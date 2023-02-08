@@ -1,6 +1,5 @@
 {
   "name": "fossbilling",
-  "version": "0.2.10",
   "author": "FOSSBilling Team",
   "homepage": "https://fossbilling.org",
   "license": "Apache License 2.0",
@@ -23,8 +22,8 @@
     "sass": "^1.58.0"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^6.2.1",
-    "apexcharts": "^3.36.3",
+    "@fortawesome/fontawesome-free": "^6.3.0",
+    "apexcharts": "^3.37.0",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.7.0",
@@ -46,9 +45,15 @@
     "upath": "^2.0.1",
     "yargs": "^17.6.2"
   },
+  "workspaces": [
+    "src/modules/Wysiwyg"
+  ],
   "config": {
     "platform": {
       "php": "8.0"
     }
+  },
+  "engines" : {
+    "npm": ">=7"
   }
 }
