@@ -4,6 +4,10 @@
   "author": "FOSSBilling Team",
   "homepage": "https://fossbilling.org",
   "license": "Apache License 2.0",
+  "scripts": {
+    "build": "gulp build",
+    "watch": "gulp watch"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/FOSSBilling/FOSSBilling.git"
@@ -40,13 +44,15 @@
     "upath": "^2.0.1",
     "yargs": "^17.6.2"
   },
-  "scripts": {
-    "build": "gulp build",
-    "watch": "gulp watch"
-  },
+  "workspaces": [
+    "src/modules/Wysiwyg"
+  ],
   "config": {
     "platform": {
       "php": "8.0"
     }
+  },
+  "engines" : {
+    "npm": ">=7"
   }
 }

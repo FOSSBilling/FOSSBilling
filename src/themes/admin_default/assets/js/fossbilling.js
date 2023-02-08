@@ -130,6 +130,19 @@ var bb = {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
           const formData = new FormData(formElement);
+
+          // Get all CKEditor instances and replace the original textarea values with the updated content.
+          if (typeof editors !== 'undefined' && Array.isArray(editors)) {
+            let editorContentOnRequiredAttr = false;
+            Object.keys(editors).forEach(function (name) {
+              editorContentOnRequiredAttr = editors[name].required ? editors[name].editor.getData() !== '' : true;
+              formData.set(name, editors[name].editor.getData());
+            });
+            if (!editorContentOnRequiredAttr) {
+              return FOSSBilling.message('At least one of the required fields are empty', 'error');
+            }
+          }
+
           if(formElement.getAttribute('method').toLowerCase() != 'get'){
              data = formData.serializeJSON();
           }else{
