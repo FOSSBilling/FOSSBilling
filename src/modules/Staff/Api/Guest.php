@@ -98,6 +98,50 @@ class Guest extends \Api_Abstract
         return $this->getService()->login($data['email'], $data['password'], $this->getIp());
     }
 
+    public function update_password($data){
+       $config = $this->getMod()->getConfig();
+       if ( isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0'){
+           throw new \Box_Exception('Password reset has been disabled');
+       }
+       $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+       $required = [
+           'code' => 'Code required',
+           'password' => 'Password required',
+           'password_confirm' => 'Password confirmation required',
+       ];
+
+       $validator = $this->di['validator'];
+       $validator->checkRequiredParamsForArray($required, $data);
+
+       if ($data['password'] != $data['password_confirm']) {
+           throw new \Box_Exception('Passwords do not match');
+       }
+
+       $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
+       if (!$reset instanceof \Model_AdminPasswordReset) {
+           throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
+       }
+
+       if(strtotime($reset -> created_at) - time() + 900 <  0){
+           throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
+       }
+
+       $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
+       $c->pass = $this->di['password']->hashIt($data['password']);
+       $this->di['db']->store($c);
+
+       $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);
+
+       // send email
+       $email = [];
+       $email['to_admin'] = $c->id;
+       $email['code'] = 'mod_staff_password_reset_approve';
+       $emailService = $this->di['mod_service']('email');
+       $emailService->sendTemplate($email);
+
+       $this->di['db']->trash($reset);
+    }
+
     public function passwordreset($data){
         $config = $this->getMod()->getConfig();
         if ( isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0'){
