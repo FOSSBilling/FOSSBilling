@@ -91,7 +91,8 @@ $di['crypt'] = function () use ($di) {
 $di['pdo'] = function () use ($di) {
     $c = $di['config']['db'];
 
-    $pdo = new PDO($c['type'] . ':host=' . $c['host'] . ';port=' . $c['port'] . ';dbname=' . $c['name'],
+    $pdo = new PDO(
+        $c['type'] . ':host=' . $c['host'] . ';port=' . $c['port'] . ';dbname=' . $c['name'],
         $c['user'],
         $c['password'],
         [
@@ -227,7 +228,7 @@ $di['events_manager'] = function () use ($di) {
 $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
     $mode = (isset($di['config']['security']['mode'])) ? $di['config']['security']['mode'] : 'strict';
-    $lifespan =(isset($di['config']['security']['cookie_lifespan'])) ? $di['config']['security']['cookie_lifespan'] : 7200;
+    $lifespan = (isset($di['config']['security']['cookie_lifespan'])) ? $di['config']['security']['cookie_lifespan'] : 7200;
     $secure = (isset($di['config']['security']['force_https'])) ? $di['config']['security']['force_https'] : true;
 
     return new Box_Session($handler, $mode, $lifespan, $secure);
@@ -265,7 +266,9 @@ $di['request'] = function () use ($di) {
  *
  * @return \FileCache
  */
-$di['cache'] = function () { return new FileCache(); };
+$di['cache'] = function () {
+    return new FileCache();
+};
 
 /**
  *
@@ -273,7 +276,9 @@ $di['cache'] = function () { return new FileCache(); };
  *
  * @return \Box_Authorization
  */
-$di['auth'] = function () use ($di) { return new Box_Authorization($di); };
+$di['auth'] = function () use ($di) {
+    return new Box_Authorization($di);
+};
 
 /**
  * Creates a new Twig environment that's configured for FOSSBilling.
@@ -311,6 +316,9 @@ $di['twig'] = $di->factory(function () use ($di) {
         $_GET['ajax'] = true;
     }
 
+    //CSRF token
+    $token = (session_status() == PHP_SESSION_ACTIVE) ? hash('md5', session_id()) : '';
+    $twig->addGlobal('CSRFToken', $token);
     $twig->addGlobal('request', $_GET);
     $twig->addGlobal('guest', $di['api_guest']);
 
@@ -359,7 +367,7 @@ $di['is_client_logged'] = function () use ($di) {
 $di['is_admin_logged'] = function () use ($di) {
     if (!$di['auth']->isAdminLoggedIn()) {
         $api_str = '/api/';
-        $url = $di['request']->getQuery('_url',null,'');
+        $url = $di['request']->getQuery('_url', null, '');
         if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
@@ -437,7 +445,9 @@ $di['api'] = $di->protect(function ($role) use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_guest'] = function () use ($di) { return $di['api']('guest'); };
+$di['api_guest'] = function () use ($di) {
+    return $di['api']('guest');
+};
 
 /**
  *
@@ -445,7 +455,9 @@ $di['api_guest'] = function () use ($di) { return $di['api']('guest'); };
  *
  * @return \Api_Handler
  */
-$di['api_client'] = function () use ($di) { return $di['api']('client'); };
+$di['api_client'] = function () use ($di) {
+    return $di['api']('client');
+};
 
 /**
  *
@@ -453,7 +465,9 @@ $di['api_client'] = function () use ($di) { return $di['api']('client'); };
  *
  * @return \Api_Handler
  */
-$di['api_admin'] = function () use ($di) { return $di['api']('admin'); };
+$di['api_admin'] = function () use ($di) {
+    return $di['api']('admin');
+};
 
 /**
  *
@@ -461,7 +475,9 @@ $di['api_admin'] = function () use ($di) { return $di['api']('admin'); };
  *
  * @return \Api_Handler
  */
-$di['api_system'] = function () use ($di) { return $di['api']('system'); };
+$di['api_system'] = function () use ($di) {
+    return $di['api']('system');
+};
 
 /**
  *
@@ -561,21 +577,27 @@ $di['curl'] = function ($url) use ($di) {
  *
  * @return Server_Package
  */
-$di['server_package'] = function () {return new Server_Package(); };
+$di['server_package'] = function () {
+    return new Server_Package();
+};
 
 /**
  * @param void
  *
  * @return Server_Client
  */
-$di['server_client'] = function () {return new Server_Client(); };
+$di['server_client'] = function () {
+    return new Server_Client();
+};
 
 /**
  * @param void
  *
  * @return Server_Account
  */
-$di['server_account'] = function () {return new Server_Account(); };
+$di['server_account'] = function () {
+    return new Server_Account();
+};
 
 /**
  * Creates a new server manager object and returns it.
@@ -610,7 +632,9 @@ $di['requirements'] = function () use ($di) {
  *
  * @return \Box_Period The new period object that was just created.
  */
-$di['period'] = $di->protect(function ($code) { return new \Box_Period($code); });
+$di['period'] = $di->protect(function ($code) {
+    return new \Box_Period($code);
+});
 
 /**
  * Gets the current client area theme.
@@ -671,21 +695,27 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \Box_Ftp The new FTP object that was just created.
  */
-$di['ftp'] = $di->protect(function ($params) { return new \Box_Ftp($params); });
+$di['ftp'] = $di->protect(function ($params) {
+    return new \Box_Ftp($params);
+});
 
 /**
  * @param void
  *
  * @return \GeoIp2\Database\Reader
  */
-$di['geoip'] = function () { return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
+$di['geoip'] = function () {
+    return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
+};
 
 /**
  * @param void
  *
  * @return \Box_Password
  */
-$di['password'] = function () { return new Box_Password(); };
+$di['password'] = function () {
+    return new Box_Password();
+};
 
 /**
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.

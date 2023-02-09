@@ -104,10 +104,6 @@ class Box_AppClient extends Box_App
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
 
-        //CSRF token
-        $token = (!is_null(session_id())) ? hash('md5', session_id()) : null;
-        $twig->addGlobal('CSRFToken', $token);
-
         if ($this->di['auth']->isClientLoggedIn()) {
             $twig->addGlobal('client', $this->di['api_client']);
         }

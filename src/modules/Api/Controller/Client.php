@@ -318,7 +318,7 @@ class Client implements InjectionAwareInterface
         }
 
         $token = $data->CSRFToken ?? $_POST["CSRFToken"] ?? $_GET["CSRFToken"] ?? null;
-        $expectedToken = (!is_null(session_id())) ? hash('md5', session_id()) : null;
+        $expectedToken = (session_status() == PHP_SESSION_ACTIVE) ? hash('md5', session_id()) : null;
 
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
          * Due to this, we whitelist the checkout URL. 
