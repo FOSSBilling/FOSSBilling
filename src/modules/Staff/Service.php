@@ -699,6 +699,12 @@ class Service implements InjectionAwareInterface
 
     public function sendPasswordResetConfirmation($hash)
     {
+        $mod = $this->di['mod']('staff');
+        $config = $mod->getConfig();
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+        if ( isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0'){
+            throw new \Box_Exception('Password reset has been disabled');
+        }
         $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
         if (!$reset instanceof \Model_AdminPasswordReset) {
             throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
