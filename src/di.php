@@ -317,7 +317,6 @@ $di['twig'] = $di->factory(function () use ($di) {
     }
 
     //CSRF token
-
     if (session_status() !== PHP_SESSION_ACTIVE) {
         $token = hash('md5', $_COOKIE['PHPSESSID'] ?? '');
     } else {
