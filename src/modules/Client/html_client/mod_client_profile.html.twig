@@ -280,7 +280,7 @@ $(function() {
     
     $('#change-api-key').submit(function(event) {
         bb.post(
-            'client/client/api_key_reset',
+            'client/profile/api_key_reset',
             $(this).serialize(),
             function(result) {
                 $('#api-key').val(result);
