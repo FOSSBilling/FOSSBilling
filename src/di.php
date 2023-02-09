@@ -317,7 +317,13 @@ $di['twig'] = $di->factory(function () use ($di) {
     }
 
     //CSRF token
-    $token = (session_status() == PHP_SESSION_ACTIVE) ? hash('md5', session_id()) : '';
+
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        $token = hash('md5', $_COOKIE['PHPSESSID'] ?? '');
+    } else {
+        $token = hash('md5', session_id());
+    }
+
     $twig->addGlobal('CSRFToken', $token);
     $twig->addGlobal('request', $_GET);
     $twig->addGlobal('guest', $di['api_guest']);

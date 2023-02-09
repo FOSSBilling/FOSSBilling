@@ -175,7 +175,7 @@ class Client implements InjectionAwareInterface
 
         try {
             $this->isRoleLoggedIn($role);
-            if($role == 'client' || $role == 'admin'){
+            if ($role == 'client' || $role == 'admin') {
                 $this->_checkCSRFToken();
             }
         } catch (\Exception) {
@@ -282,9 +282,9 @@ class Client implements InjectionAwareInterface
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
             $authFailed = array(201, 202, 206, 204, 205, 203, 403, 1004, 1002);
 
-            if(in_array($code, $authFailed)) {
+            if (in_array($code, $authFailed)) {
                 header('HTTP/1.1 401 Unauthorized');
-            } elseif($code == 701 || $code == 879) {
+            } elseif ($code == 701 || $code == 879) {
                 header('HTTP/1.1 400 Bad Request');
             }
         } else {
@@ -298,36 +298,41 @@ class Client implements InjectionAwareInterface
     {
         return $this->di['request']->getClientAddress();
     }
-    
+
     /**
      * Checks if the CSRF token provided is valid
      *
      * @throws \Box_Exception
      */
-    public function _checkCSRFToken(){
+    public function _checkCSRFToken()
+    {
         $this->_loadConfig();
         $csrfPrevention = $this->_api_config['CSRFPrevention'] ?? true;
-        if(!$csrfPrevention || php_sapi_name() == 'cli'){
+        if (!$csrfPrevention || php_sapi_name() == 'cli') {
             return true;
         }
 
         $input = file_get_contents('php://input') ?? '';
         $data = json_decode($input);
-        if(!is_object($data)){
+        if (!is_object($data)) {
             $data = new \stdClass();
         }
 
         $token = $data->CSRFToken ?? $_POST["CSRFToken"] ?? $_GET["CSRFToken"] ?? null;
-        $expectedToken = (session_status() == PHP_SESSION_ACTIVE) ? hash('md5', session_id()) : null;
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', $_COOKIE['PHPSESSID']) : null;
+        } else {
+            $expectedToken = hash('md5', session_id());
+        }
 
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
          * Due to this, we whitelist the checkout URL. 
          */
-        if(str_contains($_SERVER['REQUEST_URI'], "/api/client/cart/checkout")){
+        if (str_contains($_SERVER['REQUEST_URI'], "/api/client/cart/checkout")) {
             return true;
         }
 
-        if(!is_null($expectedToken) && $expectedToken !== $token){
+        if (!is_null($expectedToken) && $expectedToken !== $token) {
             throw new \Box_Exception('CSRF token invalid.', null, 403);
         }
     }
