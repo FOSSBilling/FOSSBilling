@@ -24,7 +24,7 @@
     "@ckeditor/ckeditor5-source-editing": "^35.4.0",
     "@ckeditor/ckeditor5-table": "^35.4.0",
     "@ckeditor/ckeditor5-theme-lark": "^35.4.0",
-    "@ckeditor/ckeditor5-typing": "^35.4.0",
+    "@ckeditor/ckeditor5-typing": "^36.0.1",
     "css-loader": "^6.7.3",
     "postcss": "^8.4.21",
     "postcss-loader": "^7.0.2",
