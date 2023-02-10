@@ -136,7 +136,19 @@
                                 <textarea class="form-control" name="allowed_ips" rows="2" placeholder="{{ admin.system_env({ 'ip': 1 }) }}">{{ params.allowed_ips }}</textarea>
                             </div>
                         </div>
-
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Allow staff reset passwords'|trans }}</label>
+                            <div class="col">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioPWresetYes" type="radio" name="public[reset_pw]" value="1"{% if params.public.reset_pw == "1" %} checked{% endif %}>
+                                    <label class="form-check-label" for="radioPWresetYes">{{ 'Yes'|trans }}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioPWresetNo" type="radio" name="public[reset_pw]" value="0"{% if not params.public.reset_pw %} checked{% endif %}>
+                                    <label class="form-check-label" for="radioPWresetNo">{{ 'No'|trans }}</label>
+                                </div>
+                            </div>
+                        </div>
                         <input type="hidden" name="ext" value="mod_staff">
                         <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                 </form>
