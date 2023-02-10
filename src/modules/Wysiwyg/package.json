@@ -21,7 +21,7 @@
     "@ckeditor/ckeditor5-markdown-gfm": "^35.4.0",
     "@ckeditor/ckeditor5-paragraph": "^35.4.0",
     "@ckeditor/ckeditor5-paste-from-office": "^35.4.0",
-    "@ckeditor/ckeditor5-source-editing": "^35.4.0",
+    "@ckeditor/ckeditor5-source-editing": "^36.0.1",
     "@ckeditor/ckeditor5-table": "^35.4.0",
     "@ckeditor/ckeditor5-theme-lark": "^36.0.1",
     "@ckeditor/ckeditor5-typing": "^36.0.1",
