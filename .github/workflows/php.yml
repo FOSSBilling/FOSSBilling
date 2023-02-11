@@ -59,6 +59,7 @@ jobs:
         run: |
           sudo systemctl start mysql.service
           mysql -e 'CREATE DATABASE fossbilling;' -u root -proot
+          mysql -u root -proot fossbilling < ./src/install/sql/structure.sql
           mysql -u root -proot fossbilling < ./src/install/sql/content_test.sql
 
       - name: Configure environment for Tests
