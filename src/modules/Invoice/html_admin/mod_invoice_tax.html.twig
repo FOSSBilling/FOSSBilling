@@ -4,6 +4,8 @@
 
 {% block meta_title %}{{ 'Tax'|trans }}{% endblock %}
 
+{% set params = admin.system_get_params %}
+
 {% set active_menu = 'system' %}
 
 {% block content %}
@@ -144,11 +146,11 @@
                         <label class="form-label col-3 col-form-label">{{ 'Enable tax support'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTexEnabledYes" type="radio" name="tax_enabled" value="1"{% if admin.system_param({ 'key': 'tax_enabled' }) %} checked{% endif %}>
+                                <input class="form-check-input" id="radioTexEnabledYes" type="radio" name="tax_enabled" value="1"{% if params.tax_enabled %} checked{% endif %}>
                                 <label class="form-check-label" for="radioTexEnabledYes">{{ 'Yes'|trans }}</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTexEnabledNo" type="radio" name="tax_enabled" value="0"{% if not admin.system_param({ 'key': 'tax_enabled' }) %} checked{% endif %}>
+                                <input class="form-check-input" id="radioTexEnabledNo" type="radio" name="tax_enabled" value="0"{% if params.tax_enabled %} checked{% endif %}>
                                 <label class="form-check-label" for="radioTexEnabledNo">{{ 'No'|trans }}</label>
                             </div>
                         </div>
