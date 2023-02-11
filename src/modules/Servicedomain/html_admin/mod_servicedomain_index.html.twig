@@ -280,28 +280,29 @@
 
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    {% set params = admin.system_get_params %}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="nameserver_1" value="{{ admin.system_param({ 'key': 'nameserver_1' }) }}">
+                            <input class="form-control" type="text" name="nameserver_1" value="{{ params.nameserver_1 }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Nameserver 2'|trans }}:</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="nameserver_2" value="{{ admin.system_param({ 'key': 'nameserver_2' }) }}">
+                            <input class="form-control" type="text" name="nameserver_2" value="{{ params.nameserver_2 }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Nameserver 3'|trans }}:</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="nameserver_3" value="{{ admin.system_param({ 'key': 'nameserver_3' }) }}">
+                            <input class="form-control" type="text" name="nameserver_3" value="{{ params.nameserver_3 }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Nameserver 4'|trans }}:</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="nameserver_4" value="{{ admin.system_param({ 'key': 'nameserver_4' }) }}">
+                            <input class="form-control" type="text" name="nameserver_4" value="{{ params.nameserver_4 }}">
                         </div>
                     </div>
 
