@@ -2,13 +2,17 @@ name: PHP Composer
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+env:
+  DB_DATABASE: fossbilling
+  DB_USER: foo
+  DB_PASSWORD: foo
 
 jobs:
   build:
-
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
@@ -17,63 +21,73 @@ jobs:
 
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Install PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-versions }}
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
 
-    - name: Check PHP Version
-      run: php -v
+      - name: Check PHP Version
+        run: php -v
 
-    - name: Clone and update the locale submodule.
-      run: git submodule update --init --recursive
-      working-directory: ./src/locale
+      - name: Clone and update the locale submodule.
+        run: git submodule update --init --recursive
+        working-directory: ./src/locale
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate
-      working-directory: ./src
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+        working-directory: ./src
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: ./src/vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: ./src/vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-    - name: Install dependencies
-      if: steps.composer-cache.outputs.cache-hit != 'true'
-      run: composer install --prefer-dist --no-progress --no-suggest
-      working-directory: ./src
+      - name: Install dependencies
+        if: steps.composer-cache.outputs.cache-hit != 'true'
+        run: composer install --prefer-dist --no-progress --no-suggest
+        working-directory: ./src
 
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
-    - name: Run test suite for composer updates.
-      run: composer install --prefer-dist --no-progress --no-suggest
-      working-directory: ./src
+      # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
+      # Docs: https://getcomposer.org/doc/articles/scripts.md
+      - name: Run test suite for composer updates.
+        run: composer install --prefer-dist --no-progress --no-suggest
+        working-directory: ./src
 
-    - name: Configure environment for Tests
-      run: |
-        cp ./src/config-sample.php ./src/config.php
-        mkdir -p ./src/data/cache
-        mkdir -p ./src/data/log
-        echo > ./src/data/log/license.log
-        echo > ./src/data/log/application.log
-        echo > ./src/data/log/php_error.log
-        rm -rf ./src/install
+      - name: Set up MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+          mysql -u foo -p${{ env.DB_PASSWORD }} fossbilling < ./src/install/sql/content_test.sql
 
-    - name: Run test suite for modules
-      run: |
-        php ./src/vendor/bin/phpunit ./tests/modules/
+      - name: Configure environment for Tests
+        run: |
+          cp ./src/config-sample.php ./src/config.php
+          mkdir -p ./src/data/cache
+          mkdir -p ./src/data/log
+          echo > ./src/data/log/license.log
+          echo > ./src/data/log/application.log
+          echo > ./src/data/log/php_error.log
+          rm -rf ./src/install
 
-    - name: Run test suite for library
-      run: |
-        php ./src/vendor/bin/phpunit ./tests/library/
+      - name: Run test suite for modules
+        run: |
+          php ./src/vendor/bin/phpunit ./tests/modules/
 
-    - name: Run test suite for integration
-      run: |
-        php ./src/vendor/bin/phpunit ./tests/integration/
+      - name: Run test suite for library
+        run: |
+          php ./src/vendor/bin/phpunit ./tests/library/
+
+      - name: Run test suite for integration/library
+        run: |
+          php ./src/vendor/bin/phpunit ./tests/integration/library
+
+      - name: Run test suite for integration/modules
+        run: |
+          php ./src/vendor/bin/phpunit ./tests/integration/modules
