@@ -73,3 +73,7 @@ jobs:
     - name: Run test suite for library
       run: |
         php ./src/vendor/bin/phpunit ./tests/library/
+
+    - name: Run test suite for integration
+      run: |
+        php ./src/vendor/bin/phpunit ./tests/integration/
