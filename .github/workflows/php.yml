@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  DB_DATABASE: fossbilling
-  DB_USER: foo
-  DB_PASSWORD: foo
-
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
@@ -62,9 +57,9 @@ jobs:
 
       - name: Set up MySQL
         run: |
-          sudo /etc/init.d/mysql start
-          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
-          mysql -u foo -p${{ env.DB_PASSWORD }} fossbilling < ./src/install/sql/content_test.sql
+          sudo systemctl start mysql.service
+          mysql -e 'CREATE DATABASE fossbilling;' -u root -proot
+          mysql -u root -proot fossbilling < ./src/install/sql/content_test.sql
 
       - name: Configure environment for Tests
         run: |

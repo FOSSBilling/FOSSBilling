@@ -145,12 +145,12 @@ return [
         /*
          * Database username.
          */
-        'user' => getenv('DB_USER') ?: 'foo',
+        'user' => getenv('DB_USER') ?: 'root',
 
         /*
          * Database password.
          */
-        'password' => getenv('DB_PASS') ?: 'foo',
+        'password' => getenv('DB_PASS') ?: 'root',
 
         /*
          * Database Port.
