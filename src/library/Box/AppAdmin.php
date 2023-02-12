@@ -54,10 +54,6 @@ class Box_AppAdmin extends Box_App
         $twig->setLoader($loader);
 
         $twig->addGlobal('theme', $theme);
-        
-        //CSRF token
-        $token = (!is_null(session_id())) ? hash('md5', session_id()) : null;
-        $twig->addGlobal('CSRFToken', $token);
 
         if ($this->di['auth']->isAdminLoggedIn()) {
             $twig->addGlobal('admin', $this->di['api_admin']);
