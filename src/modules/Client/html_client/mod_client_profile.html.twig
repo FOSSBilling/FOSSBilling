@@ -187,6 +187,19 @@
                           </div>
                       </div>
 
+                      {% for i in 1..10 %}
+                      {% set custom = 'custom_' ~ i %}
+                      {% set current = guest.client_custom_fields[custom] %}
+                      {% if current.active %}
+                      <div class="control-group">
+                          <label class="control-label" for="input">{{ current.title }}</label>
+                          <div class="controls">
+                            <input type="text" name="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required="required" {% endif %}>
+                          </div>
+                      </div>
+                      {% endif %}
+                      {% endfor %}
+
                     <div class="form-actions">
                         <button class="btn btn-alt btn-large btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
                     </div>
