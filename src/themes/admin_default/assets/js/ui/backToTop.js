@@ -8,35 +8,33 @@
  * with this source code in the file LICENSE
  */
 
- (function () {
-    FOSSBilling.backToTop = function (options) {
-        var defaults = {
-            hiddenClass: 'hidden',
-            visibleClass: 'visible',
-            buttonID: 'back-to-top',
-            minimum: 200,
-        };
+export default function (options) {
+  const defaults = {
+    hiddenClass: 'hidden',
+    visibleClass: 'visible',
+    buttonID: 'back-to-top',
+    minimum: 200,
+  };
 
-        var settings = {...defaults, ...options};
+  const settings = {...defaults, ...options};
 
-        if(document.getElementById(settings.buttonID)){
-        let toTopButton = document.getElementById(settings.buttonID);
+  if (document.getElementById(settings.buttonID)) {
+    let toTopButton = document.getElementById(settings.buttonID);
 
-        toTopButton.addEventListener("click", toTop);
+    toTopButton.addEventListener("click", toTop);
 
-        function toTop() {
-            document.body.scrollTop = 0;
-            document.documentElement.scrollTop = 0;
-        }
+    function toTop() {
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    }
 
-        window.onscroll = function () {
-            // If the page is scrolled more than the threshold, make the button visible
-            if (document.body.scrollTop > settings.minimum || document.documentElement.scrollTop > settings.minimum) {
-                toTopButton.classList.replace(settings.hiddenClass, settings.visibleClass);
-            } else {
-                toTopButton.classList.replace(settings.visibleClass, settings.hiddenClass);
-            }
-        };
+    window.onscroll = function () {
+      // If the page is scrolled more than the threshold, make the button visible
+      if (document.body.scrollTop > settings.minimum || document.documentElement.scrollTop > settings.minimum) {
+        toTopButton.classList.replace(settings.hiddenClass, settings.visibleClass);
+      } else {
+        toTopButton.classList.replace(settings.visibleClass, settings.hiddenClass);
       }
     };
-})();
+  }
+};
