@@ -395,4 +395,34 @@ class Service implements InjectionAwareInterface
 
         return $config;
     }
+
+    public function getCurrentRouteTheme(): string
+    {
+        if (str_starts_with($_SERVER['REQUEST_URI'], '/admin')) {
+            return $this->getCurrentAdminAreaTheme()['code'];
+        }
+
+        return $this->getCurrentClientAreaTheme()->getName();
+    }
+
+    public function getEncoreInfo(): array
+    {
+        $entrypoint = 'entrypoints';
+        $manifest = 'manifest';
+        $encoreInfo['is_encore_theme'] = true;
+
+        if (!file_exists($this->getEncoreJsonPath($entrypoint)) && !file_exists($this->getEncoreJsonPath($manifest))) {
+            $encoreInfo['is_encore_theme'] = false;
+        }
+
+        $encoreInfo[$entrypoint] = $this->getEncoreJsonPath($entrypoint);
+        $encoreInfo[$manifest] = $this->getEncoreJsonPath($manifest);
+
+        return $encoreInfo;
+    }
+
+    protected function getEncoreJsonPath($filename): string
+    {
+        return $this->getThemesPath() . $this->getCurrentRouteTheme() . "/build/{$filename}.json";
+    }
 }
