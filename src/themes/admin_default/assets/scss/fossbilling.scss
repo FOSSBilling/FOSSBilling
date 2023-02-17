@@ -9,7 +9,26 @@
 .hidden {
     opacity: 0;
 }
+
 .ck.ck-content:not(.ck-comment__input *) {
     min-height: 300px;
     overflow-y: auto;
+}
+
+.ts-input {
+    color: inherit;
+}
+
+.ts-control {
+    width: 205px;
+    color: inherit;
+
+    .dropdown-menu {
+        width: 100%;
+        height: auto;
+    }
+}
+
+#tomselect-1-ts-dropdown > div.dropdown-item.selected {
+    background: #eaecef !important;
 }
