@@ -56,6 +56,7 @@ export const buildThemeAdminJs = function buildThemeAdminJs() {
     'assets/js/jquery-ui.js',
     upath.joinSafe(nodeModulesPath, '@tabler/core/dist/js/tabler.js'),
     upath.joinSafe(nodeModulesPath, 'apexcharts/dist/apexcharts.js'),
+    upath.joinSafe(nodeModulesPath, 'tom-select/dist/js/tom-select.base.js'),
     'assets/js/fossbilling.js',
     'assets/js/ui/backToTop.js',
   ];
@@ -70,6 +71,7 @@ buildThemeAdminJs.description = 'Build admin_default theme JS assets.';
 export const buildThemeAdminCSS = function buildThemeAdminCSS() {
   const files = [
     upath.joinSafe(nodeModulesPath, '@tabler/core/dist/css/tabler.css'),
+    upath.joinSafe(nodeModulesPath, 'tom-select/dist/css/tom-select.bootstrap5.css'),
     'assets/scss/**/*.scss',
     // 'build/css/dark-icons-sprite.css',
     // 'build/css/dark-icons-23-sprite.css',

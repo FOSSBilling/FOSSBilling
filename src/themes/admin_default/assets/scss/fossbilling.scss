@@ -9,7 +9,35 @@
 .hidden {
     opacity: 0;
 }
+
 .ck.ck-content:not(.ck-comment__input *) {
     min-height: 300px;
     overflow-y: auto;
+}
+
+.ts-input {
+    color: inherit;
+}
+
+.ts-wrapper {
+    .ts-control {
+        width: 205px;
+        color: inherit;
+
+        .dropdown-menu {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    .ts-dropdown {
+        .active {
+            background-color: rgba(var(--tblr-muted-rgb), .06);
+            color: inherit;
+        }
+
+        .selected {
+            background-color: rgba(var(--tblr-muted-rgb), .1);
+        }
+    }
 }
