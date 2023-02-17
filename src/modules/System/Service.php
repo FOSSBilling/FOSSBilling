@@ -193,13 +193,13 @@ class Service
         ];
     }
 
-    public function getLanguages($deep = false)
+    public function getLanguages($deep = false): array
     {
         $path = PATH_LANGS;
         $locales = [];
         if ($handle = opendir($path)) {
             while (false !== ($entry = readdir($handle))) {
-                if ('.svn' != $entry && '.' != $entry && '..' != $entry && is_dir($path . DIRECTORY_SEPARATOR . $entry)) {
+                if (!str_starts_with($entry, '.') && is_dir($path . DIRECTORY_SEPARATOR . $entry)) {
                     $locales[] = $entry;
                 }
             }
