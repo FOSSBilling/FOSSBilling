@@ -43,7 +43,7 @@
     "gulp-uglifycss": "^1.1.0",
     "jquery": "^3.6.3",
     "upath": "^2.0.1",
-    "yargs": "^17.6.2"
+    "yargs": "^17.7.0"
   },
   "workspaces": [
     "src/modules/Wysiwyg"
