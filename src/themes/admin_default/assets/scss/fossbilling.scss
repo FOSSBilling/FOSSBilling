@@ -19,16 +19,25 @@
     color: inherit;
 }
 
-.ts-control {
-    width: 205px;
-    color: inherit;
+.ts-wrapper {
+    .ts-control {
+        width: 205px;
+        color: inherit;
 
-    .dropdown-menu {
-        width: 100%;
-        height: auto;
+        .dropdown-menu {
+            width: 100%;
+            height: auto;
+        }
     }
-}
 
-#tomselect-1-ts-dropdown > div.dropdown-item.selected {
-    background: #eaecef !important;
+    .ts-dropdown {
+        .active {
+            background-color: rgba(var(--tblr-muted-rgb), .06);
+            color: inherit;
+        }
+
+        .selected {
+            background-color: rgba(var(--tblr-muted-rgb), .1);
+        }
+    }
 }
