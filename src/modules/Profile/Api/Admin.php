@@ -97,8 +97,9 @@ class Admin extends \Api_Abstract
     /**
      * Change password for currently logged in staff member.
      *
-     * @param string $password         - new password
-     * @param string $password_confirm - repeat new password
+     * @param string $current_password - staff member current password
+     * @param string $new_password     - staff member new password
+     * @param string $confirm_password - staff member new password confirmation
      *
      * @return bool
      *
@@ -106,20 +107,25 @@ class Admin extends \Api_Abstract
      */
     public function change_password($data)
     {
-        if (!isset($data['password'])) {
-            throw new \Exception('Password required');
-        }
+        $required = [
+            'current_password' => 'Current password required',
+            'new_password' => 'New password required',
+            'confirm_password' => 'New password confirmation required',
+        ];
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
+        $validator->isPasswordStrong($data['new_password']);
 
-        if (!isset($data['password_confirm'])) {
-            throw new \Exception('Password confirmation required');
-        }
-
-        if ($data['password'] != $data['password_confirm']) {
+        if ($data['new_password'] != $data['confirm_password']) {
             throw new \Exception('Passwords do not match');
         }
 
-        $this->di['validator']->isPasswordStrong($data['password']);
+        $staff = $this->getIdentity();
 
-        return $this->getService()->changeAdminPassword($this->getIdentity(), $data['password']);
+        if(!$this->di['password']->verify($data['current_password'], $staff->pass)) {
+            throw new \Exception('Current password incorrect');
+        }
+
+        return $this->getService()->changeAdminPassword($staff, $data['new_password']);
     }
 }
