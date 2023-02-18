@@ -103,9 +103,6 @@ function handler_exception($e)
 
           <title>An error ocurred</title>
 
-          <!-- Google font -->
-          <link href=\"https://fonts.googleapis.com/css?family=Nunito:400,700\" rel=\"stylesheet\">
-
           <style>
           * {
               -webkit-box-sizing: border-box;
@@ -132,6 +129,7 @@ function handler_exception($e)
             }
 
             .error {
+              font-family: Arial, Helvetica, sans-serif;
               max-width: 560px;
               width: 100%;
               padding-left: 160px;
@@ -145,9 +143,6 @@ function handler_exception($e)
               display: inline-block;
               width: 150px;
               height: 150px;
-              background-image: url('/themes/huraga/assets/img/fb_wallet.svg');
-              background-repeat: no-repeat;
-              background-size: 124px 144px;
             }
 
             .error .error-container:before {
@@ -164,7 +159,6 @@ function handler_exception($e)
             }
 
             .error h1 {
-              font-family: 'Nunito', sans-serif;
               font-size: 65px;
               font-weight: 700;
               margin-top: 0px;
@@ -174,7 +168,6 @@ function handler_exception($e)
             }
 
             .error h2 {
-              font-family: 'Nunito', sans-serif;
               font-size: 21px;
               font-weight: 400;
               margin: 0;
@@ -183,13 +176,11 @@ function handler_exception($e)
             }
 
             .error p {
-              font-family: 'Nunito', sans-serif;
               color: #999fa5;
               font-weight: 400;
             }
 
             .error a {
-              font-family: 'Nunito', sans-serif;
               display: inline-block;
               font-weight: 700;
               border-radius: 40px;
@@ -210,7 +201,7 @@ function handler_exception($e)
             }
 
             code {
-              font-family: Consolas,'courier new';
+              font-family: Monaco, Menlo, Consolas, 'Courier New', monospace;
               color: crimson;
               background-color: #f1f1f1;
               padding: 2px;
