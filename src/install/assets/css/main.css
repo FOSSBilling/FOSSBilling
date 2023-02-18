@@ -147,19 +147,19 @@ body { margin: 0; padding: 0; background: url(../images/bodyBg.jpg) repeat; font
 
 /* ==========  General styles ========== */
 
-.wrapper { width: 980px; margin: auto; }
+.wrapper { width: 1000px; margin: auto; }
 .img { border: 1px solid #d5d5d5; }
 
 
 /* ==========  Typo  ========== */
 
-h1, h2, h3, h4, h5, h6, ul.tabs li a, .leftNav ul li a, .stats ul li span, .userLink, .errorPage p, .ui-dialog .ui-dialog-title { font-family: 'Cuprum', sans-serif; font-weight: normal; }
-h1 { font-size: 24px; }
-h2 { font-size: 22px; }
-h3 { font-size: 20px; }
-h4 { font-size: 18px; }
-h5 { font-size: 16px; }
-h6 { font-size: 14px; }
+h1, h2, h3, h4, h5, h6, ul.tabs li a, .leftNav ul li a, .stats ul li span, .userLink, .errorPage p, .ui-dialog .ui-dialog-title { font-family: Arial, Helvetica, sans-serif; font-weight: normal; }
+h1 { font-size: 22px; }
+h2 { font-size: 20px; }
+h3 { font-size: 18px; }
+h4 { font-size: 16px; }
+h5 { font-size: 14px; }
+h6 { font-size: 12px; }
 
 blockquote { border : 1px solid #d5d5d5; width: 702px; margin-top: 40px; padding: 15px 10px; quotes: "\201C" "\201D"; background: #fafafa; text-align: center; font-style: italic; font-size: 12px; border-left: 4px solid #d5d5d5; }
 blockquote:before { content: open-quote; font-weight: bold; }
@@ -331,7 +331,7 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 
 /* ===== Left navigation ===== */
 
-.leftNav { width: 212px; margin-top: -1px; float: left; margin-right: 41px; margin-bottom: 80px; }
+.leftNav { width: 210px; margin-top: -1px; float: left; margin-right: 30px; margin-bottom: 80px; }
 .leftNav .last { border-bottom: none; }
 
 .leftNav ul li { position: relative; }
@@ -481,7 +481,7 @@ html ul.tabs li.activeTab a { color: #797979; }
 .widgets .right { float: right; width: 344px; }
 
 .content { float: left; width: 726px; margin-bottom: 80px; }
-.content .title { background: url(../images/darkBg.jpg) repeat-x; height: 36px; width: 726px; -moz-box-shadow: 0 1px 0 #fff; -webkit-box-shadow: 0 1px 0 #fff; box-shadow: 0 1px 0 #fff; }
+.content .title { background: url(../images/darkBg.jpg) repeat-x; height: 36px; width: 760px; -moz-box-shadow: 0 1px 0 #fff; -webkit-box-shadow: 0 1px 0 #fff; box-shadow: 0 1px 0 #fff; }
 .content .title h5 { float: left; color: #fafafa; font-weight: normal; display: block; padding: 7px 15px; }
 
 
@@ -1042,10 +1042,10 @@ li.plupload_droptext { background: transparent; text-align: center; vertical-ali
 
 .swMain .stepContainer .StepTitle { display: block; position: relative; margin: 0; border: 1px solid #E0E0E0; padding: 5px; color: #5A5655; clear: both; text-align: left; z-index: 88; }
 
-.swMain ul.anchor { position: relative; display: block; float: left; list-style: none; padding: 0px; clear: both; border-top: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; width: 724px; }
+.swMain ul.anchor { position: relative; display: block; float: left; list-style: none; padding: 0px; clear: both; border-top: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; width: 760px; }
 .swMain ul.anchor li { position: relative; display:block; margin: 0; padding: 0; border-left: 1px solid #d5d5d5; float: left; }
 .swMain ul.anchor li:first-child { border-left: none; }
-.swMain ul.anchor li a { display: block; position: relative; float: left; margin: 0; height: 38px; width: 180px; text-decoration: none; outline-style: none; z-index: 99; cursor: pointer; background: url(../images/leftNavBg.png) repeat-x 0 0; }
+.swMain ul.anchor li a { display: block; position: relative; float: left; margin: 0; height: 38px; width: 192px; text-decoration: none; outline-style: none; z-index: 99; cursor: pointer; background: url(../images/leftNavBg.png) repeat-x 0 0; }
 .swMain ul.anchor li a.wFirst { width: 181px; }
 
 .swMain ul.anchor li a .stepNumber { position:relative; float:left; width:30px; text-align: center; padding:5px; padding-top:0; }

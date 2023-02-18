@@ -103,9 +103,6 @@ function handler_exception($e)
 
           <title>An error ocurred</title>
 
-          <!-- Google font -->
-          <link href=\"https://fonts.googleapis.com/css?family=Nunito:400,700\" rel=\"stylesheet\">
-
           <style>
           * {
               -webkit-box-sizing: border-box;
@@ -132,6 +129,7 @@ function handler_exception($e)
             }
 
             .error {
+              font-family: Arial, Helvetica, sans-serif;
               max-width: 560px;
               width: 100%;
               padding-left: 160px;
@@ -145,7 +143,7 @@ function handler_exception($e)
               display: inline-block;
               width: 150px;
               height: 150px;
-              background-image: url('/themes/huraga/assets/img/fb_wallet.svg');
+              background-image: url('data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTkuNDMgNjguNyI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiMwMDgxYzU7fS5jbHMtMntmaWxsOiNmZmY7fS5jbHMtM3tmaWxsOiNmYWM5NjU7fS5jbHMtNHtmaWxsOiMwNTA0MDc7fS5jbHMtNCwuY2xzLTV7c3Ryb2tlOiNmZmY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fS5jbHMtNXtmaWxsOiMxYTExMGY7fTwvc3R5bGU+PC9kZWZzPjxnIGlkPSJMYXllcl8xLTIiPjxnPjxnPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTkuODQsMzcuODZjLTEuMzcsMC0yLjUxLTEuMzUtMi41OC0zLjA4TDUuOTksNi41NmMtLjA4LTEuNzksMS4wMS0zLjMyLDIuNDQtMy40MUw1MS4yMywuNWguMTNjMS4zNywwLDIuNTEsMS4zNSwyLjU4LDMuMDdsMS4yNiwyOC4yM2MuMDgsMS43OS0xLjAxLDMuMzItMi40NCwzLjQxbC00Mi44LDIuNjVoLS4xM1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik01MS4zNiwxYzEuMDksMCwyLjAyLDEuMTcsMi4wOCwyLjZsMS4yNiwyOC4yM2MuMDcsMS40OS0uODQsMi44Mi0xLjk3LDIuODlsLTQyLjgsMi42NXMtLjA3LDAtLjEsMGMtMS4wOSwwLTIuMDItMS4xNy0yLjA4LTIuNkw2LjQ5LDYuNTRjLS4wNy0xLjQ5LC44NC0yLjgyLDEuOTctMi44OUw1MS4yNywxcy4wNywwLC4xLDBNNTEuMzYsMGMtLjA1LDAtLjExLDAtLjE2LDBMOC40LDIuNjVjLTEuNywuMS0zLDEuODYtMi45MSwzLjkzbDEuMjYsMjguMjNjLjA5LDIsMS40NSwzLjU1LDMuMDgsMy41NSwuMDUsMCwuMTEsMCwuMTYsMGw0Mi44LTIuNjVjMS43LS4xMSwzLTEuODYsMi45MS0zLjkzbC0xLjI2LTI4LjIzQzU0LjM2LDEuNTUsNTIuOTksMCw1MS4zNiwwaDBaIi8+PC9nPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTQ2LjU3LDIxLjkxbC02LjU3LC4zNGMtMS40NiwuMDgtMi43MS0xLjAxLTIuNzktMi40MmwtLjE0LTIuNTljLS4wOC0xLjQxLDEuMDUtMi42MiwyLjUxLTIuNjlsNi41Ny0uMzRjMS40Ni0uMDgsMi43MSwxLjAxLDIuNzksMi40MmwuMTQsMi41OWMuMDgsMS40MS0xLjA1LDIuNjItMi41MSwyLjY5WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMS43MiIgeT0iMjguMTYiIHdpZHRoPSI1NiIgaGVpZ2h0PSIzOCIgcng9IjQiIHJ5PSI0IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LjIyIC0yLjQxKSByb3RhdGUoNSkiLz48cGF0aCBjbGFzcz0iY2xzLTUiIGQ9Ik00Ny42Myw0NS4wOGgxMHY4aC0xMGMtMS4xLDAtMi0uOS0yLTJ2LTRjMC0xLjEsLjktMiwyLTJaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LjQ3IC00LjMxKSByb3RhdGUoNSkiLz48L2c+PC9nPjwvc3ZnPg==');
               background-repeat: no-repeat;
               background-size: 124px 144px;
             }
@@ -164,7 +162,6 @@ function handler_exception($e)
             }
 
             .error h1 {
-              font-family: 'Nunito', sans-serif;
               font-size: 65px;
               font-weight: 700;
               margin-top: 0px;
@@ -174,7 +171,6 @@ function handler_exception($e)
             }
 
             .error h2 {
-              font-family: 'Nunito', sans-serif;
               font-size: 21px;
               font-weight: 400;
               margin: 0;
@@ -183,13 +179,11 @@ function handler_exception($e)
             }
 
             .error p {
-              font-family: 'Nunito', sans-serif;
               color: #999fa5;
               font-weight: 400;
             }
 
             .error a {
-              font-family: 'Nunito', sans-serif;
               display: inline-block;
               font-weight: 700;
               border-radius: 40px;
@@ -210,7 +204,7 @@ function handler_exception($e)
             }
 
             code {
-              font-family: Consolas,'courier new';
+              font-family: Monaco, Menlo, Consolas, 'Courier New', monospace;
               color: crimson;
               background-color: #f1f1f1;
               padding: 2px;
