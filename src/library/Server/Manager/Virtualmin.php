@@ -198,13 +198,13 @@ class Server_Manager_Virtualmin extends Server_Manager
     		$key = str_replace($numbers, '', $key);
     		$url .= '&' . $key . '=' . $param;
     	}
-        error_log($url);
+
     	$ch = curl_init ();
     	curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, 0);
     	curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, false);
     	curl_setopt ($ch, CURLOPT_URL, $url);
     	curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
-    	curl_setopt ($ch, CURLOPT_TIMEOUT, 120);
+    	curl_setopt ($ch, CURLOPT_TIMEOUT, 60);
     	curl_setopt ($ch, CURLOPT_USERPWD, $this->_config['username'] . ':' . $this->_config['password']);
     	//debug
     	//curl_setopt($ch, CURLOPT_VERBOSE, true);
