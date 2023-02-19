@@ -317,6 +317,9 @@ function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $pres
 {
     mb_internal_encoding('UTF-8');
 
+    if (is_null($value)){
+        $value = '';
+    }
     if (mb_strlen($value) > $length) {
         if ($preserve) {
             if (false !== ($breakpoint = mb_strpos($value, ' ', $length))) {

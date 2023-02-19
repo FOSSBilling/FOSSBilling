@@ -804,6 +804,9 @@ class Service implements InjectionAwareInterface
 
     public function getUpgradablePairs(\Model_Product $model)
     {
+        if(is_null($model->upgrades)){
+            $model->upgrades = '';
+        }
         $ids = json_decode($model->upgrades, 1);
         $pids = $this->getProductTitlesByIds($ids);
         unset($pids[$model->id]);

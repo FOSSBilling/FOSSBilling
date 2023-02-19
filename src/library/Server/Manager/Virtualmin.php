@@ -48,7 +48,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     {
         return $this->getLoginUrl();
     }
-    
+
     public function testConnection()
     {
     	$result = $this->_makeRequest('list-commands');
@@ -59,7 +59,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     		throw new Server_Exception('Connection to server failed');
     	}
     }
-    
+
     public function synchronizeAccount(Server_Account $a)
     {
         $this->getLog()->info('Synchronizing account with server '.$a->getUsername());
@@ -170,7 +170,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     {
         throw new Server_Exception('Server manager does not support username changes');
     }
-    
+
     public function changeAccountDomain(Server_Account $a, $new)
     {
         throw new Server_Exception('Server manager does not support domain changes');
@@ -180,7 +180,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     {
         throw new Server_Exception('Server manager does not support ip changes');
     }
-    
+
     /**
      *
      * Makes request to virtualmin server
@@ -225,8 +225,8 @@ class Server_Manager_Virtualmin extends Server_Manager
      */
     private function _getUrl()
     {
-    	$url = (isset($this->_config['ssl']) && $this->_config['ssl'])  ? 'https://' : 'http://';
-    	$url .= $this->_config['host'] . ' : ' . $this->_config['port'] . '/virtual-server/remote.cgi';
+    	$url = (isset($this->_config['secure']) && $this->_config['secure'])  ? 'https://' : 'http://';
+    	$url .= $this->_config['host'] . ':' . $this->_config['port'] . '/virtual-server/remote.cgi';
 
     	return $url;
     }
@@ -307,17 +307,11 @@ class Server_Manager_Virtualmin extends Server_Manager
         if ($p->getMaxPop()) {
     		$params['allow6'] = 'mail';
     	}
-    	if ($p->getHasSsl()) {
-    		$params['allow7'] = 'ssl';
-    	}
     	if ($p->getMaxFtp() > 0) {
-    		$params['allow8'] = 'ftp';
-    	}
-    	if ($p->getHasSpamFilter()) {
-    		$params['allow9'] = 'spam';
+    		$params['allow7'] = 'ftp';
     	}
     	if ($p->getMaxSql() > 0) {
-    		$params['allow10'] = 'mysql';
+    		$params['allow8'] = 'mysql';
     	}
 
     	$response = $this->_makeRequest('create-reseller', $params);
@@ -388,14 +382,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if ($p->getMaxPop()) {
     		$params['mail'] = '';
     	}
-    	if ($p->getHasSsl()) {
-    		$params['ssl'] = '';
-    	}
     	if ($p->getMaxFtp() > 0) {
     		$params['ftp'] = '';
-    	}
-    	if ($p->getHasSpamFilter()) {
-    		$params['spam'] = '';
     	}
     	if ($p->getMaxSql() > 0) {
     		$params['mysql'] = '';
@@ -549,10 +537,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	);
 
     	if ($p->getMaxPop() > 0) $params['mail'] = '';
-    	if ($p->getHasSsl()) $params['ssl'] = '';
     	if ($p->getMaxSql() > 0) $params['mysql'] = '';
     	if ($p->getMaxFtp() > 0) $params['ftp'] = '';
-    	if ($p->getHasSpamFilter()) $params['spam'] = '';
 
     	$response = $this->_makeRequest('enable-feature', $params);
 
@@ -578,10 +564,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	);
 
     	if (!$p->getMaxPop() == 0) $params['mail'] = '';
-    	if (!$p->getHasSsl()) $params['ssl'] = '';
     	if ($p->getMaxSql() == 0) $params['mysql'] = '';
     	if ($p->getMaxFtp() == 0) $params['ftp'] = '';
-    	if (!$p->getHasSpamFilter()) $params['spam'] = '';
 
     	$response = $this->_makeRequest('disable-feature', $params);
 
@@ -663,17 +647,11 @@ class Server_Manager_Virtualmin extends Server_Manager
         if ($p->getMaxPop()) {
     		$params['allow6'] = 'mail';
     	}
-    	if ($p->getHasSsl()) {
-    		$params['allow7'] = 'ssl';
-    	}
     	if ($p->getMaxFtp() > 0) {
-    		$params['allow8'] = 'ftp';
-    	}
-    	if ($p->getHasSpamFilter()) {
-    		$params['allow9'] = 'spam';
+    		$params['allow7'] = 'ftp';
     	}
     	if ($p->getMaxSql() > 0) {
-    		$params['allow10'] = 'mysql';
+    		$params['allow8'] = 'mysql';
     	}
 
     	$response = $this->_makeRequest('modify-reseller', $params);
