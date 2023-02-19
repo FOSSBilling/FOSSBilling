@@ -1251,7 +1251,8 @@ class Service implements InjectionAwareInterface
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
-            if (!file_exists($url)) {
+            // prevent openbase error from preventing pdf creation when debug mode is enabled
+            if (@!file_exists($url)) {
                 $url = $_SERVER['DOCUMENT_ROOT'] . $url;
                 if (!file_exists($url)) {
                     // Assume the URL points to an image not hosted on this server
@@ -1286,10 +1287,12 @@ class Service implements InjectionAwareInterface
             'Email' => $invoice['seller']['email'],
         ];
         foreach ($sellerData as $label => $data) {
-            $data = trim($data);
-            if (!empty($data)) {
-                $html .= "<p>$label: $data</p>";
-                $sellerLines++;
+            if(is_string($data)){
+                $data = trim($data);
+                if (!empty($data)) {
+                    $html .= "<p>$label: $data</p>";
+                    $sellerLines++;
+                }
             }
         }
         $html .= '</div>';
@@ -1303,10 +1306,12 @@ class Service implements InjectionAwareInterface
             'Phone' => $invoice['buyer']['phone'],
         ];
         foreach ($buyerData as $label => $data) {
-            $data = trim($data);
-            if (!empty($data)) {
-                $html .= "<p>$label: $data</p>";
-                $buyerLines++;
+            if(is_string($data)){
+                $data = trim($data);
+                if (!empty($data)) {
+                    $html .= "<p>$label: $data</p>";
+                    $buyerLines++;
+                }
             }
         }
         $top = ($buyerLines >= $sellerLines) ? (325 + (25 * $buyerLines)) : (325 + (25 * $sellerLines));

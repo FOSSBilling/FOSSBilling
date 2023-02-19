@@ -252,6 +252,9 @@ function twig_autolink_filter($text)
 
 function twig_number_filter($number, $decimals = 2, $dec_point = '.', $thousands_sep = '')
 {
+    if(is_null($number)){
+        $number = '0';
+    }
     return number_format($number, $decimals, $dec_point, $thousands_sep);
 }
 
