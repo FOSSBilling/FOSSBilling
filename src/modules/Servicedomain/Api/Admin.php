@@ -196,10 +196,19 @@ class Admin extends \Api_Abstract
 
         return $this->getService()->tldToApiArray($model);
     }
-
+    
+    /**
+     * Get top level domain details by id.
+     *
+     * @param string $id - top level id, ie: 1
+     *
+     * @return array
+     *
+     * @throws Box_Exception
+     */
+     
     public function tld_get_id($data)
     {
-        var_dump($data);
         $required = [
             'id' => 'ID is missing',
         ];
