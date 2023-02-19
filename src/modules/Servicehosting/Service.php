@@ -496,7 +496,11 @@ class Service implements InjectionAwareInterface
             $result['id'] = $model->id;
             $result['active'] = $model->active;
             $result['secure'] = $model->secure;
+            if(!is_null($model->assigned_ips)){
             $result['assigned_ips'] = json_decode($model->assigned_ips, 1);
+            }else{
+                $result['assigned_ips'] = '';
+            }
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
@@ -785,6 +789,9 @@ class Service implements InjectionAwareInterface
 
     public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null)
     {
+        if(is_null($model->config)){
+            $model->config = '';
+        }
         $result = [
             'id' => $model->id,
 
