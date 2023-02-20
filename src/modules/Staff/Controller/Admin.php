@@ -74,9 +74,8 @@ class Admin implements InjectionAwareInterface
         $create = (0 == $count);
         if($this->di['auth']->isAdminLoggedIn()){
             return $app->redirect('');
-        }else{
-            return $app->render('mod_staff_login', ['create_admin' => $create]);
         }
+        return $app->render('mod_staff_login', ['create_admin' => $create]);
     }
 
     public function get_profile(\Box_App $app)
