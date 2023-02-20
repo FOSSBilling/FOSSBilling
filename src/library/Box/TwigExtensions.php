@@ -53,36 +53,56 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
              * TODO: Use Symfony\Component\Translation\Loader\MoFileLoader and remove php-gettext hardcoded library.
              */
             'trans' => new TwigFilter('trans', '__trans'),
+
             'alink' => new TwigFilter('alink', [$this, 'twig_bb_admin_link_filter'], ['is_safe' => ['html']]),
+
             'link' => new TwigFilter('link', [$this, 'twig_bb_client_link_filter'], ['is_safe' => ['html']]),
-            'gravatar' => new TwigFilter('gravatar', 'twig_gravatar_filter'),
-            'markdown' => new TwigFilter('markdown', 'twig_markdown_filter', ['needs_environment' => true, 'is_safe' => ['html']]),
-            'truncate' => new TwigFilter('truncate', 'twig_truncate_filter', ['needs_environment' => true]),
-            'timeago' => new TwigFilter('timeago', 'twig_timeago_filter'),
-            'daysleft' => new TwigFilter('daysleft', 'twig_daysleft_filter'),
-            'size' => new TwigFilter('size', 'twig_size_filter'),
+
+            'gravatar' => new TwigFilter('gravatar', [$this, 'twig_gravatar_filter']),
+
+            'markdown' => new TwigFilter('markdown', [$this, 'twig_markdown_filter'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'truncate' => new TwigFilter('truncate', [$this, 'twig_truncate_filter'], ['needs_environment' => true]),
+
+            'timeago' => new TwigFilter('timeago', [$this, 'twig_timeago_filter']),
+
+            'daysleft' => new TwigFilter('daysleft', [$this, 'twig_daysleft_filter']),
+
+            'size' => new TwigFilter('size', [$this, 'twig_size_filter']),
+
             'ipcountryname' => new TwigFilter('ipcountryname', [$this, 'twig_ipcountryname_filter']),
-            'number' => new TwigFilter('number', 'twig_number_filter'),
-            'period_title' => new TwigFilter('period_title', 'twig_period_title', ['needs_environment' => true, 'is_safe' => ['html']]),
-            'autolink' => new TwigFilter('autolink', 'twig_autolink_filter'),
-            'bbmd' => new TwigFilter('bbmd', 'twig_bbmd_filter', ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'number' => new TwigFilter('number', [$this, 'twig_number_filter']),
+
+            'period_title' => new TwigFilter('period_title', [$this, 'twig_period_title'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'autolink' => new TwigFilter('autolink', [$this, 'twig_autolink_filter']),
+
+            'bbmd' => new TwigFilter('bbmd', [$this, 'twig_bbmd_filter'], ['needs_environment' => true, 'is_safe' => ['html']]),
 
             'bb_date' => new TwigFilter('bb_date', [$this, 'twig_bb_date']),
+
             'bb_datetime' => new TwigFilter('bb_datetime', [$this, 'twig_bb_datetime']),
 
-            'img_tag' => new TwigFilter('img_tag', 'twig_img_tag', ['needs_environment' => false, 'is_safe' => ['html']]),
-            'script_tag' => new TwigFilter('script_tag', 'twig_script_tag', ['needs_environment' => false, 'is_safe' => ['html']]),
-            'stylesheet_tag' => new TwigFilter('stylesheet_tag', 'twig_stylesheet_tag', ['needs_environment' => false, 'is_safe' => ['html']]),
+            'img_tag' => new TwigFilter('img_tag', [$this, 'twig_img_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
 
-            'mod_asset_url' => new TwigFilter('mod_asset_url', 'twig_mod_asset_url'),
-            'asset_url' => new TwigFilter('asset_url', 'twig_asset_url', ['needs_environment' => true, 'is_safe' => ['html']]),
+            'script_tag' => new TwigFilter('script_tag', [$this, 'twig_script_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
 
-            'library_url' => new TwigFilter('library_url', 'twig_library_url', ['needs_environment' => true, 'is_safe' => ['html']]),
+            'stylesheet_tag' => new TwigFilter('stylesheet_tag', [$this, 'twig_stylesheet_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
 
-            'money' => new TwigFilter('money', 'twig_money', ['needs_environment' => true, 'is_safe' => ['html']]),
-            'money_without_currency' => new TwigFilter('money_without_currency', 'twig_money_without_currency', ['needs_environment' => true, 'is_safe' => ['html']]),
-            'money_convert' => new TwigFilter('money_convert', 'twig_money_convert', ['needs_environment' => true, 'is_safe' => ['html']]),
-            'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', ['needs_environment' => true, 'is_safe' => ['html']]),
+            'mod_asset_url' => new TwigFilter('mod_asset_url', [$this, 'twig_mod_asset_url']),
+
+            'asset_url' => new TwigFilter('asset_url', [$this, 'twig_asset_url'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'library_url' => new TwigFilter('library_url', [$this, 'twig_library_url'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'money' => new TwigFilter('money', [$this, 'twig_money'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'money_without_currency' => new TwigFilter('money_without_currency', [$this, 'twig_money_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'money_convert' => new TwigFilter('money_convert', [$this, 'twig_money_convert'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', [$this, 'money_convert_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
         ];
     }
 
@@ -141,204 +161,204 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     {
         return $this->di['url']->adminLink($link, $params);
     }
-}
 
-function twig_period_title(Twig\Environment $env, $period)
-{
-    $globals = $env->getGlobals();
-    $api_guest = $globals['guest'];
+    function twig_period_title(Twig\Environment $env, $period)
+    {
+        $globals = $env->getGlobals();
+        $api_guest = $globals['guest'];
 
-    return $api_guest->system_period_title(['code' => $period]);
-}
-
-function twig_money_convert(Twig\Environment $env, $price, $currency = null)
-{
-    $globals = $env->getGlobals();
-    $api_guest = $globals['guest'];
-    if (is_null($currency)) {
-        $c = $api_guest->cart_get_currency();
-        $currency = $c['code'];
+        return $api_guest->system_period_title(['code' => $period]);
     }
 
-    return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true]);
-}
-
-function money_convert_without_currency(Twig\Environment $env, $price, $currency = null, $without_currency = false)
-{
-    $globals = $env->getGlobals();
-    $api_guest = $globals['guest'];
-    if (is_null($currency)) {
-        $c = $api_guest->cart_get_currency();
-        $currency = $c['code'];
-    }
-
-    return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true, 'without_currency' => true]);
-}
-
-function twig_money(Twig\Environment $env, $price, $currency = null)
-{
-    $globals = $env->getGlobals();
-    $api_guest = $globals['guest'];
-
-    return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => false]);
-}
-
-function twig_money_without_currency(Twig\Environment $env, $price, $currency = null)
-{
-    $globals = $env->getGlobals();
-    $api_guest = $globals['guest'];
-
-    return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => false, 'without_currency' => true]);
-}
-
-function twig_mod_asset_url($asset, $mod)
-{
-    return BB_URL . 'modules/' . ucfirst($mod) . '/assets/' . $asset;
-}
-
-function twig_asset_url(Twig\Environment $env, $asset)
-{
-    $globals = $env->getGlobals();
-
-    return BB_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
-}
-
-function twig_library_url(Twig\Environment $env, $path)
-{
-    $globals = $env->getGlobals();
-
-    return BB_URL . 'library/' . $path;
-}
-
-function twig_img_tag($path, $alt = null)
-{
-    $alt = is_null($alt) ? pathinfo($path, PATHINFO_BASENAME) : $alt;
-
-    return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars($path), htmlspecialchars($alt), htmlspecialchars($alt));
-}
-
-function twig_script_tag($path)
-{
-    return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, Box_Version::VERSION);
-}
-
-function twig_stylesheet_tag($path, $media = 'screen')
-{
-    return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, Box_Version::VERSION, $media);
-}
-
-function twig_gravatar_filter($email, $size = 20)
-{
-    return (new Box_Tools())->get_gravatar($email, $size);
-}
-
-function twig_autolink_filter($text)
-{
-    $pattern = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
-
-    $callback = function ($matches) {
-        $url = array_shift($matches);
-        $url_parts = parse_url($url);
-
-        if (!isset($url_parts['scheme'])) {
-            $url = 'http://' . $url;
+    public function twig_money_convert(Twig\Environment $env, $price, $currency = null)
+    {
+        $globals = $env->getGlobals();
+        $api_guest = $globals['guest'];
+        if (is_null($currency)) {
+            $c = $api_guest->cart_get_currency();
+            $currency = $c['code'];
         }
 
-        return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
-    };
-
-    return preg_replace_callback($pattern, $callback, $text);
-}
-
-function twig_number_filter($number, $decimals = 2, $dec_point = '.', $thousands_sep = '')
-{
-    if(is_null($number)){
-        $number = '0';
-    }
-    return number_format($number, $decimals, $dec_point, $thousands_sep);
-}
-
-function twig_daysleft_filter($iso8601)
-{
-    $timediff = strtotime($iso8601) - time();
-
-    return intval($timediff / 86400);
-}
-
-function twig_timeago_filter($iso8601)
-{
-    $cur_tm = time();
-    $dif = $cur_tm - strtotime($iso8601);
-    $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
-    $lngh = [1, 60, 3600, 86400, 604800, 2630880, 31570560, 315705600];
-    $no = 0;
-
-    for ($v = sizeof($lngh) - 1; ($v >= 0) && (($no = $dif / $lngh[$v]) <= 1); --$v) {
+        return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true]);
     }
 
-    if ($v < 0) {
-        $v = 0;
+    public function money_convert_without_currency(Twig\Environment $env, $price, $currency = null, $without_currency = false)
+    {
+        $globals = $env->getGlobals();
+        $api_guest = $globals['guest'];
+        if (is_null($currency)) {
+            $c = $api_guest->cart_get_currency();
+            $currency = $c['code'];
+        }
+
+        return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true, 'without_currency' => true]);
     }
 
-    $_tm = $cur_tm - ($dif % $lngh[$v]);
+    public function twig_money(Twig\Environment $env, $price, $currency = null)
+    {
+        $globals = $env->getGlobals();
+        $api_guest = $globals['guest'];
 
-    $no = floor($no);
-
-    if (1 != $no) {
-        $pds[$v] .= 's';
+        return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => false]);
     }
-    $x = sprintf('%d %s ', $no, $pds[$v]);
 
-    return $x;
-}
+    public function twig_money_without_currency(Twig\Environment $env, $price, $currency = null)
+    {
+        $globals = $env->getGlobals();
+        $api_guest = $globals['guest'];
 
-function twig_size_filter($value)
-{
-    $precision = 2;
-    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-
-    $bytes = max($value, 0);
-    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-    $pow = min($pow, count($units) - 1);
-
-    $bytes /= pow(1024, $pow);
-
-    return round($bytes, $precision) . ' ' . $units[$pow];
-}
-
-function twig_markdown_filter(Twig\Environment $env, $value)
-{
-    $content = $value ?? '';
-    $markdownParser = new GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
-    return $markdownParser->convert($content);
-}
-
-function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
-{
-    mb_internal_encoding('UTF-8');
-
-    if (is_null($value)){
-        $value = '';
+        return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => false, 'without_currency' => true]);
     }
-    if (mb_strlen($value) > $length) {
-        if ($preserve) {
-            if (false !== ($breakpoint = mb_strpos($value, ' ', $length))) {
-                $length = $breakpoint;
+
+    public function twig_mod_asset_url($asset, $mod)
+    {
+        return BB_URL . 'modules/' . ucfirst($mod) . '/assets/' . $asset;
+    }
+
+    public function twig_asset_url(Twig\Environment $env, $asset)
+    {
+        $globals = $env->getGlobals();
+
+        return BB_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
+    }
+
+    public function twig_library_url(Twig\Environment $env, $path)
+    {
+        $globals = $env->getGlobals();
+
+        return BB_URL . 'library/' . $path;
+    }
+
+    public function twig_img_tag($path, $alt = null)
+    {
+        $alt = is_null($alt) ? pathinfo($path, PATHINFO_BASENAME) : $alt;
+
+        return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars($path), htmlspecialchars($alt), htmlspecialchars($alt));
+    }
+
+    public function twig_script_tag($path)
+    {
+        return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, Box_Version::VERSION);
+    }
+
+    public function twig_stylesheet_tag($path, $media = 'screen')
+    {
+        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, Box_Version::VERSION, $media);
+    }
+
+    public function twig_gravatar_filter($email, $size = 20)
+    {
+        return (new Box_Tools())->get_gravatar($email, $size);
+    }
+
+    public function twig_autolink_filter($text)
+    {
+        $pattern = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
+
+        $callback = function ($matches) {
+            $url = array_shift($matches);
+            $url_parts = parse_url($url);
+
+            if (!isset($url_parts['scheme'])) {
+                $url = 'http://' . $url;
             }
-        }
 
-        return mb_substr($value, 0, $length) . $separator;
+            return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
+        };
+
+        return preg_replace_callback($pattern, $callback, $text);
     }
 
-    return $value;
-}
+    public function twig_number_filter($number, $decimals = 2, $dec_point = '.', $thousands_sep = '')
+    {
+        if (is_null($number)) {
+            $number = '0';
+        }
+        return number_format($number, $decimals, $dec_point, $thousands_sep);
+    }
 
-/**
- * BoxBilling markdown.
- * @deprecated
- */
-function twig_bbmd_filter(Twig\Environment $env, $value)
-{
-    error_log('Usage for deprected bbmd filter, please use the markdown filter instead for twig templates.');
-    return twig_markdown_filter($env, $value);
+    public function twig_daysleft_filter($iso8601)
+    {
+        $timediff = strtotime($iso8601) - time();
+
+        return intval($timediff / 86400);
+    }
+
+    public function twig_timeago_filter($iso8601)
+    {
+        $cur_tm = time();
+        $dif = $cur_tm - strtotime($iso8601);
+        $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
+        $lngh = [1, 60, 3600, 86400, 604800, 2630880, 31570560, 315705600];
+        $no = 0;
+
+        for ($v = sizeof($lngh) - 1; ($v >= 0) && (($no = $dif / $lngh[$v]) <= 1); --$v) {
+        }
+
+        if ($v < 0) {
+            $v = 0;
+        }
+
+        $_tm = $cur_tm - ($dif % $lngh[$v]);
+
+        $no = floor($no);
+
+        if (1 != $no) {
+            $pds[$v] .= 's';
+        }
+        $x = sprintf('%d %s ', $no, $pds[$v]);
+
+        return $x;
+    }
+
+    public function twig_size_filter($value)
+    {
+        $precision = 2;
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        $bytes = max($value, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+
+        $bytes /= pow(1024, $pow);
+
+        return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    public function twig_markdown_filter(Twig\Environment $env, $value)
+    {
+        $content = $value ?? '';
+        $markdownParser = new GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
+        return $markdownParser->convert($content);
+    }
+
+    public function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
+    {
+        mb_internal_encoding('UTF-8');
+
+        if (is_null($value)) {
+            $value = '';
+        }
+        if (mb_strlen($value) > $length) {
+            if ($preserve) {
+                if (false !== ($breakpoint = mb_strpos($value, ' ', $length))) {
+                    $length = $breakpoint;
+                }
+            }
+
+            return mb_substr($value, 0, $length) . $separator;
+        }
+
+        return $value;
+    }
+
+    /**
+     * BoxBilling markdown.
+     * @deprecated
+     */
+    public function twig_bbmd_filter(Twig\Environment $env, $value)
+    {
+        error_log('Usage for deprected bbmd filter, please use the markdown filter instead for twig templates.');
+        return $this->twig_markdown_filter($env, $value);
+    }
 }
