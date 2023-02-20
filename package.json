@@ -21,7 +21,6 @@
   "devDependencies": {
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
-    "@fullhuman/postcss-purgecss": "^5.0.0",
     "@symfony/webpack-encore": "^4.2.0",
     "autoprefixer": "^10.4.13",
     "core-js": "^3.28.0",
