@@ -1,4 +1,5 @@
 @import "~@tabler/core";
+@import "~tom-select/dist/css/tom-select.bootstrap5.css";
 @import "bb-deprecated";
 @import "dataTable-deprecated";
 @import "main-deprecated";
@@ -30,7 +31,7 @@
 
 .ts-wrapper {
     .ts-control {
-        width: 205px;
+        width: 205px !important;
         color: inherit;
 
         .dropdown-menu {

@@ -28,7 +28,7 @@
     "cypress": "^12.5.1",
     "postcss": "^8.4.21",
     "postcss-loader": "^7.0.2",
-    "sass": "^1.58.1",
+    "sass": "^1.58.3",
     "sass-loader": "^13.2.0",
     "svg-sprite-loader": "^6.0.11",
     "svgo-loader": "^4.0.0",

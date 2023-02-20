@@ -15,6 +15,7 @@
     "imask": "^6.4.3",
     "jquery": "^3.6.3",
     "select2": "^4.0.13",
-    "spectrum-colorpicker": "^1.8.1"
+    "spectrum-colorpicker": "^1.8.1",
+    "tom-select": "^2.2.2"
   }
 }
