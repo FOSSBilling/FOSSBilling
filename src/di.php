@@ -1,5 +1,8 @@
 <?php
 
+
+declare(strict_types=1);
+
 /**
  * FOSSBilling.
  *
@@ -14,13 +17,20 @@
  * with this source code in the file LICENSE
  */
 
-declare(strict_types=1);
-
+use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
+use Lcharette\WebpackEncoreTwig\JsonManifest;
+use Lcharette\WebpackEncoreTwig\TagRenderer;
+use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use RedBeanPHP\Facade;
+use Symfony\Bridge\Twig\Extension\TranslationExtension;
+use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
+use Twig\Extension\CoreExtension;
+use Twig\Extension\DebugExtension;
+use Twig\Extension\StringLoaderExtension;
 
 $di = new Box_Di();
 
-/**
+/*
  * Returns the current FOSSBilling config from config.php
  *
  * @param void
@@ -33,7 +43,7 @@ $di['config'] = function () {
     return new Box_Config($array);
 };
 
-/**
+/*
  * Create a new logger instance and configures it based on the settings in the configuration file.
  *
  * @param void
@@ -68,7 +78,7 @@ $di['logger'] = function () use ($di) {
     return $log;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -81,7 +91,7 @@ $di['crypt'] = function () use ($di) {
     return $crypt;
 };
 
-/**
+/*
  * Creates a new PDO object for database connections
  *
  * @param void
@@ -119,7 +129,7 @@ $di['pdo'] = function () use ($di) {
     return $pdo;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -144,7 +154,7 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -157,7 +167,7 @@ $di['pager'] = function () use ($di) {
     return $service;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -171,7 +181,7 @@ $di['url'] = function () use ($di) {
     return $url;
 };
 
-/**
+/*
  * Returns a new Box_Mod object, created with the provided module name.
  *
  * @param string $name The name of the module to create the object with.
@@ -185,7 +195,7 @@ $di['mod'] = $di->protect(function ($name) use ($di) {
     return $mod;
 });
 
-/**
+/*
  *
  * @param string $mod the name of the module to get
  *
@@ -195,7 +205,7 @@ $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
     return $di['mod']($mod)->getService($sub);
 });
 
-/**
+/*
  *
  * @param string $name the name of the module to get the configuration of
  *
@@ -205,7 +215,7 @@ $di['mod_config'] = $di->protect(function ($name) use ($di) {
     return $di['mod']($name)->getConfig();
 });
 
-/**
+/*
  *
  * @param void
  *
@@ -218,7 +228,7 @@ $di['events_manager'] = function () use ($di) {
     return $service;
 };
 
-/**
+/*
  * Creates a new session, applying specified security rules depending on the config.php settings.
  *
  * @param void
@@ -234,7 +244,7 @@ $di['session'] = function () use ($di) {
     return new Box_Session($handler, $mode, $lifespan, $secure);
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -247,7 +257,7 @@ $di['cookie'] = function () use ($di) {
     return $service;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -260,7 +270,7 @@ $di['request'] = function () use ($di) {
     return $service;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -270,7 +280,7 @@ $di['cache'] = function () {
     return new FileCache();
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -280,7 +290,7 @@ $di['auth'] = function () use ($di) {
     return new Box_Authorization($di);
 };
 
-/**
+/*
  * Creates a new Twig environment that's configured for FOSSBilling.
  *
  * @param void
@@ -301,14 +311,22 @@ $di['twig'] = $di->factory(function () use ($di) {
     $box_extensions = new Box_TwigExtensions();
     $box_extensions->setDi($di);
 
-    // $twig->addExtension(new Twig\Extension\OptimizerExtension());
-    $twig->addExtension(new \Twig\Extension\StringLoaderExtension());
-    $twig->addExtension(new Twig\Extension\DebugExtension());
-    $twig->addExtension(new Symfony\Bridge\Twig\Extension\TranslationExtension());
+    if ($di['encore_info']['is_encore_theme']) {
+        $entryPoints = new EntrypointLookup($di['encore_info']['entrypoints']);
+        $tagRenderer = new TagRenderer($entryPoints);
+        $encoreExtensions = new EntrypointsTwigExtension($entryPoints, $tagRenderer);
+        $twig->addExtension($encoreExtensions);
+        $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
+    }
+
+    // $twig->addExtension(new OptimizerExtension());
+    $twig->addExtension(new StringLoaderExtension());
+    $twig->addExtension(new DebugExtension());
+    $twig->addExtension(new TranslationExtension());
     $twig->addExtension($box_extensions);
-    $twig->getExtension(Twig\Extension\CoreExtension::class)
+    $twig->getExtension(CoreExtension::class)
         ->setDateFormat($config['locale_date_format']);
-    $twig->getExtension(Twig\Extension\CoreExtension::class)
+    $twig->getExtension(CoreExtension::class)
         ->setTimezone($config['timezone']);
 
     // add globals
@@ -316,8 +334,8 @@ $di['twig'] = $di->factory(function () use ($di) {
         $_GET['ajax'] = true;
     }
 
-    //CSRF token
-    if (session_status() !== PHP_SESSION_ACTIVE) {
+    // CSRF token
+    if (PHP_SESSION_ACTIVE !== session_status()) {
         $token = hash('md5', $_COOKIE['PHPSESSID'] ?? '');
     } else {
         $token = hash('md5', session_id());
@@ -330,7 +348,7 @@ $di['twig'] = $di->factory(function () use ($di) {
     return $twig;
 });
 
-/**
+/*
  * Checks whether a client is logged in and throws an exception or redirects to the login page if not.
  *
  * @param void
@@ -359,7 +377,7 @@ $di['is_client_logged'] = function () use ($di) {
     return true;
 };
 
-/**
+/*
  * Checks whether an admin is logged in and throws an exception or redirects to the login page if not.
  *
  * @param void
@@ -386,7 +404,7 @@ $di['is_admin_logged'] = function () use ($di) {
     return true;
 };
 
-/**
+/*
  * Returns an existing logged-in client model object.
  *
  * @param void
@@ -400,7 +418,7 @@ $di['loggedin_client'] = function () use ($di) {
     return $di['db']->getExistingModelById('Client', $client_id);
 };
 
-/**
+/*
  * Returns an existing logged-in admin model object.
  *
  * @param void
@@ -420,7 +438,7 @@ $di['loggedin_admin'] = function () use ($di) {
     return $di['db']->getExistingModelById('Admin', $admin['id']);
 };
 
-/**
+/*
  * Creates a new API object based on the specified role and returns it.
  *
  * @param string $role The role to create the API object for. Can be 'guest', 'client', 'admin', or 'system'.
@@ -444,7 +462,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
     return $api;
 });
 
-/**
+/*
  *
  * @param void
  *
@@ -454,7 +472,7 @@ $di['api_guest'] = function () use ($di) {
     return $di['api']('guest');
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -464,7 +482,7 @@ $di['api_client'] = function () use ($di) {
     return $di['api']('client');
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -474,7 +492,7 @@ $di['api_admin'] = function () use ($di) {
     return $di['api']('admin');
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -484,7 +502,7 @@ $di['api_system'] = function () use ($di) {
     return $di['api']('system');
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -497,7 +515,7 @@ $di['tools'] = function () use ($di) {
     return $service;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -510,7 +528,7 @@ $di['validator'] = function () use ($di) {
     return $validator;
 };
 
-/**
+/*
  * Creates a new Guzzle HTTP client and returns it.
  *
  * @param void
@@ -527,7 +545,7 @@ $di['guzzle_client'] = function () use ($di) {
     ]);
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -537,7 +555,7 @@ $di['mail'] = function () {
     return new Box_Mail();
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -550,7 +568,7 @@ $di['extension'] = function () use ($di) {
     return $extension;
 };
 
-/**
+/*
  *
  * @param void
  *
@@ -563,7 +581,7 @@ $di['updater'] = function () use ($di) {
     return $updater;
 };
 
-/**
+/*
  * Creates a new Curl object and returns it.
  *
  * @param string $url The URL to send the request to.
@@ -577,7 +595,7 @@ $di['curl'] = function ($url) use ($di) {
     return $curl;
 };
 
-/**
+/*
  * @param void
  *
  * @return Server_Package
@@ -586,7 +604,7 @@ $di['server_package'] = function () {
     return new Server_Package();
 };
 
-/**
+/*
  * @param void
  *
  * @return Server_Client
@@ -595,7 +613,7 @@ $di['server_client'] = function () {
     return new Server_Client();
 };
 
-/**
+/*
  * @param void
  *
  * @return Server_Account
@@ -604,7 +622,7 @@ $di['server_account'] = function () {
     return new Server_Account();
 };
 
-/**
+/*
  * Creates a new server manager object and returns it.
  *
  * @param string $manager The name of the server manager to create.
@@ -618,7 +636,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) {
     return new $class($config);
 });
 
-/**
+/*
  * @param void
  *
  * @return Box_Requirements
@@ -630,7 +648,7 @@ $di['requirements'] = function () use ($di) {
     return $r;
 };
 
-/**
+/*
  * Creates a new Box_Period object using the provided period code and returns it.
  *
  * @param string $code The two characture period code to create the period object with.
@@ -641,7 +659,7 @@ $di['period'] = $di->protect(function ($code) {
     return new \Box_Period($code);
 });
 
-/**
+/*
  * Gets the current client area theme.
  *
  * @param void
@@ -654,7 +672,17 @@ $di['theme'] = function () use ($di) {
     return $service->getCurrentClientAreaTheme();
 };
 
-/**
+/*
+ * Gets the information of Webpack Encore for the current route theme.
+ * @return string
+ */
+$di['encore_info'] = function () use ($di) {
+    $service = $di['mod_service']('theme');
+
+    return $service->getEncoreInfo();
+};
+
+/*
  * Loads an existing cart session or creates a new one if there is no session.
  *
  * @param void
@@ -667,7 +695,7 @@ $di['cart'] = function () use ($di) {
     return $service->getSessionCart();
 };
 
-/**
+/*
  * Creates a new table object and returns it.
  *
  * @param string $name The name of the table to create.
@@ -683,7 +711,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
     return $table;
 });
 
-/**
+/*
  * @param void
  *
  * @return \Box\Mod\Servicelicense\Server
@@ -695,7 +723,7 @@ $di['license_server'] = function () use ($di) {
     return $server;
 };
 
-/**
+/*
  * @param mixed $params The parameters for the new FTP object.
  *
  * @return \Box_Ftp The new FTP object that was just created.
@@ -704,7 +732,7 @@ $di['ftp'] = $di->protect(function ($params) {
     return new \Box_Ftp($params);
 });
 
-/**
+/*
  * @param void
  *
  * @return \GeoIp2\Database\Reader
@@ -713,7 +741,7 @@ $di['geoip'] = function () {
     return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
 };
 
-/**
+/*
  * @param void
  *
  * @return \Box_Password
@@ -722,7 +750,7 @@ $di['password'] = function () {
     return new Box_Password();
 };
 
-/**
+/*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
  *
  * @param string $textDomain The text domain to create the translation object with.
@@ -746,7 +774,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
     return $tr;
 });
 
-/**
+/*
  * Gets the value of a key from an array, or returns a default value if the key does not exist.
  *
  * @param array $array An array of mixed types to search for the key in.

@@ -1,14 +1,14 @@
+const autoprefixer = require('autoprefixer');
+
 module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {
-      browsers: [
-        '>1%',
+  plugins: [
+    autoprefixer({
+      overrideBrowserslist: [
+        '>0.5%',
         'last 4 versions',
         'Firefox ESR',
-        'not ie < 9',
-      ],
-      flexbox: true
-    },
-  },
+        'not ie < 11',
+      ]
+    }),
+  ],
 }

@@ -1,6 +1,8 @@
 /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "boxbilling" }]*/
 
-var bb = {
+import backToTop from './ui/backToTop';
+
+globalThis.bb = {
 
   /**
   * @deprecated This method will be removed in a future release. Use the new API wrapper instead. Check the documentation for more information.
@@ -143,7 +145,8 @@ var bb = {
             }
           }
 
-          if(formElement.getAttribute('method').toLowerCase() != 'get'){
+          let data;
+          if(formElement.getAttribute('method').toLowerCase() !== 'get'){
              data = formData.serializeJSON();
           }else{
             data =  formData.serialize();
@@ -297,6 +300,7 @@ $.fn.simpleTabs = function () {
 
 const FOSSBilling = {
   message: (message, type = 'info') => {
+    let color;
     switch (type) {
       case 'error':
         color = 'danger';
@@ -368,6 +372,7 @@ $(function () {
   //if($("ul#menu").length){bb.menuAutoActive();}
 
   // Initialize backToTop
+  FOSSBilling.backToTop = backToTop;
   FOSSBilling.backToTop();
 
   //===== Datepickers =====//

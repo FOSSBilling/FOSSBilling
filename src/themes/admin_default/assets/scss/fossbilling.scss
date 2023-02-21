@@ -1,3 +1,13 @@
+@import "~@tabler/core";
+@import "~tom-select/dist/css/tom-select.bootstrap5.css";
+@import "bb-deprecated";
+@import "dataTable-deprecated";
+@import "main-deprecated";
+@import "jquery-ui";
+@import "~select2/dist/css/select2.css";
+@import "~spectrum-colorpicker/spectrum.css";
+@import "ui_custom";
+
 .page {
     min-height: calc(100vh - 2px);
 }
@@ -21,7 +31,7 @@
 
 .ts-wrapper {
     .ts-control {
-        width: 205px;
+        width: 205px !important;
         color: inherit;
 
         .dropdown-menu {

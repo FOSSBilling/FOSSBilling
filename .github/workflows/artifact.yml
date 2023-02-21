@@ -61,7 +61,7 @@ jobs:
           mkdir -p ./build/{code-browser,code-coverage,logs,pdepend,update,distribution,source}
 
       - name: Build assets
-        run: gulp build
+        run: npm run build
 
       - name: Copy mandatory files to the temporary build folder
         run: |
