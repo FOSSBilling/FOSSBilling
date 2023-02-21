@@ -21,6 +21,7 @@ $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
     }
 }
 
+/* stylelint-disable-next-line no-invalid-position-at-import-rule */
 @import "~flag-icons/sass/flag-icons-list";
 
 @each $flag-size, $size in $avatar-sizes {
