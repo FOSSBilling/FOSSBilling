@@ -213,7 +213,7 @@
                                         <div class="flex-fill">
                                             <div class="font-weight-medium">
                                                 <a href="{{ 'client/manage'|alink }}/{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</a>
-                                                <span class="flag flag-{{ client.country }}" title="{{ guest.system_countries[client.country] }}"></span>
+                                                <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
                                             </div>
                                             <div class="text-muted">
                                                 <a href="#" class="text-reset">{{ client.email }}</a>
