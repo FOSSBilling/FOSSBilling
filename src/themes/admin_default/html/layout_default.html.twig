@@ -51,7 +51,7 @@
                     <div class="nav-item me-3">
                         <select name="lang" class="form-select js-language-selector">
                             {% for lang in languages %}
-                                <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;flag flag-{{ lang.locale|split('_')[1] }}&quot;&gt;&lt;/span&gt;">{{ lang.title }}</option>
+                                <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;flag flag-country-{{ lang.locale|split('_')[1]|lower }} &quot;&gt;&lt;/span&gt;">{{ lang.title }}</option>
                             {% endfor %}
                         </select>
                     </div>
