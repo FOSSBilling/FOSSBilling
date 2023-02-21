@@ -428,6 +428,7 @@ class Service implements InjectionAwareInterface
             'format' => $model->format,
             'price_format' => $model->price_format,
             'default' => $model->is_default,
+            'enabled' => $model->is_enabled,
         ];
     }
 
@@ -459,7 +460,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null)
+    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null, int $enabled = null)
     {
         $db = $this->di['db'];
 
@@ -486,6 +487,10 @@ class Service implements InjectionAwareInterface
                 throw new \Box_Exception('Currency rate is not valid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
+        }
+
+        if (isset($enabled) && is_int($enabled)) {
+            $model->is_enabled = $enabled;
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
@@ -558,22 +563,51 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    // No longer deletes a currency, but instead marks it as disabled.
     public function deleteCurrencyByCode($code)
     {
+        $db = $this->di['db'];
         $model = $this->getByCode($code);
 
         if (!$model instanceof \Model_currency) {
             throw new \Box_Exception('Currency not found');
         }
+
         $code = $model->code;
+
+        if ($model->is_default) {
+            throw new \Box_Exception("Cannot disable default currency");
+        }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => $code]]);
 
-        $this->rm($model);
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->is_enabled = 0;
+        $db->store($model);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $code]]);
 
-        $this->di['logger']->info('Removed currency %s', $code);
+        $this->di['logger']->info('Disabled currency %s', $code);
+
+        return true;
+    }
+
+    public function enableCurrencyByCode($code)
+    {
+        $db = $this->di['db'];
+        $model = $this->getByCode($code);
+
+        if (!$model instanceof \Model_currency) {
+            throw new \Box_Exception('Currency not found');
+        }
+
+        $code = $model->code;
+
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->is_enabled = 1;
+        $db->store($model);
+
+        $this->di['logger']->info('Enabled currency %s', $code);
 
         return true;
     }
