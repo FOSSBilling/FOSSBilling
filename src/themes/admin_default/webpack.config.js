@@ -48,7 +48,7 @@ Encore
       filter: (url) => {
         if(!fs.existsSync(url)) {
           // replace css url path
-          let path = url.replace(/^(\.\.\/)+/g, './');
+          let path = url.replace(/^(\.\.\/){2}/g, './');
           // if still does not resolve, ignore that url
           return fs.existsSync(path) ? path : false;
         }
@@ -57,6 +57,7 @@ Encore
   })
   .addLoader({
     test: /\.svg$/,
+    exclude: /node_modules/,
     use: [
       {
         loader: 'svg-sprite-loader',
