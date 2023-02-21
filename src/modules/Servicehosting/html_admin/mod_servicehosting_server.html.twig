@@ -45,12 +45,12 @@
                     <input class="form-control" type="text" name="ip" value="{{ server.ip }}" required placeholder="{{ 'Primary IP address of the server used to connect to it like: 127.0.0.1'|trans }}">
                 </div>
             </div>
-            {# <div class="mb-3 row">
-                <label>{{ 'Assigned IP Addresses'|trans }}:</label>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Assigned IP Addresses'|trans }}:</label>
                 <div class="col">
-                    <textarea name="assigned_ips" rows="5" placeholder="List the IP Addresses assigned to the server (One per line)">{% for v in server.assigned_ips %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
+                    <textarea class="form-control" name="assigned_ips" rows="5" placeholder="List the IP Addresses assigned to the server (One per line)">{% for v in server.assigned_ips %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
                 </div>
-            </div> #}
+            </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Enable/Disable'|trans }}:</label>
                 <div class="col">
