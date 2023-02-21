@@ -1,0 +1,31 @@
+$flag-icons-path: "../../../../../node_modules/flag-icons/flags";
+
+@import "~flag-icons/sass/variables";
+
+.flag {
+    position: relative;
+    display: inline-block;
+    width: 1em * 1.33333;
+    height: 1em;
+    vertical-align: -3px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    border: $flag-border-size var(--#{$prefix}border-style) $flag-border-color;
+    border-radius: $flag-border-radius;
+}
+
+@mixin flag-icon($country) {
+    .flag-country-#{$country} {
+        background-image: url(#{$flag-icons-path}#{$flag-icons-rect-path}/#{$country}.svg);
+    }
+}
+
+@import "~flag-icons/sass/flag-icons-list";
+
+@each $flag-size, $size in $avatar-sizes {
+    .flag-#{$flag-size} {
+        width: $size;
+        height: $size * .75;
+    }
+}
