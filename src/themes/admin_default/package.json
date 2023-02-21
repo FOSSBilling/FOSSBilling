@@ -12,6 +12,7 @@
     "autosize": "^5.0.2",
     "bootstrap": "^5.2.3",
     "bootstrap-markdown": "^2.10.0",
+    "flag-icons": "^6.6.6",
     "imask": "^6.4.3",
     "jquery": "^3.6.3",
     "select2": "^4.0.13",
