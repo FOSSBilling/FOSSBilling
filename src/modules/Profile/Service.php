@@ -198,16 +198,14 @@ class Service implements InjectionAwareInterface
         return $client->api_token;
     }
 
-    public function changeClientPassword(\Model_Client $client, $password)
+    public function changeClientPassword(\Model_Client $client, $new_password)
     {
         $event_params = [];
-        $event_params['password'] = $password;
+        $event_params['password'] = $new_password;
         $event_params['id'] = $client->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordChange', 'params' => $event_params]);
 
-        $this->di['validator']->isPasswordStrong($password);
-
-        $client->pass = $this->di['password']->hashIt($password);
+        $client->pass = $this->di['password']->hashIt($new_password);
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordChange', 'params' => ['id' => $client->id]]);

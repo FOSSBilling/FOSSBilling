@@ -99,22 +99,38 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Change client area password.
+     * Change password for currently logged in client.
+     * 
+     * @param string $current_password - client current password
+     * @param string $new_password     - client new password
+     * @param string $confirm_password - client new password confirmation
+     *
+     * @return bool
+     *
+     * @throws Exception
+     * 
      */
     public function change_password($data)
     {
         $required = [
-            'password' => 'Password required',
-            'password_confirm' => 'Password confirmation required',
+            'current_password' => 'Current password required',
+            'new_password' => 'New password required',
+            'confirm_password' => 'New password confirmation required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $this->di['validator']->isPasswordStrong($data['password']);
+        $this->di['validator']->isPasswordStrong($data['new_password']);
 
-        if ($data['password'] != $data['password_confirm']) {
-            throw new \Box_Exception('Passwords do not match.');
+        if ($data['new_password'] != $data['confirm_password']) {
+            throw new \Exception('Passwords do not match');
         }
 
-        return $this->getService()->changeClientPassword($this->getIdentity(), $data['password']);
+        $client = $this->getIdentity();
+
+        if(!$this->di['password']->verify($data['current_password'], $client->pass)) {
+            throw new \Exception('Current password incorrect');
+        }
+
+        return $this->getService()->changeClientPassword($client, $data['new_password']);
     }
 
     /**

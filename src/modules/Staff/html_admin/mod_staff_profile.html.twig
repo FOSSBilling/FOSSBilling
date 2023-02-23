@@ -14,7 +14,7 @@
             <a class="nav-link active" href="#tab-profile" data-bs-toggle="tab">{{ 'Profile'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-password" data-bs-toggle="tab">{{ 'Change password'|trans }}</a>
+            <a class="nav-link" href="#tab-password" data-bs-toggle="tab">{{ 'Change Password'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-api" data-bs-toggle="tab">{{ 'API'|trans }}</a>
@@ -57,22 +57,28 @@
 
         <div class="tab-pane fade" id="tab-password" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/profile/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password changed'|trans }}">
+                <form method="post" action="{{ 'api/admin/profile/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password Changed'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}</label>
+                        <label for="current_password" class="col-3 col-form-label">{{ 'Current Password'|trans }}</label>
                         <div class="col">
-                            <input class="form-control" type="password" name="password" required>
+                            <input class="form-control" type="password" name="current_password" id="current_password" required>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Password confirm'|trans }}</label>
+                        <label for="new_password" class="col-3 col-form-label">{{ 'New Password'|trans }}</label>
                         <div class="col">
-                            <input class="form-control" type="password" name="password_confirm" required>
+                            <input class="form-control" type="password" name="new_password" id="new_password" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="confirm_password" class="col-3 col-form-label">{{ 'Confirm Password'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="password" name="confirm_password" id="confirm_password" required>
                         </div>
                     </div>
 
-                    <input type="submit" value="{{ 'Change password'|trans }}" class="btn btn-primary w-100">
+                    <input type="submit" value="{{ 'Change Password'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>

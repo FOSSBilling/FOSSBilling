@@ -19,7 +19,7 @@
 <div class="tabbable tabs-left">
     <ul class="nav nav-tabs">
         <li class="active"><a href="#tab1" data-toggle="tab">{{ 'Details'|trans }}</a></li>
-        <li class=""><a href="#tab2" data-toggle="tab">{{ 'Change Password'|trans }}</a></li>
+        <li class=""><a href="#tab-password" data-toggle="tab">{{ 'Change Password'|trans }}</a></li>
         <li class=""><a href="#tab3" data-toggle="tab">{{ 'API key'|trans }}</a></li>
         <li class=""><a href="#tab4" data-toggle="tab">{{ 'Currency'|trans }}</a></li>
     </ul>
@@ -206,33 +206,36 @@
                 </fieldset>
             </form>
         </div>
-        <div class="tab-pane" id="tab2">
+        <div class="tab-pane" id="tab-password">
             <header>
-                <h1>{{ 'New password'|trans }}</h1>
+                <h1>{{ 'Change Password'|trans }}</h1>
                 <p>{{ 'Please enter new password two times in order avoid mistypes'|trans }}</p>
             </header>
-            <form method="post" action="" id="change-password" class="form-horizontal">
+            <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="form-horizontal api-form" data-api-msg="{{ 'Password Changed'|trans }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                <fieldset>
-                        <div class="control-group">
-                            <label class="control-label" for="input">{{ 'Password'|trans }}</label>
-                            <div class="controls">
-                                <input type="password" name="password" value="" required="required">
-                                <p class="help-block"></p>
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="input">{{ 'Password confirm'|trans }}</label>
-                            <div class="controls">
-                                <input type="password" name="password_confirm" value="" required="required">
-                                <p class="help-block"></p>
-                            </div>
-                        </div>
-                    <div class="form-actions">
-                        <button class="btn btn-alt btn-large btn-primary" type="submit">{{ 'Update password'|trans }}</button>
-                    </div>                </fieldset>
-            </form>        </div>
+                <div class="control-group">
+                    <label class="control-label" for="current_password">{{ 'Current Password'|trans }}</label>
+                    <div class="controls">
+                        <input type="password" name="current_password" id="current_password" required>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="new_password">{{ 'New Password'|trans }}</label>
+                    <div class="controls">
+                        <input type="password" name="new_password" id="new_password" required>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
+                    <div class="controls">
+                        <input type="password" name="confirm_password" id="confirm_password" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-alt btn-large btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
+                 </div>
+            </form>        
+        </div>
         <div class="tab-pane" id="tab3">
             <header>
                 <h1>{{ 'API key'|trans }}</h1>
@@ -278,19 +281,7 @@
 
 {% block js %}
 <script>
-$(function() {
-    $('#change-password').bind('submit', function(event) {
-        bb.post(
-            'client/profile/change_password',
-            $(this).serialize(),
-            function(result) {
-                bb.msg('Password was changed');
-            }
-        );
-        
-        return false;
-    });
-    
+$(function() {    
     $('#change-api-key').submit(function(event) {
         bb.post(
             'client/profile/api_key_reset',
