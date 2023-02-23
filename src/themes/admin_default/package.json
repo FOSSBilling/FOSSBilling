@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@tabler/core": "1.0.0-beta17",
-    "apexcharts": "^3.37.0",
+    "apexcharts": "^3.37.1",
     "autosize": "^6.0.1",
     "bootstrap": "^5.2.3",
     "bootstrap-markdown": "^2.10.0",
