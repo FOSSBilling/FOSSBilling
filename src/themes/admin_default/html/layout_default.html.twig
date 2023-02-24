@@ -243,46 +243,6 @@
         </svg>
     </button>
 
-    <script>
-        // Switch light/dark theme
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('theme') === 'dark') {
-                document.body.classList.add('theme-dark');
-            }
-
-            new TomSelect('.js-language-selector', {
-                copyClassesToDropdown: false,
-                dropdownClass: 'dropdown-menu ts-dropdown',
-                optionClass: 'dropdown-item',
-                controlInput: false,
-                render: {
-                    item: function (data, escape) {
-                        if (data.customProperties) {
-                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                        }
-                        return '<div>' + escape(data.text) + '</div>';
-                    },
-                    option: function (data, escape) {
-                        if (data.customProperties) {
-                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                        }
-                        return '<div>' + escape(data.text) + '</div>';
-                    },
-                },
-            });
-        });
-
-        document.querySelectorAll('.js-theme-toggler').forEach(element => {
-            element.addEventListener('click', event => {
-                event.preventDefault();
-
-                document.body.classList.toggle('theme-dark');
-
-                localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
-            });
-        });
-    </script>
-
     {% block js %}{% endblock %}
 
     <noscript id="noscript">
