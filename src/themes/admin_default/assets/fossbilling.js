@@ -20,6 +20,7 @@ init();
 coloris({
   el: '#coloris-picker',
   alpha: false,
+  themeMode: localStorage.getItem('theme')
 });
 
 document.addEventListener('DOMContentLoaded', () => {
