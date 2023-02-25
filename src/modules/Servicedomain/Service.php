@@ -874,6 +874,7 @@ class Service implements \Box\InjectionAwareInterface
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
 
         return [
+            'id' => $model->id,
             'tld' => $model->tld,
             'price_registration' => $model->price_registration,
             'price_renew' => $model->price_renew,
@@ -895,6 +896,11 @@ class Service implements \Box\InjectionAwareInterface
     public function tldFindOneByTld($tld)
     {
         return $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', [':tld' => $tld]);
+    }
+
+    public function tldFindOneById($id)
+    {
+        return $this->di['db']->findOne('Tld', 'id = :id ORDER by id ASC', [':id' => $id]);
     }
 
     public function registrarGetSearchQuery($data)

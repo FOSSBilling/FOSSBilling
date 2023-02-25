@@ -196,6 +196,31 @@ class Admin extends \Api_Abstract
 
         return $this->getService()->tldToApiArray($model);
     }
+    
+    /**
+     * Get top level domain details by id.
+     *
+     * @param string $id - top level id, ie: 1
+     *
+     * @return array
+     *
+     * @throws Box_Exception
+     */
+     
+    public function tld_get_id($data)
+    {
+        $required = [
+            'id' => 'ID is missing',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->getService()->tldFindOneById($data['id']);
+        if (!$model instanceof \Model_Tld) {
+            throw new \Box_Exception('ID not found');
+        }
+
+        return $this->getService()->tldToApiArray($model);
+    }
 
     /**
      * Delete top level domain.

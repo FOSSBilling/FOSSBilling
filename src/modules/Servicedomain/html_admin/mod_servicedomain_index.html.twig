@@ -59,7 +59,7 @@
                     {% for tld in admin.servicedomain_tld_get_list({ 'per_page': 99 }).list %}
                     <tr>
                         <td>
-                            <a href="{{ 'servicedomain/tld'|alink }}/{{ tld.tld|slice(1) }}">{{ tld.tld }}</a>
+                            <a href="{{ 'servicedomain/id'|alink }}/{{ tld.id }}">{{ tld.tld }}</a>
                         </td>
                         <td>{{ mf.currency_format(tld.price_registration) }}</td>
                         <td>{{ mf.currency_format(tld.price_renew) }}</td>
@@ -73,7 +73,7 @@
                             <a href="{{ 'servicedomain/registrar'|alink }}/{{ tld.registrar.id }}">{{ tld.registrar.title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ 'servicedomain/tld'|alink }}/{{ tld.tld|slice(1) }}">
+                            <a class="btn btn-icon" href="{{ 'servicedomain/id'|alink }}/{{ tld.id }}">
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>

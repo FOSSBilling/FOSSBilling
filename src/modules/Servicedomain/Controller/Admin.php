@@ -54,7 +54,7 @@ class Admin implements \Box\InjectionAwareInterface
     public function register(\Box_App &$app)
     {
         $app->get('/servicedomain', 'get_index', null, static::class);
-        $app->get('/servicedomain/tld/:tld', 'get_tld', ['tld' => '[/.a-z0-9]+'], static::class);
+        $app->get('/servicedomain/id/:id', 'get_tld_id', ['id' => '[0-9]+'], static::class);
         $app->get('/servicedomain/registrar/:id', 'get_registrar', ['id' => '[0-9]+'], static::class);
     }
 
@@ -65,10 +65,10 @@ class Admin implements \Box\InjectionAwareInterface
         return $app->render('mod_servicedomain_index');
     }
 
-    public function get_tld(\Box_App $app, $tld)
+    public function get_tld_id(\Box_App $app, $id)
     {
         $api = $this->di['api_admin'];
-        $m = $api->servicedomain_tld_get(['tld' => $tld]);
+        $m = $api->servicedomain_tld_get_id(['id' => $id]);
 
         return $app->render('mod_servicedomain_tld', ['tld' => $m]);
     }
