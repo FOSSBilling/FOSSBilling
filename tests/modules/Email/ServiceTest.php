@@ -1156,9 +1156,9 @@ class ServiceTest extends \BBTestCase
         });
         $di['mod_service'] = $di->protect(function ($name) use ($systemService, $extension) {
             if ($name == 'system') {
-                $systemService
+                return $systemService;
             }else if($name == "extension"){
-                return $extension
+                return $extension;
             }
         });
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
