@@ -209,10 +209,17 @@ class ServicePayGateway implements InjectionAwareInterface
             if ('pairs' == $format) {
                 $result[$gtw->id] = $gtw->name;
             } else {
-                $result[] = $this->toApiArray($gtw);
+                $gateway =  $this->toApiArray($gtw);
+                $adapter = $this -> getPaymentAdapter($gtw);
+                if ( array_key_exists('logo',$adapter->getConfig())){
+                    $gateway['logo'] = $adapter->getConfig()['logo'];
+                    $gateway['logo']['logo'] = $this->di['tools']->url('/library/Payment/Adapter/' . $adapter->getConfig()['logo']['logo']);
+                }else{
+                    $gateway['logo'] = null;
+                }
+                $result[] = $gateway;
             }
         }
-
         return $result;
     }
 
@@ -241,6 +248,7 @@ class ServicePayGateway implements InjectionAwareInterface
         if (isset($optional['auto_redirect'])) {
             $defaults['auto_redirect'] = $optional['auto_redirect'];
         }
+        $defaults['logo'] = null;
 
         $config = array_merge($config, $defaults);
 
