@@ -61,6 +61,11 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
             'supports_one_time_payments'   =>  true,
             'supports_subscriptions'     =>  false,
             'description'     =>  'это удобный в использовании сервис, подключение к которому позволит Интернет-магазинам, веб-сайтам и прочим торговым площадкам принимать все возможные формы оплаты в максимально короткие сроки. http://www.interkassa.com/',
+            'logo' => array(
+                'logo' => 'interkassa.png',
+                'height' => '25px',
+                'width' => '100px',
+            ),
             'form'  => array(
                 'ik_co_id' => array('text', array(
                             'label' => 'Shop ID which is registered in "INTERKASSA" system. Can be found under area "Настройки магазина". Example: 64C18529-4B94-0B5D-7405-F2752F2B716C',
@@ -150,7 +155,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         if($ipn['ik_inv_st'] == 'success') {
             $tx->setStatus(Payment_Transaction::STATUS_COMPLETE);
         }
-        
+
         return $tx;
     }
 

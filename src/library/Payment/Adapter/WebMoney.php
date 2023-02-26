@@ -32,26 +32,26 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	{
 		return $this->di;
 	}
-	
+
     private $config = array();
 
 	public $testMode = false;
-    
+
 	const USD = 'Z';
 	const RUB = 'R';
 	const EUR = 'E';
 	const UAH = 'U';
 	const BYR = 'B';
-	
+
 	const REQUEST_TYPE_PREREQUEST = 'prerequest';
 	const REQUEST_TYPE_NOTIFICATION = 'notification';
 	const REQUEST_TYPE_CONFIRMATION = 'confirm';
-	
+
 	public function __construct($config)
     {
         $this->config = $config;
 		$this->testMode = (isset($config['test_mode']) && $config['test_mode']) ? true : false;
-        
+
         if(!$this->config['purse']) {
             throw new Payment_Exception('Payment gateway "WebMoney" is not configured properly. Please update configuration parameter "Purse" at "Configuration -> Payment gateways > WebMoney".');
         }
@@ -63,6 +63,11 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 			'supports_one_time_payments' => true,
 			'supports_subscriptions'     => false,
 			'description'                => 'Configure WebMoney gateway. Do not forget enable option "Allow URLs transmitted in the form"',
+            'logo' => array(
+                'logo' => 'webmoney.jpg',
+                'height' => '25px',
+                'width' => '85px',
+            ),
 			'form'                       => array(
 				'purse'      => array('text', array(
 					'label' => 'WebMoney purse',
@@ -75,11 +80,11 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 			),
 		);
     }
-	
-	public function getHtml($api_admin, $id) 
+
+	public function getHtml($api_admin, $id)
     {
         $invoice = $api_admin->invoice_get(array('id'=>$id));
-        
+
 		$data = array();
 		$data['LMI_PAYEE_PURSE']    =	$this->config['purse'];
 		$data['LMI_PAYMENT_AMOUNT']	=	$invoice['total'];
@@ -91,14 +96,14 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		$data['LMI_FAIL_URL']		=	$this->config['cancel_url'];
 		$data['LMI_FAIL_METHOD']	=	1;											//The field may have the values 0, 1 or 2 equal to values of the ‘Method of requesting Fail URL’ – ‘GET’, ‘POST’ or ‘LINK’.
 		$data['INVOICE_ID']			= 	$invoice['id'];
-		
+
 		if ($this->testMode) {
 			$data['LMI_MODE']			=	1;
 			$data['LMI_SIM_MODE']		=	($this->config['success']) ? 1 : 0; //0 or empty: All test payments will be successful; 1: All test payments will fail; 2: 80% of test payments will be successful, 20% of test payments will fail.
 		}
-		
+
 		$data['HASH']					=	$this->_getHash($data);
-		
+
         $url = 'https://merchant.wmtransfer.com/lmi/payment.asp';
 		return $this->_generateForm($url, $data);
 	}
@@ -108,7 +113,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
         if(APPLICATION_ENV != 'testing' && !$this->isIpnValid($data)) {
             throw new Payment_Exception('WebMoney IPN is not valid');
         }
-        
+
         $ipn = $data['post'];
 
 		$invoice = $this->di['db']->getExistingModelById('Invoice', $ipn['INVOICE_ID'], 'Invoice not found');
@@ -128,7 +133,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		$transaction = $this->di['db']->getExistingModelById('Transaction', $id, 'Transaction not found');
 		$transactionService = $this->di['mod_service']('Invoice', 'Transaction');
 		$transactionService->update($transaction, $tx_data);
-        
+
         $bd = array(
             'id'            =>  $invoice->client_id,
             'amount'        =>  $ipn['LMI_PAYMENT_AMOUNT'],
@@ -154,20 +159,20 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	private function isIpnValid($data)
     {
         $ipn = $data['post'];
-        
+
 		if (!$this->_verifyNotification($ipn)) {
 			return false;
 		}
-		
+
 		if (!$this->verifyRequest($ipn)) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * Generates hash
 	 * @param array $data
 	 * @return string
@@ -179,9 +184,9 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		}
 		return MD5($string);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * Verifies request, echos result and stops execution
 	 * @param array $data
 	 * @return boolean
@@ -193,9 +198,9 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 			return false;
 		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * Returns LMI hash
 	 * @param array $data
 	 * @see https://wiki.wmtransfer.com/wiki/show/Web_Merchant_Interface#validation
@@ -203,48 +208,48 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	 */
 	private function _getLmiHash($data) {
 		$string = '';
-		
+
 		if (isset($data['LMI_PAYEE_PURSE'])) {
 			$string = $data['LMI_PAYEE_PURSE'];
 		}
-		
+
 		if (isset($data['LMI_PAYMENT_AMOUNT'])) {
 			$string .= $data['LMI_PAYMENT_AMOUNT'];
 		}
-		
+
 		if (isset($data['LMI_PAYMENT_NO'])) {
 			$string .= $data['LMI_PAYMENT_NO'];
 		}
-		
+
 		if (isset($data['LMI_MODE'])) {
 			$string .= $data['LMI_MODE'];
 		}
-		
+
 		if (isset($data['LMI_SYS_INVS_NO'])) {
 			$string .= $data['LMI_SYS_INVS_NO'];
 		}
-		
+
 		if (isset($data['LMI_SYS_TRANS_NO'])) {
 			$string .= $data['LMI_SYS_TRANS_NO'];
 		}
-		
+
 		if (isset($data['LMI_SYS_TRANS_DATE'])) {
 			$string .= $data['LMI_SYS_TRANS_DATE'];
 		}
-		
+
 		$string .= $this->config['secretWord'];
-		
+
 		if (isset($data['LMI_PAYER_PURSE'])) {
 			$string .= $data['LMI_PAYER_PURSE'];
 		}
-		
+
 		if (isset($data['LMI_PAYER_WM'])) {
 			$string .= $data['LMI_PAYER_WM'];
 		}
-		
+
 		return strtoupper(hash('sha256', $string));
 	}
-	
+
 	/**
 	 * returns transaction type
 	 * @param array $request
@@ -256,10 +261,10 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		} else if (isset($request['act']) && ($request['act'] == 'success' || $request['act'] == 'fail')) {
 			return self::REQUEST_TYPE_CONFIRMATION;
 		}
-		
+
 		return self::REQUEST_TYPE_NOTIFICATION;
 	}
-	
+
 	/**
 	 * Gets currency code from purse
 	 * @param string $purse
@@ -268,15 +273,15 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	private function getCurrency($purse) {
 		$firstLetter = substr($purse, 0, 1);
 		$currencies = $this->getCurrencies();
-		
+
 		$currency = array_search($firstLetter, $currencies);
 		if ($currency === false) {
 			return false;
 		}
-		
+
 		return $currency;
 	}
-	
+
 	/**
 	 * Checks if notification is valid
 	 * @param array $data
@@ -288,10 +293,10 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
-    
+
 	private function getCurrencies() {
 		return array(
 			'USD'	=>	self::USD,
@@ -301,7 +306,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 			'BYR'	=>	self::BYR,
 		);
 	}
-    
+
     /**
      * @param string $url
      */

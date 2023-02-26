@@ -27,7 +27,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
     {
         return $this->di;
     }
-    
+
     public function __construct($config)
     {
         if(!$config['vendor_nr']) {
@@ -37,24 +37,29 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         if(!$config['secret']) {
             throw new Payment_Exception('Payment gateway "2Checkout" is not configured properly. Please update configuration parameter "Secret word" at "Configuration -> Payments".');
         }
-        
+
         $this->config = $config;
     }
-    
+
     public static function getConfig()
     {
         return array(
             'supports_one_time_payments'   =>  true,
             'supports_subscriptions'     =>  true,
             'description'     =>  'Allows to start accepting payments by 2Checkout. Redirect option must be configured propertly. Login to your 2checkout account and navigate to <i>Account -> Site Management -> Direct Return</i> section. Select <i>Header Redirect (Your URL)</i> and click "Save changes".',
+            'logo' => array(
+                'logo' => 'twocheckout.png',
+                'height' => '28px',
+                'width' => '80px',
+            ),
             'form'  => array(
                 'vendor_nr' => array('text', array(
-                            'label' => '2CO Account #', 
+                            'label' => '2CO Account #',
                             'description' => '2Checkout account number is number with which you login to 2CO account',
                     ),
                  ),
                 'secret' => array('password', array(
-                            'label' => 'Secret word', 
+                            'label' => 'Secret word',
                             'description' => 'To set up the secret word please log in to your 2CO account, click on the “Account” tab, then click on “Site Management” subcategory. On the “Site Management” page you will enter the Secret Word in the field provided under Direct Return. After you have entered your Secret Word click the blue “Save Changes” button at the bottom of the page.',
                     ),
                  ),
@@ -66,57 +71,57 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             ),
         );
     }
-    
+
     /**
      * Generate payment text
-     * 
+     *
      * @param Api_Admin $api_admin
      * @param int $invoice_id
      * @param bool $subscription
-     * 
+     *
      * @since FOSSBilling v2.9.11
-     * 
+     *
      * @return string - html form with auto submit javascript
      */
     public function getHtml($api_admin, $invoice_id, $subscription)
     {
         $invoice = $api_admin->invoice_get(array('id'=>$invoice_id));
-        
+
         if($subscription) {
             $data = $this->_recurrentPayment($invoice);
         } else {
             $data = $this->_singlePayment($invoice);
         }
-        
+
         if($this->config['test_mode']) {
             $data['demo'] = 'Y';
         }
-        
+
         if((bool)$this->config['single_page'] === false) {
             $url = 'https://www.2checkout.com/checkout/purchase';
         } else {
             $url = 'https://www.2checkout.com/checkout/spurchase';
         }
-        
+
         return $this->_generateForm($url, $data);
     }
-    
+
     /**
      * Process transaction received from payment gateway
-     * 
+     *
      * @since FOSSBilling v2.9.11
-     * 
+     *
      * @param Api_Admin $api_admin
      * @param int $id - transaction id to process
      * @param int $gateway_id - payment gateway id on FOSSBilling
-     * 
+     *
      * @return mixed
      */
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         $tx = $api_admin->invoice_transaction_get(array('id'=>$id));
         $ipn = array_merge($data['get'], $data['post']);
-        
+
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($ipn)) {
             throw new Payment_Exception('2Checkout IPN is not valid');
         }
@@ -130,33 +135,33 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             $invoice_id = $ipn['bb_invoice_id'];
             $api_admin->invoice_transaction_update(array('id'=>$id, 'invoice_id'=>$invoice_id));
         }
-        
+
         if(!$invoice_id) {
             throw new Payment_Exception('Invoice id could not be determined for this transaction');
         }
-        
+
         $invoice = $api_admin->invoice_get(array('id'=>$invoice_id));
         $client_id = $invoice['client']['id'];
-        
+
         $tx_data = array(
             'id'            =>  $id,
             'status'        =>  'pending',
         );
-        
+
         if(empty($tx['txn_id']) && isset($ipn['order_number'])) {
             $tx_data['txn_id'] = $ipn['order_number'];
         }
-        
+
         if(empty($tx['amount']) && isset($ipn['total'])) {
             $tx_data['amount'] = $ipn['total'];
         }
-        
+
         if(empty($tx['currency'])) {
             $tx_data['currency'] = $invoice['currency'];
         }
-        
+
         $api_admin->invoice_transaction_update($tx_data);
-        
+
         if(isset($ipn['credit_card_processed']) && $ipn['credit_card_processed'] == 'Y') {
             $bd = array(
                 'id'            =>  $client_id,
@@ -171,62 +176,62 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             }
 
             $api_admin->client_balance_add_funds($bd);
-            
+
             $tx_data['txn_status']  = 'complete';
             $tx_data['status']      = 'complete';
             $api_admin->invoice_transaction_update($tx_data);
-            
+
             $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
         }
-        
+
         if (isset($ipn['subscription']) && $ipn['subscription'] == 1) {
-            
+
             $recurrence = '1M';
             if(isset($ipn['li_0_recurrence'])) {
                 switch ($ipn['li_0_recurrence']) {
                     case '3 Year':
                         $recurrence = '3Y';
                         break;
-                    
+
                     case '2 Year':
                         $recurrence = '2Y';
                         break;
-                    
+
                     case '1 Year':
                         $recurrence = '1Y';
                         break;
-                    
+
                     case '6 Month':
                         $recurrence = '6M';
                         break;
-                    
+
                     case '3 Month':
                         $recurrence = '3M';
                         break;
-                    
+
                     case '2 Month':
                         $recurrence = '2M';
                         break;
-                    
+
                     case '3 Week':
                         $recurrence = '3W';
                         break;
-                    
+
                     case '2 Week':
                         $recurrence = '2W';
                         break;
-                    
+
                     case '1 Week':
                         $recurrence = '1W';
                         break;
-                    
+
                     case '1 Month':
                     default:
                         $recurrence = '1M';
                         break;
                 }
             }
-            
+
             $sd = array(
                 'client_id'     =>  $client_id,
                 'gateway_id'    =>  $gateway_id,
@@ -241,14 +246,14 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             $api_admin->invoice_subscription_create($sd);
         }
     }
-    
+
     private function _isIpnValid($ipn)
     {
         $md5_hash       = null;
         $check_key      = ' ';
         $secret         = $this->config['secret'];
         $vendorNumber   = $this->config['vendor_nr'];
-        
+
         // The following code would be applicable to orders placed using our Plug and Play cart and our proprietary third party set of parameters.
         if(isset($ipn['order_number']) && isset($ipn['total']) && isset($ipn['key'])) {
             $md5_hash  = $ipn["key"];
@@ -259,19 +264,19 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             $md5_hash  = $ipn["key"];
             $check_key = strtoupper(md5($secret.$ipn['order_number'].$ipn["total"]));
         }
-        
+
         error_log(sprintf('Returned MD5 Hash %s should be equal to %s', $md5_hash, $check_key));
         return ($md5_hash == $check_key);
     }
-    
+
     private function _singlePayment($invoice)
     {
         $b = $invoice['buyer'];
-        
+
         $data = array();
         $data['sid']                = $this->config['vendor_nr'];
         $data['mode']               = '2CO';
-        
+
         foreach($invoice['lines'] as $i=>$item) {
             $data['li_'.$i.'_type']         = 'product';
             $data['li_'.$i.'_name']         = $item['title'];
@@ -279,7 +284,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             $data['li_'.$i.'_price']        = $item['price'];
             $data['li_'.$i.'_quantity']     = $item['quantity'];
         }
-        
+
         $data['card_holder_name']   = $b['first_name'].' '.$b['last_name'];
         $data['phone']              = $b['phone_cc'].$b['phone'];
         $data['email']              = $b['email'];
@@ -288,9 +293,9 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         $data['state']              = $b['state'];
         $data['zip']                = $b['zip'];
         $data['country']            = $b['country'];
-       
+
         $data['merchant_order_id']  = $invoice['id'];
-        
+
         $data['x_receipt_link_url'] = $this->config['redirect_url'];
 
         return $data;
@@ -300,7 +305,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
     {
         $b    = $invoice['buyer'];
     	$subs = $invoice['subscription'];
-        
+
         $data = array();
         $data['sid']                = $this->config['vendor_nr'];
         $data['mode']               = '2CO';
@@ -309,7 +314,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             case 'W':
                 $unit = 'Week';
                 break;
-            
+
             case 'Y':
                 $unit = 'Year';
                 break;
@@ -319,7 +324,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
                 $unit = 'Month';
                 break;
         }
-        
+
         foreach($invoice['lines'] as $i => $item) {
         	$data['li_' . $i . '_type']			= 'product';
         	$data['li_' . $i . '_name'] 		= $item['title'];
@@ -338,14 +343,14 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         $data['state']              = $b['state'];
         $data['zip']                = $b['zip'];
         $data['country']            = $b['country'];
-       
+
         $data['merchant_order_id']  = $invoice['id'];
-        
+
         $data['x_receipt_link_url'] = $this->config['redirect_url'];
 
         return $data;
     }
-    
+
     /**
      * @param string $url
      */

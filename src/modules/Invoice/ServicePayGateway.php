@@ -213,9 +213,17 @@ class ServicePayGateway implements InjectionAwareInterface
                 $adapter = $this -> getPaymentAdapter($gtw);
                 if ( array_key_exists('logo',$adapter->getConfig())){
                     $gateway['logo'] = $adapter->getConfig()['logo'];
-                    $gateway['logo']['logo'] = $this->di['tools']->url('/library/Payment/Adapter/' . $adapter->getConfig()['logo']['logo']);
+                    if(file_exists(PATH_LIBRARY . '/Payment/Adapter/'.$adapter->getConfig()['logo']['logo'])){
+                        $gateway['logo']['logo'] = $this->di['tools']->url('/library/Payment/Adapter/' . $adapter->getConfig()['logo']['logo']);
+                    }else{
+                        if(file_exists(PATH_ROOT . '/uploads/gateways/'. $adapter->getConfig()['logo']['logo'])){
+                            $gateway['logo']['logo'] = $this->di['tools']->url('/uploads/gateways/' . $adapter->getConfig()['logo']['logo']);
+                        }else{
+                           $gateway['logo']['logo'] = $this->di['tools']->url('/uploads/gateways/default.png');
+                        }
+                    }
                 }else{
-                    $gateway['logo'] = null;
+                    $gateway['logo']['logo'] = $this->di['tools']->url('/uploads/gateways/default.png');
                 }
                 $result[] = $gateway;
             }

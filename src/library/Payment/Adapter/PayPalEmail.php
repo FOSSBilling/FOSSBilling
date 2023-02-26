@@ -27,15 +27,15 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
     {
         return $this->di;
     }
-    
+
     public function __construct($config)
     {
         $this->config = $config;
-        
+
         if(!function_exists('curl_exec')) {
             throw new Payment_Exception('PHP Curl extension must be enabled in order to use PayPal gateway');
         }
-        
+
         if(!isset($this->config['email'])) {
             throw new Payment_Exception('Payment gateway "PayPal" is not configured properly. Please update configuration parameter "PayPal Email address" at "Configuration -> Payments".');
         }
@@ -47,6 +47,11 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
             'supports_one_time_payments'   =>  true,
             'supports_subscriptions'     =>  true,
             'description'     =>  'Enter your PayPal email to start accepting payments by PayPal.',
+            'logo' => array(
+                'logo' => 'paypal.png',
+                'height' => '25px',
+                'width' => '85px',
+            ),
             'form'  => array(
                 'email' => array('text', array(
                             'label' => 'PayPal email address for payments',
@@ -67,7 +72,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         } else {
             $data = $this->getOneTimePaymentFields($invoice);
         }
-        
+
         $url = $this->serviceUrl();
         return $this->_generateForm($url, $data);
     }
@@ -77,31 +82,31 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
             throw new Payment_Exception('IPN is not valid');
         }
-        
+
         $ipn = $data['post'];
-        
+
         $tx = $api_admin->invoice_transaction_get(array('id'=>$id));
-        
+
         if(!$tx['invoice_id']) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'invoice_id'=>$data['get']['bb_invoice_id']));
         }
-        
+
         if(!$tx['type'] && isset($ipn['txn_type'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>$ipn['txn_type']));
         }
-        
+
         if(!$tx['txn_id'] && isset($ipn['txn_id'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_id'=>$ipn['txn_id']));
         }
-        
+
         if(!$tx['txn_status'] && isset($ipn['payment_status'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_status'=>$ipn['payment_status']));
         }
-        
+
         if(!$tx['amount'] && isset($ipn['mc_gross'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'amount'=>$ipn['mc_gross']));
         }
-        
+
         if(!$tx['currency'] && isset($ipn['mc_currency'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'currency'=>$ipn['mc_currency']));
         }
@@ -110,10 +115,10 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $client_id = $invoice['client']['id'];
 
         switch ($ipn['txn_type']) {
-            
+
             case 'web_accept':
             case 'subscr_payment':
-                
+
                 if($ipn['payment_status'] == 'Completed') {
                     $bd = array(
                         'id'            =>  $client_id,
@@ -131,9 +136,9 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
                     }
                     $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
                 }
-                
+
                 break;
-            
+
             case 'subscr_signup':
                 $sd = array(
                     'client_id'     =>  $client_id,
@@ -147,9 +152,9 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
                     'rel_id'        =>  $invoice['id'],
                 );
                 $api_admin->invoice_subscription_create($sd);
-                
+
                 $t = array(
-                    'id'            => $id, 
+                    'id'            => $id,
                     's_id'          => $sd['sid'],
                     's_period'      => $sd['period'],
                 );
@@ -168,7 +173,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
                 error_log('Unknown paypal transaction '.$id);
                 break;
         }
-        
+
         if(isset($ipn['payment_status']) && $ipn['payment_status'] == 'Refunded') {
             $refd = array(
                 'id'    => $invoice['id'],
@@ -176,9 +181,9 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
             );
             $api_admin->invoice_refund($refd);
         }
-        
+
         $d = array(
-            'id'        => $id, 
+            'id'        => $id,
             'error'     => '',
             'error_code'=> '',
             'status'    => 'processed',
@@ -280,7 +285,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 
 		return $data;
 	}
-    
+
     /**
      * @param string $url
      */
