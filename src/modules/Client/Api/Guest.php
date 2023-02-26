@@ -138,10 +138,10 @@ class Guest extends \Api_Abstract
 
         $service = $this->getService();
         $client = $service->authorizeClient($data['email'], $data['password']);
+        
         if (!$client instanceof \Model_Client) {
             $this->di['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
-
-            throw new \Box_Exception('Please check your login details', [], 403);
+            throw new \Box_Exception('Please check your login details.', [], 401);
         }
 
         if (isset($data['remember'])) {
