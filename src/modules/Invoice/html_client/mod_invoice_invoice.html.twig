@@ -30,18 +30,8 @@
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         {% for gtw in guest.invoice_gateways %}
                         {% if invoice.currency in gtw.accepted_currencies %}
-                        {% if gtw.logo %}
-                            <style>.logo-{{gtw.code}}{
-                               background: transparent url({{gtw.logo.logo}}) no-repeat scroll 0% 0%;
-                                background-size: contain;
-                                height: {{gtw.logo.height}};
-                                width: {{gtw.logo.width}};
-                                border: 0;
-                                margin: 10px;
-                            }</style>
-                        {% endif %}
                         {% set banklink = 'invoice/banklink'|link %}
-                        <button type="button"  class="logo-{{gtw.code}} hover-popover" type="radio" name="gateway_id" gateway_id="{{ gtw.id }}" data-toggle="tooltip" title="{{ 'Pay with'|trans }} {{gtw.title}}" onclick="window.location.replace('{{banklink}}/{{invoice.hash}}/{{gtw.id}}')")></button>
+                        <button type="button"  class="hover-popover" style="background: transparent url('{{gtw.logo.logo}}') no-repeat scroll 0% 0%; height:{{gtw.logo.height}}; width:{{gtw.logo.width}}; background-size: contain; border: 0; margin: 10px;" type="radio" name="gateway_id" gateway_id="{{ gtw.id }}" data-toggle="tooltip" title="{{ 'Pay with'|trans }} {{gtw.title}}" onclick="window.location.replace('{{banklink}}/{{invoice.hash}}/{{gtw.id}}')")></button>
                         {% endif %}
                         {% endfor %}
                         <input type="hidden" name="gateway_id" id="gateway_id">
