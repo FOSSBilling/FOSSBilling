@@ -36,8 +36,8 @@ class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
         return array(
             'logo' => array(
                 'logo' => 'clientbalance.png',
-                'height' => '25px',
-                'width' => '100px',
+                'height' => '50px',
+                'width' => '50px',
             ),
         );
     }
