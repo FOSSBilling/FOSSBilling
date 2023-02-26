@@ -501,7 +501,7 @@ class Service implements \Box\InjectionAwareInterface
         $pattern = PATH_MODS . '/*/html_email/*.html.twig';
         $list = glob($pattern);
         foreach ($list as $path) {
-            $code = pathinfo($path, PATHINFO_FILENAME);
+            $code = str_replace('.html', '', pathinfo($path, PATHINFO_FILENAME));
             $dir = pathinfo($path, PATHINFO_DIRNAME);
             $dir = pathinfo($dir, PATHINFO_DIRNAME);
             $dir = pathinfo($dir, PATHINFO_FILENAME);
@@ -614,7 +614,7 @@ class Service implements \Box\InjectionAwareInterface
             error_log($message);
 
             // Prevent mass retries of emails if one of them is "invalid"
-            if(str_contains($message, 'Invalid address:')) {
+            if (str_contains($message, 'Invalid address:')) {
 
                 try {
                     $this->di['db']->trash($queue);
