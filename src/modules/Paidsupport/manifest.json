@@ -4,7 +4,7 @@
   "name": "Paid support module",
   "description": "Module enables paid support service for your clients.",
   "icon_url": "icon.svg",
-  "homepage_url": "http://github.com/boxbilling/",
+  "homepage_url": "https://github.com/FOSSBilling",
   "author": "FOSSBilling",
   "author_url": "http://github.com/boxbilling/",
   "license": "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
