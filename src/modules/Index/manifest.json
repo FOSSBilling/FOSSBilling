@@ -1,7 +1,7 @@
 {
-    "id":           "index",
-	"type":         "mod",
-    "name":         "Index page module",
-    "description":  "FOSSBilling core module",
-    "version":      "1.0.0"
+  "id": "index",
+  "type": "mod",
+  "name": "Index page module",
+  "description": "FOSSBilling core module",
+  "version": "1.0.0"
 }

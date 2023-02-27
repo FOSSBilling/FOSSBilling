@@ -1,12 +1,12 @@
 {
-    "id":           "seo",
-    "type":         "mod",
-    "name":         "SEO Tools",
-    "description":  "Ping sitemap to Google, Yahoo and Bing",
-    "icon_url":     "icon.png",
-    "homepage_url": "http://github.com/boxbilling/",
-    "author":       "FOSSBilling",
-    "author_url":   "http://extensions.fossbilling.org/",
-    "license":      "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
-    "version":      "1.0.0"
+  "id": "seo",
+  "type": "mod",
+  "name": "SEO Tools",
+  "description": "Ping sitemap to Google, Yahoo and Bing",
+  "icon_url": "icon.svg",
+  "homepage_url": "http://github.com/boxbilling/",
+  "author": "FOSSBilling",
+  "author_url": "http://extensions.fossbilling.org/",
+  "license": "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
+  "version": "1.0.0"
 }

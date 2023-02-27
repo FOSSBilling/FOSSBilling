@@ -1,7 +1,8 @@
 {
-    "id":           "notification",
-	"type":         "mod",
-    "name":         "Notification Center",
-    "description":  "Important messages for staff members",
-    "version":      "1.0.0"
+  "id": "notification",
+  "type": "mod",
+  "name": "Notification Center",
+  "description": "Important messages for staff members",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
 }

@@ -1,11 +1,12 @@
 {
-    "id":           "kb",
-	"type":         "mod",
-    "name":         "Knowledge Base",
-    "description":  "Knowledge base module for FOSSBilling",
-    "homepage_url": "http://github.com/boxbilling/",
-    "author":       "FOSSBilling",
-    "author_url":   "http://extensions.fossbilling.org/",
-    "license":      "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
-    "version":      "1.0.0"
+  "id": "kb",
+  "type": "mod",
+  "name": "Knowledge Base",
+  "description": "Knowledge base module for FOSSBilling",
+  "homepage_url": "http://github.com/boxbilling/",
+  "icon_url": "icon.svg",
+  "author": "FOSSBilling",
+  "author_url": "http://extensions.fossbilling.org/",
+  "license": "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
+  "version": "1.0.0"
 }

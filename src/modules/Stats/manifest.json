@@ -1,7 +1,7 @@
 {
-    "id":           "stats",
-	"type":         "mod",
-    "name":         "Statistics",
-    "description":  "FOSSBilling core module",
-    "version":      "1.0.0"
+  "id": "stats",
+  "type": "mod",
+  "name": "Statistics",
+  "description": "FOSSBilling core module",
+  "version": "1.0.0"
 }

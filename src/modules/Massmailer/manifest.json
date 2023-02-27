@@ -1,8 +1,8 @@
 {
-    "id":           "massmailer",
-	"type":         "mod",
-    "name":         "Mass Mail Tool",
-    "icon_url":     "icon.png",
-    "description":  "Send batch email to filtered clients",
-    "version":      "1.0.0"
+  "id": "massmailer",
+  "type": "mod",
+  "name": "Mass Mail Tool",
+  "icon_url": "icon.svg",
+  "description": "Send batch email to filtered clients",
+  "version": "1.0.0"
 }

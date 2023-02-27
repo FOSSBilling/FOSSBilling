@@ -1,8 +1,8 @@
-{"icon_url":     "icon.png",
-    "id":           "order",
-	"type":         "mod",
-    "name":         "Orders",
-    "description":  "FOSSBilling core module",
-    "icon_url":     "icon.png",
-    "version":      "1.0.0"
+{
+  "id": "order",
+  "type": "mod",
+  "name": "Orders",
+  "description": "FOSSBilling core module",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
 }

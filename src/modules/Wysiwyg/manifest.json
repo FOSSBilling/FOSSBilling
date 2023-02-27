@@ -1,8 +1,8 @@
 {
-    "id":           "wysiwyg",
-	"type":         "mod",
-    "name":         "Wysiwyg",
-    "description":  "Allows the use of client-side editors to edit content. It simplifies the installation and integration of the editor of your choice.",
-    "icon_url":     "icon.png",
-    "version":      "1.0.0"
+  "id": "wysiwyg",
+  "type": "mod",
+  "name": "Wysiwyg",
+  "description": "Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
 }

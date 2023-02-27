@@ -1,12 +1,12 @@
 {
-    "id":           "example",
-	"type":         "mod",
-    "name":         "Example",
-    "description":  "An example module for developers to get started.",
-    "icon_url":     "icon.png",
-    "homepage_url": "https://fossbilling.org",
-    "author":       "FOSSBilling",
-    "author_url":   "https://fossbilling.org/",
-    "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-    "version":      "4.22.0"
+  "id": "example",
+  "type": "mod",
+  "name": "Example",
+  "description": "An example module for developers to get started.",
+  "icon_url": "icon.svg",
+  "homepage_url": "https://fossbilling.org",
+  "author": "FOSSBilling",
+  "author_url": "https://fossbilling.org/",
+  "license": "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+  "version": "4.22.0"
 }

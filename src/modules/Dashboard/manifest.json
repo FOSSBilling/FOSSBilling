@@ -1,7 +1,8 @@
 {
-    "id":           "dashboard",
-	"type":         "mod",
-    "name":         "Client Dashboard Module",
-    "description":  "Displays a dashboard for clients that are loggedin",
-    "version":      "1.0.0"
+  "id": "dashboard",
+  "type": "mod",
+  "name": "Client Dashboard Module",
+  "description": "Displays a dashboard for clients that are authenticated",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
 }

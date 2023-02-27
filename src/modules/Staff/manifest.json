@@ -1,8 +1,8 @@
 {
-    "id":           "staff",
-	"type":         "mod",
-    "name":         "Staff",
-    "description":  "FOSSBilling core module",
-    "icon_url":     "icon.png",
-    "version":      "1.0.0"
+  "id": "staff",
+  "type": "mod",
+  "name": "Staff",
+  "description": "FOSSBilling core module",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
 }
