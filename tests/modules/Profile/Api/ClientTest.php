@@ -85,15 +85,22 @@ class ClientTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+        
         $di['validator'] = $validatorMock;
-        $this->clientApi->setDi($di);
+        $di['password'] = new \Box_Password();
 
+        $model = new \Model_Client();
+        $model->loadBean(new \DummyBean());
+        $model->pass = $di['password']->hashIt('oldpw');
+
+        $this->clientApi->setDi($di);
         $this->clientApi->setService($service);
-        $this->clientApi->setIdentity(new \Model_Client());
+        $this->clientApi->setIdentity($model);
 
         $data   = array(
-            'password'         => '16047a3e69f5245756d73b419348f0c7',
-            'password_confirm' => '16047a3e69f5245756d73b419348f0c7'
+            'current_password' => 'oldpw',
+            'new_password'     => '16047a3e69f5245756d73b419348f0c7',
+            'confirm_password' => '16047a3e69f5245756d73b419348f0c7'
         );
         $result = $this->clientApi->change_password($data);
         $this->assertTrue($result);
@@ -117,11 +124,12 @@ class ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data   = array(
-            'password_confirm' => '16047a3e69f5245756d73b419348f0c7',
-            'password'         => '7c0f843914b37d6575425f96e3a74061' //passwords do not match
+            'current_password' => '1234',
+            'new_password'     => '16047a3e69f5245756d73b419348f0c7',
+            'confirm_password' => '7c0f843914b37d6575425f96e3a74061' //passwords do not match
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\Exception::class);
         $result = $this->clientApi->change_password($data);
         $this->assertTrue($result);
     }

@@ -1472,7 +1472,7 @@ class ServiceTest extends \BBTestCase
 
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(981);
-        $this->expectExceptionMessage('Amount is not valid');
+        $this->expectExceptionMessage('Amount must be at least ' . $minAmount);
         $this->service->generateFundsInvoice($clientModel, $fundsAmount);
     }
 
@@ -1497,7 +1497,7 @@ class ServiceTest extends \BBTestCase
 
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(982);
-        $this->expectExceptionMessage('Amount is not valid');
+        $this->expectExceptionMessage('Amount cannot exceed ' . $maxAmount);
         $this->service->generateFundsInvoice($clientModel, $fundsAmount);
     }
 

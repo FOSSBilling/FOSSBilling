@@ -366,9 +366,6 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
-
         $password = 'new password';
 
         $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();

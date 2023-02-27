@@ -1035,7 +1035,7 @@ class ServiceTest extends \BBTestCase
         $di['mail']     = $mailMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod_service'] = $di->protect(function ($name) use ($extension,$activityMock) {
-            if ($name == 'logEmail' || $name == 'logemail' || $name == 'LogEmail') {
+            if ($name == 'activity') {
                 return $activityMock;
             } elseif ($name == 'extension') {
                 return $extension;
@@ -1048,7 +1048,6 @@ class ServiceTest extends \BBTestCase
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
-
 
         $result = $service->batchSend();
 

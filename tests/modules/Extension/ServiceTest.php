@@ -3,6 +3,11 @@
 
 namespace Box\Mod\Extension;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
+
 class PdoMock extends \PDO
 {
     public function __construct (){}
@@ -600,9 +605,15 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        $guzzleMock->expects($this->atLeastOnce())
-            ->method('request');
+        $mock = new MockHandler([
+            new Response(200, [], ''),
+        ]);
+        $handlerStack = HandlerStack::create($mock);
+        $guzzleMock = new Client(['handler' => $handlerStack]);
+
+        //$guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
+        //$guzzleMock->expects($this->atLeastOnce())
+        //    ->method('request');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())

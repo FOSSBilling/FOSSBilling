@@ -92,13 +92,16 @@ class AdminTest extends \BBTestCase
 
     public function testChangePasswordExceptions()
     {
+        $di = new \Box_Di();
+        $di['validator'] = new \Box_Validate();
+
         $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi->setDi($di);
         
-        $this->expectException(\Exception::class);
+        $this->expectException(\Box_Exception::class);
         $adminApi->change_password(array());
         $this->fail('password should be passed');
         
-
         $this->expectException(\Exception::class);
         $adminApi->change_password(array('password'=>'new_pass'));
         $this->fail('password confirmation should be passed');
@@ -109,8 +112,11 @@ class AdminTest extends \BBTestCase
     {
         $di = new \Box_Di();
         $di['validator'] = new \Box_Validate();
+        $di['password'] = new \Box_Password();
 
         $model = new \Model_Admin();
+        $model->loadBean(new \DummyBean());
+        $model->pass = $di['password']->hashIt('oldpw');
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Profile\Service')
             ->getMock();
@@ -122,7 +128,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
-        $result = $adminApi->change_password(array('password'=>'84asasd221AS', 'password_confirm'=>'84asasd221AS'));
+        $result = $adminApi->change_password(array('current_password'=>'oldpw','new_password'=>'84asasd221AS', 'confirm_password'=>'84asasd221AS'));
         $this->assertTrue($result);
     }
 }
