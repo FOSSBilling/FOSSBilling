@@ -603,7 +603,18 @@ class Api_AdminTest extends \BBTestCase
             ->method('batchSend')
             ->will($this->returnValue(null));
 
+        $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
+        $extension->expects($this->atLeastOnce())
+            ->method('isExtensionActive')
+            ->will($this->returnValue($isExtensionActiveReturn));
+
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($extension) {
+            return $extension;
+        });
+
         $adminApi->setService($emailService);
+        $adminApi->setDi($di);
 
         $result = $adminApi->batch_sendmail();
         $this->assertNull($result);

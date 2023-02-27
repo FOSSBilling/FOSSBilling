@@ -337,6 +337,10 @@ class GuestTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())->
+            method('fire');
+
         $emailServiceMock =  $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->
             method('sendTemplate');
@@ -347,6 +351,7 @@ class GuestTest extends \BBTestCase {
         
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['mod_service'] =  $di->protect(function ($name) use($emailServiceMock) {return $emailServiceMock;});
         $di['password'] = $passwordMock;
@@ -377,8 +382,13 @@ class GuestTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->will($this->returnValue(null));
 
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())->
+            method('fire');
+
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')

@@ -154,9 +154,14 @@ class AdminTest extends \BBTestCase {
             ->method('performConfigUpdate')
             ->will($this->returnValue(true));
 
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())->
+            method('fire');
+
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
 
         $di = new \Box_Di();
+        $di['events_manager'] = $eventMock;
         $di['updater'] = $updaterMock;
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;

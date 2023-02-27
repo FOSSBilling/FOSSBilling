@@ -44,7 +44,7 @@ class ServiceTest extends \BBTestCase {
             'privacy_policy'    =>   NULL,
             'tos'               =>   NULL,
             'vat_number'        =>   NULL,
-
+            'favicon_url'       =>   NULL,
         );
 
         $multParamsResults = array(
