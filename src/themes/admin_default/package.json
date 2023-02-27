@@ -7,6 +7,7 @@
     "build": "encore production --progress"
   },
   "dependencies": {
+    "@melloware/coloris": "^0.18.0",
     "@tabler/core": "1.0.0-beta17",
     "apexcharts": "^3.37.1",
     "autosize": "^6.0.1",
@@ -16,7 +17,6 @@
     "imask": "^6.4.3",
     "jquery": "^3.6.3",
     "select2": "^4.0.13",
-    "spectrum-colorpicker": "^1.8.1",
     "tom-select": "^2.2.2"
   }
 }

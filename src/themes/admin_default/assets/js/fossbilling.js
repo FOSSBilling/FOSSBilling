@@ -399,11 +399,4 @@ $(function () {
   $(".hideit").click(function () {
     $(this).fadeOut(400);
   });
-
-  $("select.js-language-selector").bind('change', function () {
-    bb.cookieCreate('BBLANG', $(this).val(), 7);
-    bb.reload();
-
-    return false;
-  }).val(bb.cookieRead('BBLANG'));
 });

@@ -63,7 +63,7 @@ Encore
         loader: 'svg-sprite-loader',
         options: {
           spriteFilename: 'icons-sprite.svg',
-          publicPath: './symbol/',
+          publicPath: 'symbol/',
           extract: true,
         }
       },
