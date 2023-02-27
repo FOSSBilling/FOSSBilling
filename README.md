@@ -124,7 +124,7 @@ Head over to your root directory and run
 
 ```bash
 $ npm install
-$ npum run build
+$ npm run build
 ```
 
 Now, you have everything ready to start the installation of FOSSBilling,. Navigate to your domain using a web browser, and simply follow the on-screen instructions to complete the installation using the web installer. Ta-da, you've done it! 🎉
