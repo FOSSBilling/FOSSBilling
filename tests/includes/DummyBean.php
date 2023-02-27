@@ -5,7 +5,7 @@ class DummyBean extends \RedBeanPHP\OODBBean
     function __construct()
     {
         $bean = new \RedBeanPHP\OODBBean();
-        $bean->initializeForDispense('dummybean');
+        $this->__info['changelist'] = array();
         return $bean;
     }
 }
