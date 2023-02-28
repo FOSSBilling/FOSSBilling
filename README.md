@@ -118,13 +118,13 @@ If you've already installed Composer, head over to the folder where you copied t
 $ composer install
 ```
 
-Just as with Composer (see above) we do not store the final artifacts in our source repo. To build them make sure you have both [Node.js](https://nodejs.org/en/download/) and [Gulp](https://gulpjs.com/docs/en/getting-started/quick-start/) installed. 
+Just as with Composer (see above) we do not store the final artifacts in our source repo. To build them make sure you have [Node.js](https://nodejs.org/en/download/) installed. 
 
 Head over to your root directory and run
 
 ```bash
 $ npm install
-$ gulp
+$ npm run build
 ```
 
 Now, you have everything ready to start the installation of FOSSBilling,. Navigate to your domain using a web browser, and simply follow the on-screen instructions to complete the installation using the web installer. Ta-da, you've done it! 🎉
