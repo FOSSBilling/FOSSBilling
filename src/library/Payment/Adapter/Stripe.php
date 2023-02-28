@@ -53,6 +53,11 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
         return [
             'supports_one_time_payments'   =>  true,
             'description'     =>  'You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
+            'logo' => array(
+                'logo' => 'stripe.png',
+                'height' => '30px',
+                'width' => '65px',
+            ),
             'form'  => [
                 'test_api_key' => [
                     'text', [
@@ -216,16 +221,16 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
         $form = '<form id="payment-form" data-secret=":intent_secret">
                 <div class="loading" style="display:none;"><span>{% trans \'Loading ...\' %}</span></div>
                 <script src="https://js.stripe.com/v3/"></script>
-  
+
                     <div id="error-message">
                         <!-- Error messages will be displayed here -->
                     </div>
                     <div id="payment-element">
                         <!-- Stripe Elements will create form elements here -->
                     </div>
-                  
+
                     <button id="submit" class="btn btn-primary mt-2" style="margin-top: 0.5em;">Submit</button>
-                
+
                 <script>
                     const stripe = Stripe(\':pub_key\');
 

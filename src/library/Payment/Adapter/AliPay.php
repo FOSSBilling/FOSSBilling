@@ -19,7 +19,7 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
         if(!$this->getParam('partner')) {
             throw new Payment_Exception('Payment gateway "AliPay" is not configured properly. Please update configuration parameter "Partner ID" at "Configuration -> Payment gateways".');
         }
-        
+
         if (!$this->getParam('security_code')) {
         	throw new Payment_Exception('Payment gateway "AliPay" is not configured properly. Please update configuration parameter "Security Code" at "Configuration -> Payment gateways".');
         }
@@ -27,16 +27,21 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
         if (!$this->getParam('seller_email')) {
         	throw new Payment_Exception('Payment gateway "AliPay" is not configured properly. Please update configuration parameter "Seller email" at "Configuration -> Payment gateways".');
         }
-        
+
         $this->_config['charset']       = 'utf-8';
     }
-    
+
     public static function getConfig()
     {
         return array(
             'supports_one_time_payments'    =>  true,
             'supports_subscriptions'        =>  false,
             'description'                   =>  'Clients will be redirected to Alipay to make payment.',
+            'logo' => array(
+                'logo' => 'alipay.png',
+                'height' => '25px',
+                'width' => '85px',
+            ),
             'form'  => array(
                 'partner' => array('text', array(
                             'label' => 'AliPay Partner ID. After signing contract online successfully, Alipay provides the partner id',
@@ -61,7 +66,7 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
             ),
         );
     }
-    
+
     /**
      * Return payment gateway type
      * @return string
@@ -70,7 +75,7 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
     {
         return Payment_AdapterAbstract::TYPE_FORM;
     }
-    
+
     /**
      * Return payment gateway type
      * @return string
@@ -92,7 +97,7 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
         return $id;
     }
 
-	public function singlePayment(Payment_Invoice $invoice) 
+	public function singlePayment(Payment_Invoice $invoice)
 	{
 		$client = $invoice->getBuyer();
 
@@ -125,11 +130,11 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
             'price'             => $invoice->getTotalWithTax(),
             'quantity'          => 1,
             'payment_type'      => 1,
-            
+
             'logistics_type'    => 'EXPRESS',
             'logistics_fee'     => 0,
             'logistics_payment' => 'BUYER_PAY_AFTER_RECEIVE',
-            
+
             'seller_email'      => $this->getParam('seller_email'),
         );
 
@@ -142,22 +147,22 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
         return $data;
 	}
 
-	public function recurrentPayment(Payment_Invoice $invoice) 
+	public function recurrentPayment(Payment_Invoice $invoice)
 	{
 		throw new Payment_Exception('AliPay does not support recurrent payments');
 	}
 
-	public function getTransaction($data, Payment_Invoice $invoice) 
+	public function getTransaction($data, Payment_Invoice $invoice)
 	{
 		$ipn = $data['post'];
-        
+
         $uniqid = md5($ipn['trade_no'].$ipn['trade_status']);
-        
+
 		$tx = new Payment_Transaction();
 		$tx->setId($uniqid);
 		$tx->setAmount($ipn['total_fee']);
 		$tx->setCurrency($invoice->getCurrency());
-        
+
         $contract = $this->getParam('type');
         if($contract == '1') {
             switch ($ipn['trade_status']) {
@@ -172,7 +177,7 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
                     break;
             }
         }
-        
+
         if($contract == '2') {
             switch ($ipn['trade_status']) {
                 case 'WAIT_SELLER_SEND_GOODS':
@@ -185,7 +190,7 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
                     break;
             }
         }
-        
+
 		return $tx;
 	}
 

@@ -31,7 +31,7 @@
                         {% for gtw in guest.invoice_gateways %}
                         {% if invoice.currency in gtw.accepted_currencies %}
                         {% set banklink = 'invoice/banklink'|link %}
-                        <button type="button"  class="logo-{{gtw.code}} hover-popover" type="radio" name="gateway_id" gateway_id="{{ gtw.id }}" data-toggle="tooltip" title="{{ 'Pay with'|trans }} {{gtw.title}}" onclick="window.location.replace('{{banklink}}/{{invoice.hash}}/{{gtw.id}}')")></button>
+                        <button type="button"  class="hover-popover" style="background: transparent url('{{gtw.logo.logo}}') no-repeat scroll 0% 0%; height:{{gtw.logo.height}}; width:{{gtw.logo.width}}; background-size: contain; border: 0; margin: 10px;" type="radio" name="gateway_id" gateway_id="{{ gtw.id }}" data-toggle="tooltip" title="{{ 'Pay with'|trans }} {{gtw.title}}" onclick="window.location.replace('{{banklink}}/{{invoice.hash}}/{{gtw.id}}')")></button>
                         {% endif %}
                         {% endfor %}
                         <input type="hidden" name="gateway_id" id="gateway_id">
@@ -194,7 +194,7 @@
                                 {% if item.order_id%}
                                 <a href="{{ '/order/service'|link }}/manage/{{ item.order_id }}">{{ item.title }}</a>
                                 {% else %}
-                                {{ item.title }} 
+                                {{ item.title }}
                                 {% endif %}
                                 {% if item.quantity > 1 %}
                                 x {{ item.quantity }} {{ item.unit }}

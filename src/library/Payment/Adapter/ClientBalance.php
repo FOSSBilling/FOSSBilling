@@ -25,7 +25,7 @@ class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
     {
         return $this->di;
     }
-    
+
     public function __construct()
     {
 
@@ -33,7 +33,13 @@ class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
 
     public static function getConfig()
     {
-        return array();
+        return array(
+            'logo' => array(
+                'logo' => 'clientbalance.png',
+                'height' => '50px',
+                'width' => '50px',
+            ),
+        );
     }
 
     public function enoughInBalanceToCoverInvoice(\Model_Invoice $invoice)

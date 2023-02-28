@@ -37,6 +37,11 @@ class Payment_Adapter_Custom
             'supports_one_time_payments'   =>  true,
             'supports_subscriptions'       =>  true,
             'description'     =>  'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML and JavaScript code is supported.',
+            'logo' => array(
+                'logo' => 'custom.png',
+                'height' => '50px',
+                'width' => '50px',
+            ),
             'form'  => array(
                 'single' => array('textarea', array(
                             'label' => 'Enter your text for single payment information',
@@ -52,13 +57,13 @@ class Payment_Adapter_Custom
 
     /**
      * Generate payment text
-     * 
+     *
      * @param Api_Admin $api_admin
      * @param int $invoice_id
      * @param bool $subscription
-     * 
+     *
      * @since FOSSBilling v2.9.15
-     * 
+     *
      * @return string - html form with auto submit javascript
      */
     public function getHtml($api_admin, $invoice_id, $subscription)
