@@ -53,7 +53,12 @@ class Service implements InjectionAwareInterface
         if (isset($config['sitemap_google']) && $config['sitemap_google']) {
             try {
                 $link = 'https://www.google.com/ping?sitemap=' . $url;
-                $this->di['guzzle_client']->get($link);
+                $client = $this->di['http_client'];
+                $request = $client->request('GET', $link, [
+                    'query' => [
+                        'sitemap'   => $url,
+                    ],
+                ]);
                 error_log('Submitted sitemap to Google');
             } catch (\Exception) {
                 error_log('Exception :(');

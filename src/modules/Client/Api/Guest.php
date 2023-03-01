@@ -272,7 +272,6 @@ class Guest extends \Api_Abstract
 
         // @todo add new service provider https://vatlayer.com/ check
 //         $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
-//         $result = $this->di['guzzle_client']->get($url);
         return true;
     }
 

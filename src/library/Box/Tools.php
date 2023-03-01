@@ -301,7 +301,7 @@ class Box_Tools
 
     public function cache_function($buildCallback, array $args = array(), $timeoutSeconds = 3600)
     {
-        // Set up the filename for the cache file 
+        // Set up the filename for the cache file
         if (is_array($buildCallback)) {
             $cacheKey = get_class($buildCallback[0]) . '::' . $buildCallback[1];
         } else {
@@ -438,10 +438,6 @@ class Box_Tools
         $newConfig['api']['rate_span_login'] ??= 60;
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
-
-        $newConfig['guzzle']['user_agent'] ??= 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0';
-        $newConfig['guzzle']['timeout'] ??= 0;
-        $newConfig['guzzle']['upgrade_insecure_requests'] ??= 0;
 
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($newConfig, true) . ';';

@@ -3,10 +3,7 @@
 
 namespace Box\Mod\Extension;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
+use \Symfony\Component\HttpClient\MockHttpClient;
 
 class PdoMock extends \PDO
 {
@@ -603,17 +600,9 @@ class ServiceTest extends \BBTestCase {
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
+            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
 
-        $mock = new MockHandler([
-            new Response(200, [], ''),
-        ]);
-        $handlerStack = HandlerStack::create($mock);
-        $guzzleMock = new Client(['handler' => $handlerStack]);
-
-        //$guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        //$guzzleMock->expects($this->atLeastOnce())
-        //    ->method('request');
+        $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -627,7 +616,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_client'] = $guzzleMock;
+        $di['http_client'] = $httpClientMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -641,15 +630,13 @@ class ServiceTest extends \BBTestCase {
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
+            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
 
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        $guzzleMock->expects($this->atLeastOnce())
-            ->method('request');
+        $httpClientMock = new MockHttpClient();
         
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_client'] = $guzzleMock;
+        $di['http_client'] = $httpClientMock;
         
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -663,11 +650,9 @@ class ServiceTest extends \BBTestCase {
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
+            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
 
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        $guzzleMock->expects($this->atLeastOnce())
-            ->method('request');
+        $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -683,7 +668,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_client'] = $guzzleMock;
+        $di['http_client'] = $httpClientMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -699,11 +684,9 @@ class ServiceTest extends \BBTestCase {
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
+            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
 
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        $guzzleMock->expects($this->atLeastOnce())
-            ->method('request');
+        $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -715,7 +698,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_client'] = $guzzleMock;
+        $di['http_client'] = $httpClientMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -731,11 +714,9 @@ class ServiceTest extends \BBTestCase {
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
+            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
 
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        $guzzleMock->expects($this->atLeastOnce())
-            ->method('request');
+        $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -747,7 +728,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_client'] = $guzzleMock;
+        $di['http_client'] = $httpClientMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -763,11 +744,9 @@ class ServiceTest extends \BBTestCase {
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
+            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
 
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        $guzzleMock->expects($this->atLeastOnce())
-            ->method('request');
+        $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -776,7 +755,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_client'] = $guzzleMock;
+        $di['http_client'] = $httpClientMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);

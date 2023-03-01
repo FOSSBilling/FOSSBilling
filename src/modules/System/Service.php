@@ -387,7 +387,11 @@ class Service
     {
         if (isset($ip)) {
             try {
-                return $this->di['tools']->get_url('https://api.ipify.org', 2);
+                $client = $this->di['http_client'];
+                $response = $client->request('GET', 'https://api.ipify.org', [
+                    'timeout'   => 2,
+                ]);
+                return $response->getContent();
             } catch (\Exception) {
                 return '';
             }

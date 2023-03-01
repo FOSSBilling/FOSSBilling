@@ -144,18 +144,15 @@ class Service implements InjectionAwareInterface
                     throw new \Box_Exception('You have to complete the CAPTCHA to continue');
                 }
 
-                $postData = [
-                    'secret' => $config['captcha_recaptcha_privatekey'],
-                    'response' => $params['g-recaptcha-response'],
-                    'remoteip' => $di['request']->getClientAddress(),
-                ];
-
-                $options = [
-                    'form_params' => $postData,
-                ];
-                $response = $di['guzzle_client']->request('POST', 'https://google.com/recaptcha/api/siteverify', $options);
-                $body = $response->getBody()->getContents();
-                $content = json_decode($body, true);
+                $client = $this->di['http_client'];
+                $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
+                    'body'  => [
+                        'secret' => $config['captcha_recaptcha_privatekey'],
+                        'response' => $params['g-recaptcha-response'],
+                        'remoteip' => $di['request']->getClientAddress(),
+                    ],
+                ]);
+                $content = $response->toArray();
 
                 if (!$content['success']) {
                     throw new \Box_Exception('reCAPTCHA verification failed.');

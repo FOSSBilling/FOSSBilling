@@ -529,23 +529,6 @@ $di['validator'] = function () use ($di) {
 };
 
 /*
- * Creates a new Guzzle HTTP client and returns it.
- *
- * @param void
- *
- * @return \GuzzleHttp\Client The new Guzzle HTTP client that was just created.
- */
-$di['guzzle_client'] = function () use ($di) {
-    return new GuzzleHttp\Client([
-        'headers' => [
-            'User-Agent' => $di['config']['guzzle']['user_agent'],
-            'Upgrade-Insecure-Requests' => $di['config']['guzzle']['upgrade_insecure_requests'],
-        ],
-        'timeout' => $di['config']['guzzle']['timeout'],
-    ]);
-};
-
-/*
  *
  * @param void
  *

@@ -1,6 +1,8 @@
 <?php
 abstract class Registrar_AdapterAbstract
 {
+    use Symfony\Component\HttpClient\HttpClient;
+    
     protected $_log = null;
 
     /**
