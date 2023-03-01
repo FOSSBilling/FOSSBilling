@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -10,6 +11,7 @@
  *
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
+ *
  */
 
     /**
@@ -81,12 +83,15 @@
          */
         private function _request($call, array $params)
         {
-            $params['bb_version'] = Box_Version::VERSION;
-            $url = $this->_url.$call.'?'.http_build_query($params);
-            $curl = new Box_Curl($url, 5);
-            $curl->request();
-            $response = $curl->getBody();
-            $json = json_decode($response, 1);
+            $url = $this->_url.$call;
+            $client = $this->di['http_client'];
+            $response = $client->request('GET', $url, [
+                'timeout' => 5,
+                'query' => [
+                    'bb_version' => Box_Version::VERSION,
+                ],
+            ]);
+            $json = $response->toArray();
 
             if(is_null($json)) {
                 throw new \Box_Exception('Unable to connect to FOSSBilling extensions site.', null, 1545);

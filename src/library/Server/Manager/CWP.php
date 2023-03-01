@@ -21,10 +21,6 @@ class Server_Manager_CWP extends Server_Manager
 {
 	public function init()
 	{
-		if (!extension_loaded('curl')) {
-			throw new Server_Exception('cURL extension is not enabled');
-		}
-
 		if (empty($this->_config['ip'])) {
 			throw new Server_Exception('Server manager "CWP" is not configured properly. IP address is not set!');
 		}
@@ -259,25 +255,25 @@ class Server_Manager_CWP extends Server_Manager
 	}
 
 	/**
-	 * Makes the CURL request to the server
+	 * Makes the HTTP request to the server
 	 */
 	private function makeAPIRequest($func, $data)
 	{
 		$data['key'] = $this->_config['accesshash'];
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
-
 		$url = 'https://' . $host . ":" . $port . '/v1/' . $func;
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-		curl_setopt($ch, CURLOPT_POST, 1);
-		$response = json_decode(curl_exec($ch), true);
-		curl_close($ch);
+
+		$client = $this->getHttpClient()->withOptions([
+			'verify_peer'	=> false,
+			'verify_host'	=> false,
+		]);
+
+		$request = $client->request('POST', $url, [
+			'body'	=> $data,
+		]);
+
+		$response = $request->toArray();
 
 		$status = $response['status'] ?? 'Error';
 		$result = $response['result'] ?? null;

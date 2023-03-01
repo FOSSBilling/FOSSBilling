@@ -1,4 +1,7 @@
 <?php
+
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+
 class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 {
     public $config = array(
@@ -8,10 +11,6 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     public function __construct($options)
     {
-        if (!extension_loaded('curl')) {
-            throw new Registrar_Exception('CURL extension is not enabled');
-        }
-
         if(isset($options['apikey']) && !empty($options['apikey'])) {
             $this->config['apikey'] = $options['apikey'];
             unset($options['apikey']);
@@ -331,31 +330,23 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         $params['apikey'] = $this->config['apikey'];
         $params['password'] = $this->config['password'];
 
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->_getApiUrl() . $command);
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer'   => false,
+            'verify_host'   => false,
+        ]);
 
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-
-		curl_setopt($ch, CURLOPT_HEADER, 0);
-		curl_setopt($ch, CURLOPT_USERAGENT, "Internet.bs ClientExec plugin V2.5");
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-
-		$data = curl_exec($ch);
-
-        if ($data === false) {
-            $e = new Registrar_Exception(sprintf('CurlException: "%s"', curl_error($ch)));
+        try {
+            $response = $client->request('POST', $this->_getApiUrl().$command, [
+                'body'  => $params,
+            ]);
+        } catch (HttpExceptionInterface $error) {
+            $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
             $this->getLog()->err($e);
-            curl_close($ch);
             throw $e;
         }
         
-		curl_close($ch);
-
-        if ($data)
-            return $this->_parseResult($data);
+        $data = $response->getContent();
+        return $this->_parseResult($data);
 	}
 
     /**

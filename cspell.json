@@ -53,7 +53,6 @@
         "ivsize",
         "ciphertext",
         "followlocation",
-        "CURLOPT",
         "regexed",
         "punnycode",
         "timeago",

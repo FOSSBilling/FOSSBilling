@@ -4,10 +4,6 @@ class Registrar_Adapter_Resellerid extends Registrar_Adapter_Resellerclub
 {
     public function __construct($options)
     {
-        if (!extension_loaded('curl')) {
-            throw new Registrar_Exception('CURL extension is not enabled');
-        }
-
         if(isset($options['userid']) && !empty($options['userid'])) {
             $this->config['userid'] = $options['userid'];
             unset($options['userid']);

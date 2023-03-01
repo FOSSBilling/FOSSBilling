@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -12,10 +13,12 @@
  * with this source code in the file LICENSE
  */
 
-
 /**
  * HTTP API documentation http://cp.onlyfordemo.net/kb/answer/744
  */
+
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+
 class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 {
     public $config = array(
@@ -35,10 +38,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function __construct($options)
     {
-        if (!extension_loaded('curl')) {
-            throw new Registrar_Exception('CURL extension is not enabled');
-        }
-
         if(isset($options['userid']) && !empty($options['userid'])) {
             $this->config['userid'] = $options['userid'];
             unset($options['userid']);
@@ -677,41 +676,35 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     {
         $params = $this->includeAuthorizationParams($params);
 
-        $opts = array(
-            CURLOPT_CONNECTTIMEOUT  => 30,
-            CURLOPT_RETURNTRANSFER  => true,
-            CURLOPT_TIMEOUT         => 60,
-            CURLOPT_URL             => $this->_getApiUrl().$url.'.'.$type,
-            CURLOPT_SSL_VERIFYHOST  =>  0,
-            CURLOPT_SSL_VERIFYPEER  =>  0,
-        );
+        $client = $this->getHttpClient()->withOptions([
+            'timeout'   => 60,
+            'verify_peer'   => false,
+            'verify_host'   => false
+        ]);
 
-        if($method == 'POST') {
-            $opts[CURLOPT_POST]         = 1;
-            $opts[CURLOPT_POSTFIELDS]   = $this->_formatParams($params);
-            $this->getLog()->debug('API REQUEST: '.$opts[CURLOPT_URL].'?'.$opts[CURLOPT_POSTFIELDS]);
-        } else {
-            $opts[CURLOPT_URL]  = $opts[CURLOPT_URL].'?'.$this->_formatParams($params);
-            $this->getLog()->debug('API REQUEST: '.$opts[CURLOPT_URL]);
-        }
+        $callUrl = $this->_getApiUrl().$url.'.'.$type;
 
-        $ch = curl_init();
-        curl_setopt_array($ch, $opts);
-        $result = curl_exec($ch);
-        if ($result === false) {
-            $e = new Registrar_Exception(sprintf('CurlException: "%s"', curl_error($ch)));
+        try {
+            if($method == 'POST') {
+                $result = $client->request('POST', $callUrl, [
+                    'body'  => $this->_formatParams($params),
+                ]);
+            } else {
+                $result = $client->request('GET', $callUrl.'?'.$this->_formatParams($params));
+                $this->getLog()->debug('API REQUEST: '.$callUrl.'?'.$this->_formatParams($params));
+            }
+        } catch (HttpExceptionInterface $error) {
+            $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
             $this->getLog()->err($e);
-            curl_close($ch);
             throw $e;
         }
-        curl_close($ch);
 
         $this->getLog()->info('API RESULT: '.$result);
         
         // response checker
-        $json = json_decode($result, true);
+        $json = $result->toArray();
         if(!is_array($json)) {
-            return $result;
+            return $result->getContent();
         }
 
         if(isset($json['status']) && $json['status'] == 'ERROR') {

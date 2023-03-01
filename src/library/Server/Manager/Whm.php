@@ -12,6 +12,8 @@
  * with this source code in the file LICENSE
  */
 
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+
 /**
  * cPanel API
  * @see https://api.docs.cpanel.net/whm/introduction
@@ -20,10 +22,6 @@ class Server_Manager_Whm extends Server_Manager
 {
 	public function init()
     {
-        if (!extension_loaded('curl')) {
-            throw new Server_Exception('cURL extension is not enabled');
-        }
-
         if(empty($this->_config['host'])) {
             throw new Server_Exception('Server manager "cPanel WHM" is not configured properly. Hostname is not set');
         }
@@ -390,23 +388,31 @@ class Server_Manager_Whm extends Server_Manager
      */
     private function _request($action, $params = array())
     {
-        $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer'   => false,
+            'verify_host'   => false,
+            'timeout'       => 30
+        ]);
 
-        $args = http_build_query($params, '', '&');
         $url =  ($this->_config['secure'] ? 'https' : 'http') . '://' . $this->_config['host'] . ':' . $this->_config['port'] . '/json-api/' . $action;
+        $username = $this->_config['username'];
+        $accesshash = $this->_config['accesshash'];
+        $password = $this->_config['password'];
+        $authstr = (!empty($accesshash)) ? 'WHM ' . $username . ':' . $accesshash  
+                                         : 'Basic ' . $username .':'. $password;
 
-        if (!empty($this->_config['accesshash'])) {
-            $authstr = 'Authorization: WHM ' . $this->_config['username']. ':' . preg_replace("'(\r|\n)'","",$this->_config['accesshash']) . "\r\n";
-        } elseif (!empty($this->_config['password'])) {
-            $authstr = 'Authorization: Basic ' . base64_encode($this->_config['username'] .':'. $this->_config['password']) . "\r\n";
-        } else {
-            throw new Exception('Invalid authentication details.');
+        $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
+        
+        try  {
+            $response = $client->request('POST', $url, [
+                'headers'   => [ 'Authorization' => $authstr ],
+                'body'  => $params,
+            ]);
+        } catch (HttpExceptionInterface $error) {
+            $e = throw new Server_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
+            $this->getLog()->err($e);
         }
-
-        $body = $this->_curl_query($url, $args, $authstr);
-
-        $this->getLog()->debug('Response: '.$body);
-
+        $body = $response->getContent();
         $json = json_decode($body);
 
         if(!is_object($json)) {
@@ -414,25 +420,21 @@ class Server_Manager_Whm extends Server_Manager
             $this->getLog()->crit($msg);
             throw new Server_Exception($msg);
         }
-
         if(isset($json->cpanelresult) && isset($json->cpanelresult->error)) {
             $msg = sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error);
             $this->getLog()->crit($msg);
             throw new Server_Exception($msg);
         }
-        
         if(isset($json->data) && isset($json->data->result) && $json->data->result == '0') {
             $msg = sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason);
             $this->getLog()->crit($msg);
             throw new Server_Exception($msg);
         }
-
         if(isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
             $msg = sprintf('WHM server response error calling action %s: "%s"',$action, $json->result[0]->statusmsg);
             $this->getLog()->crit($msg);
             throw new Server_Exception($msg);
         }
-
         if(isset($json->status) && $json->status != '1') {
             $msg = sprintf('WHM server response error calling action %s: "%s"',$action, $json->statusmsg);
             $this->getLog()->crit($msg);
@@ -440,33 +442,5 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         return $json;
-    }
-
-    private function _curl_query($url, $postdata, $authstr) 
-    {
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 30);
-        curl_setopt($curl, CURLOPT_URL, $url);
-        // Increase buffer size to avoid "funny output" exception
-        curl_setopt($curl, CURLOPT_BUFFERSIZE, 131072);
-    
-        // Pass authentication header
-        $header[0] =$authstr .
-            "Content-Type: application/x-www-form-urlencoded\r\n" .
-            "Content-Length: " . strlen($postdata) . "\r\n" . "\r\n" . $postdata;
-        
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, "");
-
-        $result = curl_exec($curl);
-        if (!$result) {
-            throw new Exception("curl_exec threw error \"" . curl_error($curl) . "\" for " . $url . "?" . $postdata );
-        }
-        curl_close($curl);
-        return $result;
     }
 }

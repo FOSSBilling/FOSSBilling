@@ -12,14 +12,12 @@
  * with this source code in the file LICENSE
  */
 
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+
 class Server_Manager_Directadmin extends Server_Manager
 {
     public function init()
     {
-        if(!extension_loaded('curl')) {
-            throw new Server_Exception('DirectAdmin server manager requires php curl extension to be enabled');
-        }
-        
         if(empty($this->_config['host'])) {
             throw new Server_Exception('Server manager "DirectAdmin" is not configured properly. Hostname is not set');
         }
@@ -371,41 +369,38 @@ class Server_Manager_Directadmin extends Server_Manager
     {
         $host    = $this->_config['host'];
         $usessl  = $this->_config['secure'];
-        $authstr = $this->_config['username'] . ':' . $this->_config['password'];
         
         $fieldstring = http_build_query($fields);
         
-        $ch = curl_init();
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer'   => false,
+            'verify_host'   => false,
+            'timeout'       => 60,
+            'auth_basic'    => [ $this->_config['username'], $this->_config['password'] ],           
+        ]);
+
         if($usessl) {
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
             $url = 'https://' . $host . ':2222/' . $command . '?' . $fieldstring;
         } else {
             $url = 'http://' . $host . ':2222/' . $command . '?' . $fieldstring;
         }
-        
-        curl_setopt($ch, CURLOPT_URL, $url);
-        if($post) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $fieldstring);
+
+        try {
+            if($post) {
+                $request = $client->request('POST', $url, [
+                    'body'  => $fields,
+                ]);
+            } else {
+                $request = $client->request('GET', $url);
+            }
+        } catch (HttpExceptionInterface $error) {
+            $e = new Server_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
+            $this->getLog()->err($e);
+            throw $e;
         }
         
         $this->getLog()->debug($url);
-        
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $curlheaders[0] = 'Authorization: Basic ' . base64_encode($authstr);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $curlheaders);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        $data = curl_exec($ch);
-        
-        //    $headers = curl_getinfo($ch);
-        
-        if(curl_errno($ch)) {
-            $e = new Server_Exception(curl_error($ch), curl_errno($ch));
-            curl_close($ch);
-            throw $e;
-        }
-        curl_close($ch);
+        $data = $request->getContent();
         
         if(strlen(strstr($data, 'DirectAdmin Login')) > 0) {
             throw new Server_Exception('Server Manager DirectAdmin Error: "Login failed"');

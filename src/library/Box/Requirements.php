@@ -37,7 +37,6 @@ class Box_Requirements implements \Box\InjectionAwareInterface
             'php'   =>  array(
                 'extensions' => array(
                     'pdo_mysql',
-                    'curl',
                     'zlib',
                     'openssl',
                     'dom',
@@ -91,7 +90,6 @@ class Box_Requirements implements \Box\InjectionAwareInterface
         
         $data['extensions']    = array(
             'apc'           => extension_loaded('apc'),
-            'curl'          => extension_loaded('curl'),
             'pdo_mysql'     => extension_loaded('pdo_mysql'),
             'zlib'          => extension_loaded('zlib'),
             'mbstring'      => extension_loaded('mbstring'),

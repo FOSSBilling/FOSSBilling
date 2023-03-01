@@ -6,11 +6,6 @@ parameters:
 			path: src/library/Payment/AdapterAbstract.php
 
 		-
-			message: "#^Method Registrar_Adapter_Internetbs\\:\\:_process\\(\\) should return array but return statement is missing\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Internetbs.php
-
-		-
 			message: "#^Method Registrar_Adapter_Internetbs\\:\\:getDomainDetails\\(\\) should return Registrar_Domain but return statement is missing\\.$#"
 			count: 1
 			path: src/library/Registrar/Adapter/Internetbs.php
