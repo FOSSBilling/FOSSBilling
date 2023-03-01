@@ -80,7 +80,7 @@
                                 <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>Female</option>
                                 <option value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>Non-binary</option>
                                 <option value="other" {% if profile.gender not in ['male', 'female', 'nonbinary'] %} selected {% endif %}>Other</option>
-                            </select>                            
+                            </select>
                             <p class="help-block"></p>
                         </div>
                     </div>
@@ -234,7 +234,7 @@
                 <div class="form-actions">
                     <button class="btn btn-alt btn-large btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
                  </div>
-            </form>        
+            </form>
         </div>
         <div class="tab-pane" id="tab3">
             <header>
@@ -281,7 +281,7 @@
 
 {% block js %}
 <script>
-$(function() {    
+$(function() {
     $('#change-api-key').submit(function(event) {
         bb.post(
             'client/profile/api_key_reset',
@@ -297,13 +297,13 @@ $(function() {
 
     $('#profile-update').bind('submit', function(event) {
         bb.post(
-            'client/client/update',
+            'client/profile/update',
             $(this).serialize(),
             function(result) {
                 bb.msg('Profile updated');
             }
         );
-        
+
         return false;
     });
 });
