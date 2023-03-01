@@ -296,7 +296,6 @@
 
 {% block js%}
 <script>
-    console.log();
     function onAfterInvoicePrepared(id) {
         bb.redirect("{{ 'invoice/manage/'|alink }}/" + id);
     }
