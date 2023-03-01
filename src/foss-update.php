@@ -15,16 +15,24 @@
  */
 
 /**
- * main.
+ * Patch to remove .html from email templates action code, see https://github.com/FOSSBilling/FOSSBilling/issues/863
  */
-
+class FOSSPatch_28 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $q = "UPDATE email_template SET action_code = REPLACE(action_code, '.html', '')";
+        $this->execSql($q);
+    }
+}
 
 /**
  * Migration steps to create table to allow admin users to do password reset
  */
 class FOSSPatch_27 extends FOSSPatchAbstract
 {
-    public function patch(){
+    public function patch()
+    {
         // create admin password reset table
         $q = "CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
         $this->execSql($q);
@@ -39,25 +47,23 @@ class FOSSPatch_26 extends FOSSPatchAbstract
     public function patch()
     {
         //Added favicon settings
-        $q= "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
+        $q = "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
         $this->execSql($q);
     }
 }
-
 
 class FOSSPatch_25 extends FOSSPatchAbstract
 {
     public function patch()
     {
         //Migrate email templates to be compatible with Twig 3.x
-        $q= "UPDATE email_template SET content = REPLACE(content, '{% filter markdown %}', '{% apply markdown %}')";
+        $q = "UPDATE email_template SET content = REPLACE(content, '{% filter markdown %}', '{% apply markdown %}')";
         $this->execSql($q);
 
-        $q= "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
+        $q = "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
         $this->execSql($q);
     }
 }
-
 
 abstract class FOSSPatchAbstract
 {
@@ -142,20 +148,40 @@ $di = include __DIR__ . '/di.php';
 
 error_log('Executing FOSSBilling update script');
 natsort($patches);
+
+$html  = 
+'<!DOCTYPE html>
+<html>';
+
+$html .= 
+'<head>
+    <title>FOSSBilling Updater</title>
+</head>';
+
+$html .= '<body>';
+
 foreach ($patches as $class) {
     $p = new $class($di);
+
     if (!$p->isPatched()) {
-        $msg = 'FOSSBilling patch #' . $p->getVersion() . ' executing...';
-        error_log($msg);
+        error_log('FOSSBilling patch #' . $p->getVersion() . ' executing...');
+
         $p->patch();
         $p->donePatching();
+
         $msg = 'FOSSBilling patch #' . $p->getVersion() . ' was executed';
+        $html .= "<p>$msg</p>";
+
         error_log($msg);
-        echo $msg . PHP_EOL;
     } else {
         error_log('Skipped patch ' . $p->getVersion());
     }
 }
 error_log('FOSSBilling update completed');
 
-echo 'Update completed. You are using FOSSBilling ' . Box_Version::VERSION . PHP_EOL;
+$html .= '<p>Update completed. You are using FOSSBilling ' . Box_Version::VERSION . '</p>';
+$html .= 
+'</body>
+</html>';
+echo $html;
+exit;
