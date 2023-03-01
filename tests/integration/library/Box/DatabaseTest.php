@@ -29,7 +29,7 @@ class DatabaseTest extends BBDbApiTestCase
             $this->assertInstanceOf(\RedBeanPHP\SimpleModel::class, $m);
         }
 
-        $this->assertNull($this->di['db']->trash($model));
+        $this->assertEquals(1, $this->di['db']->trash($model));
     }
 
     public function testBean()
@@ -56,6 +56,6 @@ class DatabaseTest extends BBDbApiTestCase
             $this->assertInstanceOf(\RedBeanPHP\OODBBean::class, $m);
         }
 
-        $this->assertNull($this->di['db']->trash($model));
+        $this->assertEquals(1, $this->di['db']->trash($model));
     }
 }
