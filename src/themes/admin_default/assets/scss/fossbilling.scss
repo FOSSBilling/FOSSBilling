@@ -31,9 +31,11 @@
 
 .ts-wrapper {
     .ts-control {
-        width: 205px !important;
+        width: 100%;
         color: inherit;
-
+        &.locale {
+            width: 205px;
+        }
         .dropdown-menu {
             width: 100%;
             height: auto;

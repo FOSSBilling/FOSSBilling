@@ -9,12 +9,11 @@ import './js/jquery-ui';
 import "@melloware/coloris/dist/coloris.css";
 import { coloris, init } from '@melloware/coloris';
 import '@tabler/core/src/js/tabler';
-import TomSelect from 'tom-select';
+import './js/tomselect'
 import ApexCharts from 'apexcharts';
 import './js/fossbilling';
 
 globalThis.ApexCharts = ApexCharts;
-globalThis.TomSelect = TomSelect;
 
 init();
 coloris({
@@ -35,27 +34,5 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
     });
   });
-
-  const tomSelectTemplate = (data, escape) => {
-    if (data.customProperties) {
-      return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-    }
-    return '<div>' + escape(data.text) + '</div>';
-  }
-  let localeSelector = new TomSelect('.js-language-selector', {
-    copyClassesToDropdown: false,
-    dropdownClass: 'dropdown-menu ts-dropdown',
-    optionClass: 'dropdown-item',
-    controlInput: false,
-    items: [bb.cookieRead('BBLANG')],
-    render: {
-      item: (data, escape) => { return tomSelectTemplate(data, escape); },
-      option: (data, escape) => { return tomSelectTemplate(data, escape); },
-    },
-  });
-  localeSelector.on('change', (value) => {
-    bb.cookieCreate('BBLANG', value, 7);
-    bb.reload();
-  })
 
 });
