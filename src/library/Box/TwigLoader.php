@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -25,15 +26,15 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
     public function __construct(array $options)
     {
         parent::__construct();
-        if(!isset($options['mods'])) {
+        if (!isset($options['mods'])) {
             throw new \Box_Exception('Missing mods param for Box_TwigLoader');
         }
 
-        if(!isset($options['theme'])) {
+        if (!isset($options['theme'])) {
             throw new \Box_Exception('Missing theme param for Box_TwigLoader');
         }
 
-        if(!isset($options['type'])) {
+        if (!isset($options['type'])) {
             throw new \Box_Exception('Missing type param for Box_TwigLoader');
         }
 
@@ -56,13 +57,17 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 
         $paths = array();
         $paths[] = $this->options["theme"] . DIRECTORY_SEPARATOR . "html";
-        if(isset($name_split[1])) {
-            $paths[] = $this->options["mods"] . DIRECTORY_SEPARATOR . ucfirst($name_split[1]). DIRECTORY_SEPARATOR . "html_" . $this->options["type"];
+        if (isset($name_split[1])) {
+            $paths[] = $this->options["mods"] . DIRECTORY_SEPARATOR . ucfirst($name_split[1]) . DIRECTORY_SEPARATOR . "html_" . $this->options["type"];
         }
 
-        foreach($paths as $path) {
-            if(file_exists($path . DIRECTORY_SEPARATOR . $name)) {
+        foreach ($paths as $path) {
+            if (file_exists($path . DIRECTORY_SEPARATOR . $name)) {
                 return $this->cache[$name] = $path . '/' . $name;
+            }
+
+            if (str_ends_with($name, 'icon.svg') && file_exists(dirname($path) . DIRECTORY_SEPARATOR . 'icon.svg')) {
+                return $this->cache[$name] = dirname($path) . DIRECTORY_SEPARATOR . 'icon.svg';
             }
         }
 

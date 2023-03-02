@@ -209,6 +209,16 @@ class Service implements InjectionAwareInterface
             $result[$key]['icon_url'] = $iconPath;
         }
 
+        foreach ($result as $key => $value) {
+            $icon_url = $this->di['array_get']($value, 'icon_url');
+            if ($icon_url) {
+                $iconPath = realpath(PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($value['id']) . DIRECTORY_SEPARATOR . basename($icon_url));
+                if (file_exists($iconPath)) {
+                    $result[$key]['icon_path'] = 'mod_' . ucfirst($value['id']) . '_' . basename($icon_url);
+                }
+            }
+        }
+
         return $result;
     }
 
@@ -436,7 +446,7 @@ class Service implements InjectionAwareInterface
 
         $extracted = PATH_CACHE . '/' . md5(uniqid());
         $zip = PATH_CACHE . '/' . md5(uniqid()) . '.zip';
-        
+
         // Create a temporary directory to extract the extension
         mkdir($extracted, 0755, true);
 
