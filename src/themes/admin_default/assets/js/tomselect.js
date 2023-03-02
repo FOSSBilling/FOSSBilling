@@ -42,9 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
    * Autocomplete selector
    */
   const autocompleteTemplate = (item, escape) => {
-    return `<div class="py-2 d-flex">
+    return `<div class="py-2 d-flex align-items-center">
                 <span>${escape(item.label)}</span>
-                <small class="text-muted ms-1">#${escape(item.value)}</span>
+                <small class="text-muted ms-1 lh-1">#${escape(item.value)}</small>
              </div>`;
   }
   let autocompleteSelectorEl = document.querySelector('.autocomplete-selector');
