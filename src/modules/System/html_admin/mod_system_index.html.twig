@@ -19,10 +19,10 @@
                         <div class="datagrid-title">
                             <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
                                 {% set icon_filename = ext.icon_url|split('/')|last %}
-                                {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg') %}
+                                {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="text-primary" style="width:24px;height:24px;">
-                                            {% include '../../../modules/' ~ ext.id ~ '/' ~ icon_filename %}
+                                            {{ source (ext.icon_path, ignore_missing = true) }}
                                         </div>
                                         <span>{{ ext.name }}</span>
                                     </div>

@@ -47,9 +47,9 @@
                     <tr>
                         <td>
                             {% set icon_filename = ext.icon_url|split('/')|last %}
-                            {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg') %}
+                            {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
                                 <div class="text-primary" style="width:24px;height:24px;">
-                                    {% include '../../../modules/' ~ ext.id ~ '/' ~ icon_filename %}
+                                    {{ source (ext.icon_path, ignore_missing = true) }}
                                 </div>
                             {% else %}
                                 <img src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
