@@ -1,7 +1,7 @@
 {
-    "id":           "page",
-	"type":         "mod",
-    "name":         "Page",
-    "description":  "FOSSBilling core module",
-    "version":      "1.0.0"
+  "id": "page",
+  "type": "mod",
+  "name": "Page",
+  "description": "FOSSBilling core module",
+  "version": "1.0.0"
 }

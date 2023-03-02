@@ -1,11 +1,12 @@
 {
-    "id":           "embed",
-	"type":         "mod",
-    "name":         "Embed parts",
-    "description":  "Provides ability to embed parts of FOSSBilling to other websites",
-    "homepage_url": "http://github.com/boxbilling/",
-    "author":       "FOSSBilling",
-    "author_url":   "http://extensions.fossbilling.org/",
-    "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-    "version":      "1.0.1"
+  "id": "embed",
+  "type": "mod",
+  "name": "Embed parts",
+  "description": "Provides ability to embed parts of FOSSBilling to other websites",
+  "icon_url": "icon.svg",
+  "homepage_url": "https://github.com/FOSSBilling",
+  "author": "FOSSBilling",
+  "author_url": "http://extensions.fossbilling.org/",
+  "license": "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+  "version": "1.0.1"
 }

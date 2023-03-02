@@ -1,7 +1,7 @@
 {
-    "id":           "cart",
-	"type":         "mod",
-    "name":         "Shopping cart",
-    "description":  "FOSSBilling core module",
-    "version":      "1.0.0"
+  "id": "cart",
+  "type": "mod",
+  "name": "Shopping cart",
+  "description": "FOSSBilling core module",
+  "version": "1.0.0"
 }

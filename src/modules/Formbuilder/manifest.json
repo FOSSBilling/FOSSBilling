@@ -1,7 +1,8 @@
 {
-    "id":           "formbuilder",
-	"type":         "mod",
-    "name":         "Form Builder",
-    "description":  "Adds ability to create custom forms to be used anywhere",
-    "version":      "1.0.0"
+  "id": "formbuilder",
+  "type": "mod",
+  "name": "Form Builder",
+  "description": "Adds ability to create custom forms to be used anywhere",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
 }

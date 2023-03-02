@@ -1,7 +1,7 @@
 {
-    "id":           "servicehosting",
-	"type":         "mod",
-    "name":         "Hosting product type",
-    "description":  "FOSSBilling core module",
-    "version":      "1.0.0"
+  "id": "servicehosting",
+  "type": "mod",
+  "name": "Hosting product type",
+  "description": "FOSSBilling core module",
+  "version": "1.0.0"
 }
