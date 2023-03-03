@@ -25,7 +25,6 @@ jobs:
 
       - name: Update lock file
         run: npm i --package-lock-only
-        working-directory: ./src/
 
       - name: Create a Pull Request
         uses: peter-evans/create-pull-request@v4
