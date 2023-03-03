@@ -22,7 +22,7 @@ jobs:
       - name: Apply any available updates.
         run: ncu -u
         working-directory: ./src/modules/Wysiwyg
-        
+
       - name: Update lock file
         run: npm i --package-lock-only
         working-directory: ./src/
