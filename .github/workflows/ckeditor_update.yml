@@ -20,8 +20,12 @@ jobs:
         run: npm install -g npm-check-updates
 
       - name: Apply any available updates.
-        run: ncu -u && npm i --package-lock-only
+        run: ncu -u
         working-directory: ./src/modules/Wysiwyg
+        
+      - name: Update lock file
+        run: npm i --package-lock-only
+        working-directory: ./src/
 
       - name: Create a Pull Request
         uses: peter-evans/create-pull-request@v4
