@@ -490,6 +490,16 @@ class Service implements InjectionAwareInterface
                 }
                 break;
 
+            case \Box_Extension::TYPE_PG:
+            $destination = PATH_LIBRARY . '/Payment/Adapter/' . $id;
+            if ($this->di['tools']->fileExists($destination)) {
+                throw new \Box_Exception('Module seems to be already installed.', null, 436);
+            }
+            if (!$this->di['tools']->rename($extracted.'/'.$id, $destination)) {
+                throw new \Box_Exception('Payment gateways files can not be moved. Make sure your server allows you to write to the Payment gateway folder', null, 440);
+            }
+            break;
+
             default:
                 throw new \Box_Exception('Extension does not support auto-install feature. Extension must be installed manually');
         }
