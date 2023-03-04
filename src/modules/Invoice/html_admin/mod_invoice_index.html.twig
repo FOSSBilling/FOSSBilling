@@ -182,6 +182,7 @@
         <div class="tab-content">
             <div class="tab-pane show active" id="tab-index" role="tabpanel">
                 {% include 'partial_search.html.twig' %}
+              <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
@@ -257,7 +258,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
-
+              </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     {% include "partial_batch_delete.html.twig" with { 'action': 'admin/invoice/batch_delete' } %}
                     {% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
