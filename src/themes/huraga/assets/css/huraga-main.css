@@ -9436,8 +9436,17 @@ div.jGrowl div.success a:hover {
     width: 277px;
 }
 .container.login .login-footer {
-    text-align: right;
-    *zoom: 1;
+    display: flex;
+    flex-direction: row;
+    align-content: space-between;
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+    justify-content: space-around;
+    font-size: 16px;
+    text-align: center;
+    margin: 10px auto 0;
+    font-weight: 500;
 }
 .container.login .login-footer:before, .container.login .login-footer:after {
     display: table;
