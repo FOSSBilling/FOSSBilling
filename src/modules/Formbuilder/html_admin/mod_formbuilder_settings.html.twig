@@ -344,31 +344,6 @@
             return false;
         });
 
-        const formElements = document.getElementsByClassName("update-field");
-
-        if (formElements.length > 0) {
-            for (let i = 0; i < formElements.length; i++) {
-                const formElement = formElements[i];
-                
-                formElement.addEventListener("submit", function (event) {
-                    // Prevent the default form submit action. We will handle it ourselves.
-                    event.preventDefault();
-
-                    const formData = new FormData(formElement);
-                    const formDataObject = Object.fromEntries(formData.entries());
-                    const formDataInJSON = JSON.stringify(formDataObject);
-
-                    API.admin.post('formbuilder/update_field', formDataInJSON, function (result) {
-                        formElement.style.display = 'none';
-                        $('#background-loader').show();
-                        bb.reload();
-                    }, function (error) {
-                        FOSSBilling.message(`${error.message} (${error.code})`, 'error');
-                    });
-                });
-            }
-        }
-
        $('#new-form').click(function () {
             jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
                 if (title) {
