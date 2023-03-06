@@ -465,7 +465,7 @@ class Service implements InjectionAwareInterface
                 if (file_exists($destination)) {
                     throw new \Box_Exception('Module seems to be already installed.', null, 436);
                 }
-                if (!$this->di['tools']->rename($extracted, $destination)) {
+                if (!rename($extracted, $destination)) {
                     throw new \Box_Exception('Extension can not be moved. Make sure your server allows you to write to the modules folder.', null, 437);
                 }
                 break;
@@ -473,7 +473,7 @@ class Service implements InjectionAwareInterface
             case \Box_Extension::TYPE_THEME:
                 $destination = PATH_THEMES . '/' . $id;
                 if (!file_exists($destination)) {
-                    if (!$this->di['tools']->rename($extracted, $destination)) {
+                    if (!rename($extracted, $destination)) {
                         throw new \Box_Exception('Theme can not be moved. Make sure your server allows you to write to the themes folder.', null, 439);
                     }
                 }
@@ -485,7 +485,7 @@ class Service implements InjectionAwareInterface
                 if (!file_exists($destination)) {
                     mkdir($destination, 0777, true);
                 }
-                if (!$this->di['tools']->rename($extracted, $destination)) {
+                if (!rename($extracted, $destination)) {
                     throw new \Box_Exception('Locale files can not be moved. Make sure your server allows you to write to the locale folder', null, 440);
                 }
                 break;
@@ -495,7 +495,7 @@ class Service implements InjectionAwareInterface
             if (file_exists($destination)) {
                 throw new \Box_Exception('Module seems to be already installed.', null, 436);
             }
-            if (!$this->di['tools']->rename($extracted.'/'.$id, $destination)) {
+            if (!rename($extracted.'/'.$id, $destination)) {
                 throw new \Box_Exception('Payment gateways files can not be moved. Make sure your server allows you to write to the Payment gateway folder', null, 440);
             }
             break;
