@@ -291,7 +291,7 @@ class Service
         }
 
         $install = PATH_ROOT . '/install';
-        if ($this->di['tools']->fileExists(PATH_ROOT . '/install')) {
+        if (file_exists(PATH_ROOT . '/install')) {
             $msgs['danger'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
@@ -316,7 +316,7 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if ($this->di['tools']->fileExists($path . DIRECTORY_SEPARATOR . $file)) {
+            if (file_exists($path . DIRECTORY_SEPARATOR . $file)) {
                 return true;
             }
         }

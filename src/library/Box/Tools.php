@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -32,39 +33,6 @@ class Box_Tools
         return $this->di;
     }
 
-    public function file_put_contents($content, $target, $mode = 'wt')
-    {
-        $fp = @fopen($target, $mode);
-
-        if ($fp) {
-            $bytes = fwrite($fp, $content);
-            fclose($fp);
-            return $bytes;
-        } else {
-            $error = error_get_last();
-
-            throw new RuntimeException(
-                sprintf(
-                    'Could not write to %s: %s',
-                    $target,
-                    substr(
-                        $error['message'],
-                        strpos($error['message'], ':') + 2
-                    )
-                )
-            );
-        }
-    }
-
-    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = 0, $useoffset = true)
-    {
-        if($useoffset){
-            return file_get_contents($filename, $use_include_path, $context, $offset);
-        } else {
-            return file_get_contents($filename, $use_include_path, $context);
-        }
-    }
-
     public function get_url($url, $timeout = 10)
     {
         // TODO: Replace with Guzzle
@@ -81,7 +49,7 @@ class Box_Tools
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
         $data = curl_exec($ch);
-        if($data === false) {
+        if ($data === false) {
             throw new Exception(curl_error($ch), curl_errno($ch));
         }
         curl_close($ch);
@@ -95,28 +63,28 @@ class Box_Tools
     public function url($link = null)
     {
         $link = trim($link, '/');
-        if(BB_SEF_URLS) {
+        if (BB_SEF_URLS) {
             return BB_URL . $link;
         }
 
-        return BB_URL .'index.php?_url=/' . $link;
+        return BB_URL . 'index.php?_url=/' . $link;
     }
-    
+
     public function hasService($type)
     {
-        $file = PATH_MODS . '/mod_'.$type.'/Service.php';
+        $file = PATH_MODS . '/mod_' . $type . '/Service.php';
         return file_exists($file);
     }
-    
+
     public function getService($type)
     {
-        $class = 'Box_Mod_'.ucfirst($type).'_Service';
-        $file = PATH_MODS . '/mod_'.$type.'/Service.php';
-        if(!file_exists($file)){
-            throw new \Box_Exception('Service class :class was not found in :path', array(':class'=>$class,':path'=>$file));
+        $class = 'Box_Mod_' . ucfirst($type) . '_Service';
+        $file = PATH_MODS . '/mod_' . $type . '/Service.php';
+        if (!file_exists($file)) {
+            throw new \Box_Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
         }
         require_once $file;
-    	return new $class();
+        return new $class();
     }
 
     public function checkPerms($path, $perm = '0777')
@@ -124,11 +92,11 @@ class Box_Tools
         clearstatcache();
         $configmod = substr(sprintf('%o', fileperms($path)), -4);
         $int = (int)$configmod;
-        if($configmod == $perm) {
+        if ($configmod == $perm) {
             return true;
         }
 
-        if((int)$configmod < (int)$perm) {
+        if ((int)$configmod < (int)$perm) {
             return true;
         }
         return false;
@@ -139,10 +107,10 @@ class Box_Tools
         /* Original source for this lovely codesnippet: https://stackoverflow.com/a/24563703
          * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
          */
-        if(file_exists($folder)){
+        if (file_exists($folder)) {
             $di = new RecursiveDirectoryIterator($folder, FilesystemIterator::SKIP_DOTS);
             $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
-            foreach ( $ri as $file ) {
+            foreach ($ri as $file) {
                 $file->isDir() ?  rmdir($file->getRealPath()) : unlink($file->getRealPath());
             }
         }
@@ -163,65 +131,66 @@ class Box_Tools
      * @param int $strength
      * @return string
      */
-    public function generatePassword($length=8, $strength=3) {
-    	$upper = 0;
-    	$lower = 0;
-    	$numeric = 0;
-    	$other = 0;
+    public function generatePassword($length = 8, $strength = 3)
+    {
+        $upper = 0;
+        $lower = 0;
+        $numeric = 0;
+        $other = 0;
 
-    	$upper_letters = 'QWERTYUIOPASDFGHJKLZXCVBNM';
-    	$lower_letters = 'qwertyuiopasdfghjklzxccvbnm';
-    	$numbers = '1234567890';
-    	$symbols = '!@#$%&?()+-_';
+        $upper_letters = 'QWERTYUIOPASDFGHJKLZXCVBNM';
+        $lower_letters = 'qwertyuiopasdfghjklzxccvbnm';
+        $numbers = '1234567890';
+        $symbols = '!@#$%&?()+-_';
 
-		switch ($strength) {
-			//lowercase + uppsercase + numeric
-			case 3:
-				$lower = random_int(1, $length - 2);
-				$upper = random_int(1, $length - $lower - 1);
-				$numeric = $length - $lower - $upper;
-			break;
-			//lowercase + uppercase + numeric + symbols
+        switch ($strength) {
+                //lowercase + uppsercase + numeric
+            case 3:
+                $lower = random_int(1, $length - 2);
+                $upper = random_int(1, $length - $lower - 1);
+                $numeric = $length - $lower - $upper;
+                break;
+                //lowercase + uppercase + numeric + symbols
             case 4:
-			default:
-				$lower = random_int(1, $length - 3);
-				$upper = random_int(1, $length - $lower - 2);
-				$numeric = random_int(1, $length - $lower - $upper - 1);
-				$other = $length - $lower - $upper - $numeric;
-			break;
-		}
+            default:
+                $lower = random_int(1, $length - 3);
+                $upper = random_int(1, $length - $lower - 2);
+                $numeric = random_int(1, $length - $lower - $upper - 1);
+                $other = $length - $lower - $upper - $numeric;
+                break;
+        }
 
         $passOrder = array();
 
-		for ($i = 0; $i < $upper; $i++) {
-        	$passOrder[] = $upper_letters[random_int(0,getrandmax()) % strlen($upper_letters)];
-    	}
-    	for ($i = 0; $i < $lower; $i++) {
-        	$passOrder[] = $lower_letters[random_int(0,getrandmax()) % strlen($lower_letters)];
-    	}
-    	for ($i = 0; $i < $numeric; $i++) {
-        	$passOrder[] = $numbers[random_int(0,getrandmax()) % strlen($numbers)];
-    	}
-    	for ($i = 0; $i < $other; $i++) {
-        	$passOrder[] = $symbols[random_int(0,getrandmax()) % strlen($symbols)];
-    	}
+        for ($i = 0; $i < $upper; $i++) {
+            $passOrder[] = $upper_letters[random_int(0, getrandmax()) % strlen($upper_letters)];
+        }
+        for ($i = 0; $i < $lower; $i++) {
+            $passOrder[] = $lower_letters[random_int(0, getrandmax()) % strlen($lower_letters)];
+        }
+        for ($i = 0; $i < $numeric; $i++) {
+            $passOrder[] = $numbers[random_int(0, getrandmax()) % strlen($numbers)];
+        }
+        for ($i = 0; $i < $other; $i++) {
+            $passOrder[] = $symbols[random_int(0, getrandmax()) % strlen($symbols)];
+        }
 
-    	shuffle($passOrder);
+        shuffle($passOrder);
         return implode('', $passOrder);
     }
 
     public function autoLinkText($text)
     {
-       $pattern  = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
-       $callback = function($matches){
-           $url       = array_shift($matches);
-           $url_parts = parse_url($url);
-           if(!isset($url_parts["scheme"])) {
-              $url = "http://".$url;
-           }
-           return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
+        $pattern  = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
+        $callback = function ($matches) {
+            $url       = array_shift($matches);
+            $url_parts = parse_url($url);
+            if (!isset($url_parts["scheme"])) {
+                $url = "http://" . $url;
+            }
+            return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
         };
-       return preg_replace_callback($pattern, $callback, $text);
+        return preg_replace_callback($pattern, $callback, $text);
     }
 
     public function getResponseCode($theURL)
@@ -241,35 +210,42 @@ class Box_Tools
 
     public function escape($string)
     {
-    	$string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
-    	return stripslashes($string);
+        $string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+        return stripslashes($string);
     }
 
-    public function to_camel_case($str, $capitalise_first_char = false) {
-        if($capitalise_first_char) {
+    public function to_camel_case($str, $capitalise_first_char = false)
+    {
+        if ($capitalise_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = function($c){ return strtoupper($c[1]); };
+        $func = function ($c) {
+            return strtoupper($c[1]);
+        };
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
 
-    public function from_camel_case($str) {
+    public function from_camel_case($str)
+    {
         $str[0] = strtolower($str[0]);
-        $func = function($c){ return "-" . strtolower($c[1]); };
+        $func = function ($c) {
+            return "-" . strtolower($c[1]);
+        };
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
     public function decodeJ($json_str)
     {
-        if(isset($json_str)){
+        if (isset($json_str)) {
             $config = json_decode($json_str, true);
             return is_array($config) ? $config : array();
         } else {
             return array();
         }
     }
-    
-    public function sortByOneKey(array $array, $key, $asc = true) {
+
+    public function sortByOneKey(array $array, $key, $asc = true)
+    {
         $result = array();
 
         $values = array();
@@ -279,8 +255,7 @@ class Box_Tools
 
         if ($asc) {
             asort($values);
-        }
-        else {
+        } else {
             arsort($values);
         }
 
@@ -290,28 +265,28 @@ class Box_Tools
 
         return $result;
     }
-    
+
     public function cache_function($buildCallback, array $args = array(), $timeoutSeconds = 3600)
     {
-            // Set up the filename for the cache file 
-            if(is_array($buildCallback)){
-                    $cacheKey = get_class($buildCallback[0]) .'::'. $buildCallback[1];
-            }else{
-                    $cacheKey = $buildCallback . ':' . implode(':', $args);
-            }
-            $cacheKey .= ':' . implode(':', $args);
-            $file_path = PATH_CACHE .DIRECTORY_SEPARATOR. md5($cacheKey);
+        // Set up the filename for the cache file 
+        if (is_array($buildCallback)) {
+            $cacheKey = get_class($buildCallback[0]) . '::' . $buildCallback[1];
+        } else {
+            $cacheKey = $buildCallback . ':' . implode(':', $args);
+        }
+        $cacheKey .= ':' . implode(':', $args);
+        $file_path = PATH_CACHE . DIRECTORY_SEPARATOR . md5($cacheKey);
 
-            // If the file hasn't yet been created or is out of date then call the require function and store it's result.
-            if(!file_exists($file_path) || filemtime($file_path) < (time() - $timeoutSeconds)){
-                    $result = call_user_func_array($buildCallback, $args);
-                    file_put_contents($file_path, serialize($result), LOCK_EX);
+        // If the file hasn't yet been created or is out of date then call the require function and store it's result.
+        if (!file_exists($file_path) || filemtime($file_path) < (time() - $timeoutSeconds)) {
+            $result = call_user_func_array($buildCallback, $args);
+            file_put_contents($file_path, serialize($result), LOCK_EX);
             // Else, grab the result from the cache.
-            }else{
-                    $result = unserialize(file_get_contents($file_path));
-            }
+        } else {
+            $result = unserialize(file_get_contents($file_path));
+        }
 
-            return $result;
+        return $result;
     }
 
     /**
@@ -326,50 +301,26 @@ class Box_Tools
      * @return String containing either just a URL or a complete image tag
      * @source https://gravatar.com/site/implement/images/php/
      */
-    public function get_gravatar( $email, $size = 80, $d = 'mp', $r = 'g', $img = false, $atts = array() ) {
+    public function get_gravatar($email, $size = 80, $d = 'mp', $r = 'g', $img = false, $atts = array())
+    {
         $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5( strtolower( trim( $email ) ) );
+        $url .= md5(strtolower(trim($email)));
         $url .= "?s=$size&d=$d&r=$r";
-        if ( $img ) {
+        if ($img) {
             $url = '<img src="' . $url . '"';
-            foreach ( $atts as $key => $val )
+            foreach ($atts as $key => $val)
                 $url .= ' ' . $key . '="' . $val . '"';
             $url .= ' />';
         }
         return $url;
     }
 
-    public function fileExists($file)
-    {
-        return file_exists($file);
-    }
-
-    public function rename($old, $new)
-    {
-        return rename($old, $new);
-    }
-
-    public function unlink($file)
-    {
-        return unlink($file);
-    }
-
-    public function mkdir($destination, $perm, $recursive = false)
-    {
-        return mkdir($destination, $perm, $recursive);
-    }
-
-    public function glob($pattern, $flag = 0)
-    {
-        return glob($pattern, $flag);
-    }
-
     public function getTable($type)
     {
-        $class = 'Model_'.ucfirst($type).'Table';
-        $file = PATH_LIBRARY . '/Model/'.$type.'Table.php';
-        if(!file_exists($file)){
-            throw new \Box_Exception('Service class :class was not found in :path', array(':class'=>$class,':path'=>$file));
+        $class = 'Model_' . ucfirst($type) . 'Table';
+        $file = PATH_LIBRARY . '/Model/' . $type . 'Table.php';
+        if (!file_exists($file)) {
+            throw new \Box_Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
         }
         require_once $file;
         return new $class();
@@ -377,7 +328,7 @@ class Box_Tools
 
     public function getPairsForTableByIds($table, $ids)
     {
-        if (empty ($ids)) {
+        if (empty($ids)) {
             return array();
         }
 
@@ -393,87 +344,63 @@ class Box_Tools
         return $result;
     }
 
-    public function updateConfig(){
-        $configPath = PATH_ROOT.'/config.php';
+    public function updateConfig()
+    {
+        $configPath = PATH_ROOT . '/config.php';
         $currentConfig = include $configPath;
 
-        if(!is_array($currentConfig)){
+        if (!is_array($currentConfig)) {
             throw new \Box_Exception('Unable to load existing configuration. updateConfig() is unable to progress.');
         }
-        if(!copy($configPath, $configPath . '.old')){
+        if (!copy($configPath, $configPath . '.old')) {
             throw new \Box_Exception('Unable to create backup of configuration file. Canceling config migration.');
         }
 
-        $newConfig = [
-            'security' => [
-                'mode' => (isset($currentConfig['security']['mode'])) ? $currentConfig['security']['mode'] : 'strict',
-                'force_https' => (isset($currentConfig['security']['force_https'])) ? $currentConfig['security']['force_https'] : true,
-                'cookie_lifespan' => (isset($currentConfig['security']['cookie_lifespan'])) ? $currentConfig['security']['cookie_lifespan'] : '7200',
-            ],
-            'debug' => (isset($currentConfig['debug'])) ? $currentConfig['debug'] : false,
-            'update_branch' => (isset($currentConfig['update_branch'])) ? $currentConfig['update_branch'] : 'release',
-            'log_stacktrace' => (isset($currentConfig['log_stacktrace'])) ? $currentConfig['log_stacktrace'] : true,
-            'stacktrace_length' => (isset($currentConfig['stacktrace_length'])) ? $currentConfig['stacktrace_length'] : 25,
-            'maintenance_mode' => [
-                'enabled' => (isset($currentConfig['maintenance_mode']['enabled'])) ? $currentConfig['maintenance_mode']['enabled'] : false,
-                'allowed_urls' => (isset($currentConfig['maintenance_mode']['allowed_urls'])) ? $currentConfig['maintenance_mode']['allowed_urls'] : [],
-                'allowed_ips' => (isset($currentConfig['maintenance_mode']['allowed_ips'])) ? $currentConfig['maintenance_mode']['allowed_ips'] : [],
-            ],
-            'salt' => $currentConfig['salt'],
-            'url' => $currentConfig['url'],
-            'admin_area_prefix' => $currentConfig['admin_area_prefix'],
-            'disable_auto_cron' => (isset($currentConfig['disable_auto_cron'])) ? $currentConfig['disable_auto_cron'] : false,
-            'sef_urls' => $currentConfig['sef_urls'],
-            'timezone' => $currentConfig['timezone'],
-            'locale' =>  $currentConfig['locale'],
-            'locale_date_format' => ($currentConfig['locale_date_format'] === '%A, %d %B %G') ? 'l, d F o' : $currentConfig['locale_date_format'],
-            'locale_time_format' => ($currentConfig['locale_time_format'] === ' %T') ? ' G:i:s' : $currentConfig['locale_time_format'],
-            'path_data' => $currentConfig['path_data'],
-            'path_logs' => $currentConfig['path_logs'],
-            'log_to_db' => $currentConfig['log_to_db'],
-            'db' => [
-                'type' => $currentConfig['db']['type'],
-                'host' => $currentConfig['db']['host'],
-                'port' => (isset($currentConfig['db']['port'])) ? $currentConfig['db']['port'] : '3306',
-                'name' => $currentConfig['db']['name'],
-                'user' => $currentConfig['db']['user'],
-                'password' => $currentConfig['db']['password'],
-            ],
-            'twig' => [
-                'debug' => $currentConfig['twig']['debug'],
-                'auto_reload' => $currentConfig['twig']['auto_reload'],
-                'cache' => $currentConfig['twig']['cache'],
-            ],
-            'api' => [
-                'require_referrer_header' => $currentConfig['api']['require_referrer_header'],
-                'allowed_ips' => $currentConfig['api']['allowed_ips'],
-                'rate_span' => $currentConfig['api']['rate_span'],
-                'rate_limit' => $currentConfig['api']['rate_limit'],
-                'throttle_delay' => (isset($currentConfig['api']['rate_limit'])) ? $currentConfig['api']['rate_limit'] : 2,
-                'rate_span_login' => (isset($currentConfig['api']['rate_span_login'])) ? $currentConfig['api']['rate_span_login'] : 60,
-                'rate_limit_login' => (isset($currentConfig['api']['rate_limit_login'])) ? $currentConfig['api']['rate_limit_login'] : 20,
-                'CSRFPrevention' => (isset($currentConfig['api']['CSRFPrevention'])) ? $currentConfig['api']['CSRFPrevention'] : true,
-            ],
-            'guzzle' => [
-                'user_agent' => (isset($currentConfig['guzzle']['user_agent'])) ? $currentConfig['guzzle']['user_agent'] : 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0',
-                'timeout' => (isset($currentConfig['guzzle']['timeout'])) ? $currentConfig['guzzle']['timeout'] : 0,
-                'upgrade_insecure_requests' => (isset($currentConfig['guzzle']['upgrade_insecure_requests'])) ? $currentConfig['guzzle']['upgrade_insecure_requests'] : 0,
-            ],
+        $newConfig = $currentConfig;
+        $newConfig['security'] = [
+            'mode' => $currentConfig['security']['mode'] ?? 'strict',
+            'force_https' => $currentConfig['security']['force_https'] ?? true,
+            'cookie_lifespan' => $currentConfig['security']['cookie_lifespan'] ?? '7200',
         ];
+        $newConfig['update_branch'] = $currentConfig['update_branch'] ?? 'release';
+        $newConfig['log_stacktrace'] = $currentConfig['log_stacktrace'] ?? true;
+        $newConfig['stacktrace_length'] = $currentConfig['stacktrace_length'] ?? 25;
+        $newConfig['maintenance_mode'] = [
+            'enabled' => $currentConfig['maintenance_mode']['enabled'] ?? false,
+            'allowed_urls' => $currentConfig['maintenance_mode']['allowed_urls'] ?? [],
+            'allowed_ips' => $currentConfig['maintenance_mode']['allowed_ips'] ?? [],
+        ];
+        $newConfig['disable_auto_cron'] = $currentConfig['disable_auto_cron'] ?? false;
+        $newConfig['locale_date_format'] = ($currentConfig['locale_date_format'] === '%A, %d %B %G') ? 'l, d F o' : $currentConfig['locale_date_format'];
+        $newConfig['locale_time_format'] = ($currentConfig['locale_time_format'] === ' %T') ? ' G:i:s' : $currentConfig['locale_time_format'];
+        $newConfig['db']['port'] = $currentConfig['db']['port'] ?? '3306';
+        $newConfig['api'] = [
+            'throttle_delay' => $currentConfig['api']['rate_limit'] ?? 2,
+            'rate_span_login' => $currentConfig['api']['rate_span_login'] ?? 60,
+            'rate_limit_login' => $currentConfig['api']['rate_limit_login'] ?? 20,
+            'CSRFPrevention' => $currentConfig['api']['CSRFPrevention'] ?? true,
+        ];
+        $newConfig['guzzle'] = [
+            'user_agent' => $currentConfig['guzzle']['user_agent'] ?? 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0',
+            'timeout' => $currentConfig['guzzle']['timeout'] ?? 0,
+            'upgrade_insecure_requests' => $currentConfig['guzzle']['upgrade_insecure_requests'] ?? 0,
+        ];
+
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($newConfig, true) . ';';
-        if(file_put_contents($configPath, $output)){
+        if (file_put_contents($configPath, $output)) {
             return true;
         } else {
             throw new \Box_Exception('Error when writing updated configuration file.');
         }
     }
 
-    public function validateAndSanitizeEmail($email, $throw = true){
+    public function validateAndSanitizeEmail($email, $throw = true)
+    {
         $email = htmlspecialchars($email);
 
-        if (!filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)){
-            if($throw){
+        if (!filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) {
+            if ($throw) {
                 throw new \Box_Exception('Email address is invalid');
             } else {
                 return false;

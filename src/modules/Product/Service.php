@@ -293,15 +293,15 @@ class Service implements InjectionAwareInterface
         $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
         $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
         //remove empty value in data['upgrades];
-        if(is_array($data['upgrades'])){
+        if (is_array($data['upgrades'])) {
             $upgrades = array_values(array_filter($data['upgrades']));
-            if (empty($upgrades)){
+            if (empty($upgrades)) {
                 $model->upgrades = null;
-            } else{
+            } else {
                 $model->upgrades = json_encode($upgrades);
             }
         }
-        if(is_array($data['addons'])){
+        if (is_array($data['addons'])) {
             $addons =  array_values(array_filter($data['addons']));
             if (is_null($addons)) {
                 $model->addons = null;
@@ -356,7 +356,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (isset($data['new_config_name']) &&
+        if (
+            isset($data['new_config_name']) &&
             isset($data['new_config_value']) &&
             !empty($data['new_config_name']) &&
             !empty($data['new_config_value'])
@@ -619,34 +620,34 @@ class Service implements InjectionAwareInterface
             $model->end_at = date('Y-m-d H:i:s', strtotime($end_at));
         }
 
-        if(!is_array($this->di['array_get']($data, 'products'))){
+        if (!is_array($this->di['array_get']($data, 'products'))) {
             $model->products = null;
-        }else{
+        } else {
             $products =  array_values(array_filter($this->di['array_get']($data, 'products')));
             if (empty($products)) {
                 $model->products = null;
-            }else{
+            } else {
                 $model->products = json_encode($products);
             }
         }
-        if(!is_array($this->di['array_get']($data, 'client_groups'))){
+        if (!is_array($this->di['array_get']($data, 'client_groups'))) {
             $model->client_groups = null;
-        }else{
+        } else {
             $client_groups = array_values(array_filter($this->di['array_get']($data, 'client_groups')));
             if (empty($client_groups)) {
                 $model->client_groups = null;
-            }else{
+            } else {
                 $model->client_groups = json_encode($client_groups);
             }
         }
 
-        if(!is_array($this->di['array_get']($data, 'periods'))){
+        if (!is_array($this->di['array_get']($data, 'periods'))) {
             $model->periods = null;
-        }else{
+        } else {
             $periods = array_values(array_filter($this->di['array_get']($data, 'periods')));
             if (empty($periods)) {
                 $model->periods = null;
-            }else{
+            } else {
                 $model->periods = json_encode($periods);
             }
         }
@@ -804,7 +805,7 @@ class Service implements InjectionAwareInterface
 
     public function getUpgradablePairs(\Model_Product $model)
     {
-        if(is_null($model->upgrades)){
+        if (is_null($model->upgrades)) {
             $model->upgrades = '';
         }
         $ids = json_decode($model->upgrades, 1);
@@ -937,9 +938,8 @@ class Service implements InjectionAwareInterface
     {
         if (isset($config['filename'])) {
             $f = $this->getSavePath($config['filename']);
-            if ($this->di['tools']->fileExists($f)) {
-                $this->di['tools']->unlink($f);
-
+            if (file_exists($f)) {
+                unlink($f);
                 return true;
             }
         }

@@ -184,7 +184,7 @@ class Service implements InjectionAwareInterface
     {
         $data['f'] = 'json';
         $url = 'https://www.stopforumspam.com/api?' . http_build_query($data);
-        $file_contents = $this->di['tools']->file_get_contents($url);
+        $file_contents = file_get_contents($url);
 
         $json = json_decode($file_contents);
         if (!is_object($json) || isset($json->success) && !$json->success) {

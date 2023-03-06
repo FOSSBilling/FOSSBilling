@@ -617,12 +617,6 @@ class ServiceTest extends \BBTestCase {
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(true));
-        $toolsMock->expects($this->atLeastOnce())
             ->method('emptyFolder');
 
         $di = new \Box_Di();
@@ -671,14 +665,6 @@ class ServiceTest extends \BBTestCase {
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('mkdir');
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
             ->method('emptyFolder');
 
         $di = new \Box_Di();
@@ -706,12 +692,6 @@ class ServiceTest extends \BBTestCase {
             ->method('request');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(false));
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
@@ -738,12 +718,6 @@ class ServiceTest extends \BBTestCase {
             ->method('request');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(false));
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
@@ -770,9 +744,6 @@ class ServiceTest extends \BBTestCase {
             ->method('request');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;

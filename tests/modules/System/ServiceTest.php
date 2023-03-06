@@ -157,9 +157,6 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($latestVersion));
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
 
         $di = new \Box_Di();
         $di['updater'] = $updaterMock;
@@ -190,9 +187,6 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($getThemeResults));
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->onConsecutiveCalls(false, true));
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;

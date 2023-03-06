@@ -288,9 +288,6 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($filePath));
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -324,9 +321,6 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($filePath));
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists');
-
 
         $di                = new \Box_Di();
         $di['tools']       = $toolsMock;

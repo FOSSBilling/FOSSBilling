@@ -462,7 +462,7 @@ class Service implements InjectionAwareInterface
         switch ($type) {
             case \Box_Extension::TYPE_MOD:
                 $destination = PATH_MODS . '/' . $id;
-                if ($this->di['tools']->fileExists($destination)) {
+                if (file_exists($destination)) {
                     throw new \Box_Exception('Module seems to be already installed.', null, 436);
                 }
                 if (!$this->di['tools']->rename($extracted, $destination)) {
@@ -472,7 +472,7 @@ class Service implements InjectionAwareInterface
 
             case \Box_Extension::TYPE_THEME:
                 $destination = PATH_THEMES . '/' . $id;
-                if (!$this->di['tools']->fileExists($destination)) {
+                if (!file_exists($destination)) {
                     if (!$this->di['tools']->rename($extracted, $destination)) {
                         throw new \Box_Exception('Theme can not be moved. Make sure your server allows you to write to the themes folder.', null, 439);
                     }
@@ -482,8 +482,8 @@ class Service implements InjectionAwareInterface
             case \Box_Extension::TYPE_TRANSLATION:
                 $destination = PATH_LANGS . '/' . $id . '/LC_MESSAGES';
                 $this->di['tools']->emptyFolder($destination);
-                if (!$this->di['tools']->fileExists($destination)) {
-                    $this->di['tools']->mkdir($destination, 0777, true);
+                if (!file_exists($destination)) {
+                    mkdir($destination, 0777, true);
                 }
                 if (!$this->di['tools']->rename($extracted, $destination)) {
                     throw new \Box_Exception('Locale files can not be moved. Make sure your server allows you to write to the locale folder', null, 440);
@@ -492,7 +492,7 @@ class Service implements InjectionAwareInterface
 
             case \Box_Extension::TYPE_PG:
             $destination = PATH_LIBRARY . '/Payment/Adapter/' . $id;
-            if ($this->di['tools']->fileExists($destination)) {
+            if (file_exists($destination)) {
                 throw new \Box_Exception('Module seems to be already installed.', null, 436);
             }
             if (!$this->di['tools']->rename($extracted.'/'.$id, $destination)) {

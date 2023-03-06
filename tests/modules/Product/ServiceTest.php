@@ -1102,11 +1102,6 @@ class ServiceTest extends \BBTestCase
         $config = array('filename' => 'test.cfg');
 
         $toolMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
-        $toolMock->expects($this->atLeastOnce())
-            ->method('unlink');
 
         $di           = new \Box_Di();
         $di['tools']  = $toolMock;
@@ -1123,9 +1118,6 @@ class ServiceTest extends \BBTestCase
         $config = array('filename' => 'test.cfg');
 
         $toolMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
 
         $di           = new \Box_Di();
         $di['tools']  = $toolMock;

@@ -291,8 +291,6 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue('location/Of/Assets/file'));
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_put_contents');
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
@@ -343,8 +341,6 @@ class ServiceTest extends \BBTestCase {
         $toolsMock->expects($this->atLeastOnce())
             ->method('glob')
             ->will($this->onConsecutiveCalls(array('css.css'), array('js.js')));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_put_contents');
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
