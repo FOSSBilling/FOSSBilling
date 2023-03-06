@@ -9,38 +9,16 @@
 <div class="manage highlight">
 
 <div class="rowElem">
-
     <label for="name">{{ 'Name'|trans }}</label>
-
-    <div class="formRight moreFields">
-        <ul>
-            <li style="width: 300px">
-                <input type="text" name="name" value="{{field.name}}" id="name"/>
-            </li>
-            <li class="sep">
-                {{ 'Please keep in mind that field name can not start with number. Special characters will be replaced with underscores ( _ )'|trans }}
-            </li>
-        </ul>
-    </div>
-
+    <input class="form-control" type="text" name="name" value="{{field.name}}" id="name"/>
+    <p>{{ 'Please keep in mind that field name can not start with number. Special characters will be replaced with underscores ( _ )'|trans }}</p>
 </div>
+
 <div class="rowElem">
-<label for="label">{{ 'Label'|trans }}</label>
-
-    <div class="formRight moreFields">
-
-        <ul>
-            <li style="width: 300px">
-                <input type="text" name="label" value="{{ field.label }}" id="label"/>
-            </li>
-
-        </ul>
-
-    </div>
+    <label for="label">{{ 'Label'|trans }}</label>
+    <input class="form-control" type="text" name="label" value="{{ field.label }}" id="label"/>
 </div>
-    <div class="fix"></div>
-
-
+<div class="fix"></div>
 
 {% if field.type == "checkbox" or field.type=="radio" or field.type=="select" %}
 <div class="rowElem">
@@ -48,7 +26,7 @@
 
     <div class="formRight moreFields">
         <div class="rowElem noborder">
-            <ul>
+            <ul class="list-unstyled">
                 <li style="width: 200px">
                     <label>{{ 'Label'|trans }}</label>
                 </li>
@@ -60,7 +38,7 @@
         </div>
         {% for k,v in field.options %}
         <div class="rowElem noborder">
-            <ul>
+            <ul class="list-unstyled">
                 <li style="width: 200px">
                     <input type="text" name="labels[]" value="{{ k }}"/>
                 </li>
@@ -72,7 +50,7 @@
         </div>
         {% endfor %}
         <div class="rowElem noborder copyfields">
-            <ul>
+            <ul class="list-unstyled">
                 <li style="width: 200px">
                     <input type="text" name="labels[]"/>
                 </li>
@@ -83,7 +61,7 @@
             </ul>
         </div>
         <div class="rowElem noborder">
-            <ul>
+            <ul class="list-unstyled">
                 <li style="width: 200px">
                     <label>
                         <a href="#" class="btn btn-primary new-field" rel="{{ i }}">{{ '+ Add new option'|trans }}</a>
@@ -120,7 +98,7 @@
 <div class="rowElem">
     <label>{{ 'Additional settings'|trans }}</label>
     <div class="formRight moreFields">
-        <ul>
+        <ul class="list-unstyled">
             <label for="prefix_text">{{ 'Prepend text'|trans }}</label>
             <li style="width: 100px">
                 <input type="text" name="prefix" value="{{ field.prefix }}" id="prefix_text"/>
@@ -141,19 +119,19 @@
 <div class="rowElem">
     <label>{{ 'Textarea size'|trans }}</label>
     <div class="formRight moreFields">
-        <ul>
+        <ul class="list-unstyled">
             <label for="textarea-height">{{ 'Width'|trans }}</label>
             <li style="width: 100px">
                 <input type="text" name="textarea_size[]" value="{{field.options.width}}" id="textarea-width"/>
                 <input type="hidden" name="textarea_option[]" value="width"/>
             </li>
-            <li class="sep">{{ 'px'|trans }}</li>
+            <li>{{ 'px'|trans }}</li>
             <label for="textarea-width">{{ 'Height'|trans }}</label>
             <li style="width: 100px">
                 <input type="text" name="textarea_size[]" value="{{field.options.height}}" id="textarea-height"/>
                 <input type="hidden" name="textarea_option[]" value="height"/>
             </li>
-            <li class="sep">{{ 'px'|trans }}</li>
+            <li>{{ 'px'|trans }}</li>
         </ul>
     </div>
     <div class="fix"></div>
@@ -163,23 +141,23 @@
 <div class="rowElem">
     <label for="default_value">{{ 'Default value/option'|trans }}</label>
     <div class="formRight moreFields">
-        <ul>
+        <ul class="list-unstyled">
             {% if field.type == "text"%}
                     <li class="sep" id="prepended_text">{{ field.prefix }}</li>
-                    <li style="width: 50%"><input type="text" name="default_value" value="{{ field.default_value }}" id="default_value"/></li>
+                    <li style="width: 50%"><input class="form-control" type="text" name="default_value" value="{{ field.default_value }}" id="default_value"/></li>
                     <li class="sep" id="appended_text">{{ field.suffix }}</li>
             {% elseif field.type == "checkbox" %}
             {% for k,v in field.options %}
-                <input type="checkbox" name="default_value[]" value="{{v}}" id="{{k}}_{{v}}" {% if v in field.default_value %}checked="checked"{% endif %}>
+                <input class="form-control" type="checkbox" name="default_value[]" value="{{v}}" id="{{k}}_{{v}}" {% if v in field.default_value %}checked="checked"{% endif %}>
                 <label for="{{ k }}_{{ v }}">{{k}}</label>
             {% endfor %}
             {% elseif field.type == "radio" %}
                 {% for k,v in field.options %}
-                <input type="radio" name="default_value" value="{{v}}" id="{{k}}_{{v}}" {% if v == field.default_value %}checked="checked"{% endif %}>
+                <input class="form-control" type="radio" name="default_value" value="{{v}}" id="{{k}}_{{v}}" {% if v == field.default_value %}checked="checked"{% endif %}>
                 <label for="{{k}}_{{v}}">{{k}}</label>
                 {% endfor %}
             {% elseif field.type == "select" %}
-                <select name="default_value">
+                <select class="form-control" name="default_value">
                     <option value="">---</option>
                     {% for k,v in field.options %}
                     <option value="{{v}}"
@@ -187,9 +165,7 @@
                     {% endfor %}
                 </select>
             {% elseif field.type == "textarea" %}
-            <li style="width: auto; max-width:500px; overflow: scroll;">
-                <textarea name="default_value" style="width: {{ field.options.width }}px; height: {{ field.options.height }}px;">{{ field.default_value}}</textarea>
-            </li>
+                <textarea class="form-control" name="default_value" style="width: {{ field.options.width }}px; height: {{ field.options.height }}px;">{{ field.default_value}}</textarea>
             {% endif %}
         </ul>
     </div>
@@ -200,11 +176,7 @@
     <label for="description">{{ 'Description'|trans }}</label>
 
     <div class="formRight moreFields">
-        <ul>
-            <li style="width: 300px">
-                <input type="text" name="description" value="{{ field.description}}" id="description"/>
-            </li>
-        </ul>
+        <input class="form-control" type="text" name="description" value="{{ field.description}}" id="description"/>
     </div>
     <div class="fix"></div>
 </div>
