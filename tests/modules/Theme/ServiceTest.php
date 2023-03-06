@@ -305,9 +305,6 @@ class ServiceTest extends \BBTestCase {
     public function testregenerateThemeCssAndJsFiles_EmptyFiles()
     {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('glob')
-            ->will($this->returnValue(array()));
 
         $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -338,9 +335,6 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($presets));
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('glob')
-            ->will($this->onConsecutiveCalls(array('css.css'), array('js.js')));
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemServiceMock->expects($this->atLeastOnce())

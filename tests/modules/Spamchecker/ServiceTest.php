@@ -195,9 +195,6 @@ class ServiceTest extends \BBTestCase {
     public function testisInStopForumSpamDatabase_InvalidResponse()
     {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_get_contents')
-            ->willReturn('{}');
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
@@ -229,10 +226,6 @@ class ServiceTest extends \BBTestCase {
     public function testisInStopForumSpamDatabase_UserNameBlackListed($json, $exceptionMessage)
     {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_get_contents')
-            ->willReturn($json);
-
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
 
@@ -247,9 +240,6 @@ class ServiceTest extends \BBTestCase {
     {
         $json = '{"success" : "true", "username" : {}}';
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_get_contents')
-            ->willReturn($json);
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
