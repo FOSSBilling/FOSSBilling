@@ -27,7 +27,7 @@ If you do want to be more involved in the community then the project [GitHub](ht
 
 ## Team Members (Maintainers)
 
-Contributors who show a history of valid and high-quality contributions for over a period of time may be granted the status of Maintainer. Existing Maintainers or Steering Committee memebers can nominate contributors who they feel are suitable to be added to the team.
+Contributors who show a history of valid and high-quality contributions for over a period of time may be granted the status of Maintainer. Existing Maintainers or Steering Committee members may nominate contributors who they feel are suitable to be added to the team.
 
 Although there is no concrete expectation of participation, contributions are what enable the FOSSBilling project to move forward and progress. Participation can take many forms, for example:
 
