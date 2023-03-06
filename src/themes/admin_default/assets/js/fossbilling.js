@@ -375,14 +375,6 @@ $(function () {
   FOSSBilling.backToTop = backToTop;
   FOSSBilling.backToTop();
 
-  //===== Datepickers =====//
-  $(".datepicker").datepicker({
-    defaultDate: +7,
-    autoSize: true,
-    //appendText: '(yyyy-mm-dd)',
-    dateFormat: 'yy-mm-dd'
-  });
-
   //===== Form elements styling =====//
   // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
   $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
