@@ -23,6 +23,9 @@ jobs:
         run: ncu -u
         working-directory: ./src/modules/Wysiwyg
 
+      - name: Update lock file
+        run: npm i --package-lock-only
+
       - name: Create a Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
