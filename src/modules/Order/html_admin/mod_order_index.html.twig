@@ -56,12 +56,28 @@
                 </div>
             </div>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Creation date'|trans }}</label>
+                <label class="form-label col-3 col-form-label" for="creation_date">{{ 'Creation date'|trans }}</label>
                 <div class="col">
                     <div class="input-group">
-                        <input class="form-control" type="date" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('m/d/Y') }}{%endif%}" placeholder="{{ now|date('m/d/Y') }}" class="datepicker">
-                        <span class="input-group-text">-</span>
-                        <input class="form-control" type="date" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('m/d/Y') }}{%endif%}" placeholder="{{ now|date('m/d/Y') }}" class="datepicker">
+                        <div class="input-icon w-100">
+                            <input class="form-control datepicker"
+                                   id="creation_date"
+                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                   data-name-from="date_from"
+                                   data-name-to="date_to"
+                            >
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                    <path d="M16 3l0 4"></path>
+                                    <path d="M8 3l0 4"></path>
+                                    <path d="M4 11l16 0"></path>
+                                    <path d="M11 15l1 0"></path>
+                                    <path d="M12 15l0 3"></path>
+                                </svg>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

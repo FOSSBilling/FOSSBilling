@@ -10,6 +10,7 @@ import "@melloware/coloris/dist/coloris.css";
 import { coloris, init } from '@melloware/coloris';
 import '@tabler/core/src/js/tabler';
 import './js/tomselect'
+import './js/datepicker'
 import ApexCharts from 'apexcharts';
 import './js/fossbilling';
 

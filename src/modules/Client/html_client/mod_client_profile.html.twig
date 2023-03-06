@@ -65,9 +65,30 @@
                        </div>
 
                        <div class="control-group">
-                           <label class="control-label" for="input">{{ 'Birth date'|trans }}</label>
+                           <label class="control-label" for="birthday">{{ 'Birth date'|trans }}</label>
                            <div class="controls">
-                                <input type="date" name="birthday" value="{{ profile.birthday }}" >
+                               <div class="input-group">
+                                   <div class="input-icon w-100">
+                                       <input class="form-control datepicker"
+                                              id="birthday"
+                                              value="{{ profile.birthday }}"
+                                              name="birthday"
+                                              data-pick-year="1"
+                                              required
+                                       >
+                                       <span class="input-icon-addon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                <path d="M16 3l0 4"></path>
+                                                <path d="M8 3l0 4"></path>
+                                                <path d="M4 11l16 0"></path>
+                                                <path d="M11 15l1 0"></path>
+                                                <path d="M12 15l0 3"></path>
+                                            </svg>
+                                        </span>
+                                   </div>
+                               </div>
                                <p class="help-block"></p>
                            </div>
                        </div>
