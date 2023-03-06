@@ -1,5 +1,5 @@
 # Project Governance
-*Last updated December 12, 2022*
+*Last updated March 06, 2023*
 
 ## Overview
 
@@ -25,9 +25,9 @@ Third-party modules and integrations for FOSSBilling are welcomed. We would appr
 
 If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/FOSSBilling).
 
-## Maintainers
+## Team Members (Maintainers)
 
-Contributors who show a history of valid and high-quality contributions for more than three months may be granted the status of Maintainer.
+Contributors who show a history of valid and high-quality contributions for over a period of time may be granted the status of Maintainer. Existing Maintainers or Steering Committee memebers can nominate contributors who they feel are suitable to be added to the team.
 
 Although there is no concrete expectation of participation, contributions are what enable the FOSSBilling project to move forward and progress. Participation can take many forms, for example:
 
@@ -36,7 +36,9 @@ Although there is no concrete expectation of participation, contributions are wh
 * Submit documentation improvements to help others use FOSSBilling.
 * Create quality content for FOSSBilling communications: website improvements, newsletter articles, etc.
 
-There are no specific skill requirements and no formal selection process. A contributor's elevation to the role of maintainer will be done after discussion by, and at the discretion of, the steering committee.
+There are no specific skill requirements and no formal selection process. A contributor's elevation to the role of maintainer will be done after nomination by a team member, and then discussion by, and at the discretion of, the steering committee.
+
+Acceptance to the maintainer role is initally provisional, and well be made permanent after a period of one month. 
 
 Maintainer status can be removed if somebody demonstrates disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. This would be decided by a majority consensus of the steering committee.
 
