@@ -1,5 +1,3 @@
-{# {% if guest.extension_is_on({ "mod": "formbuilder" }) %} #}
-
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
 {% import "macro_functions.html.twig" as mf %}
@@ -10,120 +8,132 @@
 
 {% block head %}
 <style type="text/css">
-#background_overlay {
-    display: none;
-    position: fixed;
-    top: 0%;
-    left: 0%;
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    z-index:1001;
-    -moz-opacity: 0.7;
-    opacity:.70;
-    filter: alpha(opacity=70);
-}
-.update-field {
-    display: none;
-    position: absolute;
-    top: 20%;
-    left: 20%;
-    margin-left: 0px;
-    margin-top: 0px;
-    padding: 10px;
-    background: url(images/alertOpacityOverlay.png) repeat;
-    border-radius: 10px;
-    --webkit-border-radius: 10px;
-    z-index:2000;
-    overflow:visible;
-}
-#background-loader {
-    display: none;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    margin-left: -110px;
-    margin-top: -10px;
-}
-.manage {
-    position: relative;
-    background: #ffffff;
-}
+    #background_overlay {
+        display: none;
+        position: fixed;
+        top: 0%;
+        left: 0%;
+        width: 100%;
+        height: 100%;
+        background-color: #000;
+        z-index: 1001;
+        -moz-opacity: 0.7;
+        opacity: .70;
+        filter: alpha(opacity=70);
+    }
+
+    .update-field {
+        display: none;
+        position: absolute;
+        top: 20%;
+        left: 20%;
+        margin-left: 0px;
+        margin-top: 0px;
+        padding: 10px;
+        background: url(images/alertOpacityOverlay.png) repeat;
+        border-radius: 10px;
+        --webkit-border-radius: 10px;
+        z-index: 2000;
+        overflow: visible;
+    }
+
+    #background-loader {
+        display: none;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        margin-left: -110px;
+        margin-top: -10px;
+    }
+
+    .manage {
+        position: relative;
+        background: #ffffff;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#tab-index" id="open-index-tab">{{ 'Custom forms'|trans }}</a></li>
-    </ul>
-
-    <div class="tabs_container">
-        <div class="fix"></div>
-
-        <div class="tab_content nopadding" id="tab-index">
-            <table class="tableStatic wide">
-                <thead>
-                    <tr>
-                        <th>{{ 'Form'|trans }}</th>
-                        <th>{{ 'Orders using this form'|trans }}</th>
-                        <th>{{ 'Products using this form'|trans }}</th>
-                        <td width="23%">{{ 'Actions'|trans }}</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for form in admin.formbuilder_get_forms %}
-                    <tr>
-                        <td>{{ form.name }}</td>
-                        <td>{{ form.order_count }}</td>
-                        <td>{{ form.product_count }}</td>
-                        <td class="actions">
-                            <a class="btn btn-primary" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}">
-                                <svg class="icon">
-                                    <use xlink:href="#edit"/>
-                                </svg>
-                            </a>
-                            <a class="btn btn-primary copy_form" href="#" data-api-reload="1"  title="Copy" data-form-id="{{ form.id }}">
-                                <svg class="icon">
-                                    <use xlink:href="#copy"/>
-                                </svg>
-                            </a>
-                            <a class="btn btn-primary api-link" href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}" data-api-confirm="Are you sure?" >
-                                <svg class="icon">
-                                    <use xlink:href="#delete"/>
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4">
-                            <input type="button" value="{{ 'Create new form'|trans }}" class="btn btn-primary" id="new-form" style="width: 150px; float: right;"/>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+    <!--<ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Custom forms'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-import" data-bs-toggle="tab" role="tab">{{ 'Import form'|trans }}</a>
+        </li>
+    </ul>-->
+    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Form'|trans }}</th>
+                            <th>{{ 'Orders using this form'|trans }}</th>
+                            <th>{{ 'Products using this form'|trans }}</th>
+                            <td width="23%">{{ 'Actions'|trans }}</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in admin.formbuilder_get_forms %}
+                        <tr>
+                            <td>{{ form.name }}</td>
+                            <td>{{ form.order_count }}</td>
+                            <td>{{ form.product_count }}</td>
+                            <td class="actions">
+                                <a class="btn btn-primary"
+                                    href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                                <a class="btn btn-secondary copy_form" href="#" data-api-reload="1" title="Copy"
+                                    data-form-id="{{ form.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#copy" />
+                                    </svg>
+                                </a>
+                                <a class="btn btn-danger api-link"
+                                    href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}"
+                                    data-api-confirm="Are you sure?" data-api-reload="1">
+                                    <svg class="icon">
+                                        <use xlink:href="#delete" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4">
+                                <input type="button" value="{{ 'Create new form'|trans }}" class="btn btn-primary"
+                                    id="new-form" style="width: 150px; float: right;" />
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
 
-        <div class="tab_content" id="tab-import">
-            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" class="mainForm api-form save" data-api-reload="1">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="tab-pane fade" id="tab-import" role="tabpanel">
+            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" class="mainForm api-form save"
+                data-api-reload="1">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
                 <fieldset>
                     <div class="formBottom">
-                        <textarea name="form" cols="5" rows="5" placeholder="Paste new form configuration text."></textarea>
+                        <textarea name="form" cols="5" rows="5"
+                            placeholder="Paste new form configuration text."></textarea>
                     </div>
                     <div class="fix"></div>
-                    <input type="submit" value="{{ 'Import'|trans }}" class="greyishBtn submitForm" style="margin: 0"/>
+                    <input type="submit" value="{{ 'Import'|trans }}" class="greyishBtn submitForm" style="margin: 0" />
                 </fieldset>
             </form>
         </div>
     </div>
-</div>
 
 {% if request.id %}
-    {% set form = admin.formbuilder_get_form({ "id": request.id }) %}
+{% set form = admin.formbuilder_get_form({ "id": request.id }) %}
 
 <div class="widget" id="form-options-{{ form.id }}">
     <div class="head">
@@ -131,22 +141,25 @@
     </div>
 
     <div class="mainForm">
-        <form method="POST" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" class="api-form" data-api-msg="{{ 'Form options were updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <form method="POST" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" class="api-form"
+            data-api-msg="{{ 'Form options were updated'|trans }}">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
             <div class="rowElem">
                 <label>
                     <strong>{{ 'New form name and options'|trans }}</strong>
                 </label>
                 <div class="formRight">
-                    <input type="text" name="form_name"  id="form_name" value="{{form.name}}" style="width:300px;"/>
+                    <input type="text" name="form_name" id="form_name" value="{{form.name}}" style="width:300px;" />
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
                 <div class="formRight">
                     <select name="type" id="form_type" style="width:300px;">
-                        <option value="default" {% if form.style.type == 'default' %} selected {% endif %}>{{ 'Labels on top'|trans }}</option>
-                        <option value="horizontal" {% if form.style.type == 'horizontal' %} selected {% endif %}>{{ 'Labels on the left'|trans }}</option>
+                        <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on
+                            top'|trans }}</option>
+                        <option value="horizontal" {% if form.style.type=='horizontal' %} selected {% endif %}>{{
+                            'Labels on the left'|trans }}</option>
                     </select>
                 </div>
                 <div class="fix"></div>
@@ -154,8 +167,10 @@
             <div class="rowElem">
                 <div class="formRight">
                     <select name="show_title" id="show_title" style="width:300px;">
-                        <option value="1" {% if form.style.show_title == '1' %} selected {% endif %}>{{ 'Show form title'|trans }}</option>
-                        <option value="0" {% if form.style.show_title == '0' %} selected {% endif %}>{{ 'Do not show form title'|trans }}</option>
+                        <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show form
+                            title'|trans }}</option>
+                        <option value="0" {% if form.style.show_title=='0' %} selected {% endif %}>{{ 'Do not show form
+                            title'|trans }}</option>
                     </select>
                 </div>
                 <div class="fix"></div>
@@ -175,56 +190,61 @@
 </div>
 
 <div class="widget" id="form-{{ form.id }}">
-<div class="head">
-    <h5 class="iCog">{{ form.name }}</h5>
-</div>
-
-<div class="mainForm">
-
-<div class="body" id="fields">
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1" >
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        <span>{{ 'Text'|trans }}</span>
-    </a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        <span>{{ 'Dropdown'|trans }}</span>
-    </a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        <span>{{ 'Radio'|trans }}</span>
-    </a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        <span>{{ 'Checkbox'|trans }}</span>
-    </a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        <span>{{ 'Textarea'|trans }}</span>
-    </a>
-</div>
-
-<fieldset>
-{% for i,field in form.fields %}
-    <div class="wrap-field">
-    {% include 'mod_formbuilder_field.html.twig' with field %}
-    {% include 'mod_formbuilder_preview.html.twig' with field %}
+    <div class="head">
+        <h5 class="iCog">{{ form.name }}</h5>
     </div>
-{% endfor %}
-</fieldset>
 
-</div>
-<div class="fix"></div>
+    <div class="mainForm">
+
+        <div class="body" id="fields">
+            <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken}) }}"
+                title="" class="btn btn-primary api-link" data-api-reload="1">
+                <svg class="icon">
+                    <use xlink:href="#plus" />
+                </svg>
+                <span>{{ 'Text'|trans }}</span>
+            </a>
+            <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select', 'CSRFToken': CSRFToken}) }}"
+                title="" class="btn btn-primary api-link" data-api-reload="1">
+                <svg class="icon">
+                    <use xlink:href="#plus" />
+                </svg>
+                <span>{{ 'Dropdown'|trans }}</span>
+            </a>
+            <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio', 'CSRFToken': CSRFToken}) }}"
+                title="" class="btn btn-primary api-link" data-api-reload="1">
+                <svg class="icon">
+                    <use xlink:href="#plus" />
+                </svg>
+                <span>{{ 'Radio'|trans }}</span>
+            </a>
+            <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox', 'CSRFToken': CSRFToken}) }}"
+                title="" class="btn btn-primary api-link" data-api-reload="1">
+                <svg class="icon">
+                    <use xlink:href="#plus" />
+                </svg>
+                <span>{{ 'Checkbox'|trans }}</span>
+            </a>
+            <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea', 'CSRFToken': CSRFToken}) }}"
+                title="" class="btn btn-primary api-link" data-api-reload="1">
+                <svg class="icon">
+                    <use xlink:href="#plus" />
+                </svg>
+                <span>{{ 'Textarea'|trans }}</span>
+            </a>
+        </div>
+
+        <fieldset>
+            {% for i,field in form.fields %}
+            <div class="wrap-field">
+                {% include 'mod_formbuilder_field.html.twig' with field %}
+                {% include 'mod_formbuilder_preview.html.twig' with field %}
+            </div>
+            {% endfor %}
+        </fieldset>
+
+    </div>
+    <div class="fix"></div>
 </div>{% endif %}
 <div id="background_overlay">
     <img src="images/loaders/loader7.gif" alt="" id="background-loader">
@@ -235,7 +255,7 @@
 <script type="text/javascript">
     // The following code is a huge mess and needs to be refactored in the future.
     $(function () {
-        $("form").submit( function () {
+        $("form").submit(function () {
             $(':checkbox:not(:checked)').removeAttr('checked');
         });
 
@@ -253,7 +273,7 @@
             var width = $('#textarea-width').val();
             var height = $('#textarea-height').val();
 
-            p.next().find('textarea').css({"width":width, "height":height});
+            p.next().find('textarea').css({ "width": width, "height": height });
 
             return false;
         });
@@ -261,11 +281,11 @@
         $('#prefix_text, #suffix_text').change(function () {
             var prefix = $('#prefix_text').val();
             var suffix = $('#suffix_text').val();
-            
+
             $('#prepended_text').text(prefix);
             $('#appended_text').text(suffix);
 
-           return false;
+            return false;
         });
 
 
@@ -273,9 +293,9 @@
             var fid = $(this).attr('data-field-id');
             var rm = $(this);
 
-            jConfirm('Are you sure?', 'Confirm', function(r) {
-                if(r) {
-                    bb.post('admin/formbuilder/delete_field', {id: fid, CSRFToken: "{{ CSRFToken }}"}, function () {
+            jConfirm('Are you sure?', 'Confirm', function (r) {
+                if (r) {
+                    bb.post('admin/formbuilder/delete_field', { id: fid, CSRFToken: "{{ CSRFToken }}" }, function () {
                         $(rm).parents('.wrap-field').slideUp("normal", function () {
                             $(rm).remove();
                         });
@@ -288,9 +308,9 @@
         $('.ed').click(function () {
             var edit_button = $(this);
 
-            var center = function(edit_button){
-                var leftPosition = ($(window).width() / 2) - ((  $(edit_button).parents('.wrap-field').find('.update-field').width() / 2) + 10);
-                var topPosition = ($(document).height() / 2) - ((  $(edit_button).parents('.wrap-field').find('.update-field').height() / 2) + 50);
+            var center = function (edit_button) {
+                var leftPosition = ($(window).width() / 2) - (($(edit_button).parents('.wrap-field').find('.update-field').width() / 2) + 10);
+                var topPosition = ($(document).height() / 2) - (($(edit_button).parents('.wrap-field').find('.update-field').height() / 2) + 50);
 
                 $(edit_button).parents('.wrap-field').find('.update-field').css({
                     'top': topPosition,
@@ -300,34 +320,34 @@
 
             center(edit_button);
 
-            $('#background_overlay').fadeIn(function(){
-                $(window).resize(function() {
+            $('#background_overlay').fadeIn(function () {
+                $(window).resize(function () {
                     center(edit_button);
                 });
 
-                $(edit_button).parents('.wrap-field').find('.update-field').fadeIn(function() {
+                $(edit_button).parents('.wrap-field').find('.update-field').fadeIn(function () {
                     $('html, body').animate({
                         scrollTop: $(this).offset().top
                     }, 500);
                 });
 
-                $('#background_overlay').click(function() {
+                $('#background_overlay').click(function () {
                     hide_edit_form();
                 });
 
-                $('body').delegate('.close-field-form','click', function() {
+                $('body').delegate('.close-field-form', 'click', function () {
                     hide_edit_form();
-                    
+
                     return false;
                 });
 
-                $(document).keyup(function(e) {
+                $(document).keyup(function (e) {
                     if (e.keyCode == 27) {
-                       hide_edit_form();
+                        hide_edit_form();
                     }
                 });
 
-                var hide_edit_form  = function () {
+                var hide_edit_form = function () {
                     $('#background_overlay').fadeOut();
                     $(edit_button).parents('.wrap-field').find('.update-field').fadeOut();
                 };
@@ -340,11 +360,11 @@
             $(this).hide().siblings('.ed').show();
             $(this).parents('.wrap-field').find('.preview').show();
             $(this).parents('.wrap-field').find('.manage').hide();
-            
+
             return false;
         });
 
-       $('#new-form').click(function () {
+        $('#new-form').click(function () {
             jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
                 if (title) {
                     bb.post('admin/formbuilder/create_form', { name: title, CSRFToken: "{{ CSRFToken }}" }, function (id) {
@@ -372,4 +392,3 @@
     });
 </script>
 {% endblock %}
-{# {% endif %} #}
