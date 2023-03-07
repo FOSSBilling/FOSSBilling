@@ -1,7 +1,7 @@
 import './scss/fossbilling.scss';
 
 import './js/sprite';
-import './js/jquery.min';
+import $ from 'jquery';
 import './js/ui/jquery.alerts';
 import './js/forms/forms';
 import './js/jquery.scrollTo-min';
@@ -14,6 +14,7 @@ import ApexCharts from 'apexcharts';
 import './js/fossbilling';
 
 globalThis.ApexCharts = ApexCharts;
+globalThis.$ = globalThis.jQuery = $;
 
 init();
 coloris({
