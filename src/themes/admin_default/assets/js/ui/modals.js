@@ -27,7 +27,7 @@ globalThis.Modals = {
         confirmCallback: null, // The callback function to call when the modal is confirmed.
     },
 
-    allowedTypes: ['default', 'danger', 'success'],
+    allowedTypes: ['default', 'small', 'danger', 'success',],
 
     /**
      * The templates for the modals.
@@ -50,6 +50,19 @@ globalThis.Modals = {
             </div>
           </div>
         </div>`,
+        small: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body">
+              <div class="modal-title">{{ title }}</div>
+              <div>{{ content }}</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{{ closeButton }}</button>
+            </div>
+          </div>
+        </div>
+      </div>`,
         emphasis: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
           <div class="modal-content">
@@ -197,6 +210,8 @@ globalThis.Modals = {
 
     /**
      * Close every existing modal.
+     * 
+     * @returns void
      */
     closeAll: function () {
         const modals = document.querySelectorAll('.modal');
