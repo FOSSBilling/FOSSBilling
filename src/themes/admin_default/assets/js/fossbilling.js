@@ -376,8 +376,6 @@ $(function () {
   FOSSBilling.backToTop();
 
   //===== Form elements styling =====//
-  // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
-  $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
 
   $("div.simpleTabs").simpleTabs();
 
