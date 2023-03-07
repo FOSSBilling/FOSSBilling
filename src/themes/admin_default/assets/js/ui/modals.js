@@ -50,72 +50,47 @@ globalThis.Modals = {
             </div>
           </div>
         </div>`,
-        danger: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-          <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              <div class="modal-status bg-danger"></div>
-              <div class="modal-body text-center py-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <use xlink:href="#alert-triangle" />
-                </svg>
-                <h3>{{ title }}</h3>
-                <div class="text-muted">{{ content }}</div>
-              </div>
-              <div class="modal-footer">
-                <div class="w-100">
-                  <div class="row">
-                    <div class="col"><a href="#" class="btn w-100" id="cancel-button" data-bs-dismiss="modal">
-                        {{ cancelButton }}
-                      </a></div>
-                    <div class="col"><a href="#" class="btn btn-danger w-100" id="confirm-button" data-bs-dismiss="modal">
-                        {{ confirmButton }}
-                      </a></div>
-                  </div>
+        emphasis: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-status bg-{{ emphasis }}"></div>
+            <div class="modal-body text-center py-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-{{ textColor }} icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <use xlink:href="#{{ emphasisIcon }}" />
+              </svg>
+              <h3>{{ title }}</h3>
+              <div class="text-muted">{{ content }}</div>
+            </div>
+            <div class="modal-footer">
+              <div class="w-100">
+                <div class="row">
+                  <div class="col"><a href="#" class="btn w-100" id="cancel-button" data-bs-dismiss="modal">
+                      {{ cancelButton }}
+                    </a></div>
+                  <div class="col"><a href="#" class="btn btn-{{ emphasis }}  w-100" id="confirm-button" data-bs-dismiss="modal">
+                      {{ confirmButton }}
+                    </a></div>
                 </div>
               </div>
             </div>
           </div>
-        </div>`,
-        success: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-          <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              <div class="modal-status bg-success"></div>
-              <div class="modal-body text-center py-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-green icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <use xlink:href="#circle-check" />
-                </svg>
-                <h3>{{ title }}</h3>
-                <div class="text-muted">{{ content }}</div>
-              </div>
-              <div class="modal-footer">
-                <div class="w-100">
-                  <div class="row">
-                    <div class="col"><a href="#" class="btn w-100" id="cancel-button" data-bs-dismiss="modal">
-                        {{ closeButton }}
-                      </a></div>
-                    <div class="col"><a href="#" class="btn btn-success w-100" id="confirm-button" data-bs-dismiss="modal">
-                        {{ confirmButton }}
-                      </a></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>`
+        </div>
+      </div>`,
     },
 
     /**
      * Parse the template and replace the placeholders with the given options.
      *
-     * @param {String} template Name of the template to use. 
+     * @param {String} type Type of the modal. 
      * @param {Object} options The options object to use. 
      * @returns string The final template.
      */
-    parseTemplate: function (template, options) {
-        if (!template) {
-            console.error('No template for the modal specified. Please specify a template.')
+    parseTemplate: function (type, options) {
+        let template = this.templates[type];
+
+        if (!type) {
+            console.error('You must specify a type when creating a modal.')
             return '';
         }
 
@@ -127,6 +102,15 @@ globalThis.Modals = {
         if (!this.allowedTypes.includes(options.type)) {
             console.error('The type of the modal is not allowed. Please use one of the following types: ' + this.allowedTypes.join(', '))
             return '';
+        }
+
+        // Use the combined emphasis template if the type is danger or success.
+        if (options.type == 'danger' || options.type == 'success') {
+            template = this.templates.emphasis;
+
+            options['emphasis'] = options.type;
+            options['textColor'] = options.type == 'danger' ? 'danger' : 'green';
+            options['emphasisIcon'] = options.type == 'danger' ? 'alert-triangle' : 'circle-check';
         }
 
         return template.replace(/{{\s?(\w+)\s?}}/g, function (match, key) {
@@ -160,7 +144,7 @@ globalThis.Modals = {
 
         // Create the modal container.
         const modalContainer = document.createElement('div');
-        modalContainer.innerHTML = this.parseTemplate(this.templates[options.type], options);
+        modalContainer.innerHTML = this.parseTemplate(options.type, options);
         modal = modalContainer.firstChild;
 
         // Add the modal to the body.
