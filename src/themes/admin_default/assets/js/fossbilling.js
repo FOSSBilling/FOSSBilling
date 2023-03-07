@@ -293,7 +293,7 @@ $.fn.simpleTabs = function () {
   // select active tab
   if ($(document.location.hash).length) {
     $('a[href="' + document.location.hash + '"]').parent().click();
-    $(window).scrollTo(window.location.href.indexOf('#'))
+    $(window).scrollTop(window.location.href.indexOf('#'))
   }
 
 };//end function
