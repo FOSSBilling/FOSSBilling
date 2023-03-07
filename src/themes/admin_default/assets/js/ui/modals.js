@@ -21,13 +21,13 @@ globalThis.Modals = {
         confirmButton: 'Confirm', // The text for the confirm button.
         content: 'The modal content would go here.', // The content of the modal.
         extraClasses: '', // The extra class to add to the modal.
-        type: 'default', // The type of the modal. Can be simple, danger, success or warning.
+        type: 'default', // The type of the modal. Can be default, small, small-confirm, danger or success.
         closeCallback: null, // The callback function to call when the modal is closed.
         cancelCallback: null, // The callback function to call when the modal is cancelled.
         confirmCallback: null, // The callback function to call when the modal is confirmed.
     },
 
-    allowedTypes: ['default', 'small', 'danger', 'success',],
+    allowedTypes: ['default', 'small', 'danger', 'success', 'small-confirm'],
 
     /**
      * The templates for the modals.
@@ -58,7 +58,21 @@ globalThis.Modals = {
               <div>{{ content }}</div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{{ closeButton }}</button>
+              <button type="button" class="btn btn-primary" id="close-button" data-bs-dismiss="modal">{{ closeButton }}</button>
+            </div>
+          </div>
+        </div>
+      </div>`,
+        smallConfirm: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body">
+              <div class="modal-title">{{ title }}</div>
+              <div>{{ content }}</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-link link-secondary me-auto" id="cancel-button" data-bs-dismiss="modal">{{ cancelButton }}</button>
+              <button type="button" class="btn btn-primary" id="confirm-button" data-bs-dismiss="modal">{{ confirmButton }}</button>
             </div>
           </div>
         </div>
@@ -125,6 +139,8 @@ globalThis.Modals = {
             options['textColor'] = options.type == 'danger' ? 'danger' : 'green';
             options['emphasisIcon'] = options.type == 'danger' ? 'alert-triangle' : 'circle-check';
         }
+
+        template = options.type === 'small-confirm' ? this.templates.smallConfirm : template;
 
         return template.replace(/{{\s?(\w+)\s?}}/g, function (match, key) {
           return options[key];
