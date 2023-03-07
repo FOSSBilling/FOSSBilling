@@ -87,4 +87,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+
+  /**
+   * Canned Ticket Response selector
+   */
+  const cannedResponseSelectorEl = document.querySelector('.canned_ticket_response');
+  if (cannedResponseSelectorEl !== null) {
+    const cannedResponseSelector = new TomSelect('.canned_ticket_response', {
+      render: {
+        item: (data, escape) => `<div>${escape(data.text)}</div>`,
+        option: (data, escape) => `<div>${escape(data.text)}</div>`,
+      },
+    });
+    cannedResponseSelector.on('change', (value) => {
+      console.log(value)
+      if (!value) return;
+      const restUrl = new URL(
+        bb.restUrl(cannedResponseSelectorEl.dataset.resturl)
+      );
+      restUrl.searchParams.append('id', value);
+      restUrl.searchParams.append(
+        'CSRFToken',
+        cannedResponseSelectorEl.dataset.csrf,
+      );
+      fetch(restUrl)
+        .then((response) => response.json())
+        .then((json) => {
+          Object.keys(editors).forEach(function (name) {
+            editors[name].editor.setData(json.result.content)
+          })
+        });
+    });
+  }
 });
