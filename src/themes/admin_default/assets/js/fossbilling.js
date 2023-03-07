@@ -280,7 +280,7 @@ $.fn.simpleTabs = function () {
   $(this).find(".tab_content:first").show(); //Show first tab content
 
   //On Click Event
-  $("ul.tabs li").click(function () {
+  $("ul.tabs li").on('click', function () {
     $(this).parent().parent().find("ul.tabs li").removeClass("activeTab"); //Remove any "active" class
     $(this).addClass("activeTab"); //Add "active" class to selected tab
     $(this).parent().parent().find(".tab_content").hide(); //Hide all tab content
@@ -382,13 +382,13 @@ $(function () {
   $("div.simpleTabs").simpleTabs();
 
 
-  $(document).delegate('div.msg span.close', 'click', function () {
+  $(document).on('click', 'div.msg span.close', function () {
     $(this).parent().slideUp(70);
     return false;
   });
 
   //===== Information boxes =====//
-  $(".hideit").click(function () {
+  $(".hideit").on('click', function () {
     $(this).fadeOut(400);
   });
 });

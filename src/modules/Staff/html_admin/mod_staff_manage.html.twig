@@ -173,7 +173,7 @@
 {% block js%}
 <script>
     $(function() {
-        $('.js-permission-check-master').click(function() {
+        $('.js-permission-check-master').on('click', function() {
             $('.js-permission-check').prop('checked', this.checked);
         });
     });

@@ -8,7 +8,7 @@
         if (localStorage.getItem("cookie-consent") != 1) {
             $('#close-cookie-consent-block').show();
         }
-        $('#close-cookie-consent-btn').click(function () {
+        $('#close-cookie-consent-btn').on('click', function () {
             localStorage.setItem('cookie-consent', 1);
             $('#close-cookie-consent-block').hide();
         });

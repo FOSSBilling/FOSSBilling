@@ -223,13 +223,13 @@
 {% block js %}
 <script>
 $(function() {
-    $('.domain-tabs a').bind('click', function(e) {
+    $('.domain-tabs a').on('click', function(e) {
         e.preventDefault();
 
         $(this).tab('show');
     });
 
-    $('#domain-lock').bind('click', function(event) {
+    $('#domain-lock').on('click', function(event) {
         event.preventDefault();
 
         bb.post(
@@ -243,7 +243,7 @@ $(function() {
         );
     });
 
-    $('#domain-unlock').bind('click', function(event) {
+    $('#domain-unlock').on('click', function(event) {
         event.preventDefault();
 
         bb.post(
@@ -257,7 +257,7 @@ $(function() {
         );
     });
 
-    $('#domain-enable-pp').bind('click', function(event) {
+    $('#domain-enable-pp').on('click', function(event) {
         event.preventDefault();
 
         bb.post(
@@ -271,7 +271,7 @@ $(function() {
         );
     });
 
-    $('#domain-disable-pp').bind('click', function(event) {
+    $('#domain-disable-pp').on('click', function(event) {
         event.preventDefault();
 
         bb.post(
@@ -285,7 +285,7 @@ $(function() {
         );
     });
 
-    $('#get-epp').bind('click', function(event) {
+    $('#get-epp').on('click', function(event) {
         event.preventDefault();
         bb.post(
             'client/servicedomain/get_transfer_code',
@@ -296,7 +296,7 @@ $(function() {
         );
     });
 
-    $('#update-nameservers').bind('submit', function(event) {
+    $('#update-nameservers').on('submit', function(event) {
         bb.post(
             'client/servicedomain/update_nameservers',
             $(this).serialize(),
@@ -308,7 +308,7 @@ $(function() {
         return false;
     });
 
-    $('#update-contact').bind('submit', function(event) {
+    $('#update-contact').on('submit', function(event) {
         bb.post(
             'client/servicedomain/update_contacts',
             $(this).serialize(),

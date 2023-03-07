@@ -101,7 +101,7 @@
 $(function() {
     $('#anti-spam').remove();
 
-    $('#public-ticket-create').bind('submit', function(event) {
+    $('#public-ticket-create').on('submit', function(event) {
         $('.wait').show();
         bb.post(
             'guest/support/ticket_create',

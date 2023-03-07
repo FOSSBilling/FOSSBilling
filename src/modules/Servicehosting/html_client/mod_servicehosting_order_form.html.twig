@@ -67,7 +67,7 @@
     }
 
 $(function() {
-    $('#domain-check').bind('click', function(event) {
+    $('#domain-check').on('click', function(event) {
         var sld = $('input[name="domain[register_sld]"]').val();
         var tld = $('select[name="domain[register_tld]"]').val();
         var domain = sld + tld;
@@ -79,7 +79,7 @@ $(function() {
                 $('#domain-config').fadeIn('slow');
             }
         );
-        
+
         return false;
     });
 
@@ -92,12 +92,12 @@ $(function() {
         });
     }
 
-    $('#period-selector').change(function() {
+    $('#period-selector').on('change',function() {
         $('.period').hide();
         $('.period.' + $(this).val()).show();
     }).trigger('change');
 
-    $('.addon-period-selector').change(function() {
+    $('.addon-period-selector').on('change',function() {
         var r = $(this).attr('rel');
         $('#' + r + ' span').hide();
         $('#' + r + ' span.' + $(this).val()).fadeIn();
@@ -110,9 +110,9 @@ $(function() {
             { tld: tld, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 var s = $("select[name='domain[register_years]']");
-                
+
                 s.find('option').remove();
-                
+
                 for (i=1;i<6;i++) {
                     var price = bb.currency(result.price_registration, {{ currency.conversion_rate }}, "{{ currency.code }}", i);
 

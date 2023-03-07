@@ -144,7 +144,7 @@
                             </fieldset>
                         </form>
                 </div>
-            </section>    
+            </section>
         </div>
     </article>
 </div>
@@ -152,12 +152,12 @@
 {% block js %}
 <script type="text/javascript">
 $(function() {
-    $('.domain-tabs a').bind('click', function(e) {
+    $('.domain-tabs a').on('click', function(e) {
         e.preventDefault();
         $(this).tab('show');
     });
 
-    $('#change-domain').bind('submit', function(event) {
+    $('#change-domain').on('submit', function(event) {
         bb.post(
             'client/servicehosting/change_domain',
             $(this).serialize(),
@@ -169,7 +169,7 @@ $(function() {
         return false;
     });
 
-    $('#change-username').bind('submit', function(event) {
+    $('#change-username').on('submit', function(event) {
         bb.post(
             'client/servicehosting/change_username',
             $(this).serialize(),
@@ -177,11 +177,11 @@ $(function() {
                 bb.msg('Account Username was changed');
             }
         );
-        
+
         return false;
     });
 
-    $('#change-password').bind('submit', function(event) {
+    $('#change-password').on('submit', function(event) {
         bb.post(
             'client/servicehosting/change_password',
             $(this).serialize(),

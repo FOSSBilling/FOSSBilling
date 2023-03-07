@@ -6,7 +6,7 @@
 
 <script>
     $(function () {
-        $('#batch-delete-selected-btn').click(function() {
+        $('#batch-delete-selected-btn').on('click', function() {
             if ($('input.batch-delete-checkbox:checked').length) {
                 jConfirm("{{ 'Are you sure?'|trans }}", 'Confirm batch delete', function(r) {
                     if (r) {
@@ -23,7 +23,7 @@
             }
         });
 
-        $('input.batch-delete-master-checkbox').click(function() {
+        $('input.batch-delete-master-checkbox').on('click', function() {
             $('input.batch-delete-checkbox').prop('checked', this.checked);
         });
     });

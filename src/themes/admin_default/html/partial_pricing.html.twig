@@ -188,7 +188,7 @@
             elem.val(total);
         }).trigger('keyup');
 
-        $('.pp_type input').click(function() {
+        $('.pp_type input').on('click', function() {
             $('table.pp tbody').hide();
             $('table.pp tbody.' + $(this).val()).show();
         });

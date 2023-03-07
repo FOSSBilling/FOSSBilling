@@ -59,7 +59,7 @@
 {% autoescape "js" %}
 <script type="text/javascript">
     $(function() {
-        $('.email-resend').click(function(e){
+        $('.email-resend').on('click', function(e){
             e.preventDefault();
             $('.wait').show();
             var email_id = $(this).attr('mail-id');
@@ -73,7 +73,7 @@
                 }
             );
         });
-        $('.email-delete').click(function(e){
+        $('.email-delete').on('click', function(e){
             e.preventDefault();
             if (confirm('Are you sure?')){
                 $('.wait').show();

@@ -32,8 +32,8 @@
                         {% if item.discount_price %}
                         <del>{{ item.total | money_convert }}</del>
                         <strong class="text-success">{{ (item.total-item.discount_price) | money_convert }}</strong>
-							
-								
+
+
                         {% else %}
                             {{ (item.total) | money_convert }}
                         {% endif %}
@@ -99,7 +99,7 @@
                     {% endif %}
                 </tr>
                 {% endif %}
-			
+
                 {% endfor %}
                 </tbody>
             </table>
@@ -199,7 +199,7 @@
     {% endif %}
 </div>
 <script type="text/javascript">
-    $('#remove-promo').click(function(e) {
+    $('#remove-promo').on('click', function(e) {
         e.preventDefault();
         bb.post("guest/cart/remove_promo", {CSRFToken: "{{ CSRFToken }}"}, function(r) {
                 bb.msg("{{ 'Promo code was removed'|trans }}");
@@ -207,14 +207,14 @@
         });
     });
 
-    $('.remove-cart-item').click(function(e) {
+    $('.remove-cart-item').on('click', function(e) {
         e.preventDefault();
 
         var btn = $(this);
-        
+
         if (confirm("{{ 'Are you sure you want to remove this item from cart?'|trans }}")) {
             var item_id = $(btn).attr('data-cart-item-id');
-            
+
             bb.post("guest/cart/remove_item", { id: item_id, CSRFToken: "{{ CSRFToken }}" }, function(r) {
                 bb.msg("{{ 'Item was removed from cart'|trans }}");
                 location.reload(false);

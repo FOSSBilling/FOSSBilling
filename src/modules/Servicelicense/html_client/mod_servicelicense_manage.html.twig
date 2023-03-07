@@ -91,7 +91,7 @@
 
 <script type="text/javascript">
 $(function() {
-    $('#license-reset').bind('click',function(event) {
+    $('#license-reset').on('click',function(event) {
         event.preventDefault();
 
         if (confirm("{{ 'Are you sure?'|trans }}")) {

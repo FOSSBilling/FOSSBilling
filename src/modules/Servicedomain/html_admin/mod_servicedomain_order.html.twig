@@ -42,7 +42,7 @@
 
 <script>
 $(function() {
-    $('.domain-action-select input').bind('click', function() {
+    $('.domain-action-select input').on('click', function() {
         $('.domain-action').hide();
 
         if($(this).val() == 'register') {

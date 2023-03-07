@@ -255,7 +255,7 @@ $(function() {
         document.getElementById('domain-lock').style.display = 'none';
     {% endif %}
 
-    $('#domain-lock').bind('click', function(event) {
+    $('#domain-lock').on('click', function(event) {
         bb.post(
             'admin/servicedomain/lock',
             { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
@@ -271,7 +271,7 @@ $(function() {
         );
     });
 
-    $('#domain-unlock').bind('click', function(event) {
+    $('#domain-unlock').on('click', function(event) {
         bb.post(
             'admin/servicedomain/unlock',
             { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
@@ -299,7 +299,7 @@ $(function() {
         document.getElementById('domain-enable-pp').style.display = 'none';
     {% endif %}
 
-    $('#domain-enable-pp').bind('click', function(event) {
+    $('#domain-enable-pp').on('click', function(event) {
         bb.post(
             'admin/servicedomain/enable_privacy_protection',
             { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
@@ -317,7 +317,7 @@ $(function() {
         );
     });
 
-    $('#domain-disable-pp').bind('click', function(event) {
+    $('#domain-disable-pp').on('click', function(event) {
         bb.post(
             'admin/servicedomain/disable_privacy_protection',
             { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
@@ -335,7 +335,7 @@ $(function() {
         );
     });
 
-    $('#get-epp').bind('click', function(event) {
+    $('#get-epp').on('click', function(event) {
         bb.post(
             'admin/servicedomain/get_transfer_code',
             { order_id: {{ order.id}}, CSRFToken: "{{ CSRFToken }}" },

@@ -295,7 +295,7 @@
 {% block js %}
 <script>
 $(function() {
-    $('#emailTest').click(function() {
+    $('#emailTest').on('click', function() {
         API.admin.post('email/send_test', {}, function(result) {
             FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
         });
@@ -303,7 +303,7 @@ $(function() {
         return false;
     });
 
-    $("#mailer input").click(function() {
+    $("#mailer input").on('click', function() {
         if ($(this).val() == 'smtp') {
             $('fieldset.smtp').slideDown();
         } else {

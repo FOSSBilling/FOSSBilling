@@ -169,26 +169,26 @@
 {% block js %}
 <script>
 $(function() {
-    $('.reply-to-message').click(function (event) {
+    $('.reply-to-message').on('click', function (event) {
         event.preventDefault();
 
         var quote = $(this).attr('message-quote');
-        
+
         $('#ticket-reply-text').text(quote);
         $('#ticket-reply-text').focus();
     });
 
-    $('#submit-support-message').click(function () {
+    $('#submit-support-message').on('click', function () {
         if ($('#ticket-reply-text').val().length > 0) {
             $('.wait').show();
         }
     });
 
-    $('#ticket-close').bind('click', function(event) {
+    $('#ticket-close').on('click', function(event) {
         event.preventDefault();
-        
+
         $('.wait').show();
-        
+
         bb.post(
             'client/support/ticket_close',
             { id: {{ ticket.id }}, CSRFToken: "{{ CSRFToken }}" },

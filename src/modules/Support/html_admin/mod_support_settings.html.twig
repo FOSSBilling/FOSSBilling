@@ -179,7 +179,7 @@
 {% block js %}
 <script>
     $(function() {
-        $('input[name=autorespond_enable]').click(function() {
+        $('input[name=autorespond_enable]').on('click', function() {
             if ($(this).val() == 1) {
                 $('#autorespond_enable').slideDown();
             } else {
@@ -187,7 +187,7 @@
             }
         });
 
-        $('input[name=delay_enable]').click(function() {
+        $('input[name=delay_enable]').on('click', function() {
             if ($(this).val() == 1) {
                 $('#delay_enable').slideDown();
             } else {

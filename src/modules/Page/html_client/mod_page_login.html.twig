@@ -69,14 +69,14 @@
 {% block js %}
 <script type="text/javascript">
 $(function() {
-    $('#client-login').bind('submit', function(event) {
+    $('#client-login').on('submit', function(event) {
         bb.post('guest/client/login',
             $(this).serialize(),
             function(result) {
                 bb.redirect();
             }
         );
-        
+
         return false;
     });
     {% if request.al %}

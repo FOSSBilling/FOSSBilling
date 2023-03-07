@@ -217,7 +217,7 @@
 {% block js %}
 <script type="text/javascript">
     $(function () {
-        $('#client-signup').bind('submit', function (event) {
+        $('#client-signup').on('submit', function (event) {
             $.ajax({
                 type: "POST",
                 url: bb.restUrl('guest/client/create'),
