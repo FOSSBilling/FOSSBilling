@@ -359,8 +359,8 @@
 <script>
 document.querySelector('a.show-notes').addEventListener('click', function(e) {
     e.preventDefault();
-        
-    API.admin.post('support/ticket_get', { id: $(this).attr('rel'), CSRFToken: "{{ CSRFToken }}" }, function(result){
+
+    API.admin.post('support/ticket_get', { id: e.currentTarget.getAttribute('rel') }, function(result){
         var html = document.createElement('div');
             
         result.notes.forEach(function(entry) {
