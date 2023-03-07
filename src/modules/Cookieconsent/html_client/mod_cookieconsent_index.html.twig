@@ -4,13 +4,12 @@
 </div>
 
 <script type="text/javascript">
-    $(function () {
-        if (localStorage.getItem("cookie-consent") != 1) {
-            $('#close-cookie-consent-block').show();
-        }
-        $('#close-cookie-consent-btn').click(function () {
-            localStorage.setItem('cookie-consent', 1);
-            $('#close-cookie-consent-block').hide();
-        });
+    if (localStorage.getItem("cookie-consent") != 1) {
+        document.querySelector('#close-cookie-consent-block').style.display = '';
+    }
+
+    document.querySelector('#close-cookie-consent-btn').addEventListener('click', () => {
+        localStorage.setItem('cookie-consent', 1);
+        document.querySelector('#close-cookie-consent-block').style.display = 'none';
     });
 </script>
