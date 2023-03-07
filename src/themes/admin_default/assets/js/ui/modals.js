@@ -19,7 +19,7 @@ globalThis.Modals = {
         closeButton: 'Close', // The text for the close button.
         cancelButton: 'Cancel', // The text for the cancel button.
         confirmButton: 'Confirm', // The text for the confirm button.
-        content: 'The modal content would go here.', // The content of the modal.
+        content: '', // The content of the modal.
         extraClasses: '', // The extra class to add to the modal.
         type: 'default', // The type of the modal. Can be default, small, small-confirm, danger or success.
         closeCallback: null, // The callback function to call when the modal is closed.

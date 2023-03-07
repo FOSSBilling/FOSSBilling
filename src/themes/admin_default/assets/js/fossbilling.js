@@ -177,7 +177,6 @@ globalThis.bb = {
             Modals.create({
               type: 'small-confirm',
               title: linkElement.getAttribute('data-api-confirm'),
-              content: '',
               confirmCallback: function () {
                 API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
                   return bb._afterComplete(linkElement, result)}, function (error) {
