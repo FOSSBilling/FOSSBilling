@@ -24,45 +24,6 @@ class ServiceTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testforumSpamChecker()
-    {
-        $params = array(
-            'client_id' => 1,
-            'message' => 'Hello world',
-        );
-
-        $model = new \Model_Client();
-        $model->loadBean(new \DummyBean());
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($model);
-
-        $spamCheckerService = $this->getMockBuilder('\Box\Mod\Spamchecker\Service')->getMock();
-        $spamCheckerService->expects($this->atLeastOnce())
-            ->method('isCommentSpam');
-        $spamCheckerService->expects($this->atLeastOnce())
-            ->method('isBlockedIp');
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($spamCheckerService){
-            return $spamCheckerService;
-        });
-
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $this->service->forumSpamChecker($boxEventMock);
-    }
-
     public function testonBeforeClientSignUp()
     {
         $spamCheckerService = $this->getMockBuilder('\Box\Mod\Spamchecker\Service')->getMock();
