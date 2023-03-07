@@ -221,7 +221,9 @@
                             </div>
                             {% if ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
-                                    <img src="images/icons/dark/notebook.png" alt="" />
+                                    <svg class="icon">
+                                        <use xlink:href="#notes" />
+                                    </svg>
                                 </a>
                             {% endif %}
                             <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
@@ -355,18 +357,24 @@
 
 {% block js %}
 <script>
-$(function() {
-    $('a.show-notes').on('click', function() {
-        bb.post('admin/support/ticket_get', { id: $(this).attr('rel'), CSRFToken: "{{ CSRFToken }}" }, function(result){
-            var html = $('<div>');
-            $.each(result.notes, function(i, v){
-                html.append($('<div>').html(v.note));
-                html.append($('<hr>'));
-            });
-            jAlert(html, "{{ 'Notes'|trans }}");
+document.querySelector('a.show-notes').addEventListener('click', function(e) {
+    e.preventDefault();
+        
+    API.admin.post('support/ticket_get', { id: $(this).attr('rel'), CSRFToken: "{{ CSRFToken }}" }, function(result){
+        var html = document.createElement('div');
+            
+        result.notes.forEach(function(entry) {
+            var div = document.createElement('div');
+            div.innerHTML = entry.note;
+                
+            html.appendChild(div);
+            html.appendChild(document.createElement('hr'));
         });
 
-        return false;
+        Modals.create({
+            title: "{{ 'Notes'|trans }}",
+            content: html.outerHTML,
+        });
     });
 });
 
