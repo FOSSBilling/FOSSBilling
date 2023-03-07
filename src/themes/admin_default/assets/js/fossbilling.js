@@ -360,10 +360,10 @@ const boxbilling = {
 $(function () {
 
   //===== Global ajax methods =====//
-  $('.loading').ajaxStart(function () {
-    $(this).show();
-  }).ajaxStop(function () {
-    $(this).hide();
+  $(document).ajaxStart(() => {
+    $('.loading').show();
+  }).ajaxStop(() => {
+    $('.loading').hide();
   });
 
   //===== Api forms and links =====//
