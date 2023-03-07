@@ -173,12 +173,19 @@ globalThis.bb = {
           event.preventDefault();
 
           if (linkElement.hasAttribute('data-api-confirm')) {
-            if (confirm(linkElement.getAttribute('data-api-confirm'))) {
-              API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
-                return bb._afterComplete(linkElement, result)}, function (error) {
-                  FOSSBilling.message(`${error.message} (${error.code})`, 'error');
-                });
-            }
+            
+            Modals.create({
+              type: 'small-confirm',
+              title: linkElement.getAttribute('data-api-confirm'),
+              content: '',
+              confirmCallback: function () {
+                API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
+                  return bb._afterComplete(linkElement, result)}, function (error) {
+                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                  });
+              },
+            })
+
           } else if (linkElement.hasAttribute('data-api-prompt')) {
             jPrompt(linkElement.getAttribute('data-api-prompt-text'), linkElement.getAttribute('data-api-prompt-default'), linkElement.getAttribute('data-api-prompt-title'), function (r) {
               if (r) {
