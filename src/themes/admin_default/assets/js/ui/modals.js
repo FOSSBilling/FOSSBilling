@@ -185,7 +185,7 @@ globalThis.Modals = {
                     options.closeCallback();
                 }
             })
-        };
+        }
 
         const cancelButton = modal.querySelector('#cancel-button');
         if (cancelButton) {
@@ -194,7 +194,7 @@ globalThis.Modals = {
                     options.cancelCallback();
                 }
             })
-        };
+        }
 
         const confirmButton = modal.querySelector('#confirm-button');
         if (confirmButton) {
@@ -203,7 +203,7 @@ globalThis.Modals = {
                     options.confirmCallback();
                 }
             })
-        };
+        }
 
         // Show the modal.
         modalInstance.show();
