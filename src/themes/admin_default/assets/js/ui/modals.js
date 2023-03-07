@@ -1,5 +1,5 @@
 /**
- * JavaScript for the FOSSBilling modals.
+ * JavaScript for the FOSSBilling modals. No jQuery required.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
@@ -35,7 +35,7 @@ globalThis.Modals = {
      */
     templates: {
         default: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-          <div class="modal-dialog" role="document">
+          <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title">{{ title }}</h5>
@@ -51,7 +51,7 @@ globalThis.Modals = {
           </div>
         </div>`,
         danger: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-          <div class="modal-dialog modal-sm" role="document">
+          <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               <div class="modal-status bg-danger"></div>
@@ -78,7 +78,7 @@ globalThis.Modals = {
           </div>
         </div>`,
         success: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-          <div class="modal-dialog modal-sm" role="document">
+          <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               <div class="modal-status bg-success"></div>
@@ -109,8 +109,8 @@ globalThis.Modals = {
     /**
      * Parse the template and replace the placeholders with the given options.
      *
-     * @param {String} template Name of the template to use.
-     * @param {Object} options The options object to use.
+     * @param {String} template Name of the template to use. 
+     * @param {Object} options The options object to use. 
      * @returns string The final template.
      */
     parseTemplate: function (template, options) {
@@ -129,14 +129,14 @@ globalThis.Modals = {
             return '';
         }
 
-        return template.replace(/\{\{(\w+)\}\}/g, function (m, key) {
-            return options[key];
+        return template.replace(/{{\s?(\w+)\s?}}/g, function (match, key) {
+          return options[key];
         });
     },
 
     /**
      * Create a new modal.
-     *
+     * 
      * @param {Object} options The options object to use.
      * @returns {Object} The modal instance.
      * @example
@@ -150,7 +150,7 @@ globalThis.Modals = {
      *         console.log('The modal has been closed.');
      *     }
      * });
-     *
+     * 
      */
     create: function (options) {
         // Merge the options with the default options.
@@ -184,7 +184,7 @@ globalThis.Modals = {
                 if (options.closeCallback) {
                     options.closeCallback();
                 }
-            });
+            })
         };
 
         const cancelButton = modal.querySelector('#cancel-button');
@@ -193,7 +193,7 @@ globalThis.Modals = {
                 if (options.cancelCallback) {
                     options.cancelCallback();
                 }
-            });
+            })
         };
 
         const confirmButton = modal.querySelector('#confirm-button');
@@ -202,7 +202,7 @@ globalThis.Modals = {
                 if (options.confirmCallback) {
                     options.confirmCallback();
                 }
-            });
+            })
         };
 
         // Show the modal.
@@ -216,10 +216,10 @@ globalThis.Modals = {
      */
     closeAll: function () {
         const modals = document.querySelectorAll('.modal');
-
+        
         modals.forEach(function (modal) {
             const modalInstance = bootstrap.Modal.getInstance(modal);
             modalInstance.hide();
         });
-    }
+    }    
 };
