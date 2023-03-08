@@ -3,6 +3,7 @@ import './scss/fossbilling.scss';
 import './js/sprite';
 import './js/jquery.min';
 import './js/ui/jquery.alerts';
+import './js/ui/modals'
 import './js/forms/forms';
 import './js/jquery.scrollTo-min';
 import "@melloware/coloris/dist/coloris.css";
