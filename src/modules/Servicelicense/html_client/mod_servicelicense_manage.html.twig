@@ -90,20 +90,14 @@
 </div>
 
 <script type="text/javascript">
-$(function() {
-    $('#license-reset').on('click',function(event) {
+    document.querySelector('#license-reset').addEventListener('click', (event) => {
         event.preventDefault();
 
         if (confirm("{{ 'Are you sure?'|trans }}")) {
-            bb.post(
-                'client/servicelicense/reset',
-                { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
-                function(result) {
-                    bb.msg('License was reset');
-                }
-            );
+            API.client.post('servicelicense/reset', { order_id: {{ order.id }} }, function(result) {
+                bb.msg("{{ 'License was reset'|trans }}");
+            });
         }
     });
-});
 </script>
 {% endif %}

@@ -8,8 +8,11 @@
     $(function () {
         $('#batch-delete-selected-btn').on('click', function() {
             if ($('input.batch-delete-checkbox:checked').length) {
-                jConfirm("{{ 'Are you sure?'|trans }}", 'Confirm batch delete', function(r) {
-                    if (r) {
+                Modals.create({
+                    type: 'danger',
+                    title: "{{ 'Are you sure?'|trans }}",
+                    content: "{{ 'Are you sure you want to delete the selected items?'|trans }}",
+                    confirmCallback: function() {
                         var ids = $('input.batch-delete-checkbox:checked').map(function() {
                             return $(this).attr("data-item-id");
                         }).get();
@@ -19,7 +22,11 @@
                     }
                 });
             } else {
-                jAlert('You need to select at least one item to delete');
+                Modals.create({
+                    type: 'small',
+                    title: "{{ 'No items selected'|trans }}",
+                    content: "{{ 'You need to select at least one item to delete'|trans }}",
+                });
             }
         });
 

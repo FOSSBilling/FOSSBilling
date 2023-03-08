@@ -25,7 +25,7 @@ class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
             'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga',
             'type' => 'client',
         ]);
-        $test = $loader->getSourceContext('mod_example_index.html.twig');
+        $test = $loader->getSourceContext('mod_page_login.html.twig');
         $test2 = $loader->getSourceContext('404.html.twig');
 
         $this->assertIsObject($test);
