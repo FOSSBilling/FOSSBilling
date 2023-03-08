@@ -211,7 +211,7 @@
     $(function() {
         $('#reply-box textarea').focus();
 
-        $('.conversation .card-header').click(function() {
+        $('.conversation .card-header').on('click', function() {
             $(this).siblings('.card-body').toggle();
 
             return false;

@@ -5,9 +5,6 @@
 @import "bb-deprecated";
 @import "dataTable-deprecated";
 @import "main-deprecated";
-@import "jquery-ui";
-@import "~select2/dist/css/select2.css";
-@import "ui_custom";
 
 .page {
     min-height: calc(100vh - 2px);
@@ -53,4 +50,8 @@
             background-color: rgba(var(--tblr-muted-rgb), .1);
         }
     }
+}
+
+.canned_ticket_response {
+    width: 18rem;
 }

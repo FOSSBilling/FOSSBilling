@@ -96,7 +96,7 @@
             $('#popup-iframe').height($('body').height());
         });
 
-        $('#client-login').bind('submit', function(event) {
+        $('#client-login').on('submit', function(event) {
             bb.post(
                 'guest/client/login',
                 $(this).serialize(),
@@ -111,7 +111,7 @@
             );
             return false;
         });
-        $('#create-profile').bind('submit', function(event) {
+        $('#create-profile').on('submit', function(event) {
             bb.post(
                 'guest/client/create',
                 $(this).serialize(),
@@ -136,7 +136,7 @@
             );
             return false;
         });
-        $('#add-to-cart').bind('submit', function(event) {
+        $('#add-to-cart').on('submit', function(event) {
             bb.post(
                 'guest/cart/add_item',
                 $(this).serialize(),
@@ -148,7 +148,7 @@
 
             return false;
         });
-        $('#apply-promo').bind('submit', function(event) {
+        $('#apply-promo').on('submit', function(event) {
             bb.post(
                 'guest/cart/apply_promo',
                 $(this).serialize(),
@@ -161,7 +161,7 @@
             return false;
         });
 
-        $('#checkout-form').bind('submit', function(event) {
+        $('#checkout-form').on('submit', function(event) {
             bb.post(
                 'client/cart/checkout',
                 $(this).serialize(),
@@ -192,13 +192,13 @@
             return false;
         });
 
-        $('#show-promo-field').bind('click', function(event) {
+        $('#show-promo-field').on('click', function(event) {
             $('#apply-promo').show();
             $(this).hide();
             $('#promocode').focus();
         });
 
-        $('.register-login a').click(function (e) {
+        $('.register-login a').on('click', function (e) {
             e.preventDefault();
             $(this).tab('show');
         });

@@ -120,7 +120,7 @@
 {% block js %}
 <script>
 $(function() {
-    $('#ticket-submit').bind('submit', function(event) {
+    $('#ticket-submit').on('submit', function(event) {
         $('.wait').show();
         bb.post(
             'client/support/ticket_create',
@@ -132,7 +132,7 @@ $(function() {
 
         return false;
     });
-    
+
     $('#submit-ticket').modal('hide').css(
         {
             'margin-top': function () {

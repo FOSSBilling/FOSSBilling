@@ -691,7 +691,7 @@
 <script>
     $(function() {
         $('input[name=gateway]:first').attr('checked', true);
-        $('#pay-now-button').click(function() {
+        $('#pay-now-button').on('click', function() {
             var link = $('input[name=gateway]:checked').val();
             bb.redirect(link);
 

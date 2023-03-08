@@ -27,7 +27,7 @@
 $(function() {
     $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
 
-    $('#bb-upload-form').submit(function() {
+    $('#bb-upload-form').on('submit', function() {
         $(this).attr('action', bb.restUrl('admin/servicedownloadable/upload'));
 
         iframe = $('#uploadframe').load(function() {

@@ -255,11 +255,11 @@
 <script type="text/javascript">
     // The following code is a huge mess and needs to be refactored in the future.
     $(function () {
-        $("form").submit(function () {
+        $("form").on('submit', function () {
             $(':checkbox:not(:checked)').removeAttr('checked');
         });
 
-        $('.new-field').click(function () {
+        $('.new-field').on('click', function () {
             var p = $(this).closest('.rowElem').prev();
 
             p.clone().insertAfter(p);
@@ -268,7 +268,7 @@
             return false;
         });
 
-        $('#textarea-width, #textarea-height').change(function () {
+        $('#textarea-width, #textarea-height').on('change',function () {
             var p = $(this).closest('.rowElem');
             var width = $('#textarea-width').val();
             var height = $('#textarea-height').val();
@@ -278,7 +278,7 @@
             return false;
         });
 
-        $('#prefix_text, #suffix_text').change(function () {
+        $('#prefix_text, #suffix_text').on('change',function () {
             var prefix = $('#prefix_text').val();
             var suffix = $('#suffix_text').val();
 
@@ -289,7 +289,7 @@
         });
 
 
-        $('.rm').click(function () {
+        $('.rm').on('click', function () {
             var fid = $(this).attr('data-field-id');
             var rm = $(this);
 
@@ -309,7 +309,7 @@
             return false;
         });
 
-        $('.ed').click(function () {
+        $('.ed').on('click', function () {
             var edit_button = $(this);
 
             var center = function (edit_button) {
@@ -325,7 +325,7 @@
             center(edit_button);
 
             $('#background_overlay').fadeIn(function () {
-                $(window).resize(function () {
+                $(window).on('resize',function () {
                     center(edit_button);
                 });
 
@@ -335,18 +335,18 @@
                     }, 500);
                 });
 
-                $('#background_overlay').click(function () {
+                $('#background_overlay').on('click', function () {
                     hide_edit_form();
                 });
 
-                $('body').delegate('.close-field-form', 'click', function () {
+                $('body').on('click', '.close-field-form', function () {
                     hide_edit_form();
 
                     return false;
                 });
 
-                $(document).keyup(function (e) {
-                    if (e.keyCode == 27) {
+                $(document).on('keyup', function (e) {
+                    if (e.key === 'Escape') {
                         hide_edit_form();
                     }
                 });
@@ -360,7 +360,7 @@
             return false;
         });
 
-        $('.pr').click(function () {
+        $('.pr').on('click', function () {
             $(this).hide().siblings('.ed').show();
             $(this).parents('.wrap-field').find('.preview').show();
             $(this).parents('.wrap-field').find('.manage').hide();
@@ -368,7 +368,7 @@
             return false;
         });
 
-        $('#new-form').click(function () {
+        $('#new-form').on('click', function () {
             jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
                 if (title) {
                     bb.post('admin/formbuilder/create_form', { name: title, CSRFToken: "{{ CSRFToken }}" }, function (id) {
@@ -380,7 +380,7 @@
             return false;
         });
 
-        $('.copy_form').click(function () {
+        $('.copy_form').on('click', function () {
             var fid = $(this).attr('data-form-id');
 
             jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {

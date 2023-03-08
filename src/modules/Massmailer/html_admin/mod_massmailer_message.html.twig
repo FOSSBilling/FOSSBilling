@@ -9,11 +9,11 @@
     <div class="head">
         <h5>{{ 'Send Email Message'|trans }} - {{ msg.subject }}</h5>
     </div>
-    
+
     <form method="post" action="admin/massmailer/update" class="mainForm save api-form" data-api-jsonp="onAfterMessageUpdate" id="msg-form">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <fieldset>
-            
+
             <div class="rowElem noborder">
                 <label>{{ 'From'|trans }}</label>
                 <div class="formRight moreFields">
@@ -25,7 +25,7 @@
                 </div>
                 <div class="fix"></div>
             </div>
-            
+
             <div class="rowElem">
                 <label>{{ 'Subject'|trans }}</label>
                 <div class="formRight">
@@ -33,9 +33,9 @@
                 </div>
                 <div class="fix"></div>
             </div>
-            
+
             </fieldset>
-        
+
             <fieldset>
                 <legend>{{ 'Recipients filter. Select none to send message to all clients'|trans }}</legend>
             <div class="rowElem">
@@ -47,7 +47,7 @@
                         <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
                         <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Canceled'|trans }}</option>
                     </select>
-                    
+
                     <select name="filter[client_groups][]" multiple="multiple" size="5">
                         {% for id,label in admin.client_group_get_pairs %}
                         <option value="{{id}}" {% if id in msg.filter.client_groups %} selected="selected"{% endif %}>{{label}}</option>
@@ -74,7 +74,7 @@
                 <div class="fix"></div>
             </div>
                 </fieldset>
-        
+
             <fieldset>
                 <legend>{{ 'Message content'|trans }}</legend>
             <div class="rowElem">
@@ -82,21 +82,21 @@
                     <textarea name="content" cols="5" rows="20" placeholder="Email content">{{ msg.content }}</textarea>
                 </div>
                 </div>
-                
+
             <div class="body">
                 <div class="pt20" id="preview" style="display: none;">
                     <div class="body esubject mb20" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
                     <div class="body econtent" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
                 </div>
             </div>
-            
+
             <input type="submit" value="{{ 'Update and preview'|trans }}" class="greyishBtn submitForm">
             <input type="button" value="{{ 'Send test message'|trans }}" class="blueBtn submitForm" id="send-test-msg" style="float: left;">
             <input type="button" value="{{ 'Send message to clients'|trans }}" class="greenBtn submitForm" id="send-msg" style="float: left;">
             <input type="hidden" name="id" value="{{ msg.id }}">
         </fieldset>
     </form>
-    
+
     <div class="body">
         <a href="{{ 'massmailer'|alink }}"  title="" class="btnIconLeft mr10">
             <img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{{ 'Back to list'|trans }}</span>

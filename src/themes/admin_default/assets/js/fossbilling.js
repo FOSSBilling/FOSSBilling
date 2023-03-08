@@ -286,7 +286,7 @@ $.fn.simpleTabs = function () {
   $(this).find(".tab_content:first").show(); //Show first tab content
 
   //On Click Event
-  $("ul.tabs li").click(function () {
+  $("ul.tabs li").on('click', function () {
     $(this).parent().parent().find("ul.tabs li").removeClass("activeTab"); //Remove any "active" class
     $(this).addClass("activeTab"); //Add "active" class to selected tab
     $(this).parent().parent().find(".tab_content").hide(); //Hide all tab content
@@ -299,7 +299,7 @@ $.fn.simpleTabs = function () {
   // select active tab
   if ($(document.location.hash).length) {
     $('a[href="' + document.location.hash + '"]').parent().click();
-    $(window).scrollTo(window.location.href.indexOf('#'))
+    $(window).scrollTop(window.location.href.indexOf('#'))
   }
 
 };//end function
@@ -366,10 +366,10 @@ const boxbilling = {
 $(function () {
 
   //===== Global ajax methods =====//
-  $('.loading').ajaxStart(function () {
-    $(this).show();
-  }).ajaxStop(function () {
-    $(this).hide();
+  $(document).ajaxStart(() => {
+    $('.loading').show();
+  }).ajaxStop(() => {
+    $('.loading').hide();
   });
 
   //===== Api forms and links =====//
@@ -382,19 +382,17 @@ $(function () {
   FOSSBilling.backToTop();
 
   //===== Form elements styling =====//
-  // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
-  $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
 
   $("div.simpleTabs").simpleTabs();
 
 
-  $(document).delegate('div.msg span.close', 'click', function () {
+  $(document).on('click', 'div.msg span.close', function () {
     $(this).parent().slideUp(70);
     return false;
   });
 
   //===== Information boxes =====//
-  $(".hideit").click(function () {
+  $(".hideit").on('click', function () {
     $(this).fadeOut(400);
   });
 });

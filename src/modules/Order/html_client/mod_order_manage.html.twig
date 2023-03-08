@@ -103,7 +103,7 @@
                                 {% endif %}
 
                                 <a href="#submit-ticket" class="btn btn-info btn-small" type="button" id="open-ticket" data-toggle="modal">{{ 'Open ticket'|trans }}</a>
-                                
+
                                 {% if order.status == 'active' %}
                                     <a href="#submit-cancellation-ticket" class="btn btn-primary btn-warning btn-small" type="button" data-toggle="modal">{{ 'Request Cancellation'|trans }}</a>
                                 {% endif %}
@@ -304,9 +304,9 @@
 {% autoescape "js" %}
 <script>
 $(function() {
-    $('#renewal-button').click(function(e) {
+    $('#renewal-button').on('click', function(e) {
         e.preventDefault();
-        
+
         if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
             bb.post(
                 'client/invoice/renewal_invoice',
@@ -318,9 +318,9 @@ $(function() {
         }
     });
 
-    $('.open-ticket').submit(function() {
+    $('.open-ticket').on('submit', function() {
         $('.wait').show();
-        
+
         bb.post(
             'client/support/ticket_create',
             $(this).serialize(),
@@ -334,7 +334,7 @@ $(function() {
         return false;
     });
 
-    $('.request-cancellation').submit(function() {
+    $('.request-cancellation').on('submit', function() {
         $('.wait').show();
         bb.post(
             'client/support/ticket_create',
@@ -349,7 +349,7 @@ $(function() {
         return false;
     });
 
-    $('.request-upgrade').submit(function() {
+    $('.request-upgrade').on('submit', function() {
         $('.wait').show();
         bb.post(
             'client/support/ticket_create',

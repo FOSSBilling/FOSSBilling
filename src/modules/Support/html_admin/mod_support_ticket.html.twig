@@ -359,7 +359,7 @@
 
         setSelRange(ta, pos, pos);
 
-        $('.shd select').change(function(){
+        $('.shd select').on('change',function(){
             bb.get('admin/support/ticket_update', {
                 id: {{ ticket.id }},
                 support_helpdesk_id: $(this).val(),
@@ -367,7 +367,7 @@
             });
         });
 
-        $('input.tst').click(function(){
+        $('input.tst').on('click', function(){
             bb.get('admin/support/ticket_update', {
                 id: {{ ticket.id }},
                 status: $(this).val(),

@@ -121,16 +121,16 @@
 {% block js %}
 <script>
 $(function() {
-    $('.reply-to-message').click(function(event) {
+    $('.reply-to-message').on('click', function(event) {
         event.preventDefault();
 
         var quote = $(this).attr('message-quote');
-        
+
         $('#ticket-reply-text').text(quote);
         $('#ticket-reply-text').focus();
     });
 
-    $('#public-ticket-reply').bind('submit', function(event) {
+    $('#public-ticket-reply').on('submit', function(event) {
         $('.wait').show();
         bb.post(
             'guest/support/ticket_reply',
@@ -139,13 +139,13 @@ $(function() {
                 bb.reload();
             }
         );
-        
+
         return false;
     });
 
-    $('#new-ticket-button').click(function(e) {
+    $('#new-ticket-button').on('click', function(e) {
         e.preventDefault();
-        
+
         bb.post("guest/support/ticket_close", { hash: '{{ ticket.hash }}', CSRFToken: "{{ CSRFToken }}" }, function(r) {
             bb.msg("Ticket was closed");
             bb.reload();

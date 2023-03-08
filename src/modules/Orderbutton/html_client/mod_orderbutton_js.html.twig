@@ -39,8 +39,8 @@
         });
         var bodyElem = $('body');
 
-        bodyElem.undelegate('{{bind_selector}}', 'click');
-        bodyElem.delegate('{{bind_selector}}', 'click', function (event) {
+        bodyElem.off('click', '{{bind_selector}}');
+        bodyElem.on('click', '{{bind_selector}}', function (event) {
             event.preventDefault();
             _this.setDataProductId($(this).data('product'))
             _this.popup();
@@ -115,7 +115,7 @@
             $(this).show();
         });
 
-        $(window).resize(function(){
+        $(window).on('resize',function(){
             var pWidth = jQuery(window).width();
             var pTop = jQuery(window).scrollTop();
             var eWidth = _this.iframeElem.width();

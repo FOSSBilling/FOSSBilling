@@ -271,7 +271,7 @@
     }
 
     $(function() {
-        $('input[name=check_ip]').click(function() {
+        $('input[name=check_ip]').on('click', function() {
             if ($(this).val() == 1) {
                 $('#check_ip').slideDown();
             } else {

@@ -296,7 +296,7 @@
 {% block js %}
 <script>
     $(function() {
-        $("[name='form_id']").change(function() {
+        $("[name='form_id']").on('change',function() {
             var form_id = $(this).val();
             var btn = $("#formbuilder_btn");
 

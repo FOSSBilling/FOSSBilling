@@ -303,7 +303,7 @@
 {% block js %}
 <script>
 $(function() {
-    $('#change-api-key').submit(function(event) {
+    $('#change-api-key').on('submit', function(event) {
         bb.post(
             'client/profile/api_key_reset',
             $(this).serialize(),
@@ -316,7 +316,7 @@ $(function() {
         return false;
     });
 
-    $('#profile-update').bind('submit', function(event) {
+    $('#profile-update').on('submit', function(event) {
         bb.post(
             'client/profile/update',
             $(this).serialize(),

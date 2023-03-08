@@ -76,7 +76,7 @@
 
 <script type="text/javascript">
     $(function () {
-        $("form").submit( function () {
+        $("form").on('submit', function () {
                 $(':checkbox:not(:checked)').removeAttr('checked');
             }
         )

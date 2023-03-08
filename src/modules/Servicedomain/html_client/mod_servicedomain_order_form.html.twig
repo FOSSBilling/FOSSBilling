@@ -93,7 +93,7 @@
 {% set currency = guest.cart_get_currency %}
 <script type="text/javascript">
 $(function() {
-    $('ul.nav.nav-tabs > li.domain-tab a').bind('click', function () {
+    $('ul.nav.nav-tabs > li.domain-tab a').on('click', function () {
         $('#domain-action').val($(this).attr('rel'));
     });
 
@@ -103,23 +103,23 @@ $(function() {
         $('.order-button').one('click', function() {
             $(this).hide();
             $('.addons').slideDown('fast');
-        
+
             return false;
         });
     }
 
-    $('.addon-period-selector').change(function() {
+    $('.addon-period-selector').on('change',function() {
         var r = $(this).attr('rel');
-        
+
         $('#' + r + ' span').hide();
         $('#' + r + ' span.' + $(this).val()).fadeIn();
     }).trigger('change');
 
-    $('#transfer-check').bind('click', function(event) {
+    $('#transfer-check').on('click', function(event) {
         var sld = $('input[name="transfer_sld"]').val();
         var tld = $('select[name="transfer_tld"]').val();
         var domain = sld + tld;
-        
+
         bb.post(
             'guest/servicedomain/can_be_transferred',
             { sld: sld, tld: tld },
@@ -132,11 +132,11 @@ $(function() {
                 $('#transfer .order-button').show();
             }
         );
-        
+
         return false;
     });
 
-    $('#domain-check').bind('click', function(event) {
+    $('#domain-check').on('click', function(event) {
         var sld = $('input[name="register_sld"]').val();
 		sld= sld.toLowerCase();
         var tld = $('select[name="register_tld"]').val();
@@ -152,7 +152,7 @@ $(function() {
                 $('#register .order-button').show();
             }
         );
-        
+
         return false;
     });
 
@@ -180,7 +180,7 @@ $(function() {
             { tld: tld },
             function(result) {
                 var price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
-                
+
                 $('#transfer-price').text(price);
                 $('#config-next').show();
             }
