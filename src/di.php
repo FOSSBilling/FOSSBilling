@@ -789,6 +789,15 @@ $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
     return ('' === $result) ? null : $result;
 });
 
+/*
+ * Creates a CSV export of data from a specified table and sends it to the browser.
+ * 
+ * @param string $table Name of the table to export data from
+ * @param string $outputName Name of the exported CSV file
+ * @param array $headers Optional array of column headers for the CSV file
+ * @param int $limit Optional limit of the number of rows to export from the table
+ * @return void
+ */
 $di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di) {
     if ($limit > 0) {
         $beans = $di['db']->findAll($table, "LIMIT :limit", array(':limit' => $limit));
