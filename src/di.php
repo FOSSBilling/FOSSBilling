@@ -789,4 +789,35 @@ $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
     return ('' === $result) ? null : $result;
 });
 
+$di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di) {
+    if ($limit > 0) {
+        $beans = $di['db']->findAll($table, "LIMIT :limit", array(':limit' => $limit));
+    } else {
+        $beans = $di['db']->findAll($table);
+    }
+
+    $rows = array_map(function ($bean) {
+        return $bean->export();
+    }, $beans);
+
+    // If we've been provided a list of headers, use that. Otherwise, pull the keys from the rows and use that for the CSV header
+    if ($headers) {
+        $rows = array_map(function ($row) use ($headers) {
+            return array_intersect_key($row, array_flip($headers));
+        }, $rows);
+    } else {
+        $headers = array_keys(reset($rows));
+    }
+
+    $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject());
+
+    $csv->insertOne($headers);
+    $csv->insertAll($rows);
+
+    $csv->output($outputName);
+
+    // Prevent further output from being added to the end of the CSV
+    die();
+});
+
 return $di;

@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
      * @param int $data['per_page'] [optional] Number of clients to display per page.
      * 
      * @return array List of clients in a paginated manner.
-    */
+     */
     public function get_list($data)
     {
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
@@ -55,7 +55,7 @@ class Admin extends \Api_Abstract
      * @param int $data['per_page'] [optional] Number of clients to display per page.
      * 
      * @return array List of clients in a paginated manner
-    */
+     */
     public function get_pairs($data)
     {
         $service = $this->di['mod_service']('client');
@@ -665,5 +665,11 @@ class Admin extends \Api_Abstract
         }
 
         return true;
+    }
+
+    public function export_csv($data)
+    {
+        $data['headers'] ??= [];
+        return $this->getService()->exportCSV($data['headers']);
     }
 }
