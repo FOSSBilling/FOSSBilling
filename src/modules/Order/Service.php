@@ -1383,4 +1383,12 @@ class Service implements InjectionAwareInterface
         $stmt = $pdo->prepare($sql);
         $stmt->execute(['id' => $client->id]);
     }
+
+    public function exportCSV(array $headers)
+    {
+        if (!$headers) {
+            $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];
+        }
+        return $this->di['table_export_csv']('client_order', 'orders.csv', $headers);
+    }
 }
