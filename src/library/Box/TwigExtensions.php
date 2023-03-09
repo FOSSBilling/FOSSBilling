@@ -78,8 +78,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
             'autolink' => new TwigFilter('autolink', [$this, 'twig_autolink_filter']),
 
-            'bbmd' => new TwigFilter('bbmd', [$this, 'twig_bbmd_filter'], ['needs_environment' => true, 'is_safe' => ['html']]),
-
             'bb_date' => new TwigFilter('bb_date', [$this, 'twig_bb_date']),
 
             'bb_datetime' => new TwigFilter('bb_datetime', [$this, 'twig_bb_datetime']),
@@ -350,15 +348,5 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $value;
-    }
-
-    /**
-     * BoxBilling markdown.
-     * @deprecated
-     */
-    public function twig_bbmd_filter(Twig\Environment $env, $value)
-    {
-        error_log('Usage for deprected bbmd filter, please use the markdown filter instead for twig templates.');
-        return $this->twig_markdown_filter($env, $value);
     }
 }
