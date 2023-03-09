@@ -1,73 +1,88 @@
-<div class="rowElem preview">
-    <label for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
+<div class="row row-cards">
+    <div class="card-body col-12 preview">
+        <div class="mb-3 row">
+            <label class="col-3 col-form-label" for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
+            <div class="col-5">
+                {% if field.type == "text" %}
+                    <div class="input-group">
+                        {% if field.prefix %}
+                            <span class="input-group-text">{{ field.prefix }}</span>
+                        {% endif %}
+                        <input class="form-control" type="text"
+                               name="{{ field.name }}"
+                               value="{{ field.default_value }}" id="{{ field.name }}"
+                            {{ (field.readonly==1)? 'readonly="readonly"' : '' }} />
+                        {% if field.suffix %}
+                            <span class="input-group-text">{{ field.suffix }}</span>
+                        {% endif %}
+                    </div>
+                {% elseif field.type == "select" %}
 
-    <div class="formRight">
-        {% if field.type == "text" %}
-        <div class="moreFields allUpper">
-            <ul>
-                <li class="sep">{{field.prefix}}</li>
-                <li style="width: 50%">
-                    <input type="text" name="{{ field.name }}" value="{{ field.default_value }}"  id="{{field.name}}"
-                        {{ (field.readonly==1)? 'readonly="readonly"' : ''}}
-                    />
-                </li>
-                <li class="sep">{{field.suffix}}</li>
-            </ul>
-        </div>
-        {% elseif field.type == "select" %}
-            {% if field.options is empty %}
-            <ul>
-                <li style="width: 80%"><blockquote>{{ 'Please click on "Edit" in order to add new select box'|trans }}</blockquote></li>
-            </ul>
-            {% else %}
-                <select name="{{ field.name }}" required="required"   id="{{field.name}}"
-                    {{ (field.readonly==1)? 'disabled="disabled"' : ''}}
-                    />
-                    {% for k,v in field.options %}
-                    <option value="{{v}}"
-                    {{ (field.default_value == v) ? 'selected' : '' }}>{{k}}</option>
-                    {% endfor %}
+                    {% if field.options is empty %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ 'Please click on "Edit" in order to add options'|trans }}
+                        </div>
+                    {% else %}
+                        <select class="form-select" name="{{ field.name }}" required="required" id="{{ field.name }}"
+                            {{ (field.readonly==1)? 'disabled="disabled"' : '' }}>
+                            {% for k,v in field.options %}
+                                <option value="{{ v }}" {{ (field.default_value == v) ? 'selected' : '' }}>{{ k }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
 
-                </select>
-            {% endif %}
-        {% elseif field.type == "checkbox" %}
-            {% if field.options is empty %}
-            <ul>
-                <li style="width: 80%"><blockquote>{{ 'Please click on "Edit" in order to add new checkbox'|trans }}</blockquote></li>
-            </ul>
-            {% else %}
-                {% for k,v in field.options %}
-                <input type="checkbox" name="{{field.name}}" value="{{v}}" id="{{k}}_{{v}}" {% if v in field.default_value %}checked="checked"{% endif %}
-                    {{ (field.readonly==1)? 'disabled="disabled"' : ''}}
-            />
-                <label for="{{k}}_{{v}}">{{k}}</label>
-                {% endfor %}
-            {% endif %}
-        {% elseif field.type == "radio" %}
-            {% if field.options is empty %}
-                <ul>
-                    <li style="width: 80%"><blockquote>{{ 'Please click on "Edit" in order to add new radio box'|trans }}</blockquote></li>
-                </ul>
-            {% else %}
-                {% for k,v in field.options %}
-                <input type="radio" name="{{field.name}}" value="{{v}}" id="{{k}}_{{v}}" {{ (field.default_value == v) ? 'checked' : '' }}
-                    {{ (field.readonly==1)? 'disabled="disabled"' : ''}}
-            />
-                <label for="{{k}}_{{v}}">{{k}}</label>
-                {% endfor %}
-            {% endif %}
-        {% elseif field.type == "textarea" %}
-            <div style="width: auto; max-width:50%;">
-                <textarea name="{{field.name}}" style="width: {{field.options.width}}px; height: {{field.options.height}}px; overflow: scroll;">{{field.default_value}}</textarea>
+                {% elseif field.type == "checkbox" %}
+
+                    {% if field.options is empty %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ 'Please click on "Edit" in order to add options'|trans }}
+                        </div>
+                    {% else %}
+                        <div>
+                        {% for k,v in field.options %}
+                            <label class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="{{ field.name }}" value="{{ v }}" id="{{ k }}_{{ v }}"
+                                       {% if v in field.default_value %}checked="checked"{% endif %}
+                                    {{ (field.readonly==1)? 'disabled="disabled"' : '' }} />
+                                <span class="form-check-label">{{ k }}</span>
+                            </label>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+
+                {% elseif field.type == "radio" %}
+                    {% if field.options is empty %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ 'Please click on "Edit" in order to add options'|trans }}
+                        </div>
+                    {% else %}
+                        <div>
+                        {% for k,v in field.options %}
+                            <label class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="{{ field.name }}" value="{{ v }}"
+                                       id="{{ k }}_{{ v }}" {{ (field.default_value == v) ? 'checked' : '' }}
+                                    {{ (field.readonly==1)? 'disabled="disabled"' : '' }} />
+                                <span class="form-check-label">{{ k }}</span>
+                            </label>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                {% elseif field.type == "textarea" %}
+                    <textarea class="form-control" rows="5" name="{{ field.name }}" id="{{ field.name }}">{{ field.default_value }}</textarea>
+                {% endif %}
             </div>
-        {% endif %}
+            <div class="col float-end">
+                <a class="ed btn btn-icon" href="#" title="Edit">
+                    <svg class="icon">
+                        <use xlink:href="#edit"/>
+                    </svg>
+                </a>
+                <a class="rm btn btn-icon" title="Delete" href="#" data-field-id="{{ field.id }}">
+                    <svg class="icon">
+                        <use xlink:href="#delete"/>
+                    </svg>
+                </a>
+            </div>
         </div>
-        <div class="fix"></div>
-
-    <div class="actions" style="right: 0; bottom: 0; padding: 5px; position: absolute;">
-<!--        <a class="btn14 pr btnIconLeft" href="#" style="display: none;"><img src="images/searchBtn.png" alt="Preview" class="icon">Preview</a>-->
-        <a class="btn14 ed" href="#"><img src="assets/icons/edit.svg" alt="Edit" class="icon"></a>
-        <a class="btn14 rm" href="#" data-field-id="{{field.id}}"><img src="assets/icons/delete.svg" alt="" class="icon"></a>
     </div>
-    <div class="fix"></div>
 </div>
