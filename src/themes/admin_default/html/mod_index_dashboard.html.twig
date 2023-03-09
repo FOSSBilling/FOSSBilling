@@ -227,7 +227,7 @@
 
     {% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid' }) %}
     {% if invoicesUnpaid.list|length > 0 %}
-    <div class="col-lg-6">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
