@@ -6,53 +6,6 @@
 
 {% set active_menu = 'system' %}
 
-{% block head %}
-<style type="text/css">
-    #background_overlay {
-        display: none;
-        position: fixed;
-        top: 0%;
-        left: 0%;
-        width: 100%;
-        height: 100%;
-        background-color: #000;
-        z-index: 1001;
-        -moz-opacity: 0.7;
-        opacity: .70;
-        filter: alpha(opacity=70);
-    }
-
-    .update-field {
-        display: none;
-        position: absolute;
-        top: 20%;
-        left: 20%;
-        margin-left: 0px;
-        margin-top: 0px;
-        padding: 10px;
-        background: url(images/alertOpacityOverlay.png) repeat;
-        border-radius: 10px;
-        --webkit-border-radius: 10px;
-        z-index: 2000;
-        overflow: visible;
-    }
-
-    #background-loader {
-        display: none;
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        margin-left: -110px;
-        margin-top: -10px;
-    }
-
-    .manage {
-        position: relative;
-        background: #ffffff;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="card widget simpleTabs">
     <!--<ul class="nav nav-tabs" role="tablist">
@@ -90,7 +43,7 @@
                             <td>{{ form.order_count }}</td>
                             <td>{{ form.product_count }}</td>
                             <td class="action">
-                                <a class="btn btn-icon copy_form" href="#" data-api-reload="1" title="Copy"
+                                <a class="btn btn-icon copy-form" href="#" data-api-reload="1" title="Copy"
                                    data-form-id="{{ form.id }}">
                                     <svg class="icon">
                                         <use xlink:href="#copy" />
@@ -101,9 +54,7 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon api-link"
-                                   href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}" title="Delete"
-                                   data-api-confirm="Are you sure?" data-api-reload="1">
+                                <a class="btn btn-icon remove-form" data-form-id="{{ form.id }}" title="Delete">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -191,35 +142,35 @@
                 <div class="mb-3 row">
                     <div class="col-12" id="fields">
                         <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken}) }}"
-                           title="" class="btn btn-outline-primary api-link" data-api-reload="1">
+                           class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Text'|trans }}</span>
                         </a>
                         <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select', 'CSRFToken': CSRFToken}) }}"
-                           title="" class="btn btn-outline-primary api-link" data-api-reload="1">
+                           class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Dropdown'|trans }}</span>
                         </a>
                         <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio', 'CSRFToken': CSRFToken}) }}"
-                           title="" class="btn btn-outline-primary api-link" data-api-reload="1">
+                           class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Radio'|trans }}</span>
                         </a>
                         <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox', 'CSRFToken': CSRFToken}) }}"
-                           title="" class="btn btn-outline-primary api-link" data-api-reload="1">
+                           class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Checkbox'|trans }}</span>
                         </a>
                         <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea', 'CSRFToken': CSRFToken}) }}"
-                           title="" class="btn btn-outline-primary api-link" data-api-reload="1">
+                           class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
@@ -239,153 +190,96 @@
         </div>
     </div>
 {% endif %}
-    <div id="background_overlay">
-        <img src="images/loaders/loader7.gif" alt="" id="background-loader">
-    </div>
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript">
-    // The following code is a huge mess and needs to be refactored in the future.
-    $(function () {
-        $("form").on('submit', function () {
-            $(':checkbox:not(:checked)').removeAttr('checked');
-        });
-
+    <script type="text/javascript">
         $('.new-field').on('click', function () {
-            var p = $(this).closest('.rowElem').prev();
-
+            const p = $(this).closest('.copy-fields').prev();
             p.clone().insertAfter(p);
             p.next().find('input').val("");
-
             return false;
         });
 
-        $('#textarea-width, #textarea-height').on('change',function () {
-            var p = $(this).closest('.rowElem');
-            var width = $('#textarea-width').val();
-            var height = $('#textarea-height').val();
-
-            p.next().find('textarea').css({ "width": width, "height": height });
-
-            return false;
-        });
-
-        $('#prefix_text, #suffix_text').on('change',function () {
-            var prefix = $('#prefix_text').val();
-            var suffix = $('#suffix_text').val();
-
-            $('#prepended_text').text(prefix);
-            $('#appended_text').text(suffix);
-
-            return false;
-        });
-
-
-        $('.rm').on('click', function () {
-            var fid = $(this).attr('data-field-id');
-            var rm = $(this);
-
+        $('.remove-item').on('click', function () {
+            const fid = $(this).attr('data-field-id');
+            const rm = $(this);
             Modals.create({
                 type: 'small-confirm',
                 title: 'Are you sure?',
                 content: 'Are you sure you want to delete this field?',
+                confirmButton: 'Delete',
+                confirmButtonColor: 'danger',
                 confirmCallback: function () {
-                    API.admin.post('formbuilder/delete_field', { id: fid }, function () {
+                    API.admin.post('formbuilder/delete_field', {id: fid}, function () {
                         $(rm).parents('.wrap-field').slideUp("normal", function () {
                             $(rm).remove();
                         });
                     });
                 }
             });
-
             return false;
         });
 
-        $('.ed').on('click', function () {
-            var edit_button = $(this);
-
-            var center = function (edit_button) {
-                var leftPosition = ($(window).width() / 2) - (($(edit_button).parents('.wrap-field').find('.update-field').width() / 2) + 10);
-                var topPosition = ($(document).height() / 2) - (($(edit_button).parents('.wrap-field').find('.update-field').height() / 2) + 50);
-
-                $(edit_button).parents('.wrap-field').find('.update-field').css({
-                    'top': topPosition,
-                    'left': leftPosition
-                });
-            };
-
-            center(edit_button);
-
-            $('#background_overlay').fadeIn(function () {
-                $(window).on('resize',function () {
-                    center(edit_button);
-                });
-
-                $(edit_button).parents('.wrap-field').find('.update-field').fadeIn(function () {
-                    $('html, body').animate({
-                        scrollTop: $(this).offset().top
-                    }, 500);
-                });
-
-                $('#background_overlay').on('click', function () {
-                    hide_edit_form();
-                });
-
-                $('body').on('click', '.close-field-form', function () {
-                    hide_edit_form();
-
-                    return false;
-                });
-
-                $(document).on('keyup', function (e) {
-                    if (e.key === 'Escape') {
-                        hide_edit_form();
-                    }
-                });
-
-                var hide_edit_form = function () {
-                    $('#background_overlay').fadeOut();
-                    $(edit_button).parents('.wrap-field').find('.update-field').fadeOut();
-                };
+        {#href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}" title="Delete"#}
+        {#data-api-confirm="Are you sure?" data-api-reload="1"#}
+        $('.remove-form').on('click', function () {
+            const fid = $(this).data('form-id');
+            console.log(fid)
+            const rm = $(this);
+            Modals.create({
+                type: 'small-confirm',
+                title: 'Are you sure?',
+                content: 'Are you sure you want to delete this form?',
+                confirmButton: 'Delete',
+                confirmButtonColor: 'danger',
+                confirmCallback: function () {
+                    API.admin.post('formbuilder/delete_form', {id: fid}, function () {
+                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}");
+                    });
+                }
             });
-
-            return false;
-        });
-
-        $('.pr').on('click', function () {
-            $(this).hide().siblings('.ed').show();
-            $(this).parents('.wrap-field').find('.preview').show();
-            $(this).parents('.wrap-field').find('.manage').hide();
-
             return false;
         });
 
         $('#new-form').on('click', function () {
-            jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
-                if (title) {
-                    bb.post('admin/formbuilder/create_form', { name: title, CSRFToken: "{{ CSRFToken }}" }, function (id) {
+            Modals.create({
+                type: 'prompt',
+                title: 'New Form',
+                label: 'Give your form a new title',
+                value: 'My new form',
+                promptConfirmButton: 'Create',
+                promptConfirmCallback: function (title) {
+                    API.admin.post('formbuilder/create_form', {
+                        name: title,
+                        CSRFToken: "{{ CSRFToken }}"
+                    }, function (id) {
                         bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
                     });
                 }
             });
-
             return false;
         });
 
-        $('.copy_form').on('click', function () {
-            var fid = $(this).attr('data-form-id');
-
-            jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
-                if (title) {
-                    bb.post('admin/formbuilder/copy_form', { name: title, form_id: fid, CSRFToken: "{{ CSRFToken }}" }, function (id) {
+        $('.copy-form').on('click', function () {
+            const fid = $(this).attr('data-form-id');
+            Modals.create({
+                type: 'prompt',
+                title: 'Copy Form',
+                label: 'Give your duplicate form a title',
+                value: 'My duplicate form',
+                promptConfirmButton: 'Copy',
+                promptConfirmCallback: function (title) {
+                    API.admin.post('formbuilder/copy_form', {
+                        name: title,
+                        form_id: fid,
+                        CSRFToken: "{{ CSRFToken }}"
+                    }, function (id) {
                         bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
                     });
                 }
             });
-
             return false;
-        });
-    });
-</script>
+        })
+    </script>
 {% endblock %}

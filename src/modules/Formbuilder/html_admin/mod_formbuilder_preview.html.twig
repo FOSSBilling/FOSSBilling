@@ -1,5 +1,5 @@
-<div class="row row-cards">
-    <div class="card-body col-12 preview">
+<div class="row">
+    <div class="col-12">
         <div class="mb-3 row">
             <label class="col-3 col-form-label" for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
             <div class="col-5">
@@ -72,12 +72,12 @@
                 {% endif %}
             </div>
             <div class="col float-end">
-                <a class="ed btn btn-icon" href="#" title="Edit">
+                <a class="btn btn-icon" href="#" title="Edit" data-bs-target="#formbuilder_field{{ field.id }}" data-bs-toggle="modal">
                     <svg class="icon">
                         <use xlink:href="#edit"/>
                     </svg>
                 </a>
-                <a class="rm btn btn-icon" title="Delete" href="#" data-field-id="{{ field.id }}">
+                <a class="remove-item btn btn-icon" title="Delete" href="#" data-field-id="{{ field.id }}">
                     <svg class="icon">
                         <use xlink:href="#delete"/>
                     </svg>
