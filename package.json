@@ -22,7 +22,7 @@
     "@babel/core": "^7.21.0",
     "@babel/preset-env": "^7.20.2",
     "@symfony/webpack-encore": "^4.2.0",
-    "autoprefixer": "^10.4.13",
+    "autoprefixer": "^10.4.14",
     "core-js": "^3.29.0",
     "cypress": "^12.7.0",
     "postcss": "^8.4.21",
