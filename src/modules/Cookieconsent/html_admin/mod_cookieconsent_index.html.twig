@@ -16,10 +16,11 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-10">
+
                         <p>{{ 'Here you can specify message which will be shown to user. It will be shown until user will click <strong>Close &times;</strong> button, however it will not be intrusive and will not disturb to perform any actions.'|trans|raw }}</p>
                         <div class="alert alert-info" role="alert">
                             {{ 'If there is a need to change the way notification looks or is being displayed, you can do it by editing'|trans }}
-                            <b>modules/Cookieconsent/html_client/mod_cookieconsent_index.html.twig</b>
+                            <b>{{ constant('PATH_ROOT') }}/modules/Cookieconsent/html_client/mod_cookieconsent_index.html.twig</b>
                         </div>
                         {% set params = admin.extension_config_get({"ext":"mod_cookieconsent"}) %}
                         <textarea class="form-control" cols="5" rows="10" name="message" id="cookie-message"
