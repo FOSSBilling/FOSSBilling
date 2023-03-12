@@ -195,7 +195,7 @@
 {% block js %}
     <script type="text/javascript">
         $('.new-field').on('click', function () {
-            const p = $(this).closest('.copy-fields').prev();
+            const p = $(this).closest('.copy-field').prev();
             p.clone().insertAfter(p);
             p.next().find('input').val("");
             return false;
