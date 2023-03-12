@@ -1,7 +1,7 @@
 <div class="modal modal-blur fade" id="formbuilder_field{{ field.id }}" aria-hidden="true" tabindex="-1">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <form class=" api-form" method="post" action="admin/formbuilder/update_field" name="field_form{{ field.id }}" data-api-reload="1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+
+            <form class="modal-content api-form" method="post" action="admin/formbuilder/update_field" name="field_form{{ field.id }}" data-api-reload="1">
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'Edit field'|trans }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -12,21 +12,21 @@
                      <input type="hidden" name="form_id" value="{{ form.id }}">
                      <input type="hidden" name="type" value="{{ field.type }}">
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label" for="name">{{ 'Name'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="name">{{ 'Name'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="text" name="name" value="{{field.name}}" id="name">
                             <small class="form-hint">{{ 'Please keep in mind that field name can not start with number. Special characters will be replaced with underscores ( _ )'|trans }}</small>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label" for="label">{{ 'Label'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="label">{{ 'Label'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="text" name="label" value="{{ field.label }}" id="label">
                         </div>
                     </div>
                     <div class="mb-3 row">
                         {% if field.type == "checkbox" or field.type == "radio" or field.type == "select" %}
-                            <label class="col-3 col-form-label">{{ field.type|capitalize }} {{ 'options'|trans }}</label>
+                            <label class="col-md-3 col-form-label">{{ field.type|capitalize }} {{ 'options'|trans }}</label>
                             <div class="col">
                                 <div class="row">
                                     <div class="col-6">
@@ -54,15 +54,15 @@
                                         <input class="form-control" type="text" name="values[]">
                                     </div>
                                 </div>
-                                <div class="copy-field noborder">
+                                <div class="copy-field">
                                     <a href="#" class="btn btn-outline-primary new-field" rel="{{ i }}">{{ '+ Add new option'|trans }}</a>
                                 </div>
                             </div>
                         {% endif %}
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label">{{ 'Options'|trans }}</label>
-                        <div class="col">
+                        <label class="col-md-3 col-form-label">{{ 'Options'|trans }}</label>
+                        <div class="col pt-2">
                             <label class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" name="required" value="1" id="required"
                                        value="1" {{ (field.required == 1)? 'checked="checked"' : "" }}>
@@ -82,7 +82,7 @@
                     </div>
                     {% if field.type == "text" %}
                         <div class="mb-3 row">
-                            <label class="col-3 col-form-label">{{ 'Additional settings'|trans }}</label>
+                            <label class="col-md-3 col-form-label">{{ 'Additional settings'|trans }}</label>
                             <div class="col row">
                                 <div class="col">
                                     <label class="col-form-label" for="prefix">{{ 'Prefix'|trans }}</label>
@@ -107,7 +107,7 @@
                     {% endif %}
                     {% if field.type == "textarea" %}
                         <div class="mb-3 row">
-                            <label class="col-3 col-form-label">{{ 'Textarea size'|trans }}</label>
+                            <label class="col-md-3 col-form-label">{{ 'Textarea size'|trans }}</label>
                             <div class="col row">
                                 <div class="col">
                                     <label class="col-form-label" for="textarea-width">{{ 'Width'|trans }}</label>
@@ -129,7 +129,7 @@
                         </div>
                     {% endif %}
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label" for="default_value">{{ 'Default value'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="default_value">{{ 'Default value'|trans }}</label>
                         <div class="col">
                             {% if field.type == "text" %}
                                 <div class="input-group">
@@ -175,7 +175,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label" for="label">{{ 'Description'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="label">{{ 'Description'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="text" name="description" value="{{ field.description}}" id="description">
                         </div>
@@ -186,6 +186,5 @@
                     <input type="submit" class="btn btn-primary save-field-form" value="{{ 'Save'|trans }}">
                 </div>
             </form>
-        </div>
     </div>
 </div>

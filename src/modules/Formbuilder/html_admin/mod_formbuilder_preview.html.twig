@@ -1,8 +1,8 @@
 <div class="row">
     <div class="col-12">
         <div class="mb-3 row">
-            <label class="col-3 col-form-label" for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
-            <div class="col-5">
+            <label class="col-md-3 col-form-label" for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
+            <div class="col-9 col-md-6">
                 {% if field.type == "text" %}
                     <div class="input-group">
                         {% if field.prefix %}
@@ -71,17 +71,19 @@
                     <textarea class="form-control" rows="5" name="{{ field.name }}" id="{{ field.name }}">{{ field.default_value }}</textarea>
                 {% endif %}
             </div>
-            <div class="col float-end">
-                <a class="btn btn-icon" href="#" title="Edit" data-bs-target="#formbuilder_field{{ field.id }}" data-bs-toggle="modal">
-                    <svg class="icon">
-                        <use xlink:href="#edit"/>
-                    </svg>
-                </a>
-                <a class="remove-item btn btn-icon" title="Delete" href="#" data-field-id="{{ field.id }}">
-                    <svg class="icon">
-                        <use xlink:href="#delete"/>
-                    </svg>
-                </a>
+            <div class="col">
+                <div class="d-flex w-100 justify-content-end gap-1">
+                    <a class="btn btn-icon" href="#" title="Edit" data-bs-target="#formbuilder_field{{ field.id }}" data-bs-toggle="modal">
+                        <svg class="icon">
+                            <use xlink:href="#edit"/>
+                        </svg>
+                    </a>
+                    <a class="remove-item btn btn-icon" title="Delete" href="#" data-field-id="{{ field.id }}">
+                        <svg class="icon">
+                            <use xlink:href="#delete"/>
+                        </svg>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

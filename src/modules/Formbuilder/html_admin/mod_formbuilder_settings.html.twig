@@ -7,7 +7,7 @@
 {% set active_menu = 'system' %}
 
 {% block content %}
-<div class="card widget simpleTabs">
+<div class="card">
     <!--<ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Custom forms'|trans }}</a>
@@ -42,7 +42,7 @@
                             <td>{{ form.name }}</td>
                             <td>{{ form.order_count }}</td>
                             <td>{{ form.product_count }}</td>
-                            <td class="action">
+                            <td>
                                 <a class="btn btn-icon copy-form" href="#" data-api-reload="1" title="Copy"
                                    data-form-id="{{ form.id }}">
                                     <svg class="icon">
@@ -96,16 +96,16 @@
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <input type="hidden" name="form_id" value="{{ form.id }}">
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label"
+                        <label class="col-md-3 col-form-label"
                                for="form_name">{{ 'Form title'|trans }}</label>
-                        <div class="col-4">
+                        <div class="col-md-8">
                             <input class="form-control" type="text" name="form_name" id="form_name"
                                    value="{{ form.name }}"/>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label" for="form_type">{{ 'Labels position'|trans }}</label>
-                        <div class="col-4">
+                        <label class="col-md-3 col-form-label" for="form_type">{{ 'Labels position'|trans }}</label>
+                        <div class="col-md-8">
                             <select class="form-select" name="type" id="form_type">
                                 <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on
                             top'|trans }}</option>
@@ -115,8 +115,8 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-3 col-form-label" for="show_title">{{ 'Form title visibilty'|trans }}</label>
-                        <div class="col-4">
+                        <label class="col-md-3 col-form-label" for="show_title">{{ 'Form title visibilty'|trans }}</label>
+                        <div class="col-md-8">
                             <select class="form-select" name="show_title" id="show_title">
                                 <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show form
                             title'|trans }}</option>
@@ -140,7 +140,7 @@
         <div class="row row-cards">
             <div class="card-body col-12">
                 <div class="mb-3 row">
-                    <div class="col-12" id="fields">
+                    <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
                         <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken}) }}"
                            class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
@@ -221,8 +221,6 @@
             return false;
         });
 
-        {#href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}" title="Delete"#}
-        {#data-api-confirm="Are you sure?" data-api-reload="1"#}
         $('.remove-form').on('click', function () {
             const fid = $(this).data('form-id');
             console.log(fid)
