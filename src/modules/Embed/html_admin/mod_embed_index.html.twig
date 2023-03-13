@@ -4,45 +4,70 @@
 
 {% block content %}
 
-<div class="widget acc">
-    <div class="head"><h5>Client area login form</h5></div>
-    <div class="menu_body">
-        <textarea cols="2" rows="1" style="width: 100%; padding: 10px 0"><iframe width="215" height="200" src="{{ 'embed/loginform'|link }}" frameborder="0"></iframe></textarea>
-        <p>Copy and paste the embed code to your website.</p>
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Embed parts</div>
+                <p class="card-subtitle">
+                    Copy and paste the embed code to your website
+                </p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="client-login-form" class="form-label">Client area login form</label>
+                <div class="input-group input-group-flat">
+                    <input id="client-login-form" type="text" class="form-control" autocomplete="off" readonly
+                           value='<iframe width="215" height="200" src="{{ 'embed/loginform'|link }}" frameborder="0"></iframe>'>
+                    <span class="input-group-text">
+                <span class="link-secondary cursor-pointer clipboard-copy" data-clipboard-target="#client-login-form"
+                      data-bs-toggle="tooltip" aria-label="Copy" data-bs-original-title="Copy">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                         stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                        <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                    </svg>
+                </span>
+            </span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="domain-checker-form" class="form-label">Domain checker form</label>
+                <div class="input-group input-group-flat">
+                    <input id="domain-checker-form" type="text" class="form-control" autocomplete="off" readonly
+                           value='<iframe width="360" height="75" src="{{ 'embed/domainchecker'|link }}" frameborder="0"></iframe>'>
+                    <span class="input-group-text">
+                <span class="link-secondary cursor-pointer clipboard-copy" data-clipboard-target="#domain-checker-form"
+                      data-bs-toggle="tooltip" aria-label="Copy" data-bs-original-title="Copy">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                         stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                        <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                    </svg>
+                </span>
+            </span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="contact-us-form" class="form-label">Contact us form</label>
+                <div class="input-group input-group-flat">
+                    <input id="contact-us-form" type="text" class="form-control" autocomplete="off" readonly
+                           value='<iframe width="400" height="310" src="{{ 'embed/contact'|link }}" frameborder="0"></iframe>'>
+                    <span class="input-group-text">
+                <span class="link-secondary cursor-pointer clipboard-copy" data-clipboard-target="#contact-us-form"
+                      data-bs-toggle="tooltip" aria-label="Copy" data-bs-original-title="Copy">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                         stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                        <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                    </svg>
+                </span>
+            </span>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="head"><h5>Domain checker form</h5></div>
-    <div class="menu_body">
-        <textarea cols="2" rows="1" style="width: 100%; padding: 10px 0"><iframe width="360" height="75" src="{{ 'embed/domainchecker'|link }}" frameborder="0"></iframe></textarea>
-        <p>Copy and paste the embed code to your website.</p>
-    </div>
-
-    <div class="head"><h5>Contact us form</h5></div>
-    <div class="menu_body">
-        <textarea cols="2" rows="1" style="width: 100%; padding: 10px 0"><iframe width="400" height="310" src="{{ 'embed/contact'|link }}" frameborder="0"></iframe></textarea>
-        <p>Copy and paste the embed code to your website.</p>
-    </div>
-</div>
-<div class="fix"></div>
-
-{% endblock %}
-
-
-{% block js %}
-{% autoescape "js" %}
-<script type="text/javascript">
-$(function() {
-	//===== Accordion =====//
-
-	$('div.menu_body').eq(0).show();
-	$('.acc .head').eq(0).show().css({color:"#2B6893"});
-
-	$(".acc .head").on('click', function() {
-		$(this).css({color:"#2B6893"}).next("div.menu_body").slideToggle(300).siblings("div.menu_body").slideUp("slow");
-		$(this).siblings().css({color:"#404040"});
-	});
-
-});
-</script>
-{% endautoescape %}
 {% endblock %}
