@@ -173,7 +173,7 @@ globalThis.bb = {
           event.preventDefault();
 
           if (linkElement.hasAttribute('data-api-confirm')) {
-            
+
             Modals.create({
               type: 'small-confirm',
               title: linkElement.getAttribute('data-api-confirm'),
@@ -186,15 +186,20 @@ globalThis.bb = {
             })
 
           } else if (linkElement.hasAttribute('data-api-prompt')) {
-            jPrompt(linkElement.getAttribute('data-api-prompt-text'), linkElement.getAttribute('data-api-prompt-default'), linkElement.getAttribute('data-api-prompt-title'), function (r) {
-              if (r) {
-                var p = {};
-                var name = linkElement.getAttribute('data-api-prompt-key');
-                p[name] = r;
-                API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), p, function (result) {
-                  return bb._afterComplete(linkElement, result)}, function (error) {
+            Modals.create({
+              type: 'prompt',
+              title: linkElement.getAttribute('data-api-prompt-title'),
+              label: linkElement.getAttribute('data-api-prompt-text'),
+              promptConfirmCallback: function (value) {
+                if (value) {
+                  const p = {};
+                  const name = linkElement.getAttribute('data-api-prompt-key');
+                  p[name] = value;
+                  API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), p, function (result) {
+                    return bb._afterComplete(linkElement, result)}, function (error) {
                     FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                   });
+                }
               }
             });
           } else {

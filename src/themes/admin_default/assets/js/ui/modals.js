@@ -23,6 +23,7 @@ globalThis.Modals = {
     confirmButtonColor: "primary", // The color for the confirm button.
     promptConfirmButtonColor: "primary", // The color for the prompt confirm button.
     content: "", // The content of the modal.
+    value: "", // The prompt value of the modal.
     extraClasses: "", // The extra class to add to the modal.
     type: "default", // The type of the modal. Can be default, small, small-confirm, danger or success.
     closeCallback: null, // The callback function to call when the modal is closed.
