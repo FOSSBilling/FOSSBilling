@@ -21,6 +21,14 @@
     <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
     {{ encore_entry_script_tags('fossbilling') }}
 
+    <style>
+        @media only screen and (max-width: 1920px) {
+            .only-large-screens {
+                display: none;
+            }
+        }
+    </style>
+
     {% block head %}{% endblock %}
 </head>
 
@@ -62,13 +70,13 @@
                               <svg class="icon icon-tabler icon-tabler-arrow-back-up">
                                  <use xlink:href="#brand-github" />
                               </svg>
-                              {{ 'Source code'|trans }}
+                              <span class="only-large-screens">{{ 'Source code'|trans }}</span>
                            </a>
                            <a href="https://github.com/sponsors/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
                               <svg class="icon icon-tabler icon-tabler-heart text-pink">
                                  <use xlink:href="#heart" />
                               </svg>
-                              {{ 'Sponsor'|trans }}
+                              <span class="only-large-screens">{{ 'Sponsor'|trans }}</span>
                            </a>
                         </div>
                      </div>
@@ -119,21 +127,13 @@
                   <div class="collapse navbar-collapse" id="navbar-menu">
                     <div class="navbar">
                         <div class="container-xl">
-                            <div>
-                                <a class="btn btn-link" href="{{ '/'|link }}" target="_blank">
-                                   <svg class="icon icon-tabler icon-tabler-arrow-back-up">
-                                      <use xlink:href="#arrow-back-up" />
-                                   </svg>
-                                   <span class="ml-2">{{ 'Visit client area' | trans }}</span>
-                                </a>
-                             </div>
                              {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
                              <ul class="navbar-nav">
                              {% for location, group in navigation %}
                              {% if group.subpages %}
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
-                                        <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                                        <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens">
                                             <use xlink:href="#{{ group.class }}" />
                                          </svg>
                                         <span class="nav-link-title">{{ group.label|trans }}</span>
@@ -156,7 +156,6 @@
                   </div>
                </div>
             </header>
-
                 <div class="container-xl navbar">
                     <div class="ms-auto pt-4 mb-3 d-flex gap-3 overflow-x-auto">
                         {% if admin.system_is_allowed({ 'mod': 'client' }) %}
