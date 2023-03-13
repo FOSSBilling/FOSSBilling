@@ -24,7 +24,7 @@
     {% block head %}{% endblock %}
 </head>
 
-<body class="layout-fluid theme-light">
+<body class="theme-light">
     {% if not admin %}
     <script>
         $(function () {
@@ -36,11 +36,11 @@
     {% block content_wide %}{% endblock %}
     {% else %}
     <div class="page">
-        {% block nav %}{% include 'partial_sidebar.html.twig' %}{% endblock %}
+        {% block nav %}{% endblock %}
         <div class="page-wrapper">
             {% block before_content %}{% endblock %}
-
-            <header class="navbar navbar-expand-md navbar-light d-none d-lg-flex d-print-none">
+            
+            <header class="layout-fluid navbar navbar-expand-md navbar-light d-none d-lg-flex d-print-none">
                <div class="container-xl">
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
                   <span class="navbar-toggler-icon"></span>
@@ -117,14 +117,42 @@
                      </div>
                   </div>
                   <div class="collapse navbar-collapse" id="navbar-menu">
-                     <div>
-                        <a class="btn btn-link" href="{{ '/'|link }}" target="_blank">
-                           <svg class="icon icon-tabler icon-tabler-arrow-back-up">
-                              <use xlink:href="#arrow-back-up" />
-                           </svg>
-                           <span class="ml-2">{{ 'Visit client area' | trans }}</span>
-                        </a>
-                     </div>
+                    <div class="navbar">
+                        <div class="container-xl">
+                            <div>
+                                <a class="btn btn-link" href="{{ '/'|link }}" target="_blank">
+                                   <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                                      <use xlink:href="#arrow-back-up" />
+                                   </svg>
+                                   <span class="ml-2">{{ 'Visit client area' | trans }}</span>
+                                </a>
+                             </div>
+                             {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
+                             <ul class="navbar-nav">
+                             {% for location, group in navigation %}
+                             {% if group.subpages %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
+                                        <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                                            <use xlink:href="#{{ group.class }}" />
+                                         </svg>
+                                        <span class="nav-link-title">{{ group.label|trans }}</span>
+                                      </a>
+                                      <div class="dropdown-menu">
+                                        <div class="dropdown-menu-columns">
+                                            <div class="dropdown-menu-column">
+                                                {% for subpage in group.subpages %}
+                                                <a class="dropdown-item" href="{{ subpage.uri }}">{{ subpage.label|trans }}</a>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endif %}
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
                   </div>
                </div>
             </header>
