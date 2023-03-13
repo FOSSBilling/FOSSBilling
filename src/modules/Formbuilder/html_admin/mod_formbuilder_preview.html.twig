@@ -1,7 +1,7 @@
 <div class="row">
     <div class="col-12">
         <div class="mb-3 row">
-            <label class="col-md-3 col-form-label" for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
+            <label class="col-md-3 col-form-label {% if field.required == 1 %}required{% endif %}" for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
             <div class="col-9 col-md-6">
                 {% if field.type == "text" %}
                     <div class="input-group">
@@ -17,7 +17,6 @@
                         {% endif %}
                     </div>
                 {% elseif field.type == "select" %}
-
                     {% if field.options is empty %}
                         <div class="alert alert-danger" role="alert">
                             {{ 'Please click on "Edit" in order to add options'|trans }}
