@@ -172,6 +172,23 @@
                                 </li>
                             {% endif %}
                             {% endfor %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
+                                    <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens">
+                                        <use xlink:href="#help" />
+                                     </svg>
+                                    <span class="nav-link-title">{{ 'Help'|trans }}</span>
+                                  </a>
+                                  <div class="dropdown-menu">
+                                    <div class="dropdown-menu-columns">
+                                        <div class="dropdown-menu-column">
+                                            <a class="dropdown-item" href="https://fossbilling.org/docs" target="_blank" rel="noopener">{{ 'Documentation'|trans }}</a>
+                                            <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling" target="_blank" rel="noopener">{{ 'Source code'|trans }}</a>
+                                            <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank" rel="noopener">{{ 'Report a bug'|trans }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
                         </ul>
                         </div>
                     </div>
