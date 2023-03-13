@@ -37,7 +37,8 @@
         "league/commonmark": "^2.3",
         "gabordemooij/redbean": "^5.7",
         "symfony/webpack-encore-bundle": "^1.16",
-        "lcharette/webpack-encore-twig": "1.1.0"
+        "lcharette/webpack-encore-twig": "1.1.0",
+        "league/csv": "^9.8"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",

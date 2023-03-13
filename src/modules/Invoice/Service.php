@@ -1287,7 +1287,7 @@ class Service implements InjectionAwareInterface
             'Email' => $invoice['seller']['email'],
         ];
         foreach ($sellerData as $label => $data) {
-            if(is_string($data)){
+            if (is_string($data)) {
                 $data = trim($data);
                 if (!empty($data)) {
                     $html .= "<p>$label: $data</p>";
@@ -1306,7 +1306,7 @@ class Service implements InjectionAwareInterface
             'Phone' => $invoice['buyer']['phone'],
         ];
         foreach ($buyerData as $label => $data) {
-            if(is_string($data)){
+            if (is_string($data)) {
                 $data = trim($data);
                 if (!empty($data)) {
                     $html .= "<p>$label: $data</p>";
@@ -1565,5 +1565,13 @@ class Service implements InjectionAwareInterface
         }
 
         return false;
+    }
+
+    public function exportCSV(array $headers)
+    {
+        if (!$headers) {
+            $headers = ['id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc', 'buyer_email', 'approved', 'taxname', 'taxrate', 'due_at', 'reminded_at', 'paid_at'];
+        }
+        return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
     }
 }
