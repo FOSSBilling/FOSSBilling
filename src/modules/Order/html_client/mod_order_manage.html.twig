@@ -57,18 +57,18 @@
 
                     <tr>
                         <td><label>{{ 'Order created'|trans }}</label></td>
-                        <td>{{ order.created_at|bb_date }}</td>
+                        <td>{{ order.created_at|format_date }}</td>
                     </tr>
 
                     <tr>
                         <td><label>{{ 'Activated at'|trans }}</label></td>
-                        <td>{% if order.activated_at %}{{ order.activated_at|bb_date }}{% else %}-{% endif %}</td>
+                        <td>{% if order.activated_at %}{{ order.activated_at|format_date }}{% else %}-{% endif %}</td>
                     </tr>
 
                     {% if order.period %}
                     <tr>
                         <td><label>{{ 'Renewal date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
-                        <td>{% if order.expires_at %}{{ order.expires_at|bb_date }}{% else %}-{% endif %}</td>
+                        <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
                     </tr>
                     {% endif %}
 
@@ -146,7 +146,7 @@
                                 <td>{{ addon.title }}</td>
                                 <td>{{ addon.total|money(addon.currency) }}</td>
                                 <td>{{ addon.period|period_title }}</td>
-                                <td>{% if addon.expires_at %}{{ addon.expires_at|bb_date }}{% else %}-{% endif %}</td>
+                                <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                                 <td>
                                     <span class="label {% if addon.status == 'active' %}label-success{% elseif addon.status == 'pending_setup' %}label-warning{% endif %}">{{ mf.status_name(addon.status) }}</span>
                                 </td>

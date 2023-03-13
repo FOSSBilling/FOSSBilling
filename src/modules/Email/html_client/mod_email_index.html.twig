@@ -24,7 +24,7 @@
                         <li class="email-title {% if loop.first%}active{% endif %}" style="line-height: 50%">
                             <a href="#tab{{email.id}}" data-toggle="tab" style="padding-left: 0px; padding-bottom: 0px">
                                 <p><strong>{{email.subject |slice(0,50) }}{% if email.subject | length > 50%}...{% endif%}</strong></p>
-                                <p><small>{{email.created_at|bb_date}}</small></p>
+                                <p><small>{{email.created_at|format_date}}</small></p>
                             </a>
                         </li>
                         {% endfor %}
@@ -35,7 +35,7 @@
                             <div class="well well-small">
                                 <p><strong>{{ 'From:'|trans }}</strong> {{email.sender}}</p>
                                 <p><strong>{{ 'To:'|trans }}</strong> {{email.recipients}}</p>
-                                <p><strong>{{ 'Created at:'|trans }}</strong> {{email.created_at|bb_date}}</p>
+                                <p><strong>{{ 'Created at:'|trans }}</strong> {{email.created_at|format_date}}</p>
                             </div>
                             <div class="well">
                                 <h3>{{ email.subject }}</h3>

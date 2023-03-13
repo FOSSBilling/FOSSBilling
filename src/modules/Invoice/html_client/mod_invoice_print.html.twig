@@ -86,14 +86,14 @@
                                     <dd>{{ nr }}</dd>
                                     <dt>{{ 'Invoice date'|trans }}:</dt>
                                     <dd>{% if invoice.created_at %}
-                                        {{ invoice.created_at | bb_date }}
+                                        {{ invoice.created_at | format_date }}
                                         {% else %}
                                         -----
                                         {% endif %}
                                     </dd>
                                     <dt>{{ 'Due date'|trans }}:</dt>
                                     <dd>{% if invoice.due_at %}
-                                        {{ invoice.due_at | bb_date }}
+                                        {{ invoice.due_at | format_date }}
                                         {% else %}
                                         -----
                                         {% endif %}

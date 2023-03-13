@@ -130,7 +130,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Registered at'|trans }}:</td>
-                            <td>{{ client.created_at|date('M d, Y') }}</td>
+                            <td>{{ client.created_at|format_datetime }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -822,7 +822,7 @@
                             <td>{{ tx.gateway }}</td>
                             <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
                             <td>{{ mf.status_name(tx.status) }}</td>
-                            <td>{{ tx.created_at|bb_datetime }}</td>
+                            <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
                                     <svg class="icon">

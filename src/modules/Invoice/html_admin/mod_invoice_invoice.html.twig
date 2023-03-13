@@ -98,19 +98,19 @@
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Created at'|trans }}:</td>
-                        <td>{{ invoice.created_at|bb_date }}</td>
+                        <td>{{ invoice.created_at|format_date }}</td>
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Due at'|trans }}:</td>
-                        <td>{{ invoice.due_at|bb_date }}</td>
+                        <td>{{ invoice.due_at|format_date }}</td>
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Paid at'|trans }}:</td>
-                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|bb_date }}{% else %}-{% endif %}</td>
+                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Reminded at'|trans }}:</td>
-                        <td>{% if invoice.reminded_at %}{{ invoice.reminded_at|bb_date }} ({{ invoice.reminded_at|timeago }} ago) {% endif %}</td>
+                        <td>{% if invoice.reminded_at %}{{ invoice.reminded_at|format_date }} ({{ invoice.reminded_at|timeago }} ago) {% endif %}</td>
                     </tr>
                     {% if invoice.notes %}
                     <tr>
@@ -652,7 +652,7 @@
                     <td>{{ tx.gateway }}</td>
                     <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
                     <td>{{ mf.status_name(tx.status) }}</td>
-                    <td>{{ tx.created_at|bb_datetime }}</td>
+                    <td>{{ tx.created_at|format_datetime }}</td>
                     <td>
                         <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
                             <svg class="icon">

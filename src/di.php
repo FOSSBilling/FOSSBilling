@@ -28,6 +28,7 @@ use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
+use Twig\Extra\Intl\IntlExtension;
 
 $di = new Box_Di();
 
@@ -325,10 +326,10 @@ $di['twig'] = $di->factory(function () use ($di) {
     $twig->addExtension(new DebugExtension());
     $twig->addExtension(new TranslationExtension());
     $twig->addExtension($box_extensions);
-    $twig->getExtension(CoreExtension::class)
-        ->setDateFormat($config['locale_date_format']);
-    $twig->getExtension(CoreExtension::class)
-        ->setTimezone($config['timezone']);
+    $twig->getExtension(CoreExtension::class)->setTimezone($config['timezone']);
+
+    $dateFormatter = new \IntlDateFormatter($config['locale'], \IntlDateFormatter::MEDIUM, \IntlDateFormatter::MEDIUM, $config['timezone']);
+    $twig->addExtension(new IntlExtension($dateFormatter));
 
     // add globals
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 'XMLHttpRequest' === $_SERVER['HTTP_X_REQUESTED_WITH']) {

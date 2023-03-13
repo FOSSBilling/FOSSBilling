@@ -24,7 +24,7 @@
             <td>
                 {{ 'Last ping'|trans }}
             </td>
-            <td>{{ service.pinged_at|bb_date }} ({{ service.pinged_at|timeago }} ago)</td>
+            <td>{{ service.pinged_at|format_date }} ({{ service.pinged_at|timeago }} ago)</td>
         </tr>
 
     </tbody>
