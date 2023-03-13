@@ -70,12 +70,12 @@
                             </label>
                             <label class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" name="hide_label" value="1"
-                                       id="hide_label" value="1" {{ (field.required == 1)? 'checked="checked"' : "" }}>
+                                       id="hide_label" value="1" {{ (field.hide_label == 1)? 'checked="checked"' : "" }}>
                                 <span class="form-check-label">{{ 'Hide label'|trans }}</span>
                             </label>
                             <label class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" name="readonly" value="1" id="readonly"
-                                       value="1" {{ (field.required == 1)? 'checked="checked"' : "" }}>
+                                       value="1" {{ (field.readonly == 1)? 'checked="checked"' : "" }}>
                                 <span class="form-check-label">{{ 'Read only'|trans }}</span>
                             </label>
                         </div>
@@ -83,24 +83,22 @@
                     {% if field.type == "text" %}
                         <div class="mb-3 row">
                             <label class="col-md-3 col-form-label">{{ 'Additional settings'|trans }}</label>
-                            <div class="col row">
-                                <div class="col">
-                                    <label class="col-form-label" for="prefix">{{ 'Prefix'|trans }}</label>
-                                    <div class="input-group">
-                                        <input class="col form-control" type="text"
-                                               placeholder="{{ 'Prepend text'|trans }}"
-                                               name="prefix"
-                                               value="{{ field.prefix }}" id="prefix_text">
-                                    </div>
+                            <div class="col">
+                                <label class="col-form-label" for="prefix">{{ 'Prefix'|trans }}</label>
+                                <div class="input-group">
+                                    <input id="prefix" class="col form-control" type="text"
+                                           placeholder="{{ 'Prepend text'|trans }}"
+                                           name="prefix"
+                                           value="{{ field.prefix }}" id="prefix_text">
                                 </div>
-                                <div class="col">
-                                    <label class="col-form-label" for="suffix">{{ 'Suffix'|trans }}</label>
-                                    <div class="input-group">
-                                        <input class="col form-control" type="text"
-                                               placeholder="{{ 'Append text'|trans }}"
-                                               name="suffix"
-                                               value="{{ field.suffix }}" id="suffix_text">
-                                    </div>
+                            </div>
+                            <div class="col">
+                                <label class="col-form-label" for="suffix">{{ 'Suffix'|trans }}</label>
+                                <div class="input-group">
+                                    <input id="suffix" class="col form-control" type="text"
+                                           placeholder="{{ 'Append text'|trans }}"
+                                           name="suffix"
+                                           value="{{ field.suffix }}" id="suffix_text">
                                 </div>
                             </div>
                         </div>
@@ -108,22 +106,20 @@
                     {% if field.type == "textarea" %}
                         <div class="mb-3 row">
                             <label class="col-md-3 col-form-label">{{ 'Textarea size'|trans }}</label>
-                            <div class="col row">
-                                <div class="col">
-                                    <label class="col-form-label" for="textarea-width">{{ 'Width'|trans }}</label>
-                                    <div class="input-group">
-                                        <input type="hidden" name="textarea_option[]" value="width">
-                                        <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.width}}" id="textarea-width">
-                                        <span class="input-group-text">{{ 'px'|trans }}</span>
-                                    </div>
+                            <div class="col">
+                                <label class="col-form-label" for="textarea-width">{{ 'Width'|trans }}</label>
+                                <div class="input-group">
+                                    <input type="hidden" name="textarea_option[]" value="width">
+                                    <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.width}}" id="textarea-width">
+                                    <span class="input-group-text">{{ 'px'|trans }}</span>
                                 </div>
-                                <div class="col">
-                                    <label class="col-form-label" for="textarea-height">{{ 'Height'|trans }}</label>
-                                    <div class="input-group">
-                                        <input type="hidden" name="textarea_option[]" value="height">
-                                        <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.height}}" id="textarea-height">
-                                        <span class="input-group-text">{{ 'px'|trans }}</span>
-                                    </div>
+                            </div>
+                            <div class="col">
+                                <label class="col-form-label" for="textarea-height">{{ 'Height'|trans }}</label>
+                                <div class="input-group">
+                                    <input type="hidden" name="textarea_option[]" value="height">
+                                    <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.height}}" id="textarea-height">
+                                    <span class="input-group-text">{{ 'px'|trans }}</span>
                                 </div>
                             </div>
                         </div>
