@@ -27,43 +27,45 @@
                         </a>
                     </div>
                 </div>
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'Title'|trans }}</th>
-                            <th>{{ 'Orders'|trans }}</th>
-                            <th>{{ 'Products'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for form in admin.formbuilder_get_forms %}
-                        <tr>
-                            <td>{{ form.name }}</td>
-                            <td>{{ form.order_count }}</td>
-                            <td>{{ form.product_count }}</td>
-                            <td>
-                                <a class="btn btn-icon copy-form" href="#" data-api-reload="1" title="Copy"
-                                   data-form-id="{{ form.id }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#copy" />
-                                    </svg>
-                                </a>
-                                <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}" title="Edit">
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                                <a class="btn btn-icon remove-form" data-form-id="{{ form.id }}" title="Delete">
-                                    <svg class="icon">
-                                        <use xlink:href="#delete" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Title'|trans }}</th>
+                                <th>{{ 'Orders'|trans }}</th>
+                                <th>{{ 'Products'|trans }}</th>
+                                <th class="w-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in admin.formbuilder_get_forms %}
+                            <tr>
+                                <td>{{ form.name }}</td>
+                                <td>{{ form.order_count }}</td>
+                                <td>{{ form.product_count }}</td>
+                                <td>
+                                    <a class="btn btn-icon copy-form" href="#" data-api-reload="1" title="Copy"
+                                       data-form-id="{{ form.id }}">
+                                        <svg class="icon">
+                                            <use xlink:href="#copy" />
+                                        </svg>
+                                    </a>
+                                    <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}" title="Edit">
+                                        <svg class="icon">
+                                            <use xlink:href="#edit" />
+                                        </svg>
+                                    </a>
+                                    <a class="btn btn-icon remove-form" data-form-id="{{ form.id }}" title="Delete">
+                                        <svg class="icon">
+                                            <use xlink:href="#delete" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
