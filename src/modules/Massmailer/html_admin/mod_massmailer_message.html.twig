@@ -5,103 +5,162 @@
 {% set active_menu = 'system' %}
 
 {% block content %}
-<div class="widget">
-    <div class="head">
-        <h5>{{ 'Send Email Message'|trans }} - {{ msg.subject }}</h5>
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <h3 class="mb-0">{{ 'Send Email Message'|trans }} - {{ msg.subject }}</h3>
+        </div>
+        <div class="card-actions">
+            <a href="{{ 'massmailer'|alink }}" class="btn">
+                <svg class="icon">
+                    <use xlink:href="#arrow-back-up" />
+                </svg>
+                Back to list
+            </a>
+        </div>
     </div>
 
-    <form method="post" action="admin/massmailer/update" class="mainForm save api-form" data-api-jsonp="onAfterMessageUpdate" id="msg-form">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-        <fieldset>
-
-            <div class="rowElem noborder">
-                <label>{{ 'From'|trans }}</label>
-                <div class="formRight moreFields">
-                    <ul>
-                        <li style="width: 250px"><input type="text" name="from_name" value="{{ msg.from_name }}" required="required" title="{{ 'From name'|trans }}"/></li>
-                        <li class="sep"></li>
-                        <li style="width: 245px"><input type="text" name="from_email" value="{{ msg.from_email }}" required="required"  title="{{ 'From email'|trans }}"/></li>
-                    </ul>
+    <form method="post" action="admin/massmailer/update" class="api-form" data-api-jsonp="onAfterMessageUpdate"
+          id="msg-form">
+        <div class="card-body">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+            <input type="hidden" name="filter">
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label">{{ 'From'|trans }}</label>
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="col-form-label">{{ 'Name'|trans }}</label>
+                        </div>
+                        <div class="col-6">
+                            <label class="col-form-label">{{ 'Email'|trans }}</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <input class="form-control" type="text" name="from_name" value="{{ msg.from_name }}"
+                                   required="required" title="{{ 'From name'|trans }}">
+                        </div>
+                        <div class="col-6">
+                            <input class="form-control" type="text" name="from_email" value="{{ msg.from_email }}"
+                                   required="required" title="{{ 'From email'|trans }}">
+                        </div>
+                    </div>
                 </div>
-                <div class="fix"></div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label">{{ 'Subject'|trans }}</label>
+                <div class="col-md-8">
+                    <input class="form-control" type="text" name="subject" value="{{ msg.subject }}"
+                           required="required"/>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="pb-2">
+                <h3 class="card-title">{{ 'Recipients filter'|trans }}</h3>
+                <p class="card-subtitle">Select none to send message to all clients</p>
             </div>
 
-            <div class="rowElem">
-                <label>{{ 'Subject'|trans }}</label>
-                <div class="formRight">
-                    <input type="text" name="subject" value="{{ msg.subject }}" required="required"/>
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label">{{ 'Client status and group'|trans }}</label>
+                <div class="col-md-8">
+                    <input type="hidden" name="filter">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-select" name="filter[client_status][]" multiple="multiple" size="4">
+                                <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Active'|trans }}</option>
+                                <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
+                                <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Canceled'|trans }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" name="filter[client_groups][]" multiple="multiple" size="4">
+                                {% for id,label in admin.client_group_get_pairs %}
+                                    <option value="{{id}}" {% if id in msg.filter.client_groups %} selected="selected"{% endif %}>{{label}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div class="fix"></div>
             </div>
 
-            </fieldset>
-
-            <fieldset>
-                <legend>{{ 'Recipients filter. Select none to send message to all clients'|trans }}</legend>
-            <div class="rowElem">
-                <label>{{ 'Client status and group'|trans }}</label>
-                <div class="formRight">
-                    <input type="hidden" name="filter" />
-                    <select name="filter[client_status][]" multiple="multiple" size="3">
-                        <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Active'|trans }}</option>
-                        <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
-                        <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Canceled'|trans }}</option>
-                    </select>
-
-                    <select name="filter[client_groups][]" multiple="multiple" size="5">
-                        {% for id,label in admin.client_group_get_pairs %}
-                        <option value="{{id}}" {% if id in msg.filter.client_groups %} selected="selected"{% endif %}>{{label}}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="fix"></div>
-            </div>
-
-            <div class="rowElem">
-                <label>{{ 'Has order'|trans }}</label>
-                <div class="formRight">
-                            <select name="filter[has_order_with_status][]" multiple="multiple" size="5">
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label">{{ 'Has order'|trans }}</label>
+                <div class="col-md-8">
+                    <input type="hidden" name="filter">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-select" name="filter[has_order_with_status][]" multiple="multiple" size="6">
                                 {% for id,label in admin.order_get_status_pairs %}
-                                <option value="{{id}}" {% if id in msg.filter.has_order_with_status %} selected="selected"{% endif %}>{{label}}</option>
+                                    <option value="{{id}}" {% if id in msg.filter.has_order_with_status %} selected="selected"{% endif %}>{{label}}</option>
                                 {% endfor %}
                             </select>
-                            <select name="filter[has_order][]" multiple="multiple" size="5">
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" name="filter[has_order][]" multiple="multiple" size="6">
                                 {% for id,label in admin.product_get_pairs %}
-                                <option value="{{id}}" {% if id in msg.filter.has_order %} selected="selected"{% endif %}>{{label}}</option>
+                                    <option value="{{id}}" {% if id in msg.filter.has_order %} selected="selected"{% endif %}>{{label}}</option>
                                 {% endfor %}
                             </select>
-                </div>
-                <div class="fix"></div>
-            </div>
-                </fieldset>
-
-            <fieldset>
-                <legend>{{ 'Message content'|trans }}</legend>
-            <div class="rowElem">
-                <div class="formBottom">
-                    <textarea name="content" cols="5" rows="20" placeholder="Email content">{{ msg.content }}</textarea>
-                </div>
-                </div>
-
-            <div class="body">
-                <div class="pt20" id="preview" style="display: none;">
-                    <div class="body esubject mb20" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
-                    <div class="body econtent" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
+        <div class="card-body">
+            <h3 class="card-title">{{ 'Email content'|trans }}</h3>
+            <div class="card-tabs">
 
-            <input type="submit" value="{{ 'Update and preview'|trans }}" class="greyishBtn submitForm">
-            <input type="button" value="{{ 'Send test message'|trans }}" class="blueBtn submitForm" id="send-test-msg" style="float: left;">
-            <input type="button" value="{{ 'Send message to clients'|trans }}" class="greenBtn submitForm" id="send-msg" style="float: left;">
-            <input type="hidden" name="id" value="{{ msg.id }}">
-        </fieldset>
+                <ul class="nav nav-tabs" id="content-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a href="#tab-message" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-message" aria-selected="true"
+                           role="tab">{{ 'Message'|trans }}</a></li>
+                    <li class="nav-item" role="presentation">
+                        <a href="#tab-preview" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preview" aria-selected="false" role="tab"
+                           tabindex="-1">
+                            {{ 'Preview'|trans }}
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="card">
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="tab-message" role="tabpanel">
+                            <div class="card-body">
+                                <textarea class="form-control" name="content" cols="5" rows="20"
+                                          placeholder="Email content">{{ msg.content }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade" id="tab-preview" role="tabpanel">
+                            <div class="p-4" id="preview-banner">
+                                <h3>Click on update and preview button</h3>
+                            </div>
+                            <div class="d-none" id="preview">
+                                <div class="card-header">
+                                    <h3 class="card-title" id="preview-title"></h3>
+                                </div>
+                                <div class="card-body" id="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="id" value="{{ msg.id }}">
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <div class="d-flex gap-2">
+                    <input type="submit" value="{{ 'Update and preview'|trans }}" class="btn btn-secondary">
+                    <input type="button" value="{{ 'Send test message'|trans }}" class="btn btn-success" id="send-test-msg">
+                </div>
+                <input type="button" value="{{ 'Send message to clients'|trans }}" class="btn btn-primary" id="send-msg">
+            </div>
+        </div>
     </form>
-
-    <div class="body">
-        <a href="{{ 'massmailer'|alink }}"  title="" class="btnIconLeft mr10">
-            <img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{{ 'Back to list'|trans }}</span>
-        </a>
-    </div>
 </div>
 {% endblock %}
 
@@ -110,11 +169,14 @@
 <script>
 function onAfterMessageUpdate() {
     API.admin.post('massmailer/preview', { id: {{ msg.id }} }, function(result) {
-        document.querySelector('#preview').style.display = '';
-        document.querySelector('#preview .econtent').innerHTML = result.content;
-        document.querySelector('#preview .esubject').innerHTML = result.subject;
+        document.querySelector('#preview-banner').classList.add('d-none');
+        document.querySelector('#preview').classList.remove('d-none');
+        document.querySelector('#preview-title').textContent = result.subject;
+        document.querySelector('#preview-content').innerHTML = result.content;
+        const previewTab = new bootstrap.Tab(document.querySelector('#content-tabs a[data-bs-target="#tab-preview"]'));
+        previewTab.show();
     });
-};
+}
 
 document.querySelector('#send-msg').addEventListener('click', () => {
     Modals.create({
@@ -128,7 +190,7 @@ document.querySelector('#send-msg').addEventListener('click', () => {
         },
     })
 });
-    
+
 document.querySelector('#send-test-msg').addEventListener('click', () => {
     Modals.create({
         type: 'small-confirm',
