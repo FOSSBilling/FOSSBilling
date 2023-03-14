@@ -2,8 +2,6 @@ import './scss/fossbilling.scss';
 
 import './js/sprite';
 import $ from 'jquery';
-import 'jquery.browser'; // Temporary package until the removal of jquery.alerts
-import './js/ui/jquery.alerts';
 import './js/ui/modals';
 import "@melloware/coloris/dist/coloris.css";
 import { coloris, init } from '@melloware/coloris';
