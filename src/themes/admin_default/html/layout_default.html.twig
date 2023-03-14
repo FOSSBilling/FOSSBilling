@@ -32,6 +32,11 @@
                 display: none;
             }
         }
+        @media only screen and (max-width: 355px) {
+            .not-very-small {
+                display: none;
+            }
+        }
     </style>
 
     {% block head %}{% endblock %}
@@ -52,12 +57,12 @@
         {% block nav %}{% endblock %}
         <div class="page-wrapper">
             {% block before_content %}{% endblock %}
-            <header class="navbar navbar-expand-md navbar-light d-print-none">
+            <header class="navbar navbar-expand-xl navbar-light d-print-none">
                <div class="container-xl">
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
                   <span class="navbar-toggler-icon"></span>
                   </button>
-                  <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3 not-mobile">
+                  <h1 class="navbar-brand d-none-navbar-horizontal pe-0 pe-md-3 not-mobile">
                     <a href="{{ '/'|alink }}">
                       <img class="navbar-brand-image" src="{{ company.logo_url_dark }}" alt="{{ company.name }}">
                     </a>
@@ -89,7 +94,7 @@
                            </a>
                         </div>
                      </div>
-                     <div class="d-none d-md-flex me-3">
+                     <div class="me-3 pt-1 not-very-small">
                         <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
                            href="?theme=dark"
                            data-bs-toggle="tooltip"
@@ -135,7 +140,7 @@
                   </div>
                </div>
             </header>
-            <header class="navbar-expand-md">
+            <header class="navbar-expand-xl">
                 <div class="collapse navbar-collapse" id="navbar-menu">
                     <div class="navbar navbar-light">
                         <div class="container-xl">
@@ -143,7 +148,7 @@
                              <ul class="navbar-nav">
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ '/'|alink }}">
-                                        <span class="only-large-screens">
+                                        <span class="only-large-screens me-1">
                                             <svg class="icon">
                                                 <use xlink:href="#home" />
                                             </svg>
@@ -155,7 +160,7 @@
                              {% if group.subpages %}
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
-                                        <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens">
+                                        <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens me-1">
                                             <use xlink:href="#{{ group.class }}" />
                                          </svg>
                                         <span class="nav-link-title">{{ group.label|trans }}</span>
@@ -174,7 +179,7 @@
                             {% endfor %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
-                                    <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens">
+                                    <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens me-1">
                                         <use xlink:href="#help" />
                                      </svg>
                                     <span class="nav-link-title">{{ 'Help'|trans }}</span>
