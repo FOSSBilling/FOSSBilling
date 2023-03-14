@@ -172,11 +172,10 @@ globalThis.bb = {
           // Prevent the default form click action. We will handle it ourselves.
           event.preventDefault();
 
-          if (linkElement.hasAttribute('data-api-confirm')) {
-
+          if (linkElement.dataset.apiConfirm) {
             Modals.create({
               type: 'small-confirm',
-              title: linkElement.getAttribute('data-api-confirm'),
+              title: linkElement.dataset.apiConfirm,
               confirmCallback: function () {
                 API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
                   return bb._afterComplete(linkElement, result)}, function (error) {
@@ -185,15 +184,16 @@ globalThis.bb = {
               },
             })
 
-          } else if (linkElement.hasAttribute('data-api-prompt')) {
+          } else if (linkElement.dataset.apiPrompt) {
             Modals.create({
               type: 'prompt',
-              title: linkElement.getAttribute('data-api-prompt-title'),
-              label: linkElement.getAttribute('data-api-prompt-text'),
+              title: linkElement.dataset.apiPromptTitle,
+              label: linkElement.dataset.apiPromptText ? linkElement.dataset.apiPromptText : 'Label',
+              value: linkElement.dataset.apiPromptDefault ? linkElement.dataset.apiPromptDefault : '',
               promptConfirmCallback: function (value) {
                 if (value) {
                   const p = {};
-                  const name = linkElement.getAttribute('data-api-prompt-key');
+                  const name = linkElement.dataset.apiPromptKey;
                   p[name] = value;
                   API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), p, function (result) {
                     return bb._afterComplete(linkElement, result)}, function (error) {
