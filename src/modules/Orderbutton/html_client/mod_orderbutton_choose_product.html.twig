@@ -7,13 +7,19 @@
     </div>
     <div id="products" class="accordion-body collapse {% if not request.order and not request.cart and not request.checkout %}in{% endif %}" >
         <div class="accordion-inner">
-            <ul class="nav nav-list">
-                {% for i, product in products.list %}
-                <li>
-                    <a href="{{ 'orderbutton'|link({ 'order': product.id, 'show_custom_form_values': request.show_custom_form_values }) }}">{{ product.title }} <span class="awe-arrow-right pull-right"><span></a>
-                </li>
+            <div>
+                {% for i, category in guest.product_category_get_list.list %}
+                <h2 style="margin-bottom: -5px;">{{ category.title }}</h2>
+                <span>{{ category.description|markdown }}</span>
+                <ul class="nav nav-list">
+                    {% for i, product in category.products %}
+                    <li>
+                        <a href="{{ 'orderbutton'|link({ 'order': product.id, 'show_custom_form_values': request.show_custom_form_values }) }}">{{ product.title }} <span class="awe-arrow-right pull-right"><span></a>
+                    </li>
+                    {% endfor %}
+                </ul>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
     </div>
 </div>

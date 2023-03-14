@@ -13,6 +13,7 @@
     "autosize": "^6.0.1",
     "bootstrap": "^5.2.3",
     "bootstrap-markdown": "^2.10.0",
+    "clipboard": "^2.0.11",
     "flag-icons": "^6.6.6",
     "imask": "^6.4.3",
     "jquery": "^3.6.4",

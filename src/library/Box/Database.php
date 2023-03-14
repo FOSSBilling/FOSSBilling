@@ -104,6 +104,15 @@ class Box_Database implements InjectionAwareInterface
         return $beans;
     }
 
+    public function findAll(string $table, string $sql = null)
+    {
+        if (is_null($sql)) {
+            return $this->orm->findAll($table);
+        } else {
+            return $this->orm->findAll($table, $sql);
+        }
+    }
+
     /**
      * @param string $modelName
      * @param integer $id

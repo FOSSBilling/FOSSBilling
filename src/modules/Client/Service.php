@@ -664,9 +664,11 @@ class Service implements InjectionAwareInterface
     {
         $config = $this->di['mod_config']('client');
 
-        if ($client->email != $email
+        if (
+            $client->email != $email
             && isset($config['allow_change_email'])
-            && !$config['allow_change_email']) {
+            && !$config['allow_change_email']
+        ) {
             throw new \Box_Exception('Email can not be changed');
         }
 
@@ -699,5 +701,21 @@ class Service implements InjectionAwareInterface
                 }
             }
         }
+    }
+
+    public function exportCSV(array $headers)
+    {
+        if ($headers) {
+            // Prevent the password / salt columns from being exported
+            if (isset($headers['pass'])) {
+                unset($headers['pass']);
+            }
+            if (isset($headers['salt'])) {
+                unset($headers['salt']);
+            }
+        } else {
+            $headers = ['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency'];
+        }
+        return $this->di['table_export_csv']('client', 'clients.csv', $headers);
     }
 }

@@ -7,126 +7,134 @@
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
-<ul class="breadcrumb">
-    <li class="breadcrumb-item">
-        <a href="{{ '/'|alink }}">
-            <svg class="icon">
-                <use xlink:href="#home" />
-            </svg>
-        </a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
-    </li>
-    <li class="breadcrumb-item active" aria-current="page">{{ 'SpamChecker settings'|trans }}</li>
-</ul>
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home"/>
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'SpamChecker settings'|trans }}</li>
+    </ul>
 {% endblock %}
 
-
 {% block content %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ 'SpamChecker settings'|trans }}</h3>
+        </div>
 
-<div class="widget">
-    <div class="head">
-        <h5 class="iCog">{{ 'SpamChecker settings'|trans }}</h5>
+        {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
+              data-api-msg="{{ 'Configuration updated'|trans }}">
+            <div class="card-body">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+                <input type="hidden" name="ext" value="mod_spamchecker">
+                <div class="row">
+                    <label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP blocking'|trans }}</label>
+                    <div class="row col-md-6 pt-2 ps-0">
+                        <label class="form-check form-check-single form-switch ps-0 mb-2">
+                            <input id="block_ips_check" class="form-check-input" name="block_ips" type="checkbox"
+                                   {% if params.block_ips %}checked="checked"{% endif %}">
+                        </label>
+                        <div class="col ps-0">
+                            <small class="form-hint">{{ 'Blocked IPs are not allowed to login, register or open public ticket. (One IP per line)'|trans }}</small>
+                            <textarea id="block_ips" class="form-control" name="blocked_ips" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
+                            <label class="hidden" for="block_ips">Blocked IP list</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <h3 class="card-title">{{ 'reCAPTCHA settings'|trans }}</h3>
+                <p class="card-subtitle">
+                    {{ 'Enable captcha for client registration and contact forms'|trans }}<br>
+                    {{ 'Sign up for reCAPTCHA key for your domain at'|trans }}
+                    <a href="https://www.google.com/recaptcha/about/" target="_blank">Google reCAPTCHA</a>
+                </p>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label" for="captcha_enabled">{{ 'Enable reCAPTCHA'|trans }}</label>
+                    <div class="col-md-6 pt-2 ps-0">
+                        <label class="form-check form-check-single form-switch ps-0">
+                            <input id="captcha_enabled" class="form-check-input" name="captcha_enabled" type="checkbox"
+                                   {% if params.captcha_enabled %}checked="checked"{% endif %}">
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'reCAPTCHA version'|trans }}</label>
+                    <div class="col-md-6 pt-2 ps-0">
+                        <label class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="captcha_version" value="2"
+                                   {% if params.captcha_version == "2" %}checked="checked"{% endif %}>
+                            <span class="form-check-label">{{ 'v2'|trans }}</span>
+                        </label>
+{#                        <label class="form-check form-check-inline">#}
+{#                            <input class="form-check-input" type="radio" value="3" disabled#}
+{#                                   {% if params.captcha_version == "3" %}checked="checked"{% endif %}>#}
+{#                            <span class="form-check-label">{{ 'v3'|trans }}</span>#}
+{#                        </label>#}
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public key'|trans }}</label>
+                    <div class="col-md-6 row">
+                        <input class="form-control" type="text" id="captcha_recaptcha_publickey" name="captcha_recaptcha_publickey"
+                               value="{{ params.captcha_recaptcha_publickey }}">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret key'|trans }}</label>
+                    <div class="col-md-6 pt-2 row">
+                        <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey"
+                               value="{{ params.captcha_recaptcha_privatekey }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <h3 class="card-title">{{ 'Akismet settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Enable forum messages checking on the <a href="https://akismet.com/" target="_blank">Akismet</a> database'|trans|raw }}</p>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label" for="akismet_enabled">{{ 'Enable Akismet'|trans }}</label>
+                    <div class="col-md-6 pt-2 ps-0">
+                        <label class="form-check form-check-single form-switch ps-0">
+                            <input id="akismet_enabled" class="form-check-input" name="akismet_enabled" type="checkbox"
+                                   {% if params.akismet_enabled %}checked="checked"{% endif %}">
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label" for="akismet_api_key">{{ 'Akismet API key'|trans }}</label>
+                    <div class="col-md-6 row">
+                        <input class="form-control" type="text" id="akismet_api_key" name="akismet_api_key"
+                               value="{{ params.akismet_api_key }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <h3 class="card-title">{{ 'Stop Forum Spam settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'If enabled, client IP will be checked on the <a href="https://stopforumspam.com/" target="_blank">Stop Forum Spam</a> database before registration'|trans|raw }}</p>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label" for="sfs">{{ 'Enable Stop Forum Spam'|trans }}</label>
+                    <div class="col-md-6 pt-2 ps-0">
+                        <label class="form-check form-check-single form-switch ps-0">
+                            <input id="sfs" class="form-check-input" name="sfs" type="checkbox"
+                                   {% if params.sfs %}checked="checked"{% endif %}">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">{{ 'Update'|trans }}</button>
+            </div>
+        </form>
     </div>
-
-{% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
-
-<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-    <fieldset>
-        <div class="rowElem noborder">
-            <label>{{ 'Enable IP blocking'|trans }}</label>
-            <div class="formRight">
-                <input type="radio" name="block_ips" value="1" {% if params.block_ips == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
-                <input type="radio" name="block_ips" value="0" {% if params.block_ips == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-        <div class="rowElem noborder">
-            <label class="topLabel">{{ 'Blocked IPs are not allowed to login, register or open public ticket. One IP per line'|trans }}</label>
-            <div class="formBottom">
-                <textarea name="blocked_ips" cols="5" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
-            </div>
-            <div class="fix"></div>
-        </div>
-    </fieldset>
-
-    <div class="help">
-        <h3>{{ 'reCAPTCHA settings'|trans }}</h3>
-        <p>{{ 'Enable captcha for client registration and contact forms'|trans }}</p>
-        <p>{{ 'Sign up for reCAPTCHA key for your domain at'|trans }} <a href="https://google.com/recaptcha" target="_blank">https://google.com/recaptcha/</a></p>
-    </div>
-
-    <fieldset>
-        <div class="rowElem noborder">
-            <label>{{ 'Enable reCAPTCHA'|trans }}</label>
-            <div class="formRight">
-                <input type="radio" name="captcha_enabled" value="1" {% if params.captcha_enabled == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
-                <input type="radio" name="captcha_enabled" value="0" {% if params.captcha_enabled == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-
-        <div class="rowElem">
-            <label>{{ 'reCAPTCHA version'|trans }}</label>
-            <div class="formRight">
-                <input type="radio" name="captcha_version" value="2" {% if params.captcha_version == "2" %}checked="checked"{% endif %}/><label>{{ 'v2'|trans }}</label>
-            </div>
-            
-            <label>{{ 'reCAPTCHA Public key'|trans }}</label>
-            <div class="formRight">
-                <input type="text" name="captcha_recaptcha_publickey" value="{{ params.captcha_recaptcha_publickey }}"/>
-            </div>
-
-            <label>{{ 'reCAPTCHA Secret key'|trans }}</label>
-            <div class="formRight">
-                <input type="text" name="captcha_recaptcha_privatekey" value="{{ params.captcha_recaptcha_privatekey }}"/>
-            </div>
-            <div class="fix"></div>
-        </div>
-    </fieldset>
-
-    <div class="help">
-        <h3>{{ 'Akismet settings'|trans }}</h3>
-        <p>{{ 'Enable forum messages checking on the <a href="https://akismet.com/" target="_blank">Akismet</a> database'|trans }}</p>
-    </div>
-    <fieldset>
-        <div class="rowElem noborder">
-            <label>{{ 'Enable check'|trans }}</label>
-            <div class="formRight">
-                <input type="radio" name="akismet_enabled" value="1" {% if params.akismet_enabled == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
-                <input type="radio" name="akismet_enabled" value="0" {% if params.akismet_enabled == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-
-        <div class="rowElem">
-            <label>{{ 'Akismet API key'|trans }}</label>
-            <div class="formRight">
-                <input type="text" name="akismet_api_key" value="{{params.akismet_api_key}}"/>
-            </div>
-            <div class="fix"></div>
-        </div>
-    </fieldset>
-    
-    <div class="help">
-        <h3>{{ 'StopForumSpam.com settings'|trans }}</h3>
-        <p>{{ 'If enabled, client IP will be checked on the <a href="http://www.stopforumspam.com/" target="_blank">Stop Forum Spam</a> database before registration'|trans }}</p>
-    </div>
-    <fieldset>
-        <div class="rowElem noborder">
-            <label>{{ 'Enable check'|trans }}</label>
-            <div class="formRight">
-                <input type="radio" name="sfs" value="1" {% if params.sfs == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
-                <input type="radio" name="sfs" value="0" {% if params.sfs == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-
-        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-        <input type="hidden" name="ext" value="mod_spamchecker" />
-    </fieldset>
-</form>
-</div>
 {% endblock %}

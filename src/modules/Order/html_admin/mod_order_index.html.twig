@@ -254,8 +254,18 @@
                 </div>
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/order/batch_delete' } %}
-                    {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
+                    <div>
+                        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/order/batch_delete' } %}
+                        {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
+                    </div>
+                    <div>
+                        <a class="btn btn-secondary" href="{{ '/api/admin/order/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Orders'|trans }}">
+                            <svg class="icon">
+                                <use xlink:href="#download" />
+                            </svg>
+                            {{ 'Export Orders'|trans }}
+                        </a>
+                    </div>
                 </div>
             </div>
 

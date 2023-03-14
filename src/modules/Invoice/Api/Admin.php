@@ -1081,4 +1081,10 @@ class Admin extends \Api_Abstract
 
         return true;
     }
+
+    public function export_csv($data)
+    {
+        $data['headers'] ??= [];
+        return $this->getService()->exportCSV($data['headers']);
+    }
 }

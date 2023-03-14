@@ -111,10 +111,10 @@
         <div class="tab-pane fade" id="tab-core" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Automatic update'|trans }}</h3>
-                <p class="text-muted">{{ 'Automatic updater is a tool to update FOSSBilling to latest version in one click. Works on these hosting environments where PHP has permissions to overwrite files uploaded via FTP.'|trans }}</p>
+                <p class="text-muted">{{ 'The automatic updater is a one-click tool for updating FOSSBilling. It works on hosting environments where PHP can overwrite files uploaded via FTP.'|trans }}</p>
 
                 {{ admin.system_release_notes|markdown }}
-                <a href="{{ 'api/admin/extension/update_core'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. You will need to log back into your account. Click OK when you are ready to continue." data-api-msg="Update complete. Please refresh your page to login back in.">
+                <a href="{{ 'api/admin/extension/update_core'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
                     <svg class="icon">
                         <use xlink:href="#refresh" />
                     </svg>
@@ -123,7 +123,7 @@
                 <hr>
 
                 <h3>{{ 'Migrate configuration file'|trans }}</h3>
-                <p class="text-muted">{{ 'Use this tool to automatically migrate your configuration file to be compatible with the latest FOSSBilling changes. Note: this is only needed when performing manual updates'|trans }}</p>
+                <p class="text-muted">{{ 'This tool automatically migrates your configuration file to ensure compatibility with the latest FOSSBilling changes. Note that this is only necessary when performing manual updates.'|trans }}</p>
 
                 <a href="{{ 'api/admin/extension/update_config'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.php.old." data-api-msg="Migration complete">
                     <svg class="icon">
@@ -134,15 +134,16 @@
                 <hr>
 
                 <h3>{{ 'Manual update'|trans }}</h3>
-                <p>{{ 'Manual update is a solution when auto updater can not work on current installation environment'|trans }}</p>
+                <p>{{ 'If the auto updater is unable to function in your current installation environment, a manual update is available as an alternative solution.'|trans }}</p>
 
                 <ul>
-                    <li>Download the latest release from <a href="https://github.com/FOSSBilling/FOSSBilling/releases" target="_blank">GitHub</a></li>
-                    <li>Extract the files into your computer</li>
-                    <li>Upload (overwrite) extracted files via FTP to <strong>{{ constant('PATH_ROOT') }}</strong></li>
-                    <li>When the uploading is done, execute <a href="{{ constant('BB_URL') }}foss-update.php" target="_blank">{{ constant('BB_URL') }}foss-update.php</a> in your browser</li>
-                    <li>Your FOSSBilling is now updated to latest version.</li>
-                </ul>
+                    <li>Download the latest release of FOSSBilling from GitHub at <a href="https://github.com/FOSSBilling/FOSSBilling/releases" target="_blank">https://github.com/FOSSBilling/FOSSBilling/releases</a>.</li>
+                    <li>Extract the downloaded files to your computer.</li>
+                    <li>Using an FTP client, upload (overwrite) the extracted files to your FOSSBilling installation directory at <strong>{{ constant('PATH_ROOT') }}</strong>.</li>
+                    <li>Once the upload is complete, open your web browser and navigate to <a href="{{ constant('BB_URL') }}foss-update.php" target="_blank">{{ constant('BB_URL') }}foss-update.php</a>.</li>
+                    <li>Your FOSSBilling installation is now up-to-date with the latest version!</li>
+                  </ul>
+                <ul>
             </div>
         </div>
 

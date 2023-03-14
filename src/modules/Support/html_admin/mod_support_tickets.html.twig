@@ -357,29 +357,31 @@
 
 {% block js %}
 <script>
-document.querySelector('a.show-notes').addEventListener('click', function(e) {
-    e.preventDefault();
+    document.querySelectorAll('a.show-notes').forEach(notes => {
+        notes.addEventListener('click', function(e) {
+            e.preventDefault();
 
-    API.admin.post('support/ticket_get', { id: e.currentTarget.getAttribute('rel') }, function(result){
-        var html = document.createElement('div');
-            
-        result.notes.forEach(function(entry) {
-            var div = document.createElement('div');
-            div.innerHTML = entry.note;
-                
-            html.appendChild(div);
-            html.appendChild(document.createElement('hr'));
+            API.admin.post('support/ticket_get', { id: e.currentTarget.getAttribute('rel') }, function(result){
+                var html = document.createElement('div');
+                    
+                result.notes.forEach(function(entry) {
+                    var div = document.createElement('div');
+                    div.innerHTML = entry.note;
+                        
+                    html.appendChild(div);
+                    html.appendChild(document.createElement('hr'));
+                });
+
+                Modals.create({
+                    title: "{{ 'Notes'|trans }}",
+                    content: html.outerHTML,
+                });
+            });
         });
+    })
 
-        Modals.create({
-            title: "{{ 'Notes'|trans }}",
-            content: html.outerHTML,
-        });
-    });
-});
-
-function onAfterPublicTicketCreate(result) {
-    bb.redirect("{{ 'support/public-ticket'|alink }}/" + result);
-}
+    function onAfterPublicTicketCreate(result) {
+        bb.redirect("{{ 'support/public-ticket'|alink }}/" + result);
+    }
 </script>
 {% endblock %}
