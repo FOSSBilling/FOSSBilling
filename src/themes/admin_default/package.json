@@ -17,7 +17,6 @@
     "flag-icons": "^6.6.6",
     "imask": "^6.4.3",
     "jquery": "^3.6.4",
-    "jquery.browser": "^0.1.0",
     "litepicker": "^2.0.12",
     "select2": "^4.0.13",
     "tom-select": "^2.2.2"
