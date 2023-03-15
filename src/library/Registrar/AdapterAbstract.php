@@ -1,6 +1,9 @@
 <?php
+
+use Symfony\Component\HttpClient\HttpClient;
+
 abstract class Registrar_AdapterAbstract
-{
+{    
     protected $_log = null;
 
     /**
@@ -212,6 +215,16 @@ abstract class Registrar_AdapterAbstract
         }
         return $log;
     }
+
+    /**
+     * Gets a new HttpClient object.
+     *
+     * @return Symfony\Component\HttpClient\HttpClient The HttpClient object.
+     */
+    public function getHttpClient()
+    {
+        return \Symfony\Component\HttpClient\HttpClient::create();
+    }  
 
     /**
      * Enables test mode for the adapter.

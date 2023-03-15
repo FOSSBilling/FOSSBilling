@@ -66,29 +66,6 @@ class Box_Tools
         }
     }
 
-    public function get_url($url, $timeout = 10)
-    {
-        // TODO: Replace with Guzzle
-        $ch = curl_init();
-        $userAgent = $this->di['config']['guzzle']['user_agent'];
-        curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-        curl_setopt($ch, CURLOPT_FAILONERROR, true);
-        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-
-        $data = curl_exec($ch);
-        if ($data === false) {
-            throw new Exception(curl_error($ch), curl_errno($ch));
-        }
-        curl_close($ch);
-        return $data;
-    }
-
     /**
      * Return site url
      * @return string
@@ -301,7 +278,7 @@ class Box_Tools
 
     public function cache_function($buildCallback, array $args = array(), $timeoutSeconds = 3600)
     {
-        // Set up the filename for the cache file 
+        // Set up the filename for the cache file
         if (is_array($buildCallback)) {
             $cacheKey = get_class($buildCallback[0]) . '::' . $buildCallback[1];
         } else {
@@ -438,10 +415,6 @@ class Box_Tools
         $newConfig['api']['rate_span_login'] ??= 60;
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
-
-        $newConfig['guzzle']['user_agent'] ??= 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0';
-        $newConfig['guzzle']['timeout'] ??= 0;
-        $newConfig['guzzle']['upgrade_insecure_requests'] ??= 0;
 
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($newConfig, true) . ';';

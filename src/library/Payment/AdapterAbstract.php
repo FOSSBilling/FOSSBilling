@@ -12,6 +12,8 @@
  * with this source code in the file LICENSE
  */
 
+use Symfony\Component\HttpClient\HttpClient;
+
 abstract class Payment_AdapterAbstract
 {
     const TYPE_HTML         	= 'html';
@@ -24,12 +26,12 @@ abstract class Payment_AdapterAbstract
      * @var array
      */
     protected $_config = array();
-    
+
     /**
      * Response text for notify_url
      * This value is set after IPN is received and validated
-     * 
-     * @var string 
+     *
+     * @var string
      */
     protected $output = NULL;
 
@@ -42,16 +44,16 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Log object
-     * 
+     *
      * @var Box_Log
      */
     private $_log = false;
 
     /**
      * Constructs a new Payment_Adapter object
-     * 
+     *
      * @param array $config The configuration for the payment adapter as configured within the admin panel
-     * 
+     *
      * @throws Payment_Exception
      */
     public function __construct($config)
@@ -102,20 +104,20 @@ abstract class Payment_AdapterAbstract
     {
         throw new Payment_Exception('Payment adapter class did not implement configuration options method', array(), 749);
     }
-    
+
     /**
      * Return payment gateway type (TYPE_HTML, TYPE_FORM, TYPE_API)
-     * 
+     *
      * @return string
      */
     public function getType()
     {
         return Payment_AdapterAbstract::TYPE_FORM;
     }
-    
+
     /**
      * Payment gateway endpoint
-     * 
+     *
      * @return string
      */
     public function getServiceUrl()
@@ -125,18 +127,18 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Returns invoice id from callback IPN
-     * 
+     *
      * This method is called before transaction processing to determine
      * invoice id from IPN.
-     * 
-     * @param array $data - Contains $_GET, $_POST, $HTTP_RAW_POST_DATA 
-     * (or file_get_contents("php://input")) in format like: 
+     *
+     * @param array $data - Contains $_GET, $_POST, $HTTP_RAW_POST_DATA
+     * (or file_get_contents("php://input")) in format like:
      * $data = array(
-     *  'get'=>$_GET, 
-     *  'post'=>$_POST, 
+     *  'get'=>$_GET,
+     *  'post'=>$_POST,
      *  'http_raw_post_data'=>$HTTP_RAW_POST_DATA
      * );
-     * 
+     *
      * @return int - invoice id
      */
     public function getInvoiceId($data)
@@ -159,10 +161,20 @@ abstract class Payment_AdapterAbstract
     }
 
     /**
+     * Gets a new HttpClient object.
+     *
+     * @return Symfony\Component\HttpClient\HttpClient The HttpClient object.
+     */
+    public function getHttpClient()
+    {
+        return \Symfony\Component\HttpClient\HttpClient::create();
+    }
+
+    /**
      * Get config parameter
-     * 
+     *
      * @param string $param the parameter name to retrieve from the config
-     * 
+     *
      * @return mixed|null The associated config parameter or null if it's not defined
      */
     public function getParam($param)
@@ -172,11 +184,11 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Convert money amount to Gateway money format
-     * 
+     *
      * @param float The ammount
-     * 
+     *
      * @param string The currency (unused currently)
-     * 
+     *
      * @return string The formatted money string
      */
     public function moneyFormat($amount, $currency = null)
@@ -188,7 +200,7 @@ abstract class Payment_AdapterAbstract
      * Set test mode
      *
      * @param none
-     * 
+     *
      * @return Payment_AdapterAbstract
      */
     public function setTestMode($bool)
@@ -201,13 +213,13 @@ abstract class Payment_AdapterAbstract
     {
         return $this->testMode;
     }
-    
+
     /**
      * Set custom response text to be printed when IPN is received
      * Used only by payment gateways who care about notify_url response
-     * 
+     *
      * @param string
-     * 
+     *
      * @param string $response
      */
     public function setOutput($response)

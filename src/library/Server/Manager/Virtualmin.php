@@ -19,10 +19,6 @@ class Server_Manager_Virtualmin extends Server_Manager
 {
 	public function init()
 	{
-	    if (!extension_loaded('curl')) {
-            throw new Server_Exception('cURL extension is not enabled');
-        }
-
 		if(empty($this->_config['port'])){
 			$this->_config['port'] = 10000;
 		}
@@ -199,19 +195,15 @@ class Server_Manager_Virtualmin extends Server_Manager
     		$url .= '&' . $key . '=' . $param;
     	}
 
-    	$ch = curl_init ();
-    	curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    	curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, false);
-    	curl_setopt ($ch, CURLOPT_URL, $url);
-    	curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
-    	curl_setopt ($ch, CURLOPT_TIMEOUT, 60);
-    	curl_setopt ($ch, CURLOPT_USERPWD, $this->_config['username'] . ':' . $this->_config['password']);
-    	//debug
-    	//curl_setopt($ch, CURLOPT_VERBOSE, true);
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer'   => false,
+            'verify_host'   => false,
+            'timeout'       => 60,
+            'auth_basic'    => [$this->_config['username'], $this->_config['password']],           
+        ]);
+        $result = $client->request('GET', $url);
 
-		$result = curl_exec($ch);
-
-        $json = json_decode($result, 1);
+        $json = $result->toArray();
     	if (isset($json['full_error'])) {
     		throw new Server_Exception($json['full_error']);
     	}

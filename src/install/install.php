@@ -509,11 +509,6 @@ final class Box_Installer
                 'rate_limit_login' => 20,
                 'CSRFPrevention' => true,
             ],
-            'guzzle' => [
-                'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0',
-                'timeout' => 0,
-                'upgrade_insecure_requests' => 0,
-            ],
         ];
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($data, true) . ';';

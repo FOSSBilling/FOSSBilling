@@ -12,6 +12,8 @@
  * with this source code in the file LICENSE
  */
 
+use Symfony\Component\HttpClient\HttpClient;
+
 abstract class Server_Manager
 {
     private $_log = null;
@@ -106,6 +108,16 @@ abstract class Server_Manager
         }
         return $this->_log;
     }
+
+    /**
+     * Gets a new HttpClient object.
+     *
+     * @return Symfony\Component\HttpClient\HttpClient The HttpClient object.
+     */
+    public function getHttpClient()
+    {
+        return \Symfony\Component\HttpClient\HttpClient::create();
+    }  
 
     /**
      * Initializes the object after construction.

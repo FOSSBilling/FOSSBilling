@@ -12,7 +12,9 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+
+class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \Box\InjectionAwareInterface
 {
     private $config = array();
 
@@ -215,7 +217,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 		return $ret == 'VERIFIED';
     }
 
-    private function moneyFormat($amount, $currency)
+    public function moneyFormat($amount, $currency = null)
     {
         //HUF currency do not accept decimal values
         if($currency == 'HUF') {
@@ -227,7 +229,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 	/**
 	 * @param string $url
 	 */
-	private function download($url, $post_vars = false, $phd = array(), $contentType = 'application/x-www-form-urlencoded')
+	private function download($url, $post_vars = false)
     {
 		$post_contents = '';
 		if ($post_vars) {
@@ -240,49 +242,15 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 			}
 		}
 
-		$uinf = parse_url($url);
-		$host = $uinf['host'];
-		$path = $uinf['path'];
-		$path .= (isset($uinf['query']) && $uinf['query']) ? ('?'.$uinf['query']) : '';
-
-		$headers = Array(
-			($post_contents ? 'POST' : 'GET')." $path HTTP/1.1",
-			"Host: $host",
-            'Connection: Close',
-            'User-Agent: FOSSBilling'
-		);
-		if (!empty($phd)) {
-			if (!is_array($phd)) {
-				$headers[count($headers)] = $phd;
-			} else {
-				$next = count($headers);
-				$count = count($phd);
-				for ($i = 0; $i < $count; $i++) { $headers[$next + $i] = $phd[$i]; }
-			}
-		}
-		if ($post_contents) {
-			$headers[] = "Content-Type: $contentType";
-			$headers[] = 'Content-Length: '.strlen($post_contents);
-		}
-
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_setopt($ch, CURLOPT_URL,$url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 600);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-		// Apply the XML to our curl call
-		if ($post_contents) {
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $post_contents);
-		}
-
-		$data = curl_exec($ch);
-		if (curl_errno($ch)) return false;
-		curl_close($ch);
-
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer'   => false,
+            'verify_host'   => false,
+            'timeout'       => 600
+        ]);
+        $response = $client->request('POST', $url, [
+            'body'  => $post_contents,
+        ]);
+		$data = $response->getContent();
 		return $data;
 	}
 

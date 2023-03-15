@@ -528,7 +528,7 @@ class Service implements InjectionAwareInterface
      * Fetch exchange rates from external sources.
      * Uses data from the European Central Bank and currencylayer when the base currencies are Euro and US Dollar respectively.
      *
-     * @todo use Guzzle instead of simplexml_load_file()
+     * @todo use HTTPClient instead of simplexml_load_file()
      *
      * @var string Short code for the base currency
      * @var string Short code for the target currency
@@ -548,8 +548,16 @@ class Service implements InjectionAwareInterface
                 }
             }
         } elseif ('USD' == $from_Currency) {
-            $res = $this->di['guzzle_client']->get('https://api.currencylayer.com/live?access_key=' . $this->getKey() . '&currencies=' . $to_Currency . '&format=1');
-            $array = json_decode($res->getBody(), true);
+            $client = $this->di['http_client'];
+            $response = $client->request('GET', 'https://api.currencylayer.com/live', [
+                'query' => [
+                    'access_key'    => $this->getKey(),
+                    'currencies'    => $to_Currency,
+                    'format'        => 1,
+                ],
+            ]);
+            $array = $response->toArray();
+
             if (true !== $array['success']) {
                 throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />' . $array['error']['info']);
             } else {

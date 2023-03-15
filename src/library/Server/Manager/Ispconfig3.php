@@ -22,10 +22,6 @@ class Server_Manager_Ispconfig3 extends Server_Manager
         if(!extension_loaded('soap')) {
             throw new Server_Exception('PHP Soap extension required for IspConfig server manager');
         }
-
-        if (!extension_loaded('curl')) {
-            throw new Server_Exception('PHP cURL extension is not enabled');
-        }
 	}
 
     public function  __destruct()

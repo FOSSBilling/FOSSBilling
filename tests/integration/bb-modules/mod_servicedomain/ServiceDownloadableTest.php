@@ -19,15 +19,7 @@ class Api_Admin_ServiceDownloadableTest extends BBDbApiTestCase
             'file_data'     =>  '@'.realpath($file_name),
         );
         
-        // Post the file
-        $curl = curl_init($endpoint);
-        curl_setopt($curl, CURLOPT_HTTPAUTH,          CURLAUTH_BASIC) ;
-        curl_setopt($curl, CURLOPT_USERPWD,           "admin:phpunit");
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $params);
-        $rsp = curl_exec($curl);
-        curl_close($curl);
+        // @TODO Post the file
 
         $this->assertEquals('{"result":true,"error":null}', $rsp);
         */

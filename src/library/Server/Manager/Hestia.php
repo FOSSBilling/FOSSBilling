@@ -20,9 +20,6 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function init()
     {
-        if (!extension_loaded('curl')) {
-            throw new Server_Exception('PHP cURL extension is not enabled');
-        }
     }
 
     public function _getPort()
@@ -96,19 +93,17 @@ class Server_Manager_Hestia extends Server_Manager
             $params['password'] = $this->_config['password'];
         }
 
-        // Send POST query via cURL
-        $postdata = http_build_query($params);
-        $curl = curl_init();
-        $timeout = 5;
-        curl_setopt($curl, CURLOPT_URL, $host);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $postdata);
-        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $timeout);
-        $result = curl_exec($curl);
-        curl_close($curl);
+        // Send POST query
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer'   => false,
+            'verify_host'   => false,
+            'timeout'       => 5,
+        ]);
+        $response = $client->request('POST', $host, [
+            'body'  => $params,
+        ]);
+        $result = $response->getContent();
+
         if (false !== strpos($result, 'Error')) {
             throw new Server_Exception('Connection to server failed. Error code: '.$result);
         }

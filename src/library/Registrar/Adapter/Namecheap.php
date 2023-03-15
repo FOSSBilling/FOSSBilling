@@ -1,6 +1,7 @@
 <?php
 
 use GeoIp2\Model\Domain;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 {
@@ -22,10 +23,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     public function __construct($options)
     {
-        if (!extension_loaded('curl')) {
-            throw new Registrar_Exception('CURL extension is not enabled');
-        }
-
         if (isset($options['api-user-id']) && !empty($options['api-user-id'])) {
             $this->config['api-user-id'] = $options['api-user-id'];
             unset($options['api-user-id']);
@@ -140,34 +137,31 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     {
         $params = $this->includeAuthorizationParams($params);
 
-        $opts = array(
-            CURLOPT_CONNECTTIMEOUT  => 30,
-            CURLOPT_RETURNTRANSFER  => true,
-            CURLOPT_TIMEOUT         => 60,
-            CURLOPT_URL             => $this->_getApiUrl(),
-            CURLOPT_SSL_VERIFYHOST  =>  0,
-            CURLOPT_SSL_VERIFYPEER  =>  0,
-        );
+        $client = $this->getHttpClient()->withOptions([
+            'timeout'       => 60,
+            'verify_peer'   => 0,
+            'verify_host'   => 0
+        ]);
 
-        if ($method == 'POST') {
-            $opts[CURLOPT_POST]         = 1;
-            $opts[CURLOPT_POSTFIELDS]   = $this->_formatParams($params);
-            $this->getLog()->debug('API REQUEST: ' . $opts[CURLOPT_URL] . '?' . $opts[CURLOPT_POSTFIELDS]);
-        } else {
-            $opts[CURLOPT_URL]  = $opts[CURLOPT_URL] . '?' . $this->_formatParams($params);
-            $this->getLog()->debug('API REQUEST: ' . $opts[CURLOPT_URL]);
-        }
+        $callUrl = $this->_getApiUrl();
 
-        $ch = curl_init();
-        curl_setopt_array($ch, $opts);
-        $data = curl_exec($ch);
-        if ($data === false) {
-            $e = new Registrar_Exception(sprintf('CurlException: "%s"', curl_error($ch)));
+        try {
+            if ($method == 'POST') {
+                $response = $client->request('POST', $callUrl, [
+                    'body'  =>  $this->_formatParams($params),
+                ]);
+                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
+            } else {
+                $response = $client->request('GET', $callUrl.'?'.$this->_formatParams($params));
+                $this->getLog()->debug('API REQUEST: ' . $callUrl.'?'.$this->_formatParams($params));
+            }
+        } catch (HttpExceptionInterface $error) {
+            $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
             $this->getLog()->err($e);
-            curl_close($ch);
             throw $e;
         }
-        curl_close($ch);
+
+        $data = $response->getContent();
 
         $this->getLog()->info('API RESULT: ' . $data);
 

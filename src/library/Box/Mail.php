@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -17,6 +18,8 @@ use PHPMailer\PHPMailer\Exception;
 
 class Box_Mail
 {
+    protected $di = null;
+
     private $_bodyHtml  = NULL;
     private $_from      = NULL;
     private $_from_name = NULL;
@@ -25,6 +28,22 @@ class Box_Mail
     private $_replyTo_name   = NULL;
     private $_to        = NULL;
     private $_headers   = '';
+
+    /**
+     * @param Box_Di|null $di
+     */
+    public function setDi($di)
+    {
+        $this->di = $di;
+    }
+
+    /**
+     * @return Box_Di|null
+     */
+    public function getDi()
+    {
+        return $this->di;
+    }
 
     public function send($transport = 'sendmail', $options = array())
     {
@@ -101,23 +120,20 @@ class Box_Mail
             'from'      => $this->_from,
         );
         
-        // create the request URL
-        $request =  'https://api.sendgrid.com/api/mail.send.json';
-        
-        $session = curl_init($request);
-        // Tell curl to use HTTP POST
-        curl_setopt ($session, CURLOPT_POST, true);
-        // Tell curl that this is the body of the POST
-        curl_setopt ($session, CURLOPT_POSTFIELDS, $params);
-        // Tell curl not to return headers, but do return the response
-        curl_setopt($session, CURLOPT_HEADER, false);
-        // Tell PHP not to use SSLv3 (instead opting for TLS)
-        curl_setopt($session, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-        curl_setopt($session, CURLOPT_RETURNTRANSFER, true);
-        // obtain response
-        $response = curl_exec($session);
-        curl_close($session);
-        $dat = json_decode($response);
+        $url =  'https://api.sendgrid.com/api/mail.send.json';
+        $client = $this->di['http_client'];
+        $response = $client->request('POST', $url, [
+            'json' => [
+                'api_user'  => $user,
+                'api_key'   => $pass,
+                'to'        => $this->_to,
+                'subject'   => $this->_subject,
+                'html'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
+                'text'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
+                'from'      => $this->_from,
+            ],
+        ]);
+        $dat = json_decode($response->getContent());
         
         if ($dat->message != "success") {
             error_log("ERROR: Sendgrid email was not successful");

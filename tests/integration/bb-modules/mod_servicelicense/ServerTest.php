@@ -264,39 +264,4 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $result = $server->process(json_encode($data));
         $this->assertEquals($valid, $result['valid'], print_r($result, 1));
     }
-
-    /*
-    public function testLicense()
-    {
-        return ;
-        
-        $data = array();
-        $data['license']    = 'BOX-NOT-EXISTS';
-        $data['host']       = 'tests.com';
-        $data['path']       = dirname(__FILE__);
-        $data['version']    = '0.0.2';
-
-        $k = base64_encode(json_encode($data));
-        $url = 'http://www.box.local/licenses';
-        $params = 'key='.$k;
-
-        
-        $process = curl_init($url);
-        $params = trim( preg_replace( '/\s+/', '', $params ) );
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_POSTFIELDS, $params);
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, 1);
-        if (ini_get('open_basedir') == '' && ini_get('safe_mode' == 'Off'))
-            curl_setopt($process, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($process, CURLOPT_POST, 1);
-        $response = curl_exec($process);
-        curl_close($process);
-        
-
-        $json= json_decode($response);
-        $this->assertTrue(is_object($json));
-        $this->assertEquals('License key not found', $json->error);
-    }
-    */
 }

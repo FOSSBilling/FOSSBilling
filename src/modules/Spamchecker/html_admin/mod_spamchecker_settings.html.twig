@@ -98,27 +98,6 @@
             </div>
 
             <div class="card-body">
-                <h3 class="card-title">{{ 'Akismet settings'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Enable forum messages checking on the <a href="https://akismet.com/" target="_blank">Akismet</a> database'|trans|raw }}</p>
-                <div class="mb-3 row">
-                    <label class="col-md-3 col-form-label" for="akismet_enabled">{{ 'Enable Akismet'|trans }}</label>
-                    <div class="col-md-6 pt-2 ps-0">
-                        <label class="form-check form-check-single form-switch ps-0">
-                            <input id="akismet_enabled" class="form-check-input" name="akismet_enabled" type="checkbox"
-                                   {% if params.akismet_enabled %}checked="checked"{% endif %}">
-                        </label>
-                    </div>
-                </div>
-                <div class="mb-3 row">
-                    <label class="col-md-3 col-form-label" for="akismet_api_key">{{ 'Akismet API key'|trans }}</label>
-                    <div class="col-md-6 row">
-                        <input class="form-control" type="text" id="akismet_api_key" name="akismet_api_key"
-                               value="{{ params.akismet_api_key }}">
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-body">
                 <h3 class="card-title">{{ 'Stop Forum Spam settings'|trans }}</h3>
                 <p class="card-subtitle">{{ 'If enabled, client IP will be checked on the <a href="https://stopforumspam.com/" target="_blank">Stop Forum Spam</a> database before registration'|trans|raw }}</p>
                 <div class="mb-3 row">

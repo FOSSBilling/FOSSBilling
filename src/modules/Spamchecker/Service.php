@@ -41,23 +41,6 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function forumSpamChecker(\Box_Event $event)
-    {
-        $di = $event->getDi();
-        $params = $event->getParameters();
-        $client = $di['db']->load('Client', $params['client_id']);
-        $comment = [
-            'comment_type' => 'comment',
-            'comment_author' => $client->first_name . ' ' . $client->last_name,
-            'comment_author_email' => $client->email,
-            'comment_content' => $params['message'],
-        ];
-
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->isCommentSpam($event, $comment);
-        $spamCheckerService->isBlockedIp($event);
-    }
-
     public static function onBeforeClientSignUp(\Box_Event $event)
     {
         $di = $event->getDi();
@@ -90,37 +73,6 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    /**
-     * @param \Box_Event $event
-     */
-    public function isCommentSpam($event, $comment)
-    {
-        $di = $event->getDi();
-        $config = $di['mod_config']('Spamchecker');
-        if (!isset($config['akismet_enabled']) || !$config['akismet_enabled']) {
-            return false;
-        }
-
-        require_once PATH_MODS . '/Spamchecker/akismet.curl.class.php';
-
-        $akismet = new \akismet($config['akismet_api_key'], $di['config']['url']);
-        if (!$akismet->valid_key()) {
-            $extensionService = $di['mod_service']('Extension');
-            if ($extensionService->isExtensionActive('mod', 'notification')) {
-                $notificationService = $di['mod_service']('Notification');
-                $notificationService->create('Akismet Key is not valid!');
-            } else {
-                error_log('Akismet Key is not valid!');
-            }
-
-            return false;
-        }
-
-        if ($akismet->is_spam($comment)) {
-            throw new \Box_Exception('Akismet detected this message is spam');
-        }
-    }
-
     public function isSpam(\Box_Event $event)
     {
         $di = $event->getDi();
@@ -144,18 +96,15 @@ class Service implements InjectionAwareInterface
                     throw new \Box_Exception('You have to complete the CAPTCHA to continue');
                 }
 
-                $postData = [
-                    'secret' => $config['captcha_recaptcha_privatekey'],
-                    'response' => $params['g-recaptcha-response'],
-                    'remoteip' => $di['request']->getClientAddress(),
-                ];
-
-                $options = [
-                    'form_params' => $postData,
-                ];
-                $response = $di['guzzle_client']->request('POST', 'https://google.com/recaptcha/api/siteverify', $options);
-                $body = $response->getBody()->getContents();
-                $content = json_decode($body, true);
+                $client = $this->di['http_client'];
+                $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
+                    'body'  => [
+                        'secret' => $config['captcha_recaptcha_privatekey'],
+                        'response' => $params['g-recaptcha-response'],
+                        'remoteip' => $di['request']->getClientAddress(),
+                    ],
+                ]);
+                $content = $response->toArray();
 
                 if (!$content['success']) {
                     throw new \Box_Exception('reCAPTCHA verification failed.');

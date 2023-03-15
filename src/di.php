@@ -23,6 +23,7 @@ use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use RedBeanPHP\Facade;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
@@ -529,23 +530,6 @@ $di['validator'] = function () use ($di) {
 };
 
 /*
- * Creates a new Guzzle HTTP client and returns it.
- *
- * @param void
- *
- * @return \GuzzleHttp\Client The new Guzzle HTTP client that was just created.
- */
-$di['guzzle_client'] = function () use ($di) {
-    return new GuzzleHttp\Client([
-        'headers' => [
-            'User-Agent' => $di['config']['guzzle']['user_agent'],
-            'Upgrade-Insecure-Requests' => $di['config']['guzzle']['upgrade_insecure_requests'],
-        ],
-        'timeout' => $di['config']['guzzle']['timeout'],
-    ]);
-};
-
-/*
  *
  * @param void
  *
@@ -579,20 +563,6 @@ $di['updater'] = function () use ($di) {
     $updater->setDi($di);
 
     return $updater;
-};
-
-/*
- * Creates a new Curl object and returns it.
- *
- * @param string $url The URL to send the request to.
- *
- * @return \Box_Curl The new Curl object that was just created.
- */
-$di['curl'] = function ($url) use ($di) {
-    $curl = new \Box_Curl($url);
-    $curl->setDi($di);
-
-    return $curl;
 };
 
 /*
@@ -721,6 +691,15 @@ $di['license_server'] = function () use ($di) {
     $server->setDi($di);
 
     return $server;
+};
+
+/*
+ * Creates a new HTTP client and returns it.
+ *
+ * @return \Symfony\Component\HttpClient\HttpClient The new HTTP client that was just created.
+ */
+$di['http_client'] = function () {
+    return HttpClient::create();
 };
 
 /*

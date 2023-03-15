@@ -451,8 +451,11 @@ class Service implements InjectionAwareInterface
         mkdir($extracted, 0755, true);
 
         // Download the extension archive and save it to the cache folder
-        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($zip, 'w');
-        $this->di['guzzle_client']->request('GET', $manifest['download_url'], ['sink' => $resource]);
+        $resource = fopen($zip, 'w');
+        $client = $this->di['http_client'];
+        $response = $client->request('GET', $manifest['download_url'], [
+            'buffer'    => $resource,
+        ]); 
 
         // Extract the archive
         $ff = new \Box_Zip($zip);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -34,6 +35,7 @@ class Box_Update
     {
         return $this->di;
     }
+    
     private $_url = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
     private $_preview_url = 'https://fossbilling.org/downloads/preview/';
 
@@ -144,10 +146,9 @@ class Box_Update
     public function getJson()
     {
         $url = $this->_url;
-        $curl = new Box_Curl($url);
-        $curl->request();
-        $response = $curl->getBody();
-        return json_decode($response, true);
+        $client = $this->di['http_client'];
+        $response = $client->request('GET', $url);
+        return $response->toArray();
     }
 
     /**
@@ -182,7 +183,7 @@ class Box_Update
             $this->di['tools']->file_get_contents(BB_URL.'foss-update.php');
         }
 
-        //Migrate the configuration file
+        // Migrate the configuration file
         $this->performConfigUpdate();
         
         // clean up things
