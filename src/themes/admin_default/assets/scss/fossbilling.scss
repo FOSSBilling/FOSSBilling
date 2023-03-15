@@ -55,3 +55,19 @@
 .canned_ticket_response {
     width: 18rem;
 }
+
+.navbar-brand-image {
+    height: 1.6rem
+}
+
+@media (max-width: 768px) {
+    .ts-wrapper.js-language-selector {
+        width: 180px
+    }
+}
+
+@media (max-width: 320px) {
+    .js-theme-toggler {
+        display: none;
+    }
+}
