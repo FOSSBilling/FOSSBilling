@@ -21,29 +21,6 @@
     <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
     {{ encore_entry_script_tags('fossbilling') }}
 
-    <style>
-        @media only screen and (max-width: 1650px) {
-            .only-large-screens {
-                display: none;
-            }
-            .btn-list
-            .btn
-            .icon {
-                margin: 0;
-            }
-        }
-        @media only screen and (max-width: 800px) {
-            .not-mobile {
-                display: none;
-            }
-        }
-        @media only screen and (max-width: 355px) {
-            .not-very-small {
-                display: none;
-            }
-        }
-    </style>
-
     {% block head %}{% endblock %}
 </head>
 
@@ -57,25 +34,28 @@
     {% else %}
     {% if hide_menu %}
     {% block content_wide %}{% endblock %}
-    {% else %} 
+    {% else %}
     <div class="page">
         {% block nav %}{% endblock %}
         <div class="page-wrapper">
             {% block before_content %}{% endblock %}
-            <header class="navbar navbar-expand-xl navbar-light d-print-none">
+            <header class="navbar navbar-expand-lg navbar-light d-print-none">
                <div class="container-xl">
-                  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
-                  <span class="navbar-toggler-icon"></span>
-                  </button>
-                  <h1 class="navbar-brand d-none-navbar-horizontal pe-0 pe-md-3 not-mobile">
-                    <a href="{{ '/'|alink }}">
-                      <img class="navbar-brand-image" src="{{ company.logo_url_dark }}" alt="{{ company.name }}">
-                    </a>
-                  </h1>
-                  <div class="navbar-nav flex-row order-md-last">
+                   <div class="d-flex gap-3 align-items-center">
+                       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                           <span class="navbar-toggler-icon"></span>
+                       </button>
+                       <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3 a">
+                           <a href="{{ '/'|alink }}">
+                               <img class="navbar-brand-image hide-theme-light" src="{{ company.logo_url_dark }}" alt="{{ company.name }}">
+                               <img class="navbar-brand-image hide-theme-dark" src="{{ company.logo_url }}" alt="{{ company.name }}">
+                           </a>
+                       </h1>
+                   </div>
+                  <div class="navbar-nav flex-row order-md-last gap-2">
                     {% set languages = guest.extension_languages(true) %}
                     {% if languages|length > 1 %}
-                    <div class="nav-item me-3">
+                    <div class="nav-item">
                         <select name="lang" class="form-select js-language-selector">
                             {% for lang in languages %}
                                 <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;flag flag-country-{{ lang.locale|split('_')[1]|lower }} &quot;&gt;&lt;/span&gt;">{{ lang.title }}</option>
@@ -83,29 +63,29 @@
                         </select>
                     </div>
                     {% endif %}
-                     <div class="nav-item d-none d-md-flex me-3">
-                        <div class="btn-list">
-                           <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
-                              <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                     <div class="nav-item d-none d-sm-flex">
+                        <div class="btn-list gap-2">
+                           <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer">
+                              <svg class="icon icon-tabler icon-tabler-arrow-back-up m-0">
                                  <use xlink:href="#brand-github" />
                               </svg>
-                              <span class="only-large-screens">{{ 'Source code'|trans }}</span>
+                              <span class="d-none d-md-block ms-2">{{ 'Source code'|trans }}</span>
                            </a>
-                           <a href="https://github.com/sponsors/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
-                              <svg class="icon icon-tabler icon-tabler-heart text-pink">
+                           <a href="https://github.com/sponsors/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer">
+                              <svg class="icon icon-tabler icon-tabler-heart m-0 text-pink">
                                  <use xlink:href="#heart" />
                               </svg>
-                              <span class="only-large-screens">{{ 'Sponsor'|trans }}</span>
+                              <span class="d-none d-md-block ms-2">{{ 'Sponsor'|trans }}</span>
                            </a>
                         </div>
                      </div>
-                     <div class="me-3 pt-1 not-very-small">
+                      <div class="nav-item">
                         <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
                            href="?theme=dark"
                            data-bs-toggle="tooltip"
                            data-bs-placement="bottom"
                            data-bs-original-title="{{ 'Enable dark mode'|trans }}">
-                           <svg class="icon">
+                           <svg class="icon text-dark">
                               <use xlink:href="#moon" />
                            </svg>
                         </a>
@@ -114,7 +94,7 @@
                            data-bs-toggle="tooltip"
                            data-bs-placement="bottom"
                            data-bs-original-title="{{ 'Enable light mode'|trans }}">
-                           <svg class="icon">
+                           <svg class="icon text-white">
                               <use xlink:href="#sun" />
                            </svg>
                         </a>
@@ -145,15 +125,15 @@
                   </div>
                </div>
             </header>
-            <header class="navbar-expand-xl">
+            <header class="navbar-expand-lg">
                 <div class="collapse navbar-collapse" id="navbar-menu">
-                    <div class="navbar navbar-light">
+                    <div class="navbar navbar-light overflow-auto">
                         <div class="container-xl">
                              {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
                              <ul class="navbar-nav">
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ '/'|alink }}">
-                                        <span class="only-large-screens me-1">
+                                        <span class="d-none d-xxl-block me-1">
                                             <svg class="icon">
                                                 <use xlink:href="#home" />
                                             </svg>
@@ -165,7 +145,7 @@
                              {% if group.subpages %}
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
-                                        <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens me-1">
+                                        <svg class="icon icon-tabler icon-tabler-arrow-back-up d-none d-xxl-block me-1">
                                             <use xlink:href="#{{ group.class }}" />
                                          </svg>
                                         <span class="nav-link-title">{{ group.label|trans }}</span>
@@ -184,7 +164,7 @@
                             {% endfor %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
-                                    <svg class="icon icon-tabler icon-tabler-arrow-back-up only-large-screens me-1">
+                                    <svg class="icon icon-tabler icon-tabler-arrow-back-up d-none d-xxl-block me-1">
                                         <use xlink:href="#help" />
                                      </svg>
                                     <span class="nav-link-title">{{ 'Help'|trans }}</span>
