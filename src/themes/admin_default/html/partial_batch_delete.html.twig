@@ -1,12 +1,35 @@
-<a class="btn btn-danger" id="batch-delete-selected-btn">
+<a class="btn btn-danger d-none" id="batch-delete-selected-btn">
     <svg class="icon">
-        <use xlink:href="#delete" />
+        <use xlink:href="#delete"/>
     </svg>
     {{ 'Delete selected'|trans }}</a>
 
 <script>
-    $(function () {
-        $('#batch-delete-selected-btn').on('click', function() {
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const deleteBtn = document.getElementById('batch-delete-selected-btn');
+        const masterCheckbox = document.querySelector('input.batch-delete-master-checkbox');
+        const checkboxes = document.querySelectorAll('input.batch-delete-checkbox');
+
+        masterCheckbox.addEventListener('change', toggleDeleteBtn);
+        checkboxes.forEach((cb) => {
+            cb.addEventListener('change', toggleDeleteBtn)
+        });
+
+        function toggleDeleteBtn() {
+            const empty = [].filter.call(checkboxes, function (cb) {
+                return !cb.checked
+            });
+            if (empty.length !== checkboxes.length) {
+                deleteBtn.classList.remove('d-none');
+                deleteBtn.classList.add('d-inline-flex');
+                return;
+            }
+            deleteBtn.classList.remove('d-inline-flex');
+            deleteBtn.classList.add('d-none');
+        }
+
+        $('#batch-delete-selected-btn').on('click', function () {
             if ($('input.batch-delete-checkbox:checked').length) {
                 Modals.create({
                     type: 'danger',
@@ -30,7 +53,7 @@
             }
         });
 
-        $('input.batch-delete-master-checkbox').on('click', function() {
+        $('input.batch-delete-master-checkbox').on('click', function () {
             $('input.batch-delete-checkbox').prop('checked', this.checked);
         });
     });
