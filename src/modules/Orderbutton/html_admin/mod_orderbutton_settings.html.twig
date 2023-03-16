@@ -224,8 +224,10 @@
                             <h4 class="alert-title">{{ 'IMPORTANT'|trans }}</h4>
                             <div class="text-muted" id="button-info">
                                 <span class="d-block mb-2">{{ 'You need to add ID (if you want to use it for one html element) or class (if you want to use it for multiple elements) in order for it to work'|trans }}</span>
-                                <span class="d-block mb-2">{{ 'Add order-button class to your elements which must call popup. For example:'|trans }}</span>
-                                <pre>&lt;button type=&quot;button&quot;<span class="text-orange">&nbsp;class=&quot;order-button</span>&quot;&gt;Order Now&lt;/button&gt;</pre>
+                                <div id="button-code-info">
+                                    <span class="d-block mb-2">{{ 'Add order-button class to your elements which must call popup. For example:'|trans }}</span>
+                                    <pre>&lt;button type=&quot;button&quot;<span class="text-orange">&nbsp;class=&quot;order-button</span>&quot;&gt;Order Now&lt;/button&gt;</pre>
+                                </div>
                                 <span class="d-block mb-2">{{ 'Add data-product attribute to your element to open specific product. For example:'|trans }}</span>
                                 <pre>&lt;button type=&quot;button&quot; class=&quot;order-button" <span class="text-orange">data-product="2"</span>&gt;Order Product#2 Now&lt;/button&gt;</pre>
                                 <span class="d-block">{{ 'data-product attribute value will be overridden if popup\'s product is selected from select-box above'|trans }}</span>
@@ -326,17 +328,17 @@
                 const selector = $(this).val();
                 if (selector[0] !== "." || selector[0] !== "#") {
                     $('#button-info').parent().removeClass('alert-info').addClass('alert-danger');
-                    $('#button-info').html("<span class=\"d-block\">{{ 'Class name should start with dot (.) or hashtag (#) for ID'|trans }}</span>");
+                    $('#button-code-info').html("<span class=\"d-block mb-2 text-danger\"><b>{{ 'Class name should start with dot (.) or hashtag (#) for ID'|trans }}</b></span>");
                 }
 
                 if (selector[0] === ".") {
                     $('#button-info').parent().removeClass('alert-danger').removeClass('alert-info').addClass('alert-info');
-                    $('#button-info').html("<span class=\"d-block mb-2\">{{ 'Add " + selector + " class to your elements which must call popup. For example: '|trans }}" + '</span><pre class="mb-0">&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' class=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>');
+                    $('#button-code-info').html("<span class=\"d-block mb-2\">{{ 'Add " + selector + " class to your elements which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' class=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>');
                 }
 
                 if (selector[0] === "#") {
                     $('#button-info').parent().removeClass('alert-danger').removeClass('alert-info').addClass('alert-info');
-                    $('#button-info').html("<span class=\"d-block mb-2\">{{ 'Add " + selector + " ID to your element which must call popup. For example: '|trans }}" + '</span><pre class="mb-0">&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' id=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>');
+                    $('#button-code-info').html("<span class=\"d-block mb-2\">{{ 'Add " + selector + " ID to your element which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' id=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>');
                 }
             });
 
