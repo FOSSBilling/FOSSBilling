@@ -71,3 +71,15 @@
         display: none;
     }
 }
+
+.clr-field {
+    display: flex;
+    width: 100%;
+    button {
+        border-radius: 0 4px 4px 0;
+    }
+}
+
+#script-code {
+    resize: none;
+}
