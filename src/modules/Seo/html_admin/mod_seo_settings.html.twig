@@ -23,28 +23,29 @@
 {% endblock %}
 
 {% block content %}
-<div class="widget">
-    <div class="head">
-        <h5 class="iCog">{{ 'SEO settings'|trans }}</h5>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">{{ 'SEO settings'|trans }}</h3>
     </div>
 
     {% set params = admin.extension_config_get({ "ext": "mod_seo" }) %}
-    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-        <fieldset>
-            <legend>Sitemap</legend>
-            <div class="rowElem noborder">
-                <label>{{ 'Ping sitemap to Google'|trans }}</label>
-                <div class="formRight">
-                    <input type="radio" name="sitemap_google" value="1" {% if params.sitemap_google == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
-                    <input type="radio" name="sitemap_google" value="0" {% if not params.sitemap_google %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
-                </div>
-                <div class="fix"></div>
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+        <input type="hidden" name="ext" value="mod_seo">
+        <div class="card-body">
+            <h3 class="card-title">Sitemap</h3>
+            <div class="row">
+                <label class="col-md-3 form-label">{{ 'Ping sitemap to Google'|trans }}</label>
+                <span class="col-md-5">
+                    <label class="form-check form-check-single form-switch">
+                        <input class="form-check-input" type="checkbox" name="sitemap_google" {% if params.sitemap_google %}checked="checked"{% endif %}>
+                    </label>
+                </span>
             </div>
-            
-            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-            <input type="hidden" name="ext" value="mod_seo" />
-        </fieldset>
+        </div>
+        <div class="card-footer text-end">
+            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
+        </div>
     </form>
 </div>
 {% endblock %}
