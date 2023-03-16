@@ -38,9 +38,11 @@
 
     {% if settings_html %}
         <div class="card">
-            <div class="card-body" title="{{ 'Switch to a predefined set of theme settings from the dropdown. Adjust each section and apply the changes once you\'re done.'|trans }}">
+            <div class="card-body">
+                <h3 class="card-title">{{ 'Settings for'|trans }} {{ theme_code }}</h3>
+                <div class="card-subtitle">{{ 'Switch to a predefined set of theme settings from the dropdown. Adjust each section and apply the changes once you\'re done.'|trans }}</div>
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Your current preset'|trans }}:</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Your current preset'|trans }}</label>
                     <div class="col">
                         <div class="input-group">
                             <select class="form-select" name="preset" onchange="bb.post('admin/theme/preset_select', { code: '{{ theme_code }}', preset: $(this).val(), CSRFToken: "{{ CSRFToken }}" }, function(){ bb.reload(); })">
