@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
@@ -21,103 +21,110 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h5>{{ 'Client area themes'|trans }}</h5>
-    </div>
-    <table class="table card-table table-vcenter table-striped text-nowrap">
-        <thead>
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">{{ 'Client area themes'|trans }}</h3>
+        </div>
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
             <tr>
                 <th>{{ 'Name'|trans }}</th>
                 <th class="w-1"></th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             {% set themes = admin.theme_get_list({ "per_page": 100 }) %}
             {% for i, theme in themes.list %}
             <tr>
-                <td>{% if guest.extension_theme(true).code == theme.code %}<strong>{{ theme.code }}</strong>{% else %}{{ theme.code }}{% endif %}</td>
+                <td>
+                    {% if guest.extension_theme(true).code == theme.code %}
+                        <strong>{{ theme.code }}</strong>{% else %}{{ theme.code }}
+                    {% endif %}
+                </td>
                 <td>
                     {% if theme.hasSettings %}
-                    <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{theme.code}}">
-                        <svg class="icon">
-                            <use xlink:href="#settings" />
-                        </svg>
-                        {{ 'Settings'|trans }}
-                    </a>
+                        <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{ theme.code }}">
+                            <svg class="icon">
+                                <use xlink:href="#settings"/>
+                            </svg>
+                            {{ 'Settings'|trans }}
+                        </a>
                     {% else %}
-                    <p>Theme does not have settings</p>
+                        <p>Theme does not have settings</p>
                     {% endif %}
                     {% if guest.extension_theme(true).code != theme.code %}
-                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
-                        <svg class="icon">
-                            <use xlink:href="#check" />
-                        </svg>
-                        {{ 'Set as default'|trans }}
-                    </a>
+                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
+                           href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
+                            <svg class="icon">
+                                <use xlink:href="#check"/>
+                            </svg>
+                            {{ 'Set as default'|trans }}
+                        </a>
                     {% endif %}
                 </td>
             </tr>
-        </tbody>
-        {% else %}
-        <tbody>
-            <tr>
-                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-            </tr>
-        </tbody>
-        {% endfor %}
-    </table>
-
-    <div class="card-body">
-        <h5>{{ 'Admin area themes'|trans }}</h5>
+            </tbody>
+            {% else %}
+                <tbody>
+                <tr>
+                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                </tr>
+                </tbody>
+            {% endfor %}
+        </table>
     </div>
-    <table class="table card-table table-vcenter table-striped text-nowrap">
-        <thead>
+    <div class="card mt-3">
+        <div class="card-body">
+            <h3 class="card-title">{{ 'Admin area themes'|trans }}</h3>
+        </div>
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
             <tr>
                 <th>{{ 'Name'|trans }}</th>
                 <th class="w-1"></th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             {% set themes = admin.theme_get_admin_list({ 'per_page': 100 }) %}
             {% for i, theme in themes.list %}
             <tr>
                 <td>
                     {% if guest.extension_theme(false).code == theme.code %}
-                    <strong>{{ theme.code|replace({ 'admin_': '' }) }}</strong>
+                        <strong>{{ theme.code|replace({ 'admin_': '' }) }}</strong>
                     {% else %}
-                    {{ theme.code|replace({ 'admin_': '' }) }}
+                        {{ theme.code|replace({ 'admin_': '' }) }}
                     {% endif %}
                 </td>
                 <td>
                     {% if theme.hasSettings %}
-                    <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{theme.code}}">
-                        <svg class="icon">
-                            <use xlink:href="#settings" />
-                        </svg>
-                        {{ 'Settings'|trans }}
-                    </a>
+                        <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{ theme.code }}">
+                            <svg class="icon">
+                                <use xlink:href="#settings"/>
+                            </svg>
+                            {{ 'Settings'|trans }}
+                        </a>
                     {% else %}
-                    <p>Theme does not have settings</p>
+                        <p>Theme does not have settings</p>
                     {% endif %}
                     {% if guest.extension_theme(false).code != theme.code %}
-                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
-                        <svg class="icon">
-                            <use xlink:href="#check" />
-                        </svg>
-                        {{ 'Set as default'|trans }}
-                    </a>
+                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
+                           href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
+                            <svg class="icon">
+                                <use xlink:href="#check"/>
+                            </svg>
+                            {{ 'Set as default'|trans }}
+                        </a>
                     {% endif %}
                 </td>
             </tr>
-        </tbody>
-        {% else %}
-        <tbody>
-            <tr>
-                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-            </tr>
-        </tbody>
-        {% endfor %}
-    </table>
-</div>
+            </tbody>
+            {% else %}
+                <tbody>
+                <tr>
+                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                </tr>
+                </tbody>
+            {% endfor %}
+        </table>
+    </div>
 {% endblock %}

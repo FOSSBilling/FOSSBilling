@@ -23,28 +23,29 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h3>{{ 'Wysiwyg settings'|trans }}</h3>
-
-        {% set params = admin.extension_config_get({ 'ext': 'mod_wysiwyg' }) %}
+    <div class="card">
         <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Default editor'|trans }}</label>
-                <div class="col">
-                    {% for editor, title in admin.wysiwyg_editors %}
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioCheck" type="radio" name="editor" value="{{ editor }}"{% if params.editor == editor %} checked{% endif %}>
-                        <label class="form-check-label" for="radioCheck">{{ title }}</label>
+            <input type="hidden" name="ext" value="mod_wysiwyg">
+            <div class="card-body">
+                <h3 class="card-title">{{ 'Wysiwyg settings'|trans }}</h3>
+                {% set params = admin.extension_config_get({ 'ext': 'mod_wysiwyg' }) %}
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <div class="row">
+                    <label class="form-label col-3 form-label">{{ 'Default editor'|trans }}</label>
+                    <div class="col">
+                        {% for editor, title in admin.wysiwyg_editors %}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioCheck" type="radio" name="editor"
+                                       value="{{ editor }}"{% if params.editor == editor %} checked{% endif %}>
+                                <label class="form-check-label" for="radioCheck">{{ title }}</label>
+                            </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
-
-            <input type="hidden" name="ext" value="mod_wysiwyg">
-            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+            <div class="card-footer text-end">
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            </div>
         </form>
     </div>
-</div>
 {% endblock %}
