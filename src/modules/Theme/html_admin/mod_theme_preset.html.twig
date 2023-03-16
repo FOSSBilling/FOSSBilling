@@ -45,7 +45,7 @@
                     <label class="form-label col-3 col-form-label">{{ 'Your current preset'|trans }}</label>
                     <div class="col">
                         <div class="input-group">
-                            <select class="form-select" name="preset" onchange="bb.post('admin/theme/preset_select', { code: '{{ theme_code }}', preset: $(this).val(), CSRFToken: "{{ CSRFToken }}" }, function(){ bb.reload(); })">
+                            <select class="form-select" name="preset" onchange="bb.post('admin/theme/preset_select', { code: '{{ theme_code }}', preset: $(this).val(), CSRFToken: '{{ CSRFToken }}' }, function(){ bb.reload(); })">
                                 {% for preset in presets %}
                                     <option value="{{ preset }}"{% if preset == current_preset %} selected{% endif %}>{{ preset }}</option>
                                 {% endfor %}
@@ -76,6 +76,7 @@
                         <div class="mb-3">
                                 <button class="btn btn-primary w-100" type="submit">{{ 'Apply changes'|trans }}</button>
                         </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -91,15 +92,13 @@ $(function() {
 
     $('#theme-settings h3.section-header').toggle(function() {
         $(this).removeClass('collapsed').next().show();
-    }, function() {
-        $(this).addClass('collapsed').next().hide();
     });
 
-    $('#theme-settings h3.section-header:first').click();
+    $('#theme-settings h3.section-header:first').trigger('click');
 
     //special class "page"
     $("#theme-settings select.page").each(function() {
-        var sel = $(this);
+        const sel = $(this);
 
         sel.append('<option value="">None</option>');
 
@@ -149,15 +148,6 @@ $(function() {
         $('<div class="asset">').html('<a href="' + file.url + '" target="_blank" >' + file.name+'</a>').insertAfter(input);
     });
 
-    //special class "color"
-    $("#theme-settings input.color").spectrum({
-        showInput: true,
-        showButtons: true,
-        showAlpha: false,
-        clickoutFiresChange: true,
-        theme: "sp-boxbilling",
-        showInitial: true
-    });
 });
 </script>
 {% endblock %}
