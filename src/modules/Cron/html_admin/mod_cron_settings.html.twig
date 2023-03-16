@@ -64,12 +64,12 @@
     </div>
 
     <div class="card-footer text-center">
-        <a href="{{ cron.cron_url }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-            <svg class="mb-2 text-secondary" width="24" height="24">
-                <use xlink:href="#play" />
+        <a href="{{ cron.cron_url }}" class="btn btn-primary" target="_blank">
+            <svg class="icon icon-tabler">
+               <use xlink:href="#play" />
             </svg>
-            <span class="d-block text-secondary">{{ 'Execute now'|trans }}</span>
-        </a>
+            <span>{{ 'Execute now'|trans }}</span>
+         </a>
     </div>
 </div>
 {% endblock %}
