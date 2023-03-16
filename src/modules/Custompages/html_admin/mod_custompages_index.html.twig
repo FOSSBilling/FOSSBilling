@@ -8,8 +8,7 @@
 
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a href="#tab-index" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
-                   role="tab">{{ 'Custom Pages'|trans }}</a></li>
+                <a href="#tab-index" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">{{ 'Custom Pages'|trans }}</a></li>
             <li class="nav-item" role="presentation">
                 <a href="#tab-new" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabindex="-1">
                     <svg class="icon me-2">
@@ -106,8 +105,7 @@
             </div>
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                <form method="post" action="{{ 'api/admin/custompages/create'|link }}"
-                      class="api-form save" data-api-redirect="{{ 'custompages'|alink }}">
+                <form method="post" action="{{ 'api/admin/custompages/create'|link }}" class="api-form save" data-api-redirect="{{ 'custompages'|alink }}">
                     <div class="card-body mt-2">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="mb-3 row">
@@ -131,8 +129,7 @@
                         <div class="mb-3 row">
                             <label class="col-md-3 col-form-label">{{ 'Content'|trans }}</label>
                             <div class="col">
-                                <textarea class="bb-textarea" name="content" cols="5" rows="5" required="required"
-                                          placeholder="{{ 'Add page content'|trans }}"></textarea>
+                                <textarea class="bb-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Add page content'|trans }}"></textarea>
                             </div>
                         </div>
                     </div>
