@@ -38,45 +38,55 @@
 
     {% if settings_html %}
         <div class="card">
-            <div class="card-body" title="{{ 'Switch to a predefined set of theme settings from the dropdown. Adjust each section and apply the changes once you\'re done.'|trans }}">
+            <div class="card-body">
+                <h3 class="card-title">{{ 'Settings for'|trans }} {{ theme_code }}</h3>
+                <div class="card-subtitle">{{ 'Switch to a predefined set of theme settings from the dropdown. Adjust each section and apply the changes once you\'re done.'|trans }}</div>
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Your current preset'|trans }}:</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Your current preset'|trans }}</label>
                     <div class="col">
                         <div class="input-group">
-                            <select class="form-select" name="preset" onchange="bb.post('admin/theme/preset_select', { code: '{{ theme_code }}', preset: $(this).val(), CSRFToken: "{{ CSRFToken }}" }, function(){ bb.reload(); })">
+                            <select class="form-select" name="preset" onchange="bb.post('admin/theme/preset_select', { code: '{{ theme_code }}', preset: $(this).val(), CSRFToken: '{{ CSRFToken }}' }, function(){ bb.reload(); })">
                                 {% for preset in presets %}
                                     <option value="{{ preset }}"{% if preset == current_preset %} selected{% endif %}>{{ preset }}</option>
                                 {% endfor %}
                             </select>
                             {% if presets|length > 1 and current_preset != 'Default' %}
-                                <a href="{{ 'api/admin/theme/preset_delete'|link({ 'code': theme_code, 'preset': current_preset, 'CSRFToken': CSRFToken}) }}" class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                                <a href="{{ 'api/admin/theme/preset_delete'|link({ 'code': theme_code, 'preset': current_preset, 'CSRFToken': CSRFToken}) }}" class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                   data-api-confirm-btn="Delete"
+                                   data-api-type="danger"
+                                   data-api-reload="1">
                                     <svg class="icon">
-                                        <use xlink:href="#delete" />
+                                        <use xlink:href="#delete"/>
                                     </svg>
                                 </a>
                             {% endif %}
                         </div>
                     </div>
                 </div>
-
-                <div id="theme-settings">
-                    <form method="post" action="" enctype="multipart/form-data">
+            </div>
+        </div>
+        <div class="card mt-3">
+            <form method="post" action="" enctype="multipart/form-data">
+                <div class="card-body">
+                    <h3 class="card-title">{{ 'Config for'|trans }} {{ theme_code }}</h3>
+                    <div id="theme-settings">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         {{ settings_html|raw }}
-                        <div class="mt-3">
+                        <div class="mt-3 d-flex">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="save-current-setting" value="1" id="save-current-setting">
                                 <label class="form-check-label" for="save-current-setting">{{ 'Save current settings as a new preset called'|trans }}</label>
                             </div>
-                        <div class="mb-3">
-                            <input class="form-control" type="text" name="save-current-setting-preset">
+                            <div class="">
+                                <input class="ms-2 form-control" type="text" name="save-current-setting-preset">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                                <button class="btn btn-primary w-100" type="submit">{{ 'Apply changes'|trans }}</button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" type="submit">{{ 'Apply changes'|trans }}</button>
+                </div>
+            </form>
         </div>
     {% endif %}
 {% endblock %}
@@ -89,15 +99,13 @@ $(function() {
 
     $('#theme-settings h3.section-header').toggle(function() {
         $(this).removeClass('collapsed').next().show();
-    }, function() {
-        $(this).addClass('collapsed').next().hide();
     });
 
-    $('#theme-settings h3.section-header:first').click();
+    $('#theme-settings h3.section-header:first').trigger('click');
 
     //special class "page"
     $("#theme-settings select.page").each(function() {
-        var sel = $(this);
+        const sel = $(this);
 
         sel.append('<option value="">None</option>');
 
@@ -147,15 +155,6 @@ $(function() {
         $('<div class="asset">').html('<a href="' + file.url + '" target="_blank" >' + file.name+'</a>').insertAfter(input);
     });
 
-    //special class "color"
-    $("#theme-settings input.color").spectrum({
-        showInput: true,
-        showButtons: true,
-        showAlpha: false,
-        clickoutFiresChange: true,
-        theme: "sp-boxbilling",
-        showInitial: true
-    });
 });
 </script>
 {% endblock %}

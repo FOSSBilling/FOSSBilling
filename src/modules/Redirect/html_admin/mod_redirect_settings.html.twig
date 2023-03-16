@@ -22,74 +22,99 @@
 {% endblock %}
 
 {% block content %}
-    <div class="page-header mb-3">
-        <h1 class="page-title">{{ 'Redirects'|trans }}</h1>
-    </div>
 
     <div class="card">
-        <div class="card-body">
-            <h5>{{ 'Create new redirect'|trans }}</h5>
-
+        <div class="card-header">
+            <h3 class="card-title">{{ 'Redirects'|trans }}</h3>
+        </div>
+        <div class="card-body border-bottom">
+            <h3 class="card-title">{{ 'Create new redirect'|trans }}</h3>
             <form method="post" action="{{ 'api/admin/redirect/create'|link }}" class="api-form" data-api-reload="1">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                <div class="input-group">
-                    <span class="input-group-text">{{ ''|link }}</span>
-                    <input class="form-control" type="text" name="path" required="required">
-                    <span class="input-group-text">
-                        <svg class="icon">
-                            <use xlink:href="#arrow-sm-right" />
-                        </svg>
-                    </span>
-                    <input class="form-control" type="text" name="target" required>
-                    <button type="submit" class="btn btn-primary">
-                        <svg class="icon me-2">
-                            <use xlink:href="#plus" />
-                        </svg>
-                        {{ 'Add'|trans }}
-                    </button>
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+                <div class="row row-cards">
+                    <div class="col-sm-5 col-md-4 mb-3">
+                        <label class="form-label required" for="path">Path</label>
+                        <div class="col-auto">
+                            <div class="input-group input-group-flat">
+                            <span class="input-group-text">
+                                {{ ''|link }}
+                            </span>
+                                <input type="text" class="form-control ps-0" name="path" id="path">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-5 col-md-4 mb-3">
+                        <label class="form-label required" for="target">Target</label>
+                        <div class="col-auto">
+                            <div class="input-group input-group-flat">
+                            <span class="input-group-text">
+                                {{ ''|link }}
+                            </span>
+                                <input type="text" class="form-control ps-0" name="target" id="target">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2 col-md-4 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">
+                            <svg class="icon me-2">
+                                <use xlink:href="#plus" />
+                            </svg>
+                            {{ 'Add'|trans }}
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
 
-        <table class="table card-table table-vcenter table-striped text-nowrap">
-            <thead>
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
                 <tr>
-                    <th>{{ 'From'|trans }}</th>
-                    <th>{{ 'To'|trans }}</th>
+                    <th>{{ 'Path'|trans }}</th>
+                    <th></th>
+                    <th>{{ 'Target'|trans }}</th>
                     <th class="w-1"></th>
                 </tr>
-            </thead>
-            <tbody>
+                </thead>
+                <tbody>
                 {% set redirects = admin.redirect_get_list({ 'per_page': 100, 'page': request.page }|merge(request)) %}
                 {% for r in redirects %}
-                <tr>
-                    <td>
-                        <a href="{{ r.path|link }}" target="_blank">{{ r.path | link }}</a>
-                    </td>
-                    <td>
-                        {% if '://' in r.target %}
-                            <a href="{{ r.target }}" target="_blank">{{ r.target }}</a>
-                        {% else %}
-                            <a href="{{ r.target|link }}" target="_blank">{{ r.target | link }}</a>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id, 'CSRFToken': CSRFToken }) }}"
-                            data-api-confirm="{{ 'Are you sure?'|trans }}"
-                            data-api-reload="1">
+                    <tr>
+                        <td>
+                            <a href="{{ r.path|link }}" target="_blank">{{ r.path | link }}</a>
+                        </td>
+                        <td>
                             <svg class="icon">
-                                <use xlink:href="#delete" />
+                                <use xlink:href="#arrow-right" />
                             </svg>
-                        </a>
-                    </td>
-                </tr>
+                        </td>
+                        <td>
+                            {% if '://' in r.target %}
+                                <a href="{{ r.target }}" target="_blank">{{ r.target }}</a>
+                            {% else %}
+                                <a href="{{ r.target|link }}" target="_blank">{{ r.target | link }}</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a class="btn btn-icon api-link"
+                               href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id, 'CSRFToken': CSRFToken }) }}"
+                               data-api-confirm="{{ 'Are you sure?'|trans }}"
+                               data-api-type="danger"
+                               data-api-confirm-btn="Delete"
+                               data-api-reload="1">
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
                 {% else %}
-                <tr>
-                    <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
-                </tr>
+                    <tr>
+                        <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                    </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}

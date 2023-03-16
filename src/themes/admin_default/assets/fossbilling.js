@@ -1,9 +1,9 @@
+import "@melloware/coloris/dist/coloris.css";
 import './scss/fossbilling.scss';
 
 import './js/sprite';
 import $ from 'jquery';
 import './js/ui/modals';
-import "@melloware/coloris/dist/coloris.css";
 import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
 import '@tabler/core/src/js/tabler';
