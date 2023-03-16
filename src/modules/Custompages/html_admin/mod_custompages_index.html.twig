@@ -80,7 +80,10 @@
                                     </a>
                                     <a class="btn btn-icon bb-rm-tr api-link"
                                        href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id, 'CSRFToken': CSRFToken }) }}"
-                                       title="{{ 'Delete'|trans }}" data-api-confirm="Are you sure?"
+                                       title="{{ 'Delete'|trans }}"
+                                       data-api-confirm="Are you sure?"
+                                       data-api-type="danger"
+                                       data-api-confirm-btn="Delete"
                                        data-api-reload="1">
                                         <svg class="icon">
                                             <use xlink:href="#delete"/>
