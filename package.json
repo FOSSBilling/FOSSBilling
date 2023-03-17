@@ -26,7 +26,7 @@
     "core-js": "^3.29.1",
     "cypress": "^12.8.1",
     "postcss": "^8.4.21",
-    "postcss-loader": "^7.0.2",
+    "postcss-loader": "^7.1.0",
     "sass": "^1.59.3",
     "sass-loader": "^13.2.0",
     "svg-sprite-loader": "^6.0.11",
