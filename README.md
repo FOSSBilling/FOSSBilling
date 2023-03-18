@@ -170,5 +170,6 @@ This product includes the following third party work:
 
 * [Website](https://www.fossbilling.org/)
 * [Documentation](https://fossbilling.org/docs)
+* [Forum](https://forum.fossbilling.org)
 * [Twitter](https://twitter.com/FOSSBilling)
 * [Discord](https://fossbilling.org/discord)
