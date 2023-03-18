@@ -55,7 +55,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                     'text', array(
                         'label' => 'Reseller ID',
                         'description' => 'Namecheap Reseller ID. If you don\'t have one, leave this blank.',
-                        'required' => true,
+                        'required' => false,
                     ),
                 ),
                 'api-key' => array(
