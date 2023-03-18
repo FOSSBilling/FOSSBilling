@@ -71,29 +71,29 @@
 
 <div class="card-footer text-center">
     {{ order_actions }}
-    <a class="d-inline-block mx-1 btn bg-light bg-gradient" href="{{ server.cpanel_url }}" target="_blank">
-        <svg class="mb-2 text-secondary" width="24" height="24">
+    <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">
+        <svg class="icon" width="24" height="24">
             <use xlink:href="#server" />
         </svg>
-        <span class="d-block text-secondary">{{ 'Jump to control panel'|trans }}</span>
+        <span>{{ 'Jump to control panel'|trans }}</span>
     </a>
     {% if service.reseller %}
-    <a class="d-inline-block mx-1 btn bg-light bg-gradient" href="{{ server.reseller_cpanel_url }}" target="_blank">
-        <svg class="mb-2 text-secondary" width="24" height="24">
+    <a class="btn btn-primary" href="{{ server.reseller_cpanel_url }}" target="_blank">
+        <svg class="icon" width="24" height="24">
             <use xlink:href="#server" />
         </svg>
-        <span class="d-block text-secondary">{{ 'Reseller control panel'|trans }}</span>
+        <span>{{ 'Reseller control panel'|trans }}</span>
     </a>
     {% endif %}
 
-    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+    <a class="btn btn-primary api-link"
         href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id, 'CSRFToken': CSRFToken }) }}"
         data-api-confirm="{{ 'Are you sure?'|trans }}"
         data-api-msg="{{ 'Account was synced'|trans }}">
-        <svg class="mb-2 text-secondary" width="24" height="24">
+        <svg class="icon" width="24" height="24">
             <use xlink:href="#refresh" />
         </svg>
-        <span class="d-block text-secondary">{{ 'Sync with server'|trans }}</span>
+        <span>{{ 'Sync with server'|trans }}</span>
     </a>
 </div>
 

@@ -122,46 +122,46 @@
             </table>
 
             <div class="card-footer text-center">
-                <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="btn btn-primary" target="_blank">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#eye" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>
+                    <span>{{ 'View as client'|trans }}</span>
                 </a>
-                <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+                    <span>{{ 'Delete'|trans }}</span>
                 </a>
                 {% if invoice.status == 'unpaid' %}
-                <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken}) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-msg="Payment reminder was sent">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken}) }}" class="btn btn-primary api-link" data-api-msg="Payment reminder was sent">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#mail" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Send reminder'|trans }}</span>
+                    <span>{{ 'Send reminder'|trans }}</span>
                 </a>
-                <a href="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1, 'CSRFToken': CSRFToken }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-reload="Invoice marked as paid">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                <a href="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="Invoice marked as paid">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#check" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Mark as paid'|trans }}</span>
+                    <span>{{ 'Mark as paid'|trans }}</span>
                 </a>
                 {% endif %}
 
                 {% if invoice.status == 'paid' %}
-                <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#receipt-refund" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Refund'|trans }}</span>
+                    <span>{{ 'Refund'|trans }}</span>
                 </a>
                 {% endif %}
-                <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" class="btn btn-primary" target="_blank">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#download" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'PDF'|trans }}</span>
+                    <span>{{ 'PDF'|trans }}</span>
                 </a>
             </div>
         </div>

@@ -281,8 +281,10 @@
             </div>
 
             <div class="card-footer text-center">
-                <a href="{{ 'order'|link }}/{{ product.slug }}" class="btn55 mr10" target="_blank">
-                    <img src="images/searchBtn.png" alt="">
+                <a href="{{ 'order'|link }}/{{ product.slug }}" class="btn btn-primary" target="_blank">
+                    <svg class="icon" width="24" height="24">
+                        <use xlink:href="#search" />
+                    </svg>
                     <span>{{ 'View as client'|trans }}</span>
                 </a>
             </div>
