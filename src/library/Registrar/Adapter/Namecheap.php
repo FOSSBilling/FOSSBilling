@@ -23,30 +23,24 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     public function __construct($options)
     {
-        if (isset($options['api-user-id']) && !empty($options['api-user-id'])) {
-            $this->config['api-user-id'] = $options['api-user-id'];
-            unset($options['api-user-id']);
-        } else {
-            throw new Registrar_Exception('Domain registrar "Namecheap" is not configured properly. Please update configuration parameter "Reseller ID" at "Configuration -> Domain registration".');
-        }
-
         if (isset($options['api-key']) && !empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
-            unset($options['api-key']);
         } else {
             throw new Registrar_Exception('Domain registrar "Namecheap" is not configured properly. Please update configuration parameter "API Key" at "Configuration -> Domain registration".');
         }
 
         if (isset($options['username']) && !empty($options['username'])) {
             $this->config['username'] = $options['username'];
-            unset($options['username']);
         } else {
             throw new Registrar_Exception('Domain registrar "Namecheap" is not configured properly. Please update configuration parameter "Username" at "Configuration -> Domain registration".');
         }
 
+        if (!isset($options['api-user-id']) || empty(trim($options['api-user-id']))) {
+            $this->config['api-user-id'] = $options['username'];
+        }
+
         if (isset($options['ip']) && !empty($options['ip'])) {
             $this->config['ip'] = $options['ip'];
-            unset($options['ip']);
         } else {
             throw new Registrar_Exception('Domain registrar "Namecheap" is not configured properly. Please update configuration parameter "Server IP Address" at "Configuration -> Domain registration".');
         }
@@ -60,28 +54,29 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 'api-user-id' => array(
                     'text', array(
                         'label' => 'Reseller ID',
-                        'description' => 'Namecheap Reseller ID. You can get this at Namecheap control panel'
+                        'description' => 'Namecheap Reseller ID. If you don\'t have one, leave this blank.',
+                        'required' => true,
                     ),
                 ),
                 'api-key' => array(
                     'password', array(
                         'label' => 'API Key',
-                        'description' => 'You can get this at Namecheap control panel',
-                        'required' => false,
+                        'description' => 'You can get this at Namecheap control panel.',
+                        'required' => true,
                     ),
                 ),
                 'username' => array(
                     'text', array(
-                        'label' => 'Namecheap UserName',
-                        'description' => 'You can get this at Namecheap control panel',
-                        'required' => false,
+                        'label' => 'Namecheap Username',
+                        'description' => 'The username you use to login to the Namecheap control panel.',
+                        'required' => true,
                     ),
                 ),
                 'ip' => array(
                     'text', array(
-                        'label' => 'Server IP address',
-                        'description' => 'IP address of this server. Ensure that this IP is whitelisted under your NameCheap settings',
-                        'required' => false,
+                        'label' => 'Server\'s Public IP Address',
+                        'description' => 'Public IP address of this server. Ensure that this IP is whitelisted under your NameCheap settings.',
+                        'required' => true,
                     ),
                 ),
             ),
