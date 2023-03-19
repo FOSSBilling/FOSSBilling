@@ -168,41 +168,41 @@
             <div class="card-footer text-center">
                 {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/order/activate'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Activate'|trans }}</span>
+                        <span>{{ 'Activate'|trans }}</span>
                     </a>
                     {% endif %}
 
                     {% if order.status == 'active' or order.status == 'failed_renew' %}
                     {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/order/renew'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order renewed'|trans }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#refresh" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Renew'|trans }}</span>
+                        <span>{{ 'Renew'|trans }}</span>
                     </a>
 
                     {% if params.suspend_reason_list|trim == null %}
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/order/suspend'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-prompt-key="reason"
                         data-api-prompt="1"
                         data-api-prompt-text="{{ 'Reason of suspension'|trans }}"
                         data-api-prompt-title="{{ 'Suspension reason'|trans }}"
                         data-api-reload="{{ 'Order suspended'|trans }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#pause" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Suspend'|trans }}</span>
+                        <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% else %}
                     <div id="suspend_popup" style="position: fixed; z-index: 99999; padding: 5px; margin: 0px; min-width: 310px; max-width: 310px; top: 30%; left: 45%; display: none;">
@@ -233,60 +233,60 @@
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% endif %}
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/order/cancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-prompt-key="reason"
                         data-api-prompt="1"
                         data-api-prompt-text="{{ 'Reason of cancelation'|trans }}"
                         data-api-prompt-title="{{ 'Cancelation reason'|trans }}"
                         data-api-reload="{{ 'Order canceled'|trans }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#close" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Cancel'|trans }}</span>
+                        <span>{{ 'Cancel'|trans }}</span>
                     </a>
                     {% endif %}
 
                     {% if order.status == 'suspended' %}
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Unsuspend'|trans }}</span>
+                        <span>{{ 'Unsuspend'|trans }}</span>
                     </a>
                     {% endif %}
 
                     {% if order.status == 'canceled' %}
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn55 mr10 api-link" data-api-reload="Order activated">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                    <a class="btn btn-primary api-link" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn55 mr10 api-link" data-api-reload="Order activated">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Activate'|trans }}</span>
+                        <span>{{ 'Activate'|trans }}</span>
                     </a>
                     {% endif %}
 
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/order/delete'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-redirect="{{ 'order'|alink }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+                        <span>{{ 'Delete'|trans }}</span>
                     </a>
 
                     {% if not order.unpaid_invoice_id %}
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="1">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon" width="24" height="24">
                             <use xlink:href="#plus" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Issue invoice'|trans }}</span>
+                        <span>{{ 'Issue invoice'|trans }}</span>
                     </a>
                     {% endif %}
                 {% endset %}

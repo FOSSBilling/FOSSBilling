@@ -137,20 +137,20 @@
             </div>
 
             <div class="card-footer text-center">
-                <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="btn btn-primary" target="_blank">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#login" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Login to client area'|trans }}</span>
+                    <span>{{ 'Login to client area'|trans }}</span>
                 </a>
-                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                <a class="btn btn-danger api-link"
                     href="{{ 'api/admin/client/delete'|link({ 'id': client.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'client'|alink }}">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                    <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+                    <span>{{ 'Delete'|trans }}</span>
                 </a>
             </div>
         </div>
