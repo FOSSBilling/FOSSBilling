@@ -74,13 +74,13 @@
                         <div class="accordion" id="preset-config">
                             {{ settings_html|raw }}
                         </div>
-                        <div class="mt-3 d-flex">
-                            <div class="form-check">
+                        <div class="mt-3 d-flex align-items-center">
+                            <div class="form-check mb-0">
                                 <input class="form-check-input" type="checkbox" name="save-current-setting" value="1" id="save-current-setting">
                                 <label class="form-check-label" for="save-current-setting">{{ 'Save current settings as a new preset called'|trans }}</label>
                             </div>
-                            <div class="">
-                                <input class="ms-2 form-control" type="text" name="save-current-setting-preset">
+                            <div class="ms-2">
+                                <input class="form-control" type="text" name="save-current-setting-preset">
                             </div>
                         </div>
                     </div>
@@ -95,16 +95,6 @@
 {% block js %}
 <script>
 $(function() {
-    $('#theme-settings fieldset').each(function (index, value) {
-        let show = index === 0 ? 'show' : '';
-        let heading = $(this).find('legend').text();
-        let accordionBtn = `<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-body-${index}" aria-expanded="true" aria-controls="collapse-${index}">${heading}</button>`;
-        let accordionContent = `<div id="collapse-body-${index}" class="accordion-collapse collapse ${show}"><div class="accordion-body pt-0">${value.innerHTML}</div></div>`;
-        $(this).wrapAll('<div class="accordion-item">');
-        $('<h2 class="accordion-header"/>').html(accordionBtn).insertBefore($(this));
-        $(this).parent().append(accordionContent);
-    });
-
     //special class "page"
     $("#theme-settings select.page").each(function() {
         const sel = $(this);
