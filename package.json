@@ -28,7 +28,7 @@
     "postcss": "^8.4.21",
     "postcss-loader": "^7.1.0",
     "sass": "^1.59.3",
-    "sass-loader": "^13.2.0",
+    "sass-loader": "^13.2.1",
     "svg-sprite-loader": "^6.0.11",
     "svgo-loader": "^4.0.0",
     "webpack": "^5.76.2",
