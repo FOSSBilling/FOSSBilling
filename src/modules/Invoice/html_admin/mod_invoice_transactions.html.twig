@@ -196,7 +196,7 @@
                 </td>
                 <td>{{ tx.gateway }}</td>
                 <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
-                <td>{{ tx.created_at|date('Y-m-d H:i') }}</td>
+                <td>{{ tx.created_at|format_datetime }}</td>
                 <td>
                     <a class="btn btn-icon" href="{{ 'invoice/transaction'|alink }}/{{ tx.id }}">
                         <svg class="icon">

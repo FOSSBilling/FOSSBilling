@@ -6,7 +6,7 @@ Hello {{ c.first_name }} {{ c.last_name }},
 This is a payment reminder that your proforma invoice **{{ invoice.serie_nr }}** is already
 due for {{ days_passed }} days.   
 
-Amount due: {{ invoice.total | money(invoice.currency) }}
+Amount Due: {{ invoice.total | money(invoice.currency) }}
 Due Date: {{ invoice.due_at|format_date }}
 
 You can view and pay the invoice at: {{'invoice'|link}}/{{invoice.hash}}

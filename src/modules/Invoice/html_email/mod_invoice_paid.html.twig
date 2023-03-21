@@ -4,7 +4,7 @@
 Hello {{ c.first_name }} {{ c.last_name }},
 
 This is a payment receipt for Invoice **{{ invoice.serie_nr }}** issued on
-{{invoice.created_at|date('Y-m-d')}}
+{{ invoice.created_at|format_date }}
 
 Total Paid: {{ invoice.total | money(invoice.currency) }}
 

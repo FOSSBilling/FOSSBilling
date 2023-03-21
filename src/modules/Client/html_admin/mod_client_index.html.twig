@@ -252,7 +252,7 @@
                                     {% endif %}
                                     {{ mf.status_name(client.status) }}
                                 </td>
-                                <td>{{ client.created_at|date('Y-m-d') }}</td>
+                                <td>{{ client.created_at|format_date }}</td>
                                 <td>
                                     <a class="btn btn-icon" href="{{ 'client/manage'|alink }}/{{ client.id }}">
                                         <svg class="icon">

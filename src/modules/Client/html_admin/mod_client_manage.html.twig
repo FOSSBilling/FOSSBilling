@@ -129,8 +129,8 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Registered at'|trans }}:</td>
-                            <td>{{ client.created_at|format_datetime }}</td>
+                            <td class="text-end">{{ 'Registered on'|trans }}:</td>
+                            <td>{{ client.created_at|format_date }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -520,8 +520,8 @@
                         <tr>
                             <th class="w-1">#</th>
                             <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Issued at'|trans }}</th>
-                            <th>{{ 'Paid at'|trans }}</th>
+                            <th>{{ 'Issued on'|trans }}</th>
+                            <th>{{ 'Paid on'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -534,8 +534,8 @@
                                 <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
                             </td>
                             <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
-                            <td>{{ invoice.created_at|date('Y-m-d') }}</td>
-                            <td>{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
+                            <td>{{ invoice.created_at|format_date }}</td>
+                            <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
                                     <span class="badge bg-success me-1"></span>
@@ -665,7 +665,7 @@
                         <tr>
                             <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
                             <td>{{ tx.description }}</td>
-                            <td>{{ tx.created_at|date("Y-m-d H:i") }}</td>
+                            <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon api-link"
                                     href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}"
@@ -743,7 +743,7 @@
                         <tr>
                             <td>{{ login.ip }}</td>
                             <td>{{ login.ip|ipcountryname|default('Unknown') }}</td>
-                            <td>{{ login.created_at|date('l, d F Y') }}</td>
+                            <td>{{ login.created_at|format_datetime }}</td>
                         </tr>
                         {% else %}
                         <tr>
@@ -766,7 +766,7 @@
                         <tr>
                             <th>{{ 'Email subject'|trans }}</th>
                             <th>{{ 'To'|trans }}</th>
-                            <th>{{ 'Date sent'|trans }}</th>
+                            <th>{{ 'Date'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
                     </thead>
@@ -777,7 +777,7 @@
                         <tr>
                             <td>{{ email.subject }}</td>
                             <td>{{ email.recipients }}</td>
-                            <td>{{ email.created_at|date('l, d F Y') }}</td>
+                            <td>{{ email.created_at|format_datetime }}</td>
                             <td>
                                 <a class="bb-button btn14" href="{{ 'email'|alink }}/{{ email.id }}">
                                     <img src="assets/icons/edit.svg" alt="">

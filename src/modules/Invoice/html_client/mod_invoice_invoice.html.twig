@@ -65,23 +65,23 @@
                         <img src="{{ company.logo_url }}" alt="Logo">
                         {% endif %}
                         <dl class="dl-horizontal">
-                            <dt>{{ 'Invoice number'|trans }}:</dt>
+                            <dt>{{ 'Invoice Number'|trans }}:</dt>
                             <dd>{{ nr }}</dd>
-                            <dt>{{ 'Invoice date'|trans }}:</dt>
+                            <dt>{{ 'Invoice Date'|trans }}:</dt>
                             <dd>{% if invoice.paid_at %}
                                 {{ invoice.paid_at|format_date }}
                                 {% else %}
                                 {{ invoice.created_at|format_date }}
                                 {% endif %}
                             </dd>
-                            <dt>{{ 'Due date'|trans }}:</dt>
+                            <dt>{{ 'Due Date'|trans }}:</dt>
                             <dd>{% if invoice.due_at %}
                                 {{ invoice.due_at|format_date }}
                                 {% else %}
                                 -----
                                 {% endif %}
                             </dd>
-                            <dt>{{ 'Invoice status'|trans }}:</dt>
+                            <dt>{{ 'Invoice Status'|trans }}:</dt>
                             <dd>
                                 <span class="label {% if invoice.status == 'paid' %} label-success{% elseif invoice.status == 'unpaid' %}label-warning{% endif %}">
                                       {{ invoice.status|capitalize }}

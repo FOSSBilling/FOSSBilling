@@ -20,7 +20,7 @@
                 <div class="article{% if loop.last %} last{% endif%} data-container">
                     <header>
                         <h2><a href="{{ '/news'|link }}/{{post.slug}}">{{ post.title }}</a></h2>
-                        <div class="pull-right"><h5>{{ post.updated_at|format_date }}</h5></div>
+                        <div class="pull-right"><h5>{{ post.updated_at|format_datetime }}</h5></div>
                     </header>
                    <section>
                        {% if post.excerpt %}

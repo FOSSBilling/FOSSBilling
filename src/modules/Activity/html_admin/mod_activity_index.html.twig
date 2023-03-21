@@ -22,7 +22,7 @@
                 <th class="w-1"></th>
                 <th>{{ 'User'|trans }}</th>
                 <th>{{ 'Message'|trans }}</th>
-                <th>{{ 'Ip'|trans }}</th>
+                <th>{{ 'IP'|trans }}</th>
                 <th>{{ 'Country'|trans }}</th>
                 <th>{{ 'Date'|trans }}</th>
                 <th class="w-1"></th>
@@ -60,7 +60,7 @@
             <td>{{ event.message }}</td>
             <td>{{ event.ip }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
-            <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
+            <td>{{ event.created_at|format_datetime }}</td>
             <td>
                 <a class="btn btn-icon api-link"
                     href="{{ 'api/admin/activity/log_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"

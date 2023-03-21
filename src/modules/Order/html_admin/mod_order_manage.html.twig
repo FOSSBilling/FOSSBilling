@@ -30,7 +30,7 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h5>{{ 'Order management'|trans }}</h5>
+        <h5>{{ 'Order Management'|trans }}</h5>
     </div>
 
     <ul class="nav nav-tabs" role="tablist">
@@ -72,33 +72,33 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
                         <tr>
-                            <td class="w-50 text-end">{{ 'Order'|trans }}:</td>
+                            <td class="w-50 text-end">{{ 'Order'|trans }}</td>
                             <td>#{{ order.id }} ({{ order.service_type }})</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Client'|trans }}:</td>
+                            <td class="text-end">{{ 'Client'|trans }}</td>
                             <td><a href="{{ 'client/manage'|alink }}/{{order.client.id}}">{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Title'|trans }}:</td>
+                            <td class="text-end">{{ 'Title'|trans }}</td>
                             <td><a href="{{ 'product/manage'|alink }}/{{ order.product_id }}"><strong>{{ order.title }}</strong></a></td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Payment amount'|trans }}:</td>
+                            <td class="text-end">{{ 'Payment amount'|trans }}</td>
                             <td>{{ mf.currency_format( order.total, order.currency) }} {% if order.period %}{{mf.period_name(order.period)}}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
                         </tr>
                         {% if order.discount and order.discount > 0%}
                         <tr>
-                            <td class="text-end">{{ 'Order discount'|trans }}:</td>
+                            <td class="text-end">{{ 'Order discount'|trans }}</td>
                             <td>-{{ mf.currency_format( order.discount, order.currency) }} </td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Payment amount after discount'|trans }}:</td>
+                            <td class="text-end">{{ 'Payment amount after discount'|trans }}</td>
                             <td>{{ mf.currency_format( order.total - order.discount, order.currency) }} </td>
                         </tr>
                         {% endif %}
                         <tr>
-                            <td class="text-end">{{ 'Order status'|trans }}:</td>
+                            <td class="text-end">{{ 'Order status'|trans }}</td>
                             <td>
                             {% if order.status == 'pending_setup' or order.status == 'failed_setup' or order.status == 'failed_renew' %}
                                 <span class="badge bg-warning me-1"></span>
@@ -117,7 +117,7 @@
                         </tr>
                         {% if order.notes %}
                         <tr>
-                            <td class="text-end">{{ 'Order notes'|trans }}:</td>
+                            <td class="text-end">{{ 'Order notes'|trans }}</td>
                             <td>
                                 <svg class="icon">
                                     <use xlink:href="#support" />
@@ -127,24 +127,24 @@
                         </tr>
                         {% endif %}
                         <tr>
-                            <td class="text-end">{{ 'Order created'|trans }}:</td>
-                            <td>{{ order.created_at|date('l, d F Y') }}</td>
+                            <td class="text-end">{{ 'Order Date'|trans }}</td>
+                            <td>{{ order.created_at|format_date }}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Activated'|trans }} {% if order.activated_at %} {{ order.activated_at|timeago }} {{ 'ago'|trans }}{% endif %}:</td>
-                            <td>{% if order.activated_at %}{{ order.activated_at|date('l, d F Y')}} {% else %}-{% endif %}</td>
+                            <td class="text-end">{{ 'Activation Date'|trans }}</td>
+                            <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Renewal date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}{% endif %}:</td>
-                            <td>{% if order.expires_at %}{{ order.expires_at|date('l, d F Y')}}{% else %}-{% endif %}</td>
+                            <td class="text-end">{{ 'Renewal Date'|trans }}</td>
+                            <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Order group ID'|trans }}:</td>
+                            <td class="text-end">{{ 'Order group ID'|trans }}</td>
                             <td>{{ order.group_id|default('-') }}</td>
                         </tr>
                         {% if order.promo_id %}
                         <tr>
-                            <td class="text-end">{{ 'Order promo code'|trans }}:</td>
+                            <td class="text-end">{{ 'Order promo code'|trans }}</td>
                             <td>
                                 {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
                                 {{ promo.code }}
@@ -153,7 +153,7 @@
                         {% endif %}
                         {% if order.active_tickets > 0 %}
                         <tr>
-                            <td class="text-end">{{ 'Active support tickets'|trans }}:</td>
+                            <td class="text-end">{{ 'Active support tickets'|trans }}</td>
                             <td>
                                 <div class="num">
                                     <a href="{{ 'support'|alink({ 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
@@ -297,7 +297,7 @@
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
-                <h3>{{ 'Order management'|trans }}</h2>
+                <h3>{{ 'Order Management'|trans }}</h2>
                 <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
@@ -337,7 +337,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="expires_at">{{ 'Expires at'|trans }}</label>
+                        <label class="form-label col-3 col-form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -345,56 +345,6 @@
                                            id="expires_at"
                                            value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
                                            name="expires_at"
-                                    >
-                                    <span class="input-icon-addon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                            <path d="M16 3l0 4"></path>
-                                            <path d="M8 3l0 4"></path>
-                                            <path d="M4 11l16 0"></path>
-                                            <path d="M11 15l1 0"></path>
-                                            <path d="M12 15l0 3"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Created at'|trans }}</label>
-                        <div class="col">
-                            <div class="input-group">
-                                <div class="input-icon w-100">
-                                    <input class="form-control datepicker"
-                                           id="created_at"
-                                           value="{{ order.created_at|date('Y-m-d') }}"
-                                           name="created_at"
-                                    >
-                                    <span class="input-icon-addon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                            <path d="M16 3l0 4"></path>
-                                            <path d="M8 3l0 4"></path>
-                                            <path d="M4 11l16 0"></path>
-                                            <path d="M11 15l1 0"></path>
-                                            <path d="M12 15l0 3"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="activated_at">{{ 'Activated at'|trans }}</label>
-                        <div class="col">
-                            <div class="input-group">
-                                <div class="input-icon w-100">
-                                    <input class="form-control datepicker"
-                                           id="activated_at"
-                                           value="{{ order.activated_at|date('Y-m-d') }}"
-                                           name="activated_at"
                                     >
                                     <span class="input-icon-addon">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -451,7 +401,7 @@
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 {% for name, value in order.config %}
                 <div class="mb-3 row">
-                    <label class="topLabel">{{ name }}:</label>
+                    <label class="topLabel">{{ name }}</label>
                         <div class="formBottom">
                             <textarea rows="2" name="config[{{ name }}]">{{ value }}</textarea>
                         </div>
@@ -514,7 +464,7 @@
                         <td>{{ addon.title }}</td>
                         <td>{{ mf.period_name(addon.period) }}</td>
                         <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
-                        <td>{% if addon.expires_at %}{{ addon.expires_at|date('l, d F Y') }}{% else %}-{% endif %}</td>
+                        <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                         <td>
                             {% if addon.status == 'pending_setup' or addon.status == 'failed_setup' or addon.status == 'failed_renew' %}
                                 <span class="badge bg-warning me-1"></span>
@@ -575,8 +525,8 @@
                     <tr>
                         <td>{{ invoice.id }}</td>
                         <td>{{ mf.currency_format( invoice.total, invoice.currency, 1) }}</td>
-                        <td>{{ invoice.created_at|date('Y-m-d') }}</td>
-                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
+                        <td>{{ invoice.created_at|format_date }}</td>
+                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                         <td>
                             {% if invoice.status == 'paid' %}
                                 <span class="badge bg-success me-1"></span>
@@ -626,7 +576,7 @@
                     {% set statuses = admin.order_status_history_get_list({ 'per_page': 50, 'id': order.id }) %}
                     {% for i, sh in statuses.list %}
                     <tr>
-                        <td>{{ sh.created_at|date('Y-m-d H:i') }}</td>
+                        <td>{{ sh.created_at|format_datetime }}</td>
                         <td>
                             {% if sh.status == 'pending_setup' or sh.status == 'failed_setup' or sh.status == 'failed_renew' %}
                                 <span class="badge bg-warning me-1"></span>

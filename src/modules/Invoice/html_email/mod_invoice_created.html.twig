@@ -5,7 +5,7 @@ Hello {{ c.first_name }} {{ c.last_name }},
 
 This is to notify that proforma invoice {{ invoice.id }} was generated on {{ invoice.created_at|format_date }}.
 Amount Due: {{ invoice.total | money(invoice.currency) }}
-Due Date: {{invoice.due_at|format_date}}
+Due Date: {{ invoice.due_at|format_date }}
 
 You can view and pay the invoice at: {{'invoice'|link}}/{{invoice.hash}}
 

@@ -40,7 +40,7 @@
 
             <tr>
                 <td class="text-end">{{ 'Sent'|trans }}:</td>
-                <td>{{ email.created_at|date('l, d F Y') }}</td>
+                <td>{{ email.created_at|format_date }}</td>
             </tr>
          </tbody>
     </table>

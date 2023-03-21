@@ -43,7 +43,7 @@
             <th>{{ 'Subject'|trans }}</th>
             <th>{{ 'Help desk'|trans }}</th>
             <th>{{ 'Status'|trans }}</th>
-            <th>{{ 'Submitted'|trans }}</th>
+            <th>{{ 'Last Updated'|trans }}</th>
             <th>{{ 'Actions'|trans }}</th>
         </tr>
         </thead>
@@ -54,7 +54,7 @@
             <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}">{{ ticket.subject }}</a></td>
             <td>{{ ticket.helpdesk.name }}</td>
             <td><span class="label">{{ mf.status_name(ticket.status) }}</span></td>
-            <td>{{ ticket.created_at|format_date }}</td>
+            <td title="{{ ticket.updated_at|format_datetime }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
             <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="btn btn-small btn-inverse">{{ 'Reply'|trans }}</a></td>
         </tr>
         {% else %}
@@ -209,7 +209,7 @@
                     {% for i, email in client.email_get_list({ "per_page": 5 }).list %}
                     <tr class="{{ cycle(['odd', 'even'], i) }}">
                         <td><a href="{{ 'email'|link }}/{{ email.id }}">{{ email.subject|truncate(30) }}</a></td>
-                        <td title="{{ email.created_at|format_date }}">{{ email.created_at|timeago }} {{ 'ago'|trans }}</td>
+                        <td title="{{ email.created_at|format_datetime }}">{{ email.created_at|timeago }} {{ 'ago'|trans }}</td>
                     </tr>
                     {% else %}
                     <tr>
