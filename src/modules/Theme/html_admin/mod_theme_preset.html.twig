@@ -93,60 +93,64 @@
     {% endif %}
 {% endblock %}
 {% block js %}
-<script>
-$(function() {
-    //special class "page"
-    $("#theme-settings select.page").each(function() {
-        const sel = $(this);
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
 
-        sel.append('<option value="">None</option>');
+            function createOptionElement(value, text) {
+                let optionEl = document.createElement('option');
+                optionEl.setAttribute('value', value);
+                optionEl.innerText = text;
+                return optionEl;
+            }
 
-        $.each({{ admin.page_get_pairs | json_encode | raw }}, function(index, value) {
-            sel.append('<option value="' + index + '">' + value + '</option>');
+            //special class "page"
+            document.querySelectorAll('#theme-settings select.page').forEach((el) => {
+                el.append(createOptionElement('', 'None'));
+                Object.entries({{ admin.page_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
+
+            //special class "snippet"
+            document.querySelectorAll('#theme-settings select.snippet').forEach((el) => {
+                el.append(createOptionElement('', 'None'));
+                Object.entries({{ snippets|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
+
+            //special class "product"
+            document.querySelectorAll('#theme-settings select.product').forEach((el) => {
+                el.append(createOptionElement('', 'None'));
+                Object.entries({{ admin.product_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
+
+            // populate settings values
+            Object.entries({{ settings|json_encode|raw }}).forEach(([key, value]) => {
+                document.querySelectorAll('#theme-settings *[name="' + key + '"]').forEach((el) => {
+                    switch (el.getAttribute('type')) {
+                        case 'radio':
+                            el.parentElement.parentElement.querySelector('[value="'+ value +'"]').setAttribute('checked', '')
+                            break;
+                        case 'checkbox':
+                            el.setAttribute('checked', '');
+                            break;
+                        default:
+                            el.value = value;
+                    }
+                });
+            })
+
+            // show uploaded files
+            Object.entries({{ uploaded|json_encode|raw }}).forEach(([key, file]) => {
+                let el = document.querySelector('#theme-settings input[name="' + file.name + '"]');
+                let filePathBtn = '<div class="asset"><a href="' + file.url + '" target="_blank" >' + file.name + '</a></div>';
+                el.insertAdjacentHTML('afterend', filePathBtn);
+
+            })
+
         });
-    });
-
-    // special class "snippet"
-    $("#theme-settings select.snippet").each(function() {
-        var sel = $(this);
-        sel.append('<option value="">None</option>');
-        $.each({{ snippets|json_encode|raw }}, function(index, value) {
-            sel.append('<option value="' + index + '">' + value + '</option>');
-        });
-    });
-
-    // special class "product"
-    $("#theme-settings select.product").each(function() {
-        var sel = $(this);
-
-        sel.append('<option value="">None</option>');
-        $.each({{ admin.product_get_pairs|json_encode|raw }}, function(index, value) {
-            sel.append('<option value="' + index + '">' + value + '</option>');
-        });
-    });
-
-    // populate settings values
-    var settings = {{settings|json_encode|raw }};
-
-    $.each(settings, function(index, value) {
-        var el = $('#theme-settings *[name="' + index + '"]');
-
-        if(el.attr('type') === 'radio') {
-            el.filter('[value="' + value + '"]').attr('checked', true);
-        } else if(el.attr('type') === 'checkbox') {
-            el.attr('checked', true);
-        } else {
-            el.val(value);
-        }
-    });
-
-    // show uploaded files
-    var uploaded = {{ uploaded|json_encode|raw }};
-    $.each(uploaded, function(index, file) {
-        var input = $('#theme-settings input[name="' + file.name + '"]');
-        $('<div class="asset">').html('<a href="' + file.url + '" target="_blank" >' + file.name+'</a>').insertAfter(input);
-    });
-
-});
-</script>
+    </script>
 {% endblock %}
