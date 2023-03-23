@@ -1,10 +1,11 @@
+@import "bb-deprecated";
+@import "dataTable-deprecated";
+@import "main-deprecated";
 @import "~@tabler/core/src/scss/tabler";
 @import "~@tabler/core/src/scss/vendor/_litepicker.scss";
 @import "flags";
 @import "~tom-select/dist/css/tom-select.bootstrap5.css";
-@import "bb-deprecated";
-@import "dataTable-deprecated";
-@import "main-deprecated";
+@import "theme_settings";
 
 .page {
     min-height: calc(100vh - 2px);

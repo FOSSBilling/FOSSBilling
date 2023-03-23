@@ -42,8 +42,8 @@
                 <h3 class="card-title">{{ 'Settings for'|trans }} {{ theme_code }}</h3>
                 <div class="card-subtitle">{{ 'Switch to a predefined set of theme settings from the dropdown. Adjust each section and apply the changes once you\'re done.'|trans }}</div>
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Your current preset'|trans }}</label>
-                    <div class="col">
+                    <label class="form-label col-sm-4 col-md-3 col-form-label">{{ 'Your current preset'|trans }}</label>
+                    <div class="col-sm-5 col-md-3">
                         <div class="input-group">
                             <select class="form-select" name="preset" onchange="bb.post('admin/theme/preset_select', { code: '{{ theme_code }}', preset: $(this).val(), CSRFToken: '{{ CSRFToken }}' }, function(){ bb.reload(); })">
                                 {% for preset in presets %}
@@ -68,17 +68,19 @@
         <div class="card mt-3">
             <form method="post" action="" enctype="multipart/form-data">
                 <div class="card-body">
-                    <h3 class="card-title">{{ 'Config for'|trans }} {{ theme_code }}</h3>
-                    <div id="theme-settings">
+                    <h3 class="card-title">{{ 'Config for'|trans }} {{ current_preset }} {{ 'preset'|trans }}</h3>
+                    <div class="" id="theme-settings">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                        {{ settings_html|raw }}
-                        <div class="mt-3 d-flex">
-                            <div class="form-check">
+                        <div class="accordion" id="preset-config">
+                            {{ settings_html|raw }}
+                        </div>
+                        <div class="mt-3 d-flex align-items-center">
+                            <div class="form-check mb-0">
                                 <input class="form-check-input" type="checkbox" name="save-current-setting" value="1" id="save-current-setting">
                                 <label class="form-check-label" for="save-current-setting">{{ 'Save current settings as a new preset called'|trans }}</label>
                             </div>
-                            <div class="">
-                                <input class="ms-2 form-control" type="text" name="save-current-setting-preset">
+                            <div class="ms-2">
+                                <input class="form-control" type="text" name="save-current-setting-preset">
                             </div>
                         </div>
                     </div>
@@ -91,70 +93,64 @@
     {% endif %}
 {% endblock %}
 {% block js %}
-<script>
-$(function() {
-    $('#theme-settings fieldset').each(function(index, value) {
-        $('<h3 class="section-header collapsed"/>').text($(this).find('legend').text()).insertBefore($(this));
-    });
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
 
-    $('#theme-settings h3.section-header').toggle(function() {
-        $(this).removeClass('collapsed').next().show();
-    });
+            function createOptionElement(value, text) {
+                let optionEl = document.createElement('option');
+                optionEl.setAttribute('value', value);
+                optionEl.innerText = text;
+                return optionEl;
+            }
 
-    $('#theme-settings h3.section-header:first').trigger('click');
+            //special class "page"
+            document.querySelectorAll('#theme-settings select.page').forEach((el) => {
+                el.append(createOptionElement('', 'None'));
+                Object.entries({{ admin.page_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
 
-    //special class "page"
-    $("#theme-settings select.page").each(function() {
-        const sel = $(this);
+            //special class "snippet"
+            document.querySelectorAll('#theme-settings select.snippet').forEach((el) => {
+                el.append(createOptionElement('', 'None'));
+                Object.entries({{ snippets|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
 
-        sel.append('<option value="">None</option>');
+            //special class "product"
+            document.querySelectorAll('#theme-settings select.product').forEach((el) => {
+                el.append(createOptionElement('', 'None'));
+                Object.entries({{ admin.product_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
 
-        $.each({{ admin.page_get_pairs | json_encode | raw }}, function(index, value) {
-            sel.append('<option value="' + index + '">' + value + '</option>');
+            // populate settings values
+            Object.entries({{ settings|json_encode|raw }}).forEach(([key, value]) => {
+                document.querySelectorAll('#theme-settings *[name="' + key + '"]').forEach((el) => {
+                    switch (el.getAttribute('type')) {
+                        case 'radio':
+                            el.parentElement.parentElement.querySelector('[value="'+ value +'"]').setAttribute('checked', '')
+                            break;
+                        case 'checkbox':
+                            el.setAttribute('checked', '');
+                            break;
+                        default:
+                            el.value = value;
+                    }
+                });
+            })
+
+            // show uploaded files
+            Object.entries({{ uploaded|json_encode|raw }}).forEach(([key, file]) => {
+                let el = document.querySelector('#theme-settings input[name="' + file.name + '"]');
+                let filePathBtn = '<div class="asset"><a href="' + file.url + '" target="_blank" >' + file.name + '</a></div>';
+                el.insertAdjacentHTML('afterend', filePathBtn);
+
+            })
+
         });
-    });
-
-    // special class "snippet"
-    $("#theme-settings select.snippet").each(function() {
-        var sel = $(this);
-        sel.append('<option value="">None</option>');
-        $.each({{ snippets|json_encode|raw }}, function(index, value) {
-            sel.append('<option value="' + index + '">' + value + '</option>');
-        });
-    });
-
-    // special class "product"
-    $("#theme-settings select.product").each(function() {
-        var sel = $(this);
-
-        sel.append('<option value="">None</option>');
-        $.each({{ admin.product_get_pairs|json_encode|raw }}, function(index, value) {
-            sel.append('<option value="' + index + '">' + value + '</option>');
-        });
-    });
-
-    // populate settings values
-    var settings = {{settings|json_encode|raw }};
-
-    $.each(settings, function(index, value) {
-        var el = $('#theme-settings *[name="' + index + '"]');
-
-        if(el.attr('type') == 'radio') {
-            el.filter('[value="' + value + '"]').attr('checked', true);
-        } else if(el.attr('type') == 'checkbox') {
-            el.attr('checked', true);
-        } else {
-            el.val(value);
-        }
-    });
-
-    // show uploaded files
-    var uploaded = {{ uploaded|json_encode|raw }};
-    $.each(uploaded, function(index, file) {
-        var input = $('#theme-settings input[name="' + file.name + '"]');
-        $('<div class="asset">').html('<a href="' + file.url + '" target="_blank" >' + file.name+'</a>').insertAfter(input);
-    });
-
-});
-</script>
+    </script>
 {% endblock %}

@@ -10,6 +10,7 @@ import '@tabler/core/src/js/tabler';
 import './js/tomselect'
 import './js/datepicker'
 import ApexCharts from 'apexcharts';
+import './js/ui/theme_settings';
 import './js/fossbilling';
 
 globalThis.ApexCharts = ApexCharts;
