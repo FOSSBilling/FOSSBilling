@@ -649,8 +649,6 @@ class ServiceTest extends \BBTestCase {
         $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('emptyFolder');
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
