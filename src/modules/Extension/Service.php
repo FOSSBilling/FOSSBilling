@@ -451,65 +451,53 @@ class Service implements InjectionAwareInterface
         mkdir($extracted, 0755, true);
 
         // Download the extension archive and save it to the cache folder
-        $resource = fopen($zip, 'w');
+        $fileHandler = fopen($zip, 'w');
         $client = $this->di['http_client'];
-        $response = $client->request('GET', $manifest['download_url'], [
-            'buffer'    => $resource,
-        ]); 
+        $response = $client->request('GET', $manifest['download_url']);
+
+        $code = $response->getStatusCode();
+        if ($code !== 200) {
+            throw new \Box_Exception("Failed to download the extension with error :code", [':code' => $code]);
+        }
+
+        foreach ($client->stream($response) as $chunk) {
+            fwrite($fileHandler, $chunk->getContent());
+        }
 
         // Extract the archive
         $ff = new \Box_Zip($zip);
         $ff->decompress($extracted, $runFromTest);
 
-        // Install by type
         switch ($type) {
             case \Box_Extension::TYPE_MOD:
-                $destination = PATH_MODS . '/' . $id;
-                if ($this->di['tools']->fileExists($destination)) {
-                    throw new \Box_Exception('Module seems to be already installed.', null, 436);
-                }
-                if (!$this->di['tools']->rename($extracted, $destination)) {
-                    throw new \Box_Exception('Extension can not be moved. Make sure your server allows you to write to the modules folder.', null, 437);
-                }
+                $destination = PATH_MODS . DIRECTORY_SEPARATOR . $id;
                 break;
-
             case \Box_Extension::TYPE_THEME:
-                $destination = PATH_THEMES . '/' . $id;
-                if (!$this->di['tools']->fileExists($destination)) {
-                    if (!$this->di['tools']->rename($extracted, $destination)) {
-                        throw new \Box_Exception('Theme can not be moved. Make sure your server allows you to write to the themes folder.', null, 439);
-                    }
-                }
+                $destination = PATH_THEMES . DIRECTORY_SEPARATOR . $id;
                 break;
-
             case \Box_Extension::TYPE_TRANSLATION:
-                $destination = PATH_LANGS . '/' . $id . '/LC_MESSAGES';
-                $this->di['tools']->emptyFolder($destination);
-                if (!$this->di['tools']->fileExists($destination)) {
-                    $this->di['tools']->mkdir($destination, 0777, true);
-                }
-                if (!$this->di['tools']->rename($extracted, $destination)) {
-                    throw new \Box_Exception('Locale files can not be moved. Make sure your server allows you to write to the locale folder', null, 440);
-                }
+                $destination = PATH_LANGS . DIRECTORY_SEPARATOR . $id . '/LC_MESSAGES';
                 break;
-
             case \Box_Extension::TYPE_PG:
-            $destination = PATH_LIBRARY . '/Payment/Adapter/' . $id;
-            if ($this->di['tools']->fileExists($destination)) {
-                throw new \Box_Exception('Module seems to be already installed.', null, 436);
-            }
-            if (!$this->di['tools']->rename($extracted.'/'.$id, $destination)) {
-                throw new \Box_Exception('Payment gateways files can not be moved. Make sure your server allows you to write to the Payment gateway folder', null, 440);
-            }
-            break;
+                $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . $id;
+                break;
+        }
 
-            default:
-                throw new \Box_Exception('Extension does not support auto-install feature. Extension must be installed manually');
+        if (isset($destination)) {
+            if (file_exists($destination)) {
+                throw new \Box_Exception('Extension :id seems to be already installed.', [':id' => $id], 436);
+            }
+            if (!rename($extracted, $destination)) {
+                throw new \Box_Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
+            }
+        } else {
+            throw new \Box_Exception('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
         }
 
         if (file_exists($zip)) {
             unlink($zip);
         }
+
         $this->di['tools']->emptyFolder($extracted);
 
         return true;

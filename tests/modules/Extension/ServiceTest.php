@@ -606,12 +606,6 @@ class ServiceTest extends \BBTestCase {
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(true));
-        $toolsMock->expects($this->atLeastOnce())
             ->method('emptyFolder');
 
         $di = new \Box_Di();
@@ -640,7 +634,7 @@ class ServiceTest extends \BBTestCase {
         
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Extension does not support auto-install feature. Extension must be installed manually');
+        $this->expectExceptionMessage('Extension type (notDefinedType) cannot be automatically installed.');
         $this->service->downloadAndExtract('notDefinedType', 'extensionId', true);
     }
 
@@ -655,76 +649,6 @@ class ServiceTest extends \BBTestCase {
         $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('mkdir');
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('emptyFolder');
-
-        $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
-        $di['http_client'] = $httpClientMock;
-        $di['tools'] = $toolsMock;
-
-        $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionCode(440);
-        $this->expectExceptionMessage('Locale files can not be moved. Make sure your server allows you to write to the locale folder');
-        $this->service->downloadAndExtract('translation', 'extensionId', true);
-    }
-
-    public function testdownloadAndExtractThemeTypeException()
-    {
-        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
-
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
-
-        $httpClientMock = new MockHttpClient();
-
-        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(false));
-
-        $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
-        $di['http_client'] = $httpClientMock;
-        $di['tools'] = $toolsMock;
-
-        $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage(439);
-        $this->expectExceptionMessage('Theme can not be moved. Make sure your server allows you to write to the themes folder.');
-        $this->service->downloadAndExtract('theme', 'extensionId', true);
-    }
-
-    public function testdownloadAndExtractRenameException()
-    {
-        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
-
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
-
-        $httpClientMock = new MockHttpClient();
-
-        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('rename')
-            ->will($this->returnValue(false));
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
@@ -734,8 +658,8 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(437);
-        $this->expectExceptionMessage('Extension can not be moved. Make sure your server allows you to write to the modules folder.');
-        $this->service->downloadAndExtract('mod', 'extensionId', true);
+        $this->expectExceptionMessage("Failed to move extension to it's final destination. Please check permissions for the destination folder. (/home/runner/work/FOSSBilling/FOSSBilling/src/locale/extensionId/LC_MESSAGES)");
+        $this->service->downloadAndExtract('translation', 'extensionId', true);
     }
 
     public function testdownloadAndExtractFileExistsException()
@@ -749,9 +673,6 @@ class ServiceTest extends \BBTestCase {
         $httpClientMock = new MockHttpClient();
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
@@ -761,7 +682,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(436);
-        $this->expectExceptionMessage('Module seems to be already installed.');
+        $this->expectExceptionMessage('Extension extensionId seems to be already installed.');
         $this->service->downloadAndExtract('mod', 'extensionId', true);
     }
 
