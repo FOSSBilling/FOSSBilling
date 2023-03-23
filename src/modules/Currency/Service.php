@@ -556,7 +556,7 @@ class Service implements InjectionAwareInterface
         if (true !== $array['success']) {
             throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />' . $array['error']['info']);
         } else {
-            return (float) $array['quotes']['USD' . $to_Currency];
+            return (float) $array['quotes'][$from_Currency . $to_Currency];
         }
     }
 
