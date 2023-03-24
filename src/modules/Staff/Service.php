@@ -315,7 +315,7 @@ class Service implements InjectionAwareInterface
 
         $di = $this->getDi();
         $pager = $di['pager'];
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
 
         return $pager->getSimpleResultSet($query, $params, $per_page);
     }
@@ -324,9 +324,9 @@ class Service implements InjectionAwareInterface
     {
         $query = 'SELECT * FROM admin';
 
-        $search = $this->di['array_get']($data, 'search', null);
-        $status = $this->di['array_get']($data, 'status', null);
-        $no_cron = (bool) $this->di['array_get']($data, 'no_cron', false);
+        $search = $data['search'] ?? null;
+        $status = $data['status'] ?? null;
+        $no_cron = (bool) $data['no_cron'] ?? false;
 
         $where = [];
         $bindings = [];
@@ -414,11 +414,11 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
-        $model->email = $this->di['array_get']($data, 'email', $model->email);
-        $model->admin_group_id = $this->di['array_get']($data, 'admin_group_id', $model->admin_group_id);
-        $model->name = $this->di['array_get']($data, 'name', $model->name);
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
-        $model->signature = $this->di['array_get']($data, 'signature', $model->signature);
+        $model->email = $data['email'] ?? $model->email;
+        $model->admin_group_id = $data['admin_group_id'] ?? $model->admin_group_id;
+        $model->name = $data['name'] ?? $model->name;
+        $model->status = $data['status'] ?? $model->status;
+        $model->signature = $data['signature'] ?? $model->signature;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -466,7 +466,7 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Admin', 3);
 
-        $signature = $this->di['array_get']($data, 'signature', null);
+        $signature = $data['signature'] ?? null;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
@@ -610,8 +610,8 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN admin as a on m.admin_id = a.id
                 ';
 
-        $search = $this->di['array_get']($data, 'search', null);
-        $admin_id = $this->di['array_get']($data, 'admin_id', null);
+        $search = $data['search'] ?? null;
+        $admin_id = $data['admin_id'] ?? null;
 
         $where = [];
         $params = [];

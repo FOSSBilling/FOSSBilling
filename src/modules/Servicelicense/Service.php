@@ -98,11 +98,11 @@ class Service implements InjectionAwareInterface
 
         $model = $this->di['db']->dispense('ServiceLicense');
         $model->client_id = $order->client_id;
-        $model->validate_ip = (bool) $this->di['array_get']($c, 'validate_ip', false);
-        $model->validate_host = (bool) $this->di['array_get']($c, 'validate_host', false);
-        $model->validate_path = (bool) $this->di['array_get']($c, 'validate_path', false);
-        $model->validate_version = (bool) $this->di['array_get']($c, 'validate_version', false);
-        $model->plugin = $this->di['array_get']($c, 'plugin', 'Simple');
+        $model->validate_ip = (bool) $c['validate_ip'] ?? false;
+        $model->validate_host = (bool) $c['validate_host'] ?? false;
+        $model->validate_path = (bool) $c['validate_path'] ?? false;
+        $model->validate_version = (bool) $c['validate_version'] ?? false;
+        $model->plugin = $c['plugin'] ?? 'Simple';
 
         $model->ips = null;
         $model->versions = null;
@@ -123,7 +123,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
-        $iterations = $this->di['array_get']($c, 'iterations', 10);
+        $iterations = $c['iterations'] ?? 10;
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \Model_ServiceLicense) {
             throw new \Box_Exception('Could not activate order. Service was not created');
@@ -417,11 +417,11 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_ServiceLicense $s, array $data)
     {
-        $s->plugin = $this->di['array_get']($data, 'plugin', $s->plugin);
-        $s->validate_ip = (bool) $this->di['array_get']($data, 'validate_ip', $s->validate_ip);
-        $s->validate_host = (bool) $this->di['array_get']($data, 'validate_host', $s->validate_host);
-        $s->validate_path = (bool) $this->di['array_get']($data, 'validate_path', $s->validate_path);
-        $s->validate_version = (bool) $this->di['array_get']($data, 'validate_version', $s->validate_version);
+        $s->plugin = $data['plugin'] ?? $s->plugin;
+        $s->validate_ip = (bool) $data['validate_ip'] ?? $s->validate_ip;
+        $s->validate_host = (bool) $data['validate_host'] ?? $s->validate_host;
+        $s->validate_path = (bool) $data['validate_path'] ?? $s->validate_path;
+        $s->validate_version = (bool) $data['validate_version'] ?? $s->validate_version;
         if (isset($data['license_key']) && !empty($data['license_key'])) {
             $s->license_key = $data['license_key'];
         }

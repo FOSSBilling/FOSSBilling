@@ -183,7 +183,7 @@ class Service implements \Box\InjectionAwareInterface
         $model->sld = $sld;
         $model->tld = $tld;
         $model->period = $years;
-        $model->transfer_code = $this->di['array_get']($c, 'transfer_code', null);
+        $model->transfer_code = $c['transfer_code'] ?? null;
         $model->privacy = false;
         $model->action = $c['action'];
         $model->ns1 = (isset($c['ns1']) && !empty($c['ns1'])) ? $c['ns1'] : $ns['nameserver_1'];
@@ -789,14 +789,14 @@ class Service implements \Box\InjectionAwareInterface
 
     public function tldUpdate(\Model_Tld $model, $data)
     {
-        $model->tld_registrar_id = $this->di['array_get']($data, 'tld_registrar_id', $model->tld_registrar_id);
-        $model->price_registration = $this->di['array_get']($data, 'price_registration', $model->price_registration);
-        $model->price_renew = $this->di['array_get']($data, 'price_renew', $model->price_renew);
-        $model->price_transfer = $this->di['array_get']($data, 'price_transfer', $model->price_transfer);
-        $model->min_years = $this->di['array_get']($data, 'min_years', $model->min_years);
-        $model->allow_register = $this->di['array_get']($data, 'allow_register', $model->allow_register);
-        $model->allow_transfer = $this->di['array_get']($data, 'allow_transfer', $model->allow_transfer);
-        $model->active = $this->di['array_get']($data, 'active', $model->active);
+        $model->tld_registrar_id = $data['tld_registrar_id'] ?? $model->tld_registrar_id;
+        $model->price_registration = $data['price_registration'] ?? $model->price_registration;
+        $model->price_renew = $data['price_renew'] ?? $model->price_renew;
+        $model->price_transfer = $data['price_transfer'] ?? $model->price_transfer;
+        $model->min_years = $data['min_years'] ?? $model->min_years;
+        $model->allow_register = $data['allow_register'] ?? $model->allow_register;
+        $model->allow_transfer = $data['allow_transfer'] ?? $model->allow_transfer;
+        $model->active = $data['active'] ?? $model->active;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -811,8 +811,8 @@ class Service implements \Box\InjectionAwareInterface
         $query = 'SELECT * FROM tld';
 
         $hide_inactive = isset($data['hide_inactive']) ? (bool) $data['hide_inactive'] : false;
-        $allow_register = $this->di['array_get']($data, 'allow_register', null);
-        $allow_transfer = $this->di['array_get']($data, 'allow_transfer', null);
+        $allow_register = $data['allow_register'] ?? null;
+        $allow_transfer = $data['allow_register'] ?? null;
 
         $where = [];
         $bindings = [];
@@ -1015,8 +1015,8 @@ class Service implements \Box\InjectionAwareInterface
 
     public function registrarUpdate(\Model_TldRegistrar $model, $data)
     {
-        $model->name = $this->di['array_get']($data, 'title', $model->name);
-        $model->test_mode = $this->di['array_get']($data, 'test_mode', $model->test_mode);
+        $model->name = $data['title'] ?? $model->name;
+        $model->test_mode = $data['test_mode'] ?? $model->test_mode;
         if (isset($data['config']) && is_array($data['config'])) {
             $model->config = json_encode($data['config']);
         }
@@ -1060,19 +1060,15 @@ class Service implements \Box\InjectionAwareInterface
 
     public function updateDomain(\Model_ServiceDomain $s, $data)
     {
-        $s->ns1 = $this->di['array_get']($data, 'ns1', $s->ns1);
-        $s->ns2 = $this->di['array_get']($data, 'ns2', $s->ns2);
-        $s->ns3 = $this->di['array_get']($data, 'ns3', $s->ns3);
-        $s->ns4 = $this->di['array_get']($data, 'ns4', $s->ns4);
+        $s->ns1 = $data['ns1'] ?? $s->ns1;
+        $s->ns2 = $data['ns2'] ?? $s->ns2;
+        $s->ns3 = $data['ns3'] ?? $s->ns3;
+        $s->ns4 = $data['ns4'] ?? $s->ns4;
 
-        $s->period = (int) $this->di['array_get']($data, 'period', $s->period);
-        $s->privacy = (bool) $this->di['array_get']($data, 'privacy', $s->privacy);
-        $s->locked = (bool) $this->di['array_get']($data, 'locked', $s->locked);
-
-        $s->period = (int) $this->di['array_get']($data, 'period', $s->period);
-        $s->privacy = (bool) $this->di['array_get']($data, 'privacy', $s->privacy);
-        $s->locked = (bool) $this->di['array_get']($data, 'locked', $s->locked);
-        $s->transfer_code = $this->di['array_get']($data, 'transfer_code', $s->transfer_code);
+        $s->period = (int) $data['period'] ?? $s->period;
+        $s->privacy = (bool) $data['privacy'] ?? $s->privacy;
+        $s->locked = (bool) $data['locked'] ?? $s->locked;
+        $s->transfer_code = $data['transfer_code'] ?? $s->transfer_code;
         $s->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($s);

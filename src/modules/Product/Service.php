@@ -60,9 +60,9 @@ class Service implements InjectionAwareInterface
                 FROM product
                 WHERE 1';
 
-        $type = $this->di['array_get']($data, 'type', null);
-        $products_only = $this->di['array_get']($data, 'products_only', true);
-        $active_only = $this->di['array_get']($data, 'active_only', true);
+        $type = $data['type'] ?? null;
+        $products_only = $data['products_only'] ?? null;
+        $active_only = $data['active_only'] ?? null;
 
         $params = [];
         if ($products_only) {
@@ -283,25 +283,25 @@ class Service implements InjectionAwareInterface
             $model->config = json_encode($c);
         }
 
-        $form_id = $this->di['array_get']($data, 'form_id', $model->form_id);
+        $form_id = $data['form_id'] ?? $model->form_id;
 
-        $model->product_category_id = $this->di['array_get']($data, 'product_category_id', $model->product_category_id);
+        $model->product_category_id = $data['product_category_id'] ?? $model->product_category_id;
         $model->form_id = empty($form_id) ? null : $form_id;
-        $model->icon_url = $this->di['array_get']($data, 'icon_url', $model->icon_url);
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
-        $model->hidden = (int) $this->di['array_get']($data, 'hidden', $model->hidden);
-        $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
-        $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
+        $model->icon_url =  $data['icon_url'] ?? $model->icon_url;
+        $model->status =  $data['status'] ?? $model->status;
+        $model->hidden = (int)  $data['hidden'] ?? $model->hidden;
+        $model->slug =  $data['slug'] ?? $model->slug;
+        $model->setup =  $data['setup'] ?? $model->setup;
         //remove empty value in data['upgrades];
-        if(is_array($data['upgrades'])){
+        if (is_array($data['upgrades'])) {
             $upgrades = array_values(array_filter($data['upgrades']));
-            if (empty($upgrades)){
+            if (empty($upgrades)) {
                 $model->upgrades = null;
-            } else{
+            } else {
                 $model->upgrades = json_encode($upgrades);
             }
         }
-        if(is_array($data['addons'])){
+        if (is_array($data['addons'])) {
             $addons =  array_values(array_filter($data['addons']));
             if (is_null($addons)) {
                 $model->addons = null;
@@ -310,12 +310,12 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $model->title = $this->di['array_get']($data, 'title', $model->title);
-        $model->stock_control = $this->di['array_get']($data, 'stock_control', $model->stock_control);
-        $model->allow_quantity_select = $this->di['array_get']($data, 'allow_quantity_select', $model->allow_quantity_select);
-        $model->quantity_in_stock = $this->di['array_get']($data, 'quantity_in_stock', $model->quantity_in_stock);
-        $model->description = $this->di['array_get']($data, 'description', $model->description);
-        $model->plugin = $this->di['array_get']($data, 'plugin', $model->plugin);
+        $model->title = $data['title'] ?? $model->title;
+        $model->stock_control = $data['stock_control'] ?? $model->stock_control;
+        $model->allow_quantity_select = $data['allow_quantity_select'] ?? $model->allow_quantity_select;
+        $model->quantity_in_stock = $data['quantity_in_stock'] ?? $model->quantity_in_stock;
+        $model->description = $data['description'] ?? $model->description;
+        $model->plugin = $data['plugin'] ?? $model->plugin;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -356,7 +356,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (isset($data['new_config_name']) &&
+        if (
+            isset($data['new_config_name']) &&
             isset($data['new_config_value']) &&
             !empty($data['new_config_name']) &&
             !empty($data['new_config_value'])
@@ -503,9 +504,9 @@ class Service implements InjectionAwareInterface
                 FROM promo
                 WHERE 1';
 
-        $search = $this->di['array_get']($data, 'search', null);
-        $id = $this->di['array_get']($data, 'id', null);
-        $status = $this->di['array_get']($data, 'status', null);
+        $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
+        $status = $data['status'] ?? null;
 
         $params = [];
         if ($id) {
@@ -552,15 +553,15 @@ class Service implements InjectionAwareInterface
         $model->code = $code;
         $model->type = $type;
         $model->value = $value;
-        $model->active = $this->di['array_get']($data, 'active', 0);
-        $model->freesetup = $this->di['array_get']($data, 'freesetup', 0);
-        $model->once_per_client = (bool) $this->di['array_get']($data, 'once_per_client', 0);
-        $model->recurring = (bool) $this->di['array_get']($data, 'recurring', 0);
-        $model->maxuses = $this->di['array_get']($data, 'maxuses');
+        $model->active = $data['active'] ?? 0;
+        $model->freesetup = $data['freesetup'] ?? 0;
+        $model->once_per_client = (bool) $data['once_per_client'] ?? 0;
+        $model->recurring = (bool) $data['recurring'] ?? 0;
+        $model->maxuses = $data['maxuses'] ?? null;
 
-        $start_at = $this->di['array_get']($data, 'start_at');
+        $start_at = $data['start_at'] ?? null;
         $model->start_at = !empty($start_at) ? date('Y-m-d H:i:s', strtotime($start_at)) : null;
-        $end_at = $this->di['array_get']($data, 'end_at');
+        $end_at = $data['end_at'] ?? null;
         $model->end_at = (!empty($end_at)) ? date('Y-m-d H:i:s', strtotime($end_at)) : null;
 
         $model->products = json_encode($products);
@@ -596,57 +597,57 @@ class Service implements InjectionAwareInterface
 
     public function updatePromo(\Model_Promo $model, array $data = [])
     {
-        $model->code = $this->di['array_get']($data, 'code', $model->code);
-        $model->type = $this->di['array_get']($data, 'type', $model->type);
-        $model->value = $this->di['array_get']($data, 'value', $model->value);
-        $model->active = $this->di['array_get']($data, 'active', $model->active);
-        $model->freesetup = $this->di['array_get']($data, 'freesetup', $model->freesetup);
-        $model->once_per_client = $this->di['array_get']($data, 'once_per_client', $model->once_per_client);
-        $model->recurring = $this->di['array_get']($data, 'recurring', $model->recurring);
-        $model->used = $this->di['array_get']($data, 'used', $model->used);
+        $model->code = $data['code'] ?? $model->code;
+        $model->type = $data['type'] ?? $model->type;
+        $model->value = $data['value'] ?? $model->value;
+        $model->active = $data['active'] ?? $model->active;
+        $model->freesetup = $data['freesetup'] ?? $model->freesetup;
+        $model->once_per_client = $data['once_per_client'] ?? $model->once_per_client;
+        $model->recurring = $data['recurring'] ?? $model->recurring;
+        $model->used = $data['used'] ?? $model->used;
 
-        $start_at = $this->di['array_get']($data, 'start_at');
+        $start_at = $data['start_at'] ?? null;
         if (empty($start_at) && !is_null($start_at)) {
             $model->start_at = null;
         } else {
             $model->start_at = date('Y-m-d H:i:s', strtotime($start_at));
         }
 
-        $end_at = $this->di['array_get']($data, 'end_at');
+        $end_at = $data['start_at'] ?? null;
         if (empty($end_at) && !is_null($end_at)) {
             $model->end_at = null;
         } else {
             $model->end_at = date('Y-m-d H:i:s', strtotime($end_at));
         }
 
-        if(!is_array($this->di['array_get']($data, 'products'))){
+        if (!is_array($data['products'] ?? null)) {
             $model->products = null;
-        }else{
-            $products =  array_values(array_filter($this->di['array_get']($data, 'products')));
+        } else {
+            $products =  array_values(array_filter($data['products'] ?? null));
             if (empty($products)) {
                 $model->products = null;
-            }else{
+            } else {
                 $model->products = json_encode($products);
             }
         }
-        if(!is_array($this->di['array_get']($data, 'client_groups'))){
+        if (!is_array($data['client_groups'] ?? null)) {
             $model->client_groups = null;
-        }else{
-            $client_groups = array_values(array_filter($this->di['array_get']($data, 'client_groups')));
+        } else {
+            $client_groups = array_values(array_filter($data['client_groups'] ?? null));
             if (empty($client_groups)) {
                 $model->client_groups = null;
-            }else{
+            } else {
                 $model->client_groups = json_encode($client_groups);
             }
         }
 
-        if(!is_array($this->di['array_get']($data, 'periods'))){
+        if (!is_array($data['periods'] ?? null)) {
             $model->periods = null;
-        }else{
-            $periods = array_values(array_filter($this->di['array_get']($data, 'periods')));
+        } else {
+            $periods = array_values(array_filter($data['periods'] ?? null));
             if (empty($periods)) {
                 $model->periods = null;
-            }else{
+            } else {
                 $model->periods = json_encode($periods);
             }
         }
@@ -679,10 +680,10 @@ class Service implements InjectionAwareInterface
                   LEFT JOIN product_payment as pp on m.product_payment_id = pp.id
                 WHERE m.is_addon = 0';
 
-        $type = $this->di['array_get']($data, 'type', null);
-        $search = $this->di['array_get']($data, 'search', null);
-        $status = $this->di['array_get']($data, 'status', null);
-        $show_hidden = $this->di['array_get']($data, 'show_hidden', true);
+        $type = $data['type'] ?? null;
+        $search = $data['search'] ?? null;
+        $status = $data['status'] ?? null;
+        $show_hidden = $data['show_hidden'] ?? null;
 
         $params = [];
         if ($type) {
@@ -722,7 +723,7 @@ class Service implements InjectionAwareInterface
                 $type = $p->type;
             }
             $products[] = $pa;
-            $startingPrice = $this->di['array_get']($pa, 'price_starting_from', 0);
+            $startingPrice = $data['price_starting_from'] ?? 0;
 
             if (0 == $min_price) {
                 $min_price = $startingPrice;
@@ -804,7 +805,7 @@ class Service implements InjectionAwareInterface
 
     public function getUpgradablePairs(\Model_Product $model)
     {
-        if(is_null($model->upgrades)){
+        if (is_null($model->upgrades)) {
             $model->upgrades = '';
         }
         $ids = json_decode($model->upgrades, 1);

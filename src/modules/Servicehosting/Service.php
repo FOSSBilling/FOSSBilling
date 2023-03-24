@@ -93,7 +93,7 @@ class Service implements InjectionAwareInterface
         $model->sld = $c['sld'];
         $model->tld = $c['tld'];
         $model->ip = $server->ip;
-        $model->reseller = $this->di['array_get']($c, 'reseller', false);
+        $model->reseller = $c['reseller'] ?? false;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -308,8 +308,10 @@ class Service implements InjectionAwareInterface
 
     public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
-        if (!isset($data['tld']) || empty($data['tld']) ||
-           !isset($data['sld']) || empty($data['sld'])) {
+        if (
+            !isset($data['tld']) || empty($data['tld']) ||
+            !isset($data['sld']) || empty($data['sld'])
+        ) {
             throw new \Box_Exception('Domain sld or tld is missing');
         }
 
@@ -332,8 +334,10 @@ class Service implements InjectionAwareInterface
 
     public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
-        if (!isset($data['password']) || !isset($data['password_confirm'])
-                || $data['password'] != $data['password_confirm']) {
+        if (
+            !isset($data['password']) || !isset($data['password_confirm'])
+            || $data['password'] != $data['password_confirm']
+        ) {
             throw new \Box_Exception('Account password is missing or is not valid');
         }
 
@@ -496,9 +500,9 @@ class Service implements InjectionAwareInterface
             $result['id'] = $model->id;
             $result['active'] = $model->active;
             $result['secure'] = $model->secure;
-            if(!is_null($model->assigned_ips)){
-            $result['assigned_ips'] = json_decode($model->assigned_ips, 1);
-            }else{
+            if (!is_null($model->assigned_ips)) {
+                $result['assigned_ips'] = json_decode($model->assigned_ips, 1);
+            } else {
                 $result['assigned_ips'] = '';
             }
             $result['status_url'] = $model->status_url;
@@ -648,23 +652,30 @@ class Service implements InjectionAwareInterface
         $model->name = $name;
         $model->ip = $ip;
 
-        $model->hostname = $this->di['array_get']($data, 'hostname');
-        $model->assigned_ips = $this->di['array_get']($data, 'assigned_ips');
-        $model->active = $this->di['array_get']($data, 'active', 1);
-        $model->status_url = $this->di['array_get']($data, 'status_url');
-        $model->max_accounts = $this->di['array_get']($data, 'max_accounts');
+        $model->hostname = $data['hostname'] ?? false;
+        $model->assigned_ips = $data['assigned_ips'] ?? null;
+        $model->active = $data['active'] ?? 1;
+        $model->status_url = $data['status_url'] ?? null;
+        $model->max_accounts = $data['max_accounts'] ?? null;
 
-        $model->ns1 = $this->di['array_get']($data, 'ns1');
-        $model->ns2 = $this->di['array_get']($data, 'ns2');
-        $model->ns3 = $this->di['array_get']($data, 'ns3');
-        $model->ns4 = $this->di['array_get']($data, 'ns4');
+        $model->ns1 = $data['ns1'] ?? null;
+        $model->ns2 = $data['ns2'] ?? null;
+        $model->ns3 = $data['ns3'] ?? null;
+        $this->di['array_get']($data, 'ns3');
+        $model->ns4 = $data['ns4'] ?? null;
+        $this->di['array_get']($data, 'ns4');
 
         $model->manager = $manager;
-        $model->username = $this->di['array_get']($data, 'username');
-        $model->password = $this->di['array_get']($data, 'password');
-        $model->accesshash = $this->di['array_get']($data, 'accesshash');
-        $model->port = $this->di['array_get']($data, 'port');
-        $model->secure = $this->di['array_get']($data, 'secure', 0);
+        $model->username = $data['username'] ?? null;
+        $this->di['array_get']($data, 'username');
+        $model->password = $data['password'] ?? null;
+        $this->di['array_get']($data, 'password');
+        $model->accesshash = $data['accesshash'] ?? null;
+        $this->di['array_get']($data, 'accesshash');
+        $model->port = $data['port'] ?? null;
+        $this->di['array_get']($data, 'port');
+        $model->secure = $data['secure'] ?? 0;
+        $this->di['array_get']($data, 'secure', 0);
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
@@ -789,7 +800,7 @@ class Service implements InjectionAwareInterface
 
     public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null)
     {
-        if(is_null($model->config)){
+        if (is_null($model->config)) {
             $model->config = '';
         }
         $result = [

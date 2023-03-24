@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
 
         [$sql, $params] = $service->getProductSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
@@ -113,7 +113,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Product type :type is not registered', [':type' => $data['type']], 413);
         }
 
-        $categoryId = $this->di['array_get']($data, 'product_category_id', null);
+        $categoryId = $data['product_category_id'] ?? null;
 
         return (int) $service->createProduct($data['title'], $data['type'], $categoryId);
     }
@@ -216,10 +216,10 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $title = $data['title'];
-        $status = $this->di['array_get']($data, 'status', null);
-        $setup = $this->di['array_get']($data, 'setup', null);
-        $iconUrl = $this->di['array_get']($data, 'icon_url', null);
-        $description = $this->di['array_get']($data, 'description', null);
+        $status = $data['status'] ?? null;
+        $setup = $data['setup'] ?? null;
+        $iconUrl = $data['icon_url'] ?? null;
+        $description = $data['description'] ?? null;
 
         $service = $this->getService();
 
@@ -351,9 +351,9 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
-        $title = $this->di['array_get']($data, 'title', null);
-        $description = $this->di['array_get']($data, 'description', null);
-        $icon_url = $this->di['array_get']($data, 'icon_url', null);
+        $title = $data['title'] ?? null;
+        $description = $data['description'] ?? null;
+        $icon_url = $data['icon_url'] ?? null;
 
         $service = $this->getService();
 
@@ -400,9 +400,9 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
 
-        $title = $this->di['array_get']($data, 'title', null);
-        $description = $this->di['array_get']($data, 'description', null);
-        $icon_url = $this->di['array_get']($data, 'icon_url', null);
+        $title = $data['title'] ?? null;
+        $description = $data['description'] ?? null;
+        $icon_url = $data['icon_url'] ?? null;
 
         return (int) $service->createCategory($title, $description, $icon_url);
     }
@@ -438,7 +438,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         [$sql, $params] = $service->getPromoSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Promo', $item['id'], 'Promo not found');

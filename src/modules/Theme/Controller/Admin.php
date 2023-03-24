@@ -118,7 +118,7 @@ class Admin implements \Box\InjectionAwareInterface
 
         $data = [
             'info' => $info,
-            'error' => $this->di['array_get']($_GET, 'error', null),
+            'error' => $_GET['error'] ?? null,
             'theme_code' => $t->getName(),
             'settings_html' => $html,
             'uploaded' => $t->getUploadedAssets($theme),

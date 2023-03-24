@@ -74,19 +74,19 @@ class Service implements InjectionAwareInterface
 
         $params = [];
 
-        $search = $this->di['array_get']($data, 'search', null);
-        $order_id = $this->di['array_get']($data, 'order_id', null);
-        $id = $this->di['array_get']($data, 'id', null);
-        $id_nr = $this->di['array_get']($data, 'nr', null);
-        $client_id = $this->di['array_get']($data, 'client_id', null);
-        $client = $this->di['array_get']($data, 'client', null);
-        $created_at = $this->di['array_get']($data, 'created_at', null);
-        $date_from = $this->di['array_get']($data, 'date_from', null);
-        $date_to = $this->di['array_get']($data, 'date_to', null);
-        $paid_at = $this->di['array_get']($data, 'paid_at', null);
-        $status = $this->di['array_get']($data, 'status', null);
-        $approved = $this->di['array_get']($data, 'approved', null);
-        $currency = $this->di['array_get']($data, 'currency', null);
+        $search = $date['search'] ?? null;
+        $order_id = $date['order_id'] ?? null;
+        $id = $date['id'] ?? null;
+        $id_nr = $date['nr'] ?? null;
+        $client_id = $date['client_id'] ?? null;
+        $client = $date['client'] ?? null;
+        $created_at = $date['created_at'] ?? null;
+        $date_from = $date['date_from'] ?? null;
+        $date_to = $date['date_to'] ?? null;
+        $paid_at = $date['paid_at'] ?? null;
+        $status = $date['status'] ?? null;
+        $approved = $date['approved'] ?? null;
+        $currency = $date['currency'] ?? null;
 
         if ($order_id) {
             $sql .= ' AND pi.type = :item_type AND pi.rel_id = :order_id';
@@ -480,9 +480,9 @@ class Service implements InjectionAwareInterface
         $model->currency = $client->currency;
         $model->approved = 0;
 
-        $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
-        $model->text_1 = $this->di['array_get']($data, 'text_1', $model->text_1);
-        $model->text_2 = $this->di['array_get']($data, 'text_2', $model->text_2);
+        $model->gateway_id = $date['gateway_id'] ?? $model->gateway_id;
+        $model->text_1 = $date['text_1'] ?? $model->text_1;
+        $model->text_2 = $date['text_2'] ?? $model->text_2;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $invoiceId = $this->di['db']->store($model);
@@ -761,61 +761,61 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
-        $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
-        $model->text_1 = $this->di['array_get']($data, 'text_1', $model->text_1);
-        $model->text_2 = $this->di['array_get']($data, 'text_2', $model->text_2);
-        $model->seller_company = $this->di['array_get']($data, 'seller_company', $model->seller_company);
-        $model->seller_company_vat = $this->di['array_get']($data, 'seller_company_vat', $model->seller_company_vat);
-        $model->seller_company_number = $this->di['array_get']($data, 'seller_company_number', $model->seller_company_number);
-        $model->seller_address = $this->di['array_get']($data, 'seller_address', $model->seller_address);
-        $model->seller_phone = $this->di['array_get']($data, 'seller_phone', $model->seller_phone);
-        $model->seller_email = $this->di['array_get']($data, 'seller_email', $model->seller_email);
-        $model->buyer_first_name = $this->di['array_get']($data, 'buyer_first_name', $model->buyer_first_name);
-        $model->buyer_last_name = $this->di['array_get']($data, 'buyer_last_name', $model->buyer_last_name);
-        $model->buyer_company = $this->di['array_get']($data, 'buyer_company', $model->buyer_company);
-        $model->buyer_company_vat = $this->di['array_get']($data, 'buyer_company_vat', $model->buyer_company_vat);
-        $model->buyer_company_number = $this->di['array_get']($data, 'buyer_company_number', $model->buyer_company_number);
-        $model->buyer_address = $this->di['array_get']($data, 'buyer_address', $model->buyer_address);
-        $model->buyer_city = $this->di['array_get']($data, 'buyer_city', $model->buyer_city);
-        $model->buyer_state = $this->di['array_get']($data, 'buyer_state', $model->buyer_state);
-        $model->buyer_country = $this->di['array_get']($data, 'buyer_country', $model->buyer_country);
-        $model->buyer_zip = $this->di['array_get']($data, 'buyer_zip', $model->buyer_zip);
-        $model->buyer_phone = $this->di['array_get']($data, 'buyer_phone', $model->buyer_phone);
-        $model->buyer_email = $this->di['array_get']($data, 'buyer_email', $model->buyer_email);
+        $model->gateway_id = $date['gateway_id'] ?? $model->gateway_id;
+        $model->text_1 = $date['text_1'] ?? $model->text_1;
+        $model->text_2 = $date['text_2'] ?? $model->text_2;
+        $model->seller_company = $date['seller_company'] ?? $model->seller_company;
+        $model->seller_company_vat = $date['seller_company_vat'] ?? $model->seller_company_vat;
+        $model->seller_company_number = $date['seller_company_number'] ?? $model->seller_company_number;
+        $model->seller_address = $date['seller_address'] ?? $model->seller_address;
+        $model->seller_phone = $date['seller_phone'] ?? $model->seller_phone;
+        $model->seller_email = $date['seller_email'] ?? $model->seller_email;
+        $model->buyer_first_name = $date['buyer_first_name'] ?? $model->buyer_first_name;
+        $model->buyer_last_name = $date['buyer_last_name'] ?? $model->buyer_last_name;
+        $model->buyer_company = $date['buyer_company'] ?? $model->buyer_company;
+        $model->buyer_company_vat = $date['buyer_company_vat'] ?? $model->buyer_company_vat;
+        $model->buyer_company_number = $date['buyer_company_number'] ?? $model->buyer_company_number;
+        $model->buyer_address = $date['buyer_address'] ?? $model->buyer_address;
+        $model->buyer_city = $date['buyer_city'] ?? $model->buyer_city;
+        $model->buyer_state = $date['buyer_state'] ?? $model->buyer_state;
+        $model->buyer_country = $date['buyer_country'] ?? $model->buyer_country;
+        $model->buyer_zip = $date['buyer_zip'] ?? $model->buyer_zip;
+        $model->buyer_phone = $date['buyer_phone'] ?? $model->buyer_phone;
+        $model->buyer_email = $date['buyer_email'] ?? $model->buyer_email;
 
-        $paid_at = $this->di['array_get']($data, 'paid_at', $model->paid_at);
+        $paid_at = $date['paid_at'] ?? $model->paid_at;
         if (empty($paid_at)) {
             $model->paid_at = null;
         } else {
             $model->paid_at = date('Y-m-d H:i:s', strtotime($paid_at));
         }
 
-        $due_at = $this->di['array_get']($data, 'due_at', $model->due_at);
+        $due_at = $date['due_at'] ?? $model->due_at;
         if (empty($due_at)) {
             $model->due_at = null;
         } else {
             $model->due_at = date('Y-m-d H:i:s', strtotime($due_at));
         }
 
-        $model->serie = $this->di['array_get']($data, 'serie', $model->serie);
-        $model->nr = $this->di['array_get']($data, 'nr', $model->nr);
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
-        $model->taxrate = $this->di['array_get']($data, 'taxrate', $model->taxrate);
-        $model->taxname = $this->di['array_get']($data, 'taxname', $model->taxname);
-        $model->approved = (int) $this->di['array_get']($data, 'approved', $model->approved);
-        $model->notes = $this->di['array_get']($data, 'notes', $model->notes);
+        $model->serie = $date['serie'] ?? $model->serie;
+        $model->nr = $date['nr'] ?? $model->nr;
+        $model->status = $date['status'] ?? $model->status;
+        $model->taxrate = $date['taxrate'] ?? $model->taxrate;
+        $model->taxname = $date['taxname'] ?? $model->taxname;
+        $model->approved = (int) $date['approved'] ?? $model->approved;
+        $model->notes = $date['notes'] ?? $model->notes;
 
-        $created_at = $this->di['array_get']($data, 'created_at', '');
+        $created_at = $date['created_at'] ?? '';
         if (!empty($created_at)) {
             $model->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        $ni = $this->di['array_get']($data, 'new_item', []);
+        $ni = $date['new_item'] ?? [];
         if (isset($ni['title']) && !empty($ni['title'])) {
             $invoiceItemService->addNew($model, $ni);
         }
 
-        $items = $this->di['array_get']($data, 'items', []);
+        $items = $date['new_item'] ?? [];
         foreach ($items as $id => $d) {
             $item = $this->di['db']->load('InvoiceItem', $id);
             if ($item instanceof \Model_InvoiceItem) {
@@ -824,6 +824,13 @@ class Service implements InjectionAwareInterface
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
+
+        foreach ($model as $key => $value) {
+            if (empty($value)) {
+                $model->$key = null;
+            }
+        }
+
         $this->di['db']->store($model);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => ['id' => $model->id]]);

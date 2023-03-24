@@ -29,9 +29,9 @@ class Admin extends \Api_Abstract
      */
     public function article_get_list($data)
     {
-        $status = $this->di['array_get']($data, 'status', null);
-        $search = $this->di['array_get']($data, 'search', null);
-        $cat = $this->di['array_get']($data, 'cat', null);
+        $status =  $data['status'] ?? null;
+        $search =  $data['search'] ?? null;
+        $cat =  $data['search'] ?? null;
 
         $pager = $this->getService()->searchArticles($status, $search, $cat);
 
@@ -88,7 +88,7 @@ class Admin extends \Api_Abstract
         $articleCategoryId = $data['kb_article_category_id'];
         $title = $data['title'];
         $status = $data['status'] ?? \Model_KbArticle::DRAFT;
-        $content = $this->di['array_get']($data, 'content', null);
+        $content = $data['content'] ?? null;
 
         return $this->getService()->createArticle($articleCategoryId, $title, $status, $content);
     }
@@ -114,12 +114,12 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $articleCategoryId = $this->di['array_get']($data, 'kb_article_category_id', null);
-        $title = $this->di['array_get']($data, 'title', null);
-        $slug = $this->di['array_get']($data, 'slug', null);
-        $status = $this->di['array_get']($data, 'status', null);
-        $content = $this->di['array_get']($data, 'content', null);
-        $views = $this->di['array_get']($data, 'views', null);
+        $articleCategoryId = $data['kb_article_category_id'] ?? null;
+        $title = $data['title'] ?? null;
+        $slug = $data['slug'] ?? null;
+        $status = $data['status'] ?? null;
+        $content = $data['content'] ?? null;
+        $views = $data['views'] ?? null;
 
         return $this->getService()->updateArticle($data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
     }
@@ -157,7 +157,7 @@ class Admin extends \Api_Abstract
     public function category_get_list($data)
     {
         [$sql, $bindings] = $this->getService()->categoryGetSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $bindings, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
@@ -208,7 +208,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $title = $data['title'];
-        $description = $this->di['array_get']($data, 'description', null);
+        $description = $data['description'] ?? null;
 
         return $this->getService()->createCategory($title, $description);
     }
@@ -237,9 +237,9 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Article Category not found');
         }
 
-        $title = $this->di['array_get']($data, 'title', null);
-        $slug = $this->di['array_get']($data, 'slug', null);
-        $description = $this->di['array_get']($data, 'description', null);
+        $title = $data['title'] ?? null;
+        $slug = $data['slug'] ?? null;
+        $description = $data['description'] ?? null;
 
         return $this->getService()->updateCategory($model, $title, $slug, $description);
     }

@@ -36,6 +36,6 @@ class Service implements InjectionAwareInterface
     {
         $config = $this->di['mod_config']('cookieconsent');
 
-        return $this->di['array_get']($config, 'message', 'This website uses cookies. By continuing to use this website, you consent to our use of these cookies.');
+        return $config['message'] ?? 'This website uses cookies. By continuing to use this website, you consent to our use of these cookies.';
     }
 }

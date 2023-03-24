@@ -192,8 +192,8 @@ class Service
         FROM kb_article_category kac
         LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id';
 
-        $article_status = $this->di['array_get']($data, 'article_status', null);
-        $query = $this->di['array_get']($data, 'q', null);
+        $article_status = $data['article_status'] ?? null;
+        $query = $data['q'] ?? null;
 
         $where = [];
         $bindings = [];

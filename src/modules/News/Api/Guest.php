@@ -31,8 +31,8 @@ class Guest extends \Api_Abstract
     {
         $data['status'] = 'active';
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        $page = $this->di['array_get']($data, 'page');
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $page = $data['page'] ?? null;
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page, $page);
         foreach ($pager['list'] as $key => $item) {
             $post = $this->di['db']->getExistingModelById('Post', $item['id'], 'Post not found');
@@ -56,8 +56,8 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('ID or slug is missing');
         }
 
-        $id = $this->di['array_get']($data, 'id', null);
-        $slug = $this->di['array_get']($data, 'slug', null);
+        $id = $data['id'] ?? null;
+        $slug = $data['slug'] ?? null;
 
         if ($id) {
             $model = $this->getService()->findOneActiveById($id);

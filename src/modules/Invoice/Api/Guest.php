@@ -73,7 +73,7 @@ class Guest extends \Api_Abstract
         }
 
         $updateParams = [];
-        $updateParams['gateway_id'] = $this->di['array_get']($data, 'gateway_id', null);
+        $updateParams['gateway_id'] = $data['gateway_id'] ?? null;
 
         return $this->getService()->updateInvoice($invoice, $updateParams);
     }

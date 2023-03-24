@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -20,7 +21,7 @@ class Admin extends \Api_Abstract
     {
         $mod = $this->di['mod']('wysiwyg');
         $config = $mod->getConfig();
-        return $this->di['array_get']($config, 'editor', 'ckeditor');
+        return $config['editor'] ?? 'ckeditor';
     }
 
     public function editors()

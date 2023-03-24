@@ -91,13 +91,13 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $qty = $this->di['array_get']($data, 'quantity', 1);
+        $qty = $data['quantity'] ?? 1;
         // check stock
         if (!$this->isStockAvailable($product, $qty)) {
             throw new \Box_Exception("I'm afraid we are out of stock.");
         }
 
-        $addons = $this->di['array_get']($data, 'addons', []);
+        $addons = $data['addons'] ?? [];
         unset($data['id']);
         unset($data['addons']);
 
@@ -531,13 +531,13 @@ class Service implements InjectionAwareInterface
             $order->title = $item['title'];
             $order->currency = $currency->code;
             $order->service_type = $item['type'];
-            $order->unit = $this->di['array_get']($item, 'unit', null);
-            $order->period = $this->di['array_get']($item, 'period', null);
-            $order->quantity = $this->di['array_get']($item, 'quantity', null);
+            $order->unit = $item['unit'] ?? null;
+            $order->period = $item['period'] ?? null;
+            $order->quantity = $item['quantity'] ??
             $order->price = $item['price'] * $currency->conversion_rate;
             $order->discount = $item['discount_price'] * $currency->conversion_rate;
             $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
-            $order->notes = $this->di['array_get']($item, 'notes', null);
+            $order->notes = $item['notes'] ?? null;
             $order->config = json_encode($item);
             $order->created_at = date('Y-m-d H:i:s');
             $order->updated_at = date('Y-m-d H:i:s');
@@ -743,7 +743,7 @@ class Service implements InjectionAwareInterface
         $config = $this->getItemConfig($model);
         $setup = $repo->getProductSetupPrice($product, $config);
         $price = $repo->getProductPrice($product, $config);
-        $qty = $this->di['array_get']($config, 'quantity', 1);
+        $qty = $config['quantity'] ?? 1;
 
         [$discount_price, $discount_setup] = $this->getProductDiscount($model, $setup);
 

@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
     {
         $data['no_cron'] = true;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $staff = $this->di['db']->getExistingModelById('Admin', $item['id'], 'Admin is not found');
@@ -240,7 +240,7 @@ class Admin extends \Api_Abstract
     public function group_get_list($data)
     {
         [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
@@ -342,7 +342,7 @@ class Admin extends \Api_Abstract
     public function login_history_get_list($data)
     {
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'], sprintf('Staff activity item #%s not found', $item['id']));

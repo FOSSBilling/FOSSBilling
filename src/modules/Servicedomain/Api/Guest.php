@@ -31,8 +31,8 @@ class Guest extends \Api_Abstract
      */
     public function tlds($data = [])
     {
-        $allow_register = $this->di['array_get']($data, 'allow_register');
-        $allow_transfer = $this->di['array_get']($data, 'allow_transfer');
+        $allow_register = $data['allow_register'] ?? null;
+        $allow_transfer = $data['allow_transfer'] ?? null;
 
         $where = [];
         $where[] = 'active = 1';

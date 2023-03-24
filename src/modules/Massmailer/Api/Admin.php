@@ -29,7 +29,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = $this->getService()->toApiArray($item);
@@ -70,9 +70,9 @@ class Admin extends \Api_Abstract
     {
         $model = $this->_getMessage($data);
 
-        $model->content = $this->di['array_get']($data, 'content', $model->content);
-        $model->subject = $this->di['array_get']($data, 'subject', $model->subject);
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->content = $data['content'] ?? $model->content;
+        $model->subject = $data['subject'] ?? $model->subject;
+        $model->status = $data['status'] ?? $model->status;
         if (isset($data['filter'])) {
             $model->filter = json_encode($data['filter']);
         }

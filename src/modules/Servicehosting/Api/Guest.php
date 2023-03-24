@@ -35,7 +35,7 @@ class Guest extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $product_id = $this->di['array_get']($data, 'product_id', 0);
+        $product_id = $data['product_id'] ?? 0;
         $product = $this->di['db']->getExistingModelById('Product', $product_id, 'Product was not found');
 
         if (\Model_Product::HOSTING !== $product->type) {

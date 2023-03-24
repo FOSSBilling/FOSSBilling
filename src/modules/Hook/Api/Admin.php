@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
 
         return $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
     }
@@ -54,7 +54,7 @@ class Admin extends \Api_Abstract
         }
 
         $event = $data['event'];
-        $params = $this->di['array_get']($data, 'params', null);
+        $params = $data['params'] ?? null;
         if ($this->di['config']['debug']) {
             try {
                 $this->di['logger']->info($event . ': ' . var_export($params, 1));
@@ -76,7 +76,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_connect($data)
     {
-        $mod = $this->di['array_get']($data, 'mod', null);
+        $mod = $data['mod'] ?? null;
         $service = $this->getService();
 
         return $service->batchConnect($mod);

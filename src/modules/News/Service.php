@@ -60,8 +60,8 @@ class Service
 
         $params = [];
 
-        $search = $this->di['array_get']($data, 'search', null);
-        $status = $this->di['array_get']($data, 'status', null);
+        $search = $data['search'] ?? null;
+        $status = $data['status'] ?? null;
 
         if (null !== $status) {
             $sql .= ' AND status = :status';

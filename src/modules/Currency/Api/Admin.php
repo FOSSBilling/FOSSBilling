@@ -30,7 +30,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         [$query, $params] = $this->getService()->getSearchQuery();
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($query, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $currency = $this->di['db']->getExistingModelById('Currency', $item['id'], 'Currency not found');
@@ -113,18 +113,18 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
 
-        if ($service->getByCode($this->di['array_get']($data, 'code'))) {
+        if ($service->getByCode($data['code'] ?? null)) {
             throw new \Box_Exception('Currency already registered');
         }
 
-        if (!array_key_exists($this->di['array_get']($data, 'code'), $service->getAvailableCurrencies())) {
+        if (!array_key_exists($data['code'] ?? null, $service->getAvailableCurrencies())) {
             throw new \Box_Exception('Currency code is not valid');
         }
 
-        $title = $this->di['array_get']($data, 'title');
-        $conversionRate = $this->di['array_get']($data, 'conversion_rate', 1);
+        $title = $data['title'] ?? null;
+        $conversionRate = $data['conversion_rate'] ?? 1;
 
-        return $service->createCurrency($this->di['array_get']($data, 'code'), $this->di['array_get']($data, 'format'), $title, $conversionRate);
+        return $service->createCurrency($data['code'] ?? null, $data['format'] ?? null, $title, $conversionRate);
     }
 
     /**
@@ -147,10 +147,10 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $format = $this->di['array_get']($data, 'format');
-        $title = $this->di['array_get']($data, 'title');
-        $priceFormat = $this->di['array_get']($data, 'price_format');
-        $conversionRate = $this->di['array_get']($data, 'conversion_rate');
+        $format = $data['format'] ?? null;
+        $title = $data['title'] ?? null;
+        $priceFormat = $data['price_format'] ?? null;
+        $conversionRate = $data['conversion_rate'] ?? null;
 
         return $this->getService()->updateCurrency($data['code'], $format, $title, $priceFormat, $conversionRate);
     }
@@ -176,9 +176,9 @@ class Admin extends \Api_Abstract
      */
     public function update_rate_settings($data)
     {
-        $this->getService()->updateKey($this->di['array_get']($data, 'currencylayer_key'));
+        $this->getService()->updateKey($data['currencylayer_key'] ?? null);
 
-        if ($this->di['array_get']($data, 'crons_enabled') == '1') {
+        if ($data['crons_enabled'] ?? null == '1') {
             $set = '1';
         } else {
             $set = '0';

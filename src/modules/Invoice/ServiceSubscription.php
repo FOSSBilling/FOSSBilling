@@ -47,13 +47,13 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->client_id = $data['client_id'];
         $model->pay_gateway_id = $data['gateway_id'];
 
-        $model->sid = $this->di['array_get']($data, 'sid', null);
-        $model->status = $this->di['array_get']($data, 'status', null);
-        $model->period = $this->di['array_get']($data, 'period', null);
-        $model->amount = $this->di['array_get']($data, 'amount', null);
-        $model->currency = $this->di['array_get']($data, 'currency', null);
-        $model->rel_id = $this->di['array_get']($data, 'rel_id', null);
-        $model->rel_type = $this->di['array_get']($data, 'rel_type', null);
+        $model->sid = $data['sid'] ?? null;
+        $model->status = $data['status'] ?? null;
+        $model->period = $data['period'] ?? null;
+        $model->amount = $data['amount'] ?? null;
+        $model->currency = $data['currency'] ?? null;
+        $model->rel_id = $data['rel_id'] ?? null;
+        $model->rel_type = $data['rel_type'] ?? null;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
@@ -67,11 +67,11 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function update(\Model_Subscription $model, array $data)
     {
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
-        $model->sid = $this->di['array_get']($data, 'sid', $model->sid);
-        $model->period = $this->di['array_get']($data, 'period', $model->period);
-        $model->amount = $this->di['array_get']($data, 'amount', $model->amount);
-        $model->currency = $this->di['array_get']($data, 'currency', $model->currency);
+        $model->status = $data['status'] ?? $model->status;
+        $model->sid = $data['sid'] ?? $model->sid;
+        $model->period = $data['period'] ?? $model->period;
+        $model->amount = $data['amount'] ?? $model->amount;
+        $model->currency = $data['currency'] ?? $model->currency;
         $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
@@ -129,17 +129,17 @@ class ServiceSubscription implements InjectionAwareInterface
             FROM subscription
             WHERE 1 ';
 
-        $id = $this->di['array_get']($data, 'id', null);
-        $sid = $this->di['array_get']($data, 'sid', null);
-        $search = $this->di['array_get']($data, 'search', null);
-        $invoice_id = $this->di['array_get']($data, 'invoice_id', null);
-        $gateway_id = $this->di['array_get']($data, 'gateway_id', null);
-        $client_id = $this->di['array_get']($data, 'client_id', null);
-        $status = $this->di['array_get']($data, 'status', null);
-        $currency = $this->di['array_get']($data, 'currency', null);
+        $id = $data['id'] ?? null;
+        $sid = $data['sid'] ?? null;
+        $search = $data['search'] ?? null;
+        $invoice_id = $data['invoice_id'] ?? null;
+        $gateway_id = $data['gateway_id'] ?? null;
+        $client_id = $data['client_id'] ?? null;
+        $status = $data['status'] ?? null;
+        $currency = $data['currency'] ?? null;
 
-        $date_from = $this->di['array_get']($data, 'date_from', null);
-        $date_to = $this->di['array_get']($data, 'date_to', null);
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
         $params = [];
         if ($status) {
             $sql .= ' AND status = :status';
@@ -217,9 +217,11 @@ class ServiceSubscription implements InjectionAwareInterface
            ';
         $list = $this->di['db']->getAll($query, [':id' => $invoice_id]);
 
-        if (isset($list[0])
+        if (
+            isset($list[0])
             && isset($list[0]['period'])
-            && !empty($list[0]['period'])) {
+            && !empty($list[0]['period'])
+        ) {
             return true;
         } else {
             return false;
