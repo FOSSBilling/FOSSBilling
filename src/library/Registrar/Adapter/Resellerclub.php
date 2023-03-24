@@ -708,15 +708,15 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if(isset($json['status']) && $json['status'] == 'ERROR') {
-            throw new Registrar_Exception($json['message'], 101);
+            throw new Registrar_Exception($json['message'], null, 101);
         }
 
         if(isset($json['status']) && $json['status'] == 'error') {
-            throw new Registrar_Exception($json['error'], 102);
+            throw new Registrar_Exception($json['error'], null, 102);
         }
         
         if(isset($json['status']) && $json['status'] == 'Failed') {
-            throw new Registrar_Exception($json['actionstatusdesc'], 103);
+            throw new Registrar_Exception($json['actionstatusdesc'], null, 103);
         }
 
         return $json;
