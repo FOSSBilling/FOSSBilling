@@ -107,7 +107,7 @@ class Service implements InjectionAwareInterface
         $priority = $data['priority'] ?? null;
         $only_staff = $data['only_staff'] ?? null;
         $admin_id = $data['admin_id'] ?? null;
-        $only_clients = $data['only_clients'] ??
+        $only_clients = $data['only_clients'] ?? null;
         $no_info = $data['no_info'] ?? null;
         $no_debug = $data['no_debug'] ?? null;
         $where = [];

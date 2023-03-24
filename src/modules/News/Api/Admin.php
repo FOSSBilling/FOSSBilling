@@ -55,7 +55,7 @@ class Admin extends \Api_Abstract
         }
 
         $id = $data['id'] ?? null;
-        $slug = $data['slug'] ??
+        $slug = $data['slug'] ?? null;
 
         $model = null;
         if ($id) {

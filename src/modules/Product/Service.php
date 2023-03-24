@@ -723,7 +723,7 @@ class Service implements InjectionAwareInterface
                 $type = $p->type;
             }
             $products[] = $pa;
-            $startingPrice = $data['price_starting_from'] ?? 0;
+            $startingPrice = $pa['price_starting_from'] ?? 0;
 
             if (0 == $min_price) {
                 $min_price = $startingPrice;

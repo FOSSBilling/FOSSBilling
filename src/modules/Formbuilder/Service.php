@@ -90,8 +90,8 @@ class Service implements InjectionAwareInterface
         $types = $this->getFormFieldsTypes();
         $type = $field['type'];
 
-        $label = $data['label'] ?? $types[$type] . ' ' . $field_number;
-        $name = $data['name'] ?? $this->slugify('new_' . $type) . '_' . $field_number;
+        $label = $field['label'] ?? $types[$type] . ' ' . $field_number;
+        $name = $field['name'] ?? $this->slugify('new_' . $type) . '_' . $field_number;
 
         if ('select' == $type || 'checkbox' == $type || 'radio' == $type) {
             $field['options'] = '{"First option":"1", "Second option": "2", "Third option":"3"}';
@@ -109,21 +109,21 @@ class Service implements InjectionAwareInterface
         $bean->form_id = $formId;
         $bean->name = $name;
         $bean->label = $label;
-        $bean->hide_label = $data['hide_label'] ?? null;
-        $bean->description = $data['description'] ?? null;
+        $bean->hide_label = $field['hide_label'] ?? null;
+        $bean->description = $field['description'] ?? null;
         $bean->type = $field['type'];
-        $bean->default_value = $data['default_value'] ?? null;
-        $bean->required = $data['required'] ?? null;
-        $bean->hidden = $data['hidden'] ?? null;
-        $bean->readonly = $data['readonly'] ?? null;
-        $bean->options = $data['options'] ?? null;
-        $bean->prefix = $data['prefix'] ?? null;
-        $bean->suffix = $data['suffix'] ?? null;
-        $bean->show_initial = $data['show_initial'] ?? null;
-        $bean->show_middle = $data['show_middle'] ?? null;
-        $bean->show_prefix = $data['show_prefix'] ?? null;
-        $bean->show_suffix = $data['show_suffix'] ?? null;
-        $bean->text_size = $data['text_size'] ?? null;
+        $bean->default_value = $field['default_value'] ?? null;
+        $bean->required = $field['required'] ?? null;
+        $bean->hidden = $field['hidden'] ?? null;
+        $bean->readonly = $field['readonly'] ?? null;
+        $bean->options = $field['options'] ?? null;
+        $bean->prefix = $field['prefix'] ?? null;
+        $bean->suffix = $field['suffix'] ?? null;
+        $bean->show_initial = $field['show_initial'] ?? null;
+        $bean->show_middle = $field['show_middle'] ?? null;
+        $bean->show_prefix = $field['show_prefix'] ?? null;
+        $bean->show_suffix = $field['show_suffix'] ?? null;
+        $bean->text_size = $field['text_size'] ?? null;
         $bean->created_at = date('Y-m-d H:i:s');
         $bean->updated_at = date('Y-m-d H:i:s');
 
