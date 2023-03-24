@@ -810,9 +810,9 @@ class Service implements \Box\InjectionAwareInterface
     {
         $query = 'SELECT * FROM tld';
 
-        $hide_inactive = isset($data['hide_inactive']) ? (bool) $data['hide_inactive'] : false;
+        $hide_inactive = (bool) $data['hide_inactive'] ?? false;
         $allow_register = $data['allow_register'] ?? null;
-        $allow_transfer = $data['allow_register'] ?? null;
+        $allow_transfer = $data['allow_transfer'] ?? null;
 
         $where = [];
         $bindings = [];

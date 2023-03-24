@@ -815,7 +815,7 @@ class Service implements InjectionAwareInterface
             $invoiceItemService->addNew($model, $ni);
         }
 
-        $items = $data['new_item'] ?? [];
+        $items = $data['items'] ?? [];
         foreach ($items as $id => $d) {
             $item = $this->di['db']->load('InvoiceItem', $id);
             if ($item instanceof \Model_InvoiceItem) {

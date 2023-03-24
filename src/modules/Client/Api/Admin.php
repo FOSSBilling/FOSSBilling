@@ -316,6 +316,13 @@ class Admin extends \Api_Abstract
         $client->lang = $data['lang'] ?? $client->lang;
 
         $client->updated_at = date('Y-m-d H:i:s');
+
+        foreach ($client as $key => $value) {
+            if (empty($value)) {
+                $client->$key = null;
+            }
+        }
+
         $this->di['db']->store($client);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
 
