@@ -167,11 +167,11 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         // error_log('RESULT ARRAY 1: '.implode("\n", $result));
 
         if (isset($result['status']) && $result['status'] == 'error') {
-            throw new Registrar_Exception($result['error'], 102);
+            throw new Registrar_Exception($result['error'], null, 102);
         }
 
         if (isset($result['status']) && $result['status'] == 'Failed') {
-            throw new Registrar_Exception($result['actionstatusdesc'], 103);
+            throw new Registrar_Exception($result['actionstatusdesc'], null, 103);
         }
 
         return $result;
