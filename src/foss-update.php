@@ -14,6 +14,19 @@
  * with this source code in the file LICENSE
  */
 
+const DIR_SEP = DIRECTORY_SEPARATOR;
+
+class FOSSPatch_29 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $fileActions = [
+            __DIR__ . DIR_SEP . 'vendor' . DIR_SEP . 'guzzlehttp' => 'unlink',
+        ];
+        $this->performFileActions($fileActions);
+    }
+}
+
 /**
  * Patch to remove .html from email templates action code, see https://github.com/FOSSBilling/FOSSBilling/issues/863
  */
@@ -70,6 +83,7 @@ abstract class FOSSPatchAbstract
     protected mixed $pdo;
     private int $version;
     private string $k = 'last_patch';
+    private array $fileActions = [];
 
     public function __construct($di)
     {
@@ -134,6 +148,43 @@ abstract class FOSSPatchAbstract
 
         return $r;
     }
+
+    protected function performFileActions(array $files)
+    {
+        foreach ($files as $file => $action) {
+            $relPath = str_replace(__DIR__, '', $file);
+            if ($action == 'unlink' && file_exists($file) && !is_dir($file)) {
+                @unlink($file);
+                $this->fileActions[] = "<strong>Deleted:</strong> <em>$relPath</em>";
+            } elseif ($action == 'unlink' && is_dir($file)) {
+                @$this->emptyFolder($file);
+                @rmdir($file);
+                $this->fileActions[] = "<strong>Deleted:</strong> <em>$relPath</em>";
+            } elseif (file_exists($file)) {
+                @rename($file, $action);
+                $this->fileActions[] = "<strong>Moved:</strong> <em>$relPath</em> to <em>" . str_replace(__DIR__, '', $action . "</em>");
+            }
+        }
+    }
+
+    public function getFileActions()
+    {
+        return (!$this->fileActions) ? ['None'] : $this->fileActions;
+    }
+
+    private function emptyFolder($folder)
+    {
+        /* Original source for this lovely codesnippet: https://stackoverflow.com/a/24563703
+         * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
+         */
+        if (file_exists($folder)) {
+            $di = new RecursiveDirectoryIterator($folder, FilesystemIterator::SKIP_DOTS);
+            $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($ri as $file) {
+                $file->isDir() ?  rmdir($file->getRealPath()) : unlink($file->getRealPath());
+            }
+        }
+    }
 }
 
 $patches = [];
@@ -145,43 +196,93 @@ foreach (get_declared_classes() as $class) {
 
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
-
-error_log('Executing FOSSBilling update script');
 natsort($patches);
+?>
 
-$html  = 
-'<!DOCTYPE html>
-<html>';
+<!DOCTYPE html>
+<html>
 
-$html .= 
-'<head>
+<head>
     <title>FOSSBilling Updater</title>
-</head>';
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
 
-$html .= '<body>';
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
 
-foreach ($patches as $class) {
-    $p = new $class($di);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-    if (!$p->isPatched()) {
-        error_log('FOSSBilling patch #' . $p->getVersion() . ' executing...');
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
 
-        $p->patch();
-        $p->donePatching();
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
 
-        $msg = 'FOSSBilling patch #' . $p->getVersion() . ' was executed';
-        $html .= "<p>$msg</p>";
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
 
-        error_log($msg);
-    } else {
-        error_log('Skipped patch ' . $p->getVersion());
-    }
-}
-error_log('FOSSBilling update completed');
+<body>
+    <div class="header">
+        <h1>FOSSBilling Updater</h1>
+    </div>
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Patch Number</th>
+                    <th>Status</th>
+                    <th>File Actions Performed</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($patches as $class) {
+                    $p = new $class($di);
+                    if (!$p->isPatched()) {
+                        $p->patch();
+                        $p->donePatching();
 
-$html .= '<p>Update completed. You are using FOSSBilling ' . Box_Version::VERSION . '</p>';
-$html .= 
-'</body>
-</html>';
-echo $html;
-exit;
+                        $version = $p->getVersion();
+                        $fileActions = $p->getFileActions();
+                ?>
+                        <tr>
+                            <td><?php echo $version ?></td>
+                            <td>Executed</td>
+                            <td>
+                                <ul>
+                                    <?php foreach ($fileActions as $action) {
+                                        echo '<li><p>' . $action . '</p></li>';
+                                    } ?>
+                                </ul>
+                            </td>
+                        </tr>
+                <?php
+                    }
+                } ?>
+            </tbody>
+        </table>
+        <p>Update completed. You are using FOSSBilling <strong><?php echo Box_Version::VERSION ?></strong></p>
+    </div>
+</body>
+</html>
