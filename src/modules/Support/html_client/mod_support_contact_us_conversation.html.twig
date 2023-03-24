@@ -50,7 +50,7 @@
 
                     <tr>
                         <td>{{ 'Time opened'|trans }}</td>
-                        <td>{{ ticket.created_at|bb_date }}</td>
+                        <td>{{ ticket.created_at|format_date }}</td>
                     </tr>
                     </tbody>
 
@@ -83,7 +83,7 @@
                         </div>
                     </div>
                     <div class="span9">
-                        <header>{{ message.created_at|bb_date }}
+                        <header>{{ message.created_at|format_date }}
                             <div class="pull-right">
                                 <a href="#" class="btn btn-inverse reply-to-message" message-quote="{{ mf.markdown_quote(message.content) }}">{{ 'Reply'|trans }}</a>
                             </div>

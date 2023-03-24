@@ -293,7 +293,7 @@
 
 {% if settings.footer_enabled %}
 <footer id="footer" class="container">
-    <p>&copy; {{ now|date('Y') }} {{ settings.footer_signature | default(company.signature) | raw }}</p>
+    <p>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) | raw }}</p>
     <ul>
         {% if settings.footer_link_1_enabled %}
         <li>

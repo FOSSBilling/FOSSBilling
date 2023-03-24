@@ -906,7 +906,7 @@ class Service implements InjectionAwareInterface
             $order->activated_at = date('Y-m-d H:i:s', strtotime($activated_at));
         }
 
-        $expires_at = $this->di['array_get']($data, 'expires_at');
+        $expires_at = $data['expires_at'];
         if (!empty($expires_at)) {
             $order->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
         }

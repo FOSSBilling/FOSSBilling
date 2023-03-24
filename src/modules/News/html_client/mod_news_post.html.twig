@@ -30,7 +30,7 @@
         <div class="data-container">
             <header>
                 <h1>{{post.title}}</h1>
-                <div class="pull-right"><h5>{{ post.created_at|bb_date }}</h5></div>
+                <div class="pull-right"><h5>{{ post.created_at|format_datetime }}</h5></div>
                 <p>{{ 'by '|trans }} {{ post.author.name }}</p>
             </header>
             <section>

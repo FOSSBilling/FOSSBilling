@@ -93,29 +93,22 @@ return [
      */
     'sef_urls' => true,
 
-    /*
-     * System timezone.
+    /* 
+     * These configuration options allow you to configure the default localisation.
      */
-    'timezone' => 'UTC',
+    'i18n' => [
+        'locale' => 'en_US',
+        'timezone' => 'UTC',
 
-    /*
-     * FOSSBilling locale.
-     */
-    'locale' => 'en_US',
+        // Short names for formats (none, short, medium, long).
+        // @see https://www.php.net/manual/en/class.intldateformatter.php
+        'date_format' => 'medium',
+        'time_format' => 'short',
 
-    /*
-     * Set default date format for localized strings.
-     *
-     * @see https://www.php.net/manual/en/datetime.format.php
-     */
-    'locale_date_format' => 'l, d F o',
-
-    /*
-     * Set default time format for localized strings.
-     *
-     * @see https://www.php.net/manual/en/datetime.format.php
-     */
-    'locale_time_format' => ' G:i:s',
+        // Specifying a pattern will override the above date/time options. 
+        // @see https://unicode-org.github.io/icu/userguide/format_parse/datetime/#datetime-format-syntax
+        'datetime_pattern' => '',
+    ],
 
     /*
      * Set location to store sensitive data.

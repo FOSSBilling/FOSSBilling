@@ -78,10 +78,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
             'autolink' => new TwigFilter('autolink', [$this, 'twig_autolink_filter']),
 
-            'bb_date' => new TwigFilter('bb_date', [$this, 'twig_bb_date']),
-
-            'bb_datetime' => new TwigFilter('bb_datetime', [$this, 'twig_bb_datetime']),
-
             'img_tag' => new TwigFilter('img_tag', [$this, 'twig_img_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
 
             'script_tag' => new TwigFilter('script_tag', [$this, 'twig_script_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
@@ -112,23 +108,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getName()
     {
         return 'bb';
-    }
-
-    public function twig_bb_date($time, $format = null)
-    {
-        $locale_date_format = $this->di['config']['locale_date_format'];
-        $format = is_null($format) ? $locale_date_format : $format;
-
-        return date($format, strtotime($time));
-    }
-
-    public function twig_bb_datetime($time, $format = null)
-    {
-        $locale_date_format = $this->di['config']['locale_date_format'];
-        $locale_time_format = $this->di['config']['locale_time_format'];
-        $format = is_null($format) ? $locale_date_format . $locale_time_format : $format;
-
-        return date($format, strtotime($time));
     }
 
     public function twig_ipcountryname_filter($value)

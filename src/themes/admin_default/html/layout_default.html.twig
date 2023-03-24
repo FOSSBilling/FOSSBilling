@@ -207,7 +207,7 @@
 
             <footer class="footer footer-transparent d-print-none">
                 <div class="container-xl">
-                    <div>Copyright &copy; {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="Billing system" target="_blank" rel="noopener">FOSSBilling {{ guest.system_version }}</a></div>
+                    <div>Copyright &copy; {{ now|format_date(pattern='yyyy') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="Billing system" target="_blank" rel="noopener">FOSSBilling {{ guest.system_version }}</a></div>
                 </div>
             </footer>
         </div>

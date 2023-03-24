@@ -28,6 +28,23 @@ class FOSSPatch_29 extends FOSSPatchAbstract
 }
 
 /**
+ * Patch to update email templates to use format_date/format_datetime filters
+ * instead of removed bb_date/bb_datetime filters. 
+ * 
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/948
+ */
+class FOSSPatch_29 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $q = "UPDATE email_template SET content = REPLACE(content, 'bb_date', 'format_date')";
+        $this->execSql($q);
+        $q = "UPDATE email_template SET content = REPLACE(content, 'bb_datetime', 'format_datetime')";
+        $this->execSql($q);
+    }
+}
+
+/**
  * Patch to remove .html from email templates action code, see https://github.com/FOSSBilling/FOSSBilling/issues/863
  */
 class FOSSPatch_28 extends FOSSPatchAbstract

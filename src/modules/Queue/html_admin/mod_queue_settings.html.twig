@@ -50,7 +50,7 @@
                 <td>{{ queue.name }}</td>
                 <td>{{ queue.mod }}</td>
                 <td class="text-center">{{ queue.messages_count }}</td>
-                <td>{{ queue.created_at|bb_date }}</td>
+                <td>{{ queue.created_at|format_date }}</td>
                 <td class="actions">
                     <a class="btn btn-icon api-link"
                         href="{{ 'api/admin/queue/execute'|link({ 'queue': queue.name, 'CSRFToken': CSRFToken }) }}"

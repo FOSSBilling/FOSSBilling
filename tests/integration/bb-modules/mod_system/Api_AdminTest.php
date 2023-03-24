@@ -119,7 +119,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         $result = date($this->di['config']['locale_date_format']);
         $data = [
             'id' => 1,
-            '_tpl' => '{{ now|date("Y-m-d")|bb_date }}',
+            '_tpl' => '{{ now|date("Y-m-d")|format_date }}',
         ];
         $string = $this->api_admin->email_template_render($data);
         $this->assertEquals($result, $string);

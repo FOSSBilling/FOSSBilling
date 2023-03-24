@@ -47,7 +47,7 @@
             <td>
                 <a href="{{ '/email'|alink }}/{{ email.id }}">{{ email.subject|truncate(40) }}</a>
             </td>
-            <td>{{ email.created_at|date('Y-m-d') }}</td>
+            <td>{{ email.created_at|format_date }}</td>
             <td>
                 <a class="btn btn-icon" href="{{ '/email'|alink }}/{{ email.id }}">
                     <svg class="icon">

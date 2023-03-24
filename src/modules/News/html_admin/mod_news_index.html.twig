@@ -58,7 +58,7 @@
                             {% endif %}
                             {{ mf.status_name(post.status) }}
                         </td>
-                        <td>{{ post.created_at|bb_datetime }}</td>
+                        <td>{{ post.created_at|format_datetime }}</td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/news/post'|alink }}/{{ post.id }}">
                                 <svg class="icon">
