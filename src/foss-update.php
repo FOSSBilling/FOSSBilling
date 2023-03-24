@@ -163,8 +163,6 @@ abstract class FOSSPatchAbstract
             } elseif (file_exists($file)) {
                 @rename($file, $action);
                 $this->fileActions[] = "<strong>Moved:</strong> <em>$relPath</em> to <em>" . str_replace(__DIR__, '', $action . "</em>");
-            } else {
-                //$this->fileActions[] = "<strong>Error:</strong> $relPath does not exist";
             }
         }
     }
