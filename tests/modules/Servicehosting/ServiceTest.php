@@ -91,9 +91,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->service->setDi($di);
         $this->service->action_create($orderModel);
@@ -423,9 +421,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
@@ -913,9 +909,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $name = 'newSuperFastServer';
@@ -976,9 +970,7 @@ class ServiceTest extends \BBTestCase {
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->updateServer($hostingServerModel, $data);
@@ -1142,9 +1134,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
 
@@ -1167,9 +1157,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->createHp('Free Plan', array());
@@ -1279,9 +1267,7 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($config);
         $di['tools'] = $toolsMock;
 
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $tldArray = array('tld' => '.com');
         $serviceDomainServiceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -1319,9 +1305,7 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($config);
         $di['tools'] = $toolsMock;
 
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->service->setDi($di);
         $model = new \Model_Product();

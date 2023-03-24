@@ -754,21 +754,6 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
 });
 
 /*
- * Gets the value of a key from an array, or returns a default value if the key does not exist.
- *
- * @param array $array An array of mixed types to search for the key in.
- * @param string $key The key to look for.
- * @param string $default The default value if the key does not exist.
- *
- * @return mixed|null The value of the key if it exists in the array, or the default value if it does not. (null unless otherwise specified)
- */
-$di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
-    $result = array_key_exists($key, $array) ? $array[$key] : $default;
-
-    return ('' === $result) ? null : $result;
-});
-
-/*
  * Creates a CSV export of data from a specified table and sends it to the browser.
  * 
  * @param string $table Name of the table to export data from

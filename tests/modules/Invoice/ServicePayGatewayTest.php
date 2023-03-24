@@ -27,9 +27,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetSearchQuery()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
         $data = array();
         $result = $this->service->getSearchQuery($data);
@@ -42,9 +40,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetSearchQueryWithAdditionalParams()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
         $data = array('search' => 'keyword');
         $expectedParams = array('search' => "%$data[search]%");
@@ -187,9 +183,7 @@ class ServicePayGatewayTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['config'] = array('url' => $url);
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $serviceMock->setDi($di);
 
         $result = $serviceMock->toApiArray($payGatewayModel, false, new \Model_Admin());
@@ -232,9 +226,7 @@ class ServicePayGatewayTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -283,9 +275,7 @@ class ServicePayGatewayTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array('format' => 'pairs');

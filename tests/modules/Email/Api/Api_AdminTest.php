@@ -23,9 +23,6 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Box_Di();
         $di['pager']     = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $adminApi->setDi($di);
         $emailService->setDi($di);
@@ -129,9 +126,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $validatorMock   = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
@@ -302,9 +297,6 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Box_Di();
         $di['pager']     = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $adminApi->setDi($di);
         $emailService->setDi($di);
@@ -442,9 +434,6 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $adminApi->setDi($di);
         $adminApi->setService($emailService);
@@ -495,10 +484,6 @@ class Api_AdminTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
-
 
         $emailService = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('updateTemplate'))->getMock();
         $emailService->expects($this->atLeastOnce())
@@ -662,9 +647,6 @@ class Api_AdminTest extends \BBTestCase
 
         $di         = new \Box_Di();
         $di['twig'] = $twig;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $systemService = $this->getMockBuilder('Box\Mod\System\Service')->setMethods(['renderString'])->getMock();
         $systemService->expects($this->atLeastOnce())

@@ -449,9 +449,7 @@ class ServiceTest extends \BBTestCase
             }
         });
         $di['db']          = $dbMock;
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $serviceMock->setDi($di);
 
 
@@ -1484,9 +1482,7 @@ class ServiceTest extends \BBTestCase
     public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings)
     {
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
         list($query, $bindings) = $this->service->tldGetSearchQuery($data);
 
@@ -1984,9 +1980,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
@@ -2064,9 +2058,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(
@@ -2096,9 +2088,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(

@@ -101,9 +101,7 @@ class GuestTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $this->api->setIdentity(new \Model_Admin());

@@ -72,9 +72,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service->setDi($di);
         $result = $service->getSearchQuery($data);
 
@@ -303,9 +301,7 @@ class ServiceTest extends \BBTestCase
 
             return $api;
         };
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -380,9 +376,7 @@ class ServiceTest extends \BBTestCase
             return $systemService;
         });
         $di['tools'] = new \Box_Tools();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $serviceMock->setDi($di);
 
         $result = $serviceMock->sendTemplate($data);
@@ -526,9 +520,7 @@ class ServiceTest extends \BBTestCase
             }
         });
         $di['tools'] = new \Box_Tools();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $serviceMock->setDi($di);
 
         $result = $serviceMock->sendTemplate($data);
@@ -569,9 +561,7 @@ class ServiceTest extends \BBTestCase
             return $extension;
         });
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service->setDi($di);
 
         $model               = new \Model_ActivityClientEmail();
@@ -640,9 +630,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service->setDi($di);
         $result = $service->templateGetSearchQuery($data);
 
@@ -930,9 +918,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function () use ($extension) {
             return $extension;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service->setDi($di);
 
 
@@ -1044,9 +1030,7 @@ class ServiceTest extends \BBTestCase
         $di['mod'] = $di->protect(function () use ($modMock) {
            return $modMock;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service->setDi($di);
 
         $result = $service->batchSend();
@@ -1084,9 +1068,6 @@ class ServiceTest extends \BBTestCase
         $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
         $di['twig']   = $twigMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $systemService = $this->getMockBuilder('Box\Mod\System\Service')->getMock();
 
@@ -1160,9 +1141,7 @@ class ServiceTest extends \BBTestCase
                 return $extension;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service = new \Box\Mod\Email\Service();
         $service->setDi($di);
 

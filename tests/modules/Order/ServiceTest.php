@@ -44,9 +44,7 @@ class ServiceTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->counter();
@@ -416,9 +414,7 @@ class ServiceTest extends \BBTestCase
                 return $serviceMock;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $serviceMock->setDi($di);
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -1002,9 +998,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function () use ($systemService) {
             return $systemService;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -1275,9 +1269,7 @@ class ServiceTest extends \BBTestCase
     public function testgetSearchQuery($data, $expectedStr, $expectedParams)
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->getSearchQuery($data);
@@ -1351,9 +1343,7 @@ class ServiceTest extends \BBTestCase
                 return $cartServiceMock;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1401,9 +1391,7 @@ class ServiceTest extends \BBTestCase
                 return $cartServiceMock;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1450,9 +1438,7 @@ class ServiceTest extends \BBTestCase
                 return $cartServiceMock;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $di['events_manager'] = $eventMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
@@ -1532,9 +1518,6 @@ class ServiceTest extends \BBTestCase
         $di['db']             = $dbMock;
         $di['period']         = $di->protect(function () use ($periodMock) { return $periodMock; });
         $di['logger']         = new \Box_Log();
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $this->service->setDi($di);
         $result = $this->service->createOrder($modelClient, $modelProduct, array('period' => '1Y', 'price' => '10', 'notes' => 'test'));
@@ -1689,9 +1672,6 @@ class ServiceTest extends \BBTestCase
             ->with($clientOrderModel);
 
         $di                   = new \Box_Di();
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
         $di['events_manager'] = $eventMock;
         $di['db']             = $dbMock;
         $di['logger']         = new \Box_Log();
@@ -1782,9 +1762,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_config'] = $di->protect(function ($name) { return array(); });
         $di['period']     = $di->protect(function () use ($periodMock) { return $periodMock; });
         $di['db']         = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $serviceMock->setDi($di);
         $serviceMock->renewFromOrder($clientOrderModel);

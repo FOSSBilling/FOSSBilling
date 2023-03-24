@@ -48,9 +48,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $di['db']             = $dbMock;
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $eventsMock;
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(
@@ -83,9 +81,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->update($subscriptionModel, $data);
@@ -219,9 +215,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams)
     {
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
 

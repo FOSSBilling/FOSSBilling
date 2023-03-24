@@ -6,9 +6,7 @@ class Api_AdminTest extends \BBTestCase
     public function testArticle_get_list()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $adminApi = new \Box\Mod\Kb\Api\Admin();
         $adminApi->setDi($di);
 
@@ -105,9 +103,7 @@ class Api_AdminTest extends \BBTestCase
         $id = rand(1, 100);
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('createArticle'))->getMock();
         $kbService->expects($this->atLeastOnce())
@@ -145,9 +141,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('updateArticle')
             ->will($this->returnValue(true));
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -246,9 +240,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('categoryGetSearchQuery'))->getMock();
@@ -371,9 +363,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -403,9 +393,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())

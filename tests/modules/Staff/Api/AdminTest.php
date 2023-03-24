@@ -53,9 +53,7 @@ class AdminTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -338,9 +336,7 @@ class AdminTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -494,9 +490,7 @@ class AdminTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);

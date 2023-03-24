@@ -225,9 +225,7 @@ class ServiceTest extends \BBTestCase {
 
         $di        = new \Box_Di();
         $di['pdo'] = $pdoMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(
@@ -256,9 +254,7 @@ class ServiceTest extends \BBTestCase {
 
         $di        = new \Box_Di();
         $di['pdo'] = $pdoMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(
@@ -287,9 +283,7 @@ class ServiceTest extends \BBTestCase {
 
         $di        = new \Box_Di();
         $di['pdo'] = $pdoMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->getClientCountries(array());
@@ -314,9 +308,7 @@ class ServiceTest extends \BBTestCase {
 
         $di        = new \Box_Di();
         $di['pdo'] = $pdoMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->getSalesByCountry(array());
@@ -341,9 +333,7 @@ class ServiceTest extends \BBTestCase {
 
         $di        = new \Box_Di();
         $di['pdo'] = $pdoMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(

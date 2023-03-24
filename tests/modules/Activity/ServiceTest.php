@@ -37,9 +37,6 @@ class ServiceTest extends \BBTestCase
     public function testgetSearchQuery($filterKey, $search, $expected)
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
         $service = new \Box\Mod\Activity\Service();
         $service->setDi($di);
         $result  = $service->getSearchQuery($filterKey);
@@ -152,9 +149,6 @@ class ServiceTest extends \BBTestCase
 
         $di['request'] = $this->getMockBuilder('Box_Request')->getMock();;
         $di['db']        = $db;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
         $di['mod_service'] = $di->protect(function ($serviceName) use ($extensionServiceMock){
             if ($serviceName == 'Extension'){
                 return $extensionServiceMock;

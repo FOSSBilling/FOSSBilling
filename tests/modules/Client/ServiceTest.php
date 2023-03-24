@@ -293,10 +293,6 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $database;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
-
 
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
@@ -495,9 +491,7 @@ class ServiceTest extends \BBTestCase {
     {
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
         $clientBalanceService->setDi($di);
         list ($sql, $params) = $clientBalanceService->getSearchQuery($data);
@@ -528,9 +522,6 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $database;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
@@ -635,9 +626,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientService = new \Box\Mod\Client\Service();
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $clientService->setDi($di);
         list ($sql, $params) = $clientService->getHistorySearchQuery($data);
         $this->assertNotEmpty($sql);
@@ -908,9 +897,7 @@ class ServiceTest extends \BBTestCase {
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -959,9 +946,6 @@ class ServiceTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
         $di['request'] = $requestMock;
         $di['password'] = $passwordMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1235,9 +1219,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_config'] = $di->protect(function ($modName) use($config){
             return $config;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -1259,9 +1241,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_config'] = $di->protect(function ($modName) use($config){
             return $config;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $data = array();
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1285,9 +1265,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_config'] = $di->protect(function ($modName) use($config){
             return $config;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $data = array();
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);

@@ -41,9 +41,7 @@ class AdminTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -190,9 +188,7 @@ class AdminTest extends \BBTestCase {
             ->method('createProduct')
             ->will($this->returnValue($newProductId));
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -319,9 +315,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue($newAddonId));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -485,9 +479,7 @@ class AdminTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -545,9 +537,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue($newCategoryId));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -610,9 +600,7 @@ class AdminTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
