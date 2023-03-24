@@ -980,7 +980,7 @@ class Service implements InjectionAwareInterface
     public function getFreeTlds(\Model_Product $product)
     {
         $config = $this->di['tools']->decodeJ($product->config);
-        $freeTlds = $data['free_tlds'] ?? [];
+        $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {
             $result[] = ['tld' => $tld];
