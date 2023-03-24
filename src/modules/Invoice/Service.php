@@ -761,27 +761,27 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
-        $model->gateway_id = $data['gateway_id'] ?? $model->gateway_id;
-        $model->text_1 = $data['text_1'] ?? $model->text_1;
-        $model->text_2 = $data['text_2'] ?? $model->text_2;
-        $model->seller_company = $data['seller_company'] ?? $model->seller_company;
-        $model->seller_company_vat = $data['seller_company_vat'] ?? $model->seller_company_vat;
-        $model->seller_company_number = $data['seller_company_number'] ?? $model->seller_company_number;
-        $model->seller_address = $data['seller_address'] ?? $model->seller_address;
-        $model->seller_phone = $data['seller_phone'] ?? $model->seller_phone;
-        $model->seller_email = $data['seller_email'] ?? $model->seller_email;
-        $model->buyer_first_name = $data['buyer_first_name'] ?? $model->buyer_first_name;
-        $model->buyer_last_name = $data['buyer_last_name'] ?? $model->buyer_last_name;
-        $model->buyer_company = $data['buyer_company'] ?? $model->buyer_company;
-        $model->buyer_company_vat = $data['buyer_company_vat'] ?? $model->buyer_company_vat;
-        $model->buyer_company_number = $data['buyer_company_number'] ?? $model->buyer_company_number;
-        $model->buyer_address = $data['buyer_address'] ?? $model->buyer_address;
-        $model->buyer_city = $data['buyer_city'] ?? $model->buyer_city;
-        $model->buyer_state = $data['buyer_state'] ?? $model->buyer_state;
-        $model->buyer_country = $data['buyer_country'] ?? $model->buyer_country;
-        $model->buyer_zip = $data['buyer_zip'] ?? $model->buyer_zip;
-        $model->buyer_phone = $data['buyer_phone'] ?? $model->buyer_phone;
-        $model->buyer_email = $data['buyer_email'] ?? $model->buyer_email;
+        $model->gateway_id = $data['gateway_id'] ?? empty($model->gateway_id) ? null : $model->gateway_id; 
+        $model->text_1 = $data['text_1'] ?? empty($model->text_1) ? null : $model->text_1;
+        $model->text_2 = $data['text_2'] ?? empty($model->text_2) ? null : $model->text_2;
+        $model->seller_company = $data['seller_company'] ?? empty($model->seller_company) ? null : $model->seller_company;
+        $model->seller_company_vat = $data['seller_company_vat'] ?? empty($model->seller_company_vat) ? null : $model->seller_company_vat;
+        $model->seller_company_number = $data['seller_company_number'] ?? empty($model->seller_company_number) ? null : $model->seller_company_number;
+        $model->seller_address = $data['seller_address'] ?? empty($model->seller_address) ? null : $model->seller_address;
+        $model->seller_phone = $data['seller_phone'] ?? empty($model->seller_phone) ? null : $model->seller_phone;
+        $model->seller_email = $data['seller_email'] ?? empty($model->seller_email) ? null : $model->seller_email;
+        $model->buyer_first_name = $data['buyer_first_name'] ?? empty($model->buyer_first_name) ? null : $model->buyer_first_name;
+        $model->buyer_last_name = $data['buyer_last_name'] ?? empty($model->buyer_last_name) ? null : $model->buyer_last_name;
+        $model->buyer_company = $data['buyer_company'] ?? empty($model->buyer_company) ? null : $model->buyer_company;
+        $model->buyer_company_vat = $data['buyer_company_vat'] ?? empty($model->buyer_company_vat) ? null : $model->buyer_company_vat;
+        $model->buyer_company_number = $data['buyer_company_number'] ?? empty($model->buyer_company_number) ? null : $model->buyer_company_number;
+        $model->buyer_address = $data['buyer_address'] ?? empty($model->buyer_address) ? null : $model->buyer_address;
+        $model->buyer_city = $data['buyer_city'] ?? empty($model->buyer_city) ? null : $model->buyer_city;
+        $model->buyer_state = $data['buyer_state'] ?? empty($model->buyer_state) ? null : $model->buyer_state;
+        $model->buyer_country = $data['buyer_country'] ?? empty($model->buyer_country) ? null : $model->buyer_country;
+        $model->buyer_zip = $data['buyer_zip'] ?? empty($model->buyer_zip) ? null : $model->buyer_zip;
+        $model->buyer_phone = $data['buyer_phone'] ?? empty($model->buyer_phone) ? null : $model->buyer_phone;
+        $model->buyer_email = $data['buyer_email'] ?? empty($model->buyer_email) ? null : $model->buyer_email;
 
         $paid_at = $data['paid_at'] ?? $model->paid_at;
         if (empty($paid_at)) {
@@ -797,13 +797,13 @@ class Service implements InjectionAwareInterface
             $model->due_at = date('Y-m-d H:i:s', strtotime($due_at));
         }
 
-        $model->serie = $data['serie'] ?? $model->serie;
-        $model->nr = $data['nr'] ?? $model->nr;
-        $model->status = $data['status'] ?? $model->status;
-        $model->taxrate = $data['taxrate'] ?? $model->taxrate;
-        $model->taxname = $data['taxname'] ?? $model->taxname;
-        $model->approved = (int) $data['approved'] ?? $model->approved;
-        $model->notes = $data['notes'] ?? $model->notes;
+        $model->serie = $data['serie'] ?? empty($model->serie) ? null : $model->serie;
+        $model->nr = $data['nr'] ?? empty($model->nr) ? null : $model->nr;
+        $model->status = $data['status'] ?? empty($model->status) ? null : $model->status;
+        $model->taxrate = $data['taxrate'] ?? empty($model->taxrate) ? null : $model->taxrate;
+        $model->taxname = $data['taxname'] ?? empty($model->taxname) ? null : $model->taxname;
+        $model->approved = (int) $data['approved'] ?? empty($model->approved) ? null : $model->approved;
+        $model->notes = $data['notes'] ?? empty($model->notes) ? null : $model->notes;
 
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
@@ -824,12 +824,6 @@ class Service implements InjectionAwareInterface
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
-
-        foreach ($model as $key => $value) {
-            if (empty($value)) {
-                $model->$key = null;
-            }
-        }
 
         $this->di['db']->store($model);
 

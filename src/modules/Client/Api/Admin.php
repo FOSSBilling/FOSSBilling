@@ -275,53 +275,47 @@ class Admin extends \Api_Abstract
             $client->phone_cc = intval($phoneCC);
         }
 
-        $client->email = $data['email'] ?? $client->email;
-        $client->first_name = $data['first_name'] ?? $client->first_name;
-        $client->last_name = $data['last_name'] ?? $client->last_name;
-        $client->aid = $data['aid'] ?? $client->aid;
-        $client->gender = $data['gender'] ?? $client->gender;
-        $client->birthday = $data['birthday'] ?? $client->birthday;
-        $client->company = $data['company'] ?? $client->company;
-        $client->company_vat = $data['company_vat'] ?? $client->company_vat;
-        $client->address_1 = $data['address_1'] ?? $client->address_1;
-        $client->address_2 = $data['address_2'] ?? $client->address_2;
-        $client->phone = $data['phone'] ?? $client->phone;
-        $client->document_type = $data['document_type'] ?? $client->document_type;
-        $client->document_nr = $data['document_nr'] ?? $client->document_nr;
-        $client->notes = $data['notes'] ?? $client->notes;
-        $client->country = $data['country'] ?? $client->country;
-        $client->postcode = $data['postcode'] ?? $client->postcode;
-        $client->state = $data['phonestate_cc'] ?? $client->state;
-        $client->city = $data['city'] ?? $client->city;
+        $client->email = $data['email'] ?? empty($client->email) ? null : $client->email;
+        $client->first_name = $data['first_name'] ?? empty($client->first_name) ? null : $client->first_name;
+        $client->last_name = $data['last_name'] ?? empty($client->last_name) ? null : $client->last_name;
+        $client->aid = $data['aid'] ?? empty($client->aid) ? null : $client->aid;
+        $client->gender = $data['gender'] ?? empty($client->gender) ? null : $client->gender;
+        $client->birthday = $data['birthday'] ?? empty($client->birthday) ? null : $client->birthday;
+        $client->company = $data['company'] ?? empty($client->company) ? null : $client->company;
+        $client->company_vat = $data['company_vat'] ?? empty($client->company_vat) ? null : $client->company_vat;
+        $client->address_1 = $data['address_1'] ?? empty($client->address_1) ? null : $client->address_1;
+        $client->address_2 = $data['address_2'] ?? empty($client->address_1) ? null : $client->address_1;
+        $client->phone = $data['phone'] ?? empty($client->address_1) ? null : $client->address_1; $client->phone;
+        $client->document_type = $data['document_type'] ?? empty($client->document_type) ? null : $client->document_type;
+        $client->document_nr = $data['document_nr'] ?? empty($client->document_nr) ? null : $client->document_nr;
+        $client->notes = $data['notes'] ?? empty($client->notes) ? null : $client->notes;
+        $client->country = $data['country'] ?? empty($client->country) ? null : $client->country;
+        $client->postcode = $data['postcode'] ?? empty($client->postcode) ? null : $client->postcode;
+        $client->state = $data['phonestate_cc'] ?? empty($client->state) ? null : $client->state;
+        $client->city = $data['city'] ?? empty($client->city) ? null : $client->city;
 
-        $client->status = $data['status'] ?? $client->status;
-        $client->email_approved = $data['email_approved'] ?? $client->email_approved;
-        $client->tax_exempt = $data['tax_exempt'] ?? $client->tax_exempt;
-        $client->created_at = $data['created_at'] ?? $client->created_at;
+        $client->status = $data['status'] ?? empty($client->status) ? null : $client->status;
+        $client->email_approved = $data['email_approved'] ?? empty($client->email_approved) ? null : $client->email_approved;
+        $client->tax_exempt = $data['tax_exempt'] ?? empty($client->tax_exempt) ? null : $client->tax_exempt;
+        $client->created_at = $data['created_at'] ?? empty($client->created_at) ? null : $client->created_at;
 
-        $client->custom_1 = $data['custom_1'] ?? $client->custom_1;
-        $client->custom_2 = $data['custom_2'] ?? $client->custom_2;
-        $client->custom_3 = $data['custom_3'] ?? $client->custom_3;
-        $client->custom_4 = $data['custom_4'] ?? $client->custom_4;
-        $client->custom_5 = $data['custom_5'] ?? $client->custom_5;
-        $client->custom_6 = $data['custom_6'] ?? $client->custom_6;
-        $client->custom_7 = $data['custom_7'] ?? $client->custom_7;
-        $client->custom_8 = $data['custom_8'] ?? $client->custom_8;
-        $client->custom_9 = $data['custom_9'] ?? $client->custom_9;
-        $client->custom_10 = $data['custom_10'] ?? $client->custom_10;
+        $client->custom_1 = $data['custom_1'] ?? empty($client->custom_1) ? null : $client->custom_1;
+        $client->custom_2 = $data['custom_2'] ?? empty($client->custom_2) ? null : $client->custom_2;
+        $client->custom_3 = $data['custom_3'] ?? empty($client->custom_3) ? null : $client->custom_3;
+        $client->custom_4 = $data['custom_4'] ?? empty($client->custom_4) ? null : $client->custom_4;
+        $client->custom_5 = $data['custom_5'] ?? empty($client->custom_5) ? null : $client->custom_5;
+        $client->custom_6 = $data['custom_6'] ?? empty($client->custom_6) ? null : $client->custom_6;
+        $client->custom_7 = $data['custom_7'] ?? empty($client->custom_7) ? null : $client->custom_7;
+        $client->custom_8 = $data['custom_8'] ?? empty($client->custom_8) ? null : $client->custom_8;
+        $client->custom_9 = $data['custom_9'] ?? empty($client->custom_9) ? null : $client->custom_9;
+        $client->custom_10 = $data['custom_10'] ?? empty($client->custom_10) ? null : $client->custom_10;
 
-        $client->client_group_id = $data['group_id'] ?? $client->group_id;
-        $client->company_number = $data['company_number'] ?? $client->company_number;
-        $client->type = $data['type'] ?? $client->type;
-        $client->lang = $data['lang'] ?? $client->lang;
+        $client->client_group_id = $data['group_id'] ?? empty($client->group_id) ? null : $client->group_id;
+        $client->company_number = $data['company_number'] ?? empty($client->company_number) ? null : $client->company_number;
+        $client->type = $data['type'] ?? $data['custom_10'] ?? empty($client->type) ? null : $client->type;
+        $client->lang = $data['lang'] ?? $data['custom_10'] ?? empty($client->lang) ? null : $client->lang;
 
         $client->updated_at = date('Y-m-d H:i:s');
-
-        foreach ($client as $key => $value) {
-            if (empty($value)) {
-                $client->$key = null;
-            }
-        }
 
         $this->di['db']->store($client);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
