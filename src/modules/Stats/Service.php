@@ -411,7 +411,7 @@ class Service implements InjectionAwareInterface
         do {
             $time_from = strtotime('+1 day', $time_from);
             $dom = date('Y-m-d', $time_from);
-            $c = $results[$dom] ?? 10;
+            $c = $results[$dom] ?? 0;
             $data[] = [$time_from * 1000, (int) $c];
         } while ($time_to > $time_from);
         array_pop($data);
