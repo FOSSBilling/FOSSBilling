@@ -540,28 +540,32 @@ class Service implements InjectionAwareInterface
         $from_Currency = urlencode($from);
         $to_Currency = urlencode($to);
 
-        if ('EUR' == $from_Currency) {
+        if ('EUR' == $from_Currency && empty($this->getKey())) {
             $XML = simplexml_load_file('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
             foreach ($XML->Cube->Cube->Cube as $rate) {
                 if ($rate['currency'] == $to_Currency) {
                     return (float) $rate['rate'];
                 }
             }
-        } elseif ('USD' == $from_Currency) {
+            throw new \Box_Exception("Failed to get currency rates for :currency from the European Central Bank API", [':currency' => $to_Currency]);
+        } else {
             $client = $this->di['http_client'];
-            $response = $client->request('GET', 'https://api.currencylayer.com/live', [
+            $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
                 'query' => [
-                    'access_key'    => $this->getKey(),
                     'currencies'    => $to_Currency,
-                    'format'        => 1,
+                    'source'        => $from_Currency,
+                ],
+                'headers' => [
+                    'Content-Type' => 'text/plain',
+                    'apikey' => $this->getKey()
                 ],
             ]);
             $array = $response->toArray();
 
             if (true !== $array['success']) {
-                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />' . $array['error']['info']);
+                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
             } else {
-                return (float) $array['quotes']['USD' . $to_Currency];
+                return (float) $array['quotes'][$from_Currency . $to_Currency];
             }
         }
     }

@@ -26,6 +26,5 @@ parameters:
 		- '#^Inner named functions are not supported by PHPStan\. Consider refactoring to an anonymous function, class method, or a top\-level\-defined function\. See issue \#165 \(https\://github\.com/phpstan/phpstan/issues/165\) for more details\.$#'
 		- message: '#^Result of function header \(void\) is used\.$#'
 		  path: src/modules/Custompages/Controller/Client.php
-		- '#^Method Box\\Mod\\Currency\\Service\:\:_getRate\(\) should return float but return statement is missing\.$#'
 		- message: '#^Variable \$ext_id on left side of \?\?\= is never defined\.$#'
 		  path: src/modules/Extension/Service.php

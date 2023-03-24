@@ -173,7 +173,7 @@
                                 <input class="form-check-input" id="radioCronsDisabled" type="radio" name="crons_enabled" value="0"{% if admin.currency_is_cron_enabled == 0 %} checked{% endif %}>
                                 <label class="form-check-label" for="radioCronsDisabled">{{ 'Disabled'|trans }}</label>
                             </div>
-                            <small class="form-hint">{{ 'If you enable this, conversion rates will be automatically updated whenever the CRON job fires up.'|trans }}</small>
+                            <small class="form-hint">{{ 'If you enable this, conversion rates will be automatically updated whenever the CRON job fires up. This should only be used if you have a paid subscription for currencylayer, as otherwise you will quickly hit your rate limit.'|trans }}</small>
                         </div>
                     </div>
 
