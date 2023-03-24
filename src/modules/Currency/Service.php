@@ -547,7 +547,7 @@ class Service implements InjectionAwareInterface
                     return (float) $rate['rate'];
                 }
             }
-            throw new \Box_Exception("Failed to get currency rates for $to_Currency from the European Central Bank API");
+            throw new \Box_Exception("Failed to get currency rates for :currency from the European Central Bank API", [':currency' => $to_Currency]);
         } else {
             $client = $this->di['http_client'];
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
@@ -563,7 +563,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if (true !== $array['success']) {
-                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />' . $array['error']['info']);
+                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
             } else {
                 return (float) $array['quotes'][$from_Currency . $to_Currency];
             }
