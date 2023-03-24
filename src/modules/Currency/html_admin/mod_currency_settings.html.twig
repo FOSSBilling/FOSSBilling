@@ -48,7 +48,7 @@
         <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Manage currencies'|trans }}</h3>
-                <p class="text-muted">{{ 'Default currency is the one you manage all your prices in admin area. If your client in client area chooses other than default currency, prices will be recalculated according to conversion rate. You can have only one default currency. You can not add same currency once again. Changing default currency is not recommended when active orders are available. Nothing is recalculated on default currency change. Your income is calculated in default currency. Changing default currency after you have paid invoices will distort income statistics. Currency rates are taken from currencylayer.'|trans }}</p>
+                <p class="text-muted">{{ 'Default currency is the one you manage all your prices in admin area. If your client in client area chooses other than default currency, prices will be recalculated according to conversion rate. You can have only one default currency. You can not add same currency once again. Changing default currency is not recommended when active orders are available. Nothing is recalculated on default currency change. Your income is calculated in default currency. Changing default currency after you have paid invoices will distort income statistics. Currency rates are taken from European Central Bank and currencylayer.'|trans }}</p>
             </div>
 
             <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -151,8 +151,8 @@
         <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Adjust settings for currency rate updater'|trans }}</h3>
-                <p class="text-muted">FOSSBilling uses data grabbed from <a href="https://currencylayer.com/" target="_blank">currencylayer</a>, however, you'll need an API key to use currencylayer.<br />You can <a href="https://currencylayer.com/product" target="_blank">grab your API key</a> from currencylayer's website. FOSSBilling doesn't make any profits from your purchases on currencylayer.com</p>
-                <p><b>FOSSBilling does not take any responsibilities for data grabbed from 3rd party sources such as currencylayer.</b></p>
+                <p class="text-muted">FOSSBilling uses data grabbed from <a href="https://www.ecb.europa.eu/home/html/index.en.html" target="_blank">European Central Bank</a> for conversions from Euro to other currencies, and <a href="https://currencylayer.com/" target="_blank">currencylayer</a> for conversations from US Dollar to other currencies.<br />If you choose Euro as your default currency, data from European Central Bank will be used, if you choose US Dollar, data from currencylayer will be used.<br />While European Central Bank decided to keep it's API free to everyone, you won't need an authorization key to use ECB's data. However, you'll need an API key to use currencylayer.<br />You can <a href="https://currencylayer.com/product" target="_blank">grab your API key</a> from currencylayer's website. FOSSBilling doesn't make any profits from your purchases on currencylayer.com</p>
+                <p><b>FOSSBilling does not take any responsibilities for data grabbed from 3rd party sources, including European Central Bank and currencylayer.</b></p>
 
                 <form method="post" action="{{ 'api/admin/currency/update_rate_settings'|link }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>

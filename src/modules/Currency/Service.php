@@ -540,23 +540,33 @@ class Service implements InjectionAwareInterface
         $from_Currency = urlencode($from);
         $to_Currency = urlencode($to);
 
-        $client = $this->di['http_client'];
-        $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
-            'query' => [
-                'currencies'    => $to_Currency,
-                'source'        => $from_Currency,
-            ],
-            'headers' => [
-                'Content-Type' => 'text/plain',
-                'apikey' => $this->getKey()
-            ],
-        ]);
-        $array = $response->toArray();
-
-        if (true !== $array['success']) {
-            throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />' . $array['error']['info']);
+        if ('EUR' == $from_Currency && empty($this->getKey())) {
+            $XML = simplexml_load_file('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
+            foreach ($XML->Cube->Cube->Cube as $rate) {
+                if ($rate['currency'] == $to_Currency) {
+                    return (float) $rate['rate'];
+                }
+            }
+            throw new \Box_Exception("Failed to get currency rates for $to_Currency from the European Central Bank API");
         } else {
-            return (float) $array['quotes'][$from_Currency . $to_Currency];
+            $client = $this->di['http_client'];
+            $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
+                'query' => [
+                    'currencies'    => $to_Currency,
+                    'source'        => $from_Currency,
+                ],
+                'headers' => [
+                    'Content-Type' => 'text/plain',
+                    'apikey' => $this->getKey()
+                ],
+            ]);
+            $array = $response->toArray();
+
+            if (true !== $array['success']) {
+                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />' . $array['error']['info']);
+            } else {
+                return (float) $array['quotes'][$from_Currency . $to_Currency];
+            }
         }
     }
 
