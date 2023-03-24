@@ -475,10 +475,14 @@ final class Box_Installer
             'admin_area_prefix' => '/admin',
             'disable_auto_cron' => false,
             'sef_urls' => true,
-            'timezone' => 'UTC',
-            'locale' => 'en_US',
-            'locale_date_format' => 'l, d F o',
-            'locale_time_format' => ' G:i:s',
+
+            'i18n' => [
+                'locale' => 'en_US',
+                'timezone' => 'UTC',
+                'date_format' => 'medium',
+                'time_format' => 'short',
+            ],
+
             'path_data' => PATH_ROOT . '/data',
             'path_logs' => PATH_ROOT . '/data/log/application.log',
 

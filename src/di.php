@@ -307,6 +307,14 @@ $di['twig'] = $di->factory(function () use ($di) {
     $config = $di['config'];
     $options = $config['twig'];
 
+    // Get internationalisation settings from config, or use sensible defaults for
+    // missing required settings.
+    $locale = $config['i18n']['locale'] ?? 'en_US';
+    $timezone = $config['i18n']['timezone'] ?? 'UTC';
+    $date_format = !empty($config['i18n']['date_format']) ? strtoupper($config['i18n']['date_format']) : 'MEDIUM';
+    $time_format = !empty($config['i18n']['time_format']) ? strtoupper($config['i18n']['time_format']) : 'SHORT';
+    $datetime_pattern = $config['i18n']['datetime_pattern'] ?? null;
+
     $loader = new Twig\Loader\ArrayLoader();
     $twig = new Twig\Environment($loader, $options);
 
@@ -326,9 +334,9 @@ $di['twig'] = $di->factory(function () use ($di) {
     $twig->addExtension(new DebugExtension());
     $twig->addExtension(new TranslationExtension());
     $twig->addExtension($box_extensions);
-    $twig->getExtension(CoreExtension::class)->setTimezone($config['timezone']);
+    $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
 
-    $dateFormatter = new \IntlDateFormatter($config['locale'], \IntlDateFormatter::MEDIUM, \IntlDateFormatter::MEDIUM, $config['timezone']);
+    $dateFormatter = new \IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
     $twig->addExtension(new IntlExtension($dateFormatter));
 
     // add globals
@@ -510,12 +518,12 @@ $di['api_system'] = function () use ($di) {
  *
  * @return \Box_Tools
  */
-$di['tools'] = function () use ($di) {
+$di['tools'] = $di->factory(function () use ($di) {
     $service = new Box_Tools();
     $service->setDi($di);
 
     return $service;
-};
+});
 
 /*
  *
@@ -745,7 +753,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
     }
 
     $cookieBBlang = $di['cookie']->get('BBLANG');
-    $locale = !empty($cookieBBlang) ? $cookieBBlang : $di['config']['locale'];
+    $locale = !empty($cookieBBlang) ? $cookieBBlang : ($di['config']['i18n']['locale'] ?? 'en_US');
 
     $tr->setDi($di);
     $tr->setLocale($locale);
