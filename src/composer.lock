@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d9db4b3dacd84982f90b22feda0a6fd3",
+    "content-hash": "09cccff8f21218d962b2abf1a15ce575",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -1838,16 +1838,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v10.10.0",
+            "version": "v10.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "2c641079093167c2e448d82bd0bd02160e20fec1"
+                "reference": "899f50664d47ddac4f9c1ce871a4aca402f963a0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/2c641079093167c2e448d82bd0bd02160e20fec1",
-                "reference": "2c641079093167c2e448d82bd0bd02160e20fec1",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/899f50664d47ddac4f9c1ce871a4aca402f963a0",
+                "reference": "899f50664d47ddac4f9c1ce871a4aca402f963a0",
                 "shasum": ""
             },
             "require": {
@@ -1893,9 +1893,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v10.10.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v10.11.0"
             },
-            "time": "2023-03-17T01:59:34+00:00"
+            "time": "2023-03-23T21:41:24+00:00"
         },
         {
             "name": "symfony/asset",
@@ -3141,6 +3141,86 @@
             "time": "2023-02-01T08:22:55+00:00"
         },
         {
+            "name": "symfony/intl",
+            "version": "v6.0.19",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/intl.git",
+                "reference": "a2e1ce9048ea549ee1e8d9ce521cbe9a9ec7d92c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/intl/zipball/a2e1ce9048ea549ee1e8d9ce521cbe9a9ec7d92c",
+                "reference": "a2e1ce9048ea549ee1e8d9ce521cbe9a9ec7d92c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0.2"
+            },
+            "require-dev": {
+                "symfony/filesystem": "^5.4|^6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Intl\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bernhard Schussek",
+                    "email": "bschussek@gmail.com"
+                },
+                {
+                    "name": "Eriksen Costa",
+                    "email": "eriksen.costa@infranology.com.br"
+                },
+                {
+                    "name": "Igor Wiedler",
+                    "email": "igor@wiedler.ch"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Provides a PHP replacement layer for the C intl extension that includes additional data from the ICU library",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "i18n",
+                "icu",
+                "internationalization",
+                "intl",
+                "l10n",
+                "localization"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/intl/tree/v6.0.19"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2023-01-01T08:36:10+00:00"
+        },
+        {
             "name": "symfony/polyfill-ctype",
             "version": "v1.27.0",
             "source": {
@@ -4321,6 +4401,75 @@
                 }
             ],
             "time": "2023-01-18T19:37:55+00:00"
+        },
+        {
+            "name": "twig/intl-extra",
+            "version": "v3.5.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/twigphp/intl-extra.git",
+                "reference": "c3ebfac1624228c0556de57a34af6b7d83a1a408"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/twigphp/intl-extra/zipball/c3ebfac1624228c0556de57a34af6b7d83a1a408",
+                "reference": "c3ebfac1624228c0556de57a34af6b7d83a1a408",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1.3",
+                "symfony/intl": "^4.4|^5.0|^6.0",
+                "twig/twig": "^2.7|^3.0"
+            },
+            "require-dev": {
+                "symfony/phpunit-bridge": "^4.4.9|^5.0.9|^6.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.5-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Twig\\Extra\\Intl\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com",
+                    "homepage": "http://fabien.potencier.org",
+                    "role": "Lead Developer"
+                }
+            ],
+            "description": "A Twig extension for Intl",
+            "homepage": "https://twig.symfony.com",
+            "keywords": [
+                "intl",
+                "twig"
+            ],
+            "support": {
+                "source": "https://github.com/twigphp/intl-extra/tree/v3.5.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/twig/twig",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2023-02-08T07:44:55+00:00"
         },
         {
             "name": "twig/twig",

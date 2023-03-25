@@ -45,7 +45,7 @@
             </td>
             <td>{{ event.ip }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
-            <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
+            <td>{{ event.created_at|format_datetime }}</td>
             <td>
                 <a class="btn btn-icon api-link"
                     href="{{ 'api/admin/client/login_history_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"

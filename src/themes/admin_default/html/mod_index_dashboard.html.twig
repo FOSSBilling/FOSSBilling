@@ -257,7 +257,7 @@
                                 <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
                             <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
-                            <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
+                            <td class="text-center">{{ invoice.created_at|format_date }}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
                                     <span class="badge bg-success me-1"></span>
@@ -466,7 +466,7 @@
                                     <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name|truncate(40) }}</a>
                                 </td>
                                 <td>{{ event.message|truncate(50) }}</td>
-                                <td>{{ event.created_at }}</td>
+                                <td>{{ event.created_at|format_datetime }}</td>
                                 <td>{{ event.created_at|timeago }} {{ 'ago'|trans }}</td>
                             </tr>
                             {% else %}
@@ -493,7 +493,7 @@
                                     <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
                                 </td>
                                 <td>{{ event.message|truncate(50) }}</td>
-                                <td>{{ event.created_at }}</td>
+                                <td>{{ event.created_at|format_datetime }}</td>
                                 <td>{{ event.created_at|timeago }} {{ 'ago'|trans }}</td>
                             </tr>
                             {% else %}

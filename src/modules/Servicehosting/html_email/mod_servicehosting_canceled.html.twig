@@ -4,7 +4,7 @@
 
 Hello {{ c.first_name }} {{ c.last_name }},
 
-Your *{{ order.title }}* that was issued on *{{ order.activated_at|bb_date }}* is now canceled.
+Your *{{ order.title }}* that was issued on *{{ order.activated_at|format_date }}* is now canceled.
 {% if order.reason %} Reason:     
 
 **{{ order.reason }}** {% endif %}   

@@ -32,7 +32,7 @@
                         <thead>
                         <tr>
                             <th>{{ 'Title'|trans }}</th>
-                            <th>{{ 'Issue Date'|trans }}</th>
+                            <th>{{ 'Invoice Date'|trans }}</th>
                             <th>{{ 'Due Date'|trans }}</th>
                             <th>{{ 'Total'|trans }}</th>
                             <th>&nbsp</th>
@@ -43,8 +43,8 @@
                         {% for i, invoice in unpaid_invoices.list %}
                         <tr class="{{ cycle(['odd', 'even'], i) }}">
                             <td>{{ "Proforma invoice #%05s"|format(invoice.id) }}</td>
-                            <td>{{ invoice.created_at|bb_date }}</td>
-                            <td>{{ invoice.due_at|bb_date }}</td>
+                            <td>{{ invoice.created_at|format_date }}</td>
+                            <td>{{ invoice.due_at|format_date }}</td>
                             <td>{{ invoice.total | money(invoice.currency) }}</td>
                             <td><a class="btn btn-small btn-primary" href="{{ 'invoice'|link }}/{{ invoice.hash }}">{{ 'Pay'|trans }}</a></td>
                         </tr>
@@ -67,8 +67,8 @@
                         <thead>
                         <tr>
                             <th>{{ 'Title'|trans }}</th>
-                            <th>{{ 'Issue Date'|trans }}</th>
-                            <th>{{ 'Paid at'|trans }}</th>
+                            <th>{{ 'Invoice Date'|trans }}</th>
+                            <th>{{ 'Paid Date'|trans }}</th>
                             <th>{{ 'Total'|trans }}</th>
                             <th>&nbsp</th>
                         </tr>
@@ -80,8 +80,8 @@
 
                         <tr class="{{ cycle(['odd', 'even'], i) }}">
                             <td>{{ "Proforma invoice #%05s"|format(invoice.id) }}</td>
-                            <td>{{ invoice.created_at|bb_date }}</td>
-                            <td>{{ invoice.paid_at|bb_date }}</td>
+                            <td>{{ invoice.created_at|format_date }}</td>
+                            <td>{{ invoice.paid_at|format_date }}</td>
                             <td>{{ invoice.total | money(invoice.currency) }}</td>
                             <td><a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="btn btn-primary btn-small">{{ 'View'|trans }}</a></td>
                         </tr>

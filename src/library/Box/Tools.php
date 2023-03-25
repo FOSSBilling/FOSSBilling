@@ -406,8 +406,11 @@ class Box_Tools
         $newConfig['maintenance_mode']['allowed_ips'] ??= [];
 
         $newConfig['disable_auto_cron'] ??= false;
-        $newConfig['locale_date_format'] = ($currentConfig['locale_date_format'] === '%A, %d %B %G') ? 'l, d F o' : $currentConfig['locale_date_format'];
-        $newConfig['locale_time_format'] = ($currentConfig['locale_time_format'] === ' %T') ? ' G:i:s' : $currentConfig['locale_time_format'];
+
+        $newConfig['i18n']['locale'] = $currentConfig['locale'] ?? 'en_US';
+        $newConfig['i18n']['timezone'] = $currentConfig['timezone'] ?? 'UTC';
+        $newConfig['i18n']['date_format'] ??= 'medium';
+        $newConfig['i18n']['time_format'] ??= 'short';
 
         $newConfig['db']['port'] ??= '3306';
 
@@ -415,6 +418,14 @@ class Box_Tools
         $newConfig['api']['rate_span_login'] ??= 60;
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
+
+        // Remove depreciated config keys/subkeys.
+        $depreciatedConfigKeys = [ 'guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone' ];
+        $depreciatedConfigSubkeys = [];
+        $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
+        foreach ($depreciatedConfigSubkeys as $key => $subkey) {
+            unset($newConfig[$key][$subkey]);
+        }
 
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($newConfig, true) . ';';

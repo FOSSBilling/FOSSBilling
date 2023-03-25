@@ -45,7 +45,7 @@
 
                     <tr>
                         <td>{{ 'Time opened'|trans }}</td>
-                        <td>{{ ticket.created_at|bb_date }}</td>
+                        <td>{{ ticket.created_at|format_date }}</td>
                     </tr>
 
                     {% if ticket.rel_type == 'order' and ticket.rel_id %}
@@ -127,7 +127,7 @@
                                 </div>
                             </div>
                             <div class="span9">
-                                <header>#{{ i+1 }} | {{ message.created_at|bb_date }}
+                                <header>#{{ i+1 }} | {{ message.created_at|format_date }}
                                     {% if ticket.status != 'closed' %}
                                     <div class="pull-right">
                                         <a href="#" class="btn btn-inverse reply-to-message" message-quote="{{ mf.markdown_quote(message.content) }}">{{ 'Reply'|trans }}</a>

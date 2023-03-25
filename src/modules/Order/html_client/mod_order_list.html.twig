@@ -35,7 +35,7 @@
                 <tr class="{{ cycle(['odd', 'even'], i) }}">
                     <td><a href="{{ '/order/service/manage'|link }}/{{order.id}}">{{ order.title }}</a></td>
                     <td>{{  order.total | money(order.currency) }} {% if order.period %}{{ order.period | period_title }}{% endif %}</td>
-                    <td>{% if order.expires_at %}{{ order.expires_at|bb_date }}{% else %}-{% endif %}</td>
+                    <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
                     <td>
                         <span class="label {% if order.status == 'active' %}label-success{% elseif order.status == 'pending_setup' %}label-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
                     </td>

@@ -72,12 +72,12 @@
                             </tr>
                             <tr>
                                 <td class="text-end">{{ 'Created at'|trans }}:</td>
-                                <td>{{ subscription.created_at|date('l, d F Y') }}</td>
+                                <td>{{ subscription.created_at|format_date }}</td>
                             </tr>
                             {% if subscription.created_at != subscription.updated_at %}
                             <tr>
                                 <td class="text-end">{{ 'Updated at'|trans }}:</td>
-                                <td>{{ subscription.updated_at|date('l, d F Y') }}</td>
+                                <td>{{ subscription.updated_at|format_date }}</td>
                             </tr>
                             {% endif %}
                         </tbody>

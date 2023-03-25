@@ -37,7 +37,8 @@
         "symfony/webpack-encore-bundle": "^1.16",
         "lcharette/webpack-encore-twig": "1.1.0",
         "league/csv": "^9.8",
-        "symfony/http-client": "^6.0"
+        "symfony/http-client": "^6.0",
+        "twig/intl-extra": "^3.5"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",

@@ -60,11 +60,11 @@
         </tr>
         <tr>
             <td class="text-end">{{ 'Registration date'|trans }}:</td>
-            <td>{{ service.registered_at|date('l, d F Y') }}</td>
+            <td>{{ service.registered_at|format_date }}</td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Expires at'|trans }}:</td>
-            <td>{{ service.expires_at|date('l, d F Y') }}</td>
+            <td>{{ service.expires_at|format_date }}</td>
         </tr>
     </tbody>
 </table>

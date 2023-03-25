@@ -15,9 +15,9 @@ Your website and  email will not function until the domain has propagated.
 
 
 Domain: {{ service.domain }}     
-Registration date: {{order.created_at|bb_date}}
+Registration date: {{order.created_at|format_date}}
 Registration period: {{service.period}} Year(s)   
-{% if order.expires_at %}Expires on: {{ order.expires_at|bb_date }} {% endif %}
+{% if order.expires_at %}Expires on: {{ order.expires_at|format_date }} {% endif %}
 {% if order.period %}
 Billing period:
 

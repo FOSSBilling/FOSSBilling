@@ -109,7 +109,7 @@
                     {% endif %}
                     {{ mf.status_name(ticket.status) }}
                 </td>
-                <td>{{ ticket.updated_at|date('Y-m-d') }}</td>
+                <td>{{ ticket.updated_at|format_date }}</td>
                 <td>
                     <a class="btn btn-icon" href="{{ '/support/public-ticket'|alink }}/{{ ticket.id }}">
                         <svg class="icon">

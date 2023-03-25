@@ -200,8 +200,7 @@ class GuestTest extends \BBTestCase {
             ->will($this->returnValue($setLang));
 
         $di['cookie'] = $cookieMock;
-        $di['config'] = array('locale' => 'EN');
-
+        $di['config'] = [ 'i18n' => ['locale' => 'en_US' ] ];
 
         $this->api->setDi($di);
 

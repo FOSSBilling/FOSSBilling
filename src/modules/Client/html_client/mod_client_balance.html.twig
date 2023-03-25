@@ -32,7 +32,7 @@
                 {% for i, tx in transactions.list %}
                 <tr class="{{ cycle(['odd', 'even'], i) }}">
                     <td>{{ tx.description }}</td>
-                    <td>{{ tx.created_at|bb_date }}</td>
+                    <td>{{ tx.created_at|format_date }}</td>
                     <td>{{ tx.amount|money(tx.currency) }}</td>
                 </tr>
                 {% else %}

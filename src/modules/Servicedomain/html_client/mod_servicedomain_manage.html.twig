@@ -25,12 +25,12 @@
                         </tr>
                         <tr>
                             <td>{{ 'Registration date'|trans }}</td>
-                            <td>{{ service.registered_at|bb_date }}</td>
+                            <td>{{ service.registered_at|format_date }}</td>
                         </tr>
 
                         <tr>
                             <td>{{ 'Expires at'|trans }}</td>
-                            <td>{{ service.expires_at|bb_date }}</td>
+                            <td>{{ service.expires_at|format_date }}</td>
                         </tr>
 
                         </tbody>

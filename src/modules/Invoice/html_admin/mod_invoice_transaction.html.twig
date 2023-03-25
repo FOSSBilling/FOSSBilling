@@ -98,12 +98,12 @@
                         {% endif %}
                         <tr>
                             <td class="text-end">{{ 'Received at'|trans }}</td>
-                            <td>{{ transaction.created_at|date('l, d F Y') }}</td>
+                            <td>{{ transaction.created_at|format_date }}</td>
                         </tr>
                         {% if transaction.created_at != transaction.updated_at %}
                         <tr>
                             <td class="text-end">{{ 'Updated at'|trans }}</td>
-                            <td>{{ transaction.updated_at|date('l, d F Y') }}</td>
+                            <td>{{ transaction.updated_at|format_date }}</td>
                         </tr>
                         {% endif %}
                     </tbody>

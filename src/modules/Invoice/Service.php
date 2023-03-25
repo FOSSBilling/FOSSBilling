@@ -1214,7 +1214,12 @@ class Service implements InjectionAwareInterface
             $currencyCode = $client->currency;
         }
 
-        $localeDateFormat = $this->di['config']['locale_date_format'];
+        $config = $this->di['config'];
+        $locale = $config['i18n']['locale'];
+        $timezone = $config['i18n']['timezone'];
+        $date_format = strtoupper($config['i18n']['date_format']);
+        $time_format = strtoupper($config['i18n']['time_format']);
+        $datetime_pattern = $config['i18n']['datetime_pattern'] ?? null;
         $invoice = $this->toApiArray($invoice, false, $identity);
         $systemService = $this->di['mod_service']('System');
         $company = $systemService->getCompany();
@@ -1270,10 +1275,13 @@ class Service implements InjectionAwareInterface
             $html .= '<hr class="Rounded">';
         }
 
+        $format = new \IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone , null, $datetime_pattern);
+
+
         $html .= '<div class="InvoiceInfo">';
         $html .= '<p>Invoice number: ' . $invoice['serie_nr'] . '</p>';
-        $html .= '<p>Invoice date: ' . date($localeDateFormat, strtotime($invoice['created_at'])) . '</p>';
-        $html .= '<p>Due date: ' . date($localeDateFormat, strtotime($invoice['due_at'])) . '</p>';
+        $html .= '<p>Invoice date: ' . $format->format(strtotime($invoice['created_at'])) . '</p>';
+        $html .= '<p>Due date: ' . $format->format(strtotime($invoice['due_at'])) . '</p>';
         $html .= '<p>Invoice status: ' . ucfirst($invoice['status']) . '</p>';
         $html .= '</div>';
 

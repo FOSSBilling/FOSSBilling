@@ -34,17 +34,17 @@
             <tbody>
                 <tr>
                     <td class="w-50 text-end">{{ 'Timezone'|trans }}:</td>
-                    <td>{{ "now"|date('e') }}</td>
+                    <td>{{ "now"|format_date(pattern='zzz') }}</td>
                 </tr>
                 <tr>
                     <td class="text-end">{{ 'Time on server'|trans }}:</td>
-                    <td>{{ "now"|date('Y-m-d H:i:s') }}</td>
+                    <td>{{ "now"|format_datetime }}</td>
                 </tr>
                 <tr>
                     <td class="text-end">{{ 'Last time scheduled tasks were executed'|trans }}:</td>
                     <td>
                         {% if cron.last_cron_exec %}
-                            {{ cron.last_cron_exec|date('Y-m-d H:i:s') }}
+                            {{ cron.last_cron_exec|format_datetime }}
                             ({{ cron.last_cron_exec|timeago }} ago)
                         {% else %}
                             {{ 'Scheduled tasks were never executed'|trans }}

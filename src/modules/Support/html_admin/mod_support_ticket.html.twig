@@ -74,7 +74,7 @@
                     </tr>
                     <tr>
                         <td>{{ 'Time opened'|trans }}</td>
-                        <td>{{ ticket.created_at|date('l, d F Y') }}</td>
+                        <td>{{ ticket.created_at|format_date }}</td>
                     </tr>
                  </tbody>
 
@@ -284,7 +284,7 @@
                     <use xlink:href="#link" />
                 </svg>
             </a>
-            <span class="ms-auto text-muted">{{ message.created_at|bb_datetime }}</span>
+            <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
         </div>
         <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
             {{ message.content|markdown }}
