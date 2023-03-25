@@ -7,222 +7,248 @@
 {% set active_menu = 'extensions' %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Extensions'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-store" data-bs-toggle="tab">{{ 'Extension Store'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-core" data-bs-toggle="tab">{{ 'Update FOSSBilling'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-about" data-bs-toggle="tab">{{ 'Learn more about extensions'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-hooks" data-bs-toggle="tab">{{ 'Hooks'|trans }}</a>
-        </li>
-    </ul>
+    <div class="card-tabs">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Extensions'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-store" data-bs-toggle="tab">{{ 'Extension Store'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-core" data-bs-toggle="tab">{{ 'Update FOSSBilling'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-about" data-bs-toggle="tab">{{ 'Learn more about extensions'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-hooks" data-bs-toggle="tab">{{ 'Hooks'|trans }}</a>
+            </li>
+        </ul>
 
-<div class="card">
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            <div class="card-body">
-                <h3>FOSSBilling extensions</h3>
-                <p class="text-muted">{{ 'Activate or deactivate extensions'|trans }}</p>
-            </div>
+        <div class="card">
+            <div class="tab-content">
 
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>{{ 'Extension'|trans }}</th>
-                        <th>{{ 'Description'|trans }}</th>
-                        <th class="w-1"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ext in admin.extension_get_list %}
-                    <tr>
-                        <td>
-                            {% set icon_filename = ext.icon_url|split('/')|last %}
-                            {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
-                                <div class="text-primary" style="width:24px;height:24px;">
-                                    {{ source (ext.icon_path, ignore_missing = true) }}
-                                </div>
+                <div class="tab-pane fade active show" id="tab-index" role="tabpanel">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">FOSSBilling extensions</h3>
+                            <p class="card-subtitle">{{ 'Activate or deactivate extensions'|trans }}</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                            <tr>
+                                <th></th>
+                                <th>{{ 'Extension'|trans }}</th>
+                                <th>{{ 'Description'|trans }}</th>
+                                <th class="w-1"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for ext in admin.extension_get_list %}
+                                <tr>
+                                    <td>
+                                        {% set icon_filename = ext.icon_url|split('/')|last %}
+                                        {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
+                                            <div class="text-primary" style="width:24px;height:24px;">
+                                                {{ source (ext.icon_path, ignore_missing = true) }}
+                                            </div>
+                                        {% else %}
+                                            <img src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ ext.name }}</strong> {{ ext.version }}<br>
+                                        <span>by <a href="{{ ext.author_url }}" target="_blank">{{ ext.author }}</a></span>
+                                    </td>
+                                    <td>
+                                        {{ ext.description }}<br>
+                                        <a href="{{ ext.project_url }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Project details">{{ 'Learn more'|trans }}</a>
+                                    </td>
+                                    <td>
+                                        {% if ext.type == 'mod' %}
+                                            {% if ext.status == 'installed' %}
+                                                <a class="btn btn-icon api-link"
+                                                   href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                                   data-api-type="danger"
+                                                   data-api-confirm-btn="Deactivate"
+                                                   data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                                   data-api-reload="Module was deactivated"
+                                                   data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}">
+                                                    <svg class="icon">
+                                                        <use xlink:href="#close" />
+                                                    </svg>
+                                                </a>
+                                            {% else %}
+                                                <a class="btn btn-icon api-link"
+                                                   href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                                   data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                                   data-api-confirm-btn="Activate"
+                                                   data-api-jsonp="onAfterModuleActivated"
+                                                   data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
+                                                    <svg class="icon">
+                                                        <use xlink:href="#play" />
+                                                    </svg>
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            &nbsp;
+                                        {% endif %}
+
+                                        {% if ext.has_settings %}
+                                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}"
+                                               data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
+                                                <svg class="icon">
+                                                    <use xlink:href="#settings-gear" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
                             {% else %}
-                                <img src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
-                            {% endif %}
-                        </td>
-                        <td>
-                            <strong>{{ ext.name }}</strong> {{ ext.version }}<br>
-                            <span>by <a href="{{ ext.author_url }}" target="_blank">{{ ext.author }}</a></span>
-                        </td>
-                        <td>
-                            {{ ext.description }}<br>
-                            <a href="{{ ext.project_url }}" target="_blank" title="Project details">{{ 'Learn more'|trans }}</a>
-                        </td>
-                        <td>
-                            {% if ext.type == 'mod' %}
-                                {% if ext.status == 'installed' %}
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="Module was deactivated" title="{{ 'Deactivate'|trans }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#close" />
-                                    </svg>
-                                </a>
-                                {% else %}
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-jsonp="onAfterModuleActivated">
-                                    <svg class="icon">
-                                        <use xlink:href="#play" />
-                                    </svg>
-                                </a>
-                                {% endif %}
-                            {% else %}
-                                &nbsp;
-                            {% endif %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                            {% if ext.has_settings %}
-                                <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                <div class="tab-pane fade" id="tab-store" role="tabpanel">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">Modules on the extension store</h3>
+                            <p class="card-subtitle">These are all modules available for installation from the <a href="https://extensions.fossbilling.org/">extension store</a> at the click of a button.</p>
+                        </div>
+                    </div>
+                    {% include 'partial_extensions.html.twig' %}
+                </div>
 
-        <div class="tab-pane fade" id="tab-store" role="tabpanel">
-            <div class="card-body">
-                <h5>Modules on the extension store</h5>
-                <p>These are all modules available for installation from the <a href="https://extensions.fossbilling.org/">extension store</a> at the click of a button.</p>
+                <div class="tab-pane fade" id="tab-core" role="tabpanel">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">{{ 'Automatic update'|trans }}</h3>
+                            <p class="card-subtitle">{{ 'The automatic updater is a one-click tool for updating FOSSBilling. It works on hosting environments where PHP can overwrite files uploaded via FTP.'|trans }}</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {{ admin.system_release_notes|markdown }}
+                        <a href="{{ 'api/admin/extension/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
+                           class="btn btn-primary api-link"
+                           data-api-reload="1"
+                           data-api-confirm="Proceed with automatic update?"
+                           data-api-confirm-btn="Update"
+                           data-api-confirm-content="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
+                            <svg class="icon">
+                                <use xlink:href="#refresh" />
+                            </svg>
+                            {{ 'Update FOSSBilling'|trans }}
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">{{ 'Migrate configuration file'|trans }}</h3>
+                        <p class="card-subtitle">{{ 'This tool automatically migrates your configuration file to ensure compatibility with the latest FOSSBilling changes. Note that this is only necessary when performing manual updates.'|trans }}</p>
+                        <a href="{{ 'api/admin/extension/update_config'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.php.old." data-api-msg="Migration complete">
+                            <svg class="icon">
+                                <use xlink:href="#refresh" />
+                            </svg>
+                            {{ 'Migrate configuration'|trans }}
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">{{ 'Manual update'|trans }}</h3>
+                        <p class="card-subtitle">{{ 'If the auto updater is unable to function in your current installation environment, a manual update is available as an alternative solution.'|trans }}</p>
+                        <ul>
+                            <li>Download the latest release of FOSSBilling from GitHub at <a href="https://github.com/FOSSBilling/FOSSBilling/releases" target="_blank">https://github.com/FOSSBilling/FOSSBilling/releases</a>.</li>
+                            <li>Extract the downloaded files to your computer.</li>
+                            <li>Using an FTP client, upload (overwrite) the extracted files to your FOSSBilling installation directory at <strong>{{ constant('PATH_ROOT') }}</strong>.</li>
+                            <li>Once the upload is complete, open your web browser and navigate to <a href="{{ constant('BB_URL') }}foss-update.php" target="_blank">{{ constant('BB_URL') }}foss-update.php</a>.</li>
+                            <li>Your FOSSBilling installation is now up-to-date with the latest version!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-about" role="tabpanel">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">{{ 'Extending FOSSBilling'|trans }}</h3>
+                            <p class="card-subtitle">{{ 'FOSSBilling gives developers all the capabilities to customize, integrate & extend the core system into your own website & applications.'|trans }}</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>More extensions</h3>
+                        <p>If you can not find extensions you are looking for in this admin area, please visit extensions site at <a href="https://extensions.fossbilling.org" target="_blank">https://extensions.fossbilling.org</a></p>
+
+                        <h3>How to create new extension</h3>
+                        <ul>
+                            <li>Create free account at <a href="https://github.com/signup/free" target="_blank">GitHub</a></li>
+                            <li>Create new public repository dedicated for extension only</li>
+                            <li>Repository must have plugin json file. <a href="https://extensions.fossbilling.org/article/getting-started" target="_blank">More information</a></li>
+                            <li>Login to <a href="https://extensions.fossbilling.org/" target="_blank">FOSSBilling extensions site</a> with github account.</li>
+                            <li>If your repository contains valid json file, it can be registered in extensions site.</li>
+                            <li>Registered extensions can be visible in every FOSSBilling admin area.</li>
+                        </ul>
+
+                        <h3>Supported extension types</h3>
+                        <ul>
+                            <li>Payment gateways</li>
+                            <li>Server managers</li>
+                            <li>Domain registrars</li>
+                            <li>Client area themes</li>
+                            <li>Admin area themes</li>
+                            <li>Translations for client and admin areas</li>
+                            <li>Event hooks - Hooks can be injected into the process, change its behaviour, stop executing actions</li>
+                            <li>API module - External program which uses FOSSBilling API</li>
+                        </ul>
+
+                        <h3>Extension support</h3>
+                        <p>Contact extensions developers directly for support. You can find issue tracker on the extension store.</p>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-hooks" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                            <tr>
+                                <th>{{ 'Extension'|trans }}</th>
+                                <th>{{ 'Hook'|trans }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for hook in admin.hook_get_list({ 'per_page': 90 }).list %}
+                                <tr>
+                                    <td>
+                                        {{ hook.rel_id|capitalize}}
+                                    </td>
+                                    <td>
+                                        <code>{{ hook.event }}</code>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            {% include 'partial_extensions.html.twig' %}
-        </div>
-
-        <div class="tab-pane fade" id="tab-core" role="tabpanel">
-            <div class="card-body">
-                <h3>{{ 'Automatic update'|trans }}</h3>
-                <p class="text-muted">{{ 'The automatic updater is a one-click tool for updating FOSSBilling. It works on hosting environments where PHP can overwrite files uploaded via FTP.'|trans }}</p>
-
-                {{ admin.system_release_notes|markdown }}
-                <a href="{{ 'api/admin/extension/update_core'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
-                    <svg class="icon">
-                        <use xlink:href="#refresh" />
-                    </svg>
-                    {{ 'Update FOSSBilling'|trans }}
-                </a>
-                <hr>
-
-                <h3>{{ 'Migrate configuration file'|trans }}</h3>
-                <p class="text-muted">{{ 'This tool automatically migrates your configuration file to ensure compatibility with the latest FOSSBilling changes. Note that this is only necessary when performing manual updates.'|trans }}</p>
-
-                <a href="{{ 'api/admin/extension/update_config'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.php.old." data-api-msg="Migration complete">
-                    <svg class="icon">
-                        <use xlink:href="#refresh" />
-                    </svg>
-                    {{ 'Migrate configuration'|trans }}
-                </a>
-                <hr>
-
-                <h3>{{ 'Manual update'|trans }}</h3>
-                <p>{{ 'If the auto updater is unable to function in your current installation environment, a manual update is available as an alternative solution.'|trans }}</p>
-
-                <ul>
-                    <li>Download the latest release of FOSSBilling from GitHub at <a href="https://github.com/FOSSBilling/FOSSBilling/releases" target="_blank">https://github.com/FOSSBilling/FOSSBilling/releases</a>.</li>
-                    <li>Extract the downloaded files to your computer.</li>
-                    <li>Using an FTP client, upload (overwrite) the extracted files to your FOSSBilling installation directory at <strong>{{ constant('PATH_ROOT') }}</strong>.</li>
-                    <li>Once the upload is complete, open your web browser and navigate to <a href="{{ constant('BB_URL') }}foss-update.php" target="_blank">{{ constant('BB_URL') }}foss-update.php</a>.</li>
-                    <li>Your FOSSBilling installation is now up-to-date with the latest version!</li>
-                  </ul>
-                <ul>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-about" role="tabpanel">
-            <div class="card-body">
-                <h3>{{ 'Extending FOSSBilling'|trans }}</h3>
-                <p class="text-muted">{{ 'FOSSBilling gives developers all the capabilities to customize, integrate & extend the core system into your own website & applications.'|trans }}</p>
-
-                <h5>More extensions</h5>
-                <p>If you can not find extensions you are looking for in this admin area, please visit extensions site at <a href="https://extensions.fossbilling.org" target="_blank">https://extensions.fossbilling.org</a></p>
-
-                <h5>How to create new extension</h5>
-                <ul>
-                    <li>Create free account at <a href="https://github.com/signup/free" target="_blank">GitHub</a></li>
-                    <li>Create new public repository dedicated for extension only</li>
-                    <li>Repository must have plugin json file. <a href="https://extensions.fossbilling.org/article/getting-started" target="_blank">More information</a></li>
-                    <li>Login to <a href="https://extensions.fossbilling.org/" target="_blank">FOSSBilling extensions site</a> with github account.</li>
-                    <li>If your repository contains valid json file, it can be registered in extensions site.</li>
-                    <li>Registered extensions can be visible in every FOSSBilling admin area.</li>
-                </ul>
-
-                <h5>Supported extension types</h5>
-                <ul>
-                    <li>Payment gateways</li>
-                    <li>Server managers</li>
-                    <li>Domain registrars</li>
-                    <li>Client area themes</li>
-                    <li>Admin area themes</li>
-                    <li>Translations for client and admin areas</li>
-                    <li>Event hooks - Hooks can be injected into the process, change its behaviour, stop executing actions</li>
-                    <li>API module - External program which uses FOSSBilling API</li>
-                </ul>
-
-                <h5>Extension support</h5>
-                <p>Contact extensions developers directly for support. You can find issue tracker on the extension store.</p>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-hooks" role="tabpanel">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th>{{ 'Extension'|trans }}</th>
-                        <th>{{ 'Hook'|trans }}</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for hook in admin.hook_get_list({ 'per_page': 90 }).list %}
-                    <tr>
-                        <td>
-                            {{ hook.rel_id|capitalize}}
-                        </td>
-                        <td>
-                            {{ hook.event }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block js %}
-<script>
-    function onAfterUpdate(result) {
-
-    }
-
-    function onAfterModuleActivated(result) {
-        if(result.redirect && result.type == 'mod') {
-            bb.redirect("{{ ''|alink }}/" + result.id);
-        } else if (result.has_settings) {
-            bb.redirect("{{ 'extension/settings'|alink }}/" + result.id);
-        } else {
-            bb.reload();
+    <script>
+        function onAfterUpdate(result) {}
+        function onAfterModuleActivated(result) {
+            if(result.redirect && result.type === 'mod') {
+                bb.redirect("{{ ''|alink }}/" + result.id);
+            } else if (result.has_settings) {
+                bb.redirect("{{ 'extension/settings'|alink }}/" + result.id);
+            } else {
+                bb.reload();
+            }
         }
-    }
-</script>
+    </script>
 {% endblock %}
