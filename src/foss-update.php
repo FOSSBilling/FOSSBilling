@@ -16,7 +16,12 @@
 
 const DIR_SEP = DIRECTORY_SEPARATOR;
 
-class FOSSPatch_29 extends FOSSPatchAbstract
+/**
+ * Patch to remove the old guzzlehttp package, as we no longer use it. Also serves as an example for how to perform file action.
+ * 
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/987
+ */
+class FOSSPatch_30 extends FOSSPatchAbstract
 {
     public function patch()
     {
