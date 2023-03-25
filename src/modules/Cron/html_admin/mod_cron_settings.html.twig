@@ -23,15 +23,20 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h3>{{ 'Cron settings'|trans }}</h3>
-        <h5>{{ 'Setup scheduled tasks to be executed once a day'|trans }}</h3>
-        <p class="text-muted">{{ 'Scheduled tasks must be enabled immediately after installation. Cron is responsible for sending your clients reminder about payments, domain renewal notices and many more.'|trans }}</p>
-
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Cron settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Setup scheduled tasks to be executed once a day'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body border-bottom">
+            <span class="card-subtitle">{{ 'Scheduled tasks must be enabled immediately after installation. Cron is responsible for sending your clients reminder about payments, domain renewal notices and many more.'|trans }}</span>
+        </div>
         {% set cron = admin.cron_info %}
-        <table class="table card-table table-vcenter table-striped text-nowrap">
-            <tbody>
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <tbody>
                 <tr>
                     <td class="w-50 text-end">{{ 'Timezone'|trans }}:</td>
                     <td>{{ "now"|format_date(pattern='zzz') }}</td>
@@ -59,17 +64,16 @@
                     <td class="text-end">{{ 'Execute scheduled tasks from browser'|trans }}:</td>
                     <td>{{ cron.cron_url }}</td>
                 </tr>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-center">
+            <a href="{{ cron.cron_url }}" class="btn btn-primary" target="_blank">
+                <svg class="icon icon-tabler">
+                    <use xlink:href="#play"/>
+                </svg>
+                <span>{{ 'Execute now'|trans }}</span>
+            </a>
+        </div>
     </div>
-
-    <div class="card-footer text-center">
-        <a href="{{ cron.cron_url }}" class="btn btn-primary" target="_blank">
-            <svg class="icon icon-tabler">
-               <use xlink:href="#play" />
-            </svg>
-            <span>{{ 'Execute now'|trans }}</span>
-         </a>
-    </div>
-</div>
 {% endblock %}
