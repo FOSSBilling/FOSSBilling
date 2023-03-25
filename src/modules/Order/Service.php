@@ -538,9 +538,9 @@ class Service implements InjectionAwareInterface
         $qty = $data['quantity'] ?? 1;
         $config = (isset($data['config']) && is_array($data['config'])) ? $data['config'] : [];
         $group_id = $data['group_id'] ?? null;
-        $activate = (bool) $data['activate'] ?? false;
+        $activate = (bool) ($data['activate'] ?? false);
         $invoiceOption = $data['invoice_option'] ?? 'no-invoice';
-        $skipValidation = (bool) $data['skip_validation'] ?? false;
+        $skipValidation = (bool) ($data['skip_validation'] ?? false);
 
         $cartService = $this->di['mod_service']('cart');
         // check stock

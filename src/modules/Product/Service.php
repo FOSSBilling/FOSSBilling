@@ -293,7 +293,7 @@ class Service implements InjectionAwareInterface
         $model->slug =  $data['slug'] ?? $model->slug;
         $model->setup =  $data['setup'] ?? $model->setup;
         //remove empty value in data['upgrades];
-        if (is_array($data['upgrades'])) {
+        if (is_array($data['upgrades'] ?? null)) {
             $upgrades = array_values(array_filter($data['upgrades']));
             if (empty($upgrades)) {
                 $model->upgrades = null;
@@ -301,7 +301,7 @@ class Service implements InjectionAwareInterface
                 $model->upgrades = json_encode($upgrades);
             }
         }
-        if (is_array($data['addons'])) {
+        if (is_array($data['addons'] ?? null)) {
             $addons =  array_values(array_filter($data['addons']));
             if (is_null($addons)) {
                 $model->addons = null;
