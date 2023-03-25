@@ -810,7 +810,7 @@ class Service implements \Box\InjectionAwareInterface
     {
         $query = 'SELECT * FROM tld';
 
-        $hide_inactive = (bool) $data['hide_inactive'] ?? false;
+        $hide_inactive = (bool) ($data['hide_inactive'] ?? false);
         $allow_register = $data['allow_register'] ?? null;
         $allow_transfer = $data['allow_transfer'] ?? null;
 
@@ -1066,8 +1066,8 @@ class Service implements \Box\InjectionAwareInterface
         $s->ns4 = $data['ns4'] ?? $s->ns4;
 
         $s->period = (int) $data['period'] ?? $s->period;
-        $s->privacy = (bool) $data['privacy'] ?? $s->privacy;
-        $s->locked = (bool) $data['locked'] ?? $s->locked;
+        $s->privacy = (bool) ($data['privacy'] ?? $s->privacy);
+        $s->locked = (bool) ($data['locked'] ?? $s->locked);
         $s->transfer_code = $data['transfer_code'] ?? $s->transfer_code;
         $s->updated_at = date('Y-m-d H:i:s');
 

@@ -24,9 +24,9 @@
                     </header>
                    <section>
                        {% if post.excerpt %}
-                            {{ post.excerpt|bbmd }}
+                            {{ post.excerpt|markdown }}
                        {% else %}
-                            {{ post.content|bbmd }}
+                            {{ post.content|markdown }}
                        {% endif %}
                    </section>
                     <a class="btn btn-primary btn-small read_more" href="{{ '/news'|link }}/{{post.slug}}">{{ 'Read more ...'|trans }}</a>

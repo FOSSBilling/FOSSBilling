@@ -555,8 +555,8 @@ class Service implements InjectionAwareInterface
         $model->value = $value;
         $model->active = $data['active'] ?? 0;
         $model->freesetup = $data['freesetup'] ?? 0;
-        $model->once_per_client = (bool) $data['once_per_client'] ?? 0;
-        $model->recurring = (bool) $data['recurring'] ?? 0;
+        $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
+        $model->recurring = (bool) ($data['recurring'] ?? 0);
         $model->maxuses = $data['maxuses'] ?? null;
 
         $start_at = $data['start_at'] ?? null;

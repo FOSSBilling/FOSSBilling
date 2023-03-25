@@ -73,7 +73,7 @@ class Guest extends \Api_Abstract
 
         $price = $data['price'] ?? 0;
         $convert = $data['convert'] ?? true;
-        $without_currency = (bool) $data['without_currency'] ?? false;
+        $without_currency = (bool) ($data['without_currency'] ?? false);
 
         $p = $price;
         if ($convert) {

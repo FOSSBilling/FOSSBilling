@@ -326,7 +326,7 @@ class Service implements InjectionAwareInterface
 
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
-        $no_cron = (bool) $data['no_cron'] ?? false;
+        $no_cron = (bool) ($data['no_cron'] ?? false);
 
         $where = [];
         $bindings = [];

@@ -181,8 +181,8 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         $model->enabled = $data['enabled'] ?? $model->enabled;
-        $model->allow_single = (bool) $data['allow_single'] ?? $model->allow_single;
-        $model->allow_recurrent = (bool) $data['allow_recurrent'] ?? $model->allow_recurrent;
+        $model->allow_single = (bool) ($data['allow_single'] ?? $model->allow_single);
+        $model->allow_recurrent = (bool) ($data['allow_recurrent'] ?? $model->allow_recurrent);
         $model->test_mode = $data['test_mode'] ?? $model->test_mode;
         $this->di['db']->store($model);
         $this->di['logger']->info('Updated payment gateway %s', $model->gateway);

@@ -98,10 +98,10 @@ class Service implements InjectionAwareInterface
 
         $model = $this->di['db']->dispense('ServiceLicense');
         $model->client_id = $order->client_id;
-        $model->validate_ip = (bool) $c['validate_ip'] ?? false;
-        $model->validate_host = (bool) $c['validate_host'] ?? false;
-        $model->validate_path = (bool) $c['validate_path'] ?? false;
-        $model->validate_version = (bool) $c['validate_version'] ?? false;
+        $model->validate_ip = (bool) ($c['validate_ip'] ?? false);
+        $model->validate_host = (bool) ($c['validate_host'] ?? false);
+        $model->validate_path = (bool) ($c['validate_path'] ?? false);
+        $model->validate_version = (bool) ($c['validate_version'] ?? false);
         $model->plugin = $c['plugin'] ?? 'Simple';
 
         $model->ips = null;
@@ -418,10 +418,10 @@ class Service implements InjectionAwareInterface
     public function update(\Model_ServiceLicense $s, array $data)
     {
         $s->plugin = $data['plugin'] ?? $s->plugin;
-        $s->validate_ip = (bool) $data['validate_ip'] ?? $s->validate_ip;
-        $s->validate_host = (bool) $data['validate_host'] ?? $s->validate_host;
-        $s->validate_path = (bool) $data['validate_path'] ?? $s->validate_path;
-        $s->validate_version = (bool) $data['validate_version'] ?? $s->validate_version;
+        $s->validate_ip = (bool) ($data['validate_ip'] ?? $s->validate_ip);
+        $s->validate_host = (bool) ($data['validate_host'] ?? $s->validate_host);
+        $s->validate_path = (bool) ($data['validate_path'] ?? $s->validate_path);
+        $s->validate_version = (bool) ($data['validate_version'] ?? $s->validate_version);
         if (isset($data['license_key']) && !empty($data['license_key'])) {
             $s->license_key = $data['license_key'];
         }
