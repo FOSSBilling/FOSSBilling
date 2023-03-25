@@ -61,8 +61,8 @@ class Service implements InjectionAwareInterface
                 WHERE 1';
 
         $type = $data['type'] ?? null;
-        $products_only = $data['products_only'] ?? null;
-        $active_only = $data['active_only'] ?? null;
+        $products_only = $data['products_only'] ?? true;
+        $active_only = $data['active_only'] ?? true;
 
         $params = [];
         if ($products_only) {
@@ -683,7 +683,7 @@ class Service implements InjectionAwareInterface
         $type = $data['type'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
-        $show_hidden = $data['show_hidden'] ?? null;
+        $show_hidden = $data['show_hidden'] ?? true;
 
         $params = [];
         if ($type) {

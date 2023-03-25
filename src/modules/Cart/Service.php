@@ -533,7 +533,7 @@ class Service implements InjectionAwareInterface
             $order->service_type = $item['type'];
             $order->unit = $item['unit'] ?? null;
             $order->period = $item['period'] ?? null;
-            $order->quantity = $item['quantity'] ??
+            $order->quantity = $item['quantity'] ?? null;
             $order->price = $item['price'] * $currency->conversion_rate;
             $order->discount = $item['discount_price'] * $currency->conversion_rate;
             $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;

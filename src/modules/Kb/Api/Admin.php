@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
     {
         $status =  $data['status'] ?? null;
         $search =  $data['search'] ?? null;
-        $cat =  $data['search'] ?? null;
+        $cat =  $data['cat'] ?? null;
 
         $pager = $this->getService()->searchArticles($status, $search, $cat);
 

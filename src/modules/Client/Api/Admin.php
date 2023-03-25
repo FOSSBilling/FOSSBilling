@@ -256,7 +256,7 @@ class Admin extends \Api_Abstract
         $service = $this->di['mod_service']('client');
 
         if (!is_null($data['email'] ?? null)) {
-            $email = $data['email'] ?? null;
+            $email = $data['email'];
             $email = $this->di['tools']->validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
@@ -285,13 +285,13 @@ class Admin extends \Api_Abstract
         $client->company_vat = $data['company_vat'] ?? empty($client->company_vat) ? null : $client->company_vat;
         $client->address_1 = $data['address_1'] ?? empty($client->address_1) ? null : $client->address_1;
         $client->address_2 = $data['address_2'] ?? empty($client->address_1) ? null : $client->address_1;
-        $client->phone = $data['phone'] ?? empty($client->address_1) ? null : $client->address_1; $client->phone;
+        $client->phone = $data['phone'] ?? empty($client->phone) ? null : $client->phone; $client->phone;
         $client->document_type = $data['document_type'] ?? empty($client->document_type) ? null : $client->document_type;
         $client->document_nr = $data['document_nr'] ?? empty($client->document_nr) ? null : $client->document_nr;
         $client->notes = $data['notes'] ?? empty($client->notes) ? null : $client->notes;
         $client->country = $data['country'] ?? empty($client->country) ? null : $client->country;
         $client->postcode = $data['postcode'] ?? empty($client->postcode) ? null : $client->postcode;
-        $client->state = $data['phonestate_cc'] ?? empty($client->state) ? null : $client->state;
+        $client->state = $data['phonestate_cc'] ?? empty($client->phonestate_cc) ? null : $client->phonestate_cc;
         $client->city = $data['city'] ?? empty($client->city) ? null : $client->city;
 
         $client->status = $data['status'] ?? empty($client->status) ? null : $client->status;
@@ -312,8 +312,8 @@ class Admin extends \Api_Abstract
 
         $client->client_group_id = $data['group_id'] ?? empty($client->group_id) ? null : $client->group_id;
         $client->company_number = $data['company_number'] ?? empty($client->company_number) ? null : $client->company_number;
-        $client->type = $data['type'] ?? $data['custom_10'] ?? empty($client->type) ? null : $client->type;
-        $client->lang = $data['lang'] ?? $data['custom_10'] ?? empty($client->lang) ? null : $client->lang;
+        $client->type = $data['type'] ?? empty($client->type) ? null : $client->type;
+        $client->lang = $data['lang'] ?? empty($client->lang) ? null : $client->lang;
 
         $client->updated_at = date('Y-m-d H:i:s');
 

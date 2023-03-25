@@ -652,7 +652,7 @@ class Service implements InjectionAwareInterface
         $model->name = $name;
         $model->ip = $ip;
 
-        $model->hostname = $data['hostname'] ?? false;
+        $model->hostname = $data['hostname'] ?? null;
         $model->assigned_ips = $data['assigned_ips'] ?? null;
         $model->active = $data['active'] ?? 1;
         $model->status_url = $data['status_url'] ?? null;

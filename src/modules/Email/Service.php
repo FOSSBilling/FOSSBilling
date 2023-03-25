@@ -555,7 +555,7 @@ class Service implements \Box\InjectionAwareInterface
         $mod = $this->di['mod']('email');
         $settings = $mod->getConfig();
         $tries = 0;
-        $time_limit = ($settings['search'] ?? 5) * 60;
+        $time_limit = ($settings['time_limit'] ?? 5) * 60;
         $start = time();
         while ($email = $this->di['db']->findOne('ModEmailQueue', ' status = \'unsent\' ORDER BY updated_at ')) {
             $this->_sendFromQueue($email);

@@ -833,7 +833,7 @@ class Service implements \Box\InjectionAwareInterface
         $altered = $this->di['events_manager']->fire(['event' => 'onBeforeGuestPublicTicketOpen', 'params' => $event_params]);
 
         $status = 'open';
-        $subject = $data['status'] ?? null;
+        $subject = $data['subject'] ?? null;
         $message = $data['message'] ?? null;
 
         if (is_array($altered)) {
