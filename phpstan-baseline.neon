@@ -21,11 +21,6 @@ parameters:
 			path: src/library/Server/Manager/Ispconfig3.php
 
 		-
-			message: "#^Access to an undefined property Server_Manager_Plesk\\:\\:\\$_client\\.$#"
-			count: 23
-			path: src/library/Server/Manager/Plesk.php
-
-		-
 			message: "#^Method Server_Manager_Plesk\\:\\:changeAccountDomain\\(\\) should return bool but return statement is missing\\.$#"
 			count: 1
 			path: src/library/Server/Manager/Plesk.php
