@@ -13,6 +13,8 @@ use PleskX\Api\Client;
 
 class Server_Manager_Plesk extends Server_Manager
 {
+    private $_client;
+
     public function init() {
         $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
 

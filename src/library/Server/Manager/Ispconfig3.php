@@ -534,7 +534,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
             try {
                 $this->_session = $this->_c->login($username, $password);
             } catch(Exception $e) {
-                throw new Server_Exception($e->getMessage(), $e->getCode());
+                throw new Server_Exception($e->getMessage(), [], $e->getCode());
             }
         }
 
@@ -728,7 +728,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
                 break;
             }
         } catch (SoapFault $e) {
-            throw new Server_Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Server_Exception($e->getMessage(), [], $e->getCode());
         }
 
         if(isset($soap_result)){
