@@ -26,16 +26,6 @@ parameters:
 			path: src/library/Server/Manager/Plesk.php
 
 		-
-			message: "#^Method Server_Manager_Plesk\\:\\:testConnection\\(\\) should return bool but return statement is missing\\.$#"
-			count: 1
-			path: src/library/Server/Manager/Plesk.php
-
-		-
-			message: "#^Undefined variable\\: \\$client$#"
-			count: 10
-			path: src/library/Server/Manager/Plesk.php
-
-		-
 			message: "#^Undefined variable\\: \\$domainId$#"
 			count: 1
 			path: src/library/Server/Manager/Plesk.php
