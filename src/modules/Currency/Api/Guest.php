@@ -80,6 +80,8 @@ class Guest extends \Api_Abstract
             $p = $price * $c['conversion_rate'];
         }
 
+        $p ??= 0;
+
         $p = match ($c['price_format']) {
             2 => number_format($p, 2, '.', ','),
             3 => number_format($p, 2, ',', '.'),
