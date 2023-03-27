@@ -13,6 +13,8 @@ use PleskX\Api\Client;
 
 class Server_Manager_Plesk extends Server_Manager
 {
+    private $_client;
+
     public function init() {
         $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
 
@@ -45,6 +47,8 @@ class Server_Manager_Plesk extends Server_Manager
         if ($stats->other->uptime < 0) {
             throw new Server_Exception('Connection to server failed');
         }
+
+        return true;
     }
     
     public function synchronizeAccount(Server_Account $a)
@@ -498,6 +502,8 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     private function _createClientProps(Server_Account $a) {
+        $client = $a->getClient();
+
         $props = [
             'cname'				=>	$client->getCompany(),
             'pname'				=>	$client->getFullname(),

@@ -409,7 +409,7 @@ class Server_Manager_Whm extends Server_Manager
                 'body'  => $params,
             ]);
         } catch (HttpExceptionInterface $error) {
-            $e = throw new Server_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
+            $e = throw new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
             $this->getLog()->err($e);
         }
         $body = $response->getContent();

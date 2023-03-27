@@ -67,7 +67,7 @@ class Server_Manager_Directadmin extends Server_Manager
     {
         $ips = $this->getIps();
         if(empty($ips)) {
-            throw new Server_Exception(sprintf('Server Manager DirectAdmin Error: "%s" ', 'There are no IPs on DirectAdmin server'));
+            throw new Server_Exception('Server Manager DirectAdmin Error: "There are no IPs on DirectAdmin server"');
         }
         $ip = $ips[array_rand($ips)];
         
@@ -394,7 +394,7 @@ class Server_Manager_Directadmin extends Server_Manager
                 $request = $client->request('GET', $url);
             }
         } catch (HttpExceptionInterface $error) {
-            $e = new Server_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
+            $e = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
             $this->getLog()->err($e);
             throw $e;
         }
@@ -413,7 +413,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $r = $this->_parseResponse($data);
         
         if(isset($r['error']) && $r['error'] == 1) {
-            throw new Server_Exception(sprintf('Server Manager DirectAdmin Error: "%s" ', $r['details']));
+            throw new Server_Exception('Server Manager DirectAdmin Error: :error', [':error' => $r['details']]);
         }
         
         $response = empty($r) ? array() : $r;
