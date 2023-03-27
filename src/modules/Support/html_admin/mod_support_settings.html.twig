@@ -23,177 +23,179 @@
 {% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Settings'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-helpdesks" data-bs-toggle="tab" role="tab">{{ 'Help desks'|trans }}</a>
-        </li>
-    </ul>
+    <div class="card-tabs">
 
-<div class="card">
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            <div class="card-body">
-                <h3>{{ 'Auto responder settings'|trans }}</h3>
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Settings'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-helpdesks" data-bs-toggle="tab" role="tab">{{ 'Help desks'|trans }}</a>
+            </li>
+        </ul>
 
-                {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
-                <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Enable auto responder'|trans }}</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioAutorespondEnableYes" type="radio" name="autorespond_enable" value="1"{% if params.autorespond_enable == "1" %} checked{% endif %}>
-                                <label class="form-check-label" for="radioAutorespondEnableYes">{{ 'Yes'|trans }}</label>
+        <div class="card">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                        <div class="card-body">
+                            <h3 class="card-title">{{ 'Auto responder settings'|trans }}</h3>
+
+                            {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
+                            <div class="mb-3 row">
+                                <label class="col-md-3 form-label">{{ 'Enable auto responder'|trans }}</label>
+                                <div class="col-md-6">
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" name="autorespond_enable" type="checkbox" {% if params.autorespond_enable %} checked="checked"{% endif %}>
+                                    </label>
+                                </div>
                             </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioAutorespondEnableNo" type="radio" name="autorespond_enable" value="0"{% if not params.autorespond_enable %} checked{% endif %}>
-                                <label class="form-check-label" for="radioAutorespondEnableNo">{{ 'No'|trans }}</label>
+                            <div id="autorespond_enable"{% if not params.autorespond_enable %} style="display:none;"{% endif %}>
+                                <div class="mb-3 row">
+                                    <label class="col-md-3 col-form-label">{{ 'Auto respond message'|trans }}</label>
+                                    <div class="col-md-6">
+                                        <select class="form-select" name="autorespond_message_id">
+                                            {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
+                                                <option value="{{ response.id }}"{% if params.autorespond_message_id == response.id %} selected{% endif %}>{{ response.title }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                        <div class="card-body">
+                            <h3 class="card-title">{{ 'Delay message'|trans }}</h3>
+                            <p class="card-subtitle">{{ 'Selected canned response message will be added to default reply message.'|trans }}</p>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 form-label">{{ 'Enable delay message'|trans }}</label>
+                                <div class="col-md-6">
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" name="delay_enable" type="checkbox" {% if params.delay_enable %} checked="checked"{% endif %}>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="delay_enable"{% if not params.delay_enable %} style="display:none;"{% endif %}>
+                                <div class="mb-3 row">
+                                    <label class="col-md-3 col-form-label">{{ 'Delay hours'|trans }}</label>
+                                    <div class="col-md-6">
+                                        <input class="form-control" type="text" name="delay_hours" value="{{ params.delay_hours|default(24) }}" placeholder="24">
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3 row">
+                                    <label class="col-md-3 col-form-label">{{ 'Delay reply'|trans }}</label>
+                                    <div class="col-md-6">
+                                        <select class="form-select" name="delay_message_id">
+                                            {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
+                                                <option value="{{ response.id }}"{% if params.delay_message_id == response.id %} selected{% endif %}>{{ response.title }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Wait time in hours'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="text" name="wait_hours"  value="{{ params.wait_hours }}">
+                                    <small class="form-hint">{{ 'Wait time - how many hours user needs to wait until consequent ticket submission.'|trans }}</small>
+                                </div>
+                            </div>
+                            <input type="hidden" name="ext" value="mod_support">
+                        </div>
+                        <div class="card-footer text-end">
+                            <input type="submit" class="btn btn-primary" value="{{ 'Update'|trans }}">
+                        </div>
+                    </form>
+                </div>
 
-                    <div id="autorespond_enable"{% if not params.autorespond_enable %} style="display:none;"{% endif %}>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Auto respond message'|trans }}</label>
-                            <div class="col">
-                                <select class="form-select" name="autorespond_message_id">
-                                    {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
-                                    <option value="{{ response.id }}"{% if params.autorespond_message_id == response.id %} selected{% endif %}>{{ response.title }}</option>
-                                    {% endfor %}
-                                </select>
+                <div class="tab-pane fade" id="tab-helpdesks">
+                        <div class="d-flex">
+                            <div class="mt-3 ms-3">
+                                <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#mod-support-new-helpdesk">
+                                    <svg class="icon me-2">
+                                        <use xlink:href="#plus" />
+                                    </svg>
+                                    {{ 'New helpdesk'|trans }}
+                                </a>
                             </div>
+                            {% include 'partial_search.html.twig' %}
                         </div>
-                    </div>
-
-                    <h5>{{ 'Delay message'|trans }}</h5>
-                    <p class="text-muted">{{ 'Selected canned response message will be added to default reply message.'|trans }}</p>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Enable delay message'|trans }}</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioDelayEnableYes" type="radio" name="delay_enable" value="1"{% if params.delay_enable == "1" %} checked{% endif %}>
-                                <label class="form-check-label" for="radioDelayEnableYes">{{ 'Yes'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioDelayEnableNo" type="radio" name="delay_enable" value="0"{% if not params.delay_enable %} checked{% endif %}>
-                                <label class="form-check-label" for="radioDelayEnableNo">{{ 'No'|trans }}</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="delay_enable"{% if not params.delay_enable %} style="display:none;"{% endif %}>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Delay hours'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="delay_hours" value="{{ params.delay_hours|default(24) }}" placeholder="24">
-                            </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Delay reply'|trans }}</label>
-                            <div class="col">
-                                <select class="form-select" name="delay_message_id">
-                                    {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
-                                    <option value="{{ response.id }}"{% if params.delay_message_id == response.id %} selected{% endif %}>{{ response.title }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Wait time in hours'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="wait_hours"  value="{{ params.wait_hours }}">
-                            <small class="form-hint">{{ 'Wait time - how many hours user needs to wait until consequent ticket submission.'|trans }}</small>
-                        </div>
-                    </div>
-
-                    <input type="hidden" name="ext" value="mod_support">
-                    <input type="submit" class="btn btn-primary w-100" value="{{ 'Update'|trans }}">
-                </form>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-helpdesks">
-            <div class="d-flex card-body">
-                <div class="ms-auto">
-                    {% include 'partial_search.html.twig' %}
-                    <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#mod-support-new-helpdesk">
-                        <svg class="icon me-2">
-                            <use xlink:href="#plus" />
-                        </svg>
-                        {{ 'New helpdesk'|trans }}
-                    </a>
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <thead>
+                        <tr>
+                            <th class="w-1">#</th>
+                            <th>{{ 'Title'|trans }}</th>
+                            <th>{{ 'Email'|trans }}</th>
+                            <th>{{ 'Close tickets after'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for helpdesk in admin.support_helpdesk_get_list({ 'per_page': 50, 'page': request.page }|merge(request)).list %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <a href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}">{{ helpdesk.name }}</a>
+                                </td>
+                                <td>{{ helpdesk.email }}</td>
+                                <td>{{ helpdesk.close_after }} hour(s)</td>
+                                <td>
+                                    <a class="btn btn-icon" href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                        <svg class="icon">
+                                            <use xlink:href="#edit" />
+                                        </svg>
+                                    </a>
+                                    <a class="btn btn-icon api-link"
+                                       href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"
+                                       data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                       data-api-confirm-btn="{{ 'Delete'|trans }}"
+                                       data-api-type="danger"
+                                       data-api-redirect="{{ 'extension/settings/support'|alink }}"
+                                       data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                                        <svg class="icon">
+                                            <use xlink:href="#delete" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-muted">{{ 'The list is empty'|trans }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th class="w-1">#</th>
-                        <th>{{ 'Title'|trans }}</th>
-                        <th>{{ 'Email'|trans }}</th>
-                        <th>{{ 'Close tickets after'|trans }}</th>
-                        <th class="w-1"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for helpdesk in admin.support_helpdesk_get_list({ 'per_page': 50, 'page': request.page }|merge(request)).list %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>
-                            <a href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}">{{ helpdesk.name }}</a>
-                        </td>
-                        <td>{{ helpdesk.email }}</td>
-                        <td>{{ helpdesk.close_after }} hour(s)</td>
-                        <td>
-                            <a class="btn btn-icon" href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}">
-                                <svg class="icon">
-                                    <use xlink:href="#edit" />
-                                </svg>
-                            </a>
-                            <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"
-                                data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-redirect="{{ 'extension/settings/support'|alink }}">
-                                <svg class="icon">
-                                    <use xlink:href="#delete" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="4" class="text-muted">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
-</div>
 
 {% include 'modal/mod_support_new_helpdesk.html.twig' %}
 {% endblock %}
 
 {% block js %}
 <script>
-    $(function() {
-        $('input[name=autorespond_enable]').on('click', function() {
-            if ($(this).val() == 1) {
+    document.addEventListener('DOMContentLoaded', () => {
+
+        let autoRespondToggle = document.querySelector('input[name=autorespond_enable]');
+        autoRespondToggle.addEventListener('click', (e) => {
+            if (e.target.checked) {
                 $('#autorespond_enable').slideDown();
             } else {
                 $('#autorespond_enable').slideUp();
             }
-        });
+        })
 
-        $('input[name=delay_enable]').on('click', function() {
-            if ($(this).val() == 1) {
+        let delayToggle = document.querySelector('input[name=delay_enable]');
+        delayToggle.addEventListener('click', (e) => {
+            if (e.target.checked) {
                 $('#delay_enable').slideDown();
             } else {
                 $('#delay_enable').slideUp();
             }
-        });
+        })
+
     });
 </script>
 {% endblock %}
