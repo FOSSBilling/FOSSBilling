@@ -111,13 +111,14 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
 
-        error_log('AVAILABLE ATTR: ' . $result->CommandResponse->DomainCheckResult['Available']);
+        if (isset($result->CommandResponse->DomainCheckResult['IsPremiumName']) && $result->CommandResponse->DomainCheckResult['IsPremiumName'] == 'true') {
+            throw new \Registrar_Exception("Premium domains cannot be registered.");
+        }
 
         if (isset($result->CommandResponse->DomainCheckResult['Available']) && $result->CommandResponse->DomainCheckResult['Available'] == 'true') {
-            error_log('DOMAIN AVAILABLE: true');
             return true;
         }
-        error_log('DOMAIN AVAILABLE: false');
+
         return false;
     }
 
@@ -160,11 +161,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $this->getLog()->info('API RESULT: ' . $data);
 
-        error_log('API RESULT: ' . $data);
-
         $result = simplexml_load_string($data);
-
-        // error_log('RESULT ARRAY 1: '.implode("\n", $result));
 
         if (isset($result['status']) && $result['status'] == 'error') {
             throw new Registrar_Exception($result['error'], null, 102);
@@ -243,8 +240,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
 
-        error_log('AFTER NS MODIFY: ' . $domain->__toString());
-
         // TODO
         // problem here: FOSSBilling doesn't display our error and will display 'nameservers updates' evern when this fails
 
@@ -311,14 +306,10 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         );
 
         $result = $this->_makeRequest($params);
-
-        error_log('TRANSFER ATTR: ' . $result->CommandResponse->DomainTransferCreateResult['Transfer']);
-
         if (isset($result->CommandResponse->DomainTransferCreateResult['Transfer']) && $result->CommandResponse->DomainTransferCreateResult['Transfer'] == 'true') {
-            error_log('DOMAIN TRANSFER: true');
             return true;
         }
-        error_log('DOMAIN TRANSFER: false');
+
         return false;
     }
 
@@ -347,8 +338,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         );
 
         $result = $this->_makeRequest($params);
-
-        error_log('INFO ATTR: ' . (string)$result->CommandResponse->DomainContactsResult);
 
         if (!isset($result->CommandResponse->DomainContactsResult)) {
             throw new Registrar_Exception($message = "API ERROR: could not retrieve domain details");
@@ -422,8 +411,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 $newDomain->{'setNs' . $i}((string)$NsArr[$i - 1]);
             }
         }
-
-        error_log('DOMAIN OBJ FIELDS: ' . $newDomain->__toString());
 
         return $newDomain;
     }
@@ -545,11 +532,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             $params['FRRegistrantBirthplace'] = $domain->getContactRegistrar()->getCountry();
         }
 
-        error_log('REGISTER API PARAMS: ' . implode("\n", $params));
-
         $result = $this->_makeRequest($params);
-
-        error_log('REGISTER API RESULT: ' . $result);
 
         return (isset($result->CommandResponse->DomainCreateResult['Registered'])
             && ($result->CommandResponse->DomainCreateResult['Registered'] == 'true'));
