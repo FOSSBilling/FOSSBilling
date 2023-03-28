@@ -48,12 +48,6 @@ First off, no matter how you plan to take part, please take a couple of minutes 
 
 This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) server.
 
-### Which 'branch' should I contribute to?
-
-The future of FOSSBilling is the /lara branch, which is a major rewrite of the codebase built on Laravel, but there is still a long way to go until we reach a release. This is the branch that you should contribute to if you want to contribute to the long-term future of the project.
-
-In the meantime, the /main branch is being maintained with bug fixes, security updates and small enhancements. It is the codebase that was inherited from BoxBilling with some small enhancements and updates. 
-
 ### Understanding the structure of FOSSBilling
 
 FOSSBilling is an open-source project &mdash; it's made up of over [50 modules](https://github.com/FOSSBilling/FOSSBilling/tree/master/src/modules). When you initially consider contributing to FOSSBilling, you might be unsure about which of those 50 modules implements the functionality you want to change or report a bug for. This section should help you with that.
@@ -197,8 +191,6 @@ Please be as clear and descriptive as possible in your commit messages, it makes
 ### PHP Style Guide
 
 All PHP must adhere to [PSR-12](https://www.php-fig.org/psr/psr-12/).
-
-The lara branch is a work in progress and is being built in Laravel. If you are not familiar with the framework then please take a look at the [Laravel docs](https://laravel.com/docs/9.x) before diving in. 
 
 ### Documentation Style Guide
 
