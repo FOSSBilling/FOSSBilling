@@ -314,7 +314,7 @@ if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(PATH_
 $config = require $configPath;
 require PATH_VENDOR . '/autoload.php';
 
-date_default_timezone_set($config['timezone']);
+date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 
 define('BB_DEBUG', $config['debug']);
 define('BB_URL', $config['url']);
