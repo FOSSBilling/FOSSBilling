@@ -23,18 +23,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header mb-3">
-    <h1 class="page-title">{{ 'Queues'|trans }}</h1>
-</div>
-
 <div class="card">
-    <div class="d-flex card-body">
-        <div class="ms-auto">
-            {% include 'partial_search.html.twig' %}
-        </div>
+    <div class="card-header">
+        <h3 class="card-title">{{ 'Queues'|trans }}</h3>
     </div>
-    <table class="table card-table table-vcenter table-striped text-nowrap">
-        <thead>
+    {% include 'partial_search.html.twig' %}
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
             <tr>
                 <th>{{ 'Name'|trans }}</th>
                 <th>{{ 'Extension'|trans }}</th>
@@ -42,40 +38,46 @@
                 <th>{{ 'Created'|trans }}</th>
                 <th class="w-1"></th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             {% set queues = admin.queue_get_list({ "per_page": 100, "page": request.page }|merge(request)) %}
             {% for i, queue in queues.list %}
-            <tr>
-                <td>{{ queue.name }}</td>
-                <td>{{ queue.mod }}</td>
-                <td class="text-center">{{ queue.messages_count }}</td>
-                <td>{{ queue.created_at|format_date }}</td>
-                <td class="actions">
-                    <a class="btn btn-icon api-link"
-                        href="{{ 'api/admin/queue/execute'|link({ 'queue': queue.name, 'CSRFToken': CSRFToken }) }}"
-                        data-api-confirm="{{ 'Are you sure?'|trans }}"
-                        data-api-reload="1">
-                        <svg class="icon">
-                            <use xlink:href="#check" />
-                        </svg>
-                    </a>
-                    {# <a class="btn btn-icon api-link"
+                <tr>
+                    <td>{{ queue.name }}</td>
+                    <td>{{ queue.mod }}</td>
+                    <td class="text-center">{{ queue.messages_count }}</td>
+                    <td>{{ queue.created_at|format_date }}</td>
+                    <td class="actions">
+                        <a class="btn btn-icon api-link"
+                           href="{{ 'api/admin/queue/execute'|link({ 'queue': queue.name, 'CSRFToken': CSRFToken }) }}"
+                           data-api-confirm="{{ 'Are you sure?'|trans }}"
+                           data-api-confirm-btn="{{ 'Execute'|trans }}"
+                           data-api-reload="1"
+                           data-bs-toggle="tooltip" data-bs-title="{{ 'Execute'|trans }}">
+                            <svg class="icon">
+                                <use xlink:href="#cog-play" />
+                            </svg>
+                        </a>
+                        {# <a class="btn btn-icon api-link"
                         href="{{ 'api/admin/queue/queue_delete'|link({ 'id': queue.name, 'CSRFToken': CSRFToken }) }}"
+                        data-api-type="danger"
+                        data-api-confirm-btn="{{ 'Delete'|trans }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
-                        data-api-reload="1">
+                        data-api-reload="1"
+                       data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
                         <svg class="icon">
                             <use xlink:href="#delete" />
                         </svg>
                     </a> #}
-                </td>
-            </tr>
+                    </td>
+                </tr>
             {% else %}
-            <tr>
-                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-            </tr>
+                <tr>
+                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

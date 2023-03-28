@@ -176,6 +176,8 @@ globalThis.bb = {
             Modals.create({
               type: linkElement.dataset.apiType ? linkElement.dataset.apiType : 'small-confirm',
               confirmButton: linkElement.dataset.apiConfirmBtn ? linkElement.dataset.apiConfirmBtn : 'Confirm',
+              content: linkElement.dataset.apiConfirmContent ? linkElement.dataset.apiConfirmContent : '',
+              confirmButtonColor: linkElement.dataset.apiConfirmBtnColor ? linkElement.dataset.apiConfirmBtnColor : 'primary',
               title: linkElement.dataset.apiConfirm,
               confirmCallback: function () {
                 API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {

@@ -38,19 +38,19 @@
             <tr>
                 <td>
                     {% if guest.extension_theme(true).code == theme.code %}
-                        <strong>{{ theme.code }}</strong>{% else %}{{ theme.code }}
+                        {{ theme.code }}{% else %}{{ theme.code }}
                     {% endif %}
                 </td>
                 <td>
                     {% if theme.hasSettings %}
                         <a class="btn btn-outline-primary" href="{{ 'theme'|alink }}/{{ theme.code }}">
                             <svg class="icon">
-                                <use xlink:href="#settings"/>
+                                <use xlink:href="#cog"/>
                             </svg>
                             {{ 'Settings'|trans }}
                         </a>
                     {% else %}
-                        <p>Theme does not have settings</p>
+                        <small class="form-hint p-2">Theme does not have settings</small>
                     {% endif %}
                     {% if guest.extension_theme(true).code != theme.code %}
                         <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
@@ -90,7 +90,7 @@
             <tr>
                 <td>
                     {% if guest.extension_theme(false).code == theme.code %}
-                        <strong>{{ theme.code|replace({ 'admin_': '' }) }}</strong>
+                        {{ theme.code|replace({ 'admin_': '' }) }}
                     {% else %}
                         {{ theme.code|replace({ 'admin_': '' }) }}
                     {% endif %}
@@ -99,12 +99,12 @@
                     {% if theme.hasSettings %}
                         <a class="btn btn-outline-primary" href="{{ 'theme'|alink }}/{{ theme.code }}">
                             <svg class="icon">
-                                <use xlink:href="#settings"/>
+                                <use xlink:href="#cog"/>
                             </svg>
                             {{ 'Settings'|trans }}
                         </a>
                     {% else %}
-                        <p>Theme does not have settings</p>
+                        <small class="form-hint p-2">Theme does not have settings</small>
                     {% endif %}
                     {% if guest.extension_theme(false).code != theme.code %}
                         <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"

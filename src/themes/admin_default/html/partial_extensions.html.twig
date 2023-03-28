@@ -1,47 +1,55 @@
 {% if header %}
-    <div class="help">
-        <h5>{{ header }}</h5>
+    <div class="card-header">
+        <h3 class="card-title">{{ header }}</h3>
     </div>
 {% endif %}
 
-<table class="table card-table table-vcenter table-striped text-nowrap">
-    <thead>
+<div class="table-responsive">
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <thead>
         <tr>
             <th></th>
             <th>{{ 'Extension'|trans }}</th>
             <th>{{ 'Description'|trans }}</th>
             <th class="w-1"></th>
         </tr>
-    </thead>
-    <tbody>
+        </thead>
+        <tbody>
         {% set extensions = admin.extension_get_latest({ "type": type}) %}
         {% for extension in extensions %}
-        <tr>
-            <td>
-                <img src="{{ extension.icon_url|default('assets/icons/cog.svg') }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
-            </td>
-            <td>
-                <strong>{{ extension.name }}</strong> {{ extension.version }}<br>
-                <span>by <a href="{{ extension.author.URL }}" target="_blank">{{ extension.author.name }}</a></span>
-            </td>
-            <td>
-                {{ extension.description|truncate(150) }}<br>
-                <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank" title="Project details">{{ 'Learn more'|trans }}</a>
-            </td>
-            <td>
-                <a class="btn btn-icon api-link" data-api-confirm="By installing '{{ extension.name }}', you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong. Continue?" data-api-reload="1" href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id, 'CSRFToken': CSRFToken }) }}" title="Install extension">
-                    <svg class="icon">
-                        <use xlink:href="#download" />
-                    </svg>
-                </a>
-            </td>
-        </tr>
+            <tr>
+                <td>
+                    <img src="{{ extension.icon_url|default('assets/icons/cog.svg') }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
+                </td>
+                <td>
+                    <strong>{{ extension.name }}</strong> {{ extension.version }}<br>
+                    <span>by <a href="{{ extension.author.URL }}" target="_blank">{{ extension.author.name }}</a></span>
+                </td>
+                <td>
+                    {{ extension.description|truncate(150) }}<br>
+                    <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Project details">{{ 'Learn more'|trans }}</a>
+                </td>
+                <td>
+                    <a class="btn btn-icon api-link"
+                       data-api-confirm="Are you sure?"
+                       data-api-confirm-btn="Install"
+                       data-api-confirm-content='By installing "{{ extension.name }}", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'
+                       data-api-reload="1"
+                       href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id, 'CSRFToken': CSRFToken }) }}"
+                       data-bs-toggle="tooltip" data-bs-title="Install extension">
+                        <svg class="icon">
+                            <use xlink:href="#download" />
+                        </svg>
+                    </a>
+                </td>
+            </tr>
         {% else %}
-        <tr>
-            <td colspan="4" class="aligncenter">
-                <a href="https://extensions.fossbilling.org/" target="_blank">Explore FOSSBilling extensions</a>
-            </td>
-        </tr>
+            <tr>
+                <td colspan="4" class="text-center">
+                    <a href="https://extensions.fossbilling.org/" target="_blank">Explore FOSSBilling extensions</a>
+                </td>
+            </tr>
         {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
+</div>
