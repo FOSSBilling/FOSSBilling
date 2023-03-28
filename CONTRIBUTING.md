@@ -200,4 +200,4 @@ Nextra uses Markdown and MDX. Please [see their guides](https://nextra.site/docs
 
 ## But, I still have a question!
 
-Drop a message to [Discord](https://fossbilling.org/discord) community for a question. Sometimes it takes time to respond; please be patient!
+Ask in the [forum](https://forum.fossbilling.org/) or drop a message to the [Discord](https://fossbilling.org/discord) community for a question. Sometimes it takes time to respond; please be patient!
