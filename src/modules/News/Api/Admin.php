@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $post = $this->di['db']->getExistingModelById('Post', $item['id'], 'Post not found');
@@ -54,8 +54,8 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('ID or slug is missing');
         }
 
-        $id = $this->di['array_get']($data, 'id');
-        $slug = $this->di['array_get']($data, 'slug');
+        $id = $data['id'] ?? null;
+        $slug = $data['slug'] ?? null;
 
         $model = null;
         if ($id) {
@@ -96,40 +96,40 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('Post', $data['id'], 'News item not found');
 
-        $description = $this->di['array_get']($data, 'description', $model->description);
+        $description = $data['description'] ?? $model->description;
         if (empty($description)) {
-            $description = $service->generateDescriptionFromContent($this->di['array_get']($data, 'content', $model->content));
+            $description = $service->generateDescriptionFromContent($data['content'] ?? $model->content);
         }
 
-        $model->content = $this->di['array_get']($data, 'content', $model->content);
-        $model->title = $this->di['array_get']($data, 'title', $model->title);
+        $model->content = $data['content'] ?? $model->content;
+        $model->title = $data['title'] ?? $model->title;
         $model->description = $description;
-        $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
-        $model->image = $this->di['array_get']($data, 'image', $model->image);
-        $model->section = $this->di['array_get']($data, 'section', $model->section);
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->slug = $data['slug'] ?? $model->slug;
+        $model->image = $data['image'] ?? $model->image;
+        $model->section = $data['section'] ?? $model->section;
+        $model->status = $data['status'] ?? $model->status;
 
-        $publish_at = $this->di['array_get']($data, 'publish_at', 0);
+        $publish_at = $data['publish_at'] ?? 0;
         if ($publish_at) {
             $model->publish_at = date('Y-m-d H:i:s', strtotime($publish_at));
         }
 
-        $published_at = $this->di['array_get']($data, 'published_at', 0);
+        $published_at = $data['published_at'] ?? 0;
         if ($published_at) {
             $model->published_at = date('Y-m-d H:i:s', strtotime($published_at));
         }
 
-        $expires_at = $this->di['array_get']($data, 'expires_at', 0);
+        $expires_at = $data['expires_at'] ?? 0;
         if ($expires_at) {
             $model->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
         }
 
-        $created_at = $this->di['array_get']($data, 'created_at', 0);
+        $created_at = $data['created_at'] ?? 0;
         if ($created_at) {
             $model->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        $updated_at = $this->di['array_get']($data, 'updated_at', 0);
+        $updated_at = $data['updated_at'] ?? 0;
         if ($created_at) {
             $model->updated_at = date('Y-m-d H:i:s', strtotime($updated_at));
         }
@@ -164,8 +164,8 @@ class Admin extends \Api_Abstract
         $model->title = $data['title'];
         $model->description = null;
         $model->slug = $this->di['tools']->slug($data['title']);
-        $model->status = $this->di['array_get']($data, 'status', null);
-        $model->content = $this->di['array_get']($data, 'content', null);
+        $model->status = $data['status'] ?? null;
+        $model->content = $data['content'] ?? null;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);

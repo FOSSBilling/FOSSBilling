@@ -32,9 +32,6 @@ class AdminTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -74,9 +71,6 @@ class AdminTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -102,9 +96,6 @@ class AdminTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['db'] = $databaseMock;
         $di['request'] = new \Box_Request($di);
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
@@ -116,9 +107,6 @@ class AdminTest extends \BBTestCase {
     public function testlogEmptyMParam()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
@@ -134,9 +122,6 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $adminApi = new \Box\Mod\Activity\Api\Admin();
         $adminApi->setService($service);

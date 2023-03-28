@@ -40,9 +40,7 @@ class AdminTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -67,9 +65,7 @@ class AdminTest extends \BBTestCase {
         $di['config'] = $configMock;
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setDi($di);
         $result = $this->api->call($data);
@@ -94,9 +90,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(1));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);

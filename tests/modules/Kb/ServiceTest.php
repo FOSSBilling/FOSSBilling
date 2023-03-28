@@ -406,9 +406,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Kb\Service();
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $service->setDi($di);
 
         $result = $service->categoryGetSearchQuery($data);

@@ -32,7 +32,7 @@ class Client extends \Api_Abstract
     */
     public function checkout($data)
     {
-        $gateway_id = $this->di['array_get']($data, 'gateway_id');
+        $gateway_id = $data['gateway_id'] ?? null;
         $cart = $this->getService()->getSessionCart();
         $client = $this->getIdentity();
 

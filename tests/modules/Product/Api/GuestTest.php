@@ -39,9 +39,7 @@ class GuestTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -88,9 +86,7 @@ class GuestTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
@@ -114,9 +110,7 @@ class GuestTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
@@ -136,9 +130,7 @@ class GuestTest extends \BBTestCase {
             ->method('findOneActiveBySlug')
             ->will($this->returnValue($model ));
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -178,9 +170,7 @@ class GuestTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['pager'] = $pagerMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -209,9 +199,7 @@ class GuestTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->api->setDi($di);
 
@@ -231,9 +219,7 @@ class GuestTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
 
         $arr = array(
@@ -264,9 +250,7 @@ class GuestTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
 
         $arr = array(

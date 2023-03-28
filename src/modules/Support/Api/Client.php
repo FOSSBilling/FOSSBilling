@@ -37,7 +37,7 @@ class Client extends \Api_Abstract
         $data['client_id'] = $identity->id;
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $bindings, $per_page);
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');

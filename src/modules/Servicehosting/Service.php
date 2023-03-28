@@ -93,7 +93,7 @@ class Service implements InjectionAwareInterface
         $model->sld = $c['sld'];
         $model->tld = $c['tld'];
         $model->ip = $server->ip;
-        $model->reseller = $this->di['array_get']($c, 'reseller', false);
+        $model->reseller = $c['reseller'] ?? false;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -308,8 +308,10 @@ class Service implements InjectionAwareInterface
 
     public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
-        if (!isset($data['tld']) || empty($data['tld']) ||
-           !isset($data['sld']) || empty($data['sld'])) {
+        if (
+            !isset($data['tld']) || empty($data['tld']) ||
+            !isset($data['sld']) || empty($data['sld'])
+        ) {
             throw new \Box_Exception('Domain sld or tld is missing');
         }
 
@@ -332,8 +334,10 @@ class Service implements InjectionAwareInterface
 
     public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
-        if (!isset($data['password']) || !isset($data['password_confirm'])
-                || $data['password'] != $data['password_confirm']) {
+        if (
+            !isset($data['password']) || !isset($data['password_confirm'])
+            || $data['password'] != $data['password_confirm']
+        ) {
             throw new \Box_Exception('Account password is missing or is not valid');
         }
 
@@ -496,9 +500,9 @@ class Service implements InjectionAwareInterface
             $result['id'] = $model->id;
             $result['active'] = $model->active;
             $result['secure'] = $model->secure;
-            if(!is_null($model->assigned_ips)){
-            $result['assigned_ips'] = json_decode($model->assigned_ips, 1);
-            }else{
+            if (!is_null($model->assigned_ips)) {
+                $result['assigned_ips'] = json_decode($model->assigned_ips, 1);
+            } else {
                 $result['assigned_ips'] = '';
             }
             $result['status_url'] = $model->status_url;
@@ -648,23 +652,23 @@ class Service implements InjectionAwareInterface
         $model->name = $name;
         $model->ip = $ip;
 
-        $model->hostname = $this->di['array_get']($data, 'hostname');
-        $model->assigned_ips = $this->di['array_get']($data, 'assigned_ips');
-        $model->active = $this->di['array_get']($data, 'active', 1);
-        $model->status_url = $this->di['array_get']($data, 'status_url');
-        $model->max_accounts = $this->di['array_get']($data, 'max_accounts');
+        $model->hostname = $data['hostname'] ?? null;
+        $model->assigned_ips = $data['assigned_ips'] ?? null;
+        $model->active = $data['active'] ?? 1;
+        $model->status_url = $data['status_url'] ?? null;
+        $model->max_accounts = $data['max_accounts'] ?? null;
 
-        $model->ns1 = $this->di['array_get']($data, 'ns1');
-        $model->ns2 = $this->di['array_get']($data, 'ns2');
-        $model->ns3 = $this->di['array_get']($data, 'ns3');
-        $model->ns4 = $this->di['array_get']($data, 'ns4');
+        $model->ns1 = $data['ns1'] ?? null;
+        $model->ns2 = $data['ns2'] ?? null;
+        $model->ns3 = $data['ns3'] ?? null;
+        $model->ns4 = $data['ns4'] ?? null;
 
         $model->manager = $manager;
-        $model->username = $this->di['array_get']($data, 'username');
-        $model->password = $this->di['array_get']($data, 'password');
-        $model->accesshash = $this->di['array_get']($data, 'accesshash');
-        $model->port = $this->di['array_get']($data, 'port');
-        $model->secure = $this->di['array_get']($data, 'secure', 0);
+        $model->username = $data['username'] ?? null;
+        $model->password = $data['password'] ?? null;
+        $model->accesshash = $data['accesshash'] ?? null;
+        $model->port = $data['port'] ?? null;
+        $model->secure = $data['secure'] ?? 0;
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
@@ -686,11 +690,11 @@ class Service implements InjectionAwareInterface
 
     public function updateServer(\Model_ServiceHostingServer $model, array $data)
     {
-        $model->name = $this->di['array_get']($data, 'name', $model->name);
-        $model->ip = $this->di['array_get']($data, 'ip', $model->ip);
-        $model->hostname = $this->di['array_get']($data, 'hostname', $model->hostname);
+        $model->name = $data['name'] ?? $model->name;
+        $model->ip = $data['ip'] ?? $model->ip;
+        $model->hostname = $data['hostname'] ?? $model->hostname;
 
-        $assigned_ips = $this->di['array_get']($data, 'assigned_ips', '');
+        $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
             $array = explode(PHP_EOL, $data['assigned_ips']);
             $array = array_map('trim', $array);
@@ -698,20 +702,20 @@ class Service implements InjectionAwareInterface
             $model->assigned_ips = json_encode($array);
         }
 
-        $model->active = $this->di['array_get']($data, 'active', $model->active);
-        $model->status_url = $this->di['array_get']($data, 'status_url', $model->status_url);
-        $model->max_accounts = $this->di['array_get']($data, 'max_accounts', $model->max_accounts);
-        $model->ns1 = $this->di['array_get']($data, 'ns1', $model->ns1);
-        $model->ns2 = $this->di['array_get']($data, 'ns2', $model->ns2);
-        $model->ns3 = $this->di['array_get']($data, 'ns3', $model->ns3);
-        $model->ns4 = $this->di['array_get']($data, 'ns4', $model->ns4);
-        $model->manager = $this->di['array_get']($data, 'manager', $model->manager);
-        $model->accesshash = $this->di['array_get']($data, 'accesshash', $model->accesshash);
-        $model->port = $this->di['array_get']($data, 'port', $model->port);
-        $model->secure = $this->di['array_get']($data, 'secure', $model->secure);
-        $model->username = $this->di['array_get']($data, 'username', $model->username);
-        $model->password = $this->di['array_get']($data, 'password', $model->password);
-        $model->accesshash = $this->di['array_get']($data, 'accesshash', $model->accesshash);
+        $model->active = $data['active'] ?? $model->active;
+        $model->status_url = $data['status_url'] ?? $model->status_url;
+        $model->max_accounts = $data['max_accounts'] ?? $model->max_accounts;
+        $model->ns1 = $data['ns1'] ?? $model->ns1;
+        $model->ns2 = $data['ns2'] ?? $model->ns2;
+        $model->ns3 = $data['ns3'] ?? $model->ns3;
+        $model->ns4 = $data['ns4'] ?? $model->ns4;
+        $model->manager = $data['manager'] ?? $model->manager;
+        $model->accesshash = $data['accesshash'] ?? $model->accesshash;
+        $model->port = $data['port'] ?? $model->port;
+        $model->secure = $data['secure'] ?? $model->secure;
+        $model->username = $data['username'] ?? $model->username;
+        $model->password = $data['password'] ?? $model->password;
+        $model->accesshash = $data['accesshash'] ?? $model->accesshash;
 
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -789,7 +793,7 @@ class Service implements InjectionAwareInterface
 
     public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null)
     {
-        if(is_null($model->config)){
+        if (is_null($model->config)) {
             $model->config = '';
         }
         $result = [
@@ -816,20 +820,20 @@ class Service implements InjectionAwareInterface
 
     public function updateHp(\Model_ServiceHostingHp $model, array $data)
     {
-        $model->name = $this->di['array_get']($data, 'name', $model->name);
-        $model->bandwidth = $this->di['array_get']($data, 'bandwidth', $model->bandwidth);
-        $model->quota = $this->di['array_get']($data, 'quota', $model->quota);
-        $model->max_addon = $this->di['array_get']($data, 'max_addon', $model->max_addon);
-        $model->max_ftp = $this->di['array_get']($data, 'max_ftp', $model->max_ftp);
-        $model->max_sql = $this->di['array_get']($data, 'max_sql', $model->max_sql);
-        $model->max_pop = $this->di['array_get']($data, 'max_pop', $model->max_pop);
-        $model->max_sub = $this->di['array_get']($data, 'max_sub', $model->max_sub);
-        $model->max_park = $this->di['array_get']($data, 'max_park', $model->max_park);
+        $model->name = $data['name'] ?? $model->name;
+        $model->bandwidth = $data['bandwidth'] ?? $model->bandwidth;
+        $model->quota = $data['quota'] ?? $model->quota;
+        $model->max_addon = $data['max_addon'] ?? $model->max_addon;
+        $model->max_ftp = $data['max_ftp'] ?? $model->max_ftp;
+        $model->max_sql = $data['max_sql'] ?? $model->max_sql;
+        $model->max_pop = $data['max_pop'] ?? $model->max_pop;
+        $model->max_sub = $data['max_sub'] ?? $model->max_sub;
+        $model->max_park = $data['max_park'] ?? $model->max_park;
 
         /* add new config value to hosting plan */
         $config = json_decode($model->config, 1);
 
-        $inConfig = $this->di['array_get']($data, 'config');
+        $inConfig = $data['config'] ?? null;
 
         if (is_array($inConfig)) {
             foreach ($inConfig as $key => $val) {
@@ -842,8 +846,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $newConfigName = $this->di['array_get']($data, 'new_config_name');
-        $newConfigValue = $this->di['array_get']($data, 'new_config_value');
+        $newConfigName = $data['new_config_name'] ?? null;
+        $newConfigValue = $data['new_config_value'] ?? null;
         if (!empty($newConfigName) && !empty($newConfigValue)) {
             $config[$newConfigName] = $newConfigValue;
         }
@@ -862,15 +866,15 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->dispense('ServiceHostingHp');
         $model->name = $name;
 
-        $model->bandwidth = $this->di['array_get']($data, 'bandwidth', 1024 * 1024);
-        $model->quota = $this->di['array_get']($data, 'quota', 1024 * 1024);
+        $model->bandwidth = $data['bandwidth'] ?? 1024 * 1024;
+        $model->quota = $data['quota'] ?? 1024 * 1024;
 
-        $model->max_addon = $this->di['array_get']($data, 'max_addon', 1);
-        $model->max_park = $this->di['array_get']($data, 'max_park', 1);
-        $model->max_sub = $this->di['array_get']($data, 'max_sub', 1);
-        $model->max_pop = $this->di['array_get']($data, 'max_pop', 1);
-        $model->max_sql = $this->di['array_get']($data, 'max_sql', 1);
-        $model->max_ftp = $this->di['array_get']($data, 'max_ftp', 1);
+        $model->max_addon = $data['max_addon'] ?? 1;
+        $model->max_park = $data['max_park'] ?? 1;
+        $model->max_sub = $data['max_sub'] ?? 1;
+        $model->max_pop = $data['max_pop'] ?? 1;
+        $model->max_sql = $data['max_sql'] ?? 1;
+        $model->max_ftp = $data['max_ftp'] ?? 1;
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
@@ -976,7 +980,7 @@ class Service implements InjectionAwareInterface
     public function getFreeTlds(\Model_Product $product)
     {
         $config = $this->di['tools']->decodeJ($product->config);
-        $freeTlds = $this->di['array_get']($config, 'free_tlds', []);
+        $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {
             $result[] = ['tld' => $tld];

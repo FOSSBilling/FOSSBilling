@@ -46,7 +46,7 @@ class Admin extends \Api_Abstract
      */
     public function get_latest($data)
     {
-        $type = $this->di['array_get']($data, 'type', null);
+        $type = $data['type'] ?? null;
         try {
             $list = $this->di['extension']->getLatest($type);
         } catch(\Exception) {

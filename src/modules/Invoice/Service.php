@@ -74,19 +74,19 @@ class Service implements InjectionAwareInterface
 
         $params = [];
 
-        $search = $this->di['array_get']($data, 'search', null);
-        $order_id = $this->di['array_get']($data, 'order_id', null);
-        $id = $this->di['array_get']($data, 'id', null);
-        $id_nr = $this->di['array_get']($data, 'nr', null);
-        $client_id = $this->di['array_get']($data, 'client_id', null);
-        $client = $this->di['array_get']($data, 'client', null);
-        $created_at = $this->di['array_get']($data, 'created_at', null);
-        $date_from = $this->di['array_get']($data, 'date_from', null);
-        $date_to = $this->di['array_get']($data, 'date_to', null);
-        $paid_at = $this->di['array_get']($data, 'paid_at', null);
-        $status = $this->di['array_get']($data, 'status', null);
-        $approved = $this->di['array_get']($data, 'approved', null);
-        $currency = $this->di['array_get']($data, 'currency', null);
+        $search = $data['search'] ?? null;
+        $order_id = $data['order_id'] ?? null;
+        $id = $data['id'] ?? null;
+        $id_nr = $data['nr'] ?? null;
+        $client_id = $data['client_id'] ?? null;
+        $client = $data['client'] ?? null;
+        $created_at = $data['created_at'] ?? null;
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
+        $paid_at = $data['paid_at'] ?? null;
+        $status = $data['status'] ?? null;
+        $approved = $data['approved'] ?? null;
+        $currency = $data['currency'] ?? null;
 
         if ($order_id) {
             $sql .= ' AND pi.type = :item_type AND pi.rel_id = :order_id';
@@ -480,9 +480,9 @@ class Service implements InjectionAwareInterface
         $model->currency = $client->currency;
         $model->approved = 0;
 
-        $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
-        $model->text_1 = $this->di['array_get']($data, 'text_1', $model->text_1);
-        $model->text_2 = $this->di['array_get']($data, 'text_2', $model->text_2);
+        $model->gateway_id = $data['gateway_id'] ?? $model->gateway_id;
+        $model->text_1 = $data['text_1'] ?? $model->text_1;
+        $model->text_2 = $data['text_2'] ?? $model->text_2;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $invoiceId = $this->di['db']->store($model);
@@ -761,61 +761,61 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
-        $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
-        $model->text_1 = $this->di['array_get']($data, 'text_1', $model->text_1);
-        $model->text_2 = $this->di['array_get']($data, 'text_2', $model->text_2);
-        $model->seller_company = $this->di['array_get']($data, 'seller_company', $model->seller_company);
-        $model->seller_company_vat = $this->di['array_get']($data, 'seller_company_vat', $model->seller_company_vat);
-        $model->seller_company_number = $this->di['array_get']($data, 'seller_company_number', $model->seller_company_number);
-        $model->seller_address = $this->di['array_get']($data, 'seller_address', $model->seller_address);
-        $model->seller_phone = $this->di['array_get']($data, 'seller_phone', $model->seller_phone);
-        $model->seller_email = $this->di['array_get']($data, 'seller_email', $model->seller_email);
-        $model->buyer_first_name = $this->di['array_get']($data, 'buyer_first_name', $model->buyer_first_name);
-        $model->buyer_last_name = $this->di['array_get']($data, 'buyer_last_name', $model->buyer_last_name);
-        $model->buyer_company = $this->di['array_get']($data, 'buyer_company', $model->buyer_company);
-        $model->buyer_company_vat = $this->di['array_get']($data, 'buyer_company_vat', $model->buyer_company_vat);
-        $model->buyer_company_number = $this->di['array_get']($data, 'buyer_company_number', $model->buyer_company_number);
-        $model->buyer_address = $this->di['array_get']($data, 'buyer_address', $model->buyer_address);
-        $model->buyer_city = $this->di['array_get']($data, 'buyer_city', $model->buyer_city);
-        $model->buyer_state = $this->di['array_get']($data, 'buyer_state', $model->buyer_state);
-        $model->buyer_country = $this->di['array_get']($data, 'buyer_country', $model->buyer_country);
-        $model->buyer_zip = $this->di['array_get']($data, 'buyer_zip', $model->buyer_zip);
-        $model->buyer_phone = $this->di['array_get']($data, 'buyer_phone', $model->buyer_phone);
-        $model->buyer_email = $this->di['array_get']($data, 'buyer_email', $model->buyer_email);
+        $model->gateway_id = $data['gateway_id'] ?? (empty($model->gateway_id) ? null : $model->gateway_id); 
+        $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
+        $model->text_2 = $data['text_2'] ?? (empty($model->text_2) ? null : $model->text_2);
+        $model->seller_company = $data['seller_company'] ?? (empty($model->seller_company) ? null : $model->seller_company);
+        $model->seller_company_vat = $data['seller_company_vat'] ?? (empty($model->seller_company_vat) ? null : $model->seller_company_vat);
+        $model->seller_company_number = $data['seller_company_number'] ?? (empty($model->seller_company_number) ? null : $model->seller_company_number);
+        $model->seller_address = $data['seller_address'] ?? (empty($model->seller_address) ? null : $model->seller_address);
+        $model->seller_phone = $data['seller_phone'] ?? (empty($model->seller_phone) ? null : $model->seller_phone);
+        $model->seller_email = $data['seller_email'] ?? (empty($model->seller_email) ? null : $model->seller_email);
+        $model->buyer_first_name = $data['buyer_first_name'] ?? (empty($model->buyer_first_name) ? null : $model->buyer_first_name);
+        $model->buyer_last_name = $data['buyer_last_name'] ?? (empty($model->buyer_last_name) ? null : $model->buyer_last_name);
+        $model->buyer_company = $data['buyer_company'] ?? (empty($model->buyer_company) ? null : $model->buyer_company);
+        $model->buyer_company_vat = $data['buyer_company_vat'] ?? (empty($model->buyer_company_vat) ? null : $model->buyer_company_vat);
+        $model->buyer_company_number = $data['buyer_company_number'] ?? (empty($model->buyer_company_number) ? null : $model->buyer_company_number);
+        $model->buyer_address = $data['buyer_address'] ?? (empty($model->buyer_address) ? null : $model->buyer_address);
+        $model->buyer_city = $data['buyer_city'] ?? (empty($model->buyer_city) ? null : $model->buyer_city);
+        $model->buyer_state = $data['buyer_state'] ?? (empty($model->buyer_state) ? null : $model->buyer_state);
+        $model->buyer_country = $data['buyer_country'] ?? (empty($model->buyer_country) ? null : $model->buyer_country);
+        $model->buyer_zip = $data['buyer_zip'] ?? (empty($model->buyer_zip) ? null : $model->buyer_zip);
+        $model->buyer_phone = $data['buyer_phone'] ?? (empty($model->buyer_phone) ? null : $model->buyer_phone);
+        $model->buyer_email = $data['buyer_email'] ?? (empty($model->buyer_email) ? null : $model->buyer_email);
 
-        $paid_at = $this->di['array_get']($data, 'paid_at', $model->paid_at);
+        $paid_at = $data['paid_at'] ?? $model->paid_at;
         if (empty($paid_at)) {
             $model->paid_at = null;
         } else {
             $model->paid_at = date('Y-m-d H:i:s', strtotime($paid_at));
         }
 
-        $due_at = $this->di['array_get']($data, 'due_at', $model->due_at);
+        $due_at = $data['due_at'] ?? $model->due_at;
         if (empty($due_at)) {
             $model->due_at = null;
         } else {
             $model->due_at = date('Y-m-d H:i:s', strtotime($due_at));
         }
 
-        $model->serie = $this->di['array_get']($data, 'serie', $model->serie);
-        $model->nr = $this->di['array_get']($data, 'nr', $model->nr);
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
-        $model->taxrate = $this->di['array_get']($data, 'taxrate', $model->taxrate);
-        $model->taxname = $this->di['array_get']($data, 'taxname', $model->taxname);
-        $model->approved = (int) $this->di['array_get']($data, 'approved', $model->approved);
-        $model->notes = $this->di['array_get']($data, 'notes', $model->notes);
+        $model->serie = $data['serie'] ?? (empty($model->serie) ? null : $model->serie);
+        $model->nr = $data['nr'] ?? (empty($model->nr) ? null : $model->nr);
+        $model->status = $data['status'] ?? (empty($model->status) ? null : $model->status);
+        $model->taxrate = $data['taxrate'] ?? (empty($model->taxrate) ? null : $model->taxrate);
+        $model->taxname = $data['taxname'] ?? (empty($model->taxname) ? null : $model->taxname);
+        $model->approved = (int) $data['approved'] ?? (empty($model->approved) ? null : $model->approved);
+        $model->notes = $data['notes'] ?? (empty($model->notes) ? null : $model->notes);
 
-        $created_at = $this->di['array_get']($data, 'created_at', '');
+        $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
             $model->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        $ni = $this->di['array_get']($data, 'new_item', []);
+        $ni = $data['new_item'] ?? [];
         if (isset($ni['title']) && !empty($ni['title'])) {
             $invoiceItemService->addNew($model, $ni);
         }
 
-        $items = $this->di['array_get']($data, 'items', []);
+        $items = $data['items'] ?? [];
         foreach ($items as $id => $d) {
             $item = $this->di['db']->load('InvoiceItem', $id);
             if ($item instanceof \Model_InvoiceItem) {
@@ -824,6 +824,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
+
         $this->di['db']->store($model);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => ['id' => $model->id]]);

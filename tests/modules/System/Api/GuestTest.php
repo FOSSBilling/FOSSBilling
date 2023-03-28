@@ -122,9 +122,7 @@ class GuestTest extends \BBTestCase {
             ->method('getPeriod')
             ->will($this->returnValue('periodTtitleValue'));
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $this->api->setService($servuceMock);
 
@@ -137,9 +135,7 @@ class GuestTest extends \BBTestCase {
         $data = array();
         $expected = '-';
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $result = $this->api->period_title($data);
         $this->assertIsString($result);

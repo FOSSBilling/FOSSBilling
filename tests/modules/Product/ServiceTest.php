@@ -53,9 +53,6 @@ class ServiceTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $this->service->setDi($di);
 
@@ -325,9 +322,7 @@ class ServiceTest extends \BBTestCase
         $di['db']        = $dbMock;
         $di['tools']     = $toolMock;
         $di['logger']    = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $serviceMock->setDi($di);
 
@@ -521,9 +516,6 @@ class ServiceTest extends \BBTestCase
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $this->service->setDi($di);
 
@@ -625,9 +617,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $di                = new \Box_Di();
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         list($sql, $params) = $this->service->getPromoSearchQuery($data);
@@ -659,9 +649,6 @@ class ServiceTest extends \BBTestCase
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($systemServiceMock) { return $systemServiceMock; });
         $di['logger']      = new \Box_Log();
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $this->service->setDi($di);
         $result = $this->service->createPromo('code', 'percentage', 50, array(), array(), array(), array());
@@ -719,9 +706,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $this->service->setDi($di);
         $result = $this->service->updatePromo($model, $data);
@@ -760,9 +745,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $di                = new \Box_Di();
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         list($sql, $params) = $this->service->getProductSearchQuery($data);
@@ -805,9 +788,6 @@ class ServiceTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $serviceMock->setDi($di);
         $result = $serviceMock->toProductCategoryApiArray($model);
@@ -864,9 +844,6 @@ class ServiceTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $serviceMock->setDi($di);
         $result = $serviceMock->toProductCategoryApiArray($model);

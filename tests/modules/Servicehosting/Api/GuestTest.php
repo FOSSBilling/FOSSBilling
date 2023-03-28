@@ -23,9 +23,7 @@ class GuestTest extends \BBTestCase
 
         $di['validator'] = $validatorMock;
 
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
@@ -59,9 +57,7 @@ class GuestTest extends \BBTestCase
 
         $di['validator'] = $validatorMock;
 
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());

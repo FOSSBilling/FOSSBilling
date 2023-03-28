@@ -43,9 +43,6 @@ class ServiceTest extends \BBTestCase
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -205,9 +202,7 @@ class ServiceTest extends \BBTestCase
             'custom_9'       => 'string',
             'custom_10'      => 'string',
         );
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $service = new Service();
         $service->setDi($di);
@@ -261,9 +256,7 @@ class ServiceTest extends \BBTestCase
         $data            = array(
             'email' => 'email@example.com',
         );
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $service = new Service();
         $service->setDi($di);
@@ -318,9 +311,7 @@ class ServiceTest extends \BBTestCase
         $data            = array(
             'email' => 'email@example.com',
         );
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
 
         $service = new Service();
         $service->setDi($di);

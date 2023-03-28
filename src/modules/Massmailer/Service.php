@@ -65,7 +65,7 @@ class Service implements \Box\InjectionAwareInterface
         $params = [];
 
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
-        $status = $this->di['array_get']($data, 'status', null);
+        $status = $data['status'] ?? null;
 
         if (null !== $status) {
             $sql .= ' AND status = :status';
@@ -188,7 +188,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         $emailSettings = $this->di['mod_config']('email');
-        $transport = $this->di['array_get']($emailSettings, 'mailer', 'sendmail');
+        $transport = $data['mailer'] ?? 'sendmail';
 
         $mail->send($transport, $emailSettings);
 

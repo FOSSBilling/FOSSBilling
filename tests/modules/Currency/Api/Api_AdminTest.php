@@ -185,9 +185,7 @@ class Api_AdminTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['pager']     = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $adminApi->setDi($di);
 
         $service = new \Box\Mod\Currency\Service();
@@ -341,9 +339,6 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $adminApi->setService($service);
         $adminApi->setDi($di);
@@ -376,9 +371,6 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $adminApi->setService($service);
         $adminApi->setDi($di);
@@ -414,9 +406,6 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $adminApi->setDi($di);
         $adminApi->setService($service);

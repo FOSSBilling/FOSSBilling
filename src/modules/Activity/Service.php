@@ -42,9 +42,9 @@ class Service implements InjectionAwareInterface
         }
 
         $entry = $this->di['db']->dispense('ActivitySystem');
-        $entry->client_id = $this->di['array_get']($data, 'client_id', null);
-        $entry->admin_id = $this->di['array_get']($data, 'admin_id', null);
-        $entry->priority = $this->di['array_get']($data, 'priority', null);
+        $entry->client_id = $data['client_id'] ?? null;
+        $entry->admin_id = $data['admin_id'] ?? null;
+        $entry->priority = $data['priority'] ?? null;
         $entry->message = $data['message'];
         $entry->created_at = date('Y-m-d H:i:s');
         $entry->updated_at = date('Y-m-d H:i:s');
@@ -103,13 +103,13 @@ class Service implements InjectionAwareInterface
                 left join client as c on c.id = m.client_id';
 
         $params = [];
-        $search = $this->di['array_get']($data, 'search', null);
-        $priority = $this->di['array_get']($data, 'priority', null);
-        $only_staff = $this->di['array_get']($data, 'only_staff', null);
-        $admin_id = $this->di['array_get']($data, 'admin_id', null);
-        $only_clients = $this->di['array_get']($data, 'only_clients', null);
-        $no_info = $this->di['array_get']($data, 'no_info', null);
-        $no_debug = $this->di['array_get']($data, 'no_debug', null);
+        $search = $data['search'] ?? null;
+        $priority = $data['priority'] ?? null;
+        $only_staff = $data['only_staff'] ?? null;
+        $admin_id = $data['admin_id'] ?? null;
+        $only_clients = $data['only_clients'] ?? null;
+        $no_info = $data['no_info'] ?? null;
+        $no_debug = $data['no_debug'] ?? null;
         $where = [];
         if ($priority) {
             $where[] = 'm.priority = :priority';

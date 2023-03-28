@@ -47,7 +47,7 @@ class ServicePayGateway implements InjectionAwareInterface
             FROM pay_gateway
             WHERE 1 ';
 
-        $search = $this->di['array_get']($data, 'search', null);
+        $search = $data['search'] ?? null;
         $params = [];
         if ($search) {
             $sql .= 'AND m.name LIKE :search';
@@ -171,7 +171,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function update(\Model_PayGateway $model, array $data)
     {
-        $model->name = $this->di['array_get']($data, 'title', $model->name);
+        $model->name = $data['title'] ?? $model->name;
         if (isset($data['config']) && is_array($data['config'])) {
             $model->config = json_encode($data['config']);
         }
@@ -180,10 +180,10 @@ class ServicePayGateway implements InjectionAwareInterface
             $model->accepted_currencies = json_encode($data['accepted_currencies']);
         }
 
-        $model->enabled = $this->di['array_get']($data, 'enabled', $model->enabled);
-        $model->allow_single = (bool) $this->di['array_get']($data, 'allow_single', $model->allow_single);
-        $model->allow_recurrent = (bool) $this->di['array_get']($data, 'allow_recurrent', $model->allow_recurrent);
-        $model->test_mode = $this->di['array_get']($data, 'test_mode', $model->test_mode);
+        $model->enabled = $data['enabled'] ?? $model->enabled;
+        $model->allow_single = (bool) ($data['allow_single'] ?? $model->allow_single);
+        $model->allow_recurrent = (bool) ($data['allow_recurrent'] ?? $model->allow_recurrent);
+        $model->test_mode = $data['test_mode'] ?? $model->test_mode;
         $this->di['db']->store($model);
         $this->di['logger']->info('Updated payment gateway %s', $model->gateway);
 
@@ -201,7 +201,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getActive(array $data)
     {
-        $format = $this->di['array_get']($data, 'format', null);
+        $format = $data['format'] ?? null;
 
         $gateways = $this->di['db']->find('PayGateway', 'enabled = 1 ORDER BY id desc');
         $result = [];
@@ -278,8 +278,8 @@ class ServicePayGateway implements InjectionAwareInterface
     private function _getAllowTuple(\Model_PayGateway $model)
     {
         $adapter_config = $this->getAdapterConfig($model);
-        $single = $this->di['array_get']($adapter_config, 'supports_one_time_payments', false);
-        $recurrent = $this->di['array_get']($adapter_config, 'supports_subscriptions', false);
+        $single = $adapter_config['supports_one_time_payments'] ?? false;
+        $recurrent = $adapter_config['supports_subscriptions'] ?? false;
 
         return [
             $single,

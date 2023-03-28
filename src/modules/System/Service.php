@@ -156,40 +156,40 @@ class Service
         $results = $this->_getMultipleParams($c);
 
         $baseUrl = $this->di['config']['url'];
-        $logoUrl = $this->di['array_get']($results, 'company_logo', null);
+        $logoUrl = $results['company_logo'] ?? null;
         if (null !== $logoUrl && !str_contains($logoUrl, 'http')) {
             $logoUrl = $baseUrl . $logoUrl;
         }
 
-        $logoUrlDark = $this->di['array_get']($results, 'company_logo_dark', null);
+        $logoUrlDark = $results['company_logo_dark'] ?? null;
         if (null !== $logoUrlDark && !str_contains($logoUrlDark, 'http')) {
             $logoUrlDark = $baseUrl . $logoUrlDark;
         }
         $logoUrlDark = (null === $logoUrlDark) ? $logoUrl : $logoUrlDark;
 
-        $faviconUrl = $this->di['array_get']($results, 'company_favicon', null);
+        $faviconUrl = $results['company_favicon'] ?? null;
         if (null !== $faviconUrl && !str_contains($faviconUrl, 'http')) {
             $faviconUrl = $baseUrl . $faviconUrl;
         }
 
         return [
             'www' => $baseUrl,
-            'name' => $this->di['array_get']($results, 'company_name', null),
-            'email' => $this->di['array_get']($results, 'company_email', null),
-            'tel' => $this->di['array_get']($results, 'company_tel', null),
-            'signature' => $this->di['array_get']($results, 'company_signature', null),
+            'name' => $results['company_name'] ?? null,
+            'email' => $results['company_email'] ?? null,
+            'tel' => $results['company_tel'] ?? null,
+            'signature' => $results['company_signature'] ?? null,
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
             'favicon_url' => $faviconUrl,
-            'address_1' => $this->di['array_get']($results, 'company_address_1', null),
-            'address_2' => $this->di['array_get']($results, 'company_address_2', null),
-            'address_3' => $this->di['array_get']($results, 'company_address_3', null),
-            'account_number' => $this->di['array_get']($results, 'company_account_number', null),
-            'number' => $this->di['array_get']($results, 'company_number', null),
-            'note' => $this->di['array_get']($results, 'company_note', null),
-            'privacy_policy' => $this->di['array_get']($results, 'company_privacy_policy', null),
-            'tos' => $this->di['array_get']($results, 'company_tos', null),
-            'vat_number' => $this->di['array_get']($results, 'company_vat_number', null),
+            'address_1' => $results['company_address_1'] ?? null,
+            'address_2' => $results['company_address_2'] ?? null,
+            'address_3' => $results['company_address_3'] ?? null,
+            'account_number' => $results['company_account_number'] ?? null,
+            'number' => $results['company_number'] ?? null,
+            'note' => $results['company_note'] ?? null,
+            'privacy_policy' => $results['company_privacy_policy'] ?? null,
+            'tos' => $results['company_tos'] ?? null,
+            'vat_number' => $results['company_vat_number'] ?? null,
         ];
     }
 
@@ -303,7 +303,7 @@ class Service
             $msgs['warning'][] = sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
         }
 
-        return $this->di['array_get']($msgs, $type, []);
+        return $msgs[$type] ?? [];
     }
 
     public function templateExists($file, $identity = null)

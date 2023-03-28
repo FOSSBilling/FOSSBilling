@@ -71,9 +71,9 @@ class Guest extends \Api_Abstract
     {
         $c = $this->get($data);
 
-        $price = $this->di['array_get']($data, 'price', 0);
-        $convert = $this->di['array_get']($data, 'convert', true);
-        $without_currency = (bool) $this->di['array_get']($data, 'without_currency', false);
+        $price = $data['price'] ?? 0;
+        $convert = $data['convert'] ?? true;
+        $without_currency = (bool) ($data['without_currency'] ?? false);
 
         $p = $price;
         if ($convert) {

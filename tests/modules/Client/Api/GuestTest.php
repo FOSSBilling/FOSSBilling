@@ -57,10 +57,6 @@ class GuestTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
-
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
         $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
@@ -105,9 +101,6 @@ class GuestTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');

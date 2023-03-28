@@ -57,18 +57,18 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
 
-        $model->invoice_id = $this->di['array_get']($data, 'invoice_id', $model->invoice_id);
-        $model->txn_id = $this->di['array_get']($data, 'txn_id', $model->txn_id);
-        $model->txn_status = $this->di['array_get']($data, 'txn_status', $model->txn_status);
-        $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
-        $model->amount = $this->di['array_get']($data, 'amount', $model->amount);
-        $model->currency = $this->di['array_get']($data, 'currency', $model->currency);
-        $model->type = $this->di['array_get']($data, 'type', $model->type);
-        $model->note = $this->di['array_get']($data, 'note', $model->note);
-        $model->status = $this->di['array_get']($data, 'status', $model->status);
-        $model->error = $this->di['array_get']($data, 'error', $model->error);
-        $model->error_code = $this->di['array_get']($data, 'error_code', $model->error_code);
-        $model->validate_ipn = $this->di['array_get']($data, 'validate_ipn', $model->validate_ipn);
+        $model->invoice_id = $data['invoice_id'] ?? $model->invoice_id;
+        $model->txn_id = $data['txn_id'] ?? $model->txn_id;
+        $model->txn_status = $data['txn_status'] ?? $model->txn_status;
+        $model->gateway_id = $data['gateway_id'] ?? $model->gateway_id;
+        $model->amount = $data['amount'] ?? $model->amount;
+        $model->currency = $data['currency'] ?? $model->currency;
+        $model->type = $data['type'] ?? $model->type;
+        $model->note = $data['note'] ?? $model->note;
+        $model->status = $data['status'] ?? $model->status;
+        $model->error = $data['error'] ?? $model->error;
+        $model->error_code = $data['error_code'] ?? $model->error_code;
+        $model->validate_ipn = $data['validate_ipn'] ?? $model->validate_ipn;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
@@ -106,14 +106,14 @@ class ServiceTransaction implements InjectionAwareInterface
         $ipn = [
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
             'post' => (isset($data['post']) && is_array($data['post'])) ? $data['post'] : null,
-            'http_raw_post_data' => $this->di['array_get']($data, 'http_raw_post_data', null),
-            'server' => $this->di['array_get']($data, 'server', null),
+            'http_raw_post_data' => $data['http_raw_post_data'] ?? null,
+            'server' => $data['server'] ?? null,
         ];
 
         $transaction = $this->di['db']->dispense('Transaction');
-        $transaction->gateway_id = $this->di['array_get']($data, 'bb_gateway_id', null);
-        $transaction->invoice_id = $this->di['array_get']($data, 'bb_invoice_id', null);
-        $transaction->txn_id = $this->di['array_get']($data, 'txn_id', null);
+        $transaction->gateway_id = $data['bb_gateway_id'] ?? null;
+        $transaction->invoice_id = $data['bb_invoice_id'] ?? null;
+        $transaction->txn_id = $data['txn_id'] ?? null;
         $transaction->status = 'received';
         $transaction->ip = $this->di['request']->getClientAddress();
         $transaction->ipn = json_encode($ipn);
@@ -181,19 +181,19 @@ class ServiceTransaction implements InjectionAwareInterface
                 LEFT JOIN invoice as i on m.invoice_id = i.id
                 WHERE 1 ';
 
-        $id = $this->di['array_get']($data, 'id', null);
-        $search = $this->di['array_get']($data, 'search', null);
-        $invoice_hash = $this->di['array_get']($data, 'invoice_hash', null);
-        $invoice_id = $this->di['array_get']($data, 'invoice_id', null);
-        $gateway_id = $this->di['array_get']($data, 'gateway_id', null);
-        $client_id = $this->di['array_get']($data, 'client_id', null);
-        $status = $this->di['array_get']($data, 'status', null);
-        $currency = $this->di['array_get']($data, 'currency', null);
-        $type = $this->di['array_get']($data, 'type', null);
-        $txn_id = $this->di['array_get']($data, 'txn_id', null);
+        $id = $data['id'] ?? null;
+        $search = $data['search'] ?? null;
+        $invoice_hash = $data['invoice_hash'] ?? null;
+        $invoice_id = $data['invoice_id'] ?? null;
+        $gateway_id = $data['gateway_id'] ?? null;
+        $client_id = $data['client_id'] ?? null;
+        $status = $data['status'] ?? null;
+        $currency = $data['currency'] ?? null;
+        $type = $data['type'] ?? null;
+        $txn_id = $data['txn_id'] ?? null;
 
-        $date_from = $this->di['array_get']($data, 'date_from', null);
-        $date_to = $this->di['array_get']($data, 'date_to', null);
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
 
         $params = [];
         if ($id) {

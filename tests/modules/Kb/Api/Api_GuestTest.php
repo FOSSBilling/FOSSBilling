@@ -29,9 +29,7 @@ class Api_GuestTest extends \BBTestCase
             ->willReturn(100);
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
         $result = $guestApi->article_get_list(array());
         $this->assertIsArray($result);
@@ -44,9 +42,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi = new \Box\Mod\Kb\Api\Guest();
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('findActiveArticleById', 'hitView', 'toApiArray', 'findActiveArticleBySlug'))->getMock();
@@ -76,9 +72,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi = new \Box\Mod\Kb\Api\Guest();
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('findActiveArticleById', 'hitView', 'toApiArray', 'findActiveArticleBySlug'))->getMock();
@@ -152,9 +146,7 @@ class Api_GuestTest extends \BBTestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
         $this->expectException(\Box_Exception::class);
         $result = $guestApi->article_get($data);
@@ -181,9 +173,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
 
         $data = array(
@@ -214,9 +204,7 @@ class Api_GuestTest extends \BBTestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('categoryGetSearchQuery'))->getMock();
@@ -271,9 +259,7 @@ class Api_GuestTest extends \BBTestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
         $result = $guestApi->category_get($data);
         $this->assertIsArray($result);
@@ -296,9 +282,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
 
         $data   = array(
@@ -350,9 +334,7 @@ class Api_GuestTest extends \BBTestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
 
         $this->expectException(\Box_Exception::class);
@@ -381,9 +363,7 @@ class Api_GuestTest extends \BBTestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $guestApi->setDi($di);
 
         $this->expectException(\Box_Exception::class);

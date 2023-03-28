@@ -84,10 +84,10 @@ class Guest extends \Api_Abstract
         $this->getService()->checkExtraRequiredFields($data);
         $this->getService()->checkCustomFields($data);
 
-        $this->di['validator']->isPasswordStrong($this->di['array_get']($data, 'password'));
+        $this->di['validator']->isPasswordStrong($data['password']);
         $service = $this->getService();
 
-        $email = $this->di['array_get']($data, 'email');
+        $email = $data['email'] ?? null;
         $email = $this->di['tools']->validateAndSanitizeEmail($email);
         $email = strtolower(trim($email));
         if ($service->clientAlreadyExists($email)) {
@@ -100,9 +100,9 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.', null, 7777);
         }
 
-        if ($this->di['array_get']($data, 'auto_login', 0)) {
+        if ($data['auto_login'] ?? 0) {
             try {
-                $this->login(['email' => $client->email, 'password' => $this->di['array_get']($data, 'password')]);
+                $this->login(['email' => $client->email, 'password' => $data['password']]);
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
@@ -138,7 +138,7 @@ class Guest extends \Api_Abstract
 
         $service = $this->getService();
         $client = $service->authorizeClient($data['email'], $data['password']);
-        
+
         if (!$client instanceof \Model_Client) {
             $this->di['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
             throw new \Box_Exception('Please check your login details.', [], 401);
@@ -185,7 +185,7 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Email not found in our database');
         }
 
-        $hash = hash('sha256', time().random_bytes(13));
+        $hash = hash('sha256', time() . random_bytes(13));
 
         $reset = $this->di['db']->dispense('ClientPasswordReset');
         $reset->client_id = $c->id;
@@ -271,7 +271,7 @@ class Guest extends \Api_Abstract
         $vatnum = $data['vat'];
 
         // @todo add new service provider https://vatlayer.com/ check
-//         $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
+        //         $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
         return true;
     }
 

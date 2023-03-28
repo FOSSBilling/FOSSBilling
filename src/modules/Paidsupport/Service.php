@@ -117,7 +117,7 @@ class Service implements InjectionAwareInterface
     public function getErrorMessage()
     {
         $config = $this->di['mod_config']('Paidsupport');
-        $errorMessage = $this->di['array_get']($config, 'error_msg', '');
+        $errorMessage = $config['error_msg'] ?? '';
 
         return strlen(trim($errorMessage)) > 0 ? $errorMessage : 'Configure paid support module!';
     }
@@ -157,8 +157,11 @@ class Service implements InjectionAwareInterface
 
     public function uninstall()
     {
-        $model = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key',
-            [':ext' => 'mod_paidsupport', ':key' => 'config']);
+        $model = $this->di['db']->findOne(
+            'ExtensionMeta',
+            'extension = :ext AND meta_key = :key',
+            [':ext' => 'mod_paidsupport', ':key' => 'config']
+        );
         if ($model instanceof \Model_ExtensionMeta) {
             $this->di['db']->trash($model);
         }

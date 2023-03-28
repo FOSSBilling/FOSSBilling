@@ -62,9 +62,7 @@ class AdminTest extends \BBTestCase {
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
@@ -107,9 +105,7 @@ class AdminTest extends \BBTestCase {
             ->method('renderString')
             ->will($this->returnValue('returnStringType'));
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -127,9 +123,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -161,9 +155,7 @@ class AdminTest extends \BBTestCase {
 
             return false;
         });
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);

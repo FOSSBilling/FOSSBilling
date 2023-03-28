@@ -77,9 +77,7 @@ class AdminTest extends \BBTestCase {
                 return $modMock;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $di['is_admin_logged']  = true;
 
         $controller = new \Box\Mod\Theme\Controller\Admin();

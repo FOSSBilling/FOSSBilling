@@ -32,11 +32,11 @@ class Guest extends \Api_Abstract
     {
         $data['status'] = 'active';
 
-        $status = $this->di['array_get']($data, 'status', null);
-        $search = $this->di['array_get']($data, 'search', null);
-        $cat = $this->di['array_get']($data, 'kb_article_category_id', null);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        $page = $this->di['array_get']($data, 'page');
+        $status = $data['status'] ?? null;
+        $search = $data['search'] ?? null;
+        $cat = $data['kb_article_category_id'] ?? null;
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $page = $data['page'] ?? null;
 
         $pager = $this->getService()->searchArticles($status, $search, $cat, $per_page, $page);
 
@@ -62,8 +62,8 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('ID or slug is missing');
         }
 
-        $id = $this->di['array_get']($data, 'id', null);
-        $slug = $this->di['array_get']($data, 'slug', null);
+        $id = $data['id'] ?? null;
+        $slug = $data['slug'] ?? null;
 
         $model = false;
         if ($id) {
@@ -90,10 +90,10 @@ class Guest extends \Api_Abstract
         $data['article_status'] = \Model_KbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->categoryGetSearchQuery($data);
 
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getAdvancedResultSet($query, $bindings, $per_page);
 
-        $q = $this->di['array_get']($data, 'q', null);
+        $q = $data['q'] ?? null;
 
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('KbArticleCategory', $item['id'], 'KB Article not found');
@@ -127,8 +127,8 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Category ID or slug is missing');
         }
 
-        $id = $this->di['array_get']($data, 'id', null);
-        $slug = $this->di['array_get']($data, 'slug', null);
+        $id = $data['id'] ?? null;
+        $slug = $data['slug'] ?? null;
 
         $model = false;
         if ($id) {

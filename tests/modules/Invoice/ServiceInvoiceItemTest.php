@@ -196,9 +196,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $invoiceModel = new \Model_Invoice();
@@ -266,9 +264,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $this->service->update($invoiceItemModel, $data);

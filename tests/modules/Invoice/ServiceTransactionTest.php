@@ -71,9 +71,7 @@ class ServiceTransactionTest extends \BBTestCase
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventsMock;
         $di['logger']         = new \Box_Log();
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data   = array(
@@ -129,9 +127,7 @@ class ServiceTransactionTest extends \BBTestCase
         $di['events_manager'] = $eventsMock;
         $di['request']        = $requestMock;
         $di['logger']         = new \Box_Log();
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data   = array(
@@ -295,9 +291,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testgetSearchQuery($data, $expectedParams, $expectedStringPart)
     {
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
         $this->assertIsString($result[0]);

@@ -91,8 +91,8 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($filter)
     {
-        $search = $this->di['array_get']($filter, 'search', null);
-        $type = $this->di['array_get']($filter, 'type', null);
+        $search = $filter['search'] ?? null;
+        $type = $filter['type'] ?? null;
 
         $params = [];
         $sql = "SELECT * FROM extension
@@ -120,9 +120,9 @@ class Service implements InjectionAwareInterface
         [$sql, $params] = $this->getSearchQuery($filter);
         $installed = $this->di['db']->getAll($sql, $params);
 
-        $has_settings = $this->di['array_get']($filter, 'has_settings');
-        $only_installed = $this->di['array_get']($filter, 'installed');
-        $installed_and_core = $this->di['array_get']($filter, 'active');
+        $has_settings = $filter['has_settings'] ?? null;
+        $only_installed = $filter['installed'] ?? null;
+        $installed_and_core = $filter['active'] ?? null;
         $search = isset($filter['search']) ? strtolower($filter['search']) : null;
         $result = [];
 
@@ -202,7 +202,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($result as $key => $value) {
             $iconPath = 'assets/icons/cog.svg';
-            $icon_url = $this->di['array_get']($value, 'icon_url');
+            $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
                 $iconPath = $this->di['config']['url'] . $icon_url;
             }
@@ -210,7 +210,7 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($result as $key => $value) {
-            $icon_url = $this->di['array_get']($value, 'icon_url');
+            $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
                 $iconPath = realpath(PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($value['id']) . DIRECTORY_SEPARATOR . basename($icon_url));
                 if (file_exists($iconPath)) {

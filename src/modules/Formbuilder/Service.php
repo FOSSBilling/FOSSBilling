@@ -90,8 +90,8 @@ class Service implements InjectionAwareInterface
         $types = $this->getFormFieldsTypes();
         $type = $field['type'];
 
-        $label = $this->di['array_get']($field, 'label', $types[$type] . ' ' . $field_number);
-        $name = $this->di['array_get']($field, 'name', $this->slugify('new_' . $type) . '_' . $field_number);
+        $label = $field['label'] ?? $types[$type] . ' ' . $field_number;
+        $name = $field['name'] ?? $this->slugify('new_' . $type) . '_' . $field_number;
 
         if ('select' == $type || 'checkbox' == $type || 'radio' == $type) {
             $field['options'] = '{"First option":"1", "Second option": "2", "Third option":"3"}';
@@ -109,21 +109,21 @@ class Service implements InjectionAwareInterface
         $bean->form_id = $formId;
         $bean->name = $name;
         $bean->label = $label;
-        $bean->hide_label = $this->di['array_get']($field, 'hide_label', null);
-        $bean->description = $this->di['array_get']($field, 'description', null);
+        $bean->hide_label = $field['hide_label'] ?? null;
+        $bean->description = $field['description'] ?? null;
         $bean->type = $field['type'];
-        $bean->default_value = $this->di['array_get']($field, 'default_value', null);
-        $bean->required = $this->di['array_get']($field, 'required', null);
-        $bean->hidden = $this->di['array_get']($field, 'hidden', null);
-        $bean->readonly = $this->di['array_get']($field, 'readonly', null);
-        $bean->options = $this->di['array_get']($field, 'options', null);
-        $bean->prefix = $this->di['array_get']($field, 'prefix', null);
-        $bean->suffix = $this->di['array_get']($field, 'suffix', null);
-        $bean->show_initial = $this->di['array_get']($field, 'show_initial', null);
-        $bean->show_middle = $this->di['array_get']($field, 'show_middle', null);
-        $bean->show_prefix = $this->di['array_get']($field, 'show_prefix', null);
-        $bean->show_suffix = $this->di['array_get']($field, 'show_suffix', null);
-        $bean->text_size = $this->di['array_get']($field, 'text_size', null);
+        $bean->default_value = $field['default_value'] ?? null;
+        $bean->required = $field['required'] ?? null;
+        $bean->hidden = $field['hidden'] ?? null;
+        $bean->readonly = $field['readonly'] ?? null;
+        $bean->options = $field['options'] ?? null;
+        $bean->prefix = $field['prefix'] ?? null;
+        $bean->suffix = $field['suffix'] ?? null;
+        $bean->show_initial = $field['show_initial'] ?? null;
+        $bean->show_middle = $field['show_middle'] ?? null;
+        $bean->show_prefix = $field['show_prefix'] ?? null;
+        $bean->show_suffix = $field['show_suffix'] ?? null;
+        $bean->text_size = $field['text_size'] ?? null;
         $bean->created_at = date('Y-m-d H:i:s');
         $bean->updated_at = date('Y-m-d H:i:s');
 
@@ -205,20 +205,20 @@ class Service implements InjectionAwareInterface
         $bean->id = $fieldId;
         $bean->name = $name;
         $bean->label = $label;
-        $bean->hide_label = $this->di['array_get']($field, 'hide_label', null);
-        $bean->description = $this->di['array_get']($field, 'description', null);
-        $bean->default_value = $this->di['array_get']($field, 'default_value', null);
-        $bean->required = $this->di['array_get']($field, 'required', null);
-        $bean->hidden = $this->di['array_get']($field, 'hidden', null);
-        $bean->readonly = $this->di['array_get']($field, 'readonly', null);
+        $bean->hide_label = $field['hide_label'] ?? null;
+        $bean->description = $field['description'] ?? null;
+        $bean->default_value = $field['default_value'] ?? null;
+        $bean->required = $field['required'] ?? null;
+        $bean->hidden = $field['hidden'] ?? null;
+        $bean->readonly = $field['readonly'] ?? null;
         $bean->options = $field['options'];
-        $bean->prefix = $this->di['array_get']($field, 'prefix', null);
-        $bean->suffix = $this->di['array_get']($field, 'suffix', null);
-        $bean->show_initial = $this->di['array_get']($field, 'show_initial', null);
-        $bean->show_middle = $this->di['array_get']($field, 'show_middle', null);
-        $bean->show_prefix = $this->di['array_get']($field, 'show_prefix', null);
-        $bean->show_suffix = $this->di['array_get']($field, 'show_suffix', null);
-        $bean->text_size = $this->di['array_get']($field, 'text_size', null);
+        $bean->prefix = $field['prefix'] ?? null;
+        $bean->suffix = $field['suffix'] ?? null;
+        $bean->show_initial = $field['show_initial'] ?? null;
+        $bean->show_middle = $field['show_middle'] ?? null;
+        $bean->show_prefix = $field['show_prefix'] ?? null;
+        $bean->show_suffix = $field['show_suffix'] ?? null;
+        $bean->text_size = $field['text_size'] ?? null;
         $bean->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($bean);

@@ -142,9 +142,7 @@ class ServiceTest extends \BBTestCase
     public function testgetSearchQuery($data, $expectedStr, $expectedParams)
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
         $this->assertIsString($result[0]);
@@ -628,9 +626,6 @@ class ServiceTest extends \BBTestCase
             }
         });
         $di['logger']      = new \Box_Log();
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $serviceMock->setDi($di);
         $result = $serviceMock->prepareInvoice($clientModel, $data);
@@ -924,9 +919,6 @@ class ServiceTest extends \BBTestCase
         $di['mod_service']    = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
         $di['events_manager'] = $eventManagerMock;
         $di['logger']         = new \Box_Log();
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
 
         $this->service->setDi($di);
 

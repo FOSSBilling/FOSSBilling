@@ -37,7 +37,7 @@ class Guest extends \Api_Abstract
         }
 
         [$sql, $params] = $this->getService()->getProductSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
@@ -76,8 +76,8 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Product ID or slug is missing');
         }
 
-        $id = $this->di['array_get']($data, 'id', null);
-        $slug = $this->di['array_get']($data, 'slug', null);
+        $id = $data['id'] ?? null;
+        $slug = $data['slug'] ?? null;
 
         $service = $this->getService();
         if ($id) {
@@ -103,7 +103,7 @@ class Guest extends \Api_Abstract
         $data['status'] = 'enabled';
         $service = $this->getService();
         [$sql, $params] = $service->getProductCategorySearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
@@ -135,8 +135,8 @@ class Guest extends \Api_Abstract
      */
     public function get_slider($data)
     {
-        $format = $this->di['array_get']($data, 'format', null);
-        $type = $this->di['array_get']($data, 'type', 'hosting');
+        $format = $data['format'] ?? null;
+        $type = $data['type'] ?? 'hosting';
 
         $products = $this->di['db']->find('Product', 'type = :type', [':type' => $type]);
         if (count($products) <= 0) {

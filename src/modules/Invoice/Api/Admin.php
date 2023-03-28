@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
@@ -134,7 +134,7 @@ class Admin extends \Api_Abstract
     public function refund($data)
     {
         $model = $this->_getInvoice($data);
-        $note = $this->di['array_get']($data, 'note', null);
+        $note = $data['note'] ?? null;
 
         return $this->getService()->refundInvoice($model, $note);
     }
@@ -490,7 +490,7 @@ class Admin extends \Api_Abstract
     {
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $transaction = $this->di['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
@@ -570,7 +570,7 @@ class Admin extends \Api_Abstract
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         [$sql, $params] = $gatewayService->getSearchQuery($data);
 
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $gateway = $this->di['db']->getExistingModelById('PayGateway', $item['id'], 'Gateway not found');
@@ -730,7 +730,7 @@ class Admin extends \Api_Abstract
     {
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         [$sql, $params] = $subscriptionService->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $subscription = $this->di['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
@@ -964,7 +964,7 @@ class Admin extends \Api_Abstract
     {
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
         [$sql, $params] = $taxService->getSearchQuery($data);
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
 
         return $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
     }

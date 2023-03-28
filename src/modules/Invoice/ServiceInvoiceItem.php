@@ -136,20 +136,20 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function addNew(\Model_Invoice $proforma, array $data)
     {
-        $title = $this->di['array_get']($data, 'title', '');
+        $title = $data['title'] ?? '';
         if (empty($title)) {
             throw new \Box_Exception('Invoice item title is missing');
         }
 
-        $period = $this->di['array_get']($data, 'period', 0);
+        $period = $data['period'] ?? 0;
         if ($period) {
             $periodCheck = $this->di['period']($period);
         }
 
-        $type = $this->di['array_get']($data, 'type', \Model_InvoiceItem::TYPE_CUSTOM);
-        $rel_id = $this->di['array_get']($data, 'rel_id');
-        $task = $this->di['array_get']($data, 'task', \Model_InvoiceItem::TASK_VOID);
-        $status = $this->di['array_get']($data, 'status', \Model_InvoiceItem::STATUS_PENDING_PAYMENT);
+        $type = $data['type'] ?? \Model_InvoiceItem::TYPE_CUSTOM;
+        $rel_id = $data['rel_id'] ?? null;
+        $task = $data['task'] ?? \Model_InvoiceItem::TASK_VOID;
+        $status = $data['status'] ?? \Model_InvoiceItem::STATUS_PENDING_PAYMENT;
 
         $pi = $this->di['db']->dispense('InvoiceItem');
         $pi->invoice_id = $proforma->id;
@@ -159,11 +159,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->status = $status;
         $pi->title = $data['title'];
         $pi->period = $period;
-        $pi->quantity = $this->di['array_get']($data, 'quantity', 1);
-        $pi->unit = $this->di['array_get']($data, 'unit');
-        $pi->charged = $this->di['array_get']($data, 'charged', 0);
-        $pi->price = (float) $this->di['array_get']($data, 'price', 0);
-        $pi->taxed = $this->di['array_get']($data, 'taxed', false);
+        $pi->quantity = $data['quantity'] ?? 1;
+        $pi->unit = $data['unit'] ?? null;
+        $pi->charged = $data['charged'] ?? 0;
+        $pi->price = (float) $data['price'] ?? 0;
+        $pi->taxed = $data['taxed'] ?? false;
         $pi->created_at = date('Y-m-d H:i:s');
         $pi->updated_at = date('Y-m-d H:i:s');
         $itemId = $this->di['db']->store($pi);
@@ -192,10 +192,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function update(\Model_InvoiceItem $item, array $data)
     {
-        $item->title = $this->di['array_get']($data, 'title', $item->title);
-        $item->price = $this->di['array_get']($data, 'price', $item->price);
+        $item->title = $data['title'] ?? $item->title;
+        $item->price = $data['price'] ?? $item->price;
 
-        $item_quantity = $this->di['array_get']($data, 'quantity', 1);
+        $item_quantity = $data['quantity'] ?? 1;
 
         if ($item_quantity != $item->quantity) {
             $item->quantity = $item_quantity > 0 ? $item_quantity : 1;

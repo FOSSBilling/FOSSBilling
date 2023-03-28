@@ -29,7 +29,7 @@ class Admin extends \Api_Abstract
      */
     public function email_get_list($data)
     {
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
@@ -100,16 +100,16 @@ class Admin extends \Api_Abstract
             'content' => 'Email content is required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $client_id = $this->di['array_get']($data, 'client_id');
+        $client_id = $data['client_id'] ?? null;
         $emailService = $this->getService();
 
         return $emailService->sendMail(
-            $this->di['array_get']($data, 'to'),
-            $this->di['array_get']($data, 'from'),
-            $this->di['array_get']($data, 'subject'),
-            $this->di['array_get']($data, 'content'),
-            $this->di['array_get']($data, 'to_name'),
-            $this->di['array_get']($data, 'from_name'),
+            $data['to'] ?? null,
+            $data['from'] ?? null,
+            $data['subject'] ?? null,
+            $data['content'] ?? null,
+            $data['to_name'] ?? null,
+            $data['from_name'] ?? null,
             $client_id
         );
     }
@@ -178,18 +178,18 @@ class Admin extends \Api_Abstract
      */
     public function template_get_list($data)
     {
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         [$sql, $params] = $this->getService()->templateGetSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
-                'id' => $this->di['array_get']($item, 'id', ''),
-                'action_code' => $this->di['array_get']($item, 'action_code', ''),
-                'category' => $this->di['array_get']($item, 'category', ''),
-                'enabled' => $this->di['array_get']($item, 'enabled', ''),
-                'subject' => $this->di['array_get']($item, 'subject', ''),
-                'description' => $this->di['array_get']($item, 'description', ''),
+                'id' => $item['id'] ?? '',
+                'action_code' => $item['action_code'] ?? '',
+                'category' => $item['category'] ?? '',
+                'enabled' => $item['enabled'] ?? '',
+                'subject' => $item['subject'] ?? '',
+                'description' => $item['description'] ?? '',
             ];
         }
 
@@ -270,8 +270,8 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $enabled = $this->di['array_get']($data, 'enabled', 0);
-        $category = $this->di['array_get']($data, 'category');
+        $enabled = $data['enabled'] ?? 0;
+        $category = $data['category'] ?? null;
 
         $templateModel = $this->getService()->templateCreate($data['action_code'], $data['subject'], $data['content'], $enabled, $category);
 
@@ -295,10 +295,10 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $enabled = $this->di['array_get']($data, 'enabled');
-        $category = $this->di['array_get']($data, 'category');
-        $subject = $this->di['array_get']($data, 'subject');
-        $content = $this->di['array_get']($data, 'content');
+        $enabled = $data['enabled'] ?? null;
+        $category = $data['category'] ?? null;
+        $subject = $data['subject'] ?? null;
+        $content = $data['content'] ?? null;
 
         $model = $this->di['db']->getExistingModelById('EmailTemplate', $data['id'], 'Email template not found');
 
@@ -335,7 +335,7 @@ class Admin extends \Api_Abstract
     {
         $t = $this->template_get($data);
         $vars = $t['vars'];
-        $vars['_tpl'] = $this->di['array_get']($data, '_tpl', $t['content']);
+        $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->di['mod_service']('System');
 
         return $systemService->renderString($vars['_tpl'], true, $vars);

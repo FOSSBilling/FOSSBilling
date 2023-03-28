@@ -487,9 +487,7 @@ class ServiceTest extends \BBTestCase
     public function testGetSearchQuery($data)
     {
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
         list($query, $bindings) = $this->service->getSearchQuery($data);
         $this->assertIsString($query);
@@ -510,9 +508,7 @@ class ServiceTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $result = $this->service->counter();
@@ -1010,9 +1006,7 @@ class ServiceTest extends \BBTestCase
     public function testHelpdeskGetSearchQuery()
     {
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(
@@ -1241,9 +1235,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -1362,9 +1354,7 @@ class ServiceTest extends \BBTestCase
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
         $di['events_manager'] = $eventMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
@@ -1416,9 +1406,7 @@ class ServiceTest extends \BBTestCase
         $di['validator']      = $validatorMock;
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
         $di['events_manager'] = $eventMock;
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
@@ -1491,9 +1479,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service']    = $di->protect(function () use ($staffServiceMock) {
             return $staffServiceMock;
         });
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $serviceMock->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
@@ -1552,9 +1538,7 @@ class ServiceTest extends \BBTestCase
         $client->id = rand(1, 100);
 
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $serviceMock->setDi($di);
 
         $this->expectException(\Box_Exception::class);
@@ -1720,9 +1704,7 @@ class ServiceTest extends \BBTestCase
     public function testPublicGetSearchQuery($data)
     {
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         list($query, $bindings) = $this->service->publicgetSearchQuery($data);
@@ -2065,9 +2047,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
@@ -2166,9 +2146,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
@@ -2202,9 +2180,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportHelpdesk();
@@ -2226,9 +2202,7 @@ class ServiceTest extends \BBTestCase
     public function testCannedGetSearchQuery()
     {
         $di              = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $data = array(
@@ -2458,9 +2432,7 @@ class ServiceTest extends \BBTestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->service->setDi($di);
 
         $model = new \Model_SupportPr();

@@ -28,11 +28,11 @@ class Admin extends \Api_Abstract
      * @param array $data Search parameters
      * 
      * @return array An array containing the list of activity messages and the pager information
-    */
+     */
     public function log_get_list($data)
     {
         $data['no_debug'] = true;
-        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
@@ -63,18 +63,18 @@ class Admin extends \Api_Abstract
      * @param string $data['priority'] [optional] Log priority
      * 
      * @return bool
-    */
+     */
     public function log($data)
     {
         if (!isset($data['m'])) {
             return false;
         }
 
-        $priority = $this->di['array_get']($data, 'priority', 6);
+        $priority = $data['priority'] ?? 6;
 
         $entry = $this->di['db']->dispense('ActivitySystem');
-        $entry->client_id = $this->di['array_get']($data, 'client_id', null);
-        $entry->admin_id = $this->di['array_get']($data, 'admin_id', null);
+        $entry->client_id = $data['client_id'] ?? null;
+        $entry->admin_id = $data['admin_id'] ?? null;
         $entry->priority = $priority;
         $entry->message = $data['m'];
         $entry->created_at = date('Y-m-d H:i:s');
@@ -107,12 +107,12 @@ class Admin extends \Api_Abstract
             return false;
         }
 
-        $client_id = $this->di['array_get']($data, 'client_id', null);
-        $sender = $this->di['array_get']($data, 'sender', null);
-        $recipients = $this->di['array_get']($data, 'recipients', null);
+        $client_id = $data['client_id'] ?? null;
+        $sender = $data['sender'] ?? null;
+        $recipients = $data['recipients'] ?? null;
         $subject = $data['subject'];
-        $content_html = $this->di['array_get']($data, 'content_html', null);
-        $content_text = $this->di['array_get']($data, 'content_text', null);
+        $content_html = $data['content_html'] ?? null;
+        $content_text = $data['content_text'] ?? null;
 
         return $this->getService()->logEmail($subject, $client_id, $sender, $recipients, $content_html, $content_text);
     }
@@ -125,7 +125,7 @@ class Admin extends \Api_Abstract
      * @param int $data['id'] ID of the message to delete
      * 
      * @return bool True if the message was deleted, false otherwise
-    */
+     */
     public function log_delete($data)
     {
         $required = [

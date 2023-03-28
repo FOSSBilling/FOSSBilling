@@ -55,7 +55,7 @@ class Admin extends \Api_Abstract
      */
     public function messages($data)
     {
-        $type = $this->di['array_get']($data, 'type', 'info');
+        $type = $data['type'] ?? 'info';
 
         return $this->getService()->getMessages($type);
     }
@@ -94,7 +94,7 @@ class Admin extends \Api_Abstract
             return '';
         }
         $tpl = $data['_tpl'];
-        $try_render = $this->di['array_get']($data, '_try', false);
+        $try_render = $data['_try'] ?? false;
 
         $vars = $data;
         unset($vars['_tpl'], $vars['_try']);
@@ -109,7 +109,7 @@ class Admin extends \Api_Abstract
      */
     public function env($data)
     {
-        $ip = $this->di['array_get']($data, 'ip', null);
+        $ip = $data['ip'] ?? null;
 
         return $this->getService()->getEnv($ip);
     }
@@ -132,7 +132,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $f = $this->di['array_get']($data, 'f', null);
+        $f = $data['f'] ?? null;
         $service = $this->di['mod_service']('Staff');
 
         return $service->hasPermission($this->getIdentity(), $data['mod'], $f);

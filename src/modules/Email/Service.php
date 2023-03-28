@@ -44,8 +44,8 @@ class Service implements \Box\InjectionAwareInterface
     {
         $query = 'SELECT * FROM activity_client_email';
 
-        $search = $this->di['array_get']($data, 'search', null);
-        $client_id = $this->di['array_get']($data, 'client_id', null);
+        $search = $data['search'] ?? null;
+        $client_id = $data['client_id'] ?? null;
 
         $where = [];
         $bindings = [];
@@ -198,8 +198,8 @@ class Service implements \Box\InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         [$subject, $content] = $this->_parse($t, $vars);
-        $from = $this->di['array_get']($data, 'from', $systemService->getParamValue('company_email'));
-        $from_name = $this->di['array_get']($data, 'from_name', $systemService->getParamValue('company_name'));
+        $from = $data['from'] ?? $systemService->getParamValue('company_email');
+        $from_name = $data['from_name'] ?? $systemService->getParamValue('company_name');
         $sent = false;
 
         if (!$from) {
@@ -222,7 +222,7 @@ class Service implements \Box\InjectionAwareInterface
             $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id']);
         } else {
             $to = $data['to'];
-            $to_name = $this->di['array_get']($data, 'to_name', null);
+            $to_name = $data['to_name'] ?? null;
             $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name);
         }
 
@@ -242,9 +242,9 @@ class Service implements \Box\InjectionAwareInterface
         $code = $data['code'];
 
         $enabled = 0;
-        $subject = $this->di['array_get']($data, 'default_subject', ucwords(str_replace('_', ' ', $code)));
-        $content = $this->di['array_get']($data, 'default_template', $this->_getVarsString());
-        $description = $this->di['array_get']($data, 'default_description', null);
+        $subject = $data['default_subject'] ?? ucwords(str_replace('_', ' ', $code));
+        $content = $data['default_template'] ?? $this->_getVarsString();
+        $description = $data['default_description'] ?? null;
 
         $matches = [];
         preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches);
@@ -336,7 +336,7 @@ class Service implements \Box\InjectionAwareInterface
         $mail->addTo($email->recipients);
 
         $settings = $this->di['mod_config']('email');
-        $transport = $this->di['array_get']($settings, 'mailer', 'sendmail');
+        $transport = $settings['mailer'] ?? 'sendmail';
 
         if (APPLICATION_ENV == 'testing') {
             if (BB_DEBUG) {
@@ -369,8 +369,8 @@ class Service implements \Box\InjectionAwareInterface
     {
         $query = 'SELECT * FROM email_template';
 
-        $code = $this->di['array_get']($data, 'code', null);
-        $search = $this->di['array_get']($data, 'search', null);
+        $code = $data['code'] ?? null;
+        $search = $data['search'] ?? null;
 
         $where = [];
         $bindings = [];
@@ -555,7 +555,7 @@ class Service implements \Box\InjectionAwareInterface
         $mod = $this->di['mod']('email');
         $settings = $mod->getConfig();
         $tries = 0;
-        $time_limit = $this->di['array_get']($settings, 'time_limit', 5) * 60;
+        $time_limit = ($settings['time_limit'] ?? 5) * 60;
         $start = time();
         while ($email = $this->di['db']->findOne('ModEmailQueue', ' status = \'unsent\' ORDER BY updated_at ')) {
             $this->_sendFromQueue($email);
@@ -588,7 +588,7 @@ class Service implements \Box\InjectionAwareInterface
             $activityService->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
         }
 
-        $transport = $this->di['array_get']($settings, 'mailer', 'sendmail');
+        $transport = $settings['mailer'] ?? 'sendmail';
 
         try {
             $mail = $this->di['mail'];

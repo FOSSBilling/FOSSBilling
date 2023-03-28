@@ -25,7 +25,7 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $search = $this->di['array_get']($data, 'search', null);
+        $search = $data['search'] ?? null;
         $pager = $this->getService()->searchPages($search);
 
         foreach ($pager['list'] as $key => $item) {
@@ -95,8 +95,8 @@ class Admin extends \Api_Abstract
         $title = $data['title'];
 
         $content = $data['content'];
-        $description = $this->di['array_get']($data, 'description', null);
-        $keywords = $this->di['array_get']($data, 'keywords', null);
+        $description = $data['description'] ?? null;
+        $keywords = $data['keywords'] ?? null;
 
         return $this->getService()->createPage($title, $description, $keywords, $content);
     }
@@ -127,8 +127,8 @@ class Admin extends \Api_Abstract
         $title = $data['title'];
         $content = $data['content'];
         $slug = $data['slug'];
-        $description = $this->di['array_get']($data, 'description', null);
-        $keywords = $this->di['array_get']($data, 'keywords', null);
+        $description = $data['description'] ?? null;
+        $keywords = $data['keywords'] ?? null;
 
         return $this->getService()->updatePage($id, $title, $description, $keywords, $content, $slug);
     }

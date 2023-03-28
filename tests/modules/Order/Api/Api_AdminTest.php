@@ -66,9 +66,7 @@ class Api_AdminTest extends \BBTestCase
         $di          = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['mod'] = $di->protect(function() use ($modMock) {return $modMock;});
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -221,9 +219,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $apiMock->setDi($di);
 
         $apiMock->setService($serviceMock);
@@ -299,9 +295,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 
@@ -545,9 +539,7 @@ class Api_AdminTest extends \BBTestCase
         $di = new \Box_Di();
 
         $di['pager'] = $paginatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $apiMock->setDi($di);
 
         $apiMock->setService($serviceMock);
@@ -580,9 +572,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
-        });
+
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 

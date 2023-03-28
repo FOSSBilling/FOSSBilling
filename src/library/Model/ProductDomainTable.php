@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -23,7 +24,7 @@ class Model_ProductDomainTable extends Model_ProductTable
     {
         $p = array();
         $prices = $this->getPricingArray($model);
-        foreach($prices as $tld) {
+        foreach ($prices as $tld) {
             $p[] = $tld['price_registration'];
         }
         return empty($p) ? 0 : min($p);
@@ -48,40 +49,42 @@ class Model_ProductDomainTable extends Model_ProductTable
          * Compare it with other items in the cart
          * If a domain has related hosting package, determine discount configured.
          */
-        foreach($items as $addon) {
+        foreach ($items as $addon) {
 
-            if($this->isActionNameSet($addon, 'register') &&
+            if (
+                $this->isActionNameSet($addon, 'register') &&
                 $this->_isFreeDomainSet($addon) &&
-                $this->registerDomainMatch($addon, $config)) {
-                if($this->_hasFreePeriod($addon)){
-                  $factor = $this->discountFactor($addon, $config["period"]);                             
-                    return $factor * $this->getProductPrice($product, $config);  
+                $this->registerDomainMatch($addon, $config)
+            ) {
+                if ($this->_hasFreePeriod($addon)) {
+                    $factor = $this->discountFactor($addon, $config["period"]);
+                    return $factor * $this->getProductPrice($product, $config);
                 } else {
                     return 0;
                 }
-                    
             }
 
-            if($this->isActionNameSet($addon, 'transfer') &&
+            if (
+                $this->isActionNameSet($addon, 'transfer') &&
                 $this->isFreeTransferSet($addon) &&
-                $this->transferDomainMatch($addon, $config) ) {
-                    return $this->getProductPrice($product, $config);
+                $this->transferDomainMatch($addon, $config)
+            ) {
+                return $this->getProductPrice($product, $config);
             }
         }
-        
+
         return 0;
     }
 
     private function _hasFreePeriod($addon)
     {
         $free_domain_periods    = $addon['config']['free_domain_periods'];
-         $addon_period      = $addon['config']['period'];
+        $addon_period      = $addon['config']['period'];
         if (in_array($addon_period, $free_domain_periods) || sizeof($free_domain_periods) > 0) {
-             return true;
+            return true;
         } else {
             return false;
-         }
-
+        }
     }
 
 
@@ -90,7 +93,7 @@ class Model_ProductDomainTable extends Model_ProductTable
      * 
      */
     private function discountFactor($addon, $period)
-            {
+    {
         $ref_item_period = $this->di['period']($period);
         $ref_item_qty = $ref_item_period->getQty();
 
@@ -98,42 +101,40 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_sys_period = $this->di['period']($addon_period);
         $addon_qty = $addon_sys_period->getQty();
 
-         $free_domain_periods    = $addon['config']['free_domain_periods'];
+        $free_domain_periods    = $addon['config']['free_domain_periods'];
         if (count($free_domain_periods) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
 
-      if( in_array($addon_period, $free_domain_periods) ){
-              return $ref_item_qty;
-          }
-          }
+                if (in_array($addon_period, $free_domain_periods)) {
+                    return $ref_item_qty;
+                }
+            }
 
             if (strpos($addon_period, 'Y') !== false) {
 
                 if (min($ref_item_qty, $addon_qty) == 1) {
                     return 1;
-       } 
+                }
 
-               $free_domain_qtys = [];
-               foreach($free_domain_periods as $fp){
-                   $prd = $this->di['period']($fp);
-                   $qnty = $prd->getQty();
+                $free_domain_qtys = [];
+                foreach ($free_domain_periods as $fp) {
+                    $prd = $this->di['period']($fp);
+                    $qnty = $prd->getQty();
                     if ($ref_item_qty - $qnty > 0) {
-                   $free_domain_qtys[] = $qnty;
-               }
-            }
-            
-             if(count($free_domain_qtys) > 1){
-                 return min($ref_item_qty, min($free_domain_qtys));
+                        $free_domain_qtys[] = $qnty;
+                    }
+                }
+
+                if (count($free_domain_qtys) > 1) {
+                    return min($ref_item_qty, min($free_domain_qtys));
                 } else {
                     return min($ref_item_qty, $free_domain_qtys[0]);
+                }
             }
-     
-        }
-        
         } else {
-        return 0;
-    }
+            return 0;
+        }
     }
 
     /**
@@ -146,21 +147,20 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     private function _isFreeDomainSet($item)
     {
-        $free_domain            = $this->di['array_get']($item['config'],'free_domain',false);
-        $tld                    = $this->di['array_get']($item['config'], 'tld', null);
-        $free_tlds              = $this->di['array_get']($item['config'], 'free_tlds', array());
+        $free_domain            = $item['config']['free_domain'] ?? false;
+        $tld                    = $item['config']['tld'] ?? null;
+        $free_tlds              = $item['config']['free_tlds'] ?? [];
 
-        if($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
-        return true;
+        if ($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
+            return true;
         } else {
             return false;
         }
-
     }
 
     private function registerDomainMatch($item, $config)
     {
-        if (!isset($item['config']['domain']['register_sld'])){
+        if (!isset($item['config']['domain']['register_sld'])) {
             return false;
         }
         return $item['config']['domain']['register_sld'] == $config['register_sld'] && $item['config']['domain']['register_tld'] == $config['register_tld'];
@@ -168,7 +168,7 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     private function transferDomainMatch($item, $config)
     {
-        if (!isset($item['config']['domain']['transfer_sld'])){
+        if (!isset($item['config']['domain']['transfer_sld'])) {
             return false;
         }
         return $item['config']['domain']['transfer_sld'] == $config['transfer_sld'] && $item['config']['domain']['transfer_tld'] == $config['transfer_tld'];
@@ -178,12 +178,12 @@ class Model_ProductDomainTable extends Model_ProductTable
     {
         return isset($item['config']['free_transfer']) && $item['config']['free_transfer'];
     }
-    
+
     public function getPricingArray(Model_Product $product)
     {
         $pricing = array();
 
-        $sql="
+        $sql = "
             SELECT t.*, r.name
             FROM tld t
             LEFT JOIN tld_registrar r ON (r.id = t.tld_registrar_id)
@@ -193,7 +193,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $stmt = $this->di['pdo']->prepare($sql);
         $stmt->execute();
 
-        foreach($stmt->fetchAll() as $tld) {
+        foreach ($stmt->fetchAll() as $tld) {
             $pricing[$tld['tld']] = array(
                 'tld'                   => $tld['tld'],
                 'price_registration'    => $tld['price_registration'],
@@ -218,35 +218,35 @@ class Model_ProductDomainTable extends Model_ProductTable
         $rtable = $this->di['mod_service']('servicedomain', 'Tld');
         $tld = '';
 
-        if(!isset($config['action'])) {
+        if (!isset($config['action'])) {
             throw new \Box_Exception('Could not determine domain price. Domain action is missing', null, 498);
         }
-        
-        if($config['action'] == 'owndomain') {
+
+        if ($config['action'] == 'owndomain') {
             return 0;
         }
-        
-        if($config['action'] == 'register') {
+
+        if ($config['action'] == 'register') {
             $tld = $config['register_tld'];
         }
 
-        if($config['action'] == 'transfer') {
+        if ($config['action'] == 'transfer') {
             $tld = $config['transfer_tld'];
         }
-        
+
         $tld = $rtable->findOneByTld($tld);
-        if(!$tld instanceof Model_Tld) {
+        if (!$tld instanceof Model_Tld) {
             throw new \Box_Exception('Unknown TLD. Could not determine registration price');
         }
 
-        if($config['action'] == 'register') {
+        if ($config['action'] == 'register') {
             return $tld->price_registration;
         }
 
-        if($config['action'] == 'transfer') {
+        if ($config['action'] == 'transfer') {
             return $tld->price_transfer;
         }
-        
+
         return 0;
     }
 
