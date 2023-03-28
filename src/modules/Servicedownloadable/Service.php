@@ -43,15 +43,16 @@ class Service implements InjectionAwareInterface
 
     public function attachOrderConfig(\Model_Product $product, array &$data)
     {
-        $c = json_decode($product->config, 1);
+        $config = $product->config;
+        isset($config) ?  $config = json_decode($config, true) : $config = [];
         $required = [
             'filename' => 'Product is not configured completely.',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $c);
+        $this->di['validator']->checkRequiredParamsForArray($required, $config);
 
-        $data['filename'] = $c['filename'];
+        $data['filename'] = $config['filename'];
 
-        return array_merge($c, $data);
+        return array_merge($config, $data);
     }
 
     public function validateOrderData(array &$data)
