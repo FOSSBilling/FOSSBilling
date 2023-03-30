@@ -312,7 +312,7 @@ $.fn.simpleTabs = function () {
 
 };//end function
 
-const FOSSBilling = {
+globalThis.FOSSBilling = {
   message: (message, type = 'info') => {
     let color;
     switch (type) {
@@ -359,17 +359,6 @@ const FOSSBilling = {
     toast.show();
   }
 };
-
-/**
-  * Fallback for modules that still use the old "boxbilling" object. It will display deprecation warnings in the console and will be removed entirely in the future.
-  * @deprecated Will be removed in a future release. Use FOSSBilling.message() instead.
-  */
-const boxbilling = {
-  message: (message, type = 'info') => {
-    console.warn('The "boxbilling" object is deprecated and will be removed in a future release. Use FOSSBilling.message() instead.');
-    FOSSBilling.message(message, type);
-  }
-}
 
 $(function () {
 
