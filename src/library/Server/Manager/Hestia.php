@@ -97,7 +97,7 @@ class Server_Manager_Hestia extends Server_Manager
         $client = $this->getHttpClient()->withOptions([
             'verify_peer'   => false,
             'verify_host'   => false,
-            'timeout'       => 5,
+            'timeout'       => 30,
         ]);
         $response = $client->request('POST', $host, [
             'body'  => $params,
@@ -105,7 +105,7 @@ class Server_Manager_Hestia extends Server_Manager
         $result = $response->getContent();
 
         if (false !== strpos($result, 'Error')) {
-            throw new Server_Exception('Connection to server failed. Error code: :code', ['code' => $result]);
+            throw new Server_Exception('Connection to server failed. Error code: :code', [':code' => $result]);
         }
 
         return $result;
@@ -142,7 +142,7 @@ class Server_Manager_Hestia extends Server_Manager
         if (0 == intval($result)) {
             return true;
         } else {
-            throw new Server_Exception('Connection to server failed. Error code: :code', ['code' => $result]);
+            throw new Server_Exception('Connection to server failed. Error code: :code', [':code' => $result]);
         }
 
         return true;
@@ -199,10 +199,10 @@ class Server_Manager_Hestia extends Server_Manager
             ];
             $result2 = $this->_makeRequest($postvars2);
         } else {
-            throw new Server_Exception('Server Manager Hestia CP Error: Unable to create User. Error code: :code', ['code' => $result1]);
+            throw new Server_Exception('Server Manager Hestia CP Error: Unable to create User. Error code: :code', [':code' => $result1]);
         }
         if (0 !== intval($result2)) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Create Domain failure. Error code: :code', ['code' => $result2]);
+            throw new Server_Exception('Server Manager Hestia CP Error: Create Domain failure. Error code: :code', [':code' => $result2]);
         }
 
         return true;
@@ -228,7 +228,7 @@ class Server_Manager_Hestia extends Server_Manager
             return true;
         }
         if (0 !== intval($result)) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Suspend Account Error. Error code: :code', ['code' => $result]);
+            throw new Server_Exception('Server Manager Hestia CP Error: Suspend Account Error. Error code: :code', [':code' => $result]);
         }
 
         return true;
@@ -252,7 +252,7 @@ class Server_Manager_Hestia extends Server_Manager
 
         $result = $this->_makeRequest($postvars);
         if (0 !== intval($result)) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Unsuspend Account Error. Error code: :code', ['code' => $result]);
+            throw new Server_Exception('Server Manager Hestia CP Error: Unsuspend Account Error. Error code: :code', [':code' => $result]);
         }
 
         return true;
@@ -280,7 +280,7 @@ class Server_Manager_Hestia extends Server_Manager
         if ('3' == intval($result)) {
             return true;
         } elseif (0 !== intval($result)) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Cancel Account Error. Error code: :code', ['code' => $result]);
+            throw new Server_Exception('Server Manager Hestia CP Error: Cancel Account Error. Error code: :code', [':code' => $result]);
         }
 
         return true;
@@ -309,7 +309,7 @@ class Server_Manager_Hestia extends Server_Manager
         // Make request and change package
         $result = $this->_makeRequest($postvars);
         if (0 !== intval($result)) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Change User package Account Error. Error code: :code', ['code' => $result]);
+            throw new Server_Exception('Server Manager Hestia CP Error: Change User package Account Error. Error code: :code', [':code' => $result]);
         }
 
         return true;
@@ -357,7 +357,7 @@ class Server_Manager_Hestia extends Server_Manager
         // Make request and change password
         $result = $this->_makeRequest($postvars);
         if (0 !== intval($result)) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Change Password Account Error. Error code: :code', ['code' => $result]);
+            throw new Server_Exception('Server Manager Hestia CP Error: Change Password Account Error. Error code: :code', [':code' => $result]);
         }
 
         return true;
