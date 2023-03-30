@@ -312,7 +312,7 @@ $.fn.simpleTabs = function () {
 
 };//end function
 
-const FOSSBilling = {
+globalThis.FOSSBilling = {
   message: (message, type = 'info') => {
     let color;
     switch (type) {
