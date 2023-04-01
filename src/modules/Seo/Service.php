@@ -38,56 +38,111 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function pingSitemap($config)
+    public function pingSitemap($config, $forced = false)
     {
         $systemService = $this->di['mod_service']('system');
 
         $key = 'mod_seo_last_sitemap_submit';
         $last_time = $systemService->getParamValue($key);
 
-        if ($last_time && (time() - strtotime($last_time)) < 86400) {
+        // Make sure we don't ping more than once a day
+        if ($last_time && (time() - strtotime($last_time)) < 24 * 60 * 60 && !$forced) {
             return false;
         }
 
         $url = urldecode(BB_URL . 'sitemap.xml');
-        if (isset($config['sitemap_google']) && $config['sitemap_google']) {
-            try {
-                $link = 'https://www.google.com/ping?sitemap=' . $url;
-                $client = $this->di['http_client'];
-                $request = $client->request('GET', $link, [
-                    'query' => [
-                        'sitemap'   => $url,
-                    ],
-                ]);
-                error_log('Submitted sitemap to Google');
-            } catch (\Exception) {
-                error_log('Exception :(');
+
+        $engines = $this->_getEngines();
+
+        // Load the engines and ping them
+        foreach ($engines as $engine) {
+            $id = $engine->getDetails()['id'];
+            
+            if ($this->isEngineEnabled($id)) {
+                try {
+                    $engine->setDi($this->di);
+                    $engine->pingSitemap($url);
+                } catch (\Exception $e) {
+                    error_log($e->getMessage());
+                }
             }
-        }+
+        }
+
+        // Update the last time we pinged
         $systemService->updateParams([$key => date('Y-m-d H:i:s')]);
 
         return true;
     }
 
-    public function pingRss($config)
+    /**
+     * @return array
+     */
+    public function getInfo()
     {
-        // @todo
-        return false;
+        $systemService = $this->di['mod_service']('system');
 
-        $rss = '';
-        $title = '';
-        $homepage = BB_URL;
+        $result = [
+            'sitemap_url' => BB_URL . 'sitemap.xml',
+            'last_exec' => $systemService->getParamValue('mod_seo_last_sitemap_submit'),
+            'engines' => $this->_getEngineDetails(),
+        ];
 
-        $rss = urldecode($rss);
-        $title = urldecode($title);
-        $homepage = urldecode($homepage);
+        return $result;
+    }
 
-        $fp = @fopen("http://rpc.weblogs.com/pingSiteForm?name=$title&url=" . $rss, 'r');
-        @fclose($fp);
-        $fp = @fopen("http://pingomatic.com/ping/?title=$title&blogurl=$homepage&rssurl=" . $rss . '&chk_weblogscom=on&chk_blogs=on&chk_feedburner=on&chk_syndic8=on&chk_newsgator=on&chk_myyahoo=on&chk_pubsubcom=on&chk_blogdigger=on&chk_blogstreet=on&chk_moreover=on&chk_weblogalot=on&chk_icerocket=on&chk_newsisfree=on&chk_topicexchange=on&chk_google=on&chk_tailrank=on&chk_postrank=on&chk_skygrid=on&chk_collecta=on&chk_superfeedr=on&chk_audioweblogs=on&chk_rubhub=on&chk_geourl=on&chk_a2b=on&chk_blogshares=on', 'r');
-        @fclose($fp);
+    /**
+     * @param string $engine - The ID of the engine to check
+     * 
+     * @return bool
+     */
+    public function isEngineEnabled($engine)
+    {
+        $extensionService = $this->di['mod_service']('extension');
+        $config = $extensionService->getConfig('mod_seo');
 
-        return true;
+        return isset($config['sitemap_' . $engine]) && $config['sitemap_' . $engine] == "on";
+    }
+
+    /**
+     * Load engines from the Engines directory.
+     * 
+     * @return array
+     */
+    private function _getEngines()
+    {
+        $engines = [];
+        $dir = __DIR__ . '/Engines';
+        $files = scandir($dir);
+        
+        foreach ($files as $file) {
+            if (substr($file, -4) == '.php') {
+                $engine = substr($file, 0, -4);
+                $class = 'Box\\Mod\\Seo\\Engines\\' . $engine;
+                $engines[$engine] = new $class();
+            }
+        }
+
+        return $engines;
+    }
+
+    /**
+     * Get the details of all engines.
+     * 
+     * @return array
+     */
+    private function _getEngineDetails()
+    {
+        $engines = $this->_getEngines();
+        $details = [];
+
+        foreach ($engines as $engine) {
+            $engineDetails = $engine->getDetails();
+            $engineDetails['enabled'] = $this->isEngineEnabled($engineDetails['id']);
+
+            $details[$engineDetails['id']] = $engineDetails;
+        }
+
+        return $details;
     }
 
     public static function onBeforeAdminCronRun(\Box_Event $event)
@@ -100,7 +155,6 @@ class Service implements InjectionAwareInterface
             $seoService = $di['mod_service']('seo');
             $seoService->setDi($di);
             $seoService->pingSitemap($config);
-            $seoService->pingRss($config);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }

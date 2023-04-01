@@ -2,11 +2,8 @@
   "id": "seo",
   "type": "mod",
   "name": "SEO Tools",
-  "description": "Ping sitemap to Google, Yahoo and Bing",
+  "description": "Ping your sitemap to the search engines.",
   "icon_url": "icon.svg",
-  "homepage_url": "https://github.com/FOSSBilling",
-  "author": "FOSSBilling",
-  "author_url": "http://extensions.fossbilling.org/",
-  "license": "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
-  "version": "1.0.0"
+  "license": "Apache-2.0",
+  "version": "0.4.0"
 }
