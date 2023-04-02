@@ -7,7 +7,7 @@
         "issues": "https://github.com/FOSSBilling/FOSSBilling/issues",
         "chat": "https://fossbilling.org/discord"
     },
-    "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/master/README.md",
+    "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/main/README.md",
     "type": "project",
     "license": "Apache-2.0",
     "keywords": ["billing", "invoice", "client management"],
@@ -38,7 +38,8 @@
         "lcharette/webpack-encore-twig": "1.1.0",
         "league/csv": "^9.8",
         "symfony/http-client": "^6.0",
-        "twig/intl-extra": "^3.5"
+        "twig/intl-extra": "^3.5",
+        "symfony/console": "^6.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
