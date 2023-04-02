@@ -81,6 +81,10 @@ class Box_AppClient extends Box_App
             throw new \Box_Exception('Page not found', null, 404);
         }
 
+        if ($fileName . '.' . $ext == 'mod_page_sitemap.xml') {
+            header('Content-Type: application/xml');
+        }
+
         return $template->render($variableArray);
     }
 
@@ -91,7 +95,8 @@ class Box_AppClient extends Box_App
         $theme = $service->getTheme($code);
         $settings = $service->getThemeSettings($theme);
 
-        $loader = new Box_TwigLoader([
+        $loader = new Box_TwigLoader(
+            [
                 'mods' => PATH_MODS,
                 'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . $code,
                 'type' => 'client',
