@@ -322,6 +322,7 @@ define('BB_SEF_URLS', $config['sef_urls']);
 define('PATH_CACHE', $config['path_data'] . '/cache');
 define('PATH_LOG', $config['path_data'] . '/log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
+define('ADMIN_PREFIX', $config['admin_area_prefix']);
 
 if ($config['sef_urls']) {
     define('BB_URL_API', $config['url'] . 'api/');
