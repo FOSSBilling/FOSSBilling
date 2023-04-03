@@ -1,2 +1,2 @@
-order deny,allow
-deny from all
+RewriteEngine On
+RewriteRule !^assets/gateways/.*\.(jpe?g|png)$ - [F,NC]
