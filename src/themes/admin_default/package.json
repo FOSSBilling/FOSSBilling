@@ -9,7 +9,7 @@
   "dependencies": {
     "@melloware/coloris": "^0.18.0",
     "@tabler/core": "1.0.0-beta17",
-    "apexcharts": "^3.37.2",
+    "apexcharts": "^3.37.3",
     "autosize": "^6.0.1",
     "bootstrap": "^5.2.3",
     "bootstrap-markdown": "^2.10.0",
