@@ -410,9 +410,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        $base = str_replace(['https://', 'http://'], "", BB_URL);
-        $request = str_replace($base, "", $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-        if (str_starts_with('/' . $request, ADMIN_PREFIX)) {
+        if ($this->isRouteAdmin()) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -432,11 +430,39 @@ class Service implements InjectionAwareInterface
         $encoreInfo[$entrypoint] = $this->getEncoreJsonPath($entrypoint);
         $encoreInfo[$manifest] = $this->getEncoreJsonPath($manifest);
 
+        if ($this->useAdminDefaultEncore()) {
+            $encoreInfo['is_encore_theme'] = true;
+            $encoreInfo[$entrypoint] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . "build" . DIRECTORY_SEPARATOR . "{$entrypoint}.json";
+            $encoreInfo[$manifest] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . "build" . DIRECTORY_SEPARATOR . "{$manifest}.json";
+        }
+
         return $encoreInfo;
     }
 
     protected function getEncoreJsonPath($filename): string
     {
         return $this->getThemesPath() . $this->getCurrentRouteTheme() . DIRECTORY_SEPARATOR . "build" . DIRECTORY_SEPARATOR . "{$filename}.json";
+    }
+
+    protected function useAdminDefaultEncore()
+    {
+        if ($this->isRouteAdmin()) {
+            return false;
+        }
+
+        $config = $this->getThemeConfig();
+        return $config['use_admin_default_encore'] ?? false;
+    }
+
+    protected function isRouteAdmin()
+    {
+        $base = str_replace(['https://', 'http://'], "", BB_URL);
+        $request = str_replace($base, "", $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+
+        if (str_starts_with('/' . $request, ADMIN_PREFIX)) {
+            return true;
+        }
+
+        return false;
     }
 }
