@@ -47,14 +47,16 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentThemePreset(Model\Theme $theme)
     {
-        $current = $this->di['db']->getCell("SELECT meta_value
+        $current = $this->di['db']->getCell(
+            "SELECT meta_value
         FROM extension_meta
         WHERE 1
         AND extension = 'mod_theme'
         AND rel_id = 'current'
         AND rel_type = 'preset'
         AND meta_key = :theme",
-            [':theme' => $theme->getName()]);
+            [':theme' => $theme->getName()]
+        );
         if (empty($current)) {
             $current = $theme->getCurrentPreset();
             $this->setCurrentThemePreset($theme, $current);
@@ -106,28 +108,34 @@ class Service implements InjectionAwareInterface
     public function deletePreset(Model\Theme $theme, $preset)
     {
         // delete settings
-        $this->di['db']->exec("DELETE FROM extension_meta
+        $this->di['db']->exec(
+            "DELETE FROM extension_meta
             WHERE extension = 'mod_theme'
             AND rel_type = 'settings'
             AND rel_id = :theme
             AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]);
+            ['theme' => $theme->getName(), 'preset' => $preset]
+        );
 
         // delete default preset
-        $this->di['db']->exec("DELETE FROM extension_meta
+        $this->di['db']->exec(
+            "DELETE FROM extension_meta
             WHERE extension = 'mod_theme'
             AND rel_type = 'preset'
             AND rel_id = 'current'
             AND meta_key = :theme",
-            ['theme' => $theme->getName()]);
+            ['theme' => $theme->getName()]
+        );
 
         return true;
     }
 
     public function getThemePresets(Model\Theme $theme)
     {
-        $presets = $this->di['db']->getAssoc("SELECT meta_key FROM extension_meta WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :key",
-            ['key' => $theme->getName()]);
+        $presets = $this->di['db']->getAssoc(
+            "SELECT meta_key FROM extension_meta WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :key",
+            ['key' => $theme->getName()]
+        );
 
         // insert default presets to database
         if (empty($presets)) {
@@ -153,9 +161,11 @@ class Service implements InjectionAwareInterface
             $preset = $this->getCurrentThemePreset($theme);
         }
 
-        $meta = $this->di['db']->findOne('ExtensionMeta',
+        $meta = $this->di['db']->findOne(
+            'ExtensionMeta',
             "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]);
+            ['theme' => $theme->getName(), 'preset' => $preset]
+        );
         if ($meta) {
             return json_decode($meta->meta_value, 1);
         } else {
@@ -183,9 +193,11 @@ class Service implements InjectionAwareInterface
 
     public function updateSettings(Model\Theme $theme, $preset, array $params)
     {
-        $meta = $this->di['db']->findOne('ExtensionMeta',
+        $meta = $this->di['db']->findOne(
+            'ExtensionMeta',
             "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]);
+            ['theme' => $theme->getName(), 'preset' => $preset]
+        );
 
         if (!$meta) {
             $meta = $this->di['db']->dispense('ExtensionMeta');
@@ -255,7 +267,7 @@ class Service implements InjectionAwareInterface
         if (null == $theme || !file_exists($path . $theme)) {
             $theme = $default;
         }
-        $url = $this->di['config']['url'] . 'themes/' . $theme . '/';
+        $url = $this->di['config']['url'] . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -398,7 +410,9 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        if (str_starts_with($_SERVER['REQUEST_URI'], '/admin')) {
+        $base = str_replace(['https://', 'http://'], "", BB_URL);
+        $request = str_replace($base, "", $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+        if (str_starts_with('/' . $request, ADMIN_PREFIX)) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -423,6 +437,6 @@ class Service implements InjectionAwareInterface
 
     protected function getEncoreJsonPath($filename): string
     {
-        return $this->getThemesPath() . $this->getCurrentRouteTheme() . "/build/{$filename}.json";
+        return $this->getThemesPath() . $this->getCurrentRouteTheme() . DIRECTORY_SEPARATOR . "build" . DIRECTORY_SEPARATOR . "{$filename}.json";
     }
 }
