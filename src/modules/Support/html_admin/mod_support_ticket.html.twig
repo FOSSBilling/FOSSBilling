@@ -126,7 +126,7 @@
                 </a>
 
                 {% if task.status == 'pending' %}
-                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-reload="1">
+                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
                     <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1">
                     <span>{{ 'Set Task complete'|trans }}</span>
                 </a>
