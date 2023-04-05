@@ -7,7 +7,7 @@ module.exports = {
         '>0.5%',
         'last 4 versions',
         'Firefox ESR',
-        'not ie < 11',
+        'not dead',
       ]
     }),
   ],
