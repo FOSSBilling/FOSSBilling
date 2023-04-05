@@ -446,10 +446,6 @@ class Service implements InjectionAwareInterface
 
     protected function useAdminDefaultEncore()
     {
-        if ($this->isRouteAdmin()) {
-            return false;
-        }
-
         $config = $this->getThemeConfig();
         return $config['use_admin_default_encore'] ?? false;
     }
