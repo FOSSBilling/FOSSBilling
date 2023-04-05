@@ -1,65 +1,35 @@
-# Read documentation https://fossbilling.org/docs for more information
-# If you are receiving "Internal Server Error" message, make sure mod_rewrite is enabled in apache
-
+# BEGIN FOSSBilling
+# Read documentation https://fossbilling.org/docs for more information.
 Options     -Indexes    +SymLinksIfOwnerMatch
-
+<IfModule !mod_rewrite.c>
+DirectoryIndex rewrite-missing.html
+FallbackResource rewrite-missing.html
+</IfModule>
+<IfModule mod_rewrite.c>
 RewriteEngine On
+RewriteBase /
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-## Begin - Rewrite rules to block out some common exploits.
-# If you experience problems on your site block out the operations listed below
-# This attempts to block the most common type of exploit `attempts`
-#
-# Block out any script trying to base64_encode data within the URL.
+# Rewrite rules to block out some common exploits.
 RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
-# Block out any script that includes a <script> tag in URL.
 RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
-# Block out any script trying to set a PHP GLOBALS variable via URL.
 RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
-# Block out any script trying to modify a _REQUEST variable via URL.
 RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
-# Return 403 Forbidden header and show the content of the root homepage
 RewriteRule .* index.php [F]
-#
-## End - Rewrite rules to block out some common exploits.
 
-### Redirect to www
-#RewriteCond %{HTTP_HOST} ^yourdomain.com
-#RewriteRule (.*) https://www.yourdomain.com/$1 [R=301,L]
-
-# If you are receiving "Internal Server Error" message
-# Tune path if installing into subfolder, ie "RewriteBase /fossbilling/"
-# RewriteBase /
-
-# This line is for Windows Environment when API is giving authorization error
-RewriteRule .? - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-
-# Setup an alias from bb-ipn to ipn.php for those who have upgraded from BoxBilling.
+# Alias from bb-ipn.php to ipn.php for those who have upgraded from BoxBilling.
 RewriteRule ^bb-ipn\.php$ /ipn.php [L]
 
-# Block access to sensitive files and return 404 to make it indistinguishable from a missing file
-RewriteCond %{THE_REQUEST} /.+\.(htaccess|htpasswd|ini|log|sh|inc|bak|twig|sql|_) [NC]
+# Block direct access to sensitive files.
+RewriteCond %{REQUEST_URI} /?.+\.(_|htaccess|htpasswd|bak|conf|inc|ini|lock|log|old|sh|sql|twig|yaml) [NC,OR]
+RewriteCond %{REQUEST_URI} /?.*(config.php|di.php|load.php)
 RewriteRule ^ - [R=404,L]
 
-RewriteCond %{REQUEST_FILENAME} -s [OR]
-RewriteCond %{REQUEST_FILENAME} -l [OR]
+# Rewrite non-existent file/directory names to index.php.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^.*$ - [NC,L]
 RewriteRule ^page/(.*)$ index.php?_url=/custompages/$1
 RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
-
-<IfModule mod_headers.c>
-    # MONTH
-    <FilesMatch "\.(flv|gif|jpg|jpeg|png|ico|swf)$">
-       Header set Cache-Control "max-age=2592000"
-    </FilesMatch>
-
-    # WEEK
-    <FilesMatch "\.(js|css|pdf|txt)$">
-       Header set Cache-Control "max-age=604800"
-    </FilesMatch>
-
-    # DAY
-    <FilesMatch "\.(html|htm)$">
-       Header set Cache-Control "max-age=43200"
-    </FilesMatch>
 </IfModule>
+# END FOSSBilling
