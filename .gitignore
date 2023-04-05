@@ -4,7 +4,6 @@
 .DS_Store
 .vagrant*
 tmp
-src/.htaccess
 src/config.php
 !src/config-sample.php
 src/data/log/*
