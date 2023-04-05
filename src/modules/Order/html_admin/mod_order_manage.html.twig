@@ -559,9 +559,9 @@
             </table>
         </div>
 
-        <div class="tab-pane fade" id="tab-status" role="tabpanel">
+        <div class="tab-pane fade overflow-auto" id="tab-status" role="tabpanel">
             <div class="card-body">
-                <h3>{{ 'Order status change history'|trans }}</h3>
+                <h3>{{ 'Order status history'|trans }}</h3>
             </div>
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
@@ -576,23 +576,28 @@
                     {% set statuses = admin.order_status_history_get_list({ 'per_page': 50, 'id': order.id }) %}
                     {% for i, sh in statuses.list %}
                     <tr>
-                        <td>{{ sh.created_at|format_datetime }}</td>
+                        <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
+                        <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
                         <td>
-                            {% if sh.status == 'pending_setup' or sh.status == 'failed_setup' or sh.status == 'failed_renew' %}
-                                <span class="badge bg-warning me-1"></span>
-                            {% endif %}
+                            {% set class = 'bg-secondary' %}
+
                             {% if sh.status == 'active' %}
-                                <span class="badge bg-success me-1"></span>
+                                {% set class = 'bg-success' %}
                             {% endif %}
-                            {% if sh.status == 'suspended' %}
-                                <span class="badge bg-danger me-1"></span>
+
+                            {% if sh.status == 'pending_setup' or sh.status == 'failed_renew'%}
+                                {% set class = 'bg-warning' %}
                             {% endif %}
-                            {% if sh.status == 'canceled' %}
-                                <span class="badge bg-secondary me-1"></span>
+
+                            {% if sh.status == 'failed_setup' or sh.status == 'suspended' or sh.status == 'canceled'%}
+                                {% set class = 'bg-danger' %}
                             {% endif %}
-                            {{ mf.status_name(sh.status) }}
+
+                            <span class="badge {{ class }} me-1 d-none d-lg-inline-block"></span>
+                            <span class="badge {{ class }} ms-2 d-lg-none"></span>
+                            <span class="d-none d-lg-inline-block">{{ mf.status_name(sh.status) }}</span>
                         </td>
-                        <td>{{ sh.notes }}</td>
+                        <td class="text-wrap">{{ sh.notes }}</td>
                         <td>
                             <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
