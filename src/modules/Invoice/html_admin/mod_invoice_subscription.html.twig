@@ -85,11 +85,11 @@
                 </div>
 
                 <div class="body footer text-center">
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-redirect="{{ 'invoice/subscriptions'|alink }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon icon-tabler" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>

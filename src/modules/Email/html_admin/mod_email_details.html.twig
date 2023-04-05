@@ -46,19 +46,19 @@
     </table>
 
     <div class="card-footer text-center">
-        <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+        <a class="btn bbtn btn-primary api-link"
             href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}"
             data-api-msg="{{ 'Email resent'|trans }}">
-            <svg class="mb-2 text-secondary" width="24" height="24">
+            <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#refresh" />
             </svg>
             <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
-        <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+        <a class="btn btn btn-primary api-link"
             href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
             data-api-confirm="{{ 'Are you sure?'|trans }}"
             data-api-redirect="{{ 'email/history'|alink }}">
-            <svg class="mb-2 text-secondary" width="24" height="24">
+            <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#delete" />
             </svg>
             <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
