@@ -36,6 +36,9 @@
         <div class="col-sm-6 col-lg-3">
             <a href="{{ 'client'|alink }}" class="card card-sm">
                 <div class="card-body">
+                    {% if client_statuses.suspended > 0 %}
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ client_statuses.suspended }}</span>
+                    {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
                             <span class="bg-blue text-white avatar">
@@ -55,6 +58,9 @@
         <div class="col-sm-6 col-lg-3">
             <a href="{{ 'order'|alink }}" class="card card-sm">
                 <div class="card-body">
+                    {% if order_statuses.suspended > 0 %}
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ order_statuses.suspended }}</span>
+                    {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
                         <span class="bg-green text-white avatar">
@@ -74,6 +80,9 @@
         <div class="col-sm-6 col-lg-3">
             <a href="{{ 'invoice'|alink }}" class="card card-sm">
                 <div class="card-body">
+                    {% if invoice_statuses.unpaid > 0 %}
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ invoice_statuses.unpaid }}</span>
+                    {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
                             <span class="bg-danger text-white avatar">
@@ -93,6 +102,9 @@
         <div class="col-sm-6 col-lg-3">
             <a href="{{ 'support'|alink }}" class="card card-sm">
                 <div class="card-body">
+                    {% if support_statuses.open > 0 %}
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ support_statuses.open }}</span>
+                    {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
                         <span class="bg-warning text-white avatar">
