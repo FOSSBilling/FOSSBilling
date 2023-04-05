@@ -23,7 +23,7 @@ RewriteRule ^bb-ipn\.php$ /ipn.php [L]
 # Block direct access to sensitive files.
 RewriteCond %{REQUEST_URI} /?.+\.(_|htaccess|htpasswd|bak|conf|inc|ini|lock|log|old|sh|sql|twig|yaml) [NC,OR]
 RewriteCond %{REQUEST_URI} /?.*(config.php|di.php|load.php)
-RewriteRule ^ - [R=404,L]
+RewriteRule ^(.*)$ index.php?_url=/$1&_errcode=404 [L]
 
 # Rewrite non-existent file/directory names to index.php.
 RewriteCond %{REQUEST_FILENAME} -f [OR]
