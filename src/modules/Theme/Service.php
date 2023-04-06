@@ -410,7 +410,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        if (str_starts_with($this->di['request'] -> get('_url'), ADMIN_PREFIX)) {
+        if (str_starts_with($this->di['request']->get('_url'), ADMIN_PREFIX)) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
