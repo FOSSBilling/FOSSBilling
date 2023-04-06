@@ -147,8 +147,6 @@
   .awe-border {
     border: solid 1px #eeeeee;
     padding: .2em .25em .15em;
-    -webkit-border-radius: 3px;
-    -moz-border-radius: 3px;
     border-radius: 3px;
   }
   .awe-2x {
@@ -156,8 +154,6 @@
   }
   .awe-2x.awe-border {
     border-width: 2px;
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
     border-radius: 4px;
   }
   .awe-3x {
@@ -165,8 +161,6 @@
   }
   .awe-3x.awe-border {
     border-width: 3px;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
     border-radius: 5px;
   }
   .awe-4x {
@@ -174,8 +168,6 @@
   }
   .awe-4x.awe-border {
     border-width: 4px;
-    -webkit-border-radius: 6px;
-    -moz-border-radius: 6px;
     border-radius: 6px;
   }
   .pull-right {
@@ -228,42 +220,7 @@
   }
   .awe-spin {
     display: inline-block;
-    -moz-animation: spin 2s infinite linear;
-    -o-animation: spin 2s infinite linear;
-    -webkit-animation: spin 2s infinite linear;
     animation: spin 2s infinite linear;
-  }
-  @-moz-keyframes spin {
-    0% {
-      -moz-transform: rotate(0deg);
-    }
-    100% {
-      -moz-transform: rotate(359deg);
-    }
-  }
-  @-webkit-keyframes spin {
-    0% {
-      -webkit-transform: rotate(0deg);
-    }
-    100% {
-      -webkit-transform: rotate(359deg);
-    }
-  }
-  @-o-keyframes spin {
-    0% {
-      -o-transform: rotate(0deg);
-    }
-    100% {
-      -o-transform: rotate(359deg);
-    }
-  }
-  @-ms-keyframes spin {
-    0% {
-      -ms-transform: rotate(0deg);
-    }
-    100% {
-      -ms-transform: rotate(359deg);
-    }
   }
   @keyframes spin {
     0% {
