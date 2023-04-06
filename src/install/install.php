@@ -486,7 +486,6 @@ final class Box_Installer
             'url' => BB_URL,
             'admin_area_prefix' => '/admin',
             'disable_auto_cron' => false,
-            'sef_urls' => true,
 
             'i18n' => [
                 'locale' => 'en_US',
