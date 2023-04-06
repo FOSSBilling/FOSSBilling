@@ -65,10 +65,6 @@ The following environment is highly recommended for running FOSSBilling. It *may
     - xml
     - zlib
 
-## Example Configurations
-- [nginx](https://github.com/FOSSBilling/FOSSBilling/blob/master/data/nginx.conf)
-- [Lighttpd](https://github.com/FOSSBilling/FOSSBilling/blob/master/data/lighttpd.conf)
-
 ## Installation
 Installing FOSSBilling is pretty easy. Depending on how you plan to use it there are three different ways to install it:
 

@@ -17,6 +17,23 @@
 const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
+ * Patch to remove the old htaccess.txt file, and any old config.php backup.
+ * 
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
+ */
+class FOSSPatch_31 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $fileActions = [
+            __DIR__ . DIR_SEP . 'htaccess.txt' => 'unlink',
+            __DIR__ . DIR_SEP . 'config.php.old' => 'unlink',
+        ];
+        $this->performFileActions($fileActions);
+    }
+}
+
+/**
  * Patch to remove the old guzzlehttp package, as we no longer use it. Also serves as an example for how to perform file action.
  * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/987

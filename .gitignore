@@ -1,24 +1,16 @@
 .idea
 .vscode
+.nova
 ._*
 .DS_Store
 .vagrant*
-tmp
-src/.htaccess
 src/config.php
-!src/config-sample.php
 src/data/log/*
 src/data/cache/*
-src/data/tmp.txt
-src/bb-test.php
-src/vendor*
-src/install/logs/*
-bb-test.php
+src/vendor/*
 build
 composer.phar
-public
 report/*
-data/db
 
 ### phpunit/phpunit ###
 .phpunit.result.cache
@@ -30,7 +22,4 @@ npm-debug.log
 
 ### friendsofphp/php-cs-fixer ###
 src/.php-cs-fixer.cache
-
-.vscode
-.nova
 .php-cs-fixer.cache

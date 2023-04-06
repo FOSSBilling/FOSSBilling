@@ -329,7 +329,6 @@
         "src/modules/Orderbutton/html_client/mod_orderbutton_js.html.twig",
         "src/modules/Massmailer/Api/Admin.php",
         "src/modules/System/html_admin/mod_system_settings.html.twig",
-        "gulpfile.babel.js",
-        "htaccess.txt"
+        "gulpfile.babel.js"
     ]
 }

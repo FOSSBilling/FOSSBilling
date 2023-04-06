@@ -64,9 +64,9 @@ class Box_AppClient extends Box_App
         $e = new \Box_Exception('Page :url not found', [':url' => $this->url], 404);
 
         error_log($e->getMessage());
-        header('HTTP/1.0 404 Not Found');
+        http_response_code(404);
 
-        return $this->render('404', ['exception' => $e]);
+        return $this->render('error', ['exception' => $e]);
     }
 
     /**
@@ -78,6 +78,7 @@ class Box_AppClient extends Box_App
             $template = $this->getTwig()->load($fileName . '.' . $ext);
         } catch (Twig\Error\LoaderError $e) {
             error_log($e->getMessage());
+            http_response_code(404);
             throw new \Box_Exception('Page not found', null, 404);
         }
 

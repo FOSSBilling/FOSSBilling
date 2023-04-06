@@ -387,8 +387,8 @@ class Box_Tools
         if (!is_array($currentConfig)) {
             throw new \Box_Exception('Unable to load existing configuration. updateConfig() is unable to progress.');
         }
-        if (!copy($configPath, $configPath . '.old')) {
-            throw new \Box_Exception('Unable to create backup of configuration file. Canceling config migration.');
+        if (!copy($configPath, substr($configPath, 0, -4) . '.old.php')) {
+            throw new \Box_Exception('Unable to create backup of configuration file. Cancelling config migration.');
         }
 
         $newConfig = $currentConfig;
