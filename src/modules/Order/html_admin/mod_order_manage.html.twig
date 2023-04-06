@@ -220,16 +220,18 @@
                             </div>
                             <div id="suspend_popup_panel">
                                 <input type="button" class="btn btn-primary w-100" value="&nbsp;{{ 'Suspend'|trans }}&nbsp;" id="popup_ok" onclick="return susp.suspendOrder('/api/admin/order/suspend?id={{ order.id }}', 'reason');">
-                                <input type="button" class="basicBtn" value="&nbsp;Cancel&nbsp;" id="popup_cancel" onclick="return susp.suspenderHide();">
+                                <input type="button" class="btn btn-primary" value="&nbsp;Cancel&nbsp;" id="popup_cancel" onclick="return susp.suspenderHide();">
                             </div>
                         </div>
                     </div>
-                    <a class="btn55 mr10"
+                    <a class="btn btn-primary"
                         id="suspend_button"
                         href="#"
                         onclick="return susp.showSuspendPopup()"
                         data-api-reload="{{ 'Order suspended'|trans }}">
-                        <img src="images/icons/middlenav/stop.png" alt="">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#close" />
+                        </svg>
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% endif %}
@@ -260,7 +262,7 @@
                     {% endif %}
 
                     {% if order.status == 'canceled' %}
-                    <a class="btn btn-primary api-link" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn55 mr10 api-link" data-api-reload="Order activated">
+                    <a class="btn btn-primary api-link" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn btn-primary api-link" data-api-reload="Order activated">
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -409,7 +411,7 @@
                 </div>
                 {% endfor %}
 
-                <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+                <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary submitForm" />
                 <input type="hidden" name="id" value="{{ order.id }}"/>
             </form>
             {% endif #}

@@ -105,28 +105,28 @@
 
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
-                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                <a class="btn btn-primary api-link"
                     href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                    <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Close'|trans }}</span>
                 </a>
                 {% endif %}
-                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                <a class="btn btn-primary api-link"
                     href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink }}">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                    <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
 
                 {% if task.status == 'pending' %}
-                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-reload="1">
+                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
                     <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1">
                     <span>{{ 'Set Task complete'|trans }}</span>
                 </a>

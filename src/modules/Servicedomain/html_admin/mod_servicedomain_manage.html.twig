@@ -72,32 +72,32 @@
 <div class="card-footer text-center">
     {{ order_actions }}
     {% if order.status == 'active' %}
-    <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="get-epp">
-        <svg class="mb-2 text-secondary" width="24" height="24">
+    <a class="btn btn-primary" type="button" id="get-epp">
+        <svg class="icon icon-tabler" width="24" height="24">
             <use xlink:href="#key" />
         </svg>
         <span class="d-block text-secondary">{{ 'Get EPP'|trans }}</span>
     </a>
-    <a class="d-inline-block mx-1 btn btn-danger bg-gradient" type="button" id="domain-unlock">
+    <a class="btn btn-danger bg-gradient" type="button" id="domain-unlock">
         <svg class="mb-2" width="24" height="24">
             <use xlink:href="#lock-open" />
         </svg>
         <span class="d-block">{{ 'Unlock'|trans }}</span>
     </a>
-    <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="domain-lock">
-        <svg class="mb-2 text-secondary" width="24" height="24">
+    <a class="btn btn-primary" type="button" id="domain-lock">
+        <svg class="icon icon-tabler" width="24" height="24">
             <use xlink:href="#lock-closed" />
         </svg>
         <span class="d-block text-secondary">{{ 'Lock'|trans }}</span>
     </a>
-    <a class="d-inline-block mx-1 btn btn-danger bg-gradient" type="button" id="domain-disable-pp">
+    <a class="btn btn-danger bg-gradient" type="button" id="domain-disable-pp">
         <svg class="mb-2" width="24" height="24">
             <use xlink:href="#eye" />
         </svg>
         <span class="d-block">{{ 'Disable privacy'|trans }}</span>
     </a>
-    <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="domain-enable-pp">
-        <svg class="mb-2 text-secondary" width="24" height="24">
+    <a class="btn btn-primary" type="button" id="domain-enable-pp">
+        <svg class="icon icon-tabler" width="24" height="24">
             <use xlink:href="#eye-off" />
         </svg>
         <span class="d-block text-secondary">{{ 'Enable privacy'|trans }}</span>
