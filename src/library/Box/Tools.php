@@ -73,7 +73,11 @@ class Box_Tools
     public function url($link = null)
     {
         $link = trim($link, '/');
-        return BB_URL . $link;
+        if (BB_SEF_URLS) {
+            return BB_URL . $link;
+        }
+
+        return BB_URL . 'index.php?_url=/' . $link;
     }
 
     public function hasService($type)
@@ -383,8 +387,8 @@ class Box_Tools
         if (!is_array($currentConfig)) {
             throw new \Box_Exception('Unable to load existing configuration. updateConfig() is unable to progress.');
         }
-        if (!copy($configPath, substr($configPath, 0, -4) . '.old.php')) {
-            throw new \Box_Exception('Unable to create backup of configuration file. Cancelling config migration.');
+        if (!copy($configPath, $configPath . '.old')) {
+            throw new \Box_Exception('Unable to create backup of configuration file. Canceling config migration.');
         }
 
         $newConfig = $currentConfig;
@@ -416,7 +420,7 @@ class Box_Tools
         $newConfig['api']['CSRFPrevention'] ??= true;
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = [ 'guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls' ];
+        $depreciatedConfigKeys = [ 'guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone' ];
         $depreciatedConfigSubkeys = [];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {

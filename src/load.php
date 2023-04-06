@@ -318,11 +318,17 @@ date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 
 define('BB_DEBUG', $config['debug']);
 define('BB_URL', $config['url']);
+define('BB_SEF_URLS', $config['sef_urls']);
 define('PATH_CACHE', $config['path_data'] . '/cache');
 define('PATH_LOG', $config['path_data'] . '/log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
-define('BB_URL_API', $config['url'] . 'api/');
+
+if ($config['sef_urls']) {
+    define('BB_URL_API', $config['url'] . 'api/');
+} else {
+    define('BB_URL_API', $config['url'] . 'index.php?_url=/api/');
+}
 
 if ($config['debug']) {
     error_reporting(E_ALL);

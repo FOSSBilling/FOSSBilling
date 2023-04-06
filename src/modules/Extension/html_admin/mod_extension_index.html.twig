@@ -151,7 +151,7 @@
                     <div class="card-body">
                         <h3 class="card-title">{{ 'Migrate configuration file'|trans }}</h3>
                         <p class="card-subtitle">{{ 'This tool automatically migrates your configuration file to ensure compatibility with the latest FOSSBilling changes. Note that this is only necessary when performing manual updates.'|trans }}</p>
-                        <a href="{{ 'api/admin/extension/update_config'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Migration complete">
+                        <a href="{{ 'api/admin/extension/update_config'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.php.old." data-api-msg="Migration complete">
                             <svg class="icon">
                                 <use xlink:href="#refresh" />
                             </svg>

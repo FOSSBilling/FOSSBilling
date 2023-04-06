@@ -71,6 +71,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
 
         $data['bb']    = array(
             'BB_LOCALE'     =>  $this->di['config']['i18n']['locale'],
+            'BB_SEF_URLS'   =>  BB_SEF_URLS,
             'version'       =>  Box_Version::VERSION,
         );
 

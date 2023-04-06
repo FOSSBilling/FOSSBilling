@@ -86,6 +86,13 @@ return [
      */
     'disable_auto_cron' => false,
 
+    /*
+     * Enable or disable search engine friendly URLs.
+     * Configure .htaccess file before enabling this feature
+     * Set to TRUE if using nginx.
+     */
+    'sef_urls' => true,
+
     /* 
      * These configuration options allow you to configure the default localisation.
      */
