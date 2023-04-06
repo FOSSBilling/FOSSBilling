@@ -11,9 +11,17 @@
                         element.removeAttribute('required');
                         required = true;
                     }
-                    editors[element.name] = {editor, 'required': required};
+                    editors[element.name] = { editor, 'required': required };
                 })
-                .catch(error => {console.error(error)});
+                .catch(error => { console.error(error) });
         });
+
+        if (localStorage.getItem('theme') === 'dark') {
+            setTimeout(() => {
+                document.querySelectorAll('.ck-editor__main').forEach(function (element) {
+                    element.style.color="#1d273b";
+                });
+            }, 1000);
+        }
     });
 </script>
