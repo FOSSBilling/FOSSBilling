@@ -13,9 +13,9 @@
   * @param {object} FormData object
   * @returns {string} Serialized string of the FormData
  */
-FormData.prototype.serialize = function(){
-    if(!this.get('CSRFToken')){
-      this.append('CSRFToken', Tools.getCSRFToken());
+FormData.prototype.serialize = function () {
+    if (!this.get('CSRFToken')) {
+        this.append('CSRFToken', Tools.getCSRFToken());
     }
     return new URLSearchParams(this).toString();
 }
@@ -24,42 +24,42 @@ FormData.prototype.serialize = function(){
  * @param {object} FormData object
  * @returns {object} The reformatted object or stringified version of the object.
 */
-FormData.prototype.serializeObject = function(){
+FormData.prototype.serializeObject = function () {
     const obj = {};
-    if(!this.get('CSRFToken')){
-      this.append('CSRFToken', Tools.getCSRFToken());
+    if (!this.get('CSRFToken')) {
+        this.append('CSRFToken', Tools.getCSRFToken());
     }
     // reformat input[] fields to arrays
     for (const pair of this.entries()) {
-      key=pair[0];
-      if(key.endsWith('[]')){
-          key=key.slice(0,-2);
-          if(!obj[key]){
-              obj[key] = [];
-          }
-          obj[key].push(pair[1]);
-      }else{
-          obj[key]=pair[1];
-      }
+        key = pair[0];
+        if (key.endsWith('[]')) {
+            key = key.slice(0, -2);
+            if (!obj[key]) {
+                obj[key] = [];
+            }
+            obj[key].push(pair[1]);
+        } else {
+            obj[key] = pair[1];
+        }
     }
     let reformattedObj = {};
     Object.keys(obj).forEach(function (key) {
-      let parts = key.split('[');
-      let current = reformattedObj;
-      for (let i = 0; i < parts.length; i++) {
-          let part = parts[i];
-          if (part.endsWith(']')) {
-              part = part.slice(0, -1);
-          }
-          if (i === parts.length - 1) {
-              current[part] = obj[key];
-          } else {
-              if (!(part in current)) {
-                  current[part] = {};
-              }
-              current = current[part];
-          }
-      }
+        let parts = key.split('[');
+        let current = reformattedObj;
+        for (let i = 0; i < parts.length; i++) {
+            let part = parts[i];
+            if (part.endsWith(']')) {
+                part = part.slice(0, -1);
+            }
+            if (i === parts.length - 1) {
+                current[part] = obj[key];
+            } else {
+                if (!(part in current)) {
+                    current[part] = {};
+                }
+                current = current[part];
+            }
+        }
     });
     return reformattedObj;
 }
@@ -68,8 +68,8 @@ FormData.prototype.serializeObject = function(){
  * @param {object} FormData object
  * @returns {string} Returns JSON string of the FromData Object
 */
-FormData.prototype.serializeJSON = function(){
-  return JSON.stringify(this.serializeObject());
+FormData.prototype.serializeJSON = function () {
+    return JSON.stringify(this.serializeObject());
 }
 
 
@@ -209,26 +209,37 @@ const API = {
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
+        // Add a loading icon to the page
+        const loader = document.createElement('div');
+        loader.classList.add('spinner-border');
+        loader.setAttribute('role', 'status');
+        loader.style.width = '4rem';
+        loader.style.height = '4rem';
+        loader.style.left = '50%';
+        loader.style.top = '50%';
+        loader.style.position = 'fixed';
+        document.body.appendChild(loader);
+
         url = new URL(url);
-        if(typeof params === 'object'){
-          if(!params.CSRFToken){ params.CSRFToken=Tools.getCSRFToken()}
+        if (typeof params === 'object') {
+            if (!params.CSRFToken) { params.CSRFToken = Tools.getCSRFToken() }
         }
         // Loop through the parameters and add them to the URL as a query string
         // GET requests should have their parameters in the query string and POST requests should have them in the body
         if (method.toLowerCase() === "get") {
-          if(typeof params === 'object'){
-            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-          }else{
-            if(params){
-              url.search=params;
+            if (typeof params === 'object') {
+                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+            } else {
+                if (params) {
+                    url.search = params;
+                }
             }
-          }
-          body = null
+            body = null
         } else if (method.toLowerCase() === "post") {
-          if(!Tools.isJSON(params)){
-            params = JSON.stringify(params)
-          }
-          body = params;
+            if (!Tools.isJSON(params)) {
+                params = JSON.stringify(params)
+            }
+            body = params;
         }
 
         // Call the API and handle the response
@@ -241,9 +252,11 @@ const API = {
             body: body,
         })
             .then((response) => {
+                document.body.removeChild(loader);
                 return response.json();
             })
             .then((response) => {
+                document.body.removeChild(loader);
                 // If the response is an error, call the error handler
                 if (response.error) {
                     if (typeof errorHandler === 'function') {
