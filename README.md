@@ -25,7 +25,7 @@
 </div>
 
 > **Warning**
-> FOSSBilling is under active development but is currently very much beta software, there may be stability or security issues and it is not recommended for use in active production environments yet!
+> FOSSBilling is under active development but is currently very much beta software. This means that there may be stability or security issues and it is not yet recommended for use in active production environments! Also please be aware that we are not currently strictly following SemVer, and there may be breaking changes at any time. Be careful and make sure you read changelogs before updates!
 
 **FOSSBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether a startup or established, FOSSBilling can help you to automate your invoicing, incoming payments, and client management and communication.
 
