@@ -7,7 +7,7 @@
 {% set active_menu = 'activity' %}
 
 {% block content %}
-<div class="card">
+<div class="card overflow-auto">
     <div class="card-body">
         <h5>{{ 'System activity'|trans }}</h5>
     </div>
@@ -38,11 +38,11 @@
             <td>
                 {% if event.client %}
                 <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="avatar avatar-sm" style="background-image: url({{ event.client.email|gravatar }}&size=20)"></span>
+                    <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar }}&size=20)"></span>
                 </a>
                 {% elseif event.staff %}
                 <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                    <span class="avatar avatar-sm" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
+                    <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
                 </a>
                 {% else %}
                 &nbsp;

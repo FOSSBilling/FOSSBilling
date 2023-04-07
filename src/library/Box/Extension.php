@@ -87,9 +87,9 @@
             $client = $this->di['http_client'];
             $response = $client->request('GET', $url, [
                 'timeout' => 5,
-                'query' => [
+                'query' => array_merge($params, [
                     'bb_version' => Box_Version::VERSION,
-                ],
+                ]),
             ]);
             $json = $response->toArray();
 

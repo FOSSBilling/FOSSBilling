@@ -7,7 +7,7 @@
 {% set active_menu = 'activity' %}
 
 {% block content %}
-<div class="card">
+<div class="card overflow-auto">
     <div class="card-body">
         <h5>{{ 'Clients logins history'|trans }}</h5>
     </div>
@@ -37,7 +37,7 @@
             </td>
             <td>
                 <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="avatar avatar-xs" style="background-image: url({{ event.client.email|gravatar }}&size=24)"></span>
+                    <span class="avatar avatar-xs d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar }}&size=24)"></span>
                 </a>
             </td>
             <td>

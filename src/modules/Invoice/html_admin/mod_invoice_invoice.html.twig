@@ -626,7 +626,7 @@
 
     {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
     {% if transactions|length > 0 %}
-    <div class="card">
+    <div class="card overflow-auto">
         <div class="card-body">
             <h5>{{ 'Transactions'|trans }}</h5>
         </div>
