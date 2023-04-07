@@ -17,9 +17,9 @@
 const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
- * Patch to remove the old htaccess.txt file, and any old config.php backup.
+ * Patch to remove the old htaccess.txt file, any old config.php backup, and leftover admin_default files.
  * 
- * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075 and https://github.com/FOSSBilling/FOSSBilling/pull/1063
  */
 class FOSSPatch_31 extends FOSSPatchAbstract
 {
@@ -28,6 +28,10 @@ class FOSSPatch_31 extends FOSSPatchAbstract
         $fileActions = [
             __DIR__ . DIR_SEP . 'htaccess.txt' => 'unlink',
             __DIR__ . DIR_SEP . 'config.php.old' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'images' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'bb-deprecated.scss' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'dataTable-deprecated.scss' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'main-deprecated.scss' => 'unlink',
         ];
         $this->performFileActions($fileActions);
     }
@@ -324,4 +328,5 @@ natsort($patches);
         <p>Update completed. You are using FOSSBilling <strong><?php echo Box_Version::VERSION ?></strong></p>
     </div>
 </body>
+
 </html>

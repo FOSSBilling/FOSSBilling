@@ -66,7 +66,7 @@
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
-            <div class="card-body">
+            <div class="card-body overflow-auto">
                 <h3>{{ order.title }}</h3>
 
                 <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -506,7 +506,7 @@
             {% endif %}
         </div>
 
-        <div class="tab-pane fade" id="tab-invoices" role="tabpanel">
+        <div class="tab-pane fade overflow-auto" id="tab-invoices" role="tabpanel">
             <div class="help">
                 <h3>{{ 'Order invoices'|trans }}</h3>
             </div>

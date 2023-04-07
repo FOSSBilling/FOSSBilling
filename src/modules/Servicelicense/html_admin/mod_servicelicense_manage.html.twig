@@ -2,27 +2,27 @@
 
 {% set service = admin.order_service({ "id": order.id }) %}
 
-<div class="card-body">
+<div class="card-body overflow-auto">
     <h3>{{ 'Details'|trans }}</h3>
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <tbody>
+            <tr>
+                <td class="text-end">{{ 'Key'|trans }}:</td>
+                <td>{{ service.license_key }}</td>
+            </tr>
+            <tr>
+                <td class="text-end">{{ 'Plugin'|trans }}:</td>
+                <td>
+                    {{ service.plugin }}
+                </td>
+            </tr>
+            <tr>
+                <td class="text-end">{{ 'Last ping'|trans }}:</td>
+                <td>{{ service.pinged_at|format_date }} ({{ service.pinged_at|timeago }} ago)</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
-<table class="table card-table table-vcenter table-striped text-nowrap">
-    <tbody>
-        <tr>
-            <td class="text-end">{{ 'Key'|trans }}:</td>
-            <td>{{ service.license_key }}</td>
-        </tr>
-        <tr>
-            <td class="text-end">{{ 'Plugin'|trans }}:</td>
-            <td>
-                {{ service.plugin }}
-            </td>
-        </tr>
-        <tr>
-            <td class="text-end">{{ 'Last ping'|trans }}:</td>
-            <td>{{ service.pinged_at|format_date }} ({{ service.pinged_at|timeago }} ago)</td>
-        </tr>
-    </tbody>
-</table>
 
 <div class="card-footer text-center">
     {{ order_actions }}
