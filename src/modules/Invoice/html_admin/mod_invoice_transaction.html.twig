@@ -111,12 +111,16 @@
             </div>
 
             <div class="card-footer text-center">
-                <a class="btn55 mr10 api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1">
-                    <img src="assets/icons/refresh.svg" alt="">
+                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1">
+                    <svg class="icon" width="24" height="24">
+                        <use xlink:href="#refresh" />
+                    </svg>
                     <span>{{ 'Process'|trans }}</span>
                 </a>
-                <a class="btn55 mr10 api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': transaction.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice/transactions'|alink }}">
-                    <img src="images/icons/middlenav/trash.png" alt="">
+                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': transaction.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice/transactions'|alink }}">
+                    <svg class="icon" width="24" height="24">
+                        <use xlink:href="#delete" />
+                    </svg>
                     <span>{{ 'Delete'|trans }}</span>
                 </a>
                 </div>

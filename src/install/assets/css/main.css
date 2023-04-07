@@ -276,7 +276,7 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 
 /* ==========  Numbers notifications  ========== */
 
-.numberTop, .numberMiddle, .numberLeft { text-align: center; background: url(../images/number.png) repeat-x; display: inline-block; padding: 1px 5px; color: #fff; -moz-border-radius: 2px; -webkit-border-radius: 2px; -khtml-border-radius: 2px; border-radius: 2px; float: right; margin: 10px 15px 10px -5px; font-size: 11px; line-height: 14px; }
+.numberTop, .numberMiddle, .numberLeft { text-align: center; background: url(../images/number.png) repeat-x; display: inline-block; padding: 1px 5px; color: #fff; border-radius: 2px; float: right; margin: 10px 15px 10px -5px; font-size: 11px; line-height: 14px; }
 .numberTop { margin: 10px 15px 10px -5px; padding: 1px 5px!important; }
 .numberMiddle { margin: 0; position: absolute; top: -5px; right: -5px; font-size: 11px; }
 .numberLeft { margin: 0; position: absolute; top: 12px; right: 8px; font-size: 11px; font-family: Arial, Helvetica, sans-serif; float: none; background: url(../images/number.png) repeat-x!important; padding: 1px 5px!important; }
@@ -318,7 +318,7 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 .middleNav { float: right; margin-right: 1px; }
 .middleNav ul { margin-top: 25px; }
 .middleNav ul li { height: 55px;  text-align: center; display: block; float: left; margin-left: 25px; position: relative; }
-.middleNav ul li a { display: block; border: 1px solid #d5d5d5; background: url(../images/middlebg.png) repeat-x 0 0; -moz-border-radius: 2px; -webkit-border-radius: 2px; -khtml-border-radius: 2px; border-radius: 2px; color: #595858; font-size: 12px; position: relative; -moz-box-shadow: 0 2px 1px #fff; -webkit-box-shadow: 0 2px 1px #fff; box-shadow: 0 2px 1px #fff; }
+.middleNav ul li a { display: block; border: 1px solid #d5d5d5; background: url(../images/middlebg.png) repeat-x 0 0; border-radius: 2px; color: #595858; font-size: 12px; position: relative; box-shadow: 0 2px 1px #fff; }
 .middleNav ul li a span { display: block; padding: 34px 10px 0; }
 
 .middleNav ul li.iForum a span { background: url(../images/bubbles2.png) no-repeat 50% 8px; }
@@ -376,7 +376,7 @@ ul.sub li ul li { padding-left: 10px; }
 .stats ul li { display: block; float: left; margin-left: 40px; width: 151px; vertical-align: middle; }
 .stats ul li:first-child { margin: 0; }
 .stats ul li span { color: #424242; font-size: 16px; display: block; vertical-align: middle; white-space: normal; }
-.count { font-size: 26px; height: 40px; display: inline-block; float: left; line-height: 41px; padding: 0 10px; -moz-box-shadow: 0 1px 0 #fff; -webkit-box-shadow: 0 1px 0 #fff; box-shadow: 0 1px 0 #fff; margin-right: 10px; }
+.count { font-size: 26px; height: 40px; display: inline-block; float: left; line-height: 41px; padding: 0 10px; box-shadow: 0 1px 0 #fff; margin-right: 10px; }
 
 .stats a.blue { background: url(../images/count/blue.png) repeat-x 0 0; border: 1px solid #2e6590; color: #f7f7f7; }
 .stats a.blue:hover { background-position: 0 -41px; }
@@ -474,14 +474,14 @@ html ul.tabs li.activeTab a { color: #797979; }
 /* ===== Widgets ===== */
 
 .twoOne { width: 358px; }
-.widget, .content .title, .count, .widget .num a, a.count1, .table, .breadCrumb, .earnings, .leftNav ul li a, .listData .cNote, .pages li a, .errorPage, .btn14, .btn55, .loginPanel, .customfile { -moz-border-radius: 2px; -webkit-border-radius: 2px; -khtml-border-radius: 2px; border-radius: 2px; }
+.widget, .content .title, .count, .widget .num a, a.count1, .table, .breadCrumb, .earnings, .leftNav ul li a, .listData .cNote, .pages li a, .errorPage, .btn14, .btn55, .loginPanel, .customfile { border-radius: 2px; }
 
 .widgets { clear: both; }
 .widgets .left { float: left; width: 344px; }
 .widgets .right { float: right; width: 344px; }
 
 .content { float: left; width: 726px; margin-bottom: 80px; }
-.content .title { background: url(../images/darkBg.jpg) repeat-x; height: 36px; width: 760px; -moz-box-shadow: 0 1px 0 #fff; -webkit-box-shadow: 0 1px 0 #fff; box-shadow: 0 1px 0 #fff; }
+.content .title { background: url(../images/darkBg.jpg) repeat-x; height: 36px; width: 760px; box-shadow: 0 1px 0 #fff; }
 .content .title h5 { float: left; color: #fafafa; font-weight: normal; display: block; padding: 7px 15px; }
 
 
@@ -945,7 +945,7 @@ ul.listData li { display: inline-block; padding: 0 6px 1px!important; border: no
 
 
 
-#popup_container { min-width: 300px; max-width: 600px; background: url(../images/alertOpacityOverlay.png) repeat; -moz-border-radius: 5px; -webkit-border-radius: 5px; border-radius: 5px; }
+#popup_container { min-width: 300px; max-width: 600px; background: url(../images/alertOpacityOverlay.png) repeat; border-radius: 5px; }
 #popup_title { text-align: center; background: url(../images/leftNavBg.png) repeat-x; border-bottom: 1px solid #d5d5d5; cursor: default; padding: 9px 0 9px 0px; margin: 0em; height: 20px; }
 #popup_content { background: #fafafa; padding: 1em 1.75em; margin: 0em; }
 #popup_message { text-align: center; }

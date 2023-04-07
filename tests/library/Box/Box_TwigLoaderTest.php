@@ -26,7 +26,7 @@ class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
             'type' => 'client',
         ]);
         $test = $loader->getSourceContext('mod_page_login.html.twig');
-        $test2 = $loader->getSourceContext('404.html.twig');
+        $test2 = $loader->getSourceContext('error.html.twig');
 
         $this->assertIsObject($test);
         $this->assertIsObject($test2);

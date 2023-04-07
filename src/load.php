@@ -347,9 +347,9 @@ ini_set('error_log', PATH_LOG . '/php_error.log');
 $isApache = (function_exists('apache_get_version')) ? true : false;
 $serverSoftware = (isset($_SERVER['SERVER_SOFTWARE'])) ? $_SERVER['SERVER_SOFTWARE'] : '';
 
-if ($isApache or (false !== stripos($serverSoftware, 'apache'))) {
+if ($isApache or (false !== stripos($serverSoftware, 'apache')) or (false !== stripos($serverSoftware, 'litespeed'))) {
     if (!file_exists(PATH_ROOT . '/.htaccess')) {
-        throw new Exception('Error: You appear to be running an Apache server without a valid <b><em>.htaccess</em></b> file. You may need to rename <b><em>htaccess.txt</em></b> to <b><em>.htaccess</em></b>');
+        throw new Exception('Fatal Error: You appear to be running an Apache or LiteSpeed based webserver without a valid <b><em>.htaccess</em></b> file.');
     }
 }
 

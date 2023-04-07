@@ -9,10 +9,6 @@
  .dropdown-submenu:hover > a,
  .dropdown-submenu:focus > a {
    background-color: #3b3f47;
-   background-image: -moz-linear-gradient(top, #40444d, #34383f);
-   background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#40444d), to(#34383f));
-   background-image: -webkit-linear-gradient(top, #40444d, #34383f);
-   background-image: -o-linear-gradient(top, #40444d, #34383f);
    background-image: linear-gradient(to bottom, #40444d, #34383f);
    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff40444d', endColorstr='#ff34383f', GradientType=0);
  }
@@ -20,18 +16,10 @@
  .dropdown-menu > .active > a:hover,
  .dropdown-menu > .active > a:focus {
   background-color: #3b3f47;
-  background-image: -moz-linear-gradient(top, #40444d, #34383f);
-  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#40444d), to(#34383f));
-  background-image: -webkit-linear-gradient(top, #40444d, #34383f);
-  background-image: -o-linear-gradient(top, #40444d, #34383f);
   background-image: linear-gradient(to bottom, #40444d, #34383f);
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff40444d', endColorstr='#ff34383f', GradientType=0);
 }
  .btn-primary {
-  background-image: -moz-linear-gradient(top, #40444d, #40414d);
-  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#40444d), to(#40414d));
-  background-image: -webkit-linear-gradient(top, #40444d, #40414d);
-  background-image: -o-linear-gradient(top, #40444d, #40414d);
   background-image: linear-gradient(to bottom, #40444d, #40414d);
   border-color: #40414d #40414d #1d1e23;
   border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
@@ -139,10 +127,6 @@
  .wizard .buttonPrevious,
  .wizard .buttonFinish {
   background-color: #40434d;
-  background-image: -moz-linear-gradient(top, #40444d, #40414d);
-  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#40444d), to(#40414d));
-  background-image: -webkit-linear-gradient(top, #40444d, #40414d);
-  background-image: -o-linear-gradient(top, #40444d, #40414d);
   background-image: linear-gradient(to bottom, #40444d, #40414d);
   background-repeat: repeat-x;
   border-color: #40414d #40414d #1d1e23;
@@ -185,10 +169,6 @@
  }
  .has-switch span.switch-primary,
  .has-switch span.switch-left {
-  background-image: -moz-linear-gradient(top, #40414d, #40444d);
-  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#40414d), to(#40444d));
-  background-image: -webkit-linear-gradient(top, #40414d, #40444d);
-  background-image: -o-linear-gradient(top, #40414d, #40444d);
   background-image: linear-gradient(to bottom, #40414d, #40444d);
   background-repeat: repeat-x;
   border-color: #40444d #40444d #1d1f23;

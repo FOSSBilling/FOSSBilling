@@ -15,6 +15,7 @@
 
 use Box\Mod\Email\Service;
 use Twig\Loader\FilesystemLoader;
+use Symfony\Component\HttpClient\HttpClient;
 
 /**
  * @return bool
@@ -78,11 +79,13 @@ const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 /*
   Config paths & templates
 */
-const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
-const PATH_HTACCESS_TEMPLATE = PATH_ROOT . DIRECTORY_SEPARATOR . 'htaccess.txt';
-
 const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
 const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
+
+/*
+  htaccess path
+*/
+const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -406,12 +409,21 @@ final class Box_Installer
         /*
           Copy config templates when applicable
         */
-        if (!file_exists(PATH_HTACCESS) && file_exists(PATH_HTACCESS_TEMPLATE)) {
-            rename(PATH_HTACCESS_TEMPLATE, PATH_HTACCESS);
-        }
-
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             rename(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG);
+        }
+
+        /*
+          If .htaccess doesn't exist, grab it from Github.
+        */
+        if (!file_exists(PATH_HTACCESS)) {
+            try {
+                $client = HttpClient::create();
+                $response = $client->request('GET', 'https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/main/src/.htaccess');
+                file_put_contents(PATH_HTACCESS, $response->getContent());
+            } catch (Exception $e) {
+                throw new Exception("Unable to write required .htaccess file to " . PATH_HTACCESS . ". Check file and folder permissions.", $e->getCode());
+            }
         }
 
         return true;

@@ -83,28 +83,28 @@
 
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
-                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                <a class="btn btn-primary api-link"
                     href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-redirect="{{ 'support/public-tickets'|alink }}">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                    <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Close'|trans }}</span>
                 </a>
                 {% endif %}
-                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                <a class="btn btn-primary api-link"
                     href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support/public-tickets'|alink }}">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                    <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
-                <a class="d-inline-block mx-1 btn bg-light bg-gradient"
+                <a class="btn btn-primary"
                     href="{{ 'support/contact-us/conversation'|link }}/{{ ticket.hash }}"
                     target="_blank">
-                    <svg class="mb-2 text-secondary" width="24" height="24">
+                    <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#eye" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>

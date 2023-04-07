@@ -27,7 +27,7 @@ jobs:
         run: npm i --package-lock-only
 
       - name: Create a Pull Request
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           title: Update CKEditor and Related Dependencies
           commit-message: Update CKEditor and Related Dependencies

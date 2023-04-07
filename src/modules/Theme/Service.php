@@ -452,10 +452,7 @@ class Service implements InjectionAwareInterface
 
     protected function isRouteAdmin()
     {
-        $base = str_replace(['https://', 'http://'], "", BB_URL);
-        $request = str_replace($base, "", $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-
-        if (str_starts_with('/' . $request, ADMIN_PREFIX)) {
+        if (str_starts_with($_SERVER['REQUEST_URI'], ADMIN_PREFIX)) {
             return true;
         }
 

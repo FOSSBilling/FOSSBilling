@@ -35,13 +35,13 @@
     <div class="card">
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                <div class="card-body">
+                <div class="card-body overflow-auto">
                     <h3>{{ 'Subscription details'|trans }}</h3>
 
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <tbody>
                             <tr>
-                                <td class="w-50 text-end">{{ 'Client'|trans }}:</td>
+                                <td class="text-end">{{ 'Client'|trans }}:</td>
                                 <td>
                                     <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
                                 </td>
@@ -55,7 +55,8 @@
                                 <td>{{ subscription.gateway.title }}</td>
                             </tr>
                             <tr>
-                                <td class="text-end">{{ 'Subscription ID on payment gateway'|trans }}:</td>
+                                <td class="text-end d-none d-sm-table-cell">{{ 'Subscription ID on payment gateway'|trans }}:</td>
+                                <td class="text-end d-sm-none">{{ 'Subscription ID on PG'|trans }}:</td>
                                 <td>{{ subscription.sid|default('-') }}</td>
                             </tr>
                             <tr>
@@ -85,14 +86,14 @@
                 </div>
 
                 <div class="body footer text-center">
-                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-redirect="{{ 'invoice/subscriptions'|alink }}">
-                        <svg class="mb-2 text-secondary" width="24" height="24">
+                        <svg class="icon icon-tabler" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
-                        <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+                        <span>{{ 'Delete'|trans }}</span>
                     </a>
                 </div>
             </div>

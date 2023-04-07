@@ -75,9 +75,9 @@ class Box_App
     public function show404(Exception $e)
     {
         error_log($e->getMessage());
-        header('HTTP/1.0 404 Not Found');
+        http_response_code(404);
 
-        return $this->render('404', ['exception' => $e]);
+        return $this->render('error', ['exception' => $e]);
     }
 
     /**

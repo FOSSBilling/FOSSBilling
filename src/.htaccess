@@ -1,0 +1,35 @@
+# BEGIN FOSSBilling
+# Read documentation https://fossbilling.org/docs for more information.
+Options     -Indexes    +SymLinksIfOwnerMatch
+<IfModule !mod_rewrite.c>
+DirectoryIndex rewrite-missing.html
+FallbackResource rewrite-missing.html
+</IfModule>
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Rewrite rules to block out some common exploits.
+RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
+RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+RewriteRule .* index.php [F]
+
+# Alias from bb-ipn.php to ipn.php for those who have upgraded from BoxBilling.
+RewriteRule ^bb-ipn\.php$ /ipn.php [L]
+
+# Block direct access to sensitive files.
+RewriteCond %{REQUEST_URI} /?.+\.(_|htaccess|htpasswd|bak|conf|inc|ini|lock|log|old|sh|sql|twig|yaml) [NC,OR]
+RewriteCond %{REQUEST_URI} /?.*(config.php|di.php|load.php)
+RewriteRule ^(.*)$ index.php?_url=/$1&_errcode=404 [L]
+
+# Rewrite non-existent file/directory names to index.php.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^.*$ - [NC,L]
+RewriteRule ^page/(.*)$ index.php?_url=/custompages/$1
+RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
+</IfModule>
+# END FOSSBilling

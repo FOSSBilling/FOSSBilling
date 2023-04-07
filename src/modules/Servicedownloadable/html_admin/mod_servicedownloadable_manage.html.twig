@@ -22,7 +22,7 @@
     <h3>{{ 'Upload new file for this order'|trans }}</h3>
     <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
 
-    <form method="post" action="" class="mainForm" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+    <form method="post" action="" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <input type="submit" value="{{ 'Upload'|trans }}" class="greyishBtn submitForm" id="bb-upload-button">
+        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary submitForm" id="bb-upload-button">
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
     </form>

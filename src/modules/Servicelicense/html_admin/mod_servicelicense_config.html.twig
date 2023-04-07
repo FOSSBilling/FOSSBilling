@@ -1,85 +1,85 @@
 {% import 'macro_functions.html.twig' as mf %}
-
-<div class="help">
+<div class="card-body">
     <h5>{{ 'License settings'|trans }}</h5>
-</div>
-
-<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="License settings updated">
-<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-<fieldset>
-    <div class="rowElem noborder">
-        <label>{{ 'Prefix'|trans }}:</label>
-        <div class="formRight">
-            <input type="text" name="config[prefix]" value="{{ product.config.prefix }}">
+    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'License settings updated'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Prefix'|trans }}:</label>
+            <div class="col">
+                <input type="text" class="form-control" name="config[prefix]" value="{{ product.config.prefix }}">
+            </div>
         </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Length'|trans }}:</label>
-        <div class="formRight">
-            <input type="text" name="config[length]" value="{{ product.config.length }}">
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
+            <div class="col">
+                <input type="number" class="form-control" name="config[length]" value="{{ product.config.length }}">
+            </div>
         </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Plugin'|trans }}:</label>
-        <div class="formRight">
-            {{ mf.selectbox('config[plugin]', admin.servicelicense_plugin_get_pairs, product.config.plugin, 1) }}
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Plugin'|trans }}:</label>
+            <div class="col">
+                {{ mf.selectbox('config[plugin]', admin.servicelicense_plugin_get_pairs, product.config.plugin, 1) }}
+            </div>
         </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Validate IP'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="config[validate_ip]" value="1"{% if product.config.validate_ip %} checked{% endif %}>
-            <label>{{ 'Yes'|trans }}</label>
-            <input type="radio" name="config[validate_ip]" value="0"{% if not product.config.validate_ip %} checked{% endif %}>
-            <label>{{ 'No'|trans }}</label>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate IP'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateIPYes" type="radio" name="config[validate_ip]" value="1"{% if product.config.validate_ip %} checked{% endif %}>
+                    <label class="form-check-label" for="validateIPYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateIPNo" type="radio" name="config[validate_ip]" value="0"{% if not product.config.validate_ip %} checked{% endif %}>
+                    <label class="form-check-label" for="validateIPNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
         </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Validate Hostname'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="config[validate_host]" value="1"{% if product.config.validate_host %} checked{% endif %}>
-            <label>{{ 'Yes'|trans }}</label>
-            <input type="radio" name="config[validate_host]" value="0"{% if not product.config.validate_host %} checked{% endif %}>
-            <label>{{ 'No'|trans }}</label>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate Hostname'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateHostnameYes" type="radio" name="config[validate_host]" value="1"{% if product.config.validate_host %} checked{% endif %}>
+                    <label class="form-check-label" for="validateHostnameYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateHostnameNo" type="radio" name="config[validate_host]" value="0"{% if not product.config.validate_host %} checked{% endif %}>
+                    <label class="form-check-label" for="validateHostnameNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
         </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Validate Version'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="config[validate_version]" value="1"{% if product.config.validate_version %} checked{% endif %}>
-            <label>{{ 'Yes'|trans }}</label>
-            <input type="radio" name="config[validate_version]" value="0"{% if not product.config.validate_version %} checked{% endif %}>
-            <label>{{ 'No'|trans }}</label>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate Version'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateVersionYes" type="radio" name="config[validate_version]" value="1"{% if product.config.validate_version %} checked{% endif %}>
+                    <label class="form-check-label" for="validateVersionYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateVersionNo" type="radio" name="config[validate_version]" value="0"{% if not product.config.validate_version %} checked{% endif %}>
+                    <label class="form-check-label" for="validateVersionNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
         </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Validate Path'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="config[validate_path]" value="1"{% if product.config.validate_path %} checked{% endif %}>
-            <label>{{ 'Yes'|trans }}</label>
-            <input type="radio" name="config[validate_path]" value="0"{% if not product.config.validate_path %} checked{% endif %}>
-            <label>{{ 'No'|trans }}</label>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate Path'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validatePathYes" type="radio" name="config[validate_path]" value="1"{% if product.config.validate_path %} checked{% endif %}>
+                    <label class="form-check-label" for="validatePathYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validatePathNo" type="radio" name="config[validate_path]" value="0"{% if not product.config.validate_path %} checked{% endif %}>
+                    <label class="form-check-label" for="validatePathNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
         </div>
-        <div class="fix"></div>
-    </div>
-
-    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm">
-</fieldset>
-
-    <input type="hidden" name="id" value="{{ product.id }}">
-</form>
-
-<div class="body">
-    <h1 class="pt10">{{ 'License plugins'|trans }}</h1>
-    <p>{{ 'FOSSBilling gives you ability to provide your own license generation script. Follow the instructions bellow to install new license plugin'|trans }}</p>
-
-    <div class="pt20 list arrowGrey">
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+    </form>
+    <hr>
+    <div>
+        <h1>{{ 'License plugins'|trans }}</h1>
+        <p>{{ 'FOSSBilling gives you ability to provide your own license generation script. Follow the instructions bellow to install new license plugin'|trans }}</p>
         <ul>
             <li>{{ 'License plugin is PHP class "License_PluginName" with one method'|trans }} <strong>generate</strong></li>
             <li>{{ 'Take a look at default plugin at'|trans }} <strong>src/modules/Servicelicense/Plugin/Simple.php</strong></li>
