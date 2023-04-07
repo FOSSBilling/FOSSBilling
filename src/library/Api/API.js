@@ -252,7 +252,6 @@ const API = {
             body: body,
         })
             .then((response) => {
-                document.body.removeChild(loader);
                 return response.json();
             })
             .then((response) => {
