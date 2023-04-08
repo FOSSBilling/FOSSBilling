@@ -19,8 +19,6 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "devDependencies": {
-    "@babel/core": "^7.21.4",
-    "@babel/preset-env": "^7.21.4",
     "@symfony/webpack-encore": "^4.2.0",
     "autoprefixer": "^10.4.14",
     "core-js": "^3.30.0",
