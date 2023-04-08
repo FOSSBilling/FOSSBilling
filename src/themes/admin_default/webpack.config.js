@@ -21,7 +21,6 @@ Encore
   .enableIntegrityHashes()
   .disableSingleRuntimeChunk()
   .cleanupOutputBeforeBuild()
-  .enableBuildNotifications()
   .enableSourceMaps(!Encore.isProduction())
   .enableVersioning(Encore.isProduction())
   .configureBabel((config) => {
