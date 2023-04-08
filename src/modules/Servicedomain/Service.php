@@ -56,19 +56,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($action == 'owndomain') {
-            if (!isset($data['owndomain_sld'])) {
-                throw new \FOSSBilling\Exception('Order data must contain :field configuration field', [':field' => 'owndomain_sld']);
+            if (!isset($data['owndomain'])) {
+                throw new \Box_Exception('Order data must contain :field configuration field', [':field' => 'owndomain']);
             }
 
-            if (!$validator->isSldValid($data['owndomain_sld'])) {
-                $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            [$sld, $tld] = $this->_getTuple($data['owndomain']);
 
-                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+            if (!$validator->isSldValid($sld)) {
+                $safe_domain = htmlspecialchars($data['owndomain'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_domain]);
             }
 
             $required = [
-                'owndomain_tld' => 'Domain TLD is invalid.',
-                'owndomain_sld' => 'Domain name is required.',
+                'owndomain' => 'Domain name provided is not valid.',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
         }
@@ -616,11 +617,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function _getTuple($data)
     {
         $action = $data['action'];
+
         [$sld, $tld] = [null, null];
 
         if ($action == 'owndomain') {
-            $sld = $data['owndomain_sld'];
-            $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+            $domain = (string) $data['domain']['owndomain'];
+            $tldSepPos = strrpos($domain, '.');
+            if ($tldSepPos === false) {
+                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $domain]);
+            }
+            $tld = substr($domain, $tldSepPos); // TLD includes leading period (e.g. .com).
+            $sld = substr($domain, 0, strlen($domain) - strlen($tld)); // SLD is everything before TLD.
         }
 
         if ($action == 'transfer') {

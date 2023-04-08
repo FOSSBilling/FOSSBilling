@@ -142,11 +142,6 @@ class Service implements InjectionAwareInterface
 
             $productServiceFromList = $productFromList->getService();
 
-            // @deprecated logic
-            if (method_exists($productServiceFromList, 'prependOrderConfig')) {
-                $productFromListConfig = $productServiceFromList->prependOrderConfig($productFromList, $productFromListConfig);
-            }
-
             if (method_exists($productServiceFromList, 'attachOrderConfig')) {
                 $model = $this->di['db']->load('Product', $productFromList->id);
                 $productFromListConfig = $productServiceFromList->attachOrderConfig($model, $productFromListConfig);
@@ -522,7 +517,7 @@ class Service implements InjectionAwareInterface
             $item['register_sld'] = (isset($item['register_sld'])) ? strtolower($item['register_sld']) : null;
             $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower($item['transfer_sld']) : null;
             $item['sld'] = (isset($item['sld'])) ? strtolower($item['sld']) : null;
-            $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower($item['domain']['owndomain_sld']) : null;
+            $item['domain']['owndomain'] = (isset($item['domain']['owndomain'])) ? strtolower($item['domain']['owndomain']) : null;
             $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower($item['domain']['register_sld']) : null;
             $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
 

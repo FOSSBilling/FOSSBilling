@@ -263,9 +263,9 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
             array(7, array()), //downloadable
             array(10, array('action'=>'register', 'register_sld'=>'test', 'register_tld'=>".com", 'register_years'=>'3')), //domain
             array(10, array('action'=>'transfer', 'transfer_sld'=>'test', 'transfer_tld'=>".com", 'transfer_code'=>'asdasd')), //domain
-            array(10, array('action'=>'owndomain', 'owndomain_sld'=>'test', 'owndomain_tld'=>".com", 'register_years'=>'3')), //domain
+            array(10, array('action'=>'owndomain', 'owndomain'=>'test.com', 'register_years'=>'3')), //domain
             array(12, array('some'=>'var')), //membership
-            array(8, array('domain'=>array('action'=>'owndomain', 'owndomain_sld'=>'cololo', 'owndomain_tld'=>'.com'))), //hosting
+            array(8, array('domain'=>array('action'=>'owndomain', 'owndomain'=>'cololo.com'))), //hosting
             
             array(3, array()), //addon
         );

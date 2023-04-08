@@ -324,15 +324,14 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     {
         $this->api_guest->cart_reset();
 
-        $data = array(
+        $data = [
             'id'        =>  8,
             'period'    =>  '3M',
-            'domain'    =>  array(
+            'domain'    =>  [
                 'action'=>  'owndomain',
-                'owndomain_tld'=>  '.com',
-                'owndomain_sld'=>  'exist',
-            ),
-        );
+                'owndomain'=>  'exist.com'
+            ],
+        ];
         $bool = $this->api_guest->cart_add_item($data);
         $this->assertTrue($bool);
     }
@@ -341,15 +340,14 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     {
         $this->api_guest->cart_reset();
 
-        $data = array(
+        $data = [
             'id'        =>  8,
             'period'    =>  '3M',
-            'domain'    =>  array(
+            'domain'    =>  [
                 'action'=>  'owndomain',
-                'owndomain_tld'=>  '.com',
-                'owndomain_sld'=>  'example',
-            ),
-        );
+                'owndomain'=>  'example.com'
+            ],
+        ];
         $bool = $this->api_guest->cart_add_item($data);
         $this->assertTrue($bool);
 
