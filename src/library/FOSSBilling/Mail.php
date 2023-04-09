@@ -44,7 +44,7 @@ class FOSSBilling_Mail
     }
 
     /**
-     * Constructor for creating an email message. You must either provide a transport or DSN to use, but not both at the same time.
+     * Constructor for creating an email message. The custom DSN will be used if you either don't provide a transport or use 'custom' for it.
      *
      * @param array|string $from      The sender's email and name (optional) as an associative array with keys 'email' and 'name', a string representing the email address, or an array of email addresses.
      * @param array|string $to        The recipient's email and name (optional) as an associative array with keys 'email' and 'name', a string representing the email address, or an array of email addresses.
@@ -173,6 +173,7 @@ class FOSSBilling_Mail
                 $dsn = 'sendgrid://' . $options['sendgrid_key'] . '@default';
                 break;
             case null:
+            case 'custom':
                 if (empty($this->dsn)) {
                     throw new \Box_Exception("Error: No transport method was provided and the custom DSN is empty");
                 }

@@ -184,7 +184,7 @@
 
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">Queue options</label>
-                                <div class="col-md-6" id="mailer">
+                                <div class="col-md-6">
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Send emails per cron run (0 = unlimited)'|trans }}</small>
                                         <input class="form-control" type="text" name="queue_once" placeholder="0" value="{{ params.queue_once }}">
@@ -195,13 +195,13 @@
                                     </div>
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Cancel sending email after unsuccessful tries (0 = do not cancel)'|trans }}</small>
-                                        <input class="form-control" type="text" name="cancel_after" placeholder="0" value="{{ params.cancel_after }}">
+                                        <input class="form-control" type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after }}">
                                     </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
                                 <label class="col-md-3 form-label">{{ 'Log sent emails to database'|trans }}</label>
-                                <div class="col-md-6" id="mailer">
+                                <div class="col-md-6">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radioLogEnabledYes" type="radio" name="log_enabled" value="1"{% if params.log_enabled %} checked{% endif %}>
                                         <label class="form-check-label" for="radioLogEnabledYes">{{ 'Yes'|trans }}</label>
@@ -226,6 +226,10 @@
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radioSendGrid" type="radio" name="mailer" value="sendgrid"{% if params.mailer == 'sendgrid' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioSendGrid">{{ 'SendGrid'|trans }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" id="radioCustom" type="radio" name="mailer" value="custom"{% if params.mailer == 'custom' %} checked{% endif %}>
+                                        <label class="form-check-label" for="radioCustom">{{ 'Custom'|trans }}</label>
                                     </div>
                                 </div>
                             </div>
@@ -255,36 +259,25 @@
                                         <input class="form-control" type="password" name="smtp_password" value="{{ params.smtp_password }}">
                                     </div>
                                 </div>
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 form-label">{{ 'SMTP Security'|trans }}</label>
-                                    <div class="col-md-6">
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" id="radioSmtpNone" type="radio" name="smtp_security" value="" {% if not params.smtp_security %} checked{% endif %}>
-                                            <label class="form-check-label" for="radioSmtpNone">{{ 'None'|trans }}</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" id="radioSmtpSSL" type="radio" name="smtp_security" value="ssl"{% if params.smtp_security == 'ssl' %} checked{% endif %}>
-                                            <label class="form-check-label" for="radioSmtpSSL">SSL</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" id="radioSmtpTLS" type="radio" name="smtp_security" value="tls"{% if params.smtp_security == 'tls' %} checked{% endif %}>
-                                            <label class="form-check-label" for="radioSmtpTLS">TLS</label>
-                                        </div>
-                                    </div>
-                                </div>
                             </fieldset>
 
                             <fieldset class="sendgrid"{% if params.mailer != 'sendgrid' %} style="display:none;"{% endif %} >
                                 <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'SendGrid Username'|trans }}</label>
+                                    <label class="col-md-3 col-form-label">{{ 'SendGrid API Key'|trans }}</label>
                                     <div class="col-md-6">
-                                        <input class="form-control" type="text" name="sendgrid_username" value="{{ params.sendgrid_username }}">
+                                        <input class="form-control" type="text" name="sendgrid_key" value="{{ params.sendgrid_key }}">
                                     </div>
                                 </div>
+                            </fieldset>
+
+                            <fieldset class="custom"{% if params.mailer != 'custom' %} style="display:none;"{% endif %} >
                                 <div class="mb-3 row">
-                                    <label class="form-label col-3 col-form-label">{{ 'SendGrid Password'|trans }}</label>
+                                    <label class="col-md-3 col-form-label" for="custom_dsn">{{ 'Custom DSN'|trans }}</label>
                                     <div class="col-md-6">
-                                        <input class="form-control" type="password" name="sendgrid_password" value="{{ params.sendgrid_password }}">
+                                        <p>{{"If one of the available options don't quite meet your needs, you can define a custom DSN. Please keep in mind that usernames, passwords, and hostnames with special characters need to be URL-encoded."|trans}}</p>
+                                        <p>{{"More information"|trans}}: <a href="https://symfony.com/doc/current/mailer.html#using-built-in-transports">{{"Symfony Documentation"}}</a></p>
+                                        <p class="fw-light">{{"Example"|trans}}: smtp://user:pass@smtp.example.com?verify_peer=0</p>
+                                        <input class="form-control" type="text" name="custom_dsn" value="{{ params.custom_dsn }}">
                                     </div>
                                 </div>
                             </fieldset>
@@ -329,6 +322,12 @@ $(function() {
             $('fieldset.sendgrid').slideDown();
         } else {
             $('fieldset.sendgrid').slideUp();
+        }
+
+        if ($(this).val() == 'custom') {
+            $('fieldset.custom').slideDown();
+        } else {
+            $('fieldset.custom').slideUp();
         }
     });
 });
