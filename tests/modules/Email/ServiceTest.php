@@ -534,7 +534,7 @@ class ServiceTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $db       = $this->getMockBuilder('Box_Database')->getMock();
-        $mailMock = $this->getMockBuilder('Box_Mail')->getMock();
+        $mailMock = $this->getMockBuilder('FOSSBilling_Mail')->getMock();
 
         $emailSettings = array(
             'mailer'              => 'sendmail',
@@ -1009,7 +1009,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($isExtensionActiveReturn));
 
 
-          $mailMock = $this->getMockBuilder('\Box_Mail')->disableOriginalConstructor()->getMock();
+          $mailMock = $this->getMockBuilder('\FOSSBilling_Mail')->disableOriginalConstructor()->getMock();
        /* Will not work be called because APPLICATION_ENV != 'production'
         * $mailMock->expects($this->atLeastOnce())
             ->method('send')
@@ -1120,7 +1120,7 @@ class ServiceTest extends \BBTestCase
                 'cancel_after' => 1
             )));
 
-        $mailMock = $this->getMockBuilder('\Box_Mail')->disableOriginalConstructor()->getMock();
+        $mailMock = $this->getMockBuilder('\FOSSBilling_Mail')->disableOriginalConstructor()->getMock();
         $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
