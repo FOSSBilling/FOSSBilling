@@ -82,28 +82,6 @@ class AdminTest extends \BBTestCase {
         $activity->log_get_list(array());
     }
 
-    public function testlog()
-    {
-        $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
-        $databaseMock->expects($this->atLeastOnce())->
-            method('dispense')->
-            will($this->returnValue(new \stdClass()));
-
-        $databaseMock->expects($this->atLeastOnce())->
-            method('store')->
-            will($this->returnValue(1));
-
-        $di = new \Box_Di();
-        $di['db'] = $databaseMock;
-        $di['request'] = new \Box_Request($di);
-
-        $activity = new \Box\Mod\Activity\Api\Admin();
-        $activity->setDi($di);
-        $result = $activity->log(array('m' => 'hello message'));
-
-        $this->assertEquals(true, $result, 'Log did not returned true');
-    }
-
     public function testlogEmptyMParam()
     {
         $di = new \Box_Di();
@@ -182,4 +160,3 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals(true, $result);
     }
 }
- 

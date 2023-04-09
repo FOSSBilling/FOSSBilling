@@ -380,7 +380,7 @@ $di['twig'] = $di->factory(function () use ($di) {
 $di['is_client_logged'] = function () use ($di) {
     if (!$di['auth']->isClientLoggedIn()) {
         $api_str = '/api/';
-        $url = $di['request']->getQuery('_url');
+        $url = $_GET['_url'] ?? null;
 
         if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
             // Throw Exception if api request
@@ -408,7 +408,7 @@ $di['is_client_logged'] = function () use ($di) {
 $di['is_admin_logged'] = function () use ($di) {
     if (!$di['auth']->isAdminLoggedIn()) {
         $api_str = '/api/';
-        $url = $di['request']->getQuery('_url', null, '');
+        $url = $_GET['_url'] ?? '';
         if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
@@ -761,7 +761,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
 
 /*
  * Creates a CSV export of data from a specified table and sends it to the browser.
- * 
+ *
  * @param string $table Name of the table to export data from
  * @param string $outputName Name of the exported CSV file
  * @param array $headers Optional array of column headers for the CSV file

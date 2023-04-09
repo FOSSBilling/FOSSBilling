@@ -1,5 +1,4 @@
 <?php
-
 /**
  * FOSSBilling.
  *
@@ -17,8 +16,8 @@
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
-$url = $di['request']->getQuery('_url') ?? '';
-$http_err_code = $di['request']->getQuery('_errcode') ?? null;
+$url = $_GET['_url'] ?? '';
+$http_err_code = $_GET['_errcode'] ?? '';
 
 $admin_prefix = $di['config']['admin_area_prefix'];
 if (0 === strncasecmp($url, $admin_prefix, strlen($admin_prefix))) {

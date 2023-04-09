@@ -345,7 +345,7 @@ ini_set('html_errors', false);
 ini_set('error_log', PATH_LOG . '/php_error.log');
 
 $isApache = (function_exists('apache_get_version')) ? true : false;
-$serverSoftware = (isset($_SERVER['SERVER_SOFTWARE'])) ? $_SERVER['SERVER_SOFTWARE'] : '';
+$serverSoftware = ($_SERVER['SERVER_SOFTWARE']) ?? '';
 
 if ($isApache or (false !== stripos($serverSoftware, 'apache')) or (false !== stripos($serverSoftware, 'litespeed'))) {
     if (!file_exists(PATH_ROOT . '/.htaccess')) {

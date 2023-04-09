@@ -142,21 +142,6 @@ class GuestTest extends \BBTestCase {
         $this->assertEquals($expected, $result);
     }
 
-    public function testcurrent_url()
-    {
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
-        $requestMock->expects($this->atLeastOnce())
-            ->method('getURI')
-            ->will($this->returnValue('StringTypeUrl'));
-
-        $di = new \Box_Di();
-        $di['request'] = $requestMock;
-
-        $this->api->setDi($di);
-        $result = $this->api->current_url();
-        $this->assertIsString($result);
-    }
-
     public function testtemplate_exists()
     {
         $data = array(
@@ -228,4 +213,3 @@ class GuestTest extends \BBTestCase {
     }
 
 }
- 

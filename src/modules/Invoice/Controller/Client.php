@@ -93,7 +93,8 @@ class Client implements \Box\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $data = [
-            'subscription' => $this->di['request']->getQuery('subscription'),
+
+            'subscription' => $_GET['subscription'] ?? null,
             'hash' => $hash,
             'gateway_id' => $id,
             'auto_redirect' => true,

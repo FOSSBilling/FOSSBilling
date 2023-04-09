@@ -24,7 +24,6 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertInstanceOf('Box_Cookie', $di['cookie']);
 
         $this->assertInstanceOf('Box_Session', $di['session']);
-        $this->assertInstanceOf('Box_Request', $di['request']);
         $this->assertInstanceOf('FileCache', $di['cache']);
         $this->assertInstanceOf('Box_Authorization', $di['auth']);
         $this->assertInstanceOf('Twig\Environment', $di['twig']);
