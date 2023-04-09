@@ -534,7 +534,6 @@ class ServiceTest extends \BBTestCase
 
         $di       = new \Box_Di();
         $db       = $this->getMockBuilder('Box_Database')->getMock();
-        $mailMock = $this->getMockBuilder('FOSSBilling_Mail')->getMock();
 
         $emailSettings = array(
             'mailer'              => 'sendmail',
@@ -547,7 +546,6 @@ class ServiceTest extends \BBTestCase
         );
 
         $di['db']          = $db;
-        $di['mail']        = $mailMock;
         $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
@@ -1009,7 +1007,6 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($isExtensionActiveReturn));
 
 
-          $mailMock = $this->getMockBuilder('\FOSSBilling_Mail')->disableOriginalConstructor()->getMock();
        /* Will not work be called because APPLICATION_ENV != 'production'
         * $mailMock->expects($this->atLeastOnce())
             ->method('send')
@@ -1018,7 +1015,6 @@ class ServiceTest extends \BBTestCase
 
         $di           = new \Box_Di();
         $di['db']     = $db;
-        $di['mail']     = $mailMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod_service'] = $di->protect(function ($name) use ($extension,$activityMock) {
             if ($name == 'activity') {
@@ -1120,7 +1116,6 @@ class ServiceTest extends \BBTestCase
                 'cancel_after' => 1
             )));
 
-        $mailMock = $this->getMockBuilder('\FOSSBilling_Mail')->disableOriginalConstructor()->getMock();
         $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
@@ -1129,7 +1124,6 @@ class ServiceTest extends \BBTestCase
         $di = new \Box_Di();
         $di['db'] = $dbMock;
 
-        $di['mail']     = $mailMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod'] = $di->protect(function () use ($modMock) {
             return $modMock;
