@@ -20,7 +20,6 @@
         "pimple/pimple": "^3.3",
         "twig/twig": "^3.3.9",
         "geoip2/geoip2": "^2.10.0",
-        "phpmailer/phpmailer": "^6.6.5",
         "stripe/stripe-php": "^10.3.0",
         "filp/whoops": "^2.14",
         "psr/log": "^3.0.0",
@@ -39,7 +38,10 @@
         "league/csv": "^9.8",
         "symfony/http-client": "^6.0",
         "twig/intl-extra": "^3.5",
-        "symfony/polyfill-intl-icu": "^1.27"
+        "symfony/polyfill-intl-icu": "^1.27",
+        "symfony/mailer": "^6.0",
+        "symfony/sendgrid-mailer": "^6.0",
+        "symfony/filesystem": "^6.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",

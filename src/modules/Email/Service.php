@@ -329,14 +329,9 @@ class Service implements \Box\InjectionAwareInterface
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }
-        $mail = $di['mail'];
-        $mail->setBodyHtml($email->content_html);
-        $mail->setFrom($email->sender);
-        $mail->setSubject($email->subject);
-        $mail->addTo($email->recipients);
-
         $settings = $this->di['mod_config']('email');
-        $transport = $settings['mailer'] ?? 'sendmail';
+
+        $mail = new \Box_Mail($email->sender, '', $email->recipients, $email->sender, $email->content_html, $settings['mailer'] ?? 'sendmail');
 
         if (APPLICATION_ENV == 'testing') {
             if (BB_DEBUG) {
@@ -355,7 +350,7 @@ class Service implements \Box\InjectionAwareInterface
                 $activityService->logEmail($email->subject, $email->client_id, $email->sender, $email->recipients, $email->content_html, $email->content_text);
             }
 
-            $mail->send($transport, $settings);
+            $mail->send($settings);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }

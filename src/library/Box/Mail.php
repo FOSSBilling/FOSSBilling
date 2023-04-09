@@ -13,21 +13,19 @@
  * with this source code in the file LICENSE
  */
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mime\Address;
 
 class Box_Mail
 {
     protected $di = null;
 
-    private $_bodyHtml  = NULL;
-    private $_from      = NULL;
-    private $_from_name = NULL;
-    private $_subject   = NULL;
-    private $_replyTo   = NULL;
-    private $_replyTo_name   = NULL;
-    private $_to        = NULL;
-    private $_headers   = '';
+    private Email $email;
+    private $method = null;
+    private $dsn = null;
 
     /**
      * @param Box_Di|null $di
@@ -45,246 +43,110 @@ class Box_Mail
         return $this->di;
     }
 
-    public function send($transport = 'sendmail', $options = array())
+    public function __construct(string $from, string|null $from_name, string $to, string $subject, string $bodyHTML, string|null $method, string|null $dsn = null)
     {
-        if($transport == 'sendmail') {
-            $this->_sendMail();
-        } else if($transport == 'smtp') {
-            $this->_sendSmtpMail($options);
-        } else if($transport == 'sendgrid') {
-            $this->_sendSendgrid($options);
+        if (empty($from_name)) {
+            $from = new Address($from);
         } else {
-            throw new \Box_Exception('Unknown mail transport: :transport', array(':transport'=>$transport));
+            $from = new Address($from, $from_name);
+        }
+
+        $this->email = (new Email())
+            ->from($from)
+            ->to($to)
+            ->priority(Email::PRIORITY_NORMAL)
+            ->subject($subject)
+            ->html($bodyHTML);
+        $this->method = $method;
+        $this->dsn = $dsn ?? null;
+    }
+
+    public function addTo(string|array $toAddresses)
+    {
+        $this->email->addto($toAddresses);
+    }
+
+    public function addCc(string|array $ccAddresses)
+    {
+        $this->email->addCc($ccAddresses);
+    }
+
+    public function addBcc(string|array $bccAddresses)
+    {
+        $this->email->addBcc($bccAddresses);
+    }
+
+    public function addReplyto(string|array $replyToAddresses)
+    {
+        $this->email->addReplyTo($replyToAddresses);
+    }
+
+    public function setPriority(int $priority)
+    {
+        if (is_int($priority) && $priority >= 1 && $priority <= 5) {
+            $this->email->priority($priority);
+        } else {
+            throw new \Box_Exception("Provided priority (:priority) is invalid. Please provide an integer between 1 and 5 or use the pre-defined symfony constants.", [':priority' => $priority]);
         }
     }
 
-    public function setBodyHtml($param)
+    public function send(array|null $options = null)
     {
-        $this->_bodyHtml = $param;
-        return $this;
-    }
-
-    public function setFrom($email, $name = null)
-    {
-        $this->_from = $this->_filterEmail($email);
-        $this->_from_name = $this->_filterName($name);
-
-        return $this;
-    }
-
-    public function getSubject()
-    {
-        return $this->_subject;
-    }
-    
-    public function getBody()
-    {
-        return $this->_bodyHtml;
-    }
-
-    public function setSubject($subject)
-    {
-        $this->_subject =  $this->_filterOther($subject);
-        return $this;
-    }
-
-    public function setReplyTo($email, $name = null)
-    {
-        $this->_replyTo = $this->_filterEmail($email);
-        $this->_replyTo_name = $this->_filterName($name);
-        return $this;
-    }
-
-    public function addTo($email, $name='')
-    {
-        $this->_to = $this->_filterEmail($email);
-        return $this;
-    }
-    protected function _sendSendgrid($options)
-    {
-        if(!isset($options['sendgrid_username']) || !isset($options['sendgrid_password'])) {
-            throw new \Box_Exception('Sendgrid is not configured');
-        }
-        
-        $user = isset($options['sendgrid_username']) ? $options['sendgrid_username'] : NULL;
-        $pass = isset($options['sendgrid_password']) ? $options['sendgrid_password'] : NULL;
-        
-        // Create JSON array
-        $params = array(
-            'api_user'  => $user,
-            'api_key'   => $pass,
-            'to'        => $this->_to,
-            'subject'   => $this->_subject,
-            'html'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
-            'text'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
-            'from'      => $this->_from,
-        );
-        
-        $url =  'https://api.sendgrid.com/api/mail.send.json';
-        $client = $this->di['http_client'];
-        $response = $client->request('POST', $url, [
-            'json' => [
-                'api_user'  => $user,
-                'api_key'   => $pass,
-                'to'        => $this->_to,
-                'subject'   => $this->_subject,
-                'html'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
-                'text'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
-                'from'      => $this->_from,
-            ],
-        ]);
-        $dat = json_decode($response->getContent());
-        
-        if ($dat->message != "success") {
-            error_log("ERROR: Sendgrid email was not successful");
-        }
-    }
-    
-    protected function _sendSmtpMail($options)
-    {
-        if(!isset($options['smtp_host'])) {
-            throw new \Box_Exception('SMTP host not configured');
-        }
-        
-        if(!isset($options['smtp_port'])) {
-            throw new \Box_Exception('SMTP port not configured');
-        }
-        
-        $user       = isset($options['smtp_username']) ? $options['smtp_username'] : NULL;
-        $pass       = isset($options['smtp_password']) ? $options['smtp_password'] : NULL;
-        $port       = isset($options['smtp_port']) ? $options['smtp_port'] : NULL;
-        $host       = isset($options['smtp_host']) ? $options['smtp_host'] : NULL;
-        $security   = isset($options['smtp_security']) ? $options['smtp_security'] : NULL;
-
-        if(empty($host)) {
-            throw new \Box_Exception('SMTP hostname is not configured.');
+        switch ($this->method) {
+            case 'sendmail':
+                $dsn = 'sendmail://default';
+                break;
+            case 'smtp':
+                $dsn = $this->__smtpDsn($options);
+                break;
+            case 'sendgrid':
+                if (empty($options['sendgrid_key'])) {
+                    throw new \Box_Exception("A Sendgrid API key is required to send emails via Sendgrid");
+                }
+                $dsn = 'sendgrid://' . $options['sendgrid_key'] . '@default';
+                break;
+            case null:
+                if (empty($this->dsn)) {
+                    throw new \Box_Exception("Error: No transport method was provided and the custom DSN is empty");
+                }
+                #See: https://symfony.com/doc/current/mailer.html#using-a-3rd-party-transport
+                $dsn = $this->dsn;
+                break;
+            default:
+                throw new \Box_Exception('Unknown mail transport: :transport', [':transport' => $this->method]);
+                break;
         }
 
-        $mail = new PHPMailer(true);
-        $mail->CharSet = 'utf-8';
-        $mail->IsSMTP();     
-        $mail->Host         = $host; 
-        $mail->SMTPDebug     = 0; 
-        
-        if($port) {
-            $mail->Port     = (int)$port;
-        }
-
-        if($user) {
-            $mail->SMTPAuth     = true;
-            $mail->SMTPSecure     = $security;
-            $mail->Username     = $user;
-            $mail->Password     = $pass;
-        }
-            
-        $mail->SetFrom($this->_from, $this->_from_name);
-        $mail->AddReplyTo($this->_from);
-        $mail->AddAddress($this->_to);
-
-        $mail->Subject  = $this->_subject;
-        $mail->MsgHTML($this->_bodyHtml);
-        $mail->send();
-    }
-
-    protected function _sendMail()
-    {
         try {
-            $mail = new PHPMailer(true);
-            $mail->CharSet = 'utf-8';
-            $mail->AddReplyTo($this->_from, $this->_from_name);
-            $mail->SetFrom($this->_from, $this->_from_name);
-            $mail->AddAddress($this->_to);
-            $mail->Subject    = $this->_subject;
-            $mail->AltBody    = "To view the message, please use an HTML compatible email viewer!"; // optional, comment out and test
-            $mail->MsgHTML($this->_bodyHtml);
-            $mail->Send();
-        } catch(Exception $e) {
-            error_log($e->getMessage());
-
-            //simple mail sending
-            $subject = "=?utf-8?B?".base64_encode($this->_subject)."?=";
-            $this->addHeader('From', $this->_from);
-            $this->addHeader('Reply-To', $this->_replyTo);
-            $this->addHeader('Return-Path', $this->_from);
-            $this->addHeader('Content-type', 'text/html;charset=utf-8');
-            $this->addHeader('Content-Transfer-Encoding', '8bit');
-            $this->addHeader('X-mailer', 'FOSSBilling/'.Box_Version::VERSION);
-            mail($this->_to,$subject,$this->_bodyHtml,$this->_headers);
+            $transport = Transport::fromDsn($dsn);
+            $mailer = new Mailer($transport);
+            $mailer->send($this->email);
+        } catch (TransportExceptionInterface $e) {
+            error_log("Failed to send email via $this->method with the exception $e");
         }
     }
 
-    private function addHeader($name, $value)
-    {
-        $this->_headers .= $name.": ".$value."\r\n";
-    }
-
     /**
-     * Temporary error handler for PHP native mail().
-     *
-     * @param int    $errno
-     * @param string $errstr
-     * @param string $errfile
-     * @param string $errline
-     * @param array  $errcontext
-     * @return true
+     * @param array $options List of 
+     * @return string 
+     * @throws Box_Exception 
      */
-    public function _handleMailErrors($errno, $errstr, $errfile = null, $errline = null, array $errcontext = null)
+    private function __smtpDsn(array $options)
     {
-        throw new \Box_Exception($errstr);
-    }
+        if (empty($options['smtp_host']) || empty($options['smtp_port'])) {
+            throw new \Box_Exception('SMTP host or port is not configured');
+        }
 
-    /**
-     * Filter of email data
-     *
-     * @param string $email
-     * @return string
-     */
-    private function _filterEmail($email)
-    {
-        $rule = array("\r" => '',
-                      "\n" => '',
-                      "\t" => '',
-                      '"'  => '',
-                      ','  => '',
-                      '<'  => '',
-                      '>'  => '',
-        );
+        $host = urlencode($options['smtp_host']);
 
-        return strtr($email, $rule);
-    }
+        if (!empty($options['smtp_username'])) {
+            $username = urlencode($options['smtp_username']);
+            $pass = urlencode($options['smtp_password'] ?? '');
 
-    /**
-     * Filter of name data
-     *
-     * @param string $name
-     * @return string
-     */
-    private function _filterName($name)
-    {
-        $rule = array("\r" => '',
-                      "\n" => '',
-                      "\t" => '',
-                      '"'  => "'",
-                      '<'  => '[',
-                      '>'  => ']',
-        );
-
-        return trim(strtr($name, $rule));
-    }
-
-    /**
-     * Filter of other data
-     *
-     * @param string $data
-     * @return string
-     */
-    private function _filterOther($data)
-    {
-        $rule = array("\r" => '',
-                      "\n" => '',
-                      "\t" => '',
-        );
-
-        return strtr($data, $rule);
+            $authString = !empty($pass) ? $username . ':' . $pass : $username;
+            return "smtp://$authString@" . $host . ":" . $options['smtp_port'];
+        } else {
+            return "smtp://" . $host . ":" . $options['smtp_port'];
+        }
     }
 }
