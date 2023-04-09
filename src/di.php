@@ -550,16 +550,6 @@ $di['validator'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Mail
- */
-$di['mail'] = function () {
-    return new Box_Mail();
-};
-
-/*
- *
- * @param void
- *
  * @return \Box_Extension
  */
 $di['extension'] = function () use ($di) {

@@ -329,14 +329,9 @@ class Service implements \Box\InjectionAwareInterface
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }
-        $mail = $di['mail'];
-        $mail->setBodyHtml($email->content_html);
-        $mail->setFrom($email->sender);
-        $mail->setSubject($email->subject);
-        $mail->addTo($email->recipients);
-
         $settings = $this->di['mod_config']('email');
-        $transport = $settings['mailer'] ?? 'sendmail';
+
+        $mail = new \FOSSBilling_Mail($email->sender, $email->recipients, $email->sender, $email->content_html, $settings['mailer'] ?? 'sendmail', $settings['custom_dsn'] ?? null);
 
         if (APPLICATION_ENV == 'testing') {
             if (BB_DEBUG) {
@@ -355,7 +350,7 @@ class Service implements \Box\InjectionAwareInterface
                 $activityService->logEmail($email->subject, $email->client_id, $email->sender, $email->recipients, $email->content_html, $email->content_text);
             }
 
-            $mail->send($transport, $settings);
+            $mail->send($settings);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
@@ -590,12 +585,18 @@ class Service implements \Box\InjectionAwareInterface
 
         $transport = $settings['mailer'] ?? 'sendmail';
 
+        $sender = [
+            'email' => $queue->sender,
+            'name' => $queue->from_name,
+        ];
+
+        $recipient = [
+            'email' => $queue->recipient,
+            'name' => $queue->to_name,
+        ];
+
         try {
-            $mail = $this->di['mail'];
-            $mail->setSubject($queue->subject);
-            $mail->setBodyHtml($queue->content);
-            $mail->setFrom($queue->sender, $queue->from_name);
-            $mail->addTo($queue->recipient, $queue->to_name);
+            $mail = new \FOSSBilling_Mail($sender, $recipient, $queue->subject, $queue->content, $transport, $settings['custom_dsn'] ?? null);
 
             if (APPLICATION_ENV != 'production') {
                 error_log('Skip email sending. Application ENV: ' . APPLICATION_ENV);
@@ -603,7 +604,7 @@ class Service implements \Box\InjectionAwareInterface
                 return true;
             }
 
-            $mail->send($transport, $settings);
+            $mail->send($settings);
             try {
                 $this->di['db']->trash($queue);
             } catch (\Exception $e) {
@@ -628,6 +629,7 @@ class Service implements \Box\InjectionAwareInterface
             if ($queue->priority) {
                 --$queue->priority;
             }
+
             $queue->status = 'unsent';
             ++$queue->tries;
             $queue->updated_at = date('Y-m-d H:i:s');

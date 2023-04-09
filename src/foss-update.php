@@ -17,9 +17,29 @@
 const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
+ * Patch to remove the old phpmailer package, as we no longer use it. and some leftover admin_default files.
+ * 
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1091 and https://github.com/FOSSBilling/FOSSBilling/pull/1063
+ */
+class FOSSPatch_32 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $fileActions = [
+            __DIR__ . DIR_SEP . 'vendor' . DIR_SEP . 'phpmailer' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'images' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'bb-deprecated.scss' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'dataTable-deprecated.scss' => 'unlink',
+            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'main-deprecated.scss' => 'unlink',
+        ];
+        $this->performFileActions($fileActions);
+    }
+}
+
+/**
  * Patch to remove the old htaccess.txt file, any old config.php backup, and leftover admin_default files.
  * 
- * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075 and https://github.com/FOSSBilling/FOSSBilling/pull/1063
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
  */
 class FOSSPatch_31 extends FOSSPatchAbstract
 {
@@ -28,10 +48,6 @@ class FOSSPatch_31 extends FOSSPatchAbstract
         $fileActions = [
             __DIR__ . DIR_SEP . 'htaccess.txt' => 'unlink',
             __DIR__ . DIR_SEP . 'config.php.old' => 'unlink',
-            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'images' => 'unlink',
-            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'bb-deprecated.scss' => 'unlink',
-            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'dataTable-deprecated.scss' => 'unlink',
-            __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'main-deprecated.scss' => 'unlink',
         ];
         $this->performFileActions($fileActions);
     }
