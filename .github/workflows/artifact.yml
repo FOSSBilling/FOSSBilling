@@ -31,7 +31,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16"
+          node-version: "18"
 
       - name: Check PHP Version
         run: php -v
@@ -65,7 +65,7 @@ jobs:
 
       - name: Copy mandatory files to the temporary build folder
         run: |
-          cp -r ./src/* ./build/source/
+          cp -r ./src/. ./build/source/
           cp README.md ./build/source/
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
