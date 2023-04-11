@@ -57,7 +57,7 @@ class FOSSBilling_Mail
      */
     public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, string|null $transport, string|null $dsn = null)
     {
-        if (isset($from['name'])) {
+        if (isset($from['email']) && isset($from['name'])) {
             $fromAddress = new Address($from['email'], $from['name']);
         } elseif (isset($from['email'])) {
             $fromAddress = new Address($from['email']);
@@ -65,9 +65,8 @@ class FOSSBilling_Mail
             $fromAddress = $to;
         }
 
-        if (isset($to['name'])) {
+        if (isset($to['email']) && isset($to['name'])) {
             $toAddress = new Address($to['email'], $to['name']);
-            $toAddress = new Address($to['email']);
         } elseif (isset($to['email'])) {
             $toAddress = new Address($to['email']);
         } else {
@@ -132,7 +131,8 @@ class FOSSBilling_Mail
     }
 
     /**
-     * Set the priority of the email message. Can be an integer between 1 and 5, or one of Symfony's pre-defined constancs (Example: Email::PRIORITY_HIGH)
+     * Set the priority of the email message. Can be an integer between 1 and 5, with 1 being the highest priority.
+     * It's recomended to use Symfony's pre-defined constants instead of a specific integer, but either should work. (Example: Email::PRIORITY_HIGH)
      *
      * @param int $priority The priority of the email message, represented as an integer between 1 and 5.
      *
@@ -142,7 +142,7 @@ class FOSSBilling_Mail
      */
     public function setPriority(int $priority)
     {
-        if (is_int($priority) && $priority >= 1 && $priority <= 5) {
+        if (is_int($priority) && $priority >= Email::PRIORITY_HIGHEST && $priority <= Email::PRIORITY_LOWEST) {
             $this->email->priority($priority);
         } else {
             throw new \Box_Exception("Provided priority (:priority) is invalid. Please provide an integer between 1 and 5 or use the pre-defined symfony constants.", [':priority' => $priority]);
@@ -175,7 +175,7 @@ class FOSSBilling_Mail
             case null:
             case 'custom':
                 if (empty($this->dsn)) {
-                    throw new \Box_Exception("Error: No transport method was provided and the custom DSN is empty");
+                    throw new \Box_Exception("Unable to send email: 'Custom' transport method was selected without a custom DSN");
                 }
                 $dsn = $this->dsn;
                 break;
