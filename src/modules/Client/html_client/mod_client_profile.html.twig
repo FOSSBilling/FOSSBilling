@@ -25,7 +25,7 @@
     </ul>
 
     <div class="tab-content">
-
+        {% set required = guest.client_required %}
         <div class="tab-pane active" id="tab1">
             <header>
                 <h1>{{ 'Update details'|trans }}</h1>
@@ -59,7 +59,7 @@
                        <div class="control-group">
                            <label class="control-label" for="input">{{ 'Last Name'|trans }}</label>
                            <div class="controls">
-                                <input type="text" name="last_name" value="{{ profile.last_name }}" required="required">
+                                <input type="text" name="last_name" value="{{ profile.last_name }}" {% if last_name in required|keys %} required="required" {% endif %}>
                                <p class="help-block"></p>
                            </div>
                        </div>
@@ -67,7 +67,7 @@
                     <div class="control-group">
                         <label class="control-label" for="birthday">{{ 'Birth date'|trans }}</label>
                         <div class="controls">
-                            <input type="date" id="birthday" name="birthday" value="{{ profile.birthday }}">
+                            <input type="date" id="birthday" name="birthday" value="{{ profile.birthday }}" {% if birthday in required|keys %} required="required" {% endif %}>
                         </div>
                         <p class="help-block"></p>
                     </div>
@@ -75,7 +75,7 @@
                        <div class="control-group">
                         <label class="control-label" for="input">{{ 'Gender'|trans }}</label>
                         <div class="controls">
-                            <select name="gender" id="gender">
+                            <select name="gender" id="gender" {% if gender in required|keys %} required="required" {% endif %}>
                                 <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>Male</option>
                                 <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>Female</option>
                                 <option value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>Non-binary</option>
@@ -88,7 +88,7 @@
                        <div class="control-group">
                            <label class="control-label" for="input">{{ 'Company Name'|trans }}</label>
                            <div class="controls">
-                                <input type="text" name="company" value="{{ profile.company }}">
+                                <input type="text" name="company" value="{{ profile.company }}" {% if company in required|keys %} required="required" {% endif %}>
                                <p class="help-block"></p>
                            </div>
                        </div>
@@ -112,7 +112,7 @@
                         <div class="control-group">
                             <label class="control-label" for="input">{{ 'Phone Country Code'|trans }}</label>
                             <div class="controls">
-                                <input type="text" name="phone_cc" value="{{ profile.phone_cc }}" required="required">
+                                <input type="text" name="phone_cc" value="{{ profile.phone_cc }}" {% if phone in required|keys %} required="required" {% endif %}>
                                 <p class="help-block"></p>
                             </div>
                         </div>
@@ -120,7 +120,7 @@
                        <div class="control-group">
                            <label class="control-label" for="input">{{ 'Phone Number'|trans }}</label>
                            <div class="controls">
-                                <input type="text" name="phone" value="{{ profile.phone }}" required="required">
+                                <input type="text" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required="required" {% endif %}>
                                <p class="help-block"></p>
                            </div>
                        </div>
@@ -128,7 +128,7 @@
                         <div class="control-group">
                             <label class="control-label" for="input">{{ 'Address'|trans }}</label>
                             <div class="controls">
-                                <input type="text" name="address_1" value="{{ profile.address_1 }}" required="required">
+                                <input type="text" name="address_1" value="{{ profile.address_1 }}" {% if address_1 in required|keys %} required="required" {% endif %}>
                                 <p class="help-block"></p>
                             </div>
                         </div>
@@ -136,7 +136,7 @@
                        <div class="control-group">
                            <label class="control-label" for="input">{{ 'Address 2'|trans }}</label>
                            <div class="controls">
-                                <input type="text" name="address_2" value="{{ profile.address_2 }}">
+                                <input type="text" name="address_2" value="{{ profile.address_2 }}" {% if address_2 in required|keys %} required="required" {% endif %}>
                                <p class="help-block"></p>
                            </div>
                        </div>
@@ -144,7 +144,7 @@
                         <div class="control-group">
                             <label class="control-label" for="input">{{ 'City'|trans }}</label>
                             <div class="controls">
-                                <input type="text" name="city" value="{{ profile.city }}" required="required">
+                                <input type="text" name="city" value="{{ profile.city }}" {% if city in required|keys %} required="required" {% endif %}>
                                 <p class="help-block"></p>
                             </div>
                         </div>
@@ -152,7 +152,7 @@
                         <div class="control-group">
                             <label class="control-label" for="input">{{ 'Country'|trans }}</label>
                             <div class="controls">
-                                <select name="country" required="required">
+                                <select name="country" {% if country in required|keys %} required="required" {% endif %}>
                                 <option value="">{{ '-- Select country --'|trans }}</option>
                                 {% for val,label in guest.system_countries %}
                                 <option value="{{ val }}" label="{{ label|e }}" {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
@@ -166,7 +166,7 @@
                            <label class="control-label" for="input">{{ 'State'|trans }}</label>
                            <div class="controls">
                                 {# mf.selectbox('state', guest.system_states, profile.state, 0, 'Select state') #}
-                                <input type="text" name="state" value="{{ profile.state }}" />
+                                <input type="text" name="state" value="{{ profile.state }}" {% if state in required|keys %} required="required" {% endif %}/>
                                <p class="help-block"></p>
                            </div>
                        </div>
@@ -174,7 +174,7 @@
                       <div class="control-group">
                           <label class="control-label" for="input">{{ 'Zip/Postal Code'|trans }}</label>
                           <div class="controls">
-                                <input type="text" name="postcode" value="{{ profile.postcode }}" required="required">
+                                <input type="text" name="postcode" value="{{ profile.postcode }}" {% if postcode in required|keys %} required="required" {% endif %}>
                               <p class="help-block"></p>
                           </div>
                       </div>
