@@ -27,14 +27,14 @@
                     <div class="control-group">
                         <label class="control-label" for="email">{{ 'Email Address'|trans }}</label>
                         <div class="controls">
-                            <input id="icon" type="text" placeholder="{{ 'Your email address'|trans }}" name="email" value="{{ request.email }}" required="required" data-validation-required-message="{{ 'You must fill in your email.'|trans }}" autofocus>
+                            <input id="icon" type="text" placeholder="{{ 'Your email address'|trans }}" name="email" value="{{ request.email }}" required="required" autofocus>
                             <div class="help-block"></div>
                         </div>
                     </div>
                     <div class="control-group">
                         <label class="control-label" for="password">{{ 'Password'|trans }}</label>
                         <div class="controls">
-                            <input id="password" type="password" placeholder="{{ 'Password'|trans }}" name="password" required="required" value="{{ request.password }}" data-validation-required-message="{{ 'You must fill in your password.'|trans }}">
+                            <input id="password" type="password" placeholder="{{ 'Password'|trans }}" name="password" required="required" value="{{ request.password }}">
                             {% if settings.login_page_show_remember_me %}
                             <label class="checkbox">
                                 <input type="checkbox" name="remember" checked="checked"> {{ 'Remember me'|trans }}
@@ -83,17 +83,5 @@ $(function() {
         $('#client-login').submit();
     {% endif %}
 });
-</script>
-
-<script src="{{ 'js/plugins/bootstrapValidation/jqBootstrapValidation.min.js'|asset_url }}"></script>
-
-<script>
-    $(document).ready(function() {
-        $("input").jqBootstrapValidation({
-            submitSuccess: function($form, event) {
-                event.preventDefault();
-            }
-        });
-    });
 </script>
 {% endblock %}
