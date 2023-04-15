@@ -104,17 +104,7 @@ class AdminTest extends \BBTestCase {
 
     public function testlanguages()
     {
-        $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemService->expects($this->atLeastOnce())
-            ->method('getLanguages')
-            ->will($this->returnValue(array()));
-
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($systemService) {return $systemService;});
-
-        $this->api->setDi($di);
         $result = $this->api->languages();
-
         $this->assertIsArray($result);
     }
 

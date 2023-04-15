@@ -76,7 +76,8 @@ class ServiceTest extends \BBTestCase {
     public function testgetLanguages()
     {
         $result = $this->service->getLanguages(true);
-        $this->assertIsArray($result);    }
+        $this->assertIsArray($result);
+    }
 
     public function testgetParams()
     {

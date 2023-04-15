@@ -78,9 +78,7 @@ class Admin extends \Api_Abstract
      */
     public function languages()
     {
-        $systemService = $this->di['mod_service']('system');
-
-        return $systemService->getLanguages(true);
+        return \FOSSBilling_i18n::getLocales(true);
     }
 
     /**

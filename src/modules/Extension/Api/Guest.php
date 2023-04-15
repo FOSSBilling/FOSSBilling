@@ -81,8 +81,6 @@ class Guest extends \Api_Abstract
      */
     public function languages($deep = false)
     {
-        $service = $this->di['mod_service']('system');
-
-        return $service->getLanguages($deep);
+        return \FOSSBilling_i18n::getLocales($deep);
     }
 }
