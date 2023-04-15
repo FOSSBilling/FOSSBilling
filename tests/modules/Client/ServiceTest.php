@@ -1223,7 +1223,7 @@ class ServiceTest extends \BBTestCase {
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('It is required that you provide details for field "Id"');
+        $this->expectExceptionMessage('Field Id cannot be empty');
         $service->checkExtraRequiredFields($data);
     }
 
@@ -1246,7 +1246,7 @@ class ServiceTest extends \BBTestCase {
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('It is required that you provide details for field "custom_field_title"');
+        $this->expectExceptionMessage('Field custom_field_title cannot be empty');
         $service->checkCustomFields($data);
 
     }
