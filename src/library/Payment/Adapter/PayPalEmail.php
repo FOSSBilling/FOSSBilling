@@ -34,12 +34,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \Bo
     {
         $this->config = $config;
 
-        if(!function_exists('curl_exec')) {
-            throw new Payment_Exception('PHP Curl extension must be enabled in order to use PayPal gateway');
-        }
-
         if(!isset($this->config['email'])) {
-            throw new Payment_Exception('Payment gateway "PayPal" is not configured properly. Please update configuration parameter "PayPal Email address" at "Configuration -> Payments".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'PayPal', ':missing' => 'PayPal Email address']);
         }
     }
 
@@ -130,7 +126,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \Bo
                         'rel_id'        =>  $ipn['txn_id'],
                     );
                     if ($this->isIpnDuplicate($ipn)){
-                        throw new Payment_Exception('IPN is duplicate');
+                        throw new Payment_Exception('Cannot process duplicate IPN');
                     }
                     $api_admin->client_balance_add_funds($bd);
                     if($tx['invoice_id']) {

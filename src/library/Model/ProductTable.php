@@ -115,7 +115,7 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
             return $price;
         }
 
-        throw new \Box_Exception('Unknown Period selected for setup price');
+        throw new \Box_Exception('Unknown period selected for setup price');
     }
 
     /**

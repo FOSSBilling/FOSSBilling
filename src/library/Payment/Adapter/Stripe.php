@@ -36,11 +36,11 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
         $this->config = $config;
 
         if (!isset($this->config['api_key'])) {
-            throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "api_key" at "Configuration -> Payments".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'API key']);
         }
 
         if (!isset($this->config['pub_key'])) {
-            throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "pub_key" at "Configuration -> Payments".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Publishable key']);
         }
 
         $api_key = $this->config['test_mode'] ? $this->get_test_api_key() : $this->config['api_key'];

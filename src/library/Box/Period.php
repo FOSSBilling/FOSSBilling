@@ -173,7 +173,7 @@ class Box_Period
                 $qty = $this->qty * 12;
                 break;
             default:
-                throw new \Box_Exception('Can not determine months amount from unit');
+                throw new \Box_Exception('Unable to get the number of months for :unit',[':unit' => $this->unit]);
         }
 
         return $qty;

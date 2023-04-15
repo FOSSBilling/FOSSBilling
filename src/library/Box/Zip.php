@@ -40,7 +40,8 @@ class Box_Zip
             }
             catch(\PhpZip\Exception\ZipException $e){
                 $zip->close();
-                throw new \Box_Exception('Failed to extract file! Exception:<br>' . $e);
+                error_log($e->getMessage());
+                throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
             }
         }
     }

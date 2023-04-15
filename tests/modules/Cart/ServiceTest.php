@@ -899,7 +899,7 @@ class ServiceTest extends \BBTestCase
         $productModel->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage("I'm afraid we are out of stock.");
+        $this->expectExceptionMessage("This item is currently out of stock");
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 

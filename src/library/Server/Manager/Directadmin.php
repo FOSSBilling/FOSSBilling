@@ -19,15 +19,15 @@ class Server_Manager_Directadmin extends Server_Manager
     public function init()
     {
         if(empty($this->_config['host'])) {
-            throw new Server_Exception('Server manager "DirectAdmin" is not configured properly. Hostname is not set');
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'hostname']);
         }
         
         if(empty($this->_config['username'])) {
-            throw new Server_Exception('Server manager "DirectAdmin" is not configured properly. Username is not set');
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'username']);
         }
         
         if(empty($this->_config['password'])) {
-            throw new Server_Exception('Server manager "DirectAdmin" is not configured properly. Password is not set');
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'password']);
         }
     }
     
@@ -67,7 +67,7 @@ class Server_Manager_Directadmin extends Server_Manager
     {
         $ips = $this->getIps();
         if(empty($ips)) {
-            throw new Server_Exception('Server Manager DirectAdmin Error: "There are no IPs on DirectAdmin server"');
+            throw new Server_Exception('There are no available IPs on this server.');
         }
         $ip = $ips[array_rand($ips)];
         
@@ -172,7 +172,7 @@ class Server_Manager_Directadmin extends Server_Manager
         }
         
         if(strpos(implode('', $results), 'Error Creating User') !== false) {
-            throw new Server_Exception('Error Creating User');
+            throw new Server_Exception('Error creating user');
         }
         
         return true;

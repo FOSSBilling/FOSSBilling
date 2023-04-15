@@ -65,7 +65,7 @@ class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)){
-            return __trans('Forbidden to pay deposit invoice with this gateway');
+            return __trans('It is forbidden to pay a deposit invoice with this gateway');
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
@@ -94,7 +94,7 @@ class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)){
-            throw new Payment_Exception('Forbidden to pay deposit invoice with this gateway', array(), 303);
+            throw new Payment_Exception('It is forbidden to pay a deposit invoice with this gateway', array(), 303);
         }
 
         if($invoice_id) {
@@ -128,7 +128,7 @@ class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)){
-            throw new Payment_Exception('Forbidden to pay deposit invoice with this gateway', null, 302);
+            throw new Payment_Exception('It is forbidden to pay a deposit invoice with this gateway', null, 302);
         }
 
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');

@@ -53,7 +53,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		$this->testMode = (isset($config['test_mode']) && $config['test_mode']) ? true : false;
 
         if(!$this->config['purse']) {
-            throw new Payment_Exception('Payment gateway "WebMoney" is not configured properly. Please update configuration parameter "Purse" at "Configuration -> Payment gateways > WebMoney".');
+			throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'WebMoney', ':missing' => 'Purse']);
         }
     }
 
@@ -146,7 +146,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		$clientService = $this->di['mod_service']('client');
 
         if ($this->isIpnDuplicate($ipn)){
-            throw new Payment_Exception('IPN is duplicate');
+            throw new Payment_Exception('Cannot process duplicate IPN');
         }
 		$clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
