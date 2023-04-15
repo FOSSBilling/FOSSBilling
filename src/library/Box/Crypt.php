@@ -22,7 +22,7 @@ class Box_Crypt implements \Box\InjectionAwareInterface
     public function __construct()
     {
         if (!extension_loaded('openssl')) {
-            throw new Box_Exception('php openssl extension must be enabled on your server');
+            throw new Box_Exception('The PHP openssl extension must be enabled on your server');
         }
     }
 

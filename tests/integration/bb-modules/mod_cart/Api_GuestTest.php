@@ -82,7 +82,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         );
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Selected billing period is not valid for addon');
+        $this->expectExceptionMessage('Selected billing period is not valid for the selected addon');
 
         $bool = $this->api_guest->cart_add_item($data);
     }

@@ -22,15 +22,15 @@ class Server_Manager_CWP extends Server_Manager
 	public function init()
 	{
 		if (empty($this->_config['ip'])) {
-			throw new Server_Exception('Server manager "CWP" is not configured properly. IP address is not set!');
+			throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'IP address']);
 		}
 
 		if (empty($this->_config['host'])) {
-			throw new Server_Exception('Server manager "CWP" is not configured properly. Hostname is not set!');
+			throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'Hostname']);
 		}
 
 		if (empty($this->_config['accesshash'])) {
-			throw new Server_Exception('Server manager "CWP" is not configured properly. API Key / Access Hash is not set!');
+			throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'API Key / Access Hash']);
 		} else {
 			$this->_config['accesshash'] = preg_replace("'(\r|\n)'", "", $this->_config['accesshash']);
 		}

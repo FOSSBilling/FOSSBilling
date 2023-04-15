@@ -24,7 +24,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             $this->config['email'] = $options['email'];
             unset($options['email']);
         } else {
-            throw new Registrar_Exception('Email Registrar config requires param "email"');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Email', ':missing' => 'email']);
         }
 
         if(isset($options['use_whois'])) {

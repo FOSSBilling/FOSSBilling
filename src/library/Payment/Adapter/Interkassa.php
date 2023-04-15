@@ -38,10 +38,10 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
     public function init()
     {
         if(!$this->getParam('ik_co_id')) {
-            throw new Payment_Exception('Shop ID is missing in gateway configuration');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Interkassa', ':missing' => 'Shop ID']);
         }
         if(!$this->getParam('ik_secret_key')) {
-            throw new Payment_Exception('Secret key is missing in gateway configuration');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Interkassa', ':missing' => 'Secret key']);
         }
     }
 
@@ -227,7 +227,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
             );
 
             if ($this->isIpnDuplicate($ipn)){
-                throw new Payment_Exception('IPN is duplicate');
+                throw new Payment_Exception('Cannot process duplicate IPN');
             }
 
             $clientService = $this->di['mod_service']('Client');

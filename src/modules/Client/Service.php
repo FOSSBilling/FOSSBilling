@@ -682,7 +682,7 @@ class Service implements InjectionAwareInterface
         foreach ($required as $field) {
             if (!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
-                throw new \Box_Exception('It is required that you provide details for field ":field"', [':field' => $name]);
+                throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
             }
         }
     }
@@ -697,7 +697,7 @@ class Service implements InjectionAwareInterface
             if ($active && $required) {
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
                     $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
-                    throw new \Box_Exception('It is required that you provide details for field ":field"', [':field' => $name]);
+                    throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
                 }
             }
         }

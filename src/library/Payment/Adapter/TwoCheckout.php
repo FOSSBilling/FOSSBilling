@@ -31,11 +31,11 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
     public function __construct($config)
     {
         if(!$config['vendor_nr']) {
-            throw new Payment_Exception('Payment gateway "2Checkout" is not configured properly. Please update configuration parameter "Vendor account number" at "Configuration -> Payments".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => '2Checkout', ':missing' => 'Vendor account number']);
         }
 
         if(!$config['secret']) {
-            throw new Payment_Exception('Payment gateway "2Checkout" is not configured properly. Please update configuration parameter "Secret word" at "Configuration -> Payments".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => '2Checkout', ':missing' => 'Secret word']);
         }
 
         $this->config = $config;
@@ -172,7 +172,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             );
 
             if ($this->isIpnDuplicate($ipn)){
-                throw new Payment_Exception('IPN is duplicate');
+                throw new Payment_Exception('Cannot process duplicate IPN');
             }
 
             $api_admin->client_balance_add_funds($bd);

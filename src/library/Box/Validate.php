@@ -56,7 +56,7 @@ class Box_Validate
     {
         $valid = (filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) ? true : false;
         if(!$valid && $throw) {
-            throw new \Box_Exception('Email is not valid');
+            throw new \Box_Exception('Email is invalid');
         }
         return $valid;
     }
@@ -119,7 +119,7 @@ class Box_Validate
     public function isBirthdayValid($birthday = '')
     {
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
-            throw new \Box_Exception('Invalid birth date value');
+            throw new \Box_Exception('Birthdate is invalid');
         }
         return true;
     }

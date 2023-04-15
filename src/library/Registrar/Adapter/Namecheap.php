@@ -26,13 +26,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if (isset($options['api-key']) && !empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
         } else {
-            throw new Registrar_Exception('Domain registrar "Namecheap" is not configured properly. Please update configuration parameter "API Key" at "Configuration -> Domain registration".');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'API Key']);
         }
 
         if (isset($options['username']) && !empty($options['username'])) {
             $this->config['username'] = $options['username'];
         } else {
-            throw new Registrar_Exception('Domain registrar "Namecheap" is not configured properly. Please update configuration parameter "Username" at "Configuration -> Domain registration".');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'Username']);
         }
 
         if (!isset($options['api-user-id']) || empty(trim($options['api-user-id']))) {
@@ -42,7 +42,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if (isset($options['ip']) && !empty($options['ip'])) {
             $this->config['ip'] = $options['ip'];
         } else {
-            throw new Registrar_Exception('Domain registrar "Namecheap" is not configured properly. Please update configuration parameter "Server IP Address" at "Configuration -> Domain registration".');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'server IP address']);
         }
     }
 
@@ -244,7 +244,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         // problem here: FOSSBilling doesn't display our error and will display 'nameservers updates' evern when this fails
 
         if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
-            throw new Registrar_Exception($message = 'Could not update NameServers');
+            throw new Registrar_Exception($message = 'Could not update name servers');
         }
         return True;
     }

@@ -114,7 +114,7 @@ class Payment_Adapter_Onebip extends Payment_AdapterAbstract
      */
     public function recurrentPayment(Payment_Invoice $invoice)
     {
-        throw new Payment_Exception('Not implemented yet');
+        throw new Payment_Exception('This feature is unimplemented');
     }
 
     public function isIpnValid($data, Payment_Invoice $invoice)

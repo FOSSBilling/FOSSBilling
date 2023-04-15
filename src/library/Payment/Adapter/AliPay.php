@@ -17,15 +17,15 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
     public function init()
     {
         if(!$this->getParam('partner')) {
-            throw new Payment_Exception('Payment gateway "AliPay" is not configured properly. Please update configuration parameter "Partner ID" at "Configuration -> Payment gateways".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'AliPay', ':missing' => 'Partner ID']);
         }
 
         if (!$this->getParam('security_code')) {
-        	throw new Payment_Exception('Payment gateway "AliPay" is not configured properly. Please update configuration parameter "Security Code" at "Configuration -> Payment gateways".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'AliPay', ':missing' => 'Security Code']);
         }
 
         if (!$this->getParam('seller_email')) {
-        	throw new Payment_Exception('Payment gateway "AliPay" is not configured properly. Please update configuration parameter "Seller email" at "Configuration -> Payment gateways".');
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'AliPay', ':missing' => 'Seller Email']);
         }
 
         $this->_config['charset']       = 'utf-8';
