@@ -51,7 +51,22 @@ class FOSSBilling_i18n
             $detectedLocale = '';
         }
 
-        return Locale::lookup(self::getLocales(), $detectedLocale, false, null);
+        $matchingLocale = Locale::lookup(self::getLocales(), $detectedLocale, false, null);
+
+        /* The system was unable to match the browser locale to one of our local ones.
+         * This is most likely because Locale::lookup will not match en with en_US. It will only match en_US with en.
+         * As a workaround, let's see if one of the available locales starts with the detected locale.
+         * If it does, return that.
+         */
+        if (empty($matchingLocale)) {
+            foreach (self::getLocales() as $locale) {
+                if (str_starts_with($locale, $detectedLocale)) {
+                    return $locale;
+                }
+            }
+        }
+
+        return $matchingLocale;
     }
 
     /**
