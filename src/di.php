@@ -309,7 +309,7 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     // Get internationalisation settings from config, or use sensible defaults for
     // missing required settings.
-    $locale = $_COOKIE['BBLANG'] ?? $config['i18n']['locale'] ?? 'en_US';
+    $locale = \FOSSBilling_i18n::getActiveLocale();
     $timezone = $config['i18n']['timezone'] ?? 'UTC';
     $date_format = !empty($config['i18n']['date_format']) ? strtoupper($config['i18n']['date_format']) : 'MEDIUM';
     $time_format = !empty($config['i18n']['time_format']) ? strtoupper($config['i18n']['time_format']) : 'SHORT';
@@ -338,7 +338,7 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     try {
         $dateFormatter = new \IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-    } catch (\Symfony\Polyfill\Intl\Icu\Exception\MethodArgumentValueNotImplementedException $e) {
+    } catch (\Symfony\Polyfill\Intl\Icu\Exception\MethodArgumentValueNotImplementedException) {
         if (($config['i18n']['locale'] ?? 'en_US') == 'en_US') {
             $dateFormatter = new \IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
@@ -750,8 +750,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
         $tr->setDomain($textDomain);
     }
 
-    $cookieBBlang = $di['cookie']->get('BBLANG');
-    $locale = !empty($cookieBBlang) ? $cookieBBlang : ($di['config']['i18n']['locale'] ?? 'en_US');
+    $locale = \FOSSBilling_i18n::getActiveLocale();
 
     $tr->setDi($di);
     $tr->setLocale($locale);

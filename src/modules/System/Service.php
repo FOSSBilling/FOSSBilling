@@ -193,41 +193,14 @@ class Service
         ];
     }
 
+    /**
+     * @depricated Please use the \FOSSBilling_i18n::getLocales function, which provides the same functionality.
+     * @param bool $deep 
+     * @return array 
+     */
     public function getLanguages($deep = false): array
     {
-        $path = PATH_LANGS;
-        $locales = [];
-        if ($handle = opendir($path)) {
-            while (false !== ($entry = readdir($handle))) {
-                if (!str_starts_with($entry, '.') && is_dir($path . DIRECTORY_SEPARATOR . $entry)) {
-                    $locales[] = $entry;
-                }
-            }
-            closedir($handle);
-        }
-        sort($locales);
-        if (!$deep) {
-            return $locales;
-        }
-        $array = include PATH_ROOT . '/locale/locales.php';
-        $details = [];
-        foreach ($locales as $locale) {
-            if (empty($array[$locale])) {
-                //fall back on locale string
-                $details[] = [
-                    'locale' => $locale,
-                    'title' => $locale . ' (' . $locale . ')',
-                    'name' => $locale,
-                ];
-            } else {
-                $details[] = [
-                    'locale' => $locale,
-                    'title' => $array[$locale] . ' (' . $locale . ')',
-                    'name' => $array[$locale],
-                ];
-            }
-        }
-        return $details;
+        return \FOSSBilling_i18n::getLocales($deep);
     }
 
     public function getParams($data)

@@ -111,14 +111,6 @@ class GuestTest extends \BBTestCase {
 
     public function testlanguages()
     {
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getLanguages')
-            ->will($this->returnValue(array()));
-
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($name) use($systemServiceMock) { return $systemServiceMock;});
-
         $this->api->setDi($di);
         $result = $this->api->languages();
         $this->assertIsArray($result);
