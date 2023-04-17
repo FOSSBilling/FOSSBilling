@@ -159,4 +159,50 @@ class Admin extends \Api_Abstract
 
         return $updater->getLatestReleaseNotes();
     }
+
+
+    /**
+     * Update FOSSBilling core.
+     *
+     * @return bool
+     *
+     * @throws Box_Exception
+     * @throws Exception
+     */
+    public function update_core($data)
+    {
+        $updater = $this->di['updater'];
+        if ('preview' !== $updater->getUpdateBranch() && !$updater->getCanUpdate()) {
+            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.', null, 930);
+        }
+
+        $new_version = $updater->getLatestVersion();
+
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
+        $updater->performUpdate();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
+
+        $this->di['logger']->info('Updated FOSSBilling from %s to %s', \Box_Version::VERSION, $new_version);
+
+        return true;
+    }
+
+    /**
+     * Update FOSSBilling config.
+     *
+     * @return bool
+     *
+     * @throws Box_Exception
+     * @throws Exception
+     */
+    public function update_config()
+    {
+        $updater = $this->di['updater'];
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateConfig']);
+        $updater->performConfigUpdate();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateConfig']);
+        $this->di['logger']->info('Updated FOSSBilling config');
+
+        return true;
+    }
 }
