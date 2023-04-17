@@ -153,22 +153,6 @@ class ServiceTest extends \BBTestCase {
         $this->service->isBlockedIp($boxEventMock);
     }
 
-    public function testisInStopForumSpamDatabase_InvalidResponse()
-    {
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_get_contents')
-            ->willReturn('{}');
-
-        $di = new \Box_Di();
-        $di['tools'] = $toolsMock;
-
-        $data = array();
-        $this->service->setDi($di);
-        $result = $this->service->isInStopForumSpamDatabase($data);
-        $this->assertFalse($result);
-    }
-
     public function dataProviderSpamResponses()
     {
         return array(
@@ -183,43 +167,4 @@ class ServiceTest extends \BBTestCase {
             ),
         );
     }
-
-    /**
-     * @dataProvider dataProviderSpamResponses
-     */
-    public function testisInStopForumSpamDatabase_UserNameBlackListed($json, $exceptionMessage)
-    {
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_get_contents')
-            ->willReturn($json);
-
-        $di = new \Box_Di();
-        $di['tools'] = $toolsMock;
-
-        $data = array();
-        $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage($exceptionMessage);
-        $this->service->isInStopForumSpamDatabase($data);
-    }
-
-    public function testisInStopForumSpamDatabase_NotExists()
-    {
-        $json = '{"success" : "true", "username" : {}}';
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_get_contents')
-            ->willReturn($json);
-
-        $di = new \Box_Di();
-        $di['tools'] = $toolsMock;
-
-        $data = array();
-        $this->service->setDi($di);
-        $result = $this->service->isInStopForumSpamDatabase($data);
-        $this->assertFalse($result);
-    }
-
-
 }

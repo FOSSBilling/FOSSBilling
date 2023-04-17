@@ -273,42 +273,6 @@ class ServiceTest extends \BBTestCase
         $this->service->updateProductFile($serviceDownloadableModel, $orderModel);
     }
 
-    public function testsendFile()
-    {
-        $serviceDownloadableModel = new \Model_ServiceDownloadable();
-        $serviceDownloadableModel->loadBean(new \DummyBean());
-        $serviceDownloadableModel->filename  = 'config.cfg';
-        $serviceDownloadableModel->downloads = 1;
-
-        $filePath = 'path/to/location' . md5($serviceDownloadableModel->filename);
-
-        $productServiceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
-        $productServiceMock->expects($this->atLeastOnce())
-            ->method('getSavePath')
-            ->will($this->returnValue($filePath));
-
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
-        $di['tools']       = $toolsMock;
-        $di['logger']      = new \Box_Log();
-        $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
-
-        $this->service->setDi($di);
-
-        $result = $this->service->sendFile($serviceDownloadableModel);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
     public function testsendFileFileDoesNotExists()
     {
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
@@ -322,11 +286,6 @@ class ServiceTest extends \BBTestCase
         $productServiceMock->expects($this->atLeastOnce())
             ->method('getSavePath')
             ->will($this->returnValue($filePath));
-
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists');
-
 
         $di                = new \Box_Di();
         $di['tools']       = $toolsMock;
@@ -342,4 +301,3 @@ class ServiceTest extends \BBTestCase
 
 
 }
- 

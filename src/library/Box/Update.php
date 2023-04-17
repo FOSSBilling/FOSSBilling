@@ -167,7 +167,7 @@ class Box_Update
         $latest_version_archive = PATH_CACHE.DIRECTORY_SEPARATOR.$latest_version.'.zip';
 
         // download latest archive from link
-        $content = $this->di['tools']->file_get_contents($this->getLatestVersionDownloadLink(), false, null, null, false);
+        $content = file_get_contents($this->getLatestVersionDownloadLink(), false, null, null, false);
         $f = fopen($latest_version_archive,'wb');
         fwrite($f,$content,strlen($content));
         fclose($f);
@@ -180,7 +180,7 @@ class Box_Update
 
         if(file_exists(PATH_ROOT.'/foss-update.php')) {
             error_log('Calling foss-update.php script from auto-updater');
-            $this->di['tools']->file_get_contents(BB_URL.'foss-update.php');
+            file_get_contents(BB_URL.'foss-update.php');
         }
 
         // Migrate the configuration file

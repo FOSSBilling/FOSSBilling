@@ -306,11 +306,6 @@ class ServiceTest extends \BBTestCase {
 
     public function testregenerateThemeCssAndJsFiles_EmptyFiles()
     {
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('glob')
-            ->will($this->returnValue(array()));
-
         $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getPathAssets')
@@ -321,47 +316,6 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testregenerateThemeCssAndJsFiles()
-    {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('getThemeSettings'))
-            ->getMock();
-
-        $presets = array(
-            'default' => 'Defaults',
-            'red_black' => 'Red Black',
-        );
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getThemeSettings')
-            ->will($this->returnValue($presets));
-
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('glob')
-            ->will($this->onConsecutiveCalls(array('css.css'), array('js.js')));
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_put_contents');
-
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('renderString')
-            ->will($this->returnValue('renderedString'));
-
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
-        $themeMock->expects($this->atLeastOnce())
-            ->method('getPathAssets')
-            ->will($this->returnValue('location/Of/'));
-
-        $di = new \Box_Di();
-        $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(function() use($systemServiceMock) {return $systemServiceMock;});
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -454,4 +408,3 @@ class ServiceTest extends \BBTestCase {
     }
 
 }
- 

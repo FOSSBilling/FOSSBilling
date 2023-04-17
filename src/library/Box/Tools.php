@@ -1,5 +1,4 @@
 <?php
-
 /**
  * FOSSBilling
  *
@@ -10,7 +9,7 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
 class Box_Tools
@@ -54,15 +53,6 @@ class Box_Tools
                     )
                 )
             );
-        }
-    }
-
-    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = 0, $useoffset = true)
-    {
-        if ($useoffset) {
-            return file_get_contents($filename, $use_include_path, $context, $offset);
-        } else {
-            return file_get_contents($filename, $use_include_path, $context);
         }
     }
 
@@ -124,15 +114,6 @@ class Box_Tools
                 $file->isDir() ?  rmdir($file->getRealPath()) : unlink($file->getRealPath());
             }
         }
-    }
-
-    /**
-     * Returns referer url
-     * @return string
-     */
-    public function getReferer($default = '/')
-    {
-        return empty($_SERVER['HTTP_REFERER']) ? $default : $_SERVER['HTTP_REFERER'];
     }
 
     /**
@@ -323,31 +304,6 @@ class Box_Tools
             $url .= ' />';
         }
         return $url;
-    }
-
-    public function fileExists($file)
-    {
-        return file_exists($file);
-    }
-
-    public function rename($old, $new)
-    {
-        return rename($old, $new);
-    }
-
-    public function unlink($file)
-    {
-        return unlink($file);
-    }
-
-    public function mkdir($destination, $perm, $recursive = false)
-    {
-        return mkdir($destination, $perm, $recursive);
-    }
-
-    public function glob($pattern, $flag = 0)
-    {
-        return glob($pattern, $flag);
     }
 
     public function getTable($type)

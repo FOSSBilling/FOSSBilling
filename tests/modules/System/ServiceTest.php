@@ -155,11 +155,6 @@ class ServiceTest extends \BBTestCase {
             ->method('getLatestVersion')
             ->will($this->returnValue($latestVersion));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
-
         $di = new \Box_Di();
         $di['updater'] = $updaterMock;
         $di['mod_service'] = $di->protect(function () use($systemServiceMock) {return $systemServiceMock;});
@@ -170,37 +165,6 @@ class ServiceTest extends \BBTestCase {
 
         $result = $systemServiceMock->getMessages($type, true);
         $this->assertIsArray($result);
-    }
-
-    public function testtemplateExists()
-    {
-
-        $getThemeResults = array(
-            'paths' => array(
-                '\home',
-                '\var',
-            ),
-        );
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')->setMethods(array('getThemeConfig'))->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getThemeConfig')
-            ->will($this->returnValue($getThemeResults));
-
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->onConsecutiveCalls(false, true));
-
-        $di = new \Box_Di();
-        $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(function () use($systemServiceMock) {return $systemServiceMock;});
-
-        $this->service->setDi($di);
-
-        $result =  $this->service->templateExists('defaultFile.cp');
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-
     }
 
     public function testtemplateExistsEmptyPaths()
@@ -225,7 +189,7 @@ class ServiceTest extends \BBTestCase {
         $vars = array(
             '_client_id' => 1
         );
-        
+
 
         $this
         ->getMockBuilder('Drupal\Core\Template\TwigEnvironment')
@@ -259,11 +223,11 @@ class ServiceTest extends \BBTestCase {
         $vars = array(
             '_client_id' => 1
         );
-        
+
         $twigMock = $this->getMockBuilder(Environment::class)
             ->disableOriginalConstructor()
             ->getMock();
-        
+
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
         // $twigMock->method('createTemplate')
@@ -272,7 +236,7 @@ class ServiceTest extends \BBTestCase {
         //     ->willReturn(new \FakeTemplateWrapper('test'));
         $twigMock->method('render')
             ->willReturn('');
-                 
+
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
