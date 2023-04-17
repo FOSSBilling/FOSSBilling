@@ -335,63 +335,6 @@ class Box_Tools
         return $result;
     }
 
-    public function updateConfig()
-    {
-        $configPath = PATH_ROOT . '/config.php';
-        $currentConfig = include $configPath;
-
-        if (!is_array($currentConfig)) {
-            throw new \Box_Exception('Unable to load existing configuration. updateConfig() is unable to progress.');
-        }
-        if (!copy($configPath, substr($configPath, 0, -4) . '.old.php')) {
-            throw new \Box_Exception('Unable to create backup of configuration file. Cancelling config migration.');
-        }
-
-        $newConfig = $currentConfig;
-
-        $newConfig['security']['mode'] ??= 'strict';
-        $newConfig['security']['force_https'] ??= true;
-        $newConfig['security']['cookie_lifespan'] ??= '7200';
-
-        $newConfig['update_branch'] ??= 'release';
-        $newConfig['log_stacktrace'] ??= true;
-        $newConfig['stacktrace_length'] ??= 25;
-
-        $newConfig['maintenance_mode']['enabled'] ??= false;
-        $newConfig['maintenance_mode']['allowed_urls'] ??= [];
-        $newConfig['maintenance_mode']['allowed_ips'] ??= [];
-
-        $newConfig['disable_auto_cron'] ??= false;
-
-        $newConfig['i18n']['locale'] = $currentConfig['locale'] ?? 'en_US';
-        $newConfig['i18n']['timezone'] = $currentConfig['timezone'] ?? 'UTC';
-        $newConfig['i18n']['date_format'] ??= 'medium';
-        $newConfig['i18n']['time_format'] ??= 'short';
-
-        $newConfig['db']['port'] ??= '3306';
-
-        $newConfig['api']['throttle_delay'] ??= 2;
-        $newConfig['api']['rate_span_login'] ??= 60;
-        $newConfig['api']['rate_limit_login'] ??= 20;
-        $newConfig['api']['CSRFPrevention'] ??= true;
-
-        // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = [ 'guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone' ];
-        $depreciatedConfigSubkeys = [];
-        $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
-        foreach ($depreciatedConfigSubkeys as $key => $subkey) {
-            unset($newConfig[$key][$subkey]);
-        }
-
-        $output = '<?php ' . PHP_EOL;
-        $output .= 'return ' . var_export($newConfig, true) . ';';
-        if (file_put_contents($configPath, $output)) {
-            return true;
-        } else {
-            throw new \Box_Exception('Error when writing updated configuration file.');
-        }
-    }
-
     public function validateAndSanitizeEmail($email, $throw = true)
     {
         $email = htmlspecialchars($email);

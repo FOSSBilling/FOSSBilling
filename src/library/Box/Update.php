@@ -35,7 +35,7 @@ class Box_Update
     {
         return $this->di;
     }
-    
+
     private $_url = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
     private $_preview_url = 'https://fossbilling.org/downloads/preview/';
 
@@ -137,7 +137,7 @@ class Box_Update
         if(!file_exists($file)) {
             return false;
         }
-        
+
         $response = $this->_getLatestVersionInfo();
         $hash = md5($response->version.filesize($file));
         return ($hash == $response->hash);
@@ -185,7 +185,7 @@ class Box_Update
 
         // Migrate the configuration file
         $this->performConfigUpdate();
-        
+
         // clean up things
         $this->di['tools']->emptyFolder(PATH_CACHE);
         $this->di['tools']->emptyFolder(PATH_ROOT.'/install');
@@ -199,12 +199,64 @@ class Box_Update
     }
 
     /**
-     * Perform config file update
+     * Perform config file update.
      *
      * @throws Exception
      */
     public function performConfigUpdate()
     {
-        return $this->di['tools']->updateConfig();
+        $configPath = PATH_ROOT . '/config.php';
+        $currentConfig = include $configPath;
+
+        if (!is_array($currentConfig)) {
+            throw new \Box_Exception('Unable to load existing configuration. performConfigUpdate() is unable to progress.');
+        }
+        if (!copy($configPath, substr($configPath, 0, -4) . '.old.php')) {
+            throw new \Box_Exception('Unable to create backup of configuration file. Cancelling config migration.');
+        }
+
+        $newConfig = $currentConfig;
+
+        $newConfig['security']['mode'] ??= 'strict';
+        $newConfig['security']['force_https'] ??= true;
+        $newConfig['security']['cookie_lifespan'] ??= '7200';
+
+        $newConfig['update_branch'] ??= 'release';
+        $newConfig['log_stacktrace'] ??= true;
+        $newConfig['stacktrace_length'] ??= 25;
+
+        $newConfig['maintenance_mode']['enabled'] ??= false;
+        $newConfig['maintenance_mode']['allowed_urls'] ??= [];
+        $newConfig['maintenance_mode']['allowed_ips'] ??= [];
+
+        $newConfig['disable_auto_cron'] ??= false;
+
+        $newConfig['i18n']['locale'] = $currentConfig['locale'] ?? 'en_US';
+        $newConfig['i18n']['timezone'] = $currentConfig['timezone'] ?? 'UTC';
+        $newConfig['i18n']['date_format'] ??= 'medium';
+        $newConfig['i18n']['time_format'] ??= 'short';
+
+        $newConfig['db']['port'] ??= '3306';
+
+        $newConfig['api']['throttle_delay'] ??= 2;
+        $newConfig['api']['rate_span_login'] ??= 60;
+        $newConfig['api']['rate_limit_login'] ??= 20;
+        $newConfig['api']['CSRFPrevention'] ??= true;
+
+        // Remove depreciated config keys/subkeys.
+        $depreciatedConfigKeys = [ 'guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone' ];
+        $depreciatedConfigSubkeys = [];
+        $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
+        foreach ($depreciatedConfigSubkeys as $key => $subkey) {
+            unset($newConfig[$key][$subkey]);
+        }
+
+        $output = '<?php ' . PHP_EOL;
+        $output .= 'return ' . var_export($newConfig, true) . ';';
+        if (file_put_contents($configPath, $output)) {
+            return true;
+        } else {
+            throw new \Box_Exception('Error when writing updated configuration file.');
+        }
     }
 }
