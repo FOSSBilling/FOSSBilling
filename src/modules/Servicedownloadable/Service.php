@@ -263,7 +263,7 @@ class Service implements InjectionAwareInterface
         $info = $this->toApiArray($serviceDownloadable);
         $filename = $info['filename'];
         $path = $info['path'];
-        if (!$this->di['tools']->fileExists($path)) {
+        if (!file_exists($path)) {
             throw new \Box_Exception('File can not be downloaded at the moment. Please contact support', null, 404);
         }
         $this->hitDownload($serviceDownloadable);

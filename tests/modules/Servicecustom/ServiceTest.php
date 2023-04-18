@@ -128,7 +128,7 @@ class ServiceTest extends \BBTestCase
         $data    = array(
             'field_name' => 'field_name'
         );
-        
+
         $this->expectException(\Exception::class);
         $result  = $this->service->validateCustomForm($data, $product);
         $this->assertNull($result);
@@ -599,4 +599,3 @@ class ServiceTest extends \BBTestCase
         $serviceMock->updateConfig(rand(1, 100), $config);
     }
 }
- 

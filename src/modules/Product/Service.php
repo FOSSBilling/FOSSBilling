@@ -938,9 +938,8 @@ class Service implements InjectionAwareInterface
     {
         if (isset($config['filename'])) {
             $f = $this->getSavePath($config['filename']);
-            if ($this->di['tools']->fileExists($f)) {
-                $this->di['tools']->unlink($f);
-
+            if (file_exists($f)) {
+                unlink($f);
                 return true;
             }
         }

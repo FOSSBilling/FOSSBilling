@@ -621,11 +621,11 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(array('download_url' => 'www.fossbilling.com')));
 
         $httpClientMock = new MockHttpClient();
-        
+
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
         $di['http_client'] = $httpClientMock;
-        
+
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage('Extension type (notDefinedType) cannot be automatically installed.');

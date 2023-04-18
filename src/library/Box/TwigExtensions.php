@@ -223,7 +223,10 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_gravatar_filter($email, $size = 20)
     {
-        return (new Box_Tools())->get_gravatar($email, $size);
+        $url = 'https://www.gravatar.com/avatar/';
+        $url .= md5(strtolower(trim($email)));
+        $url .= "?s=$size&d=mp&r=g";
+        return $url;
     }
 
     public function twig_autolink_filter($text)

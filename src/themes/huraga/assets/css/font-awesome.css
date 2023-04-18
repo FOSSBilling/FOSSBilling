@@ -37,7 +37,7 @@
     text-decoration: inherit;
     -webkit-font-smoothing: antialiased;
     /* sprites.less reset */
-  
+
     display: inline;
     width: auto;
     height: auto;
@@ -86,7 +86,7 @@
   .nav [class*=" awe-"] {
     display: inline;
     /* keeps button heights with and without icons the same */
-  
+
   }
   .btn [class^="awe-"].awe-large,
   .nav [class^="awe-"].awe-large,
@@ -105,7 +105,7 @@
   .nav-tabs [class*=" awe-"],
   .nav-pills [class*=" awe-"] {
     /* keeps button heights with and without icons the same */
-  
+
   }
   .nav-tabs [class^="awe-"],
   .nav-pills [class^="awe-"],
@@ -130,7 +130,7 @@
   li [class*=" awe-"].awe-large,
   .nav li [class*=" awe-"].awe-large {
     /* increased font size for awe-large */
-  
+
     width: 1.5625em;
   }
   ul.icons {

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * FOSSBilling
  *
@@ -10,7 +9,7 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
 class Box_Tools
@@ -54,15 +53,6 @@ class Box_Tools
                     )
                 )
             );
-        }
-    }
-
-    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = 0, $useoffset = true)
-    {
-        if ($useoffset) {
-            return file_get_contents($filename, $use_include_path, $context, $offset);
-        } else {
-            return file_get_contents($filename, $use_include_path, $context);
         }
     }
 
@@ -124,15 +114,6 @@ class Box_Tools
                 $file->isDir() ?  rmdir($file->getRealPath()) : unlink($file->getRealPath());
             }
         }
-    }
-
-    /**
-     * Returns referer url
-     * @return string
-     */
-    public function getReferer($default = '/')
-    {
-        return empty($_SERVER['HTTP_REFERER']) ? $default : $_SERVER['HTTP_REFERER'];
     }
 
     /**
@@ -299,57 +280,6 @@ class Box_Tools
         return $result;
     }
 
-    /**
-     * Get either a Gravatar URL or complete image tag for a specified email address.
-     *
-     * @param string $email The email address
-     * @param string $s Size in pixels, defaults to 80px [ 1 - 2048 ]
-     * @param string $d Default imageset to use [ 404 | mp | identicon | monsterid | wavatar ]
-     * @param string $r Maximum rating (inclusive) [ g | pg | r | x ]
-     * @param boole $img True to return a complete IMG tag False for just the URL
-     * @param array $atts Optional, additional key/value attributes to include in the IMG tag
-     * @return String containing either just a URL or a complete image tag
-     * @source https://gravatar.com/site/implement/images/php/
-     */
-    public function get_gravatar($email, $size = 80, $d = 'mp', $r = 'g', $img = false, $atts = array())
-    {
-        $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim($email)));
-        $url .= "?s=$size&d=$d&r=$r";
-        if ($img) {
-            $url = '<img src="' . $url . '"';
-            foreach ($atts as $key => $val)
-                $url .= ' ' . $key . '="' . $val . '"';
-            $url .= ' />';
-        }
-        return $url;
-    }
-
-    public function fileExists($file)
-    {
-        return file_exists($file);
-    }
-
-    public function rename($old, $new)
-    {
-        return rename($old, $new);
-    }
-
-    public function unlink($file)
-    {
-        return unlink($file);
-    }
-
-    public function mkdir($destination, $perm, $recursive = false)
-    {
-        return mkdir($destination, $perm, $recursive);
-    }
-
-    public function glob($pattern, $flag = 0)
-    {
-        return glob($pattern, $flag);
-    }
-
     public function getTable($type)
     {
         $class = 'Model_' . ucfirst($type) . 'Table';
@@ -377,63 +307,6 @@ class Box_Tools
         }
 
         return $result;
-    }
-
-    public function updateConfig()
-    {
-        $configPath = PATH_ROOT . '/config.php';
-        $currentConfig = include $configPath;
-
-        if (!is_array($currentConfig)) {
-            throw new \Box_Exception('Unable to load existing configuration. updateConfig() is unable to progress.');
-        }
-        if (!copy($configPath, substr($configPath, 0, -4) . '.old.php')) {
-            throw new \Box_Exception('Unable to create backup of configuration file. Cancelling config migration.');
-        }
-
-        $newConfig = $currentConfig;
-
-        $newConfig['security']['mode'] ??= 'strict';
-        $newConfig['security']['force_https'] ??= true;
-        $newConfig['security']['cookie_lifespan'] ??= '7200';
-
-        $newConfig['update_branch'] ??= 'release';
-        $newConfig['log_stacktrace'] ??= true;
-        $newConfig['stacktrace_length'] ??= 25;
-
-        $newConfig['maintenance_mode']['enabled'] ??= false;
-        $newConfig['maintenance_mode']['allowed_urls'] ??= [];
-        $newConfig['maintenance_mode']['allowed_ips'] ??= [];
-
-        $newConfig['disable_auto_cron'] ??= false;
-
-        $newConfig['i18n']['locale'] = $currentConfig['locale'] ?? 'en_US';
-        $newConfig['i18n']['timezone'] = $currentConfig['timezone'] ?? 'UTC';
-        $newConfig['i18n']['date_format'] ??= 'medium';
-        $newConfig['i18n']['time_format'] ??= 'short';
-
-        $newConfig['db']['port'] ??= '3306';
-
-        $newConfig['api']['throttle_delay'] ??= 2;
-        $newConfig['api']['rate_span_login'] ??= 60;
-        $newConfig['api']['rate_limit_login'] ??= 20;
-        $newConfig['api']['CSRFPrevention'] ??= true;
-
-        // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = [ 'guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone' ];
-        $depreciatedConfigSubkeys = [];
-        $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
-        foreach ($depreciatedConfigSubkeys as $key => $subkey) {
-            unset($newConfig[$key][$subkey]);
-        }
-
-        $output = '<?php ' . PHP_EOL;
-        $output .= 'return ' . var_export($newConfig, true) . ';';
-        if (file_put_contents($configPath, $output)) {
-            return true;
-        } else {
-            throw new \Box_Exception('Error when writing updated configuration file.');
-        }
     }
 
     public function validateAndSanitizeEmail($email, $throw = true)

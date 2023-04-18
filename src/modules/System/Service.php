@@ -195,8 +195,8 @@ class Service
 
     /**
      * @depricated Please use the \FOSSBilling_i18n::getLocales function, which provides the same functionality.
-     * @param bool $deep 
-     * @return array 
+     * @param bool $deep
+     * @return array
      */
     public function getLanguages($deep = false): array
     {
@@ -264,7 +264,7 @@ class Service
         }
 
         $install = PATH_ROOT . '/install';
-        if ($this->di['tools']->fileExists(PATH_ROOT . '/install')) {
+        if (file_exists(PATH_ROOT . '/install')) {
             $msgs['danger'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
@@ -289,7 +289,7 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if ($this->di['tools']->fileExists($path . DIRECTORY_SEPARATOR . $file)) {
+            if (file_exists($path . DIRECTORY_SEPARATOR . $file)) {
                 return true;
             }
         }

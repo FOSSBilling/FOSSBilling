@@ -234,8 +234,8 @@ class Service implements InjectionAwareInterface
     {
         $assets = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
 
-        $css_files = $this->di['tools']->glob($assets . '*.css.html.twig');
-        $js_files = $this->di['tools']->glob($assets . '*.js.html.twig');
+        $css_files = glob($assets . '*.css.html.twig');
+        $js_files = glob($assets . '*.js.html.twig');
         $files = array_merge($css_files, $js_files);
 
         foreach ($files as $file) {
@@ -245,7 +245,7 @@ class Service implements InjectionAwareInterface
             $vars = [];
 
             $vars['settings'] = $settings;
-            $vars['_tpl'] = $this->di['tools']->file_get_contents($file);
+            $vars['_tpl'] = file_get_contents($file);
             $systemService = $this->di['mod_service']('system');
             $data = $systemService->renderString($vars['_tpl'], false, $vars);
 

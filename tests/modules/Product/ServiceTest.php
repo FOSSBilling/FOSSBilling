@@ -1074,46 +1074,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testremoveOldFile()
-    {
-        $config = array('filename' => 'test.cfg');
-
-        $toolMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
-        $toolMock->expects($this->atLeastOnce())
-            ->method('unlink');
-
-        $di           = new \Box_Di();
-        $di['tools']  = $toolMock;
-        $di['config'] = array('path_data' => '/home');
-
-        $this->service->setDi($di);
-        $result = $this->service->removeOldFile($config);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testremoveOldFileFileNotFound()
-    {
-        $config = array('filename' => 'test.cfg');
-
-        $toolMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(false));
-
-        $di           = new \Box_Di();
-        $di['tools']  = $toolMock;
-        $di['config'] = array('path_data' => '/home');
-
-        $this->service->setDi($di);
-        $result = $this->service->removeOldFile($config);
-        $this->assertIsBool($result);
-        $this->assertFalse($result);
-    }
-
     public function testcanUpgradeTo_returnsTrue()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
@@ -1210,4 +1170,3 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals((double) $amount, $result);
     }
 }
- 
