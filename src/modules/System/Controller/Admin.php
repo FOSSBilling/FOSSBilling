@@ -42,7 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
             'group' => [
                 'index' => 600,
                 'location' => 'system',
-                'label' => __trans('Configuration'),
+                'label' => __trans('System'),
                 'class' => 'settings',
                 'sprite_class' => 'dark-sprite-icon sprite-cog3',
             ],
@@ -54,6 +54,13 @@ class Admin implements \Box\InjectionAwareInterface
                     'uri' => $this->di['url']->adminLink('system'),
                     'class' => '',
                 ],
+                [
+                    'location' => 'system',
+                    'label' => __trans('Update'),
+                    'index' => 100,
+                    'uri' => $this->di['url']->adminLink('system/update'),
+                    'class' => '',
+                ]
             ],
         ];
     }
@@ -64,6 +71,7 @@ class Admin implements \Box\InjectionAwareInterface
         $app->get('/system/', 'get_index', [], static::class);
         $app->get('/system/index', 'get_index', [], static::class);
         $app->get('/system/activity', 'get_activity', [], static::class);
+        $app->get('/system/update', 'get_update', [], static::class);
     }
 
     public function get_index(\Box_App $app)
@@ -78,5 +86,12 @@ class Admin implements \Box\InjectionAwareInterface
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_activity');
+    }
+
+    public function get_update(\Box_App $app)
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_system_update');
     }
 }

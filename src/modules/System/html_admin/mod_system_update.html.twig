@@ -1,0 +1,50 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Update'|trans }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Update</h3>
+        </div>
+        <div class="card-body">
+            <h3 class="card-title">{{ 'Automatic Update'|trans }}</h3>
+            <p class="card-subtitle">{{ 'The automatic updater is a one-click tool for updating FOSSBilling. It works on hosting environments where PHP can overwrite files uploaded via FTP.'|trans }}</p>
+            {{ admin.system_release_notes|markdown }}
+            <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
+            class="btn btn-primary api-link"
+            data-api-reload="1"
+            data-api-confirm="Proceed with automatic update?"
+            data-api-confirm-btn="Update"
+            data-api-confirm-content="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
+                <svg class="icon">
+                    <use xlink:href="#refresh" />
+                </svg>
+                {{ 'Update FOSSBilling'|trans }}
+            </a>
+        </div>
+        <div class="card-body">
+            <h3 class="card-title">{{ 'Migrate Configuration'|trans }}</h3>
+            <p class="card-subtitle">{{ 'This tool automatically migrates your configuration file to ensure compatibility with the latest FOSSBilling changes.'|trans }}</p>
+            <a href="{{ 'api/admin/system/update_config'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Migration complete.">
+                <svg class="icon">
+                    <use xlink:href="#refresh" />
+                </svg>
+                {{ 'Migrate Configuration'|trans }}
+            </a>
+        </div>
+        <div class="card-body">
+            <h3 class="card-title">{{ 'Manual Update'|trans }}</h3>
+            <p class="card-subtitle">{{ 'If the auto updater is unable to function in your current installation environment, a manual update is available as an alternative solution.'|trans }}</p>
+            <ul>
+                <li>Download the latest release of FOSSBilling from GitHub at <a href="https://github.com/FOSSBilling/FOSSBilling/releases" target="_blank">https://github.com/FOSSBilling/FOSSBilling/releases</a>.</li>
+                <li>Extract the downloaded files to your computer.</li>
+                <li>Using an FTP client, upload (overwrite) the extracted files to your FOSSBilling installation directory at <strong>{{ constant('PATH_ROOT') }}</strong>.</li>
+                <li>Once the upload is complete, open your web browser and navigate to <a href="{{ constant('BB_URL') }}foss-update.php" target="_blank">{{ constant('BB_URL') }}foss-update.php</a>.</li>
+                <li>Your FOSSBilling installation is now up-to-date with the latest version!</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
