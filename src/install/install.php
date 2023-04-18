@@ -43,6 +43,7 @@ if(!isSSL()){
         'ssl' => array(
             'verify_peer' => true,
             'verify_peer_name' => true,
+            'timeout' => 1,
         ),
     ));
     $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
