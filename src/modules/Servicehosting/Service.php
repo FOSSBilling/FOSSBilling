@@ -118,7 +118,8 @@ class Service implements InjectionAwareInterface
         if (isset($c['username']) && !empty($c['username'])) {
             $username = $c['username'];
         } else {
-            $username = $this->_generateUsername($model->sld . $model->tld);
+            $serverManager = $this->_getServerMangerForOrder($model);
+            $username = $serverManager->generateUsername($model->sld . $model->tld);
         }
 
         $model->username = $username;
@@ -398,17 +399,10 @@ class Service implements InjectionAwareInterface
         return \Model_ClientOrder::STATUS_FAILED_SETUP != $order->status;
     }
 
-    /**
-     * Generate username by domain.
-     */
-    private function _generateUsername($domain_name)
+    private function _getServerMangerForOrder($model)
     {
-        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
-        $username = substr($username, 0, 7);
-        $randnum = random_int(0, 9);
-        $username = $username . $randnum;
-
-        return $username;
+        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
+        return $this->getServerManager($server);
     }
 
     public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null)
@@ -887,7 +881,7 @@ class Service implements InjectionAwareInterface
 
     public function getServerPackage(\Model_ServiceHostingHp $model)
     {
-        $config = json_decode($model->config, 1);
+        $config = json_decode(($model->config ?? ''), 1);
         if (!is_array($config)) {
             $config = [];
         }
