@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -11,8 +12,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
-use Symfony\Component\HttpClient\HttpClient;
 
 abstract class Server_Manager
 {
@@ -83,6 +82,21 @@ abstract class Server_Manager
     }
 
     /**
+     * Generates a username for an account based on the provided domain name.
+     * Server managers may define this function to provide their own method for username generation depending on the specifics of the server they are integrated with.
+     *
+     * @param mixed $domain_name The domain name used to generate the username.
+     * @return string The generated username.
+     */
+    public function generateUsername($domain_name)
+    {
+        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
+        $username = substr($username, 0, 7);
+        $randnum = random_int(0, 9);
+        return $username . $randnum;
+    }
+
+    /**
      * Sets the logger object.
      *
      * @param Box_Log $value The logger object.
@@ -117,7 +131,7 @@ abstract class Server_Manager
     public function getHttpClient()
     {
         return \Symfony\Component\HttpClient\HttpClient::create();
-    }  
+    }
 
     /**
      * Initializes the object after construction.
