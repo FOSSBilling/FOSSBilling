@@ -37,9 +37,6 @@
                 <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-ftp" data-bs-toggle="tab" role="tab">{{ 'FTP layer'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-cache" data-bs-toggle="tab" role="tab">{{ 'Cache'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
@@ -409,55 +406,6 @@ ZW=Zimbabwe
                                     <textarea class="form-control" name="countries" rows="25" placeholder="US=United States">{{ new_params.countries|default(default_countries) }}</textarea>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-footer text-end">
-                            <button class="btn btn-primary" type="submit">{{ 'Update settings'|trans }}</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="tab-pane fade" id="tab-ftp" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'FTP settings updated'|trans }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
-                        <div class="card-body">
-                            <h3 class="card-title">{{ 'FTP layer for FOSSBilling'|trans }}</h3>
-                            <p class="card-subtitle">{{ 'FTP is used to manage FOSSBilling modules and updates.'|trans }}</p>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'FTP hostname'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="ftp_host" value="{{ params.ftp_host|default('localhost') }}">
-                                    <small class="form-hint">{{ 'Can be a numerical URL 127.0.0.1 is the default address for a locally hosted server, it might be this, it might be the full URL as my example above with the File Transfer Protocol (FTP) prefix, it might be the http:// protocol it might be SFTP (secure FTP) even secure http (https). Your host will be able to advise you on the correct format.'|trans }}</small>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'FTP port'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="ftp_port" value="{{ params.ftp_port|default(21) }}">
-                                    <small class="form-hint">{{ 'Is nearly always 21 unless the host has changed this they will have notified you of this. Secure FTP generally uses port 22.'|trans }}</small>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'FTP user'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="ftp_user" value="{{ params.ftp_user }}">
-                                    <small class="form-hint">{{ 'In most cases, this is the specific user name your host has set up for you to access your Web site via FTP- It is the name you use in your FTP client. This could be an alphanumeric, it could be your name, even your e-mail address, If you don\'t know this speak to your host. You may have the facility on your Web account to set up additional FTP users if that is the case (and it\'s more secure) you are recommended to do this'|trans }}</small>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'FTP password'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="password" name="ftp_password" value="{{ params.ftp_password }}">
-                                    <small class="form-hint">{{ 'This is the password you enter in your FTP client.'|trans }}</small>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'FTP directory'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="ftp_root" value="{{ params.ftp_root }}">
-                                    <small class="form-hint">{{ 'This is generally the directory in which FOSSBilling is installed. This setting is very important to be setup correctly as it very specifically depends on the Host server settings. In can be just / BUT it might be htdocs/boxbilling, public_html/, /public_html/boxbilling or other. It is a variable that FOSSBilling has absolutely no control over. You will need to clarify this with your host.'|trans }}</small>
-                                </div>
-                            </div>
-
                         </div>
                         <div class="card-footer text-end">
                             <button class="btn btn-primary" type="submit">{{ 'Update settings'|trans }}</button>

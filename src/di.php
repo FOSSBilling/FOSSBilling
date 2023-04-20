@@ -710,15 +710,6 @@ $di['http_client'] = function () {
 };
 
 /*
- * @param mixed $params The parameters for the new FTP object.
- *
- * @return \Box_Ftp The new FTP object that was just created.
- */
-$di['ftp'] = $di->protect(function ($params) {
-    return new \Box_Ftp($params);
-});
-
-/*
  * @param void
  *
  * @return \GeoIp2\Database\Reader
