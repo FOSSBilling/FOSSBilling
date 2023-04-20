@@ -162,6 +162,9 @@ class FOSSBilling_Mail
         switch ($this->transport) {
             case 'sendmail':
                 $dsn = 'sendmail://default';
+                if (!function_exists('proc_open')) {
+                    throw new \Box_Exception("FOSSBilling requires the proc_open PHP function to be enabled when using the sendmail transport");
+                }
                 break;
             case 'smtp':
                 $dsn = $this->__smtpDsn($options);
@@ -172,7 +175,6 @@ class FOSSBilling_Mail
                 }
                 $dsn = 'sendgrid://' . $options['sendgrid_key'] . '@default';
                 break;
-            case null:
             case 'custom':
                 if (empty($this->dsn)) {
                     throw new \Box_Exception("Unable to send email: 'Custom' transport method was selected without a custom DSN");
