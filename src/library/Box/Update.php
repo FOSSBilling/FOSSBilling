@@ -13,6 +13,8 @@
  * with this source code in the file LICENSE
  */
 
+use PhpZip\ZipFile;
+
 class Box_Update
 {
     /**
@@ -175,8 +177,15 @@ class Box_Update
         //@todo validate downloaded file hash
 
         // Extract latest archive on top of current version
-        $ff = new Box_Zip($latest_version_archive);
-        $ff->decompress(PATH_ROOT);
+        $zip = new ZipFile();
+        try {
+            $zip->openFile($latest_version_archive);
+            $zip->extractTo(PATH_ROOT);
+            $zip->close();
+        } catch (\PhpZip\Exception\ZipException $e) {
+            error_log($e->getMessage());
+            throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+        }
 
         if(file_exists(PATH_ROOT.'/foss-update.php')) {
             error_log('Calling foss-update.php script from auto-updater');

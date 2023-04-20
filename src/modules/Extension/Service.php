@@ -17,6 +17,7 @@
 namespace Box\Mod\Extension;
 
 use Box\InjectionAwareInterface;
+use PhpZip\ZipFile;
 
 class Service implements InjectionAwareInterface
 {
@@ -435,7 +436,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function downloadAndExtract($type, $id, $runFromTest = false)
+    public function downloadAndExtract($type, $id)
     {
         $ext = $this->di['extension'];
         $manifest = $ext->getExtension($id, $type);
@@ -444,14 +445,14 @@ class Service implements InjectionAwareInterface
             throw new \Exception('Invalid download URL for the extension');
         }
 
-        $extracted = PATH_CACHE . '/' . md5(uniqid());
-        $zip = PATH_CACHE . '/' . md5(uniqid()) . '.zip';
+        $extractedPath = PATH_CACHE . '/' . md5(uniqid());
+        $zipPath = PATH_CACHE . '/' . md5(uniqid()) . '.zip';
 
         // Create a temporary directory to extract the extension
-        mkdir($extracted, 0755, true);
+        mkdir($extractedPath, 0755, true);
 
         // Download the extension archive and save it to the cache folder
-        $fileHandler = fopen($zip, 'w');
+        $fileHandler = fopen($zipPath, 'w');
         $client = $this->di['http_client'];
         $response = $client->request('GET', $manifest['download_url']);
 
@@ -465,8 +466,15 @@ class Service implements InjectionAwareInterface
         }
 
         // Extract the archive
-        $ff = new \Box_Zip($zip);
-        $ff->decompress($extracted, $runFromTest);
+        $zip = new ZipFile();
+        try {
+            $zip->openFile($zipPath);
+            $zip->extractTo($extractedPath);
+            $zip->close();
+        } catch (\PhpZip\Exception\ZipException $e) {
+            error_log($e->getMessage());
+            throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+        }
 
         switch ($type) {
             case \Box_Extension::TYPE_MOD:
@@ -487,18 +495,18 @@ class Service implements InjectionAwareInterface
             if (file_exists($destination)) {
                 throw new \Box_Exception('Extension :id seems to be already installed.', [':id' => $id], 436);
             }
-            if (!rename($extracted, $destination)) {
+            if (!rename($extractedPath, $destination)) {
                 throw new \Box_Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
             }
         } else {
             throw new \Box_Exception('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
         }
 
-        if (file_exists($zip)) {
-            unlink($zip);
+        if (file_exists($zipPath)) {
+            unlink($zipPath);
         }
 
-        $this->di['tools']->emptyFolder($extracted);
+        $this->di['tools']->emptyFolder($extractedPath);
 
         return true;
     }
