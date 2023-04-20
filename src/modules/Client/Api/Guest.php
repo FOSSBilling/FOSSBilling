@@ -147,7 +147,7 @@ class Guest extends \Api_Abstract
         if (isset($data['remember'])) {
             $email = $data['email'];
             $cookie_time = (3600 * 24 * 30); // 30 days
-            $this->di['cookie']->set('BOXCLR', 'e=' . base64_encode($email) . '&p=' . base64_encode($client->pass), time() + $cookie_time, '/');
+            setcookie('BOXCLR', 'e=' . base64_encode($email) . '&p=' . base64_encode($client->pass), time() + $cookie_time, '/');
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);

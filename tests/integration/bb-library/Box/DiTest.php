@@ -21,7 +21,6 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertInstanceOf('Box_Pagination', $di['pager']);
         $this->assertInstanceOf('Box_Url', $di['url']);
         $this->assertInstanceOf('Box_EventManager', $di['events_manager']);
-        $this->assertInstanceOf('Box_Cookie', $di['cookie']);
 
         $this->assertInstanceOf('Box_Session', $di['session']);
         $this->assertInstanceOf('Box_Request', $di['request']);

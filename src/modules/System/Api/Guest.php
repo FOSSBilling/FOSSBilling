@@ -178,10 +178,9 @@ class Guest extends \Api_Abstract
      */
     public function locale()
     {
-        $cookie = $this->di['cookie'];
         $locale = $this->di['config']['i18n']['locale'];
-        if ($cookie->has('BBLANG')) {
-            $bblang = $cookie->get('BBLANG');
+        if (isset($_COOKIE['BBLANG'])) {
+            $bblang = $_COOKIE['BBLANG'];
             if (!empty($bblang)) {
                 $locale = $bblang;
             }

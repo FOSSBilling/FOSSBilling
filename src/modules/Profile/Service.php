@@ -225,7 +225,7 @@ class Service implements InjectionAwareInterface
     public function logoutClient()
     {
         if ($_COOKIE) { // testing env fix
-            $this->di['cookie']->set('BOXCLR', '', time() - 3600, '/');
+            setcookie('BOXCLR', ''. time() - 3600, '/');
         }
         $this->di['session']->delete('client');
         $this->di['session']->delete('client_id');

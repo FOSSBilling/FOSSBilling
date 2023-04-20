@@ -46,7 +46,6 @@ class AdminTest extends \BBTestCase
             ->getMock();
 
         $di = new \Box_Di();
-        $di['cookie'] = new \Box_Cookie();
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
 
