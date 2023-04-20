@@ -259,23 +259,17 @@
 
         <div class="tab-pane fade" id="tab-links" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Product links'|trans }}</h5>
+                <h5>{{ 'Product Links'|trans }}</h5>
                 <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Product ID'|trans }}</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Order Page (via ID)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value="{{ product.id }}">
+                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.id }}" readonly>
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Order page with ID'|trans }}</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Order Page (via Link)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.id }}">
-                    </div>
-                </div>
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Order page with slug'|trans }}</label>
-                    <div class="col">
-                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.slug }}">
+                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.slug }}" readonly>
                     </div>
                 </div>
             </div>
