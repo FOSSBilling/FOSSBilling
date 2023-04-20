@@ -187,7 +187,7 @@ class GuestTest extends \BBTestCase {
 
     public function testlocale()
     {
-        $setLang = 'FR';
+        $setLang = 'en_US';
         $di = new \Box_Di();
 
         $di['config'] = [ 'i18n' => ['locale' => 'en_US' ] ];
