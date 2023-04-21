@@ -7,7 +7,7 @@
     "build": "encore production --progress"
   },
   "dependencies": {
-    "@melloware/coloris": "^0.18.0",
+    "@melloware/coloris": "^0.19.0",
     "@tabler/core": "1.0.0-beta17",
     "apexcharts": "^3.39.0",
     "autosize": "^6.0.1",
