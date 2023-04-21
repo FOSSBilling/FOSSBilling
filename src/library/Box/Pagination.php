@@ -41,9 +41,9 @@ class Box_Pagination implements InjectionAwareInterface
     public function getSimpleResultSet($q, $values, $per_page = 100, $page = null)
     {
         if (is_null($page)){
-            $page = $this->di['request']->getQuery('page', "int", 1);
+            $page = $_GET['page'] ?? 1;
         }
-        $per_page = $this->di['request']->getQuery('per_page', "int", $per_page);
+        $per_page = $_GET['per_page'] ?? $per_page;
 
         $offset = ($page - 1) * $per_page;
 
@@ -67,8 +67,8 @@ class Box_Pagination implements InjectionAwareInterface
 
     public function getAdvancedResultSet($q, $values, $per_page = 100)
     {
-        $page = $this->di['request']->getQuery('page', "int", 1);
-        $per_page = $this->di['request']->getQuery('per_page', "int", $per_page);
+        $page = $page = $_GET['page'] ?? 1;
+        $per_page = $_GET['per_page'] ?? $per_page;
 
         $offset = ($page - 1) * $per_page;
         $q = str_replace('SELECT ', 'SELECT SQL_CALC_FOUND_ROWS ', $q);

@@ -65,7 +65,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
     public function getInfo()
     {
         $data = array();
-        $data['ip']             = isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : null;
+        $data['ip']             = $_SERVER['SERVER_ADDR'] ?? null;
         $data['PHP_OS']         = PHP_OS;
         $data['PHP_VERSION']    = PHP_VERSION;
 

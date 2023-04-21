@@ -121,8 +121,10 @@ class Admin implements \Box\InjectionAwareInterface
         $api->client_login(['id' => $id]);
 
         $redirect_to = '/';
-        if ($this->di['request']->getQuery('r')) {
-            $r = $this->di['request']->getQuery('r');
+
+        $query = $_GET['r'] ?? null;
+        if ($query) {
+            $r = $query;
             $redirect_to = '/' . trim($r, '/');
         }
 

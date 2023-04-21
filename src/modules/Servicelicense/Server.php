@@ -50,7 +50,7 @@ class Server implements \Box\InjectionAwareInterface
             return $_SERVER;
         }
 
-        return (isset($_SERVER[$key])) ? $_SERVER[$key] : $default;
+        return $_SERVER[$key] ?? $default;
     }
 
     private function getIp($checkProxy = true)

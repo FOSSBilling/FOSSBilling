@@ -48,7 +48,7 @@ class Service implements \Box\InjectionAwareInterface
         ';
         $values = [
             'ip' => $request->getClientAddress(),
-            'request' => $request->getURI(),
+            'request' => $_SERVER['REQUEST_URI'] ?? null,
         ];
 
         return $this->di['db']->exec($sql, $values);

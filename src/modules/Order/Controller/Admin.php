@@ -85,8 +85,9 @@ class Admin implements \Box\InjectionAwareInterface
     public function get_new(\Box_App $app)
     {
         $api = $this->di['api_admin'];
-        $product = $api->product_get(['id' => $this->di['request']->getPost('product_id')]);
-        $client = $api->client_get(['id' => $this->di['request']->getPost('client_id')]);
+
+        $product = $api->product_get(['id' => $_POST['product_id'] ?? null]);
+        $client = $api->client_get(['id' => $_POST['client_id'] ?? null]);
 
         return $app->render('mod_order_new', ['product' => $product, 'client' => $client]);
     }

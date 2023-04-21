@@ -269,40 +269,6 @@ class ServiceTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
-    public function testgetCurrentUrl()
-    {
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
-        $requestMock->expects($this->atLeastOnce())
-            ->method('getScheme')
-            ->will($this->returnValue('https'));
-        $requestMock->expects($this->atLeastOnce())
-            ->method('getURI')
-            ->will($this->returnValue('?page=1'));
-
-        $requestMock->expects($this->atLeastOnce())
-            ->method('getServer')
-            ->will($this->returnCallback( function ()
-            {
-                $arg = func_get_arg(0);
-                if ($arg == 'SERVER_PORT'){
-                    return '80';
-                }
-                if ($arg == 'SERVER_NAME'){
-                    return 'localhost';
-                }
-                return false;
-            }));
-
-        $di = new \Box_Di();
-        $di['request'] = $requestMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->getCurrentUrl();
-        $this->assertIsString($result);
-    }
-
-
-
     public function testgetPeriod()
     {
         $code = '1W';

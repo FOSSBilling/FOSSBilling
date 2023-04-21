@@ -379,22 +379,17 @@ class Service
 
     public function getCurrentUrl()
     {
-        $request = $this->di['request'];
-        $pageURL = 'http';
-        $https = $request->getScheme();
-        if (isset($https) && 'https' == $https) {
-            $pageURL .= 's';
-        }
-        $pageURL .= '://';
+        $pageScheme = $_SERVER['HTTPS'] ? 'https' : 'http';
+        $pageURL = $pageScheme . '://';
 
-        $serverPort = $request->getServer('SERVER_PORT');
+        $serverPort = $_SERVER['SERVER_PORT'] ?? null;
         if (isset($serverPort) && '80' != $serverPort && '443' != $serverPort) {
-            $pageURL .= $request->getServer('SERVER_NAME') . ':' . $request->getServer('SERVER_PORT');
+            $pageURL .= $_SERVER['SERVER_NAME'] ?? null . ':' . $serverPort;
         } else {
-            $pageURL .= $request->getServer('SERVER_NAME');
+            $pageURL .= $_SERVER['SERVER_NAME'] ?? null;;
         }
 
-        $this_page = $request->getURI();
+        $this_page = $_SERVER['REQUEST_URI'] ?? '';
         if (str_contains($this_page, '?')) {
             $a = explode('?', $this_page);
             $this_page = reset($a);
