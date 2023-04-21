@@ -28,21 +28,49 @@
         <h3 class="card-title">{{ 'SEO settings'|trans }}</h3>
     </div>
 
+    {% set info = admin.seo_info %}
+
     {% set params = admin.extension_config_get({ "ext": "mod_seo" }) %}
     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
         <input type="hidden" name="ext" value="mod_seo">
         <div class="card-body">
-            <h3 class="card-title">Sitemap</h3>
+            <h3 class="card-title">Enabled engines</h3>
+
+            {% for i, engine in info.engines %}
             <div class="row">
-                <label class="col-md-3 form-label">{{ 'Ping sitemap to Google'|trans }}</label>
+                <label class="col-md-3 form-label">{{ engine.name }}</label>
                 <span class="col-md-5">
                     <label class="form-check form-check-single form-switch">
-                        <input class="form-check-input" type="checkbox" name="sitemap_google" {% if params.sitemap_google %}checked="checked"{% endif %}>
+                        <input class="form-check-input" type="checkbox" name="sitemap_{{ engine.id }}" {% if engine.enabled %}checked="checked"{% endif %}>
                     </label>
                 </span>
             </div>
+            {% endfor %}
         </div>
+
+        <div class="card-body border-bottom">
+            <span class="card-subtitle">{{ 'FOSSBilling will automatically ping every enabled search engine every 24 hours. Cron jobs must be working for this to work.'|trans }}</span>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <tbody>
+                    <tr>
+                        <td class="text-end">{{ 'Last time a ping was sent'|trans }}:</td>
+                        <td>
+                            {% if info.last_exec %}
+                                {{ info.last_exec|format_datetime }}
+                                ({{ info.last_exec|timeago }} ago)
+                            {% else %}
+                                {{ 'A ping wasn\'t sent yet'|trans }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <div class="card-footer text-end">
             <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
         </div>
