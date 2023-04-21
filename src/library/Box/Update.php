@@ -192,7 +192,7 @@ class Box_Update
         rmdir(PATH_ROOT.'/install');
 
         // Log off the current user and destroy the session.
-        $this->di['cookie']->delete('BOXADMR');
+        unset($_COOKIE['BOXADMR']);
         $this->di['session']->delete('admin');
         session_destroy();
         return true;

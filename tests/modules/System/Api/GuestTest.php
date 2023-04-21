@@ -187,19 +187,9 @@ class GuestTest extends \BBTestCase {
 
     public function testlocale()
     {
-        $setLang = 'FR';
+        $setLang = 'en_US';
         $di = new \Box_Di();
 
-        $cookieMock = $this->getMockBuilder('\Box_Cookie')->getMock();
-        $cookieMock->expects($this->atLeastOnce())
-            ->method('has')
-            ->will($this->returnValue(true));
-        $cookieMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->with('BBLANG')
-            ->will($this->returnValue($setLang));
-
-        $di['cookie'] = $cookieMock;
         $di['config'] = [ 'i18n' => ['locale' => 'en_US' ] ];
 
         $this->api->setDi($di);

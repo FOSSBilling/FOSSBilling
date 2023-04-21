@@ -250,19 +250,6 @@ $di['session'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Cookie
- */
-$di['cookie'] = function () use ($di) {
-    $service = new Box_Cookie();
-    $service->setDi($di);
-
-    return $service;
-};
-
-/*
- *
- * @param void
- *
  * @return \Box_Request
  */
 $di['request'] = function () use ($di) {

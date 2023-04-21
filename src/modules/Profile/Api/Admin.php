@@ -57,7 +57,7 @@ class Admin extends \Api_Abstract
      */
     public function logout()
     {
-        $this->di['cookie']->delete('BOXADMR');
+        unset($_COOKIE['BOXADMR']);
         $this->di['session']->delete('admin');
         $this->di['logger']->info('Admin logged out');
 

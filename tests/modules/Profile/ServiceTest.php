@@ -389,15 +389,10 @@ class ServiceTest extends \BBTestCase
 
         $sessionMock->expects($this->atLeastOnce())
             ->method("delete");
-        $cookieMock = $this->getMockBuilder('Box_Cookie')->getMock();
-
-        $cookieMock->expects($this->any())
-            ->method('set');
 
         $di            = new \Box_Di();
         $di['logger']  = new \Box_Log();
         $di['session'] = $sessionMock;
-        $di['cookie']  = $cookieMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());

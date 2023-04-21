@@ -195,9 +195,6 @@ class GuestTest extends \BBTestCase {
         $sessionMock->expects($this->atLeastOnce())
             ->method("set");
 
-        $cookieMock = $this->getMockBuilder('\Box_Cookie')->getMock();
-        $cookieMock->expects($this->atLeastOnce())
-            ->method('set');
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         //$toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
@@ -210,7 +207,6 @@ class GuestTest extends \BBTestCase {
         $di['events_manager'] = $eventMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
-        $di['cookie'] = $cookieMock;
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
 
