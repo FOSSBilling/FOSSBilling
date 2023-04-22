@@ -600,7 +600,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Invalid download URL for the extension');
+        $this->expectExceptionMessage('Coudn\'t find a valid download URL for the extension.');
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 

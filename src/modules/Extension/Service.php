@@ -324,26 +324,7 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_Extension $model)
     {
-        $result = [];
-
-        if ('mod' == $model->type) {
-            $latest = $this->di['extension_directory']->getLatestExtensionRelease($model->name)['tag'];
-            
-            $hasUpdate = (version_compare($model->version, $latest) < 0);
-            if (!$hasUpdate) {
-                throw new \Box_Exception('The latest version of :mod is already installed.', [':mod' => $model->name], 785);
-            }
-
-            $extension = $this->di['extension_directory']->getExtension($model->name);
-
-            throw new \Box_Exception('Visit the extension directory for more information on updating this extension.', null, 252);
-            $result = [
-                'version_old' => $model->version,
-                'version_new' => $latest,
-            ];
-        }
-
-        return $result;
+        throw new \Box_Exception('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
     public function activate(\Model_Extension $ext)
