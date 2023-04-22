@@ -59,7 +59,7 @@ class Client extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function get($data)
@@ -85,7 +85,7 @@ class Client extends \Api_Abstract
      *
      * @return type
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function resend($data)
@@ -110,7 +110,7 @@ class Client extends \Api_Abstract
      *
      * @return type
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function delete($data)

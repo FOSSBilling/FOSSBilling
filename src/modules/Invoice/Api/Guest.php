@@ -29,7 +29,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function get($data)
     {
@@ -55,7 +55,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update($data)
     {
@@ -107,7 +107,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function payment($data)
@@ -128,7 +128,7 @@ class Guest extends \Api_Abstract
      *
      * @param string $hash - invoice hash
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function pdf($data)
     {

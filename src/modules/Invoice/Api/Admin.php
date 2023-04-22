@@ -232,7 +232,7 @@ class Admin extends \Api_Abstract
      *
      * @return string - invoice id
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function renewal_invoice($data)
@@ -632,7 +632,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function gateway_get($data)
     {
@@ -655,7 +655,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new id of gateway
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function gateway_copy($data)
     {
@@ -684,7 +684,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function gateway_update($data)
     {
@@ -706,7 +706,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function gateway_delete($data)
     {
@@ -756,7 +756,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - id
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function subscription_create($data)
     {
@@ -791,7 +791,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function subscription_update($data)
     {
@@ -814,7 +814,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function subscription_get($data)
     {
@@ -850,7 +850,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function subscription_delete($data)
     {

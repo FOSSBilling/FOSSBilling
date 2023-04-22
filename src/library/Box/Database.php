@@ -183,7 +183,7 @@ class Box_Database implements InjectionAwareInterface
      * @param int $id
      * @param string $message
      * @return \FOSSBilling_Model
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function getExistingModelById($modelName, $id, $message = "Model :name not found in the database")
     {

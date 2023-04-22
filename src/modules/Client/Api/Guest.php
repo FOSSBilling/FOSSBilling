@@ -119,7 +119,7 @@ class Guest extends \Api_Abstract
      *
      * @return array - session data
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function login($data)
     {
@@ -167,7 +167,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function reset_password($data)
     {
@@ -215,7 +215,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function confirm_reset($data)
     {

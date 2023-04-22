@@ -59,7 +59,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function get($data)
     {
@@ -101,7 +101,7 @@ class Admin extends \Api_Abstract
      *
      * @return string - currency code
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function create($data = [])
     {
@@ -138,7 +138,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update($data)
     {
@@ -220,7 +220,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function delete($data)
     {
@@ -240,7 +240,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function set_default($data)
     {

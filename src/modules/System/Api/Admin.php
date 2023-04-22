@@ -166,8 +166,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update_core($data)
     {
@@ -192,8 +191,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update_config()
     {
