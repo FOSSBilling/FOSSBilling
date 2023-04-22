@@ -40,15 +40,15 @@ class Admin extends \Api_Abstract
      * Get list of extensions from extensions.fossbilling.org
      * which can be installed on current version of FOSSBilling.
      *
-     * @param string $type - mod, gateway ...
+     * @param string $type - extensions type: mod, theme, ... (optional)
      *
-     * @return array
+     * @return array - list of extensions
      */
     public function get_latest($data)
     {
         $type = $data['type'] ?? null;
         try {
-            $list = $this->di['extension']->getLatest($type);
+            $list = $this->di['extension_directory']->getExtensionList($type);
         } catch(\Exception) {
             $list = array();
         }
