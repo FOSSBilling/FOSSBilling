@@ -139,7 +139,7 @@ class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
     {
         $latest = $this->getLatestExtensionRelease($extension);
 
-        if ($this->di['config']['update_branch'] === 'stable') {
+        if ($this->di['config']['update_branch'] === 'release') {
             if (version_compare(\Box_Version::VERSION, $latest['min_fossbilling_version'], '<')) {
                 return false;
             }
