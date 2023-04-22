@@ -15,7 +15,7 @@
 
 use Box\InjectionAwareInterface;
 
-class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
+class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 {
     /**
      * @var \Box_Di

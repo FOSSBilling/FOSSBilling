@@ -50,7 +50,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionDirectory')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtensionList')
@@ -68,7 +68,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array('type' => 'mod');
 
-        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionDirectory')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtensionList')

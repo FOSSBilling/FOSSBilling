@@ -337,7 +337,7 @@ class Service implements InjectionAwareInterface
         ];
 
         switch ($ext->type) {
-            case \FOSSBilling_ExtensionDirectory::TYPE_MOD:
+            case \FOSSBilling_ExtensionManager::TYPE_MOD:
                 $mod = $this->di['mod']($ext->name);
                 $manifest = $mod->getManifest();
                 $this->installModule($ext);
@@ -360,7 +360,7 @@ class Service implements InjectionAwareInterface
     public function deactivate(\Model_Extension $ext)
     {
         switch ($ext->type) {
-            case \FOSSBilling_ExtensionDirectory::TYPE_HOOK:
+            case \FOSSBilling_ExtensionManager::TYPE_HOOK:
                 $file = ucfirst($ext->name) . '.php';
                 $destination = PATH_LIBRARY . '/Hook/' . $file;
                 if (file_exists($destination)) {
@@ -368,7 +368,7 @@ class Service implements InjectionAwareInterface
                 }
                 break;
 
-            case \FOSSBilling_ExtensionDirectory::TYPE_MOD:
+            case \FOSSBilling_ExtensionManager::TYPE_MOD:
                 $mod = $ext->name;
                 if ($this->isCoreModule($mod)) {
                     throw new \Box_Exception('FOSSBilling core modules can not be managed');
@@ -399,7 +399,7 @@ class Service implements InjectionAwareInterface
         $this->deactivate($ext);
 
         switch ($ext->type) {
-            case \FOSSBilling_ExtensionDirectory::TYPE_MOD:
+            case \FOSSBilling_ExtensionManager::TYPE_MOD:
                 break;
 
             default:
@@ -455,16 +455,16 @@ class Service implements InjectionAwareInterface
         }
 
         switch ($type) {
-            case \FOSSBilling_ExtensionDirectory::TYPE_MOD:
+            case \FOSSBilling_ExtensionManager::TYPE_MOD:
                 $destination = PATH_MODS . DIRECTORY_SEPARATOR . $id;
                 break;
-            case \FOSSBilling_ExtensionDirectory::TYPE_THEME:
+            case \FOSSBilling_ExtensionManager::TYPE_THEME:
                 $destination = PATH_THEMES . DIRECTORY_SEPARATOR . $id;
                 break;
-            case \FOSSBilling_ExtensionDirectory::TYPE_TRANSLATION:
+            case \FOSSBilling_ExtensionManager::TYPE_TRANSLATION:
                 $destination = PATH_LANGS . DIRECTORY_SEPARATOR . $id . '/LC_MESSAGES';
                 break;
-            case \FOSSBilling_ExtensionDirectory::TYPE_PG:
+            case \FOSSBilling_ExtensionManager::TYPE_PG:
                 $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . $id;
                 break;
         }

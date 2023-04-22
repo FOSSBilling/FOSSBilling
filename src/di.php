@@ -537,10 +537,10 @@ $di['validator'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling_ExtensionDirectory
+ * @return \FOSSBilling_ExtensionManager
  */
 $di['extension_directory'] = function () use ($di) {
-    $extension = new \FOSSBilling_ExtensionDirectory();
+    $extension = new \FOSSBilling_ExtensionManager();
     $extension->setDi($di);
 
     return $extension;

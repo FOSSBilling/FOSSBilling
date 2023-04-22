@@ -314,7 +314,7 @@ class ServiceTest extends \BBTestCase {
         $model->version = '2';
         $newversion = '3';
 
-        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionDirectory')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
 
         $di = new \Box_Di();
         $di['extension_directory'] = $extensionMock;
@@ -499,7 +499,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractDownloadUrlMissing()
     {
-        $extensionMock = $this->getMockBuilder(\FOSSBilling_ExtensionDirectory::class)->getMock();
+        $extensionMock = $this->getMockBuilder(\FOSSBilling_ExtensionManager::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getLatestExtensionRelease')
