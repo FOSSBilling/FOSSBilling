@@ -693,18 +693,18 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 $result = $client->request('GET', $callUrl.'?'.$this->_formatParams($params));
                 $this->getLog()->debug('API REQUEST: '.$callUrl.'?'.$this->_formatParams($params));
             }
+
+            $this->getLog()->info('API RESULT: ' . $result->getContent());
+        
+            // response checker
+            $json = $result->toArray();
+            if(!is_array($json)) {
+                return $result->getContent();
+            }
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
             $this->getLog()->err($e);
             throw $e;
-        }
-
-        $this->getLog()->info('API RESULT: '.$result);
-        
-        // response checker
-        $json = $result->toArray();
-        if(!is_array($json)) {
-            return $result->getContent();
         }
 
         if(isset($json['status']) && $json['status'] == 'ERROR') {
@@ -736,7 +736,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             }
         }
 
-        $params = http_build_query($params, null, '&');
+        $params = http_build_query($params);
         $params = preg_replace('~%5B(\d+)%5D~', '', $params);
         return $params;
     }
