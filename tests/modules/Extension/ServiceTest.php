@@ -314,9 +314,9 @@ class ServiceTest extends \BBTestCase {
         $model->version = '2';
         $newversion = '3';
 
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionDirectory')->getMock();
         $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
+            ->method('getLatestExtensionRelease')
             ->will($this->returnValue($newversion));
 
         $extensionMock->expects($this->atLeastOnce())
@@ -324,7 +324,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue('string'));
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_directory'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -342,9 +342,9 @@ class ServiceTest extends \BBTestCase {
         $model->version = '2';
         $newversion = '3';
 
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionDirectory')->getMock();
         $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
+            ->method('getLatestExtensionRelease')
             ->will($this->returnValue($newversion));
 
         $extensionMock->expects($this->atLeastOnce())
@@ -352,7 +352,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(''));
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_directory'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -370,13 +370,13 @@ class ServiceTest extends \BBTestCase {
         $model->version = '1';
         $newversion = $model->version;
 
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionDirectory')->getMock();
         $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
+            ->method('getLatestExtensionRelease')
             ->will($this->returnValue($newversion));
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_directory'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -391,13 +391,13 @@ class ServiceTest extends \BBTestCase {
         $model->type = 'mod';
         $model->name = 'testExtension';
 
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionDirectory')->getMock();
         $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
+            ->method('getLatestExtensionRelease')
             ->will($this->returnValue(''));
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_directory'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -589,14 +589,14 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractDownloadUrlMissing()
     {
-        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
+        $extensionMock = $this->getMockBuilder(\FOSSBilling_ExtensionDirectory::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_directory'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
