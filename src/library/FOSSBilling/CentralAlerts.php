@@ -104,8 +104,8 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
                 });
             } else {
                 $alerts = array_filter($alerts, function($alert) use ($version) {
-                    $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['minimum_version']), '>=');
-                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower($alert['maximum_version']), '<=');
+                    $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');
+                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower($alert['max_fossbilling_version']), '<=');
     
                     return $overThanTheMinimum && $lessThanTheMaximum;
                 });
