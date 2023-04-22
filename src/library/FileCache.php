@@ -28,7 +28,7 @@ class FileCache
 
         if ($cacheDir) {
             if (!is_dir($cacheDir)) {
-                throw new FileCacheException('The specified cache directory is invalid.');
+                throw new \Box_Exception('The specified cache directory is invalid.');
             }
             $this->_cacheDir = $cacheDir;
         }
@@ -41,7 +41,7 @@ class FileCache
     {
         $cacheFile = $this->getCacheFile($key);
         if (!file_put_contents($cacheFile, json_encode($data))) {
-            throw new FileCacheException('Error saving data with the key ' . $key . ' to the cache file.');
+            throw new \Box_Exception('Error saving data with the key ' . $key . ' to the cache file.');
         }
         return $this;
     }
@@ -54,7 +54,7 @@ class FileCache
         if ($this->exists($key)) {
             $cacheFile = $this->getCacheFile($key);
             if (!$data = json_decode(file_get_contents($cacheFile), true)) {
-                throw new FileCacheException('Error reading data with the key ' . $key . ' from the cache file.');
+                throw new \Box_Exception('Error reading data with the key ' . $key . ' from the cache file.');
             }
             return $data;
         }
@@ -69,7 +69,7 @@ class FileCache
         if ($this->exists($key)) {
             $cacheFile = $this->getCacheFile($key);
             if (!unlink($cacheFile)) {
-                throw new FileCacheException('Error deleting the file cache with key ' . $key);
+                throw new \Box_Exception('Error deleting the file cache with key ' . $key);
             }
             return true;
         }
