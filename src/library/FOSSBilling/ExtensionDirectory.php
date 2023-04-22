@@ -59,7 +59,7 @@ class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
      */
     public function getExtension($id)
     {
-        $manifest = $this->makeRequest('extension/' . $id, []);
+        $manifest = $this->makeRequest('extension/' . $id);
 
         if (empty($manifest)) {
             throw new \Box_Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
@@ -157,7 +157,7 @@ class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
      * @return array The API response
      * @throws \Box_Exception
      */
-    public function makeRequest($endpoint, array $params)
+    public function makeRequest($endpoint, array $params = [])
     {
         $url = $this->_url . $endpoint;
 
@@ -176,6 +176,10 @@ class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
 
         if (isset($json['error']) && is_array($json['error'])) {
             throw new \Box_Exception($json['error']['message'], null, 746);
+        }
+
+        if (!is_array($json['result'])) {
+            throw new \Box_Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
         }
 
         return $json['result'];
