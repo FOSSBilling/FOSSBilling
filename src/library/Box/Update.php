@@ -10,10 +10,8 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
-
-use PhpZip\ZipFile;
 
 class Box_Update
 {
@@ -161,25 +159,38 @@ class Box_Update
     public function performUpdate()
     {
         if($this->getUpdateBranch() !== 'preview' && !$this->getCanUpdate()) {
-            throw new LogicException('You have latest version of FOSSBilling. You do not need to update.');
+            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         error_log('Started FOSSBilling auto-update script');
-        $latest_version = $this->getLatestVersion();
-        $latest_version_archive = PATH_CACHE.DIRECTORY_SEPARATOR.$latest_version.'.zip';
+        $latestVersionNum = $this->getLatestVersion();
+        $archiveFile = PATH_CACHE . DIRECTORY_SEPARATOR . $latestVersionNum . '.zip';
 
-        // download latest archive from link
-        $content = file_get_contents($this->getLatestVersionDownloadLink(), false, null, null, false);
-        $f = fopen($latest_version_archive,'wb');
-        fwrite($f,$content,strlen($content));
-        fclose($f);
+        // Download latest archive.
+        try {
+            $httpClient = $this->di['http_client']->withOptions([
+                'timeout'      => 5,
+                'max_duration' => 120
+            ]);
+            $response = $httpClient->request('GET', $this->getLatestVersionDownloadLink());
+
+            $fileHandler = fopen($archiveFile, 'w');
+            foreach ($httpClient->stream($response) as $chunk) {
+                fwrite($fileHandler, $chunk->getContent());
+            }
+            fclose($fileHandler);
+        } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface |
+                 \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
+            error_log($e->getMessage());
+            throw new \Box_Exception('Failed to download the update archive. Further details are available in the error log.');
+        }
 
         //@todo validate downloaded file hash
 
-        // Extract latest archive on top of current version
-        $zip = new ZipFile();
+        // Extract latest archive on top of current version.
         try {
-            $zip->openFile($latest_version_archive);
+            $zip = new \PhpZip\ZipFile();
+            $zip->openFile($archiveFile);
             $zip->extractTo(PATH_ROOT);
             $zip->close();
         } catch (\PhpZip\Exception\ZipException $e) {
