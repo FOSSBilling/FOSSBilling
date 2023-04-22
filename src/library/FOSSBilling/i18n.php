@@ -51,7 +51,11 @@ class FOSSBilling_i18n
             $detectedLocale = '';
         }
 
-        $matchingLocale = Locale::lookup(self::getLocales(), $detectedLocale, false, null);
+        try {
+            $matchingLocale = Locale::lookup(self::getLocales(), $detectedLocale, false, null);
+        } catch (Exception) {
+            $matchingLocale = null;
+        }
 
         /* The system was unable to match the browser locale to one of our local ones.
          * This is most likely because Locale::lookup will not match en with en_US. It will only match en_US with en.
@@ -59,11 +63,17 @@ class FOSSBilling_i18n
          * If it does, return that.
          */
         if (empty($matchingLocale)) {
+            if (strlen($detectedLocale) < 2) {
+                return null;
+            }
             foreach (self::getLocales() as $locale) {
-                if (str_starts_with($locale, $detectedLocale)) {
+                if (str_starts_with($locale, substr($detectedLocale, 0, 2))) {
+                    setcookie("BBLANG", $locale, strtotime("+1 month"));
                     return $locale;
                 }
             }
+        } else {
+            setcookie("BBLANG", $matchingLocale, strtotime("+1 month"));
         }
 
         return $matchingLocale;
