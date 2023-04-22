@@ -18,6 +18,8 @@ const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
  * Migration steps to create the Central Alerts System table.
+ *
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1143
  */
 class FOSSPatch_33 extends FOSSPatchAbstract
 {
