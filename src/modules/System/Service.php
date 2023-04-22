@@ -1590,7 +1590,7 @@ class Service
 
     public function getVersion()
     {
-        return \Box_Version::VERSION;
+        return \FOSSBilling_Version::VERSION;
     }
 
     public function getPendingMessages()

@@ -39,7 +39,7 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertInstanceOf('\Server_Client', $di['server_client']);
         $this->assertInstanceOf('\Server_Account', $di['server_account']);
         $this->assertTrue(isset($di['server_manager']));
-        $this->assertInstanceOf('\Box_Requirements', $di['requirements']);
+        $this->assertInstanceOf('\FOSSBilling_Requirements', $di['requirements']);
         $this->assertInstanceOf('\Box\Mod\Theme\Model\Theme', $di['theme']);
         $this->assertInstanceOf('\Model_Cart', $di['cart']);
         $this->assertInstanceOf('\GeoIp2\Database\Reader', $di['geoip']);

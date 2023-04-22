@@ -603,10 +603,10 @@ $di['server_manager'] = $di->protect(function ($manager, $config) {
 /*
  * @param void
  *
- * @return Box_Requirements
+ * @return FOSSBilling_Requirements
  */
 $di['requirements'] = function () use ($di) {
-    $r = new Box_Requirements();
+    $r = new FOSSBilling_Requirements();
     $r->setDi($di);
 
     return $r;

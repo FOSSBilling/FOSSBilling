@@ -181,7 +181,7 @@ class Admin extends \Api_Abstract
         $updater->performUpdate();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
 
-        $this->di['logger']->info('Updated FOSSBilling from %s to %s', \Box_Version::VERSION, $new_version);
+        $this->di['logger']->info('Updated FOSSBilling from %s to %s', \FOSSBilling_Version::VERSION, $new_version);
 
         return true;
     }

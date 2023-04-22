@@ -13,7 +13,7 @@
  */
 
 
-class Box_Requirements implements \Box\InjectionAwareInterface
+class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
 {
     protected $di;
 
@@ -69,10 +69,10 @@ class Box_Requirements implements \Box\InjectionAwareInterface
         $data['PHP_OS']         = PHP_OS;
         $data['PHP_VERSION']    = PHP_VERSION;
 
-        $data['bb']    = array(
+        $data['FOSSBilling']    = array(
             'BB_LOCALE'     =>  $this->di['config']['i18n']['locale'],
             'BB_SEF_URLS'   =>  BB_SEF_URLS,
-            'version'       =>  Box_Version::VERSION,
+            'version'       =>  FOSSBilling_Version::VERSION,
         );
 
         $data['ini']    = array(
@@ -110,9 +110,9 @@ class Box_Requirements implements \Box\InjectionAwareInterface
         return version_compare($current, $required, '>=');
     }
 
-    public function isBoxVersionOk()
+    public function isFOSSBillingVersionOk()
     {
-        $current = Box_Version::VERSION;
+        $current = FOSSBilling_Version::VERSION;
         if ($current == "0.0.1") {
             return false;
         }
