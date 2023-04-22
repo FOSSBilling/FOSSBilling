@@ -342,7 +342,7 @@ class Service implements InjectionAwareInterface
                 throw new \Box_Exception('Could not retrieve :ext information', [':ext' => $model->name], 744);
             }
 
-            throw new \Box_Exception('Visit the extension store for more information on updating this extension.', null, 252);
+            throw new \Box_Exception('Visit the extension directory for more information on updating this extension.', null, 252);
             $result = [
                 'version_old' => $model->version,
                 'version_new' => $latest,
