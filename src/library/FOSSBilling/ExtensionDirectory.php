@@ -178,7 +178,7 @@ class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
             throw new \Box_Exception($json['error']['message'], null, 746);
         }
 
-        if (!is_array($json['result'])) {
+        if (!isset($json['result']) || !is_array($json['result'])) {
             throw new \Box_Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
         }
 
