@@ -140,7 +140,7 @@ class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
         $latest = $this->getLatestExtensionRelease($extension);
 
         if ($this->di['config']['update_branch'] === 'release') {
-            if (version_compare(\Box_Version::VERSION, $latest['min_fossbilling_version'], '<')) {
+            if (version_compare(\FOSSBilling_Version::VERSION, $latest['min_fossbilling_version'], '<')) {
                 return false;
             }
         }
@@ -164,7 +164,7 @@ class FOSSBilling_ExtensionDirectory implements InjectionAwareInterface
         $response = $this->di['http_client']->request('GET', $url, [
             'timeout' => 5,
             'query' => array_merge($params, [
-                'fossbilling_version' => Box_Version::VERSION,
+                'fossbilling_version' => \FOSSBilling_Version::VERSION,
             ]),
         ]);
 
