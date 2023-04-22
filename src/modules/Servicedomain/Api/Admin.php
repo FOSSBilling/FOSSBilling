@@ -175,7 +175,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function tld_get($data)
     {
@@ -204,7 +204,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
      
     public function tld_get_id($data)
@@ -229,7 +229,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function tld_delete($data)
     {
@@ -258,7 +258,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function tld_create($data)
     {
@@ -290,7 +290,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function tld_update($data)
     {

@@ -89,7 +89,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new product id
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function prepare($data)
     {
@@ -141,7 +141,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function update($data)
     {
@@ -158,7 +158,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function update_priority($data)
     {
@@ -206,7 +206,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new addon id
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function addon_create($data)
     {
@@ -233,7 +233,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function addon_get($data)
     {
@@ -274,7 +274,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function addon_update($data)
     {
@@ -340,7 +340,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function category_update($data)
     {
@@ -365,7 +365,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function category_get($data)
     {
@@ -389,7 +389,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new category id
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function category_create($data)
     {
@@ -414,7 +414,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function category_delete($data)
     {
@@ -467,7 +467,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new promo code id
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function promo_create($data)
     {
@@ -503,7 +503,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function promo_get($data)
     {
@@ -538,7 +538,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function promo_update($data)
     {
@@ -561,7 +561,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function promo_delete($data)
     {

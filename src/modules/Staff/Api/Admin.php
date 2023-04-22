@@ -48,7 +48,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function get($data)
     {
@@ -75,7 +75,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update($data)
     {
@@ -100,7 +100,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function delete($data)
     {
@@ -123,7 +123,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function change_password($data)
     {
@@ -158,7 +158,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - ID of newly created staff member
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function create($data)
     {
@@ -257,7 +257,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new staff group ID
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function group_create($data)
     {
@@ -276,7 +276,7 @@ class Admin extends \Api_Abstract
      *
      * @return array - group details
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function group_get($data)
     {
@@ -297,7 +297,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function group_delete($data)
     {
@@ -320,7 +320,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function group_update($data)
     {

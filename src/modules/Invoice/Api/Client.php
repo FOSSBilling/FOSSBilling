@@ -49,7 +49,7 @@ class Client extends \Api_Abstract
      *
      * @return type
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function get($data)
     {
@@ -75,7 +75,7 @@ class Client extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update($data)
     {
@@ -107,7 +107,7 @@ class Client extends \Api_Abstract
      *
      * @return string - invoice hash
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function renewal_invoice($data)
@@ -168,7 +168,7 @@ class Client extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function delete($data)
     {

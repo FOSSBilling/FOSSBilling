@@ -96,7 +96,7 @@ class Box_Validate
      * @param array $data - Array to search for keys
      * @param array $variables - Array of variables for message placeholders (:placeholder)
      * @param integer $code - Exception code
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function checkRequiredParamsForArray(array $required, array $data, array $variables = NULL, $code = 0)
     {

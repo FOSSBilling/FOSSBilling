@@ -156,7 +156,7 @@ class Box_Update
     /**
      * Perform update
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function performUpdate()
     {
@@ -210,7 +210,7 @@ class Box_Update
     /**
      * Perform config file update.
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function performConfigUpdate()
     {
