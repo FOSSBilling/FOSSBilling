@@ -17,6 +17,18 @@
 const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
+ * Migration steps to create the Central Alerts System table.
+ */
+class FOSSPatch_33 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $q = "CREATE TABLE `central_alerts` ( `id` bigint(20) NOT NULL, `details` text, `locally_saved_time` DATETIME DEFAULT CURRENT_TIMESTAMP, `modification_time` DATETIME ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (`id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+        $this->execSql($q);
+    }
+}
+
+/**
  * Patch to remove the old phpmailer package, as we no longer use it. and some leftover admin_default files.
  * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1091 and https://github.com/FOSSBilling/FOSSBilling/pull/1063

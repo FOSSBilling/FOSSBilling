@@ -537,6 +537,19 @@ $di['validator'] = function () use ($di) {
  *
  * @param void
  *
+ * @return \FOSSBilling_CentralAlerts
+ */
+$di['central_alerts'] = function () use ($di) {
+    $centralalerts = new \FOSSBilling_CentralAlerts();
+    $centralalerts->setDi($di);
+
+    return $centralalerts;
+};
+
+/*
+ *
+ * @param void
+ *
  * @return \Box_Extension
  */
 $di['extension'] = function () use ($di) {
