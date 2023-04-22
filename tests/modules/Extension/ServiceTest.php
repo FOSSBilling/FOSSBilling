@@ -330,7 +330,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(252);
-        $this->expectExceptionMessage('Visit the extension store for more information on updating this extension.');
+        $this->expectExceptionMessage('Visit the extension directory for more information on updating this extension.');
         $this->service->update($model);
     }
 
