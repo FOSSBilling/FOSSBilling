@@ -341,7 +341,7 @@ natsort($patches);
                 } ?>
             </tbody>
         </table>
-        <p>Update completed. You are using FOSSBilling <strong><?php echo Box_Version::VERSION ?></strong></p>
+        <p>Update completed. You are using FOSSBilling <strong><?php echo FOSSBilling_Version::VERSION ?></strong></p>
     </div>
 </body>
 

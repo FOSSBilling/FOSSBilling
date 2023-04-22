@@ -272,7 +272,7 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-        header('X-FOSSBilling-Version: ' . \Box_Version::VERSION);
+        header('X-FOSSBilling-Version: ' . \FOSSBilling_Version::VERSION);
         header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);

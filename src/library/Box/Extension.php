@@ -88,7 +88,7 @@
             $response = $client->request('GET', $url, [
                 'timeout' => 5,
                 'query' => array_merge($params, [
-                    'bb_version' => Box_Version::VERSION,
+                    'bb_version' => FOSSBilling_Version::VERSION,
                 ]),
             ]);
             $json = $response->toArray();

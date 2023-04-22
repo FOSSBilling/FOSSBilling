@@ -327,7 +327,7 @@ class ServiceTest extends \BBTestCase {
     {
         $result = $this->service->getVersion();
         $this->assertIsString($result);
-        $this->assertEquals(\Box_Version::VERSION, $result);
+        $this->assertEquals(\FOSSBilling_Version::VERSION, $result);
     }
 
     public function testgetPendingMessages()
