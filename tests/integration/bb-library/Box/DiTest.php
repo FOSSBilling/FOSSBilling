@@ -11,7 +11,6 @@ class DiTest extends PHPUnit\Framework\TestCase
     public function testInjector()
     {
         $di = $this->di;
-        $this->assertInstanceOf('Box_Config', $di['config']);
         $this->assertInstanceOf('Box_Mod', $di['mod']('admin'));
         $this->assertInstanceOf('Box_Log', $di['logger']);
         $this->assertInstanceOf('Box_Crypt', $di['crypt']);

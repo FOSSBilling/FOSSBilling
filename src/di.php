@@ -41,8 +41,7 @@ $di = new Box_Di();
  */
 $di['config'] = function () {
     $array = include PATH_ROOT . '/config.php';
-
-    return new Box_Config($array);
+    return $array;
 };
 
 /*
