@@ -447,10 +447,10 @@ class Service implements InjectionAwareInterface
 
             $r = $this->di['db']->findOne('Invoice', 'nr is not null order by id desc');
             if ($r instanceof \Model_Invoice && is_numeric($r->nr)) {
-                $next_nr = $r->nr + 1;
+                $next_nr = intval($r->nr) + 1;
             }
         }
-        $systemService->setParamValue($p, $next_nr + 1);
+        $systemService->setParamValue($p, intval($next_nr) + 1);
 
         return $next_nr;
     }
