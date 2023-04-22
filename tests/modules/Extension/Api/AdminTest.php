@@ -45,20 +45,19 @@ class AdminTest extends \BBTestCase {
         $result = $this->api->get_list($data);
         $this->assertIsArray($result);
     }
-/*
- * @todo enable when extensions are available
+
     public function testget_latest()
     {
         $data = array();
 
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatest')
+            ->method('getExtensionList')
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_directory'] = $extensionMock;
 
         $this->api->setDi($di);
         $result = $this->api->get_latest($data);
@@ -69,21 +68,20 @@ class AdminTest extends \BBTestCase {
     {
         $data = array('type' => 'mod');
 
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatest')
+            ->method('getExtensionList')
             ->willThrowException(new \Exception());
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_directory'] = $extensionMock;
 
         $this->api->setDi($di);
         $result = $this->api->get_latest($data);
         $this->assertIsArray($result);
         $this->assertEquals(array(), $result);
     }
-*/
 
     public function testget_navigation()
     {

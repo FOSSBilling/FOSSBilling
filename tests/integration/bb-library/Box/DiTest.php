@@ -32,8 +32,8 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertTrue(isset($di['mod']));
         $this->assertTrue(isset($di['mod_config']));
         $this->assertInstanceOf('Box\\Mod\\Cron\\Service', $di['mod_service']('cron'));
-        $this->assertInstanceOf('Symfony\Component\HttpClient\HttpClient', $di['http_client'];
-        $this->assertInstanceOf('\Box_Extension', $di['extension']);
+        $this->assertInstanceOf('Symfony\Component\HttpClient\HttpClient', $di['http_client']);
+        $this->assertInstanceOf('\FOSSBilling_ExtensionManager', $di['extension_directory']);
         $this->assertInstanceOf('\Box_Update', $di['updater']);
         $this->assertInstanceOf('\Server_Package', $di['server_package']);
         $this->assertInstanceOf('\Server_Client', $di['server_client']);
