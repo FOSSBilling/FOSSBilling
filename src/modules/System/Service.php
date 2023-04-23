@@ -16,6 +16,8 @@
 
 namespace Box\Mod\System;
 
+use Symfony\Component\HttpClient\HttpClient;
+
 class Service
 {
     protected $di;
@@ -360,7 +362,7 @@ class Service
     {
         if (isset($ip)) {
             try {
-                $client = $this->di['http_client'];
+                $client = HttpClient::create();
                 $response = $client->request('GET', 'https://api.ipify.org', [
                     'timeout'   => 2,
                 ]);

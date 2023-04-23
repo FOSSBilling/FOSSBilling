@@ -18,6 +18,7 @@ namespace Box\Mod\Extension;
 
 use Box\InjectionAwareInterface;
 use PhpZip\ZipFile;
+use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
 {
@@ -431,7 +432,7 @@ class Service implements InjectionAwareInterface
 
         // Download the extension archive and save it to the cache folder
         $fileHandler = fopen($zipPath, 'w');
-        $client = $this->di['http_client'];
+        $client = HttpClient::create();
         $response = $client->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();
