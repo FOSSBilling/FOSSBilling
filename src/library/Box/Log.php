@@ -146,7 +146,7 @@ class Box_Log
     }
 
     /**
-     * @param Box_LogDb|Box_LogStream|FOSSBilling_Monolog $writer
+     * @param Box_LogDb|FOSSBilling_Monolog $writer
      */
     public function addWriter($writer)
     {
