@@ -17,6 +17,7 @@
 namespace Box\Mod\Spamchecker;
 
 use Box\InjectionAwareInterface;
+use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
 {
@@ -96,7 +97,7 @@ class Service implements InjectionAwareInterface
                     throw new \Box_Exception('You have to complete the CAPTCHA to continue');
                 }
 
-                $client = $this->di['http_client'];
+                $client = HttpClient::create();
                 $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
                     'body'  => [
                         'secret' => $config['captcha_recaptcha_privatekey'],

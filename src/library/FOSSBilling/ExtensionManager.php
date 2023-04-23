@@ -14,6 +14,7 @@
  */
 
 use Box\InjectionAwareInterface;
+use Symfony\Component\HttpClient\HttpClient;
 
 class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 {
@@ -161,7 +162,8 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
     {
         $url = $this->_url . $endpoint;
 
-        $response = $this->di['http_client']->request('GET', $url, [
+        $httpClient = HttpClient::create();
+        $response = $httpClient->request('GET', $url, [
             'timeout' => 5,
             'query' => array_merge($params, [
                 'fossbilling_version' => \FOSSBilling_Version::VERSION,

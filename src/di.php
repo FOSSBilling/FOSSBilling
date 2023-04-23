@@ -23,7 +23,6 @@ use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use RedBeanPHP\Facade;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
@@ -685,15 +684,6 @@ $di['license_server'] = function () use ($di) {
     $server->setDi($di);
 
     return $server;
-};
-
-/*
- * Creates a new HTTP client and returns it.
- *
- * @return \Symfony\Component\HttpClient\HttpClient The new HTTP client that was just created.
- */
-$di['http_client'] = function () {
-    return HttpClient::create();
 };
 
 /*

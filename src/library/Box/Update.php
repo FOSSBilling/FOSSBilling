@@ -1,5 +1,4 @@
 <?php
-
 /**
  * FOSSBilling
  *
@@ -12,6 +11,8 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE.
  */
+
+use Symfony\Component\HttpClient\HttpClient;
 
 class Box_Update
 {
@@ -146,7 +147,7 @@ class Box_Update
     public function getJson()
     {
         $url = $this->_url;
-        $client = $this->di['http_client'];
+        $client = HttpClient::create();
         $response = $client->request('GET', $url);
         return $response->toArray();
     }
@@ -168,7 +169,7 @@ class Box_Update
 
         // Download latest archive.
         try {
-            $httpClient = $this->di['http_client']->withOptions([
+            $httpClient = HttpClient::create([
                 'timeout'      => 5,
                 'max_duration' => 120
             ]);
