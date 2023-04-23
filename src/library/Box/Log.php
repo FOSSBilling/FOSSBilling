@@ -79,7 +79,7 @@ class Box_Log
                     }
                     break;
             }
-            $this->log($message, $priority);
+            $this->log($message, $priority, $params);
         } else {
             throw new \Box_Exception('Bad log priority');
         }
@@ -123,8 +123,8 @@ class Box_Log
 
         //do not log debug level messages if debug is OFF
 
-        if($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
-            return ;
+        if ($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
+            return;
         }
 
         // send to each writer
@@ -139,14 +139,14 @@ class Box_Log
             'timestamp'    => date('Y-m-d H:i:s'),
             'message'      => $message,
             'priority'     => $priority,
-            'priorityName' => $this->_priorities[$priority]
+            'priorityName' => $this->_priorities[$priority],
             ),
             $this->_extras
         );
     }
 
     /**
-     * @param Box_LogDb|Box_LogStream $writer
+     * @param Box_LogDb|Box_LogStream|FOSSBilling_Monolog $writer
      */
     public function addWriter($writer)
     {
