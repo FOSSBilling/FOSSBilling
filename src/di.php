@@ -592,10 +592,13 @@ $di['server_account'] = function () {
  *
  * @return \Server_Manager The new server manager object that was just created.
  */
-$di['server_manager'] = $di->protect(function ($manager, $config) {
+$di['server_manager'] = $di->protect(function($manager, $config) use ($di) {
     $class = sprintf('Server_Manager_%s', ucfirst($manager));
 
-    return new $class($config);
+    $s = new $class($config);
+    $s->setLog($di['logger']);
+
+    return $s;
 });
 
 /*

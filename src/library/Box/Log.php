@@ -22,7 +22,7 @@
  * @method void info(string $message)
  * @method void debug(string $message)
  */
-class Box_Log
+class Box_Log implements \Box\InjectionAwareInterface
 {
     const EMERG   = 0;  // Emergency: system is unusable
     const ALERT   = 1;  // Alert: action must be taken immediately
@@ -58,6 +58,14 @@ class Box_Log
     public function setDi($di)
     {
         $this->di = $di;
+    }
+
+    /**
+     * @return Box_Di|null
+     */
+    public function getDi()
+    {
+        return $this->di;
     }
 
     public function __call($method, $params)
@@ -122,7 +130,6 @@ class Box_Log
         }
 
         //do not log debug level messages if debug is OFF
-
         if($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
             return ;
         }
