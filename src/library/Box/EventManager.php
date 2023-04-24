@@ -15,7 +15,6 @@
 class Box_EventManager implements \Box\InjectionAwareInterface
 {
     protected $di;
-    protected $sensitiveParameters = ['password', 'pass', 'passwd', 'password_confirmation'];
 
     /**
      * @param mixed $di
@@ -45,10 +44,6 @@ class Box_EventManager implements \Box\InjectionAwareInterface
         $subject = $data['subject'] ?? null;
         $params = $data['params'] ?? null;
 
-        if (is_array($params)) {
-            $params = $this->hideSensitiveParameters($params);
-        }
-
         if (BB_DEBUG) {
             $this->di['logger']->debug($event.': '.var_export($params, 1));
         }
@@ -60,25 +55,6 @@ class Box_EventManager implements \Box\InjectionAwareInterface
         $disp->notify($e);
 
         return $e->getReturnValue();
-    }
-
-    /**
-     * Hide some of the known sensitive parameters.
-     * 
-     * @param array $params
-     * @return array
-     */
-    public function hideSensitiveParameters($params)
-    {
-        if (is_array($params)) {
-            foreach ($params as $key => $value) {
-                if (in_array($key, $this->sensitiveParameters)) {
-                    $params[$key] = '********';
-                }
-            }
-        }
-
-        return $params;
     }
 
     /**
