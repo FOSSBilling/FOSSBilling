@@ -12,8 +12,6 @@
  * with this source code in the file LICENSE
  */
 
-use Symfony\Component\HttpClient\HttpClient;
-
 abstract class Payment_AdapterAbstract
 {
     const TYPE_HTML         	= 'html';
