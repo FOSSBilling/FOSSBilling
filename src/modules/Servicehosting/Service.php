@@ -342,11 +342,11 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Account password is missing or is not valid');
         }
 
-        $p = $data['password'];
+        $newPassword = $data['password'];
 
         if ($this->_performOnService($order)) {
             [$adapter, $account] = $this->_getAM($model);
-            $adapter->changeAccountPassword($account, $p);
+            $adapter->changeAccountPassword($account, $newPassword);
         }
 
         $model->pass = "******";
