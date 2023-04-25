@@ -761,7 +761,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
-        $model->gateway_id = (is_null($data['gateway_id']) || empty($data['gateway_id'])) ? (empty($model->gateway_id) ? null : $model->gateway_id) : intval($data['gateway_id']);
+        $model->gateway_id = empty($data['gateway_id']) ? (empty($model->gateway_id) ? null : $model->gateway_id) : intval($data['gateway_id']);
         $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
         $model->text_2 = $data['text_2'] ?? (empty($model->text_2) ? null : $model->text_2);
         $model->seller_company = $data['seller_company'] ?? (empty($model->seller_company) ? null : $model->seller_company);
