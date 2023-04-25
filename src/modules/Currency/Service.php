@@ -355,7 +355,7 @@ class Service implements InjectionAwareInterface
 
         $pairs = $db->getAssoc($sql);
 
-        return $pairs['currencylayer'];
+        return $pairs['currencylayer'] ?? '';
     }
 
     /**
