@@ -628,7 +628,7 @@ class Service implements \Box\InjectionAwareInterface
 
         if ('owndomain' == $action) {
             $sld = $data['owndomain_sld'];
-            $tld = $data['owndomain_tld'];
+            $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
         if ('transfer' == $action) {
