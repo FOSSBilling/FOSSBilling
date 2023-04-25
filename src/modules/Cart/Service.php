@@ -519,6 +519,9 @@ class Service implements InjectionAwareInterface
             $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower($item['domain']['register_sld']) : null;
             $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
 
+            // Domain TLD must begin with a period - add if not present for owndomain.
+            $item['domain']['owndomain_tld'] = (isset( $item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
+
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;
             $order->promo_id = $cart->promo_id;
