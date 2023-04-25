@@ -9,10 +9,8 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
-
-use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Server_Manager_Directadmin extends Server_Manager
 {
@@ -34,22 +32,53 @@ class Server_Manager_Directadmin extends Server_Manager
     public static function getForm()
     {
         return array(
-            'label' => 'DirectAdmin'
+            'label' => 'DirectAdmin',
+            'form' => [
+                'credentials' => [
+                    'fields' => [
+                        [
+                            'name' => 'username',
+                            'type' => 'text',
+                            'label' => 'Username',
+                            'placeholder' => 'Username used to connect to the server',
+                            'required' => true,
+                        ],
+                        [
+                            'name' => 'password',
+                            'type' => 'text',
+                            'label' => 'Password / Login Key',
+                            'placeholder' => 'Password or login key used to connect to the server',
+                            'required' => true,
+                        ]
+                    ]
+                ]
+            ]
         );
     }
     
-    public function getLoginUrl()
+    public function getLoginUrl() : string
     {
-        $protocol = 'https://';
-        if (!$this->_config['secure']) {
-            $protocol = 'http://';
-        }
-        return $protocol.$this->_config['host'] . ':2222';
+        $protocol = $this->_config['secure'] ? 'https://' : 'http://';
+        return $protocol . $this->_config['host'] . ':2222';
     }
     
     public function getResellerLoginUrl()
     {
         return $this->getLoginUrl();
+    }
+
+    public function generateUsername($domain_name)
+    {
+        // Username must be alphanumeric.
+        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
+
+        // Username must start with a-z.
+        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(rand(97,122)), 0, 1) : $username;
+
+        // Username must be at most 10 characters long, and sufficiently random to avoid collisons.
+        $username = substr($username, 0, 7);
+        $randnum = random_int(0, 99);
+        return $username . $randnum;
     }
     
     public function testConnection()
@@ -289,29 +318,29 @@ class Server_Manager_Directadmin extends Server_Manager
         return true;
     }
     
-    public function changeAccountPassword(Server_Account $a, $new)
+    public function changeAccountPassword(Server_Account $a, $newPassword)
     {
         $fields             = array();
         $fields['username'] = $a->getUsername();
-        $fields['passwd']   = $a->getPassword();
-        $fields['passwd2']  = $a->getPassword();
+        $fields['passwd']   = $newPassword;
+        $fields['passwd2']  = $newPassword;
         $this->_request('CMD_API_USER_PASSWD', $fields);
         return true;
     }
     
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin do not support username changes');
+        throw new Server_Exception('DirectAdmin does not support username changes');
     }
     
     public function changeAccountDomain(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin do not support domain changes');
+        throw new Server_Exception('DirectAdmin does not support domain changes');
     }
     
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin do not support ip changes');
+        throw new Server_Exception('DirectAdmin does not support IP changes');
     }
     
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
@@ -367,40 +396,37 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function _request($command, $fields = array(), $post = true)
     {
-        $host    = $this->_config['host'];
-        $usessl  = $this->_config['secure'];
+        $host = $this->_config['host'];
+        $protocol = $this->_config['secure'] ? 'https://' : 'http://';
         
         $fieldstring = http_build_query($fields);
         
-        $client = $this->getHttpClient()->withOptions([
+        $httpClient = $this->getHttpClient()->withOptions([
             'verify_peer'   => false,
             'verify_host'   => false,
             'timeout'       => 60,
             'auth_basic'    => [ $this->_config['username'], $this->_config['password'] ],           
         ]);
 
-        if($usessl) {
-            $url = 'https://' . $host . ':2222/' . $command . '?' . $fieldstring;
-        } else {
-            $url = 'http://' . $host . ':2222/' . $command . '?' . $fieldstring;
-        }
+        $url = $protocol . $host . ':2222/' . $command . '?' . $fieldstring;
+        $this->getLog()->debug($url);
 
         try {
             if($post) {
-                $request = $client->request('POST', $url, [
+                $request = $httpClient->request('POST', $url, [
                     'body'  => $fields,
                 ]);
             } else {
-                $request = $client->request('GET', $url);
+                $request = $httpClient->request('GET', $url);
             }
-        } catch (HttpExceptionInterface $error) {
+
+            $data = $request->getContent();
+        } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface |
+                 \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $error) {
             $e = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
             $this->getLog()->err($e);
             throw $e;
         }
-        
-        $this->getLog()->debug($url);
-        $data = $request->getContent();
         
         if(strlen(strstr($data, 'DirectAdmin Login')) > 0) {
             throw new Server_Exception('Server Manager DirectAdmin Error: "Login failed"');
