@@ -57,7 +57,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['extension_directory'] = $extensionMock;
+        $di['extension_manager'] = $extensionMock;
 
         $this->api->setDi($di);
         $result = $this->api->get_latest($data);
@@ -75,7 +75,7 @@ class AdminTest extends \BBTestCase {
             ->willThrowException(new \Exception());
 
         $di = new \Box_Di();
-        $di['extension_directory'] = $extensionMock;
+        $di['extension_manager'] = $extensionMock;
 
         $this->api->setDi($di);
         $result = $this->api->get_latest($data);

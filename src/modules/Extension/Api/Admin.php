@@ -48,7 +48,7 @@ class Admin extends \Api_Abstract
     {
         $type = $data['type'] ?? null;
         try {
-            $list = $this->di['extension_directory']->getExtensionList($type);
+            $list = $this->di['extension_manager']->getExtensionList($type);
         } catch(\Exception) {
             $list = array();
         }
