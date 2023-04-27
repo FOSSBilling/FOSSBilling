@@ -19,7 +19,7 @@ use Symfony\Component\HttpClient\HttpClient;
 class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 {
     /**
-     * @var \Box_Di
+     * @var Box_Di
      */
     protected $di = null;
 
@@ -31,34 +31,34 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
     const TYPE_HOOK = 'hook';
     const TYPE_TRANSLATION = 'translation';
 
-    private $_url = 'https://extensions.fossbilling.org/api/';
+    private string $_url = 'https://extensions.fossbilling.org/api/';
 
     /**
-     * @param \Box_Di $di
+     * @param Box_Di $di
      */
-    public function setDi($di)
+    public function setDi($di): void
     {
         $this->di = $di;
     }
 
     /**
-     * @return \Box_Di
+     * @return Box_Di|null
      */
-    public function getDi()
+    public function getDi(): ?Box_Di
     {
         return $this->di;
     }
 
     /**
      * Fetch extension details from the FOSSBilling extension directory
-     * 
+     *
      * @param string $id The extension identifier (e.g. Example)
-     * 
+     *
      * @return array The extension details
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response
      * @throws \Box_Exception
      */
-    public function getExtension($id)
+    public function getExtension(string $id): array
     {
         $manifest = $this->makeRequest('extension/' . $id);
 
@@ -71,19 +71,19 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 
     /**
      * Fetch the list of releases of an extension from the FOSSBilling extension directory
-     * 
+     *
      * @param string $id The extension identifier (e.g. Example)
-     * 
+     *
      * @return array The list of releases of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the "releases" array)
      * @throws \Box_Exception
      */
-    public function getExtensionReleases($id)
+    public function getExtensionReleases(string $id): array
     {
         $releases = $this->getExtension($id)['releases'];
 
         if (empty($releases) || !is_array($releases)) {
-            throw new \Box_Exception('Unable to fetch the releaes of the extension from the FOSSBilling extension directory.');
+            throw new \Box_Exception('Unable to fetch the releases of the extension from the FOSSBilling extension directory.');
         }
 
         return $releases;
@@ -91,14 +91,14 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 
     /**
      * Fetch the latest release of an extension from the FOSSBilling extension directory
-     * 
+     *
      * @param string $id The extension identifier (e.g. Example)
-     * 
+     *
      * @return array The latest release of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the first element in the "releases" array)
      * @throws \Box_Exception
      */
-    public function getLatestExtensionRelease($id)
+    public function getLatestExtensionRelease(string $id): array
     {
         $releases = $this->getExtensionReleases($id);
         $latest = reset($releases);
@@ -112,13 +112,13 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 
     /**
      * Fetch the list of extensions from the FOSSBilling extension directory
-     * 
+     *
      * @param string $type The extension type (e.g. mod) - optional
-     * 
+     *
      * @return array The list of extensions
      * @example https://extensions.fossbilling.org/api/list An example of the API response
      */
-    public function getExtensionList($type = null)
+    public function getExtensionList($type = null): array
     {
         $params = [];
 
@@ -131,12 +131,12 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 
     /**
      * Check if the latest version of an extension is compatible with the current FOSSBilling version
-     * 
+     *
      * @param string $extension The extension identifier (e.g. Example)
-     * 
+     *
      * @return bool True if the extension is compatible, false otherwise
      */
-    public function isExtensionCompatible($extension)
+    public function isExtensionCompatible(string $extension): bool
     {
         $latest = $this->getLatestExtensionRelease($extension);
 
@@ -151,14 +151,14 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 
     /**
      * Make a request to the FOSSBilling extension directory
-     * 
+     *
      * @param string $endpoint The API endpoint to call (e.g. list)
      * @param array $params The array of parameters to pass to the API endpoint
-     * 
+     *
      * @return array The API response
      * @throws \Box_Exception
      */
-    public function makeRequest($endpoint, array $params = [])
+    public function makeRequest(string $endpoint, array $params = []): array
     {
         $url = $this->_url . $endpoint;
 
