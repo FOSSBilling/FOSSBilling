@@ -241,7 +241,8 @@ class Service
             $updater = $this->di['updater'];
             if ($updater->getCanUpdate()) {
                 $version = $updater->getLatestVersion();
-                $msgs['info'][] = sprintf('FOSSBilling %s is available for download.', $version);
+                $updateUrl = $this->di['url']->adminLink('system/update');
+                $msgs['info'][] = sprintf('<a href="%s">FOSSBilling %s is available for download.</a>', $updateUrl, $version);
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
