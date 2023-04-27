@@ -21,13 +21,13 @@ final class FOSSBilling_Version
      * Compare the specified FOSSBilling version string $version
      * with the current FOSSBilling_Version::VERSION of FOSSBilling.
      *
-     * @param  string  $version  A version string (e.g. "0.7.1").
-     * @return integer           -1 if the $version is older,
+     * @param   string $version  A version string (e.g. "0.7.1").
+     * @return  integer           -1 if the $version is older,
      *                           0 if they are the same,
      *                           and +1 if $version is newer.
      *
      */
-    public static function compareVersion($version)
+    public static function compareVersion(string $version): int
     {
         return version_compare(strtolower($version), strtolower(self::VERSION));
     }
