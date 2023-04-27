@@ -33,6 +33,9 @@ class Server_Manager_Whm extends Server_Manager
         if(empty($this->_config['password']) && empty($this->_config['accesshash'])) {
             throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'cPanel WHM', ':missing' => 'authentication credentials']);
         }
+
+        // If port not set, use WHM default.
+        $this->_config['port'] = empty($this->_config['port']) ? '2087' : $this->_config['port'];  
 	}
 
     public function getLoginUrl()
