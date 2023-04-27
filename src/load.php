@@ -306,11 +306,6 @@ function detectOldFiles(){
 }
 detectOldFiles();
 
-// Try to check if /install directory still exists, even after the installation was completed
-if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(PATH_ROOT . '/install/index.php')) {
-    throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
-}
-
 $config = require $configPath;
 require PATH_VENDOR . '/autoload.php';
 
