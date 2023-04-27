@@ -234,22 +234,6 @@ if (!file_exists(PATH_VENDOR)) {
     throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded FOSSBilling from <a href=\"https://github.com/FOSSBilling/FOSSBilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
 }
 
-// Multisite support. Load new configuration depending on the current hostname
-// If being run from CLI, first parameter must be the hostname
-$configPath = PATH_ROOT . '/config.php';
-if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SAPI && isset($argv[1]))) {
-    if ('cli' === PHP_SAPI) {
-        $host = $argv[1];
-    } else {
-        $host = $_SERVER['HTTP_HOST'];
-    }
-
-    $predictConfigPath = PATH_ROOT . '/config-' . $host . '.php';
-    if (file_exists($predictConfigPath)) {
-        $configPath = $predictConfigPath;
-    }
-}
-
 // Rename the old "bb-config" file to the new name if it exists
 if(!file_exists($configPath) && file_exists(PATH_ROOT . '/bb-config.php')){
     rename(PATH_ROOT . '/bb-config.php', $configPath);
