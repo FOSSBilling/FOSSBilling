@@ -802,7 +802,7 @@ class Service implements InjectionAwareInterface
         $model->status = $data['status'] ?? (empty($model->status) ? null : $model->status);
         $model->taxrate = $data['taxrate'] ?? (empty($model->taxrate) ? null : $model->taxrate);
         $model->taxname = $data['taxname'] ?? (empty($model->taxname) ? null : $model->taxname);
-        $model->approved = (int) $data['approved'] ?? (empty($model->approved) ? null : $model->approved);
+        $model->approved = (int) ($data['approved'] ?? (empty($model->approved) ? null : $model->approved));
         $model->notes = $data['notes'] ?? (empty($model->notes) ? null : $model->notes);
 
         $created_at = $data['created_at'] ?? '';
