@@ -133,11 +133,10 @@ LOCK TABLES `extension` WRITE;
 
 INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`, `manifest`)
 VALUES
-	(1,'mod','kb','installed','1.0.0','{\"id\":\"kb\",\"type\":\"mod\",\"name\":\"Knowledge Base\",\"description\":\"Knowledge base module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\",\"author\":\"FOSSBilling\",\"author_url\":\"http:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Kb\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-	(2,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\",\"author\":\"FOSSBilling\",\"author_url\":\"http:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/News\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-	(3,'mod','branding','installed','0.0.1','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"Show your support by voluntarily displaying references to FOSSBilling.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"0.0.1\",\"icon_url\":\"\\/modules\\/Branding\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-	(4,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Redirect\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-	(5,'mod','wysiwyg','installed','1.0.0','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"Wysiwyg\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Wysiwyg\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
+	(1,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\",\"author\":\"FOSSBilling\",\"author_url\":\"http:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/News\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
+	(2,'mod','branding','installed','0.0.1','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"Show your support by voluntarily displaying references to FOSSBilling.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"0.0.1\",\"icon_url\":\"\\/modules\\/Branding\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
+	(3,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Redirect\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
+	(4,'mod','wysiwyg','installed','1.0.0','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"Wysiwyg\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Wysiwyg\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -168,34 +167,34 @@ UNLOCK TABLES;
 
 
 
-# Dump of table kb_article
+# Dump of table support_kb_article
 # ------------------------------------------------------------
 
-LOCK TABLES `kb_article` WRITE;
-/*!40000 ALTER TABLE `kb_article` DISABLE KEYS */;
+LOCK TABLES `support_kb_article` WRITE;
+/*!40000 ALTER TABLE `support_kb_article` DISABLE KEYS */;
 
-INSERT INTO `kb_article` (`id`, `kb_article_category_id`, `views`, `title`, `content`, `slug`, `status`, `created_at`, `updated_at`)
+INSERT INTO `support_kb_article` (`id`, `kb_article_category_id`, `views`, `title`, `content`, `slug`, `status`, `created_at`, `updated_at`)
 VALUES
 	(1,2,0,'How to contact support','Registered clients can contact our support team:\n------------------------------------------------------------\n\n* Login to clients area\n* Select **Support** menu item\n* Click **Submit new ticket**\n* Fill the form and press *Submit*\n\nGuests can contact our support team:\n------------------------------------------------------------\n\n* Use our contact form.\n* Fill the form and click *Submit*\n','how-to-contact-support','active','2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(2,2,0,'How to place new order','To place new order, follow these steps:\n------------------------------------------------------------\n\n* Select our services at *Order* page.\n* Depending on selected product, you might need to provide additional information to complete order request.\n* Click \"Continue\" and your product/service is now in shopping cart.\n* If you have promo code, you can apply it and get discount.\n* Click on \"Checkout\" button to proceed with checkout process\n    * If you are already logged in, uou will be automaticaly redirected to new invoice\n    * If you are registerd client, you can provide your login details\n    * If you have never purchased any service from us, fill up client sign up form, and continue checkout\n* Choose payment method to pay for invoice. List of all avalable payment methods will be listed below invoice details.\n* Choose payment method\n* You will be redirected to payment gateway page\n* After successful payment, You will be redirected back to invoice page.\n* Depending on selected services your order will be reviewed and activated by our staff members.\n* After you receive confirmation email about order activation you are able to manage your services.\n','how-to-place-new-order','active','2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,2,0,'Example article','Example article heading\n------------------------------------------------------------\n\nCursus, parturient porta dis sit? Habitasse non, sociis porttitor, sagittis dapibus scelerisque? Pid, porttitor integer, montes. Hac, in? Arcu nunc integer nascetur dis nisi. In, sed a amet? Adipiscing odio mauris mauris, porta, integer, adipiscing habitasse, elementum phasellus, turpis in? Quis magna placerat eu, cursus urna mattis egestas, a ac massa turpis mus et odio pid in, urna dapibus ridiculus in turpis cursus ac a urna magna purus etiam ac nisi porttitor! Auctor est? In adipiscing, hac platea augue vut, hac est cum sagittis! Montes nascetur pulvinar tristique porta platea? Magnis vel etiam nisi augue auctor sit pulvinar! Aliquet rhoncus, elit porta? Magnis pulvinar eu turpis purus sociis a augue? Sit, nascetur! Mattis nisi, penatibus ac ac natoque auctor turpis.\n\nExample article heading\n------------------------------------------------------------\n\nUt diam cursus, elit pulvinar, habitasse purus? Enim. Urna? Velit arcu, rhoncus sociis sed, et, ultrices nascetur lacus vut purus tempor a. Vel? Sagittis integer scelerisque, dapibus lectus mid, magnis, augue duis velit etiam tortor! Eros, a et phasellus est ultricies integer elementum in, tempor sed parturient. Dictumst rhoncus, ut sed sagittis facilisis? In, proin? Urna augue in sociis enim dignissim! Velit magna tincidunt ac. Nunc, vel auctor porta enim integer. Phasellus amet eu. Tristique lundium arcu! In? Massa penatibus arcu, rhoncus augue ut pid pulvinar, porttitor, porta, et! A sit odio, proin natoque ultrices cras cras magna porttitor! Ultrices sed magna in! Porttitor nunc, tincidunt nec, amet integer aenean. Tincidunt, placerat nec dolor parturient et ac pulvinar a.\n','example-article-slug','active','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
-/*!40000 ALTER TABLE `kb_article` ENABLE KEYS */;
+/*!40000 ALTER TABLE `support_kb_article` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
-# Dump of table kb_article_category
+# Dump of table support_kb_article_category
 # ------------------------------------------------------------
 
-LOCK TABLES `kb_article_category` WRITE;
-/*!40000 ALTER TABLE `kb_article_category` DISABLE KEYS */;
+LOCK TABLES `support_kb_article_category` WRITE;
+/*!40000 ALTER TABLE `support_kb_article_category` DISABLE KEYS */;
 
-INSERT INTO `kb_article_category` (`id`, `title`, `description`, `slug`, `created_at`, `updated_at`)
+INSERT INTO `support_kb_article_category` (`id`, `title`, `description`, `slug`, `created_at`, `updated_at`)
 VALUES
 	(1,'Frequently asked questions','Section for common issues','faq','2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(2,'How to''s','Section dedicated for tutorials','how-to','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
-/*!40000 ALTER TABLE `kb_article_category` ENABLE KEYS */;
+/*!40000 ALTER TABLE `support_kb_article_category` ENABLE KEYS */;
 UNLOCK TABLES;
 
 

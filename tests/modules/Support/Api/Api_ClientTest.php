@@ -1,6 +1,6 @@
 <?php
-namespace Box\Tests\Mod\Support\Api;
 
+namespace Box\Tests\Mod\Support\Api;
 
 class Api_ClientTest extends \BBTestCase
 {
@@ -228,7 +228,6 @@ class Api_ClientTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-
     public function testTicket_close()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
@@ -262,6 +261,4 @@ class Api_ClientTest extends \BBTestCase
 
         $this->assertIsInt($result);
     }
-
-
 }

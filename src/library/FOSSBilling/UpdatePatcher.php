@@ -306,6 +306,34 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "ALTER TABLE session ADD created_at int(11);";
                 $this->executeSql($q);
             },
+            36 => function () {
+                // Patch to complete merging the Kb and Support modules.
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
+
+                // Renames the "support_kb_article" and "support_kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
+                $q = "RENAME TABLE support_kb_article TO support_kb_article, support_kb_article_category TO support_kb_article_category;";
+                $this->executeSql($q);
+
+                // If the Kb extension is currently active, set enabled in Support settings.
+                $ext_service = $this->di['mod_service']('extension');
+                if ($ext_service->isExtensionActive('mod', 'kb')) {
+                    $support_ext_config = $ext_service->getConfig('mod_support');
+                    $support_ext_config['kb_enable'] ?: 'on';
+                    $ext_service->setConfig($support_ext_config);
+                }
+
+                // If the Kb extension exists, uninstall it.
+                $kb_ext = $ext_service->findExtension('mod', 'kb');
+                if ($kb_ext instanceof \Model_Extension) {
+                    $ext_service->uninstall($kb_ext);
+                }
+
+                // Finally, remove old Kb extension files/folders.
+                $fileActions = [
+                    PATH_MODS . DIRECTORY_SEPARATOR . 'Kb' => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

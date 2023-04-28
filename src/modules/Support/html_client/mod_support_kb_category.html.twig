@@ -4,7 +4,7 @@
 
 {% block body_class %}kb-category{% endblock %}
 {% block breadcrumb %}
-<li><a href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a> <span class="divider">/</span></li>
+<li><a href="{{ 'support/kb'|link }}">{{ 'Knowledge Base'|trans }}</a> <span class="divider">/</span></li>
 <li class="active">{{ category.title }}</li>
 {% endblock %}
 
@@ -20,11 +20,11 @@
                 <section>
                     <ul>
                         {% for i, article in category.articles %}
-                        <li><a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}">{{ article.title }}</a></li>
+                        <li><a href="{{ 'support/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}">{{ article.title }}</a></li>
                         <hr/>
                         {% endfor %}
                     </ul>
-                    <a class="btn btn-small" href="{{ 'kb'|link }}">{{ 'Back to list'|trans }}</a>
+                    <a class="btn btn-small" href="{{ 'support/kb'|link }}">{{ 'Back to List'|trans }}</a>
                 </section>
             </div>
         </article>

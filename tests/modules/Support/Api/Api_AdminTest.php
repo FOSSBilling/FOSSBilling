@@ -1394,4 +1394,593 @@ class Api_AdminTest extends \BBTestCase
         $result = $activityMock->batch_delete_public(array('ids' => array(1, 2, 3)));
         $this->assertEquals(true, $result);
     }
+
+    /*
+    * Knowledge Base Tests.
+    */
+
+    public function testKb_article_get_list()
+    {
+        $di = new \Pimple\Container();
+
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi->setDi($di);
+
+        $data = array(
+            'status' => 'status',
+            'search' => 'search',
+            'cat'    => 'category'
+        );
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbSearchArticles'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbSearchArticles')
+            ->will($this->returnValue(array('list' => array())));
+
+        $adminApi->setService($kbService);
+
+        $result = $adminApi->kb_article_get_list($data);
+        $this->assertIsArray($result);
+
+    }
+
+    public function testKb_article_get()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $data = array(
+            'id' => rand(1, 100),
+        );
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticle()));
+
+        $admin     = new \Model_Admin();
+        $admin->loadBean(new \DummyBean());
+
+        $admin->id = 5;
+
+        $di                   = new \Pimple\Container();
+        $di['loggedin_admin'] = $admin;
+        $di['db']             = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbToApiArray'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbToApiArray')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $result = $adminApi->kb_article_get($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_article_getNotFoundException()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $data = array(
+            'id' => rand(1, 100),
+        );
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(false));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+        $this->expectException(\FOSSBilling\Exception::class);
+        $adminApi->kb_article_get($data);
+    }
+
+    public function testKb_article_create()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $data = array(
+            'kb_article_category_id' => rand(1, 100),
+            'title'                  => 'Title',
+        );
+
+        $id = rand(1, 100);
+
+        $di = new \Pimple\Container();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCreateArticle'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCreateArticle')
+            ->will($this->returnValue($id));
+        $adminApi->setService($kbService);
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $result = $adminApi->kb_article_create($data);
+        $this->assertIsInt($result);
+        $this->assertEquals($result, $id);
+    }
+
+    public function testKb_article_update()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $data = array(
+            "id"                     => rand(1, 100),
+            "kb_article_category_id" => rand(1, 100),
+            "title"                  => "Title",
+            "slug"                   => "article-slug",
+            "status"                 => "active",
+            "content"                => "Content",
+            "views"                  => rand(1, 100),
+        );
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateArticle'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbUpdateArticle')
+            ->will($this->returnValue(true));
+        $di = new \Pimple\Container();
+
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
+        $adminApi->setDi($di);
+
+        $adminApi->setService($kbService);
+
+        $result = $adminApi->kb_article_update($data);
+        $this->assertTrue($result);
+    }
+
+    public function testKb_article_delete()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $data = array(
+            "id" => rand(1, 100),
+        );
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticle()));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
+        $adminApi->setDi($di);
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbRm'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbRm')
+            ->will($this->returnValue(true));
+        $adminApi->setService($kbService);
+
+        $result = $adminApi->kb_article_delete($data);
+        $this->assertTrue($result);
+    }
+
+    public function testKb_article_deleteNotFoundException()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(false));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbRm'))->getMock();
+        $kbService->expects($this->never())
+            ->method('kbRm')
+            ->will($this->returnValue(true));
+        $adminApi->setService($kbService);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $adminApi->kb_article_delete(array('id' => rand(1, 100)));
+        $this->assertTrue($result);
+    }
+
+    public function testKb_category_get_list()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $willReturn = array(
+            "pages"    => 5,
+            "page"     => 2,
+            "per_page" => 2,
+            "total"    => 10,
+            "list"     => array(),
+        );
+
+        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pager->expects($this->atLeastOnce())
+            ->method('getAdvancedResultSet')
+            ->will($this->returnValue($willReturn));
+
+        $di          = new \Pimple\Container();
+        $di['pager'] = $pager;
+
+        $adminApi->setDi($di);
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryGetSearchQuery'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCategoryGetSearchQuery')
+            ->will($this->returnValue(true));
+        $adminApi->setService($kbService);
+
+        $result = $adminApi->kb_category_get_list(array());
+        $this->assertIsArray($result);
+        $this->assertEquals($result, $willReturn);
+    }
+
+    public function testKb_category_get()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticleCategory()));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryToApiArray'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCategoryToApiArray')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $data   = array(
+            'id' => rand(1, 100)
+        );
+        $result = $adminApi->kb_category_get($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_getIdNotSetException()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->never())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticleCategory()));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \FOSSBilling\Exception('Category ID not passed'));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryToApiArray'))->getMock();
+        $kbService->expects($this->never())
+            ->method('kbCategoryToApiArray')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $adminApi->kb_category_get(array());
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_getNotFoundException()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(false));
+
+        $di       = new \Pimple\Container();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $di['db'] = $db;
+        $adminApi->setDi($di);
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryToApiArray'))->getMock();
+        $kbService->expects($this->never())
+            ->method('kbCategoryToApiArray')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $data = array(
+            'id' => rand(1, 100)
+        );
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $adminApi->kb_category_get($data);;
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_create()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCreateCategory'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCreateCategory')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $data = array(
+            'title'       => 'Title',
+            'description' => 'Description',
+        );
+
+        $di = new \Pimple\Container();
+
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $result = $adminApi->kb_category_create($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_update()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateCategory'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbUpdateCategory')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticleCategory()));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
+        $adminApi->setDi($di);
+
+        $data = array(
+            'id'          => rand(1, 100),
+            'title'       => 'Title',
+            'slug'        => 'category-slug',
+            'description' => 'Description',
+        );
+
+        $result = $adminApi->kb_category_update($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_updateIdNotSet()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateCategory'))->getMock();
+        $kbService->expects($this->never())
+            ->method('kbUpdateCategory')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->never())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticleCategory()));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \FOSSBilling\Exception('Category ID not passed'));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $data = array();
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $adminApi->kb_category_update($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_updateNotFound()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateCategory'))->getMock();
+        $kbService->expects($this->never())
+            ->method('kbUpdateCategory')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(false));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+
+        $data = array(
+            'id'          => rand(1, 100),
+            'title'       => 'Title',
+            'slug'        => 'category-slug',
+            'description' => 'Description',
+        );
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $adminApi->kb_category_update($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_delete()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryRm'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCategoryRm')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticleCategory()));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $data   = array(
+            'id' => rand(1, 100),
+        );
+        $result = $adminApi->kb_category_delete($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_deleteIdNotSet()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryRm'))->getMock();
+        $kbService->expects($this->never())
+            ->method('kbCategoryRm')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->never())
+            ->method('findOne')
+            ->will($this->returnValue(new \Model_SupportKbArticleCategory()));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \FOSSBilling\Exception('Category ID not passed'));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $data   = array();
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $adminApi->kb_category_delete($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_deleteNotFound()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryRm'))->getMock();
+        $kbService->expects($this->never())
+            ->method('kbCategoryRm')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(false));
+
+        $di       = new \Pimple\Container();
+        $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
+
+        $data   = array(
+            'id' => rand(1, 100)
+        );
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $adminApi->kb_category_delete($data);
+        $this->assertIsArray($result);
+    }
+
+    public function testKb_category_get_pairs()
+    {
+        $adminApi = new \Box\Mod\Support\Api\Admin();
+
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryGetPairs'))->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCategoryGetPairs')
+            ->will($this->returnValue(array()));
+        $adminApi->setService($kbService);
+
+        $result = $adminApi->kb_category_get_pairs(array());
+        $this->assertIsArray($result);
+    }
 }

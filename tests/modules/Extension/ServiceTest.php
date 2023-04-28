@@ -240,16 +240,19 @@ class ServiceTest extends \BBTestCase {
 
         $result = $this->service->getExtensionsList($data);
         $this->assertIsArray($result);
-
     }
 
     public function testgetAdminNavigation()
     {
+        $extensionServiceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->setMethods(['getConfig'])->getMock();
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->will($this->returnValue(array()));
+
         $staffServiceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->getMock();
         $staffServiceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
             ->will($this->returnValue(true));
-
 
         $pdoStatment = $this->getMockBuilder('\Box\Mod\Extension\PdoStatmentsMock')->getMock();
         $pdoStatment->expects($this->atLeastOnce())
@@ -257,7 +260,6 @@ class ServiceTest extends \BBTestCase {
         $pdoStatment->expects($this->atLeastOnce())
             ->method('fetchAll')
             ->will($this->returnValue(array()));
-
 
         $pdoMock = $this->getMockBuilder('\Box\Mod\Extension\PdoMock')->getMock();
         $pdoMock->expects($this->atLeastOnce())
@@ -279,7 +281,13 @@ class ServiceTest extends \BBTestCase {
             return $mod;
         });
         $di['tools'] = new \FOSSBilling\Tools();
-        $di['mod_service'] = $di->protect(function () use ($staffServiceMock) {return $staffServiceMock; });
+        $di['mod_service'] = $di->protect(function ($mod) use ($extensionServiceMock, $staffServiceMock) {
+            if ($mod == 'staff') {
+                return $staffServiceMock;
+            } else {
+                return $extensionServiceMock;
+            }
+        });
         $di['pdo'] = $pdoMock;
         $di['url'] = $urlMock;
 

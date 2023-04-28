@@ -8,8 +8,6 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-class Model_KbArticle extends \RedBeanPHP\SimpleModel
+class Model_SupportKbArticleCategory extends \RedBeanPHP\SimpleModel
 {
-    public const ACTIVE    = 'active';
-    public const DRAFT     = 'draft';
 }
