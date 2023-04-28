@@ -64,6 +64,11 @@ class Box_Translate implements \Box\InjectionAwareInterface
         PhpMyAdmin\MoTranslator\Loader::loadFunctions();
 
         $locale = $this->getLocale();
+        if(empty($locale)){
+            //We are using the standard PHP Exception here rather than our custom one as ours requires translations to be setup, which we cannot do without the locale being defined.
+            throw new Exception("Unable to setup FOSSBilling translation functionality, locale was undefined.");
+        }
+
         $codeset = "UTF-8";
         @putenv('LANG=' . $locale . '.' . $codeset);
         @putenv('LANGUAGE=' . $locale . '.' . $codeset);
@@ -80,7 +85,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);
 
-        function __trans(string $msgid, array $values = NULL)
+        function __trans(string $msgid, array $values = null)
         {
             $translated = _gettext($msgid);
 
@@ -91,7 +96,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
             return $translated;
         }
 
-        function __pluralTrans(string $msgid, string $msgidPlural, int $number, array $values = NULL)
+        function __pluralTrans(string $msgid, string $msgidPlural, int $number, array $values = null)
         {
             $translated = _ngettext($msgid, $msgidPlural, $number);
 
