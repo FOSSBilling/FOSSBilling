@@ -127,11 +127,12 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
+         * @param {bool} [enableLoader] Enable or disable the usage of a loader
          *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        get: function (endpoint, params, successHandler, errorHandler) {
-            API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
+        get: function (endpoint, params, successHandler, errorHandler, enableLoader = true) {
+            API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler, enableLoader)
         },
         /**
          * Make a POST request to the admin API
@@ -139,11 +140,12 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
+         * @param {bool} [enableLoader] Enable or disable the usage of a loader
          *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        post: function (endpoint, params, successHandler, errorHandler) {
-            API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
+        post: function (endpoint, params, successHandler, errorHandler, enableLoader = true) {
+            API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler, enableLoader)
         }
     },
 
@@ -153,11 +155,11 @@ const API = {
      */
     client: {
         baseURL: Tools.getBaseURL('client'),
-        get: function (endpoint, params, successHandler, errorHandler) {
-            API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
+        get: function (endpoint, params, successHandler, errorHandler, enableLoader = true) {
+            API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler, enableLoader)
         },
-        post: function (endpoint, params, successHandler, errorHandler) {
-            API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
+        post: function (endpoint, params, successHandler, errorHandler, enableLoader = true) {
+            API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler, enableLoader)
         }
     },
 
@@ -173,6 +175,7 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
+         * @param {bool} [enableLoader] Enable or disable the usage of a loader
          *
          * @example
          * API.guest.get("system/version", {}, function(response) {
@@ -181,8 +184,8 @@ const API = {
          *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        get: function (endpoint, params, successHandler, errorHandler) {
-            API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
+        get: function (endpoint, params, successHandler, errorHandler, enableLoader = true) {
+            API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler, enableLoader)
         },
         /**
          * Make a POST request to the guest API
@@ -190,11 +193,12 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
+         * @param {bool} [enableLoader] Enable or disable the usage of a loader
          *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        post: function (endpoint, params, successHandler, errorHandler) {
-            API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
+        post: function (endpoint, params, successHandler, errorHandler, enableLoader = true) {
+            API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler, enableLoader)
         }
     },
 
@@ -205,10 +209,10 @@ const API = {
      * @param {object|string} [params] The parameters to send
      * @param {function} [successHandler] The function to call if the request is successful
      * @param {function} [errorHandler] The function to call if the request is unsuccessful
-     *
+     * @param {bool} [enableLoader] Enable or disable the usage of a loader. Custom themes simply need to provide one with the spinner-border class
      * @documentation https://fossbilling.org/docs/api/javascript
      */
-    makeRequest: function (method, url, params, successHandler, errorHandler) {
+    makeRequest: function (method, url, params, successHandler, errorHandler, enableLoader = true) {
         // Add a loading icon to the page
         const loader = document.createElement('div');
         loader.classList.add('spinner-border');
@@ -218,6 +222,8 @@ const API = {
         loader.style.left = '50%';
         loader.style.top = '50%';
         loader.style.position = 'fixed';
+        loader.style.opacity = '0';
+        loader.style.transition = 'opacity 250ms';
         document.body.appendChild(loader);
 
         url = new URL(url);
@@ -240,6 +246,12 @@ const API = {
                 params = JSON.stringify(params)
             }
             body = params;
+        }
+
+        if (enableLoader) {
+            setTimeout(() => {
+                loader.style.opacity = '1';
+            }, 250);
         }
 
         // Call the API and handle the response
