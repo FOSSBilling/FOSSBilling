@@ -243,8 +243,8 @@ class FOSSBillingErrorPage
                 <div class="container">
                 <div class="error-container">
                     <p class="error-title">' . $error['title'] . '</p>
-                    <p class="error-code">Error Code: #' . $code . '</p>
-                    <p class="error-category">Error Category: ' . $error['category'] . '</p>
+                    <p class="error-code">' . __trans('Error Code: #:number', [':number' => $code]) . '</p>
+                    <p class="error-category">' . __trans('Component: :category', [':category' => $error['category']]) . '</p>
                     <p class="error-message" id="specialized">' . $error['message'] . '</p>
                     <p class="error-message" id="original" style="display: none;">' . $message . '</p>
 
