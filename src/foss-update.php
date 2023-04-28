@@ -19,7 +19,7 @@ const DIR_SEP = DIRECTORY_SEPARATOR;
 /**
  * Patch to remove the old FileCache class that was replaced with Symfony's Cache component
  * 
- * @see https://github.com/FOSSBilling/FOSSBilling/pull/
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
  */
 class FOSSPatch_33 extends FOSSPatchAbstract
 {
