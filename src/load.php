@@ -1,5 +1,4 @@
 <?php
-
 /**
  * FOSSBilling.
  *
@@ -11,9 +10,10 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
+use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
@@ -26,29 +26,131 @@ const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR. 'modules';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR. 'locale';
 const PATH_UPLOADS = PATH_ROOT . DIRECTORY_SEPARATOR. 'uploads';
 const PATH_DATA = PATH_ROOT . DIRECTORY_SEPARATOR. 'data';
-const isCLI = 'cli' === PHP_SAPI;
+const PATH_CONFIG = PATH_ROOT . '/config.php';
 
-function handler_error(int $number, string $message, string $file, int $line)
+/*
+ * Check configuration exists, and is valid.
+ */
+function checkConfig() {
+    $filesystem = new Filesystem();
+
+    $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ('on' === $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS'])) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO']) ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+    $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+
+    // Check if configuration is available, and redirect to installer if not.
+    if (!$filesystem->exists(PATH_CONFIG)) {
+        if ($filesystem->exists('/install/index.php')) {
+            header("Location: " . $base_url . '/install', true, 301);
+        } else {
+            throw new Exception("Your <b><em>config.php</em></b> file appears to be invalid. It's possible that your existing configuration file may not contain the required configuration parameters or have become corrupted. FOSSBilling needs to have a valid configuration file in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/master/src/config-sample.php'>here</a>. You may need to manually restore an old config file or fix your existing one.</p>");
+        }
+    }
+}
+
+/*
+ * Check if the installer is present.
+ */
+function checkInstaller() {
+    $filesystem = new Filesystem();
+
+    // Check if /install directory still exists after installation has been completed.
+    if ($filesystem->exists('config.php') && $filesystem->exists('/install/index.php')) {
+        throw new Exception('For security you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.');
+    }
+}
+
+/*
+ * Check if any legacy BoxBilling/FOSSBilling files are present.
+ */
+function checkLegacyFiles() {
+    $filesystem = new Filesystem();
+
+    // Detect old files and folders from legacy BoxBilling or FOSSBilling installations.
+    $toCheck = ['bb-data', 'bb-library', 'bb-locale', 'bb-modules', 'bb-themes', 'bb-uploads', 'bb-cron.php', 'bb-di.php', 'bb-load.php','bb-config.php'];
+    $legacyFound = null;
+    foreach ($toCheck as $path) {
+        if ($filesystem->exists($path)) {
+            $legacyFound = true;
+            break;
+        }
+    }
+
+    // Show an error if any legacy files/folders found.
+    if ($legacyFound) {
+        throw new Exception('Legacy BoxBilling or FOSSBilling preview files have been found. The file structure within FOSSBilling, along with the configuration format, has since changed.<br> See the <a href="https://fossbilling.org/docs/getting-started/migrate-from-boxbilling">migration guide</a> for assistance in migrating to the latest version of FOSSBilling.');
+    }
+}
+
+/*
+ * Check hard requirements such as PHP version, Composer packages, etc.
+ */
+function checkRequirements() {
+    // Check for Composer packages / vendor folder.
+    if (!file_exists(PATH_VENDOR)) {
+        throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded FOSSBilling from <a href=\"https://github.com/FOSSBilling/FOSSBilling/releases\">GitHub releases</a>, this shouldn't happen.");
+    }
+}
+
+/*
+ * Check if SSL required, and enforce if so.
+ */
+function checkSSL() {
+    $config = include PATH_CONFIG;
+    if (isset($config['security']['force_https']) && $config['security']['force_https'] && 'cli' !== PHP_SAPI) {
+        $isHTTPS = false;
+    
+        if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+            $isHTTPS = true;
+        }
+        if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https') {
+            $isHTTPS = true;
+        }
+        if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) == 'on') {
+            $isHTTPS = true;
+        }
+
+        if(!$isHTTPS){
+            $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+            header('Location: ' . $url);
+            exit;
+        }
+    }
+}
+
+/*
+ * Check the web server config.
+ */
+function checkWebServer() {
+    $filesystem = new Filesystem();
+
+    // Check for missing required .htaccess on Apache and Apache-compatible web servers.
+    $isApache = function_exists('apache_get_version') ? true : false;
+    $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
+    if ($isApache or (stripos($serverSoftware, 'apache') !== false) or (stripos($serverSoftware, 'litespeed')) !== false) {
+        if (!$filesystem->exists('.htaccess')) {
+            throw new Exception('Fatal Error: You appear to be running an Apache or LiteSpeed based webserver without a valid <b><em>.htaccess</em></b> file.');
+        }
+    }
+}
+
+/*
+ * Error handler.
+ */
+function errorHandler(int $number, string $message, string $file, int $line)
 {
     if (E_RECOVERABLE_ERROR === $number) {
-        if (isCLI) {
-            echo "Error #[$number] occurred in [$file] at line [$line]: [$message]";
-        } else {
-            handler_exception(new ErrorException($message, $number, 0, $file, $line));
-        }
+        exceptionHandler(new ErrorException($message, $number, 0, $file, $line));
     } else {
         error_log($number . ' ' . $message . ' ' . $file . ' ' . $line);
     }
-
     return false;
 }
 
-// Removed Exception type. Some errors are thrown as exceptions causing fatal errors.
-function handler_exception($e)
+/*
+ * Exception handler.
+ */
+function exceptionHandler($e)
 {
-    if (isCLI) {
-        echo 'Error #[' . $e->getCode() . '] occurred in [' . $e->getFile() . '] at line [' . $e->getLine() . ']: [' . trim(strip_tags($e->getMessage())) . ']';
-    } else {
         if (APPLICATION_ENV === 'testing') {
             echo $e->getMessage() . PHP_EOL;
 
@@ -223,78 +325,32 @@ function handler_exception($e)
 
       </html>';
         }
-    }
 }
 
-set_exception_handler('handler_exception');
-set_error_handler('handler_error');
+/*
+ *
+ * Initialise App.
+ *
+ */
 
-// Check for Composer packages
-if (!file_exists(PATH_VENDOR)) {
-    throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded FOSSBilling from <a href=\"https://github.com/FOSSBilling/FOSSBilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
-}
+// Check hard requirements.
+checkRequirements();
 
-// Rename the old "bb-config" file to the new name if it exists
-if(!file_exists($configPath) && file_exists(PATH_ROOT . '/bb-config.php')){
-    rename(PATH_ROOT . '/bb-config.php', $configPath);
-}
-
-// Try to check if configuration is available
-if (!file_exists($configPath) || 0 === filesize($configPath)) {
-    // Try to create an empty configuration file
-    @file_put_contents($configPath, '');
-
-    $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ('on' === $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS'])) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
-    $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-    $url = $base_url . '/install/index.php';
-
-    if (file_exists(PATH_ROOT . '/install/index.php')) {
-        header("Location: $url");
-    }
-
-    $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = "Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. FOSSBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/master/src/config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>";
-    throw new Exception($msg, 101);
-}
-
-// Try to check if /install directory still exists, even after the installation was completed and display a message
-if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(PATH_ROOT . '/install/index.php')) {
-    throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
-}
-
-// Detect old for files from an old BoxBilling or FOSSBilling preview installation.
-function detectOldFiles(){
-    $i = 0;
-    $msg = '';
-    $foundOld = false;
-
-    $oldFolderNames = ['bb-data','bb-library','bb-locale','bb-modules','bb-themes','bb-uploads','bb-cron.php','bb-di.php','bb-load.php','bb-config.php'];
-    $newFolderNames = ['data','library','locale','modules','themes','uploads','cron.php','di.php','load.php','config.php'];
-
-    foreach ($oldFolderNames as $folder){
-        $toCheck = PATH_ROOT . DIRECTORY_SEPARATOR . $folder;
-        $newName = $newFolderNames[$i];
-        if(file_exists($toCheck) or is_dir($toCheck)){
-            $msg .= "<b>$folder</b> --> <b>$newName</b> <br>";
-            $foundOld = true;
-        }
-        $i++;
-    }
-    if($foundOld){
-        $finalMsg = "The FOSSBilling file structure has been changed, please migrate any custom files and folders from the old folder to the new folder and then delete the old ones. You will also need to update the paths in your config.php file. <br>";
-        $finalMsg .= "Feel free to join our <a href='https://fossbilling.org/discord'>Discord Server</a> for assistance. <br><br>";
-        $finalMsg .= "Files and folders renamed: <br>";
-        $finalMsg .= $msg;
-        throw new Exception($finalMsg);
-    }
-}
-detectOldFiles();
-
-$config = require $configPath;
+// Requirements met - load required packages/files.
 require PATH_VENDOR . '/autoload.php';
+$config = require PATH_CONFIG;
 
+// Check web server and web server settings.
+checkWebServer();
+
+// Check for legacy BoxBilling/FOSSBilling files.
+checkLegacyFiles();
+
+// Check config exists.
+checkConfig();
+
+// Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
-
 define('BB_DEBUG', $config['debug']);
 define('BB_URL', $config['url']);
 define('BB_SEF_URLS', $config['sef_urls']);
@@ -302,13 +358,21 @@ define('PATH_CACHE', $config['path_data'] . '/cache');
 define('PATH_LOG', $config['path_data'] . '/log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
-
 if ($config['sef_urls']) {
     define('BB_URL_API', $config['url'] . 'api/');
 } else {
     define('BB_URL_API', $config['url'] . 'index.php?_url=/api/');
 }
 
+// Check if SSL required, and enforce if so.
+checkSSL();
+
+// Set error and exception handlers, and default logging settings.
+ini_set('log_errors', '1');
+ini_set('html_errors', false);
+ini_set('error_log', PATH_LOG . '/php_error.log');
+set_exception_handler('exceptionHandler');
+set_error_handler('errorHandler');
 if ($config['debug']) {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
@@ -317,38 +381,4 @@ if ($config['debug']) {
     error_reporting(E_RECOVERABLE_ERROR);
     ini_set('display_errors', '0');
     ini_set('display_startup_errors', '0');
-}
-
-ini_set('log_errors', '1');
-ini_set('html_errors', false);
-ini_set('error_log', PATH_LOG . '/php_error.log');
-
-$isApache = (function_exists('apache_get_version')) ? true : false;
-$serverSoftware = ($_SERVER['SERVER_SOFTWARE']) ?? '';
-
-if ($isApache or (false !== stripos($serverSoftware, 'apache')) or (false !== stripos($serverSoftware, 'litespeed'))) {
-    if (!file_exists(PATH_ROOT . '/.htaccess')) {
-        throw new Exception('Fatal Error: You appear to be running an Apache or LiteSpeed based webserver without a valid <b><em>.htaccess</em></b> file.');
-    }
-}
-
-// If the configured security mode is strict, redirect to HTTPS
-if (isset($config['security']['force_https']) && $config['security']['force_https'] && 'cli' !== PHP_SAPI){
-    $isHTTPS = false;
-    
-    if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
-        $isHTTPS = true;
-    }
-    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https') {
-        $isHTTPS = true;
-    }
-    if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) == 'on') {
-        $isHTTPS = true;
-    }
-
-    if(!$isHTTPS){
-        $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-        header('Location: ' . $url);
-        exit;
-    }
 }
