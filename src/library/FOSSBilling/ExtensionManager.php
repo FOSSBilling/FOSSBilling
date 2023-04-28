@@ -19,7 +19,7 @@ use Symfony\Component\HttpClient\HttpClient;
 class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 {
     /**
-     * @var Box_Di
+     * @var \Box_Di
      */
     protected $di = null;
 
@@ -34,7 +34,7 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
     private string $_url = 'https://extensions.fossbilling.org/api/';
 
     /**
-     * @param Box_Di $di
+     * @param \Box_Di $di
      */
     public function setDi($di): void
     {
@@ -42,7 +42,7 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
     }
 
     /**
-     * @return Box_Di|null
+     * @return \Box_Di|null
      */
     public function getDi(): ?Box_Di
     {
