@@ -14,6 +14,7 @@
  */
 
 use Box\InjectionAwareInterface;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class FOSSBilling_CentralAlerts implements InjectionAwareInterface
@@ -113,8 +114,9 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
     public function makeRequest(string $endpoint, array $params = []): array
     {
         $url = $this->_url . $endpoint;
+        $client = HttpClient::create();
 
-        $response = $this->di['http_client']->request('GET', $url, [
+        $response = $client->request('GET', $url, [
             'timeout' => 5,
             'query' => array_merge($params, [
                 'fossbilling_version' => FOSSBilling_Version::VERSION,
@@ -122,10 +124,6 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
         ]);
 
         $json = $response->toArray();
-
-        if (is_null($json)) {
-            throw new \Box_Exception('Unable to connect to the FOSSBilling Central Alerts System.', null);
-        }
 
         if (isset($json['error']) && is_array($json['error'])) {
             throw new \Box_Exception($json['error']['message'], null);
