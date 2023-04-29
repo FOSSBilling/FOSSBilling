@@ -275,7 +275,7 @@ class Box_Update
         $newConfig['api']['CSRFPrevention'] ??= true;
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone'];
+        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
         $depreciatedConfigSubkeys = [];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -63,11 +64,7 @@ class Box_Tools
     public function url($link = null)
     {
         $link = trim($link, '/');
-        if (BB_SEF_URLS) {
-            return BB_URL . $link;
-        }
-
-        return BB_URL . 'index.php?_url=/' . $link;
+        return BB_URL . $link;
     }
 
     public function hasService($type)
