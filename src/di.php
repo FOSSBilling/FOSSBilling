@@ -30,7 +30,7 @@ use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
 
-$di = new Box_Di();
+$di = new \Box_Di();
 
 /*
  * Returns the current FOSSBilling config from config.php
