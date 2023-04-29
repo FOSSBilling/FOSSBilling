@@ -5,6 +5,22 @@
 {% block meta_title %}{{ 'Dashboard'|trans }}{% endblock %}
 
 {% block content %}
+    {% for alert in admin.system_cas_messages() %}
+    <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }}" role="alert">
+        <h3 class="mb-1">{{ alert.title }}</h3>
+        <p>{{ alert.message }}</p>
+        {% if alert.buttons|length > 0 %}
+            <div class="btn-list">
+            {% for button in alert.buttons %}
+                <a href="{{ button.link }}" class="btn {{ button.type ? "btn-" ~ button.type : "" }}">{{ button.text }}</a>
+            {% endfor %}
+            </div>
+        {% endif %}
+        {% if alert.dismissible %}
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+        {% endif %}
+    </div>
+    {% endfor %}
     {% for msg in admin.system_messages({ 'type': 'danger' }) %}
     <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
         <strong>{{ 'Danger!'|trans }}</strong> {% if msg.url is not empty %}<a href="{{ msg.url }}">{{ msg.text }}</a>{% else %} {{ msg.text }} {% endif %}

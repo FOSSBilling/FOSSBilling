@@ -14,7 +14,7 @@ declare(strict_types=1);
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
@@ -530,6 +530,19 @@ $di['validator'] = function () use ($di) {
     $validator->setDi($di);
 
     return $validator;
+};
+
+/*
+ *
+ * @param void
+ *
+ * @return \FOSSBilling_CentralAlerts
+ */
+$di['central_alerts'] = function () use ($di) {
+    $centralalerts = new \FOSSBilling_CentralAlerts();
+    $centralalerts->setDi($di);
+
+    return $centralalerts;
 };
 
 /*
