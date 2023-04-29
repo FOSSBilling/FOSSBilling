@@ -14,7 +14,7 @@ declare(strict_types=1);
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
@@ -23,7 +23,7 @@ use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use RedBeanPHP\Facade;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
-use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
@@ -41,8 +41,7 @@ $di = new Box_Di();
  */
 $di['config'] = function () {
     $array = include PATH_ROOT . '/config.php';
-
-    return new Box_Config($array);
+    return $array;
 };
 
 /*
@@ -260,13 +259,13 @@ $di['request'] = function () use ($di) {
 };
 
 /*
- *
  * @param void
  *
- * @return \FileCache
+ * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
 $di['cache'] = function () {
-    return new FileCache();
+    // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+    return new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 };
 
 /*
@@ -550,10 +549,10 @@ $di['central_alerts'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Extension
+ * @return \FOSSBilling_ExtensionManager
  */
-$di['extension'] = function () use ($di) {
-    $extension = new \Box_Extension();
+$di['extension_manager'] = function () use ($di) {
+    $extension = new \FOSSBilling_ExtensionManager();
     $extension->setDi($di);
 
     return $extension;
@@ -607,19 +606,22 @@ $di['server_account'] = function () {
  *
  * @return \Server_Manager The new server manager object that was just created.
  */
-$di['server_manager'] = $di->protect(function ($manager, $config) {
+$di['server_manager'] = $di->protect(function($manager, $config) use ($di) {
     $class = sprintf('Server_Manager_%s', ucfirst($manager));
 
-    return new $class($config);
+    $s = new $class($config);
+    $s->setLog($di['logger']);
+
+    return $s;
 });
 
 /*
  * @param void
  *
- * @return Box_Requirements
+ * @return FOSSBilling_Requirements
  */
 $di['requirements'] = function () use ($di) {
-    $r = new Box_Requirements();
+    $r = new FOSSBilling_Requirements();
     $r->setDi($di);
 
     return $r;
@@ -698,15 +700,6 @@ $di['license_server'] = function () use ($di) {
     $server->setDi($di);
 
     return $server;
-};
-
-/*
- * Creates a new HTTP client and returns it.
- *
- * @return \Symfony\Component\HttpClient\HttpClient The new HTTP client that was just created.
- */
-$di['http_client'] = function () {
-    return HttpClient::create();
 };
 
 /*

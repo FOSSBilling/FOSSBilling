@@ -523,7 +523,7 @@ class Service implements InjectionAwareInterface
 
         $client->aid = $data['aid'] ?? null;
         $client->last_name = $data['last_name'] ?? null;
-        $client->client_group_id = $data['group_id'] ?? null;
+        $client->client_group_id = !empty($data['group_id']) ? $data['group_id'] : null;
         $client->status = $data['status'] ?? null;
         $client->gender = $data['gender'] ?? null;
         $client->birthday = $data['birthday'] ?? null;

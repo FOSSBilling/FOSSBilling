@@ -447,10 +447,10 @@ class Service implements InjectionAwareInterface
 
             $r = $this->di['db']->findOne('Invoice', 'nr is not null order by id desc');
             if ($r instanceof \Model_Invoice && is_numeric($r->nr)) {
-                $next_nr = $r->nr + 1;
+                $next_nr = intval($r->nr) + 1;
             }
         }
-        $systemService->setParamValue($p, $next_nr + 1);
+        $systemService->setParamValue($p, intval($next_nr) + 1);
 
         return $next_nr;
     }
@@ -761,7 +761,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
-        $model->gateway_id = $data['gateway_id'] ?? (empty($model->gateway_id) ? null : $model->gateway_id); 
+        $model->gateway_id = empty($data['gateway_id']) ? (empty($model->gateway_id) ? null : $model->gateway_id) : intval($data['gateway_id']);
         $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
         $model->text_2 = $data['text_2'] ?? (empty($model->text_2) ? null : $model->text_2);
         $model->seller_company = $data['seller_company'] ?? (empty($model->seller_company) ? null : $model->seller_company);
@@ -802,7 +802,7 @@ class Service implements InjectionAwareInterface
         $model->status = $data['status'] ?? (empty($model->status) ? null : $model->status);
         $model->taxrate = $data['taxrate'] ?? (empty($model->taxrate) ? null : $model->taxrate);
         $model->taxname = $data['taxname'] ?? (empty($model->taxname) ? null : $model->taxname);
-        $model->approved = (int) $data['approved'] ?? (empty($model->approved) ? null : $model->approved);
+        $model->approved = (int) ($data['approved'] ?? (empty($model->approved) ? null : $model->approved));
         $model->notes = $data['notes'] ?? (empty($model->notes) ? null : $model->notes);
 
         $created_at = $data['created_at'] ?? '';

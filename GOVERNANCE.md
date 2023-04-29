@@ -48,8 +48,9 @@ The steering committee is made up of community members and developers who make a
 
 Each member of the steering committee also takes ownership of the project on GitHub. This ensures that in the event of any one person abandoning FOSSBilling or being unavailable for some reason the project does not stagnate or stop.
 
-At this moment the Steering Committee includes five members - identified here by their GitHub usernames:
+At this moment the Steering Committee includes six members - identified here by their GitHub usernames:
 
+* [admdly](https://github.com/admdly)
 * [BelleNottelling](https://github.com/BelleNottelling)
 * [evrifaessa](https://github.com/evrifaessa)
 * [HunterNyan](https://github.com/HunterNyan)

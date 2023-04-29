@@ -70,7 +70,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function login($data)
     {

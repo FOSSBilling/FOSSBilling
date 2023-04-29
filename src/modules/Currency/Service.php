@@ -17,6 +17,7 @@
 namespace Box\Mod\Currency;
 
 use Box\InjectionAwareInterface;
+use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
 {
@@ -354,7 +355,7 @@ class Service implements InjectionAwareInterface
 
         $pairs = $db->getAssoc($sql);
 
-        return $pairs['currencylayer'];
+        return $pairs['currencylayer'] ?? '';
     }
 
     /**
@@ -549,7 +550,7 @@ class Service implements InjectionAwareInterface
             }
             throw new \Box_Exception("Failed to get currency rates for :currency from the European Central Bank API", [':currency' => $to_Currency]);
         } else {
-            $client = $this->di['http_client'];
+            $client = HttpClient::create();
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
                 'query' => [
                     'currencies'    => $to_Currency,

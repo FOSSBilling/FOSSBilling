@@ -69,7 +69,7 @@ class Client extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update($data)
     {
@@ -107,7 +107,7 @@ class Client extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * 
      */
     public function change_password($data)

@@ -314,106 +314,16 @@ class ServiceTest extends \BBTestCase {
         $model->version = '2';
         $newversion = '3';
 
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
-            ->will($this->returnValue($newversion));
-
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getExtension')
-            ->will($this->returnValue('string'));
+        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_manager'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(252);
         $this->expectExceptionMessage('Visit the extension directory for more information on updating this extension.');
         $this->service->update($model);
-    }
-
-    public function testupdateExtensionInformationException()
-    {
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
-        $model->type = 'mod';
-        $model->name = 'testExtension';
-        $model->version = '2';
-        $newversion = '3';
-
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
-            ->will($this->returnValue($newversion));
-
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getExtension')
-            ->will($this->returnValue(''));
-
-        $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
-
-        $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionCode(744);
-        $this->expectExceptionMessage(sprintf('Could not retrieve %s information', $model->name));
-        $this->service->update($model);
-    }
-
-    public function testupdateNoNeedToUpdateException()
-    {
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
-        $model->type = 'mod';
-        $model->name = 'testExtension';
-        $model->version = '1';
-        $newversion = $model->version;
-
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
-            ->will($this->returnValue($newversion));
-
-        $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
-
-        $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage(sprintf('Latest %s version installed. No need to update', $model->name), 785);
-        $this->service->update($model);
-    }
-
-    public function testupdateLastestVersionException()
-    {
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
-        $model->type = 'mod';
-        $model->name = 'testExtension';
-
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getLatestExtensionVersion')
-            ->will($this->returnValue(''));
-
-        $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
-
-        $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionCode(745);
-        $this->expectExceptionMessage(sprintf('Could not retrieve version information for extension %s', $model->name));
-        $this->service->update($model);
-
-    }
-
-    public function testupdateInvalidType()
-    {
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
-
-        $result = $this->service->update($model);
-        $this->assertEquals(array(), $result);
     }
 
     public function testactivate()
@@ -589,18 +499,18 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractDownloadUrlMissing()
     {
-        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
+        $extensionMock = $this->getMockBuilder(\FOSSBilling_ExtensionManager::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
-            ->method('getExtension')
+            ->method('getLatestExtensionRelease')
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
+        $di['extension_manager'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Invalid download URL for the extension');
+        $this->expectExceptionMessage('Coudn\'t find a valid download URL for the extension.');
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 

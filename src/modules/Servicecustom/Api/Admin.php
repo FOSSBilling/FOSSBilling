@@ -45,7 +45,7 @@ class Admin extends \Api_Abstract
      *
      * @param int $order_id - ID of the order
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function __call($name, $arguments)
     {

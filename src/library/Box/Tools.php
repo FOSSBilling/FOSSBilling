@@ -257,29 +257,6 @@ class Box_Tools
         return $result;
     }
 
-    public function cache_function($buildCallback, array $args = array(), $timeoutSeconds = 3600)
-    {
-        // Set up the filename for the cache file
-        if (is_array($buildCallback)) {
-            $cacheKey = get_class($buildCallback[0]) . '::' . $buildCallback[1];
-        } else {
-            $cacheKey = $buildCallback . ':' . implode(':', $args);
-        }
-        $cacheKey .= ':' . implode(':', $args);
-        $file_path = PATH_CACHE . DIRECTORY_SEPARATOR . md5($cacheKey);
-
-        // If the file hasn't yet been created or is out of date then call the require function and store it's result.
-        if (!file_exists($file_path) || filemtime($file_path) < (time() - $timeoutSeconds)) {
-            $result = call_user_func_array($buildCallback, $args);
-            file_put_contents($file_path, serialize($result), LOCK_EX);
-            // Else, grab the result from the cache.
-        } else {
-            $result = unserialize(file_get_contents($file_path));
-        }
-
-        return $result;
-    }
-
     public function getTable($type)
     {
         $class = 'Model_' . ucfirst($type) . 'Table';

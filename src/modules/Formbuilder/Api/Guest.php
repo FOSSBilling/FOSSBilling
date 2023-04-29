@@ -29,7 +29,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function get($data)
     {

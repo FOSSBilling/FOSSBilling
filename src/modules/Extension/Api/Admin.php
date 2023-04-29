@@ -40,15 +40,15 @@ class Admin extends \Api_Abstract
      * Get list of extensions from extensions.fossbilling.org
      * which can be installed on current version of FOSSBilling.
      *
-     * @param string $type - mod, gateway ...
+     * @param string $type - extensions type: mod, theme, ... (optional)
      *
-     * @return array
+     * @return array - list of extensions
      */
     public function get_latest($data)
     {
         $type = $data['type'] ?? null;
         try {
-            $list = $this->di['extension']->getLatest($type);
+            $list = $this->di['extension_manager']->getExtensionList($type);
         } catch(\Exception) {
             $list = array();
         }
@@ -89,8 +89,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function update($data)
     {
@@ -112,8 +111,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function activate($data)
     {
@@ -137,8 +135,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool - true
      *
-     * @throws Box_Exception
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function deactivate($data)
     {
@@ -185,7 +182,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function install($data)
     {
@@ -248,7 +245,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
     public function config_save($data)
     {

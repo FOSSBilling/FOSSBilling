@@ -756,7 +756,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
-            <div class="help">
+            <div class="card-body">
                 <h3>{{ 'Emails sent to client'|trans }}</h3>
             </div>
 
@@ -779,8 +779,10 @@
                             <td>{{ email.recipients }}</td>
                             <td>{{ email.created_at|format_datetime }}</td>
                             <td>
-                                <a class="bb-button btn14" href="{{ 'email'|alink }}/{{ email.id }}">
-                                    <img src="assets/icons/edit.svg" alt="">
+                                <a class="btn btn-icon" href="{{ 'email'|alink }}/{{ email.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit"></use>
+                                    </svg>
                                 </a>
                             </td>
                         </tr>

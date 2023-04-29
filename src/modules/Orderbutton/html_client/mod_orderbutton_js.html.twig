@@ -75,7 +75,6 @@
     };
 
     orderbutton.prototype.createIframe = function (){
-
         this.iframeElem  = $('<iframe frameborder="0" allowtransparency="true" onload="" id="popup-iframe"  src="'+this.srclink()+'" />').appendTo('body');
         this.iframeElem .css({
             {% if request.popup_center == "1" %}
@@ -102,9 +101,8 @@
             this.iframeElem .css({ 'width': ""});
         }
 
-
         var _this = this;
-        this.iframeElem.load(function() {
+        this.iframeElem.load(this.srclink(), function() {
             _this.loaderImageElem.hide();
             this.style.height = '80%';
             var pWidth = jQuery(window).width();

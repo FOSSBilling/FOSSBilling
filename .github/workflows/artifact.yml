@@ -78,7 +78,7 @@ jobs:
         run: |
           sed s/0.0.1/${GITHUB_SHA::7}/ Version.php > Version2.php
           mv Version2.php Version.php
-        working-directory: ./build/source/library/Box
+        working-directory: ./build/source/library/FOSSBilling
 
       - name: Create the final archive
         run: zip -r ./FOSSBilling-preview.zip .

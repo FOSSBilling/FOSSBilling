@@ -57,7 +57,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function email_get($data)
@@ -87,7 +87,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function send($data = [])
     {
@@ -121,7 +121,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function email_resend($data)
@@ -147,7 +147,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function email_delete($data)
@@ -203,7 +203,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function template_get($data)
@@ -225,7 +225,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function template_delete($data)
@@ -259,7 +259,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - newly created template id
      *
-     * @throws Exception
+     * @throws \Box_Exception
      */
     public function template_create($data)
     {
@@ -285,7 +285,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws Exception
+     * @throws \Box_Exception
      * @throws LogicException
      */
     public function template_update($data)

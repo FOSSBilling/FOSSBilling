@@ -205,7 +205,7 @@ final class Box_Installer
             default:
                 $this->session->set('agree', true);
 
-                $se = new Box_Requirements();
+                $se = new FOSSBilling_Requirements();
                 $options = $se->getOptions();
                 $vars = [
                     'tos' => $this->getLicense(),
@@ -214,8 +214,8 @@ final class Box_Installer
                     'files' => $se->files(),
                     'os' => PHP_OS,
                     'os_ok' => true,
-                    'box_ver' => Box_Version::VERSION,
-                    'box_ver_ok' => $se->isBoxVersionOk(),
+                    'fossbilling_ver' => FOSSBilling_Version::VERSION,
+                    'fossbilling_ver_ok' => $se->isFOSSBillingVersionOk(),
                     'php_ver' => $options['php']['version'],
                     'php_ver_req' => $options['php']['min_version'],
                     'php_safe_mode' => $options['php']['safe_mode'],
@@ -267,7 +267,7 @@ final class Box_Installer
         $twig = new Twig\Environment($loader, $options);
         // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
-        $twig->addGlobal('version', Box_Version::VERSION);
+        $twig->addGlobal('version', FOSSBilling_Version::VERSION);
 
         return $twig->render($name, $vars);
     }
@@ -400,13 +400,6 @@ final class Box_Installer
             'currency_format' => $ns->get('currency_format'),
         ]);
 
-        try {
-            $this->_sendMail($ns);
-        } catch (Exception $e) {
-            // E-mail was not sent, but that is not a problem
-            error_log($e->getMessage());
-        }
-
         /*
           Copy config templates when applicable
         */
@@ -430,42 +423,21 @@ final class Box_Installer
         return true;
     }
 
-    private function _sendMail($ns): void
-    {
-        $admin_name = $ns->get('admin_name');
-        $admin_email = $ns->get('admin_email');
-        $admin_pass = $ns->get('admin_pass');
-
-        $content = "Hi $admin_name, " . PHP_EOL;
-        $content .= 'You have successfully setup FOSSBilling at ' . BB_URL . PHP_EOL;
-        $content .= 'Access client area at: ' . BB_URL . PHP_EOL;
-        $content .= 'Access admin area at: ' . BB_URL_ADMIN . ' with login details:' . PHP_EOL;
-        $content .= 'E-mail: ' . $admin_email . PHP_EOL;
-        $content .= 'Password: The password you chose during installation' . PHP_EOL . PHP_EOL;
-
-        $content .= "Read FOSSBilling documentation to get started https://fossbilling.org/docs" . PHP_EOL;
-        $content .= "Thank You for using FOSSBilling." . PHP_EOL;
-
-        $subject = sprintf('FOSSBilling is ready at "%s"', BB_URL);
-
-        @mail($admin_email, $subject, $content);
-    }
-
     private function _createConfigurationFile($data): void
     {
         $output = $this->_getConfigOutput($data);
-        if (!@file_put_contents(PATH_CONFIG, $output)) {
+        if (!file_put_contents(PATH_CONFIG, $output)) {
             throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
     }
 
     private function _getConfigOutput($ns): string
     {
-        $version = new Box_Requirements();
+        $version = new FOSSBilling_Requirements();
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
-        $updateBranch = (preg_match($reg, Box_Version::VERSION, $matches) !== 0) ? "release" : "preview";
+        $updateBranch = (preg_match($reg, FOSSBilling_Version::VERSION, $matches) !== 0) ? "release" : "preview";
 
-        // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
+        // TODO: Why not just take the defaults from the config-sample.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
             'security' => [
                 'mode' => 'strict',

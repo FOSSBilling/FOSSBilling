@@ -498,181 +498,6 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getPromoSearchQuery($data)
-    {
-        $sql = 'SELECT *
-                FROM promo
-                WHERE 1';
-
-        $search = $data['search'] ?? null;
-        $id = $data['id'] ?? null;
-        $status = $data['status'] ?? null;
-
-        $params = [];
-        if ($id) {
-            $sql .= ' AND id = :id';
-            $params['id'] = $id;
-        }
-
-        if ($search) {
-            $sql .= ' AND code like :search';
-            $params['search'] = '%' . $search . '%';
-        }
-
-        switch ($status) {
-            case 'active':
-                $sql .= ' AND start_at <= :start_at AND end_at >= :end_at';
-                $params['start_at'] = time();
-                $params['end_at'] = time();
-                break;
-            case 'not-started':
-                $sql .= ' AND start_at <= :start_at';
-                $params['start_at'] = time();
-                break;
-            case 'expired':
-                $sql .= ' AND start_at <= :end_at';
-                $params['end_at'] = time();
-                break;
-        }
-
-        $sql .= ' ORDER BY id asc';
-
-        return [$sql, $params];
-    }
-
-    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data)
-    {
-        if ($this->di['db']->findOne('Promo', 'code = :code', [':code' => $code])) {
-            throw new \Box_Exception('This promo code already exists.');
-        }
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Promo', 2);
-
-        $model = $this->di['db']->dispense('Promo');
-        $model->code = $code;
-        $model->type = $type;
-        $model->value = $value;
-        $model->active = $data['active'] ?? 0;
-        $model->freesetup = $data['freesetup'] ?? 0;
-        $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
-        $model->recurring = (bool) ($data['recurring'] ?? 0);
-        $model->maxuses = $data['maxuses'] ?? null;
-
-        $start_at = $data['start_at'] ?? null;
-        $model->start_at = !empty($start_at) ? date('Y-m-d H:i:s', strtotime($start_at)) : null;
-        $end_at = $data['end_at'] ?? null;
-        $model->end_at = (!empty($end_at)) ? date('Y-m-d H:i:s', strtotime($end_at)) : null;
-
-        $model->products = json_encode($products);
-        $model->periods = json_encode($periods);
-        $model->client_groups = json_encode($clientGroups);
-
-        $model->updated_at = date('Y-m-d H:i:s');
-        $model->created_at = date('Y-m-d H:i:s');
-        $promoId = $this->di['db']->store($model);
-
-        $this->di['logger']->info('Created new promo code %s', $model->code);
-
-        return $promoId;
-    }
-
-    public function toPromoApiArray(\Model_Promo $model, $deep = false, $identity = null)
-    {
-        $products = json_decode($model->products, 1);
-        $products = $this->getProductTitlesByIds($products);
-
-        $clientGroups = json_decode($model->client_groups, 1);
-        $clientGroups = $this->di['tools']->getPairsForTableByIds('client_group', $clientGroups);
-
-        $result = $this->di['db']->toArray($model);
-        $result['applies_to'] = $products;
-        $result['cgroups'] = $clientGroups;
-        $result['products'] = json_decode($model->products, 1);
-        $result['periods'] = json_decode($model->periods, 1);
-        $result['client_groups'] = json_decode($model->client_groups, 1);
-
-        return $result;
-    }
-
-    public function updatePromo(\Model_Promo $model, array $data = [])
-    {
-        $model->code = $data['code'] ?? $model->code;
-        $model->type = $data['type'] ?? $model->type;
-        $model->value = $data['value'] ?? $model->value;
-        $model->active = $data['active'] ?? $model->active;
-        $model->freesetup = $data['freesetup'] ?? $model->freesetup;
-        $model->once_per_client = $data['once_per_client'] ?? $model->once_per_client;
-        $model->recurring = $data['recurring'] ?? $model->recurring;
-        $model->used = $data['used'] ?? $model->used;
-
-        $start_at = $data['start_at'] ?? null;
-        if (empty($start_at) && !is_null($start_at)) {
-            $model->start_at = null;
-        } else {
-            $model->start_at = date('Y-m-d H:i:s', strtotime($start_at));
-        }
-
-        $end_at = $data['start_at'] ?? null;
-        if (empty($end_at) && !is_null($end_at)) {
-            $model->end_at = null;
-        } else {
-            $model->end_at = date('Y-m-d H:i:s', strtotime($end_at));
-        }
-
-        if (!is_array($data['products'] ?? null)) {
-            $model->products = null;
-        } else {
-            $products =  array_values(array_filter($data['products'] ?? null));
-            if (empty($products)) {
-                $model->products = null;
-            } else {
-                $model->products = json_encode($products);
-            }
-        }
-        if (!is_array($data['client_groups'] ?? null)) {
-            $model->client_groups = null;
-        } else {
-            $client_groups = array_values(array_filter($data['client_groups'] ?? null));
-            if (empty($client_groups)) {
-                $model->client_groups = null;
-            } else {
-                $model->client_groups = json_encode($client_groups);
-            }
-        }
-
-        if (!is_array($data['periods'] ?? null)) {
-            $model->periods = null;
-        } else {
-            $periods = array_values(array_filter($data['periods'] ?? null));
-            if (empty($periods)) {
-                $model->periods = null;
-            } else {
-                $model->periods = json_encode($periods);
-            }
-        }
-
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-
-        $this->di['logger']->info('Update promo code %s', $model->code);
-
-        return true;
-    }
-
-    public function deletePromo(\Model_Promo $model)
-    {
-        $sql = 'UPDATE client_order SET promo_id = NULL WHERE promo_id = :id';
-        $this->di['db']->exec($sql, [':id' => $model->id]);
-
-        $id = $model->code;
-        $this->di['db']->trash($model);
-
-        $this->di['logger']->info('Removed promo code %s', $id);
-
-        return true;
-    }
-
     public function getProductSearchQuery(array $data)
     {
         $sql = 'SELECT m.*
@@ -952,50 +777,6 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Product', "type = 'custom' and is_addon = 1 and id = ?", [$id]);
     }
 
-    public function getProductDiscount(\Model_Product $product, \Model_Promo $promo, array $config = null)
-    {
-        if (!$this->isPromoLinkedToProduct($promo, $product)) {
-            return 0;
-        }
-
-        // check if promo code applies to specific period only
-        if (isset($config['period'])) {
-            $periods = $this->getPeriods($promo);
-            if (!empty($periods) && !in_array($config['period'], $periods)) {
-                return 0;
-            }
-        }
-
-        $repo = $product->getTable();
-        $price = $repo->getProductPrice($product, $config);
-
-        if (0 == $price) {
-            return 0;
-        }
-
-        $discount = 0;
-        $quantity = 1;
-
-        switch ($promo->type) {
-            case \Model_Promo::ABSOLUTE:
-                $discount += $promo->value;
-                break;
-
-            case \Model_Promo::PERCENTAGE:
-                if (isset($config['quantity']) && is_numeric($config['quantity'])) {
-                    $quantity = $config['quantity'];
-                }
-
-                $discount += round($price * $quantity * $promo->value / 100, 2);
-                break;
-
-            default:
-                break;
-        }
-
-        return $discount;
-    }
-
     private function getPeriods(\Model_Promo $model)
     {
         return $this->di['tools']->decodeJ($model->periods);
@@ -1004,31 +785,6 @@ class Service implements InjectionAwareInterface
     private function getProducts(\Model_Promo $model)
     {
         return $this->di['tools']->decodeJ($model->products);
-    }
-
-    public function isPromoLinkedToProduct(\Model_Promo $promo, \Model_Product $product)
-    {
-        if ($product->is_addon) {
-            return false;
-        }
-
-        $products = $this->getProducts($promo);
-        if (empty($products)) {
-            return true;
-        }
-
-        return in_array($product->id, $products);
-    }
-
-    public function isPromoLinkedToTld(\Model_Promo $promo, \Model_Tld $tld)
-    {
-        foreach ($promo->PromoItem as $item) {
-            if ($item->tld_id == $tld->id) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function getAddonsApiArray(\Model_Product $model)
@@ -1078,5 +834,231 @@ class Service implements InjectionAwareInterface
             'pricing' => $pricing,
             'config' => $config,
         ];
+    }
+
+    /*
+     * Product Promotion Functions
+     */
+    public function getPromoSearchQuery($data)
+    {
+        $sql = 'SELECT *
+                FROM promo
+                WHERE 1';
+
+        $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
+        $status = $data['status'] ?? null;
+
+        $params = [];
+        if ($id) {
+            $sql .= ' AND id = :id';
+            $params['id'] = $id;
+        }
+
+        if ($search) {
+            $sql .= ' AND code like :search';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        switch ($status) {
+            case 'active':
+                $sql .= ' AND start_at <= :start_at AND end_at >= :end_at';
+                $params['start_at'] = time();
+                $params['end_at'] = time();
+                break;
+            case 'not-started':
+                $sql .= ' AND start_at <= :start_at';
+                $params['start_at'] = time();
+                break;
+            case 'expired':
+                $sql .= ' AND start_at <= :end_at';
+                $params['end_at'] = time();
+                break;
+        }
+
+        $sql .= ' ORDER BY id asc';
+
+        return [$sql, $params];
+    }
+
+    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data)
+    {
+        if ($this->di['db']->findOne('Promo', 'code = :code', [':code' => $code])) {
+            throw new \Box_Exception('This promotion code already exists.');
+        }
+
+        $systemService = $this->di['mod_service']('system');
+        $systemService->checkLimits('Model_Promo', 2);
+
+        $model = $this->di['db']->dispense('Promo');
+        $model->code = $code;
+        $model->type = $type;
+        $model->value = $value;
+        $model->active = $data['active'] ?? 0;
+        $model->freesetup = $data['freesetup'] ?? 0;
+        $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
+        $model->recurring = (bool) ($data['recurring'] ?? 0);
+        $model->maxuses = (int) $data['maxuses'] ?? null;
+        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
+        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
+        $model->products = json_encode($products);
+        $model->periods = json_encode($periods);
+        $model->client_groups = json_encode($clientGroups);
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
+        $promoId = $this->di['db']->store($model);
+
+        $this->di['logger']->info('Created new promotion code %s', $model->code);
+
+        return $promoId;
+    }
+
+    public function toPromoApiArray(\Model_Promo $model, $deep = false, $identity = null)
+    {
+        $products = $model->products ? $this->getProductTitlesByIds(json_decode($model->products, 1)) : null;
+        $clientGroups = $model->client_groups ? $this->di['tools']->getPairsForTableByIds('client_group', json_decode($model->client_groups, 1)) : null;
+
+        $result = $this->di['db']->toArray($model);
+        $result['applies_to'] = $products;
+        $result['cgroups'] = $clientGroups;
+        $result['products'] = $model->products ? json_decode($model->products, 1) : null;
+        $result['periods'] =  $model->periods ? json_decode($model->periods, 1) : null;
+        $result['client_groups'] = $model->client_groups ? json_decode($model->client_groups, 1) : null;
+
+        return $result;
+    }
+
+    public function updatePromo(\Model_Promo $model, array $data = [])
+    {
+        $model->code = $data['code'] ?? $model->code;
+        $model->type = $data['type'] ?? $model->type;
+        $model->value = $data['value'] ?? $model->value;
+        $model->active = $data['active'] ?? $model->active;
+        $model->freesetup = $data['freesetup'] ?? $model->freesetup;
+        $model->once_per_client = $data['once_per_client'] ?? $model->once_per_client;
+        $model->recurring = $data['recurring'] ?? $model->recurring;
+        $model->used = $data['used'] ?? $model->used;
+        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
+        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
+
+        if (!is_array($data['products'] ?? null)) {
+            $model->products = null;
+        } else {
+            $products =  array_values(array_filter($data['products'] ?? null));
+            if (empty($products)) {
+                $model->products = null;
+            } else {
+                $model->products = json_encode($products);
+            }
+        }
+        if (!is_array($data['client_groups'] ?? null)) {
+            $model->client_groups = null;
+        } else {
+            $client_groups = array_values(array_filter($data['client_groups'] ?? null));
+            if (empty($client_groups)) {
+                $model->client_groups = null;
+            } else {
+                $model->client_groups = json_encode($client_groups);
+            }
+        }
+
+        if (!is_array($data['periods'] ?? null)) {
+            $model->periods = null;
+        } else {
+            $periods = array_values(array_filter($data['periods'] ?? null));
+            if (empty($periods)) {
+                $model->periods = null;
+            } else {
+                $model->periods = json_encode($periods);
+            }
+        }
+
+        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($model);
+
+        $this->di['logger']->info('Update promo code %s', $model->code);
+
+        return true;
+    }
+
+    public function deletePromo(\Model_Promo $model)
+    {
+        $sql = 'UPDATE client_order SET promo_id = NULL WHERE promo_id = :id';
+
+        $this->di['db']->exec($sql, [':id' => $model->id]);
+        $this->di['db']->trash($model);
+
+        $this->di['logger']->info('Removed promo code %s', $model->code);
+
+        return true;
+    }
+
+    public function isPromoLinkedToProduct(\Model_Promo $promo, \Model_Product $product)
+    {
+        if ($product->is_addon) {
+            return false;
+        }
+
+        $products = $this->getProducts($promo);
+        if (empty($products)) {
+            return true;
+        }
+
+        return in_array($product->id, $products);
+    }
+
+    public function getProductDiscount(\Model_Product $product, \Model_Promo $promo, array $config = null)
+    {
+        if (!$this->isPromoLinkedToProduct($promo, $product)) {
+            return 0;
+        }
+
+        // check if promo code applies to specific period only
+        if (isset($config['period'])) {
+            $periods = $this->getPeriods($promo);
+            if (!empty($periods) && !in_array($config['period'], $periods)) {
+                return 0;
+            }
+        }
+
+        $repo = $product->getTable();
+        $price = $repo->getProductPrice($product, $config);
+
+        if (0 == $price) {
+            return 0;
+        }
+
+        $discount = 0;
+        $quantity = 1;
+
+        switch ($promo->type) {
+            case \Model_Promo::ABSOLUTE:
+                $discount += $promo->value;
+                break;
+
+            case \Model_Promo::PERCENTAGE:
+                if (isset($config['quantity']) && is_numeric($config['quantity'])) {
+                    $quantity = $config['quantity'];
+                }
+
+                $discount += round($price * $quantity * $promo->value / 100, 2);
+                break;
+
+            default:
+                break;
+        }
+
+        return $discount;
+    }
+
+    public function isPromoLinkedToTld(\Model_Promo $promo, \Model_Tld $tld)
+    {
+        foreach ($promo->PromoItem as $item) {
+            if ($item->tld_id == $tld->id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
