@@ -265,7 +265,7 @@ $di['request'] = function () use ($di) {
  */
 $di['cache'] = function () {
     // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
-    return new FilesystemAdapter('', 0, PATH_CACHE . '/sf_cache');
+    return new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 };
 
 /*
