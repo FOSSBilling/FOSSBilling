@@ -18,7 +18,7 @@ const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
  * Patch to remove the old FileCache class that was replaced with Symfony's Cache component
- *
+ * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
  */
 class FOSSPatch_33 extends FOSSPatchAbstract
@@ -33,8 +33,8 @@ class FOSSPatch_33 extends FOSSPatchAbstract
 }
 
 /**
- * Patch to remove the old phpmailer package, some leftover admin_default files, and old Box_ classes we've removed or replaced
- *
+ * Patch to remove the old phpmailer package, some leftover admin_default files, and old Box_ classes we've removed or replaced 
+ * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1091 and https://github.com/FOSSBilling/FOSSBilling/pull/1063
  */
 class FOSSPatch_32 extends FOSSPatchAbstract
@@ -65,7 +65,7 @@ class FOSSPatch_32 extends FOSSPatchAbstract
 
 /**
  * Patch to remove the old htaccess.txt file, any old config.php backup
- *
+ * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
  */
 class FOSSPatch_31 extends FOSSPatchAbstract
@@ -82,7 +82,7 @@ class FOSSPatch_31 extends FOSSPatchAbstract
 
 /**
  * Patch to remove the old guzzlehttp package, as we no longer use it. Also serves as an example for how to perform file action.
- *
+ * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/987
  */
 class FOSSPatch_30 extends FOSSPatchAbstract
@@ -98,8 +98,8 @@ class FOSSPatch_30 extends FOSSPatchAbstract
 
 /**
  * Patch to update email templates to use format_date/format_datetime filters
- * instead of removed bb_date/bb_datetime filters.
- *
+ * instead of removed bb_date/bb_datetime filters. 
+ * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/948
  */
 class FOSSPatch_29 extends FOSSPatchAbstract
@@ -330,46 +330,46 @@ natsort($patches);
 </head>
 
 <body>
-<div class="header">
-    <h1>FOSSBilling Updater</h1>
-</div>
-<div class="container">
-    <table>
-        <thead>
-        <tr>
-            <th>Patch Number</th>
-            <th>Status</th>
-            <th>File Actions Performed</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($patches as $class) {
-            $p = new $class($di);
-            if (!$p->isPatched()) {
-                $p->patch();
-                $p->donePatching();
-
-                $version = $p->getVersion();
-                $fileActions = $p->getFileActions();
-                ?>
+    <div class="header">
+        <h1>FOSSBilling Updater</h1>
+    </div>
+    <div class="container">
+        <table>
+            <thead>
                 <tr>
-                    <td><?php echo $version ?></td>
-                    <td>Executed</td>
-                    <td>
-                        <ul>
-                            <?php foreach ($fileActions as $action) {
-                                echo '<li><p>' . $action . '</p></li>';
-                            } ?>
-                        </ul>
-                    </td>
+                    <th>Patch Number</th>
+                    <th>Status</th>
+                    <th>File Actions Performed</th>
                 </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($patches as $class) {
+                    $p = new $class($di);
+                    if (!$p->isPatched()) {
+                        $p->patch();
+                        $p->donePatching();
+
+                        $version = $p->getVersion();
+                        $fileActions = $p->getFileActions();
+                ?>
+                        <tr>
+                            <td><?php echo $version ?></td>
+                            <td>Executed</td>
+                            <td>
+                                <ul>
+                                    <?php foreach ($fileActions as $action) {
+                                        echo '<li><p>' . $action . '</p></li>';
+                                    } ?>
+                                </ul>
+                            </td>
+                        </tr>
                 <?php
-            }
-        } ?>
-        </tbody>
-    </table>
-    <p>Update completed. You are using FOSSBilling <strong><?php echo FOSSBilling_Version::VERSION ?></strong></p>
-</div>
+                    }
+                } ?>
+            </tbody>
+        </table>
+        <p>Update completed. You are using FOSSBilling <strong><?php echo FOSSBilling_Version::VERSION ?></strong></p>
+    </div>
 </body>
 
 </html>
