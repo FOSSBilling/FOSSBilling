@@ -57,7 +57,7 @@ function checkInstaller()
     $filesystem = new Filesystem();
 
     // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists('config.php') && $filesystem->exists('install/index.php')) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/index.php')) {
         throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
     }
 }
@@ -222,8 +222,11 @@ checkLegacyFiles();
 // Check config exists.
 checkConfig();
 
-//All seems good, so load the config file
+//All seems good, so load the config file.
 $config = require PATH_CONFIG;
+
+// Verify the installer was removed.
+checkInstaller();
 
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
