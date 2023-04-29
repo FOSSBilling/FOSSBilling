@@ -300,7 +300,7 @@ class Service
      * 
      * @return array - array of messages
      */
-    public function getCasMessages()
+    public function getCasMessages(): array
     {
         return $this->di['central_alerts']->filterAlerts();
     }
@@ -1642,23 +1642,6 @@ class Service
     public function clearPendingMessages()
     {
         $this->di['session']->delete('pending_messages');
-
-        return true;
-    }
-
-    /**
-     * Hook to fetch the Central Alerts System messages.
-     * @param \Box_Event $event
-     */
-    public static function onBeforeAdminCronRun(\Box_Event $event)
-    {
-        $di = $event->getDi();
-
-        try {
-            $di['central_alerts']->updateAlerts();
-        } catch (\Exception $e) {
-            error_log($e);
-        }
 
         return true;
     }

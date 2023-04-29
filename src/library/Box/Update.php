@@ -69,8 +69,8 @@ class Box_Update
      */
     private function _getLatestVersionInfo(): array
     {
-        return $this->di['cache']->get('core_version_info', function (ItemInterface $item) {
-            $item->expiresAfter(86400); // 24 hours
+        return $this->di['cache']->get('Update._getLatestVersionInfo', function (ItemInterface $item) {
+            $item->expiresAfter(24 * 60 * 60);
 
             return $this->getJson();
         });

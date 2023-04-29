@@ -14,6 +14,7 @@
  */
 
 use Box\InjectionAwareInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class FOSSBilling_CentralAlerts implements InjectionAwareInterface
 {
@@ -22,73 +23,58 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
      */
     protected $di = null;
 
-    private $_url = 'https://fossbilling.org/api/central-alerts/';
+    private string $_url = 'https://fossbilling.org/api/central-alerts/';
 
     /**
      * @param \Box_Di $di
      */
-    public function setDi($di)
+    public function setDi($di): void
     {
         $this->di = $di;
     }
 
     /**
-     * @return \Box_Di
+     * @return \Box_Di|null
      */
-    public function getDi()
+    public function getDi(): ?Box_Di
     {
         return $this->di;
     }
 
     /**
-     * Fetch the latest alerts from the FOSSBilling Central Alerts System and save them to the database.
+     * Fetch the latest alerts from the FOSSBilling Central Alerts System or the cache.
+     *
      * The Central Alerts System allows the FOSSBilling team to send alerts to instance administrators.
      * The alerts are only displayed to the administrators of FOSSBilling instances through the admin area.
-     * 
+     *
      * They are useful for notifying administrators of security issues and other important information.
      * The alerts are **never** displayed to the clients.
-     * 
+     *
      * @return array The alerts
+     * @throws \Box_Exception
      */
-    public function updateAlerts() {
-        $alerts = $this->makeRequest('list');
+    public function getAlerts(): array
+    {
+        $alerts = $this->di['cache']->get('CentralAlerts.getAlerts', function (ItemInterface $item) {
+            $item->expiresAfter(4 * 60 * 60);
 
-        if (!is_array($alerts) || empty($alerts) || !isset($alerts['alerts'])) {
-            return [];
-        }
+            return $this->makeRequest('list');
+        });
 
-        $this->flushAlerts();
-        $this->saveAlerts($alerts['alerts']);
-
-        return $alerts['alerts'];
-    }
-
-    /**
-     * Fetch the cached alerts from the database.
-     * 
-     * @return array The alerts
-     */
-    public function getAlerts() {
-        $alerts = $this->di['db']->getAll('SELECT * FROM central_alerts');
-
-        if (!is_array($alerts) || empty($alerts)) {
-            return [];
-        }
-
-        return array_map(function($alert) {
-            return json_decode($alert['details'], true);
-        }, $alerts);
+        return empty($alerts['alerts']) ? [] : $alerts['alerts'];
     }
 
     /**
      * Filter the cached alerts by type and version
-     * 
+     *
      * @param array $type The alert types to filter by (e.g. ['info', 'warning']) - defaults to all types
      * @param string $version The version to filter by (e.g. 0.4.2) - defaults to the current version of FOSSBilling
-     * 
+     *
      * @return array The filtered alerts
+     * @throws \Box_Exception
      */
-    public function filterAlerts($type = [], $version = \Box_Version::VERSION) {
+    public function filterAlerts(array $type = [], string $version = FOSSBilling_Version::VERSION): array
+    {
         $alerts = $this->getAlerts();
 
         if (is_array($type) && !empty($type)) {
@@ -116,33 +102,6 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
     }
 
     /**
-     * Flush all alerts from the database.
-     * 
-     * @return void
-     */
-    public function flushAlerts() {
-        $this->di['db']->exec('TRUNCATE TABLE central_alerts');
-    }
-
-    /**
-     * Save alerts to the database.
-     * 
-     * @param array $alerts The alerts to save
-     * 
-     * @return void
-     */
-    public function saveAlerts($alerts) {
-        foreach ($alerts as $alert) {
-            $sql = "INSERT INTO central_alerts (id, details) VALUES (:id, :details) ON DUPLICATE KEY UPDATE details = :details";
-
-            $this->di['db']->exec($sql, [
-                ':id' => $alert['id'],
-                ':details' => json_encode($alert),
-            ]);
-        }
-    }
-
-    /**
      * Make a request to the FOSSBilling Central Alerts System API
      * 
      * @param string $endpoint The API endpoint to call (e.g. list)
@@ -151,14 +110,14 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
      * @return array The API response
      * @throws \Box_Exception
      */
-    public function makeRequest($endpoint, array $params = [])
+    public function makeRequest(string $endpoint, array $params = []): array
     {
         $url = $this->_url . $endpoint;
 
         $response = $this->di['http_client']->request('GET', $url, [
             'timeout' => 5,
             'query' => array_merge($params, [
-                'fossbilling_version' => Box_Version::VERSION,
+                'fossbilling_version' => FOSSBilling_Version::VERSION,
             ]),
         ]);
 
