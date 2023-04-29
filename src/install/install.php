@@ -400,13 +400,6 @@ final class Box_Installer
             'currency_format' => $ns->get('currency_format'),
         ]);
 
-        try {
-            $this->_sendMail($ns);
-        } catch (Exception $e) {
-            // E-mail was not sent, but that is not a problem
-            error_log($e->getMessage());
-        }
-
         /*
           Copy config templates when applicable
         */
@@ -430,31 +423,10 @@ final class Box_Installer
         return true;
     }
 
-    private function _sendMail($ns): void
-    {
-        $admin_name = $ns->get('admin_name');
-        $admin_email = $ns->get('admin_email');
-        $admin_pass = $ns->get('admin_pass');
-
-        $content = "Hi $admin_name, " . PHP_EOL;
-        $content .= 'You have successfully setup FOSSBilling at ' . BB_URL . PHP_EOL;
-        $content .= 'Access client area at: ' . BB_URL . PHP_EOL;
-        $content .= 'Access admin area at: ' . BB_URL_ADMIN . ' with login details:' . PHP_EOL;
-        $content .= 'E-mail: ' . $admin_email . PHP_EOL;
-        $content .= 'Password: The password you chose during installation' . PHP_EOL . PHP_EOL;
-
-        $content .= "Read FOSSBilling documentation to get started https://fossbilling.org/docs" . PHP_EOL;
-        $content .= "Thank You for using FOSSBilling." . PHP_EOL;
-
-        $subject = sprintf('FOSSBilling is ready at "%s"', BB_URL);
-
-        @mail($admin_email, $subject, $content);
-    }
-
     private function _createConfigurationFile($data): void
     {
         $output = $this->_getConfigOutput($data);
-        if (!@file_put_contents(PATH_CONFIG, $output)) {
+        if (!file_put_contents(PATH_CONFIG, $output)) {
             throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
     }
@@ -465,7 +437,7 @@ final class Box_Installer
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
         $updateBranch = (preg_match($reg, FOSSBilling_Version::VERSION, $matches) !== 0) ? "release" : "preview";
 
-        // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
+        // TODO: Why not just take the defaults from the config-sample.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
             'security' => [
                 'mode' => 'strict',

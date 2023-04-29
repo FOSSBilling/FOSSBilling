@@ -342,11 +342,11 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Account password is missing or is not valid');
         }
 
-        $p = $data['password'];
+        $newPassword = $data['password'];
 
         if ($this->_performOnService($order)) {
             [$adapter, $account] = $this->_getAM($model);
-            $adapter->changeAccountPassword($account, $p);
+            $adapter->changeAccountPassword($account, $newPassword);
         }
 
         $model->pass = "******";
@@ -529,7 +529,7 @@ class Service implements InjectionAwareInterface
 
         if ('owndomain' == $data['domain']['action']) {
             $sld = $data['domain']['owndomain_sld'];
-            $tld = $data['domain']['owndomain_tld'];
+            $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
         if ('register' == $data['domain']['action']) {

@@ -27,9 +27,9 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
         return $this->di;
     }
 
-    private $_all_ok = true;
-    private $_app_path = PATH_ROOT;
-    private $_options = array();
+    private bool $_all_ok = true;
+    private string $_app_path = PATH_ROOT;
+    private array $_options = array();
 
     public function __construct()
     {
@@ -57,12 +57,12 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
         );
     }
 
-    public function getOptions()
+    public function getOptions(): array
     {
         return $this->_options;
     }
 
-    public function getInfo()
+    public function getInfo(): array
     {
         $data = array();
         $data['ip']             = $_SERVER['SERVER_ADDR'] ?? null;
@@ -87,7 +87,7 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
             PATH_CACHE       =>  substr(sprintf('%o', fileperms(PATH_CACHE)), -4),
             PATH_LOG         =>  substr(sprintf('%o', fileperms(PATH_LOG)), -4),
         );
-        
+
         $data['extensions']    = array(
             'apc'           => extension_loaded('apc'),
             'pdo_mysql'     => extension_loaded('pdo_mysql'),
@@ -95,34 +95,30 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
             'mbstring'      => extension_loaded('mbstring'),
             'openssl'        => extension_loaded('openssl'),
         );
-        
+
         //determine php username
         if(function_exists('posix_getpwuid') && function_exists('posix_geteuid')) {
             $data['posix_getpwuid'] = posix_getpwuid(posix_geteuid());
         }
         return $data;
     }
-    
-    public function isPhpVersionOk()
+
+    public function isPhpVersionOk(): bool
     {
         $current = $this->_options['php']['version'];
         $required = $this->_options['php']['min_version'];
         return version_compare($current, $required, '>=');
     }
 
-    public function isFOSSBillingVersionOk()
+    public function isFOSSBillingVersionOk(): bool
     {
-        $current = FOSSBilling_Version::VERSION;
-        if ($current == "0.0.1") {
-            return false;
-        }
-        return true;
+        return FOSSBilling_Version::VERSION !== '0.0.1';
     }
 
     /**
      * What extensions must be loaded for FOSSBilling to function correctly
      */
-    public function extensions()
+    public function extensions(): array
     {
         $exts = $this->_options['php']['extensions'];
 
@@ -142,7 +138,7 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
     /**
      * Files that must be writable
      */
-    public function files()
+    public function files(): array
     {
         $files = $this->_options['writable_files'];
         $result = array();
@@ -164,7 +160,7 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
     /**
      * Folders that must be writable
      */
-    public function folders()
+    public function folders(): array
     {
         $folders = $this->_options['writable_folders'];
 
@@ -187,7 +183,7 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
      * Check if we can continue with installation
      * @return bool
      */
-    public function canInstall()
+    public function canInstall(): bool
     {
         $this->extensions();
         $this->folders();
@@ -201,11 +197,10 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
      * @param string $perm
      * @return bool
      */
-    public function checkPerms($path, $perm = '0777')
+    public function checkPerms(string $path, string $perm = '0777'): bool
     {
         clearstatcache();
         $configmod = substr(sprintf('%o', @fileperms($path)), -4);
         return ($configmod == $perm);
     }
-
 }

@@ -11,7 +11,6 @@ class DiTest extends PHPUnit\Framework\TestCase
     public function testInjector()
     {
         $di = $this->di;
-        $this->assertInstanceOf('Box_Config', $di['config']);
         $this->assertInstanceOf('Box_Mod', $di['mod']('admin'));
         $this->assertInstanceOf('Box_Log', $di['logger']);
         $this->assertInstanceOf('Box_Crypt', $di['crypt']);
@@ -23,7 +22,6 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertInstanceOf('Box_EventManager', $di['events_manager']);
 
         $this->assertInstanceOf('Box_Session', $di['session']);
-        $this->assertInstanceOf('FileCache', $di['cache']);
         $this->assertInstanceOf('Box_Authorization', $di['auth']);
         $this->assertInstanceOf('Twig\Environment', $di['twig']);
         $this->assertInstanceOf('Box_Tools', $di['tools']);
@@ -32,7 +30,7 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertTrue(isset($di['mod']));
         $this->assertTrue(isset($di['mod_config']));
         $this->assertInstanceOf('Box\\Mod\\Cron\\Service', $di['mod_service']('cron'));
-        $this->assertInstanceOf('\FOSSBilling_ExtensionManager', $di['extension_directory']);
+        $this->assertInstanceOf('\FOSSBilling_ExtensionManager', $di['extension_manager']);
         $this->assertInstanceOf('\Box_Update', $di['updater']);
         $this->assertInstanceOf('\Server_Package', $di['server_package']);
         $this->assertInstanceOf('\Server_Client', $di['server_client']);

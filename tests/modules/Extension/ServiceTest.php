@@ -317,7 +317,7 @@ class ServiceTest extends \BBTestCase {
         $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
 
         $di = new \Box_Di();
-        $di['extension_directory'] = $extensionMock;
+        $di['extension_manager'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -506,7 +506,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['extension_directory'] = $extensionMock;
+        $di['extension_manager'] = $extensionMock;
 
         $this->service->setDi($di);
         $this->expectException(\Exception::class);

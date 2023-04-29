@@ -17,7 +17,23 @@
 const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
- * Patch to remove the old phpmailer package, as we no longer use it. and some leftover admin_default files.
+ * Patch to remove the old FileCache class that was replaced with Symfony's Cache component
+ * 
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
+ */
+class FOSSPatch_33 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $fileActions = [
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'FileCache.php' => 'unlink',
+        ];
+        $this->performFileActions($fileActions);
+    }
+}
+
+/**
+ * Patch to remove the old phpmailer package, some leftover admin_default files, and old Box_ classes we've removed or replaced 
  * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1091 and https://github.com/FOSSBilling/FOSSBilling/pull/1063
  */
@@ -31,13 +47,24 @@ class FOSSPatch_32 extends FOSSPatchAbstract
             __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'bb-deprecated.scss' => 'unlink',
             __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'dataTable-deprecated.scss' => 'unlink',
             __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'main-deprecated.scss' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Mail.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Ftp.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'FileCacheExcption.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Zip.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Requirements.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Version.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Extension.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Cookie.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'ExceptionAuth.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Response.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Config.php' => 'unlink',
         ];
         $this->performFileActions($fileActions);
     }
 }
 
 /**
- * Patch to remove the old htaccess.txt file, any old config.php backup, and leftover admin_default files.
+ * Patch to remove the old htaccess.txt file, any old config.php backup
  * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
  */

@@ -414,13 +414,13 @@ class Service implements InjectionAwareInterface
 
     public function downloadAndExtract($type, $id)
     {
-        $latest = $this->di['extension_directory']->getLatestExtensionRelease($id);
+        $latest = $this->di['extension_manager']->getLatestExtensionRelease($id);
 
         if (!isset($latest['download_url'])) {
             throw new \Exception('Coudn\'t find a valid download URL for the extension.');
         }
 
-        if (!$this->di['extension_directory']->isExtensionCompatible($id)) {
+        if (!$this->di['extension_manager']->isExtensionCompatible($id)) {
             throw new \Exception('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 

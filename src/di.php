@@ -23,6 +23,7 @@ use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use RedBeanPHP\Facade;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
@@ -40,8 +41,7 @@ $di = new Box_Di();
  */
 $di['config'] = function () {
     $array = include PATH_ROOT . '/config.php';
-
-    return new Box_Config($array);
+    return $array;
 };
 
 /*
@@ -258,13 +258,13 @@ $di['request'] = function () use ($di) {
 };
 
 /*
- *
  * @param void
  *
- * @return \FileCache
+ * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
 $di['cache'] = function () {
-    return new FileCache();
+    // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+    return new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 };
 
 /*
@@ -537,7 +537,7 @@ $di['validator'] = function () use ($di) {
  *
  * @return \FOSSBilling_ExtensionManager
  */
-$di['extension_directory'] = function () use ($di) {
+$di['extension_manager'] = function () use ($di) {
     $extension = new \FOSSBilling_ExtensionManager();
     $extension->setDi($di);
 
@@ -592,10 +592,13 @@ $di['server_account'] = function () {
  *
  * @return \Server_Manager The new server manager object that was just created.
  */
-$di['server_manager'] = $di->protect(function ($manager, $config) {
+$di['server_manager'] = $di->protect(function($manager, $config) use ($di) {
     $class = sprintf('Server_Manager_%s', ucfirst($manager));
 
-    return new $class($config);
+    $s = new $class($config);
+    $s->setLog($di['logger']);
+
+    return $s;
 });
 
 /*

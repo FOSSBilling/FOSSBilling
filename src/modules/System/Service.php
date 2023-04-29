@@ -241,7 +241,11 @@ class Service
             $updater = $this->di['updater'];
             if ($updater->getCanUpdate()) {
                 $version = $updater->getLatestVersion();
-                $msgs['info'][] = sprintf('FOSSBilling %s is available for download.', $version);
+                $updateUrl = $this->di['url']->adminLink('system/update');
+                $msgs['info'][] = [
+                    'text'  => "FOSSBilling {$version} is available for download.",
+                    'url'   => $updateUrl
+                ];
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
@@ -250,14 +254,18 @@ class Service
         $disableAutoCron = $this->di['config']['disable_auto_cron'] ?? false;
         if (false === $runFromTest && false === $disableAutoCron) {
             if (!$last_exec) {
-                $msgs['info'][] = 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.';
+                $msgs['info'][] = [
+                    'text' => 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.'
+                ];
                 $cronService = $this->di['mod_service']('cron');
                 $cronService->runCrons();
             } else {
                 $minSinceLastExec = (time() - strtotime($last_exec)) / 60;
                 if ($minSinceLastExec >= 15) {
                     $minSinceLastExec = round($minSinceLastExec, 2);
-                    $msgs['info'][] = 'Cron hasn\'t been executed in ' . $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.';
+                    $msgs['info'][] = [
+                        'text' => 'Cron hasn\'t been executed in ' . $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.'
+                    ];
                     $cronService = $this->di['mod_service']('cron');
                     $cronService->runCrons();
                     error_log("Cron hasn't been run in $minSinceLastExec minutes. Manually executing.");
@@ -267,15 +275,21 @@ class Service
 
         $install = PATH_ROOT . '/install';
         if (file_exists(PATH_ROOT . '/install')) {
-            $msgs['danger'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
+            $msgs['danger'][] = [
+                'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install)
+            ];
         }
 
         if ('0.0.1' == $this->getVersion()) {
-            $msgs['warning'][] = 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.';
+            $msgs['warning'][] = [
+                'text' => 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.'
+            ];
         }
 
         if (!extension_loaded('openssl')) {
-            $msgs['warning'][] = sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
+            $msgs['warning'][] = [
+                'text' => sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl')
+            ];
         }
 
         return $msgs[$type] ?? [];

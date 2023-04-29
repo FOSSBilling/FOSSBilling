@@ -150,7 +150,7 @@ Your [pull requests](https://github.com/FOSSBilling/FOSSBilling/pulls) will be h
 
 **Got questions? Found a bug? Ideas for improvements?**
 
-Don't hesitate to create an [issue](https://github.com/FOSSBilling/FOSSBilling/issues), or join us on [Discord](https://fossbilling.org/discord) to say hi.
+Don't hesitate to create an [issue](https://github.com/FOSSBilling/FOSSBilling/issues), start a discussion in the [FOSSBilling Forum](https://forum.fossbilling.org/), or join us on [Discord](https://fossbilling.org/discord) to say hi.
 
 ⭐ Not a developer? Feel free to help by starring the repository. It helps us catch the attention of new developers who'd like to contribute. 
 
