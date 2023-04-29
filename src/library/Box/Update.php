@@ -13,6 +13,7 @@
  */
 
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class Box_Update
 {
@@ -37,22 +38,24 @@ class Box_Update
         return $this->di;
     }
 
-    private $_url = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
-    private $_preview_url = 'https://fossbilling.org/downloads/preview/';
+    private string $_url = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
+    private string $_preview_url = 'https://fossbilling.org/downloads/preview/';
 
     /**
      * Determines which branch FOSSBilling is configured to update from.
      */
-    public function getUpdateBranch(){
-        return ( isset($this->di['config']['update_branch']) ) ? $this->di['config']['update_branch'] : "release";
+    public function getUpdateBranch(): string
+    {
+        return (isset($this->di['config']['update_branch'])) ? $this->di['config']['update_branch'] : "release";
     }
 
     /**
      * Checks if FOSSBilling is running a preview version or not
      */
-    public function isPreviewVersion(){
+    public function isPreviewVersion(): bool
+    {
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
-        if(preg_match($reg, $this->getLatestVersion())){
+        if (preg_match($reg, $this->getLatestVersion())) {
             return false;
         } else {
             return true;
@@ -61,25 +64,32 @@ class Box_Update
 
     /**
      * Returns latest information
+     *
+     * @return array
      */
-    private function _getLatestVersionInfo()
+    private function _getLatestVersionInfo(): array
     {
-        return $this->di['tools']->cache_function(array($this, 'getJson'), array(), 86400);
+        return $this->di['cache']->get('core_version_info', function (ItemInterface $item) {
+            $item->expiresAfter(86400); // 24 hours
+
+            return $this->getJson();
+        });
     }
 
     /**
      * Returns latest release notes
+     *
      * @return string
      */
-    public function getLatestReleaseNotes()
+    public function getLatestReleaseNotes(): string
     {
-        if($this->getUpdateBranch() === "preview"){
+        if ($this->getUpdateBranch() === "preview") {
             $compareLink = 'https://github.com/FOSSBilling/FOSSBilling/compare/' . $this->getLatestVersion() . '...main';
-            return "Release notes are not available for preview builds. You can check the latest changes on our [Github]($compareLink)";
+            return "Release notes are not available for preview builds. You can check the latest changes on our [GitHub]($compareLink) repository.";
         }
 
         $response = $this->_getLatestVersionInfo();
-        if(!isset($response['body'])){
+        if (!isset($response['body'])) {
             return "**Error: Release info unavailable**";
         }
         return $response['body'];
@@ -89,14 +99,14 @@ class Box_Update
      * Returns latest version number
      * @return string
      */
-    public function getLatestVersion()
+    public function getLatestVersion(): string
     {
-        if($this->getUpdateBranch() === "preview"){
+        if ($this->getUpdateBranch() === "preview") {
             return FOSSBilling_Version::VERSION;
         }
 
         $response = $this->_getLatestVersionInfo();
-        if(!isset($response['tag_name'])){
+        if (!isset($response['tag_name'])) {
             return FOSSBilling_Version::VERSION;
         }
         return $response['tag_name'];
@@ -106,9 +116,9 @@ class Box_Update
      * Latest version link
      * @return string
      */
-    public function getLatestVersionDownloadLink()
+    public function getLatestVersionDownloadLink(): string
     {
-        if($this->getUpdateBranch() === "preview"){
+        if ($this->getUpdateBranch() === "preview") {
             return $this->_preview_url;
         }
 
@@ -120,7 +130,7 @@ class Box_Update
      * Check if we need to update current FOSSBilling version
      * @return bool
      */
-    public function getCanUpdate()
+    public function getCanUpdate(): bool
     {
         $version = $this->getLatestVersion();
         $result = FOSSBilling_Version::compareVersion($version);
@@ -133,18 +143,18 @@ class Box_Update
      * @param string $file - filepath
      * @return bool
      */
-    private function isHashValid($file)
+    private function isHashValid($file): bool
     {
-        if(!file_exists($file)) {
+        if (!file_exists($file)) {
             return false;
         }
 
         $response = $this->_getLatestVersionInfo();
-        $hash = md5($response->version.filesize($file));
+        $hash = md5($response->version . filesize($file));
         return ($hash == $response->hash);
     }
 
-    public function getJson()
+    public function getJson(): array
     {
         $url = $this->_url;
         $client = HttpClient::create();
@@ -159,7 +169,7 @@ class Box_Update
      */
     public function performUpdate()
     {
-        if($this->getUpdateBranch() !== 'preview' && !$this->getCanUpdate()) {
+        if ($this->getUpdateBranch() !== 'preview' && !$this->getCanUpdate()) {
             throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.');
         }
 
@@ -170,7 +180,7 @@ class Box_Update
         // Download latest archive.
         try {
             $httpClient = HttpClient::create([
-                'timeout'      => 5,
+                'timeout' => 5,
                 'max_duration' => 120
             ]);
             $response = $httpClient->request('GET', $this->getLatestVersionDownloadLink());
@@ -180,8 +190,8 @@ class Box_Update
                 fwrite($fileHandler, $chunk->getContent());
             }
             fclose($fileHandler);
-        } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface |
-                 \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
+        } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface|
+        \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
             error_log($e->getMessage());
             throw new \Box_Exception('Failed to download the update archive. Further details are available in the error log.');
         }
@@ -199,9 +209,9 @@ class Box_Update
             throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
-        if(file_exists(PATH_ROOT.'/foss-update.php')) {
+        if (file_exists(PATH_ROOT . '/foss-update.php')) {
             error_log('Calling foss-update.php script from auto-updater');
-            file_get_contents(BB_URL.'foss-update.php');
+            file_get_contents(BB_URL . 'foss-update.php');
         }
 
         // Migrate the configuration file
@@ -209,8 +219,8 @@ class Box_Update
 
         // clean up things
         $this->di['tools']->emptyFolder(PATH_CACHE);
-        $this->di['tools']->emptyFolder(PATH_ROOT.'/install');
-        rmdir(PATH_ROOT.'/install');
+        $this->di['tools']->emptyFolder(PATH_ROOT . '/install');
+        rmdir(PATH_ROOT . '/install');
 
         // Log off the current user and destroy the session.
         unset($_COOKIE['BOXADMR']);
@@ -265,7 +275,7 @@ class Box_Update
         $newConfig['api']['CSRFPrevention'] ??= true;
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = [ 'guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone' ];
+        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone'];
         $depreciatedConfigSubkeys = [];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {

@@ -11,7 +11,7 @@
         </div>
         <div class="card-body">
             <h3 class="card-title">{{ 'Automatic Update'|trans }}</h3>
-            <p class="card-subtitle">{{ 'The automatic updater is a one-click tool for updating FOSSBilling. It works on hosting environments where PHP can overwrite files uploaded via FTP.'|trans }}</p>
+            <p class="card-subtitle">{{ 'The automatic updater is a one-click tool for updating FOSSBilling. PHP must be able to write to the directory where FOSSBilling is installed.'|trans }}</p>
             {{ admin.system_release_notes|markdown }}
             <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
             class="btn btn-primary api-link"

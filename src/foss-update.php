@@ -17,6 +17,22 @@
 const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
+ * Patch to remove the old FileCache class that was replaced with Symfony's Cache component
+ * 
+ * @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
+ */
+class FOSSPatch_33 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        $fileActions = [
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'FileCache.php' => 'unlink',
+        ];
+        $this->performFileActions($fileActions);
+    }
+}
+
+/**
  * Patch to remove the old phpmailer package, some leftover admin_default files, and old Box_ classes we've removed or replaced 
  * 
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1091 and https://github.com/FOSSBilling/FOSSBilling/pull/1063

@@ -23,6 +23,7 @@ use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use RedBeanPHP\Facade;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
@@ -258,13 +259,13 @@ $di['request'] = function () use ($di) {
 };
 
 /*
- *
  * @param void
  *
- * @return \FileCache
+ * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
 $di['cache'] = function () {
-    return new FileCache();
+    // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+    return new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 };
 
 /*
