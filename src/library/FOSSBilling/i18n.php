@@ -40,8 +40,9 @@ class FOSSBilling_i18n
      */
     private static function getBrowserLocale(): ?string
     {
+        $header = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
         try {
-            $detectedLocale = @Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+            $detectedLocale = @Locale::acceptFromHttp($header);
             $detectedLocale = @Locale::canonicalize($detectedLocale . '.utf8');
         } catch (Exception) {
             $detectedLocale = '';
@@ -68,12 +69,12 @@ class FOSSBilling_i18n
             }
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with($locale, substr($detectedLocale, 0, 2))) {
-                    setcookie("BBLANG", $locale, strtotime("+1 month"));
+                    setcookie("BBLANG", $locale, strtotime("+1 month"), "/");
                     return $locale;
                 }
             }
         } else {
-            setcookie("BBLANG", $matchingLocale, strtotime("+1 month"));
+            setcookie("BBLANG", $matchingLocale, strtotime("+1 month"), "/");
         }
 
         return $matchingLocale;
