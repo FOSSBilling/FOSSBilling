@@ -27,7 +27,7 @@ const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_UPLOADS = PATH_ROOT . DIRECTORY_SEPARATOR . 'uploads';
 const PATH_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';
-const PATH_CONFIG = PATH_ROOT . '/config.php';
+const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 
 /*
  * Check configuration exists, and is valid.
@@ -42,7 +42,7 @@ function checkConfig()
     // Check if configuration is available, and redirect to installer if not.
     if (!$filesystem->exists(PATH_CONFIG)) {
         if ($filesystem->exists('install/index.php')) {
-            header("Location: " . $base_url . '/install', true, 307);
+            header("Location: " . $base_url . '/install/index.php', true, 307);
         } else {
             throw new Exception("The FOSSBilling configuration file is empty or invalid.", 3);
         }
@@ -203,9 +203,13 @@ function exceptionHandler($e)
  *
  */
 
-// Define custom error handlers
+// Define custom error handlers.
 set_exception_handler('exceptionHandler');
 set_error_handler('errorHandler');
+
+//Enabled during setup, is then overridden once we have loaded the config.
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
 
 // Check hard requirements.
 checkRequirements();
@@ -233,8 +237,8 @@ date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 define('BB_DEBUG', $config['debug']);
 define('BB_URL', $config['url']);
 define('BB_SEF_URLS', $config['sef_urls']);
-define('PATH_CACHE', $config['path_data'] . '/cache');
-define('PATH_LOG', $config['path_data'] . '/log');
+define('PATH_CACHE', $config['path_data'] . DIRECTORY_SEPARATOR . 'cache');
+define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 if ($config['sef_urls']) {
@@ -249,7 +253,7 @@ checkSSL();
 // Set error and exception handlers, and default logging settings.
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
-ini_set('error_log', PATH_LOG . '/php_error.log');
+ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
 if ($config['debug']) {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
