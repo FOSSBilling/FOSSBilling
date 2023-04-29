@@ -71,7 +71,6 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
 
         $data['FOSSBilling']    = array(
             'BB_LOCALE'     =>  $this->di['config']['i18n']['locale'],
-            'BB_SEF_URLS'   =>  BB_SEF_URLS,
             'version'       =>  FOSSBilling_Version::VERSION,
         );
 
