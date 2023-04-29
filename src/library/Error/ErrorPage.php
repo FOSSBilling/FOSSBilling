@@ -30,7 +30,7 @@ class FOSSBillingErrorPage
         return [
             '1' => [
                 'title' => __trans('Unable to find Composer Packages'),
-                'message' => 'The composer packages appear to be missing. This shouldn\'t happen if you are using a release version of FOSSBilling. If you are developer, you will need to install dependencies using :code', [':code' => '<code>composer install</code>'],
+                'message' => 'The composer packages appear to be missing. This shouldn\'t happen if you are using a release version of FOSSBilling. If you are developer, you will need to install dependencies using :code.', [':code' => '<code>composer install</code>'],
                 'link' => [
                     'label' => __trans('View more info on the composer website'),
                     'href' => 'https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies',
@@ -45,7 +45,7 @@ class FOSSBillingErrorPage
             ],
             '3' => [
                 'title' => __trans('Your Configuration is Empty'),
-                'message' => __trans('Your FOSSBilling configuration seems to either be empty or non-existient. You may need to re-install FOSSBilling, or re-create the :code file based on the example config' . [':code' => '<code>config.php</code>']),
+                'message' => __trans('Your FOSSBilling configuration seems to either be empty or non-existient. You may need to re-install FOSSBilling, or re-create the :code file based on the example config.', [':code' => '<code>config.php</code>']),
                 'link' => [
                     'label' => __trans('See the example config.'),
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/config-sample.php',
@@ -127,7 +127,7 @@ class FOSSBillingErrorPage
     public function generatePage(int $code, string $message)
     {
         $error = $this->getCodeInfo($code);
-        $error['message'] ??= __trans('Uh-oh! You\'ve received a generic error message: :errorMessage', ['errorMessage' => $message]);
+        $error['message'] ??= __trans('Uh-oh! You\'ve received a generic error message: :errorMessage', [':errorMessage' => '<code>' . $message . '</code>']);
 
         $page = '
         <!DOCTYPE html>

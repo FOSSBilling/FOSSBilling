@@ -41,8 +41,8 @@ function checkConfig()
 
     // Check if configuration is available, and redirect to installer if not.
     if (!$filesystem->exists(PATH_CONFIG)) {
-        if ($filesystem->exists('/install/index.php')) {
-            header("Location: " . $base_url . '/install', true, 301);
+        if ($filesystem->exists('install/index.php')) {
+            header("Location: " . $base_url . '/install', true, 307);
         } else {
             throw new Exception("The FOSSBilling configuration file is empty or invalid.", 3);
         }
@@ -57,7 +57,7 @@ function checkInstaller()
     $filesystem = new Filesystem();
 
     // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists('config.php') && $filesystem->exists('/install/index.php')) {
+    if ($filesystem->exists('config.php') && $filesystem->exists('install/index.php')) {
         throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
     }
 }
