@@ -34,7 +34,6 @@ class FOSSBillingAutoloader
                 break;
             default:
                 throw new \Exception("Unknown PSR autoloader type: {$type}");
-                break;
         }
     }
 
