@@ -10,7 +10,11 @@
     "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/master/README.md",
     "type": "project",
     "license": "Apache-2.0",
-    "keywords": ["billing", "invoice", "client management"],
+    "keywords": [
+        "billing",
+        "invoice",
+        "client management"
+    ],
     "homepage": "https://fossbilling.org",
     "require": {
         "php": ">=8.0",
@@ -22,7 +26,7 @@
         "gabordemooij/redbean": "^5.7",
         "geoip2/geoip2": "^2.10.0",
         "io-developer/php-whois": "^4.1",
-        "lcharette/webpack-encore-twig": "1.1.0",
+        "lcharette/webpack-encore-twig": "^1.1.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
         "nelexa/zip": "^4.0.2",
@@ -58,12 +62,10 @@
         "ext-gettext": "*",
         "ext-intl": "*"
     },
-    "autoload": {
-        "psr-0": {"": "src/library"},
-        "psr-4": {"Box\\Mod\\": "src/modules"}
-    },
     "autoload-dev": {
-        "psr-0": { "": "tests/library" }
+        "psr-0": {
+            "": "tests/library"
+        }
     },
     "config": {
         "sort-packages": true,

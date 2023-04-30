@@ -232,6 +232,13 @@ $config = require PATH_CONFIG;
 // Verify the installer was removed.
 checkInstaller();
 
+//Initial setup and checks passed, now we setup our custom autoloader.
+require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Autoload.php';
+$loader = new \FOSSBillingAutoloader();
+$loader->addPrefix('', PATH_LIBRARY, 'psr0');
+$loader->addPrefix('Box\\Mod\\', PATH_MODS, 'psr4');
+$loader->register();
+
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 define('BB_DEBUG', $config['debug']);
