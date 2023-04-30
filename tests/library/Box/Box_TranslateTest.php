@@ -16,7 +16,7 @@ class Box_TranslateTest extends PHPUnit\Framework\TestCase
 
     public function testDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $translateObj = new \Box_Translate();
         $translateObj->setDi($di);
         $getDi = $translateObj->getDi();

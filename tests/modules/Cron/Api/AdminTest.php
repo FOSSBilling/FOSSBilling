@@ -8,7 +8,7 @@ class AdminTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $api_admin = new \Box\Mod\Cron\Api\Admin();
         $api_admin->setDi($di);
         $getDi = $api_admin->getDi();

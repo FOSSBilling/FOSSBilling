@@ -15,18 +15,18 @@
 class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 {
 	/**
-	 * @var Box_Di
+	 * @var \Pimple\Container
 	 */
 	protected $di;
 	/**
-	 * @param Box_Di $di
+	 * @param \Pimple\Container $di
 	 */
 	public function setDi($di)
 	{
 		$this->di = $di;
 	}
 	/**
-	 * @return Box_Di
+	 * @return \Pimple\Container
 	 */
 	public function getDi()
 	{

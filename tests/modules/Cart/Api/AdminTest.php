@@ -42,7 +42,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -73,7 +73,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']        = $dbMock;
         $this->adminApi->setDi($di);
@@ -99,7 +99,7 @@ class AdminTest extends \BBTestCase
             ->method('exec')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->adminApi->setDi($di);

@@ -17,7 +17,7 @@ class ClientTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -41,7 +41,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -67,7 +67,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -98,7 +98,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -125,7 +125,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -152,7 +152,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -193,7 +193,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($clientOrder));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
@@ -226,7 +226,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($clientOrder));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
@@ -259,7 +259,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -294,7 +294,7 @@ class ClientTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('approveInvoice');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
 
@@ -329,7 +329,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
@@ -359,7 +359,7 @@ class ClientTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
@@ -387,7 +387,7 @@ class ClientTest extends \BBTestCase {
             ->willReturn($taxRate);
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($service, $sub) use($invoiceTaxService){
             if ($service == 'Invoice' && $sub == 'Tax'){
                 return  $invoiceTaxService;

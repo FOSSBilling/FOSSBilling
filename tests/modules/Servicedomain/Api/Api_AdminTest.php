@@ -209,7 +209,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('tldGetSearchQuery')
             ->will($this->returnValue(array('query', array())));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
 
         $this->adminApi->setDi($di);
@@ -446,7 +446,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array()));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -559,7 +559,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('registrarRm')
             ->will($this->returnValue(true));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -592,7 +592,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarRm')
             ->will($this->returnValue(true));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -625,7 +625,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('registrarCopy')
             ->will($this->returnValue(true));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -658,7 +658,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarCopy')
             ->will($this->returnValue(true));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -691,7 +691,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('registrarToApiArray')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -724,7 +724,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarToApiArray')
             ->will($this->returnValue(true));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -770,7 +770,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('registrarUpdate')
             ->will($this->returnValue(true));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -803,7 +803,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarUpdate')
             ->will($this->returnValue(true));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -840,7 +840,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDomain()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderService) {
             return $orderService;
@@ -878,7 +878,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDomain()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderService) {
             return $orderService;
@@ -916,7 +916,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderService) {
             return $orderService;

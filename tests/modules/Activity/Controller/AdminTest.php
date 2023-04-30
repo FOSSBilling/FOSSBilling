@@ -10,7 +10,7 @@ class AdminTest extends \BBTestCase {
     {
         $controller = new \Box\Mod\Activity\Controller\Admin();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $di['db'] = $db;
@@ -21,7 +21,7 @@ class AdminTest extends \BBTestCase {
 
     public function testfetchNavigation()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $link = 'activity';
 
         $urlMock = $this->getMockBuilder('Box_Url')->getMock();

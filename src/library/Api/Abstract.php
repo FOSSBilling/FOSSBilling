@@ -19,30 +19,30 @@ class Api_Abstract implements InjectionAwareInterface
     /**
      * @var string - request ip
      */
-    protected $ip           = null;
+    protected $ip = null;
 
     /**
      * @var \Box_Mod
      */
-    protected $mod          = null;
+    protected $mod  = null;
 
     /**
      * @var \Box\Mod\X\Service
      */
-    protected $service      = null;
+    protected $service  = null;
 
     /**
      * @var Model_Admin | Model_Client | Model_Guest
      */
-    protected $identity     = null;
+    protected $identity = null;
 
     /**
-     * @var \Box_Di
+     * @var \Pimple\Container
      */
-    protected $di           = null;
+    protected $di = null;
 
     /**
-     * @param \Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {
@@ -50,7 +50,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return \Box_Di
+     * @return \Pimple\Container
      */
     public function getDi()
     {

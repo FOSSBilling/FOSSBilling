@@ -19,7 +19,7 @@ class AdminTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -39,7 +39,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
 
 
@@ -79,7 +79,7 @@ class AdminTest extends \BBTestCase {
         ->method('toApiArray')
         ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -187,7 +187,7 @@ class AdminTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('createProduct')
             ->will($this->returnValue($newProductId));
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -218,7 +218,7 @@ class AdminTest extends \BBTestCase {
             ->method('updateProduct')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -276,7 +276,7 @@ class AdminTest extends \BBTestCase {
             ->method('updateConfig')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -314,7 +314,7 @@ class AdminTest extends \BBTestCase {
             ->method('createAddon')
             ->will($this->returnValue($newAddonId));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -348,7 +348,7 @@ class AdminTest extends \BBTestCase {
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -384,7 +384,7 @@ class AdminTest extends \BBTestCase {
             ->method('load')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -431,7 +431,7 @@ class AdminTest extends \BBTestCase {
             ->method('deleteProduct')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -477,7 +477,7 @@ class AdminTest extends \BBTestCase {
             ->method('updateCategory')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -511,7 +511,7 @@ class AdminTest extends \BBTestCase {
             ->method('toProductCategoryApiArray')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -536,7 +536,7 @@ class AdminTest extends \BBTestCase {
             ->method('createCategory')
             ->will($this->returnValue($newCategoryId));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -568,7 +568,7 @@ class AdminTest extends \BBTestCase {
             ->method('removeProductCategory')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -598,7 +598,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
 
 
@@ -659,7 +659,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -696,7 +696,7 @@ class AdminTest extends \BBTestCase {
             ->method('updatePromo')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -727,7 +727,7 @@ class AdminTest extends \BBTestCase {
             ->method('deletePromo')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')

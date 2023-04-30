@@ -29,7 +29,7 @@ class AdminTest extends \BBTestCase {
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
 
@@ -68,7 +68,7 @@ class AdminTest extends \BBTestCase {
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
 
@@ -84,7 +84,7 @@ class AdminTest extends \BBTestCase {
 
     public function testlogEmptyMParam()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
@@ -99,7 +99,7 @@ class AdminTest extends \BBTestCase {
             ->method('logEmail')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $adminApi = new \Box\Mod\Activity\Api\Admin();
         $adminApi->setService($service);
@@ -118,7 +118,7 @@ class AdminTest extends \BBTestCase {
 
     public function testlog_delete()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
         $databaseMock->expects($this->atLeastOnce())->
@@ -152,7 +152,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 

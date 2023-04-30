@@ -45,7 +45,7 @@ class AdminTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
 
@@ -91,7 +91,7 @@ class AdminTest extends \BBTestCase
 
     public function testChangePasswordExceptions()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = new \Box_Validate();
 
         $adminApi = new \Box\Mod\Profile\Api\Admin();
@@ -109,7 +109,7 @@ class AdminTest extends \BBTestCase
 
     public function testChangePassword()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = new \Box_Validate();
         $di['password'] = new \Box_Password();
 

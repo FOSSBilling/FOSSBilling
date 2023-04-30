@@ -18,7 +18,7 @@ class ServicePayGatewayTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -26,7 +26,7 @@ class ServicePayGatewayTest extends \BBTestCase {
 
     public function testgetSearchQuery()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
         $data = array();
@@ -39,7 +39,7 @@ class ServicePayGatewayTest extends \BBTestCase {
 
     public function testgetSearchQueryWithAdditionalParams()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
         $data = array('search' => 'keyword');
@@ -71,7 +71,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAll')
             ->will($this->returnValue($queryResult));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -88,7 +88,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAll')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -116,7 +116,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -181,7 +181,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             'callback'                   => $url.'ipn.php?',
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['config'] = array('url' => $url);
 
         $serviceMock->setDi($di);
@@ -205,7 +205,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('store')
             ->will($this->returnValue($expected));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -224,7 +224,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $di['logger'] = new \Box_Log();
@@ -253,7 +253,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -273,7 +273,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('find')
             ->will($this->returnValue(array($payGatewayModel)));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -320,7 +320,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['config'] = array('url' => 'http://fossbilling.vm/', 'debug' => true);
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
@@ -356,7 +356,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['config'] = array('url' => 'http://fossbilling.vm/', 'debug' => true);
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;

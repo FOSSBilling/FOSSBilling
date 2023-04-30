@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase {
         $themeService->expects($this->atLeastOnce())
             ->method('getCurrentClientAreaThemeCode');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($themeService) {return $themeService;});
 
         $service->setDi($di);

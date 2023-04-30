@@ -34,7 +34,7 @@ class Api_ClientTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $clientApiMock->setDi($di);
 
@@ -199,7 +199,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDomain()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($orderService) {
             return $orderService;
         });
@@ -231,7 +231,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDomain()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($orderService) {
             return $orderService;
         });
@@ -263,7 +263,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDomain()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($orderService) {
             return $orderService;
         });
@@ -297,7 +297,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($orderService) {
             return $orderService;
         });

@@ -18,7 +18,7 @@ class ServiceTransactionTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -44,7 +44,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls($transactionModel));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['db']     = $dbMock;
 
@@ -67,7 +67,7 @@ class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventsMock;
         $di['logger']         = new \Box_Log();
@@ -122,7 +122,7 @@ class ServiceTransactionTest extends \BBTestCase
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventsMock;
         $di['request']        = $requestMock;
@@ -146,7 +146,7 @@ class ServiceTransactionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
 
         $this->service->setDi($di);
@@ -167,7 +167,7 @@ class ServiceTransactionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
 
         $this->service->setDi($di);
@@ -189,7 +189,7 @@ class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['db']     = $dbMock;
         $this->service->setDi($di);
@@ -210,7 +210,7 @@ class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($payGatewayModel));
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -290,7 +290,7 @@ class ServiceTransactionTest extends \BBTestCase
      */
     public function testgetSearchQuery($data, $expectedParams, $expectedStringPart)
     {
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
@@ -309,7 +309,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('getAll')
             ->will($this->returnValue($queryResult));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -415,7 +415,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('fire');
 
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger']         = new \Box_Log();
         $serviceMock->setDi($di);
@@ -444,7 +444,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('fire');
 
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger']         = new \Box_Log();
         $serviceMock->setDi($di);
@@ -471,7 +471,7 @@ class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -520,7 +520,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('getPaymentAdapter')
             ->will($this->returnValue($paymentAdapterMock));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($payGatewayService) { return $payGatewayService; });
         $di['api_admin']   = new \Api_Handler(new \Model_Admin());
@@ -571,7 +571,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('getPaymentAdapter')
             ->will($this->returnValue($paymentAdapterMock));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($payGatewayService) { return $payGatewayService; });
         $di['api_system']  = new \Api_Handler(new \Model_Admin());
@@ -606,7 +606,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('getAll')
             ->will($this->returnValue(array(array())));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -642,7 +642,7 @@ class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 

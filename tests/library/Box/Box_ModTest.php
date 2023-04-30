@@ -11,7 +11,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $di = new Box_Di();
+        $di = new \Pimple\Container();
         $di['config'] = array('salt'=>'salt');
         $di['db'] = $db;
 
@@ -35,7 +35,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
     
     public function testManifest()
     {
-        $di = new Box_Di();
+        $di = new \Pimple\Container();
         $di['url'] = new Box_Url();
 
         $mod = new Box_Mod('Cookieconsent');

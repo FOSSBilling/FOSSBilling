@@ -8,7 +8,7 @@ class ServiceBalanceTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $service = new \Box\Mod\Client\ServiceBalance();
         $service->setDi($di);
         $getDi = $service->getDi();
@@ -17,7 +17,7 @@ class ServiceBalanceTest extends \BBTestCase
 
     public function testdeductFunds()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $clientBalance = new \Model_ClientBalance();
         $clientBalance->loadBean(new \DummyBean());

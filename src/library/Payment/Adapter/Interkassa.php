@@ -15,12 +15,12 @@
 class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box\InjectionAwareInterface
 {
     /**
-     * @var Box_Di
+     * @var \Pimple\Container
      */
     protected $di;
 
     /**
-     * @param Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {
@@ -28,7 +28,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
     }
 
     /**
-     * @return Box_Di
+     * @return \Pimple\Container
      */
     public function getDi()
     {

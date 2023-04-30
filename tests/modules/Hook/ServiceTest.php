@@ -19,7 +19,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -73,7 +73,7 @@ class ServiceTest extends \BBTestCase {
         $hookService->expects($this->atLeastOnce())
             ->method('batchConnect');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($name) use($hookService){ return $hookService;});
 
@@ -123,7 +123,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $eventMock->expects($this->atLeastOnce())
@@ -190,7 +190,7 @@ class ServiceTest extends \BBTestCase {
             ->method('isCoreModule')
             ->will($this->returnValue(false));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(function () use($boxModMock) {
             return $boxModMock;

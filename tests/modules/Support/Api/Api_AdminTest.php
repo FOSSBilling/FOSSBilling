@@ -40,7 +40,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db']    = $dbMock;
 
@@ -71,7 +71,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -103,7 +103,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketUpdate')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -135,7 +135,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketMessageUpdate')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -168,7 +168,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('rm')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -200,7 +200,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -236,7 +236,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -272,7 +272,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('closeTicket')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -310,7 +310,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForAdmin')
             ->will($this->returnValue($randID));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -349,7 +349,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($ticket));
 
         $this->adminApi->setService($serviceMock);
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->adminApi->setDi($di);
@@ -380,7 +380,7 @@ class Api_AdminTest extends \BBTestCase
 
 
         $this->adminApi->setService($serviceMock);
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -419,7 +419,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $this->adminApi->setService($serviceMock);
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->adminApi->setDi($di);
         $result = $this->adminApi->batch_public_ticket_auto_close(array());
@@ -498,7 +498,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db']    = $dbMock;
 
@@ -525,7 +525,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketCreate')
             ->will($this->returnValue($randID));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -562,7 +562,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -594,7 +594,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicRm')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -626,7 +626,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicCloseTicket')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -659,7 +659,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketUpdate')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -692,7 +692,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReply')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -766,7 +766,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetSearchQuery')
             ->will($this->returnValue(array('query', array())));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
 
         $this->adminApi->setDi($di);
@@ -811,7 +811,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskToApiArray')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -844,7 +844,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskUpdate')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -872,7 +872,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskCreate')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -904,7 +904,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskRm')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -946,7 +946,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db']    = $dbMock;
 
@@ -967,7 +967,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getAssoc')
             ->will($this->returnValue(array(1 => 'Title')));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -994,7 +994,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1027,7 +1027,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedRm')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1055,7 +1055,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedCreate')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $this->adminApi->setDi($di);
@@ -1090,7 +1090,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_SupportPr()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1114,7 +1114,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getAssoc')
             ->will($this->returnValue(array(1 => 'Category 1')));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1145,7 +1145,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryToApiArray')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1181,7 +1181,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryUpdate')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
 
@@ -1218,7 +1218,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryRm')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1246,7 +1246,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryCreate')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -1277,7 +1277,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_SupportTicket()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1311,7 +1311,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_SupportTicketNote()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1344,7 +1344,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_SupportTicket()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']     = $dbMock;
         $this->adminApi->setDi($di);
@@ -1369,7 +1369,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
@@ -1387,7 +1387,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 

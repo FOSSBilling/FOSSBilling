@@ -166,7 +166,7 @@ class Api_GuestTest extends \BBTestCase
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
         $guestApi->setService($service);
@@ -226,7 +226,7 @@ class Api_GuestTest extends \BBTestCase
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
         $guestApi->setService($service);

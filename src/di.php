@@ -30,7 +30,7 @@ use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
 
-$di = new Box_Di();
+$di = new \Pimple\Container();
 
 /*
  * Returns the current FOSSBilling config from config.php
@@ -140,7 +140,7 @@ $di['db'] = function () use ($di) {
     \RedBeanPHP\R::setup($di['pdo']);
     \RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
-    $helper = new Box_BeanHelper();
+    $helper = new \Box_BeanHelper();
     $helper->setDi($di);
 
     $mapper = new Facade();

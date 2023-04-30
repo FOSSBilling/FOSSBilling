@@ -28,7 +28,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi ->setDi($di);
 
@@ -59,7 +59,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi ->setDi($di);
 
@@ -94,7 +94,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi ->setDi($di);
 
@@ -123,7 +123,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi ->setDi($di);
 
@@ -152,7 +152,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi ->setDi($di);
 

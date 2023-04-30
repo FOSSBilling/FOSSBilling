@@ -9,7 +9,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Activity\Service();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $di['db'] = $db;
@@ -36,7 +36,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testgetSearchQuery($filterKey, $search, $expected)
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $service = new \Box\Mod\Activity\Service();
         $service->setDi($di);
         $result  = $service->getSearchQuery($filterKey);
@@ -60,7 +60,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('dispense')
@@ -92,7 +92,7 @@ class ServiceTest extends \BBTestCase
             ->with('Client', $clientHistoryModel->client_id, $expectionError)
             ->willReturn($clientModel);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Activity\Service();
@@ -129,7 +129,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->with($activitySystemModel);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Activity\Service();
