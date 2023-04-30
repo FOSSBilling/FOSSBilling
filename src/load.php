@@ -199,7 +199,7 @@ function exceptionHandler($e)
 
 /*
  *
- * initialize App.
+ * Initialize App.
  *
  */
 
