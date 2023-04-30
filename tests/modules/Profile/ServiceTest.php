@@ -383,7 +383,7 @@ class ServiceTest extends \BBTestCase
 
     public function testLogoutClient()
     {
-        $sessionMock = $this->getMockBuilder("Box_Session")
+        $sessionMock = $this->getMockBuilder("\Box_Session")
             ->disableOriginalConstructor()
             ->getMock();
 
