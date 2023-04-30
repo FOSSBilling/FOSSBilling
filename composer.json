@@ -59,16 +59,17 @@
         "ext-intl": "*"
     },
     "autoload": {
-        "psr-0": {"": "library"},
-        "psr-4": {"Box\\Mod\\": "modules"}
+        "psr-0": {"": "src/library"},
+        "psr-4": {"Box\\Mod\\": "src/modules"}
     },
     "autoload-dev": {
-        "psr-0": { "": "../tests/library" }
+        "psr-0": { "": "tests/library" }
     },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
             "phpstan/extension-installer": true
-        }
+        },
+        "vendor-dir": "src/vendor"
     }
 }
