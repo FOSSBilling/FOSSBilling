@@ -22,7 +22,7 @@ body:
     id: reproduce
     attributes:
       label: How to reproduce
-      description: What steps did you take when the bug occured? Help us reproduce it!
+      description: What steps did you take when the bug occurred? Help us reproduce it!
       placeholder: |
         Steps to reproduce the behavior:
         1. Go to '...'

@@ -21,7 +21,7 @@ class Box_Exception extends Exception
 	 * @param   string   error message
 	 * @param   array|null    translation variables
 	 * @param   int 	 The exception code.
-	 * @param 	bool 	 If the varibles in this should be considered protect, if so, hide them from the stack trace. 
+	 * @param 	bool 	 If the variables in this should be considered protect, if so, hide them from the stack trace. 
 	 */
 	public function __construct(string $message, array|null $variables = null, int $code = 0, bool $protected = false)
 	{
