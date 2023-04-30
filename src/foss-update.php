@@ -49,7 +49,7 @@ class FOSSPatch_32 extends FOSSPatchAbstract
             __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'main-deprecated.scss' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Mail.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Ftp.php' => 'unlink',
-            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'FileCacheExcption.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'FileCacheException.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Zip.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Requirements.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Version.php' => 'unlink',
@@ -260,7 +260,7 @@ abstract class FOSSPatchAbstract
 
     private function emptyFolder($folder)
     {
-        /* Original source for this lovely codesnippet: https://stackoverflow.com/a/24563703
+        /* Original source for this lovely code snippet: https://stackoverflow.com/a/24563703
          * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
          */
         if (file_exists($folder)) {

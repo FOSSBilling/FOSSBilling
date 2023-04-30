@@ -38,7 +38,7 @@ Although there is no concrete expectation of participation, contributions are wh
 
 There are no specific skill requirements and no formal selection process. A contributor's elevation to the role of maintainer will be done after nomination by a team member, and then discussion by, and at the discretion of, the steering committee.
 
-Acceptance to the maintainer role is initally provisional, and well be made permanent after a period of one month. 
+Acceptance to the maintainer role is initially provisional, and well be made permanent after a period of one month. 
 
 Maintainer status can be removed if somebody demonstrates disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. This would be decided by a majority consensus of the steering committee.
 

@@ -183,7 +183,7 @@ abstract class Payment_AdapterAbstract
     /**
      * Convert money amount to Gateway money format
      *
-     * @param float The ammount
+     * @param float The amount
      *
      * @param string The currency (unused currently)
      *

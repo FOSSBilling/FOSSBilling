@@ -1,8 +1,6 @@
 {
     "version": "0.2",
-    // language - current active spelling language
     "language": "en",
-    // words - list of words to be always considered correct
     "words": [
         "FOSS",
         "huraga",
@@ -28,7 +26,10 @@
         "fordnox",
         "Dockerized",
         "proccess",
-        "unsuspended"
+        "unsuspended",
+        "admdly",
+        "Pictogrammers",
+        "Symfony"
     ],
 
     "ignoreWords": [
@@ -295,7 +296,41 @@
         "Domaincan",
         "datagrid",
         "buildmetadata",
-        "endfilter"
+        "endfilter",
+        "darkmode",
+        "Virtualmin",
+        "strikethrough",
+        "Nextra",
+        "Lcharette",
+        "TFPDF",
+        "Entrypoints",
+        "internationalisation",
+        "PHPSESSID",
+        "centralalerts",
+        "phpmailer",
+        "guzzlehttp",
+        "Keine",
+        "webserver",
+        "localisation",
+        "subarrays",
+        "configmod",
+        "stacktracing",
+        "Unsuspends",
+        "unsuspending",
+        "litespeed",
+        "nonbinary",
+        "phonestate",
+        "linecap",
+        "linejoin",
+        "afterend",
+        "resturl",
+        "passwordreset",
+        "coloris",
+        "selectgroup",
+        "openbasedir",
+        "Coudn\\'t",
+        "updatepassword",
+        "datatable"
     ],
     "ignorePaths": [
         "tests/**",
@@ -306,10 +341,8 @@
         "src/modules/*/assets/**",
         "src/composer.json",
         "src/composer.lock",
-        "src/modules/Servicesolusvm/**",
         "build.xml",
         "data/**",
-        "Makefile",
         "phpunit.xml.dist",
         "bin/**",
         "src/library/GeoLite2-Country.mmdb",
@@ -321,14 +354,18 @@
         "src/library/Payment/Adapter/**",
         "src/locale/**",
         "src/modules/System/Service.php",
-        "src/modules/Servicecentovacast/**",
         "src/library/Server/Package.php",
         "src/modules/Currency/Service.php",
-        "src/themes/admin_default/gulpfile.babel.js",
         "src/modules/Seo/Service.php",
         "src/modules/Orderbutton/html_client/mod_orderbutton_js.html.twig",
         "src/modules/Massmailer/Api/Admin.php",
         "src/modules/System/html_admin/mod_system_settings.html.twig",
-        "gulpfile.babel.js"
+        "src/vendor",
+        "src/themes/*/build",
+        "src/themes/*/node_modules",
+        "cypress",
+        "phpstan.neon",
+        "*.config.js",
+        "src/modules/Wysiwyg/src/ckeditor.js"
     ]
 }

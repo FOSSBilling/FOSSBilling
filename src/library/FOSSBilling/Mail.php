@@ -91,7 +91,7 @@ class FOSSBilling_Mail
      */
     public function addTo(string|array $toAddresses): void
     {
-        $this->email->addto($toAddresses);
+        $this->email->addTo($toAddresses);
     }
 
     /**
@@ -125,7 +125,7 @@ class FOSSBilling_Mail
      *
      * @return void
      */
-    public function addReplyto(string|array $replyToAddresses): void
+    public function addReplyTo(string|array $replyToAddresses): void
     {
         $this->email->addReplyTo($replyToAddresses);
     }

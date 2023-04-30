@@ -1257,7 +1257,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
-            // prevent openbase error from preventing pdf creation when debug mode is enabled
+            // prevent openbasedir error from preventing pdf creation when debug mode is enabled
             if (@!file_exists($url)) {
                 $url = $_SERVER['DOCUMENT_ROOT'] . $url;
                 if (!file_exists($url)) {

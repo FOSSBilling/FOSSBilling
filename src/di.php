@@ -200,7 +200,7 @@ $di['mod'] = $di->protect(function ($name) use ($di) {
  *
  * @param string $mod the name of the module to get
  *
- * @return mixed the service of the asociated module
+ * @return mixed the service of the associated module
  */
 $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
     return $di['mod']($mod)->getService($sub);
@@ -210,7 +210,7 @@ $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
  *
  * @param string $name the name of the module to get the configuration of
  *
- * @return mixed the configuration of the asociated module
+ * @return mixed the configuration of the associated module
  */
 $di['mod_config'] = $di->protect(function ($name) use ($di) {
     return $di['mod']($name)->getConfig();
@@ -630,7 +630,7 @@ $di['requirements'] = function () use ($di) {
 /*
  * Creates a new Box_Period object using the provided period code and returns it.
  *
- * @param string $code The two characture period code to create the period object with.
+ * @param string $code The two character period code to create the period object with.
  *
  * @return \Box_Period The new period object that was just created.
  */
