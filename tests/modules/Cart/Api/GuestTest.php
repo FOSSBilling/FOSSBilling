@@ -66,7 +66,7 @@ class GuestTest extends \BBTestCase
         $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
             ->will($this->returnValue(new \Model_Currency()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['validator']   = $validatorMock;
         $di['mod_service'] = $di->protect(function () use ($currencyServiceMock) {
             return $currencyServiceMock;
@@ -103,7 +103,7 @@ class GuestTest extends \BBTestCase
         $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['validator']   = $validatorMock;
         $di['mod_service'] = $di->protect(function () use ($currencyServiceMock) {
             return $currencyServiceMock;
@@ -146,7 +146,7 @@ class GuestTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue(new \Model_Currency()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($currencyServiceMock) {
             return $currencyServiceMock;
@@ -187,7 +187,7 @@ class GuestTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($currencyServiceMock) {
             return $currencyServiceMock;
@@ -228,7 +228,7 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -266,7 +266,7 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -305,7 +305,7 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -343,7 +343,7 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -398,7 +398,7 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -436,7 +436,7 @@ class GuestTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_Product()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']        = $dbMock;
 
@@ -484,7 +484,7 @@ class GuestTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_Product()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']        = $dbMock;
         $apiMock->setDi($di);

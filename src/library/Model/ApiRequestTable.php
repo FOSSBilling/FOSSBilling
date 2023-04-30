@@ -16,12 +16,12 @@
 class Model_ApiRequestTable implements \Box\InjectionAwareInterface
 {
     /**
-     * @var \Box_Di
+     * @var \Pimple\Container
      */
     protected $di;
 
     /**
-     * @param Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {
@@ -29,7 +29,7 @@ class Model_ApiRequestTable implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @return Box_Di
+     * @return \Pimple\Container
      */
     public function getDi()
     {

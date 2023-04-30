@@ -18,7 +18,7 @@ class GuestTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -37,7 +37,7 @@ class GuestTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
 
 
@@ -85,7 +85,7 @@ class GuestTest extends \BBTestCase {
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -109,7 +109,7 @@ class GuestTest extends \BBTestCase {
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -129,7 +129,7 @@ class GuestTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->will($this->returnValue($model ));
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -167,7 +167,7 @@ class GuestTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($modelProductCategory));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['pager'] = $pagerMock;
 
@@ -197,7 +197,7 @@ class GuestTest extends \BBTestCase {
             ->method('find')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
 
@@ -217,7 +217,7 @@ class GuestTest extends \BBTestCase {
             ->method('find')
             ->will($this->returnValue(array($productModel)));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -248,7 +248,7 @@ class GuestTest extends \BBTestCase {
             ->method('find')
             ->will($this->returnValue(array($productModel)));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);

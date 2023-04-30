@@ -17,7 +17,7 @@ class ServiceTest extends \BBTestCase
 
     public function testDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -44,7 +44,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                    = new \Box_Di();
+        $di                    = new \Pimple\Container();
         $di['mod_service']     = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -87,7 +87,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -130,7 +130,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -173,7 +173,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -215,7 +215,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -256,7 +256,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -298,7 +298,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -341,7 +341,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ('email' == $serviceName) {
                 return $emailServiceMock;
@@ -370,7 +370,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_SupportTicket()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -387,7 +387,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($supportTicketModel));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -410,7 +410,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($supportTicketModel));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -429,7 +429,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -486,7 +486,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testGetSearchQuery($data)
     {
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $this->service->setDi($di);
         list($query, $bindings) = $this->service->getSearchQuery($data);
@@ -506,7 +506,7 @@ class ServiceTest extends \BBTestCase
             ->method('getAssoc')
             ->will($this->returnValue($arr));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -526,7 +526,7 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array($ticket, $ticket)));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -544,7 +544,7 @@ class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->will($this->returnValue(array(array('id' => 1))));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -560,7 +560,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -575,7 +575,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -595,7 +595,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($supportTicketModel));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -613,7 +613,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -646,7 +646,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['events_manager'] = $eventMock;
@@ -666,7 +666,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -687,7 +687,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($helpdesk));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -711,7 +711,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($helpdesk));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -738,7 +738,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -766,7 +766,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -814,7 +814,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getClientApiArrayForTicket')
             ->will($this->returnValue(array()));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
@@ -862,7 +862,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getClientApiArrayForTicket')
             ->will($this->returnValue(array()));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
@@ -893,7 +893,7 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
@@ -921,7 +921,7 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->never())->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
@@ -948,7 +948,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($admin));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -965,7 +965,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -989,7 +989,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('noteGetAuthorDetails')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1005,7 +1005,7 @@ class ServiceTest extends \BBTestCase
 
     public function testHelpdeskGetSearchQuery()
     {
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $this->service->setDi($di);
 
@@ -1034,7 +1034,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array(0 => 'General')));
 
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1058,7 +1058,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -1081,7 +1081,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -1101,7 +1101,7 @@ class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1119,7 +1119,7 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array(new \Model_SupportTicketMessage())));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1138,7 +1138,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1161,7 +1161,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($admin));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1186,7 +1186,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($client));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1212,7 +1212,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('messageGetAuthorDetails')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -1232,7 +1232,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -1259,7 +1259,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -1315,7 +1315,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
@@ -1349,7 +1349,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
@@ -1400,7 +1400,7 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['validator']      = $validatorMock;
@@ -1468,7 +1468,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
             ->will($this->returnValue(array('content' => 'Content')));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
@@ -1537,7 +1537,7 @@ class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $serviceMock->setDi($di);
 
@@ -1581,7 +1581,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di            = new \Box_Di();
+        $di            = new \Pimple\Container();
         $di['db']      = $dbMock;
         $di['logger']  = $this->getMockBuilder('Box_Log')->getMock();
         $di['request'] = $this->getMockBuilder('Box_Request')->getMock();
@@ -1608,7 +1608,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di            = new \Box_Di();
+        $di            = new \Pimple\Container();
         $di['db']      = $dbMock;
         $di['logger']  = $this->getMockBuilder('Box_Log')->getMock();
         $di['request'] = $this->getMockBuilder('Box_Request')->getMock();
@@ -1636,7 +1636,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_SupportPTicket()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1655,7 +1655,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1703,7 +1703,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testPublicGetSearchQuery($data)
     {
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $this->service->setDi($di);
 
@@ -1724,7 +1724,7 @@ class ServiceTest extends \BBTestCase
             ->method('getAssoc')
             ->will($this->returnValue($arr));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1742,7 +1742,7 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array($ticket, $ticket)));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1758,7 +1758,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1774,7 +1774,7 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array($ticket, $ticket)));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1805,7 +1805,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['events_manager'] = $eventMock;
@@ -1825,7 +1825,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -1847,7 +1847,7 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array(new \Model_SupportPTicketMessage())));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -1898,7 +1898,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
             ->will($this->returnValue(array('name' => 'Name', 'email' => 'email#example.com')));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
@@ -1926,7 +1926,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($admin));
 
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1952,7 +1952,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($ticket));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1978,7 +1978,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -2012,7 +2012,7 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
@@ -2044,7 +2044,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -2082,7 +2082,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
@@ -2117,7 +2117,7 @@ class ServiceTest extends \BBTestCase
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
@@ -2143,7 +2143,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -2177,7 +2177,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -2201,7 +2201,7 @@ class ServiceTest extends \BBTestCase
 
     public function testCannedGetSearchQuery()
     {
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $this->service->setDi($di);
 
@@ -2229,7 +2229,7 @@ class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->will($this->returnValue($pairs));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -2254,7 +2254,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2281,7 +2281,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($category));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -2307,7 +2307,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue(null));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -2329,7 +2329,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array(0 => 'General')));
 
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -2349,7 +2349,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2368,7 +2368,7 @@ class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->will($this->returnValue(array()));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2398,7 +2398,7 @@ class ServiceTest extends \BBTestCase
         $settingsServiceMock->expects($this->atLeastOnce())->method('checkLimits')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($settingsServiceMock) {
             return $settingsServiceMock;
         });
@@ -2429,7 +2429,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -2462,7 +2462,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2488,7 +2488,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2514,7 +2514,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2546,7 +2546,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2591,7 +2591,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($ticket));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
         $client = new \Model_Client();

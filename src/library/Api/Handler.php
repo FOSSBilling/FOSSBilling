@@ -25,7 +25,7 @@ final class Api_Handler implements InjectionAwareInterface
     private   $_enable_cache    = FALSE;
     private   $_cache           = array();
     private   $_acl_exception    = FALSE;
-    
+
     public function __construct($identity)
     {
         $this->identity = $identity;
@@ -57,11 +57,11 @@ final class Api_Handler implements InjectionAwareInterface
         $mod = strtolower($e[0]);
         unset($e[0]);
         $method_name = implode('_', $e);
-        
+
         if(empty($mod)) {
             throw new \Box_Exception('Invalid module name', null, 714);
         }
-        
+
         //cache
         $cache_key = md5($this->type.$mod.$method_name.serialize($arguments));
         if($this->_enable_cache && isset($this->_cache[$cache_key])) {

@@ -18,7 +18,7 @@ class Box_Mod
     private $mod = null;
 
     /**
-     * @var Box_Di
+     * @var \Pimple\Container
      */
     private $di = null;
 
@@ -172,12 +172,12 @@ class Box_Mod
     public function getSettingsRoutes()
     {
         $result = array();
-        
+
         if ($this->hasSettingsRoutes()) {
             foreach ($this->getService()->getSettingsRoutes() as $route) {
                 // Check if it is a valid external link
                 $filtered = filter_var(idn_to_ascii($route["path"]), FILTER_VALIDATE_URL);
-                
+
                 // If it's an external link, return it directly. Otherwise, return the internal link with the /admin prefix.
                 $route['path'] = $filtered ? $filtered : $this->di['url']->adminLink($route["path"], []);
                 $result[] = $route;

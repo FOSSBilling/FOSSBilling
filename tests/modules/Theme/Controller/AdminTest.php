@@ -10,7 +10,7 @@ class AdminTest extends \BBTestCase {
     {
         $controller = new \Box\Mod\Theme\Controller\Admin();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $di['db'] = $db;
@@ -70,7 +70,7 @@ class AdminTest extends \BBTestCase {
             ->method('getService')
             ->willReturn($themeServiceMock);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod'] = $di->protect(function ($name) use($modMock){
             if ($name == 'theme')
             {
@@ -123,7 +123,7 @@ class AdminTest extends \BBTestCase {
 	    $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
 	    $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod'] = $di->protect(function ($name) use($modMock){
             if ($name == 'theme')
             {
@@ -180,7 +180,7 @@ class AdminTest extends \BBTestCase {
 	    $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
 	    $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod'] = $di->protect(function ($name) use($modMock){
             if ($name == 'theme')
             {

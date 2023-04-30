@@ -10,7 +10,7 @@ class AdminTest extends \BBTestCase {
     {
         $controller = new \Box\Mod\Index\Controller\Admin();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $di['db'] = $db;
@@ -41,7 +41,7 @@ class AdminTest extends \BBTestCase {
             ->method("isAdminLoggedIn")
             ->willReturn(true);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
 
         $controller = new \Box\Mod\Index\Controller\Admin();
@@ -61,7 +61,7 @@ class AdminTest extends \BBTestCase {
             ->method("isAdminLoggedIn")
             ->willReturn(false);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
 
         $controller = new \Box\Mod\Index\Controller\Admin();

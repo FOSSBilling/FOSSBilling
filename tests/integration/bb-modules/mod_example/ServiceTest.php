@@ -21,7 +21,7 @@ class ServiceTest extends BBDbApiTestCase
     public function testGetSearchQuery()
     {
         $service = new Box\Mod\Example\Service();
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $service->setDi($di);
 
         $data = array(

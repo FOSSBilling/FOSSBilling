@@ -25,7 +25,7 @@ class AdminTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -56,7 +56,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExtensionList')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
 
         $this->api->setDi($di);
@@ -74,7 +74,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExtensionList')
             ->willThrowException(new \Exception());
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
 
         $this->api->setDi($di);
@@ -177,7 +177,7 @@ class AdminTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
@@ -216,7 +216,7 @@ class AdminTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -257,7 +257,7 @@ class AdminTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -301,7 +301,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;

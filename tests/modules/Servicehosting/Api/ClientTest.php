@@ -17,7 +17,7 @@ class ClientTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -123,7 +123,7 @@ class ClientTest extends \BBTestCase {
             ->method('getOrderService')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
         $di['db'] = $dbMock;
 
@@ -158,7 +158,7 @@ class ClientTest extends \BBTestCase {
             ->method('getOrderService')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
         $di['db'] = $dbMock;
 
@@ -186,7 +186,7 @@ class ClientTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($clientOrderModel));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);

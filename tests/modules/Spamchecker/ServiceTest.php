@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -32,7 +32,7 @@ class ServiceTest extends \BBTestCase {
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($spamCheckerService){
             return $spamCheckerService;
         });
@@ -53,7 +53,7 @@ class ServiceTest extends \BBTestCase {
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($spamCheckerService){
             return $spamCheckerService;
         });
@@ -80,7 +80,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getClientAddress')
             ->willReturn($clientIp);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function($modName) use ($modConfig ){
             if ($modName == 'Spamchecker'){
                 return $modConfig;
@@ -113,7 +113,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getClientAddress')
             ->willReturn($clientIp);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function($modName) use ($modConfig ){
             if ($modName == 'Spamchecker'){
                 return $modConfig;
@@ -137,7 +137,7 @@ class ServiceTest extends \BBTestCase {
         );
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function($modName) use ($modConfig ){
             if ($modName == 'Spamchecker'){
                 return $modConfig;

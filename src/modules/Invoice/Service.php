@@ -22,12 +22,12 @@ use Dompdf\Dompdf;
 class Service implements InjectionAwareInterface
 {
     /**
-     * @var \Box_Di
+     * @var \Pimple\Container
      */
     protected $di = null;
 
     /**
-     * @param \Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {
@@ -35,7 +35,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return \Box_Di
+     * @return \Pimple\Container
      */
     public function getDi()
     {

@@ -19,7 +19,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getSimpleResultSet')
             ->will($this->returnValue($willReturn));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $pager;
 
         $clientApi->setDi($di);
@@ -170,7 +170,7 @@ class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());

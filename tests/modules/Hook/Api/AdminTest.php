@@ -19,7 +19,7 @@ class AdminTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -38,7 +38,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
 
 
@@ -61,7 +61,7 @@ class AdminTest extends \BBTestCase {
             ->method('fire')
             ->will($this->returnValue(1));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['config'] = $configMock;
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
@@ -89,7 +89,7 @@ class AdminTest extends \BBTestCase {
             ->method('batchConnect')
             ->will($this->returnValue(1));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
 

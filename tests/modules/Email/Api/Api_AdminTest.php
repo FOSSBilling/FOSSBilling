@@ -21,7 +21,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getSimpleResultSet')
             ->will($this->returnValue($willReturn));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['pager']     = $pager;
 
         $adminApi->setDi($di);
@@ -91,7 +91,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
@@ -125,7 +125,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('sendMail')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $validatorMock   = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
@@ -160,7 +160,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $db;
         $di['validator'] = $validatorMock;
 
@@ -195,7 +195,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
@@ -224,7 +224,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
@@ -263,7 +263,7 @@ class Api_AdminTest extends \BBTestCase
 
         $loggerMock = $this->getMockBuilder('Box_Log')->getMock();
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $db;
         $di['logger']    = $loggerMock;
         $di['validator'] = $validatorMock;
@@ -295,7 +295,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getSimpleResultSet')
             ->will($this->returnValue($willReturn));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['pager']     = $pager;
 
         $adminApi->setDi($di);
@@ -331,7 +331,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
@@ -369,7 +369,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $db;
         $di['validator'] = $validatorMock;
         $di['logger']    = $loggerMock;
@@ -396,7 +396,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
@@ -432,7 +432,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
@@ -481,7 +481,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -514,7 +514,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
@@ -593,7 +593,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('isExtensionActive')
             ->will($this->returnValue($isExtensionActiveReturn));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($extension) {
             return $extension;
         });
@@ -645,7 +645,7 @@ class Api_AdminTest extends \BBTestCase
         $loader = new \Twig\Loader\ArrayLoader();
         $twig = $this->getMockBuilder('Twig\Environment')->setConstructorArgs([$loader,['debug' => false]])->getMock();
 
-        $di         = new \Box_Di();
+        $di         = new \Pimple\Container();
         $di['twig'] = $twig;
 
         $systemService = $this->getMockBuilder('Box\Mod\System\Service')->setMethods(['renderString'])->getMock();
@@ -673,7 +673,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 

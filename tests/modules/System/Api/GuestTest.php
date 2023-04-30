@@ -17,7 +17,7 @@ class GuestTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -121,7 +121,7 @@ class GuestTest extends \BBTestCase {
         $servuceMock->expects($this->atLeastOnce())
             ->method('getPeriod')
             ->will($this->returnValue('periodTtitleValue'));
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
         $this->api->setService($servuceMock);
@@ -134,7 +134,7 @@ class GuestTest extends \BBTestCase {
     {
         $data = array();
         $expected = '-';
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
         $result = $this->api->period_title($data);
@@ -173,7 +173,7 @@ class GuestTest extends \BBTestCase {
     public function testlocale()
     {
         $setLang = 'en_US';
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['config'] = [ 'i18n' => ['locale' => 'en_US' ] ];
 

@@ -7,7 +7,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
         $getDi = $admin_Client->getDi();
@@ -40,7 +40,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['pager']     = $pagerMock;
         $di['db']        = $dbMock;
 
@@ -61,7 +61,7 @@ class AdminTest extends \BBTestCase
         method('getPairs')->will($this->returnValue(array()));
 
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -113,7 +113,7 @@ class AdminTest extends \BBTestCase
         $sessionMock->expects($this->atLeastOnce())->
         method('set');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
         $di['session']     = $sessionMock;
@@ -158,7 +158,7 @@ class AdminTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['events_manager'] = $eventMock;
         $di['tools'] = $toolsMock;
@@ -188,7 +188,7 @@ class AdminTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
 
@@ -223,7 +223,7 @@ class AdminTest extends \BBTestCase
             ->method('remove')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger']         = new \Box_Log();
@@ -309,7 +309,7 @@ class AdminTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });;
         $di['events_manager'] = $eventMock;
@@ -388,7 +388,7 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });;
         $di['events_manager'] = $eventMock;
@@ -412,7 +412,7 @@ class AdminTest extends \BBTestCase
         $data         = array();
         $admin_Client = new \Box\Mod\Client\Api\Admin();
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $di['validator'] = new \Box_Validate();
         $admin_Client->setDi($di);
@@ -449,7 +449,7 @@ class AdminTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger']         = new \Box_Log();
@@ -517,7 +517,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
         $di['pager']       = $pagerMock;
 
@@ -544,7 +544,7 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -579,7 +579,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('addFunds');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
 
@@ -610,7 +610,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('getExpiredPasswordReminders')->will($this->returnValue($expiredArr));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
         $di['logger']      = new \Box_Log();
@@ -638,7 +638,7 @@ class AdminTest extends \BBTestCase
             ->method('getSimpleResultSet')
             ->will($this->returnValue($pagerResultSet));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['pager']     = $pagerMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -655,7 +655,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('counter')->will($this->returnValue(array()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -671,7 +671,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('getGroupPairs')->will($this->returnValue(array()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -695,7 +695,7 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -724,7 +724,7 @@ class AdminTest extends \BBTestCase
             ->method('store')->will($this->returnValue(1));
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -759,7 +759,7 @@ class AdminTest extends \BBTestCase
             ->method('deleteGroup')
             ->will($this->returnValue(true));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -791,7 +791,7 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -821,7 +821,7 @@ class AdminTest extends \BBTestCase
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']        = $dbMock;
         $admin_Client->setDi($di);
@@ -841,7 +841,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
@@ -859,7 +859,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 

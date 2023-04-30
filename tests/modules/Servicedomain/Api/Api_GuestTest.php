@@ -27,7 +27,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array(new \Model_Tld())));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
 
 
@@ -104,7 +104,7 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -126,7 +126,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -157,7 +157,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -188,7 +188,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 

@@ -21,7 +21,7 @@ class Box_EventManagerTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(array()));
 
 
-        $di = new Box_Di();
+        $di = new \Pimple\Container();
         $di['logger'] = new Box_Log();
         $di['db'] = $db_mock;
 

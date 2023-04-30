@@ -21,7 +21,7 @@ class Simple
     protected $di;
 
     /**
-     * @param \Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {
@@ -29,7 +29,7 @@ class Simple
     }
 
     /**
-     * @return \Box_Di
+     * @return \Pimple\Container
      */
     public function getDi()
     {

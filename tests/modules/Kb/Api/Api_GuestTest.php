@@ -27,7 +27,7 @@ class Api_GuestTest extends \BBTestCase
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPer_page')
             ->willReturn(100);
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
 
         $guestApi->setDi($di);
@@ -41,7 +41,7 @@ class Api_GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
 
@@ -71,7 +71,7 @@ class Api_GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
 
@@ -145,7 +145,7 @@ class Api_GuestTest extends \BBTestCase
             'id' => rand(1, 100)
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -172,7 +172,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $guestApi->setService($kbService);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
 
@@ -202,7 +202,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('getAdvancedResultSet')
             ->will($this->returnValue($willReturn));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $pager;
 
         $guestApi->setDi($di);
@@ -258,7 +258,7 @@ class Api_GuestTest extends \BBTestCase
             'id' => rand(1, 100)
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
         $result = $guestApi->category_get($data);
@@ -281,7 +281,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $guestApi->setService($kbService);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
 
@@ -333,7 +333,7 @@ class Api_GuestTest extends \BBTestCase
             'id' => rand(1, 100)
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
 
@@ -362,7 +362,7 @@ class Api_GuestTest extends \BBTestCase
             'slug' => 'article-slug'
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
 

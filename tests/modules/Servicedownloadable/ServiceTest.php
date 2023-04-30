@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -39,7 +39,7 @@ class ServiceTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->attachOrderConfig($productModel, $data);
@@ -69,7 +69,7 @@ class ServiceTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -91,7 +91,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
 
@@ -108,7 +108,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -137,7 +137,7 @@ class ServiceTest extends \BBTestCase
             ->method('getSavePath')
             ->will($this->returnValue($filePath));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
 
         $this->service->setDi($di);
@@ -155,7 +155,7 @@ class ServiceTest extends \BBTestCase
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));
-        $di            = new \Box_Di();
+        $di            = new \Pimple\Container();
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
@@ -195,7 +195,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
         $di['db']          = $dbMock;
         $di['logger']      = new \Box_Log();
@@ -239,7 +239,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
         $di['db']          = $dbMock;
         $di['logger']      = new \Box_Log();
@@ -264,7 +264,7 @@ class ServiceTest extends \BBTestCase
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));
-        $di            = new \Box_Di();
+        $di            = new \Pimple\Container();
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
@@ -287,7 +287,7 @@ class ServiceTest extends \BBTestCase
             ->method('getSavePath')
             ->will($this->returnValue($filePath));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['tools']       = $toolsMock;
         $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
 

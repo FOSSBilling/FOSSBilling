@@ -18,7 +18,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -39,7 +39,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -68,7 +68,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -99,7 +99,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
         $di['validator']   = $validatorMock;
@@ -136,7 +136,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
         $di['validator']   = $validatorMock;

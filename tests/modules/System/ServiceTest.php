@@ -62,7 +62,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getAll')
             ->will($this->returnValue($multParamsResults));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['config'] = $config;
 
@@ -100,7 +100,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getAll')
             ->will($this->returnValue($multParamsResults));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -127,7 +127,7 @@ class ServiceTest extends \BBTestCase {
             ->method('setParamValue')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = $logMock;
 
@@ -155,7 +155,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getLatestVersion')
             ->will($this->returnValue($latestVersion));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['updater'] = $updaterMock;
         $di['mod_service'] = $di->protect(function () use($systemServiceMock) {return $systemServiceMock;});
         $di['tools'] = $toolsMock;
@@ -175,7 +175,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getThemeConfig')
             ->will($this->returnValue($getThemeResults));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($systemServiceMock) {return $systemServiceMock;});
         $this->service->setDi($di);
 
@@ -208,7 +208,7 @@ class ServiceTest extends \BBTestCase {
             ->method('load')
             ->will($this->returnValue(new \Model_Client()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['twig'] = $twigMock;
         $di['api_client'] = new \Model_Client();
@@ -242,7 +242,7 @@ class ServiceTest extends \BBTestCase {
             ->method('load')
             ->will($this->returnValue(new \Model_Client()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['twig'] = $twigMock;
         $di['api_client'] = new \Model_Client();
@@ -259,7 +259,7 @@ class ServiceTest extends \BBTestCase {
             ->method('emptyFolder')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -287,7 +287,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getConfig')
             ->will($this->returnValue(array('countries' => 'US')));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod'] = $di->protect(function () use($modMock) {return $modMock;});
 
         $this->service->setDi($di);
@@ -302,7 +302,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getConfig')
             ->will($this->returnValue(array('countries' => 'US')));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod'] = $di->protect(function () use($modMock) {return $modMock;});
 
         $this->service->setDi($di);
@@ -332,7 +332,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetPendingMessages()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -349,7 +349,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetPendingMessages_GetReturnsNotArray()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -373,7 +373,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getPendingMessages')
             ->willReturn(array());
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -391,7 +391,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testclearPendingMessages()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())

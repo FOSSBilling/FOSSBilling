@@ -5,7 +5,7 @@ class Api_AdminTest extends \BBTestCase
 {
     public function testArticle_get_list()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $adminApi = new \Box\Mod\Kb\Api\Admin();
         $adminApi->setDi($di);
@@ -46,7 +46,7 @@ class Api_AdminTest extends \BBTestCase
 
         $admin->id = 5;
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['loggedin_admin'] = $admin;
         $di['db']             = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -79,7 +79,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -102,7 +102,7 @@ class Api_AdminTest extends \BBTestCase
 
         $id = rand(1, 100);
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('createArticle'))->getMock();
@@ -140,7 +140,7 @@ class Api_AdminTest extends \BBTestCase
         $kbService->expects($this->atLeastOnce())
             ->method('updateArticle')
             ->will($this->returnValue(true));
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -170,7 +170,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_KbArticle()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -200,7 +200,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -238,7 +238,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getAdvancedResultSet')
             ->will($this->returnValue($willReturn));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $pager;
 
         $adminApi->setDi($di);
@@ -263,7 +263,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_KbArticleCategory()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -294,7 +294,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_KbArticleCategory()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -323,7 +323,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -362,7 +362,7 @@ class Api_AdminTest extends \BBTestCase
             'description' => 'Description',
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -391,7 +391,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_KbArticleCategory()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
 
 
@@ -431,7 +431,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_KbArticleCategory()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -464,7 +464,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -502,7 +502,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_KbArticleCategory()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -534,7 +534,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_KbArticleCategory()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -565,7 +565,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())

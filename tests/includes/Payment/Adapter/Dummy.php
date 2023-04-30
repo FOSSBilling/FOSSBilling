@@ -4,7 +4,7 @@ class Payment_Adapter_Dummy
     protected $di;
 
     /**
-     * @param Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {

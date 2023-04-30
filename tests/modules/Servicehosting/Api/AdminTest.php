@@ -19,7 +19,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -50,7 +50,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingHp));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $apiMock->setDi($di);
@@ -251,7 +251,7 @@ class AdminTest extends \BBTestCase
             ->method('find')
             ->will($this->returnValue(array()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['pager']     = $pagerMock;
         $di['db']        = $dbMock;
 
@@ -283,7 +283,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
@@ -313,7 +313,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -343,7 +343,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -374,7 +374,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -404,7 +404,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -441,7 +441,7 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(array('list' => array())));
 
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['pager']     = $pagerMock;
 
 
@@ -474,7 +474,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -509,7 +509,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -543,7 +543,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -574,7 +574,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
@@ -608,7 +608,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
         $di['db']          = $dbMock;
         $di['validator']   = $validatorMock;
@@ -645,7 +645,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
         $di['db']          = $dbMock;
         $di['validator']   = $validatorMock;

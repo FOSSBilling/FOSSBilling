@@ -61,7 +61,7 @@ class Box_Log implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @return Box_Di|null
+     * @return \Pimple\Container|null
      */
     public function getDi()
     {

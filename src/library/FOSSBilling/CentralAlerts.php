@@ -20,14 +20,14 @@ use Symfony\Contracts\Cache\ItemInterface;
 class FOSSBilling_CentralAlerts implements InjectionAwareInterface
 {
     /**
-     * @var \Box_Di
+     * @var \Pimple\Container
      */
     protected $di = null;
 
     private string $_url = 'https://fossbilling.org/api/central-alerts/';
 
     /**
-     * @param \Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di): void
     {
@@ -35,9 +35,9 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
     }
 
     /**
-     * @return \Box_Di|null
+     * @return \Pimple\Container|null
      */
-    public function getDi(): ?Box_Di
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

@@ -17,7 +17,7 @@
 class Box_Translate implements \Box\InjectionAwareInterface
 {
     /**
-     * @var \Box_Di
+     * @var \Pimple\Container
      */
     protected $di = NULL;
 
@@ -44,7 +44,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {
@@ -52,7 +52,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @return Box_Di
+     * @return \Pimple\Container
      */
     public function getDi()
     {

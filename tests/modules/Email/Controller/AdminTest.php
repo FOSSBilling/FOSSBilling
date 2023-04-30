@@ -10,7 +10,7 @@ class AdminTest extends \BBTestCase {
     {
         $controller = new \Box\Mod\Email\Controller\Admin();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $di['db'] = $db;
