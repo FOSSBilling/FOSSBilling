@@ -328,7 +328,7 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals($newFormId, $result);
     }
 
-    public function testcopy_formMisssingId()
+    public function testcopy_formMissingId()
     {
         $data = array();
 
@@ -338,7 +338,7 @@ class AdminTest extends \BBTestCase {
         $this->api->copy_form($data);
     }
 
-    public function testcopy_formMisssingName()
+    public function testcopy_formMissingName()
     {
         $data = array('form_id' => 1);
 

@@ -42,7 +42,7 @@ if (!is_null($http_err_code)) {
         default:
             $http_err_code = intval($http_err_code);
             http_response_code($http_err_code);
-            $e = new Box_Exception('HTTP Error :err_code occured while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
+            $e = new Box_Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
             echo $app->render('error', ['exception' => $e]);
     }
     exit;
