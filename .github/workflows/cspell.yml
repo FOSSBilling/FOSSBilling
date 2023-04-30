@@ -10,3 +10,4 @@ jobs:
       - uses: streetsidesoftware/cspell-action@v2
         with:
           incremental_files_only: true #TODO: Change this once I have fixed all of the issues :)
+          config: 'cspell.json'
