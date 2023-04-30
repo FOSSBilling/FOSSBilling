@@ -49,7 +49,7 @@ class FOSSPatch_32 extends FOSSPatchAbstract
             __DIR__ . DIR_SEP . 'themes' . DIR_SEP . 'admin_default' . DIR_SEP . 'assets' . DIR_SEP . 'scss' . DIR_SEP . 'main-deprecated.scss' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Mail.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Ftp.php' => 'unlink',
-            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'FileCacheException.php' => 'unlink',
+            __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'FileCacheExcption.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Zip.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Requirements.php' => 'unlink',
             __DIR__ . DIR_SEP . 'library' . DIR_SEP . 'Box' . DIR_SEP . 'Version.php' => 'unlink',

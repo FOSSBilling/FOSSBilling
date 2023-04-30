@@ -330,7 +330,8 @@
         "openbasedir",
         "Coudn\\'t",
         "updatepassword",
-        "datatable"
+        "datatable",
+        "FileCacheExcption"
     ],
     "ignorePaths": [
         "tests/**",
