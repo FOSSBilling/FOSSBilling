@@ -367,6 +367,7 @@
         "cypress",
         "phpstan.neon",
         "*.config.js",
-        "src/modules/Wysiwyg/src/ckeditor.js"
+        "src/modules/Wysiwyg/src/ckeditor.js",
+        ".github/**"
     ]
 }
