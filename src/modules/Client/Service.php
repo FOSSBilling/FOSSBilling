@@ -38,28 +38,6 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSettingsRoutes()
-    {
-        return array(
-            'active' => array(
-                'path' => '/client?status=active',
-                'label' => __trans('Active clients'),
-            ),
-            'suspended' => array(
-                'path' => '/client?status=suspended',
-                'label' => __trans('Suspended clients'),
-            ),
-            'canceled' => array(
-                'path' => '/client?status=canceled',
-                'label' => __trans('Canceled clients'),
-            ),
-            'all' => array(
-                'path' => '/client',
-                'label' => __trans('All clients'),
-            ),
-        );
-    }
-
     public function approveClientEmailByHash($hash)
     {
         $db = $this->di['db'];
