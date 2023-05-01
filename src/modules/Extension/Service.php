@@ -135,8 +135,6 @@ class Service implements InjectionAwareInterface
                 $manifest = $m->getManifest();
                 $manifest['status'] = 'core';
                 $manifest['has_settings'] = $m->hasSettingsPage();
-                $manifest['has_settings_routes'] = $m->hasSettingsRoutes();
-                $manifest['settings_routes'] = $m->hasSettingsRoutes() ? $m->getSettingsRoutes() : array();
                 $result[] = $manifest;
             }
         }
@@ -153,8 +151,6 @@ class Service implements InjectionAwareInterface
             $manifest['status'] = $im['status'];
             if ('mod' == $im['type'] && 'installed' == $im['status']) {
                 $manifest['has_settings'] = $m->hasSettingsPage();
-                $manifest['has_settings_routes'] = $m->hasSettingsRoutes();
-                $manifest['settings_routes'] = $m->hasSettingsRoutes() ? $m->getSettingsRoutes() : array();
             }
 
             $result[] = $manifest;

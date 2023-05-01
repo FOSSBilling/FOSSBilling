@@ -38,28 +38,6 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSettingsRoutes()
-    {
-        return array(
-            'pending_setup' => array(
-                'path' => '/order?status=pending_setup',
-                'label' => __trans('Orders pending setup'),
-            ),
-            'active' => array(
-                'path' => '/order?status=active',
-                'label' => __trans('Active orders'),
-            ),
-            'suspended' => array(
-                'path' => '/order?status=suspended',
-                'label' => __trans('Suspended orders'),
-            ),
-            'all' => array(
-                'path' => '/order',
-                'label' => __trans('All orders'),
-            ),
-        );
-    }
-
     public function counter()
     {
         $sql = '
