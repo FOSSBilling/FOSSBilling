@@ -21,7 +21,7 @@ use Symfony\Component\Mime\Address;
 
 class FOSSBilling_Mail
 {
-    protected $di = null;
+    protected ?\Pimple\Container $di = null;
 
     private Email $email;
     private $transport = null;
@@ -30,7 +30,7 @@ class FOSSBilling_Mail
     /**
      * @param \Pimple\Container|null $di
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
@@ -38,7 +38,7 @@ class FOSSBilling_Mail
     /**
      * @return \Pimple\Container|null
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

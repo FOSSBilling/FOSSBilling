@@ -15,7 +15,7 @@
 
 class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
 {
-    protected $di = null;
+    protected ?\Pimple\Container $di = null;
     protected $value = null;
     protected $processed = false;
     protected $subject = null;
@@ -45,7 +45,7 @@ class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
     /**
      * @param \Pimple\Container|null $di
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
@@ -53,7 +53,7 @@ class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
     /**
      * @return \Pimple\Container|null
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

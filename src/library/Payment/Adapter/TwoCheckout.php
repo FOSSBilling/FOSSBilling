@@ -16,14 +16,14 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
 {
     private $config = array();
 
-    protected $di;
+    protected ?\Pimple\Container $di = null;
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

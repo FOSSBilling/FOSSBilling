@@ -18,10 +18,7 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 {
-    /**
-     * @var \Pimple\Container
-     */
-    protected $di = null;
+    protected ?\Pimple\Container $di;
 
     const TYPE_MOD = 'mod';
     const TYPE_THEME = 'theme';
@@ -36,7 +33,7 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
     /**
      * @param \Pimple\Container $di
      */
-    public function setDi($di): void
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }

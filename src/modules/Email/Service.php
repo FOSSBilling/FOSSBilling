@@ -18,14 +18,14 @@ namespace Box\Mod\Email;
 
 class Service implements \Box\InjectionAwareInterface
 {
-    protected $di;
+    protected ?\Pimple\Container $di = null;
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

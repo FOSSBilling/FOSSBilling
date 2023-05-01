@@ -50,12 +50,13 @@ class Box_Log implements \Box\InjectionAwareInterface
 
     protected $_extras = array();
 
-    protected $di;
+    protected ?\Pimple\Container $di = null;
 
     /**
-     * @param mixed $di
+     * @param \Pimple\Container $di
+     * @return void
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
@@ -63,7 +64,7 @@ class Box_Log implements \Box\InjectionAwareInterface
     /**
      * @return \Pimple\Container|null
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

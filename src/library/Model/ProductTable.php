@@ -29,20 +29,21 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
     const SETUP_AFTER_PAYMENT   = 'after_payment';
     const SETUP_MANUAL          = 'manual';
 
-    protected $di;
+    protected ?\Pimple\Container $di = null;
 
     /**
-     * @param mixed $di
+     * @param \Pimple\Container $di
+     * @return void
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
     /**
-     * @return mixed
+     * @return \Pimple\Container|null
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

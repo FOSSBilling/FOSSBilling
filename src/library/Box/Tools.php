@@ -15,12 +15,12 @@
 
 class Box_Tools
 {
-    protected $di = null;
+    protected ?\Pimple\Container $di = null;
 
     /**
      * @param \Pimple\Container|null $di
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
@@ -28,7 +28,7 @@ class Box_Tools
     /**
      * @return \Pimple\Container|null
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

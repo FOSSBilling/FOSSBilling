@@ -22,7 +22,7 @@ class Box_App
     protected $after_filters = [];
     protected $shared = [];
     protected $options;
-    protected $di = null;
+    protected ?\Pimple\Container $di = null;
     protected $ext = 'html.twig';
     protected $mod = 'index';
     protected $url = '/';
@@ -34,7 +34,7 @@ class Box_App
         $this->options = new ArrayObject($options);
     }
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }

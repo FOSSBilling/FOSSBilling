@@ -1,12 +1,12 @@
 <?php
 class Payment_Adapter_Dummy
 {
-    protected $di;
+    protected ?\Pimple\Container $di = null;
 
     /**
      * @param \Pimple\Container $di
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }

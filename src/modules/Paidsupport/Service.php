@@ -27,23 +27,20 @@ use Box\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    /**
-     * @var \Pimple\Container
-     */
-    protected $di;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
     /**
-     * @return mixed
+     * @return \Pimple\Container|null
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }
