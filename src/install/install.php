@@ -76,6 +76,7 @@ const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
 const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
+const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 
 /*
   Config paths & templates
@@ -95,6 +96,11 @@ set_include_path(implode(PATH_SEPARATOR, [
 ]));
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
+require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Autoload.php';
+$loader = new \FOSSBillingAutoloader();
+$loader->addPrefix('', PATH_LIBRARY, 'psr0');
+$loader->addPrefix('Box\\Mod\\', PATH_MODS, 'psr4');
+$loader->register();
 
 final class Box_Installer
 {
@@ -517,8 +523,6 @@ final class Box_Installer
 
     private function generateEmailTemplates(): bool
     {
-        define('PATH_MODS', PATH_ROOT . '/modules');
-
         $emailService = new Service();
         $di = include PATH_ROOT . '/di.php';
         $di['translate']();
