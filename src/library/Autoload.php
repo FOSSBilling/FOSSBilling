@@ -1,11 +1,39 @@
 <?php
+
 class FOSSBillingAutoloader
 {
+    private static string $classMapPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php';
+
     private array $psr0 = [];
     private array $psr4 = [];
 
+    private array $classMap = [];
+
     private string $typePsr0 = 'psr0';
     private string $typePsr4 = 'psr4';
+
+    public function checkClassMap()
+    {
+        if (!file_exists(self::$classMapPath)) {
+            $generator = new Composer\ClassMapGenerator\ClassMapGenerator;
+
+            foreach ($this->psr0 as $path) {
+                $generator->scanPaths($path);
+            }
+
+            foreach ($this->psr4 as $path) {
+                $generator->scanPaths($path);
+            }
+
+            $classMap = $generator->getClassMap();
+            $classMap->sort();
+
+            $this->classMap = $classMap->getMap();
+            $this->saveMap();
+            return;
+        }
+        $this->classMap = include self::$classMapPath;
+    }
 
     public function register()
     {
@@ -38,6 +66,58 @@ class FOSSBillingAutoloader
     }
 
     /**
+     * @param string $class Classname to load. If found, file will be included and execution will be completed.
+     * @return void 
+     */
+    public function autoload(string $class): void
+    {
+        //Check if the class exists in the classMap array and then use that to require it, rather than searching for it.
+        $file = $this->classMap[$class] ?? '';
+        if (file_exists($file)) {
+            error_log("Loaded $class from classmap.");
+            require $file;
+            return;
+        }
+
+        /* PSR-0 Loader.
+         * @see https://www.php-fig.org/psr/psr-0/
+         */
+        foreach ($this->psr0 as $prefix => $path) {
+            if (empty($prefix) || strpos($class, $prefix) === 0) {
+                $class = str_replace('_', DIRECTORY_SEPARATOR, $class);
+                $file = $this->getFile($class, $path, $prefix);
+
+                if (file_exists($file)) {
+                    //The class was found, but not defined in our classmap, so let's update it and save it.
+                    $this->classMap[$class] = $file;
+                    $this->saveMap();
+
+                    require $file;
+                    return;
+                }
+            }
+        }
+
+        /* PSR-4 Loader.
+         * @see https://www.php-fig.org/psr/psr-4/
+         */
+        foreach ($this->psr4 as $prefix => $path) {
+            if (empty($prefix) || strpos($class, $prefix) === 0) {
+                $file = $this->getFile($class, $path, $prefix);
+
+                if (file_exists($file)) {
+                    //The class was found, but not defined in our classmap, so let's update it and save it.
+                    $this->classMap[$class] = $file;
+                    $this->saveMap();
+
+                    require $file;
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
      * @param string $class Classname, after having and specialized handling performed
      * @param string $path The path associated with the prefix
      * @param mixed $prefix The prefix matching the classname.
@@ -57,37 +137,10 @@ class FOSSBillingAutoloader
         return $path . $classname;
     }
 
-    /**
-     * @param string $class Classname to load. If found, file will be included and execution will be completed.
-     * @return void 
-     */
-    public function autoload(string $class): void
+    private function saveMap()
     {
-        /* PSR-0 Loader.
-         * @see https://www.php-fig.org/psr/psr-0/
-         */
-        foreach ($this->psr0 as $prefix => $path) {
-            if (empty($prefix) || strpos($class, $prefix) === 0) {
-                $class = str_replace('_', DIRECTORY_SEPARATOR, $class);
-                $file = $this->getFile($class, $path, $prefix);
-                if (file_exists($file)) {
-                    require $file;
-                    return;
-                }
-            }
-        }
-
-        /* PSR-4 Loader.
-         * @see https://www.php-fig.org/psr/psr-4/
-         */
-        foreach ($this->psr4 as $prefix => $path) {
-            if (empty($prefix) || strpos($class, $prefix) === 0) {
-                $file = $this->getFile($class, $path, $prefix);
-                if (file_exists($file)) {
-                    require $file;
-                    return;
-                }
-            }
-        }
+        $output = '<?php ' . PHP_EOL;
+        $output .= 'return ' . var_export($this->classMap, true) . ';';
+        @file_put_contents(self::$classMapPath, $output);
     }
 }

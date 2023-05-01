@@ -21,6 +21,7 @@
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
+        "composer/class-map-generator": "^1.0",
         "dompdf/dompdf": "^2.0.1",
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
