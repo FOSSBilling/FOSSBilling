@@ -50,9 +50,6 @@ class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container|null
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;

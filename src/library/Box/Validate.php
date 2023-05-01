@@ -25,9 +25,6 @@ class Box_Validate
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container|null
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;

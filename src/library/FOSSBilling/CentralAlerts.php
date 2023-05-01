@@ -31,9 +31,6 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container|null
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;

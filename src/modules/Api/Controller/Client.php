@@ -28,18 +28,11 @@ class Client implements InjectionAwareInterface
     private $_api_config = null;
     protected ?\Pimple\Container $di;
 
-    /**
-     * @param \Pimple\Container $di
-     * @return void
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container|null
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
