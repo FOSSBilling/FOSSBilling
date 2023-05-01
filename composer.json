@@ -59,8 +59,8 @@
         "ext-intl": "*"
     },
     "autoload": {
-        "psr-0": {"": "src/library"},
-        "psr-4": {"Box\\Mod\\": "src/modules"}
+        "psr-0": {"": ["src/library", "library"]},
+        "psr-4": {"Box\\Mod\\": ["src/modules", "modules"]}
     },
     "autoload-dev": {
         "psr-0": { "": "tests/library" }

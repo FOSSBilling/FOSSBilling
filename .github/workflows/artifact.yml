@@ -68,10 +68,16 @@ jobs:
       - name: Copy mandatory files to the temporary build folder
         run: |
           cp -r ./src/. ./build/source/
-          cp -r ./src/vendor/. ./build/source/vendor/
           cp README.md ./build/source/
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
+          cp composer.json ./build/source/
+
+      - name: Update Composer autoloader
+        run: |
+          composer dump-autoload --optimize
+          rm composer.json
+        working-directory: ./build/source/
 
       - name: Add short commit hash as the release number
         run: |
