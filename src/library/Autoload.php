@@ -12,7 +12,12 @@ class FOSSBillingAutoloader
     private string $typePsr0 = 'psr0';
     private string $typePsr4 = 'psr4';
 
-    public function checkClassMap()
+    /** 
+     * Checks for the existance of the classMap file. Will generate a new one if it doesn't exist.
+     * After generating one / if it exists, the map is loaded to the classMap array to be used to speed up loading later.
+     * @return void  
+     */
+    public function checkClassMap(): void
     {
         if (!file_exists(self::$classMapPath)) {
             $generator = new Composer\ClassMapGenerator\ClassMapGenerator;
@@ -33,9 +38,14 @@ class FOSSBillingAutoloader
             return;
         }
         $this->classMap = include self::$classMapPath;
+        return;
     }
 
-    public function register()
+    /** 
+     * Registers the autoloader.
+     * @return void
+     * */
+    public function register(): void
     {
         spl_autoload_register(array($this, 'autoload'));
     }
@@ -74,7 +84,6 @@ class FOSSBillingAutoloader
         //Check if the class exists in the classMap array and then use that to require it, rather than searching for it.
         $file = $this->classMap[$class] ?? '';
         if (file_exists($file)) {
-            error_log("Loaded $class from classmap.");
             require $file;
             return;
         }
@@ -137,7 +146,11 @@ class FOSSBillingAutoloader
         return $path . $classname;
     }
 
-    private function saveMap()
+    /**
+     * Saves the current classMap array to the cache folder for later access.
+     * @return void 
+     */
+    private function saveMap(): void
     {
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($this->classMap, true) . ';';
