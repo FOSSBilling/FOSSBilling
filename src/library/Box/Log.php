@@ -50,8 +50,6 @@ class Box_Log implements \Box\InjectionAwareInterface
     protected $_writers = array();
     protected $_extras = array();
 
-    protected ?\Pimple\Container $di;
-
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
