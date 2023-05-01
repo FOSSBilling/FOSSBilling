@@ -13,14 +13,14 @@ class FOSSBillingAutoloader
     }
 
     /**
-     * @param string $prefix Class prefix. Use an empty prefix to allow this prefix to work with any path. Paths must already have directory seperators normalized for the current system.
-     * @param string $path Base path associaded with the class prefix
+     * @param string $prefix Class prefix. Use an empty prefix to allow this prefix to work with any path. Paths must already have directory separators normalized for the current system.
+     * @param string $path Base path associated with the class prefix
      * @param string $type The type of PSR autoloader the prefix is associated with. EX: psr4
      * @return void 
      */
     public function addPrefix(string $prefix, string $path, string $type): void
     {
-        //The loader assumes the path does NOT end in a directory seperator, so let's remove it now.
+        //The loader assumes the path does NOT end in a directory separator, so let's remove it now.
         if (str_ends_with($path, DIRECTORY_SEPARATOR)) {
             $path = substr($path, 0, -1);
         }
@@ -48,7 +48,7 @@ class FOSSBillingAutoloader
         //Remove the "prefix" so we get just the classname
         $classname = substr($class, strlen($prefix));
 
-        //Now convert it to a path and ensure it has a directory seperator at the start, since our paths won't.
+        //Now convert it to a path and ensure it has a directory separator at the start, since our paths won't.
         $classname = str_replace('\\', DIRECTORY_SEPARATOR, $classname) . '.php';
         if (!str_starts_with($classname, DIRECTORY_SEPARATOR)) {
             $classname = DIRECTORY_SEPARATOR . $classname;
