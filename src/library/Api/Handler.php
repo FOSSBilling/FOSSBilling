@@ -20,7 +20,7 @@ final class Api_Handler implements InjectionAwareInterface
     protected $type     = NULL;
     protected $identity = NULL;
     protected $ip       = NULL;
-    protected $di      = NULL;
+    protected ?\Pimple\Container $di;
 
     private   $_enable_cache    = FALSE;
     private   $_cache           = array();
@@ -33,12 +33,12 @@ final class Api_Handler implements InjectionAwareInterface
         $this->type = $role;
     }
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

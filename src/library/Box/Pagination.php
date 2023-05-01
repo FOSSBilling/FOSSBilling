@@ -17,15 +17,15 @@ use Box\InjectionAwareInterface;
 
 class Box_Pagination implements InjectionAwareInterface
 {
-    protected $di = null;
+    protected ?\Pimple\Container $di;
     protected $per_page = 100;
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

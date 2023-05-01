@@ -20,9 +20,9 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class Service
 {
-    protected $di;
+    protected ?\Pimple\Container $di;
 
-    public function setDi(mixed $di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }

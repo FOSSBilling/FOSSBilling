@@ -51,6 +51,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
@@ -76,6 +78,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
@@ -214,6 +218,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -241,6 +247,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
@@ -267,6 +275,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);

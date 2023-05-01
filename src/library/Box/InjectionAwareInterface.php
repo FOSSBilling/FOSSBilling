@@ -14,16 +14,18 @@
 
 namespace Box;
 
+use Pimple\Container;
+
 interface InjectionAwareInterface
 {
     /**
      * @param \Pimple\Container $di
      * @return void
      */
-    public function setDi($di);
+    public function setDi(\Pimple\Container $di): void;
 
     /**
-     * @return \Pimple\Container
+     * @return \Pimple\Container|null
      */
-    public function getDi();
+    public function getDi(): ?\Pimple\Container;
 }

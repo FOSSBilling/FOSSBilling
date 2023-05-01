@@ -18,20 +18,14 @@ namespace Box\Mod\Servicehosting\Controller;
 
 class Admin implements \Box\InjectionAwareInterface
 {
-    protected $di;
+    protected ?\Pimple\Container $di;
 
-    /**
-     * @param mixed $di
-     */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

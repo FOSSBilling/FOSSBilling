@@ -46,21 +46,17 @@ class Box_Log implements \Box\InjectionAwareInterface
 
     protected ?\Pimple\Container $di;
     protected $_min_priority = NULL;
-    protected array $_writers = array();
-    protected array $_extras = array();
-    protected string $_channel = 'application';
+    
+    protected $_writers = array();
+    protected $_extras = array();
 
-    /**
-     * @param $di
-     */
-    public function setDi($di): void
+    protected ?\Pimple\Container $di;
+
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container|null
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;

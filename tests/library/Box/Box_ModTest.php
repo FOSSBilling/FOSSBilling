@@ -52,6 +52,9 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
     {
         $mod = new Box_Mod('Invoice');
         $subServiceName = 'transaction';
+        
+        $di = new \Pimple\Container();
+        $mod->setDi($di);
 
         $subService = $mod->getService($subServiceName);
         $this->assertInstanceOf(\Box\Mod\Invoice\ServiceTransaction::class, $subService);

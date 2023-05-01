@@ -15,7 +15,7 @@
 class Payment_Adapter_Custom
 {
     private $config = array();
-    protected $di;
+    protected ?\Pimple\Container $di;
 
     public function __construct($config)
     {
@@ -25,7 +25,7 @@ class Payment_Adapter_Custom
     /**
      * @param \Pimple\Container $di
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }

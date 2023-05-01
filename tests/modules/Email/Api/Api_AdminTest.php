@@ -449,6 +449,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
         $this->expectException(\Box_Exception::class);
@@ -617,6 +619,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+        
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
