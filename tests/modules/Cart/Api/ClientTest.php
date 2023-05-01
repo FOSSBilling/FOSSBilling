@@ -44,7 +44,7 @@ class ClientTest extends \BBTestCase {
         $data   = array(
             'id' => rand(1, 100)
         );
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->clientApi->setDi($di);
         $result = $this->clientApi->checkout($data);

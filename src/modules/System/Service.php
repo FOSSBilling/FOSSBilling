@@ -295,6 +295,16 @@ class Service
         return $msgs[$type] ?? [];
     }
 
+    /**
+     * Get the Central Alerts System messages sent to this installation.
+     * 
+     * @return array - array of messages
+     */
+    public function getCasMessages(): array
+    {
+        return $this->di['central_alerts']->filterAlerts();
+    }
+
     public function templateExists($file, $identity = null)
     {
         if ($identity instanceof \Model_Admin) {

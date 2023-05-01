@@ -21,7 +21,7 @@ class ClientTest extends \BBTestCase
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($clientService) {
             return $clientService;
         });
@@ -113,7 +113,7 @@ class ClientTest extends \BBTestCase
             ->method('changeClientPassword')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')

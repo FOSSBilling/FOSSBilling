@@ -6,7 +6,7 @@ class Box_SessionTest extends PHPUnit\Framework\TestCase
 {
     public function testSession()
     {
-        $mock = $this->getMockBuilder("Box_Session")
+        $mock = $this->getMockBuilder("\Box_Session")
             ->disableOriginalConstructor()
             ->getMock();
 

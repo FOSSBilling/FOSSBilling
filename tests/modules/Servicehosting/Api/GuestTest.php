@@ -15,7 +15,7 @@ class GuestTest extends \BBTestCase
 
     public function testfree_tlds()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -49,7 +49,7 @@ class GuestTest extends \BBTestCase
 
     public function testfree_tlds_ProductTypeIsNotHosting()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')

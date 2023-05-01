@@ -18,12 +18,12 @@ use Symfony\Contracts\Cache\ItemInterface;
 class Box_Update
 {
     /**
-     * @var \Box_Di
+     * @var \Pimple\Container
      */
     protected $di = null;
 
     /**
-     * @param \Box_Di $di
+     * @param \Pimple\Container $di
      */
     public function setDi($di)
     {
@@ -31,7 +31,7 @@ class Box_Update
     }
 
     /**
-     * @return \Box_Di
+     * @return \Pimple\Container
      */
     public function getDi()
     {
@@ -69,8 +69,8 @@ class Box_Update
      */
     private function _getLatestVersionInfo(): array
     {
-        return $this->di['cache']->get('core_version_info', function (ItemInterface $item) {
-            $item->expiresAfter(86400); // 24 hours
+        return $this->di['cache']->get('Update._getLatestVersionInfo', function (ItemInterface $item) {
+            $item->expiresAfter(24 * 60 * 60);
 
             return $this->getJson();
         });
@@ -275,7 +275,7 @@ class Box_Update
         $newConfig['api']['CSRFPrevention'] ??= true;
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone'];
+        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
         $depreciatedConfigSubkeys = [];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {

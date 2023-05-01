@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -17,7 +18,7 @@ class Box_Tools
     protected $di = null;
 
     /**
-     * @param Box_Di|null $di
+     * @param \Pimple\Container|null $di
      */
     public function setDi($di)
     {
@@ -25,7 +26,7 @@ class Box_Tools
     }
 
     /**
-     * @return Box_Di|null
+     * @return \Pimple\Container|null
      */
     public function getDi()
     {
@@ -63,11 +64,7 @@ class Box_Tools
     public function url($link = null)
     {
         $link = trim($link, '/');
-        if (BB_SEF_URLS) {
-            return BB_URL . $link;
-        }
-
-        return BB_URL . 'index.php?_url=/' . $link;
+        return BB_URL . $link;
     }
 
     public function hasService($type)
@@ -104,7 +101,7 @@ class Box_Tools
 
     public function emptyFolder($folder)
     {
-        /* Original source for this lovely codesnippet: https://stackoverflow.com/a/24563703
+        /* Original source for this lovely code snippet: https://stackoverflow.com/a/24563703
          * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
          */
         if (file_exists($folder)) {

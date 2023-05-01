@@ -11,7 +11,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Branding\Service();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $di['db'] = $db;

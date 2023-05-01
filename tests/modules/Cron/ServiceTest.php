@@ -8,7 +8,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $service = new \Box\Mod\Cron\Service();
         $service->setDi($di);
         $getDi = $service->getDi();
@@ -20,7 +20,7 @@ class ServiceTest extends \BBTestCase {
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use($systemServiceMock) {return $systemServiceMock;});
         $service = new \Box\Mod\Cron\Service();
         $service->setDi($di);
@@ -62,7 +62,7 @@ class ServiceTest extends \BBTestCase {
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventsMock;
         $di['api_system'] = $apiSystem;
@@ -80,7 +80,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getParamValue')
             ->will($this->returnValue('2012-12-12 12:12:12'));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use($systemServiceMock) {return $systemServiceMock;});
         $service = new \Box\Mod\Cron\Service();
         $service->setDi($di);

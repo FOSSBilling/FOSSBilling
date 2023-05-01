@@ -17,7 +17,7 @@ class ClientTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -67,7 +67,7 @@ class ClientTest extends \BBTestCase {
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) {return $orderServiceMock;});
@@ -101,7 +101,7 @@ class ClientTest extends \BBTestCase {
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) {return $orderServiceMock;});

@@ -8,7 +8,7 @@ class GuestTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
         $getDi = $client->getDi();
@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase {
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
@@ -98,7 +98,7 @@ class GuestTest extends \BBTestCase {
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
 
@@ -129,7 +129,7 @@ class GuestTest extends \BBTestCase {
         );
 
         $client = new \Box\Mod\Client\Api\Guest();
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $client->setDi($di);
 
@@ -154,7 +154,7 @@ class GuestTest extends \BBTestCase {
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $client = new \Box\Mod\Client\Api\Guest();
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
         $client->setDi($di);
@@ -203,7 +203,7 @@ class GuestTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
@@ -253,7 +253,7 @@ class GuestTest extends \BBTestCase {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function ($name) use($emailServiceMock) {return $emailServiceMock;});
@@ -280,7 +280,7 @@ class GuestTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -338,7 +338,7 @@ class GuestTest extends \BBTestCase {
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt');
         
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
@@ -375,7 +375,7 @@ class GuestTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -396,7 +396,7 @@ class GuestTest extends \BBTestCase {
     {
         $configArr = array();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
 
         $client = new \Box\Mod\Client\Api\Guest();

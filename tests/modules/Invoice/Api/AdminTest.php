@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -36,7 +36,7 @@ class AdminTest extends \BBTestCase {
             ->method('getAdvancedResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
 
 
@@ -64,7 +64,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -100,7 +100,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -138,7 +138,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -172,7 +172,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -206,7 +206,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -241,7 +241,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -276,7 +276,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($invoiceItemService) {return $invoiceItemService;});
@@ -311,7 +311,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -347,7 +347,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -378,7 +378,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -426,7 +426,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -518,7 +518,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -550,7 +550,7 @@ class AdminTest extends \BBTestCase {
             ->method('proccessReceivedATransactions')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
         $this->api->setDi($di);
@@ -586,7 +586,7 @@ class AdminTest extends \BBTestCase {
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventsMock;
@@ -623,7 +623,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
@@ -643,7 +643,7 @@ class AdminTest extends \BBTestCase {
             ->method('create')
             ->will($this->returnValue($newTransactionId));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
         $this->api->setDi($di);
 
@@ -675,7 +675,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
@@ -710,7 +710,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
@@ -733,7 +733,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
@@ -750,7 +750,7 @@ class AdminTest extends \BBTestCase {
             ->method('counter')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
         $this->api->setDi($di);
@@ -766,7 +766,7 @@ class AdminTest extends \BBTestCase {
             ->method('getStatusPairs')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
         $this->api->setDi($di);
@@ -782,7 +782,7 @@ class AdminTest extends \BBTestCase {
             ->method('getStatuses')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
         $this->api->setDi($di);
@@ -798,7 +798,7 @@ class AdminTest extends \BBTestCase {
             ->method('getGatewayStatuses')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
         $this->api->setDi($di);
@@ -814,7 +814,7 @@ class AdminTest extends \BBTestCase {
             ->method('getTypes')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($transactionService) {return $transactionService;});
 
         $this->api->setDi($di);
@@ -835,7 +835,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
 
@@ -852,7 +852,7 @@ class AdminTest extends \BBTestCase {
             ->method('getPairs')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
         $this->api->setDi($di);
 
@@ -867,7 +867,7 @@ class AdminTest extends \BBTestCase {
             ->method('getAvailable')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
         $this->api->setDi($di);
 
@@ -890,7 +890,7 @@ class AdminTest extends \BBTestCase {
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
         $this->api->setDi($di);
@@ -923,7 +923,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
@@ -957,7 +957,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
@@ -992,7 +992,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
@@ -1027,7 +1027,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($gatewayService) {return $gatewayService;});
@@ -1051,7 +1051,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function () use($subscriptionService) {return $subscriptionService;});
 
@@ -1090,7 +1090,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls($client, $model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($subscriptionService) {return $subscriptionService;});
@@ -1126,7 +1126,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls($client, $model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -1160,7 +1160,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($subscriptionService) {return $subscriptionService;});
@@ -1191,7 +1191,7 @@ class AdminTest extends \BBTestCase {
             ->method('load')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($subscriptionService) {return $subscriptionService;});
 
@@ -1224,7 +1224,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($subscriptionService) {return $subscriptionService;});
@@ -1259,7 +1259,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use($taxService) {return $taxService;});
@@ -1287,7 +1287,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray');
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['mod_service'] = $di->protect(function () use($taxService) {return $taxService;});
 
@@ -1310,7 +1310,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSimpleResultSet')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function () use($taxService) {return $taxService;});
 
@@ -1329,7 +1329,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(true));
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($taxService) {return $taxService;});
 
         $this->api->setDi($di);
@@ -1350,7 +1350,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
@@ -1368,7 +1368,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
@@ -1386,7 +1386,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
@@ -1405,7 +1405,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
@@ -1431,7 +1431,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['validator']   = $validatorMock;
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($taxService) { return $taxService; });
@@ -1464,7 +1464,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['validator']   = $validatorMock;
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($taxService) { return $taxService; });

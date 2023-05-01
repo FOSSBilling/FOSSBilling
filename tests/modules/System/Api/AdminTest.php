@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -61,7 +61,7 @@ class AdminTest extends \BBTestCase {
         $data = array(
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
 
@@ -104,7 +104,7 @@ class AdminTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('renderString')
             ->will($this->returnValue('returnStringType'));
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -122,7 +122,7 @@ class AdminTest extends \BBTestCase {
             ->method('getEnv')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -147,7 +147,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
             if ($serviceName == 'Staff') {
                 return $staffServiceMock;

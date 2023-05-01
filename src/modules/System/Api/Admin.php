@@ -61,6 +61,16 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Get Central Alerts System messages sent for this installation.
+     * 
+     * @return array - array of messages
+     */
+    public function cas_messages()
+    {
+        return $this->getService()->getCasMessages();
+    }
+
+    /**
      * Check if passed file name template exists for admin area.
      *
      * @param string $file - template file name, example: mod_index_dashboard.html.twig

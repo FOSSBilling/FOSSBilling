@@ -5,7 +5,7 @@ class FOSSBillingErrorPage
     public function __construct()
     {
         /* If the __trans function is undefined, this probably means we experienced an unrecoverable error during the initialization of FOSSBilling.
-         * As a workarond, we define a "polyfill" for it here which just returns the original (english) string, handling placeholders in the process.
+         * As a workaround, we define a "polyfill" for it here which just returns the original (english) string, handling placeholders in the process.
          * This allows us to have translation functionality in our error pages, while also handling cases where they aren't setup.
          */
         if (!function_exists('__trans')) {
@@ -30,7 +30,7 @@ class FOSSBillingErrorPage
         return [
             '1' => [
                 'title' => __trans('Unable to find Composer Packages'),
-                'message' => 'The composer packages appear to be missing. This shouldn\'t happen if you are using a release version of FOSSBilling. If you are developer, you will need to install dependencies using :code', [':code' => '<code>composer install</code>'],
+                'message' => 'The composer packages appear to be missing. This shouldn\'t happen if you are using a release version of FOSSBilling. If you are developer, you will need to install dependencies using :code.', [':code' => '<code>composer install</code>'],
                 'link' => [
                     'label' => __trans('View more info on the composer website'),
                     'href' => 'https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies',
@@ -45,7 +45,7 @@ class FOSSBillingErrorPage
             ],
             '3' => [
                 'title' => __trans('Your Configuration is Empty'),
-                'message' => __trans('Your FOSSBilling configuration seems to either be empty or non-existient. You may need to re-install FOSSBilling, or re-create the :code file based on the example config' . [':code' => '<code>config.php</code>']),
+                'message' => __trans('Your FOSSBilling configuration seems to either be empty or non-existent. You may need to re-install FOSSBilling, or re-create the :code file based on the example config.', [':code' => '<code>config.php</code>']),
                 'link' => [
                     'label' => __trans('See the example config.'),
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/config-sample.php',
@@ -60,7 +60,7 @@ class FOSSBillingErrorPage
                 ]
             ],
             '5' => [
-                'title' => __trans("Misssing .htaccess file"),
+                'title' => __trans("Missing .htaccess file"),
                 'message' => __trans("You appear to be running an Apache or LiteSpeed based webserver without a valid :code file. Please create one using the default FOSSBilling .htaccess file.", [':code', '<b><em>.htaccess</em></b>']),
                 'link' => [
                     'label' => __trans("Check the default .htaccess"),
@@ -70,7 +70,7 @@ class FOSSBillingErrorPage
         ];
     }
 
-    /* List of code cetegories. The "start" and "end" values are considered valid for a category.
+    /* List of code categories. The "start" and "end" values are considered valid for a category.
      * (Example: an error code of 50 will match the "FOSSBilling Loader" category)
      */
     private array $codeCategories = [
@@ -93,7 +93,7 @@ class FOSSBillingErrorPage
     private function getCodeInfo(int $code): array
     {
         $errorDetails = [
-            'title' => __trans('An error has occured.'),
+            'title' => __trans('An error has occurred.'),
             'link' => [
                 'label' => __trans('View the FOSSBilling documentation'),
                 'href' => 'https://fossbilling.org/docs',
@@ -127,7 +127,7 @@ class FOSSBillingErrorPage
     public function generatePage(int $code, string $message)
     {
         $error = $this->getCodeInfo($code);
-        $error['message'] ??= __trans('Uh-oh! You\'ve received a generic error message: :errorMessage', ['errorMessage' => $message]);
+        $error['message'] ??= __trans('Uh-oh! You\'ve received a generic error message: :errorMessage', [':errorMessage' => '<code>' . $message . '</code>']);
 
         $page = '
         <!DOCTYPE html>

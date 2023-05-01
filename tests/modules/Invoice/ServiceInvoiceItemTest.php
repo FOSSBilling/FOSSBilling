@@ -18,7 +18,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -54,7 +54,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
             ->method('load')
             ->willReturn($clientOrder);
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock){ return $orderServiceMock;});
         $serviceMock->setDi($di);
@@ -91,7 +91,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue(null));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -117,7 +117,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventManagerMock;
         $serviceMock->setDi($di);
 
@@ -136,7 +136,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $di['db'] = $dbMock;
 
@@ -194,7 +194,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -237,7 +237,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue($rate));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -262,7 +262,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -285,7 +285,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
@@ -308,7 +308,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -347,7 +347,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceServiceMock->expects($this->atLeastOnce())
             ->method('addNote');
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($invoiceServiceMock) {
             return $invoiceServiceMock;
@@ -408,7 +408,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
     public function testgetAllNotExecutePaidItems()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

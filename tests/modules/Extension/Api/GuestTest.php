@@ -25,7 +25,7 @@ class GuestTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -77,7 +77,7 @@ class GuestTest extends \BBTestCase {
             ->method('getThemeConfig')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use($themeServiceMock) { return $themeServiceMock;});
 
         $this->api->setDi($di);

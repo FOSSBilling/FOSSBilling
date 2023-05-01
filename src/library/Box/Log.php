@@ -24,51 +24,55 @@
  */
 class Box_Log implements \Box\InjectionAwareInterface
 {
-    const EMERG   = 0;  // Emergency: system is unusable
-    const ALERT   = 1;  // Alert: action must be taken immediately
-    const CRIT    = 2;  // Critical: critical conditions
-    const ERR     = 3;  // Error: error conditions
-    const WARN    = 4;  // Warning: warning conditions
-    const NOTICE  = 5;  // Notice: normal but significant condition
-    const INFO    = 6;  // Informational: informational messages
-    const DEBUG   = 7;  // Debug: debug messages
+    const EMERG = 0;  // Emergency: system is unusable
+    const ALERT = 1;  // Alert: action must be taken immediately
+    const CRIT = 2;  // Critical: critical conditions
+    const ERR = 3;  // Error: error conditions
+    const WARN = 4;  // Warning: warning conditions
+    const NOTICE = 5;  // Notice: normal but significant condition
+    const INFO = 6;  // Informational: informational messages
+    const DEBUG = 7;  // Debug: debug messages
 
-    protected $_priorities = array(
-         self::EMERG    => 'EMERG',
-         self::ALERT    => 'ALERT',
-         self::CRIT     => 'CRIT',
-         self::ERR      => 'ERR',
-         self::WARN     => 'WARN',
-         self::NOTICE   => 'NOTICE',
-         self::INFO     => 'INFO',
-         self::DEBUG    => 'DEBUG',
+    protected array $_priorities = array(
+        self::EMERG => 'EMERG',
+        self::ALERT => 'ALERT',
+        self::CRIT => 'CRIT',
+        self::ERR => 'ERR',
+        self::WARN => 'WARN',
+        self::NOTICE => 'NOTICE',
+        self::INFO => 'INFO',
+        self::DEBUG => 'DEBUG',
     );
 
+    protected ?\Pimple\Container $di;
     protected $_min_priority = NULL;
-    
-    protected $_writers = array();
-
-    protected $_extras = array();
-
-    protected $di;
+    protected array $_writers = array();
+    protected array $_extras = array();
+    protected string $_channel = 'application';
 
     /**
-     * @param mixed $di
+     * @param $di
      */
-    public function setDi($di)
+    public function setDi($di): void
     {
         $this->di = $di;
     }
 
     /**
-     * @return Box_Di|null
+     * @return \Pimple\Container|null
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }
 
-    public function __call($method, $params)
+    /**
+     * @param $method
+     * @param $params
+     * @return void
+     * @throws Box_Exception
+     */
+    public function __call($method, $params): void
     {
         $priority = strtoupper($method);
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
@@ -77,7 +81,7 @@ class Box_Log implements \Box\InjectionAwareInterface
                     throw new \Box_Exception('Missing log message');
                 case 1:
                     $message = array_shift($params);
-                    $extras  = null;
+                    $extras = null;
                     break;
                 default:
                     $message = array_shift($params);
@@ -93,21 +97,28 @@ class Box_Log implements \Box\InjectionAwareInterface
         }
     }
 
-    public function log($message, $priority, $extras = null)
+    /**
+     * @param $message
+     * @param $priority
+     * @param $extras
+     * @return void
+     * @throws Box_Exception
+     */
+    public function log($message, $priority, $extras = null): void
     {
         // sanity checks
         if (empty($this->_writers)) {
             return;
         }
 
-        if (! isset($this->_priorities[$priority])) {
+        if (!isset($this->_priorities[$priority])) {
             throw new \Box_Exception('Bad log priority');
         }
-        
-        if($this->_min_priority && $priority > $this->_min_priority) {
+
+        if ($this->_min_priority && $priority > $this->_min_priority) {
             return;
         }
-        
+
         $event = $this->_packEvent($message, $priority);
 
         // Check to see if any extra information was passed
@@ -136,38 +147,60 @@ class Box_Log implements \Box\InjectionAwareInterface
 
         // send to each writer
         foreach ($this->_writers as $writer) {
-            $writer->write($event);
+            $writer->write($event, $this->_channel);
         }
     }
 
     protected function _packEvent($message, $priority)
     {
         return array_merge(array(
-            'timestamp'    => date('Y-m-d H:i:s'),
-            'message'      => $message,
-            'priority'     => $priority,
+            'timestamp' => date('Y-m-d H:i:s'),
+            'message' => $message,
+            'priority' => $priority,
             'priorityName' => $this->_priorities[$priority],
-            ),
+        ),
             $this->_extras
         );
     }
 
     /**
      * @param Box_LogDb|FOSSBilling_Monolog $writer
+     * @return $this The Box_Log instance
      */
-    public function addWriter($writer)
+    public function addWriter($writer): static
     {
         $this->_writers[] = $writer;
         return $this;
     }
 
-    public function setEventItem($name, $value)
+    /**
+     * @param $name string
+     * @param $value mixed
+     * @return $this The Box_Log instance
+     */
+    public function setEventItem(string $name, mixed $value): static
     {
         $this->_extras = array_merge($this->_extras, array($name => $value));
         return $this;
     }
-    
-    public function setMinPriority($priority)
+
+    /**
+     * Set the channel name for the logger.
+     *
+     * @param string $channel Channel name
+     * @return $this The Box_Log instance
+     */
+    public function setChannel(string $channel): static
+    {
+        $this->_channel = $channel;
+        return $this;
+    }
+
+    /**
+     * @param $priority
+     * @return $this The Box_Log instance
+     */
+    public function setMinPriority($priority): static
     {
         $this->_min_priority = $priority;
         return $this;

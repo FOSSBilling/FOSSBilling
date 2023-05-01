@@ -18,7 +18,7 @@ class ServiceSubscriptionTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -44,7 +44,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $eventsMock;
@@ -78,7 +78,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['db']        = $dbMock;
         $di['logger']    = new \Box_Log();
 
@@ -116,7 +116,7 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($clientServiceMock, $payGatewayService) {
             if ($serviceName == 'Client') {
                 return $clientServiceMock;
@@ -163,7 +163,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $eventsMock;
@@ -214,7 +214,7 @@ class ServiceSubscriptionTest extends \BBTestCase
      */
     public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams)
     {
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
 
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
@@ -235,7 +235,7 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(array('')));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -260,7 +260,7 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('getAll')
             ->will($this->returnValue($getAllResults));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -286,7 +286,7 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue($period));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -306,7 +306,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 

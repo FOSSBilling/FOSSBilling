@@ -8,7 +8,7 @@ class ClientTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $client = new \Box\Mod\Client\Api\Client();
         $client->setDi($di);
         $getDi = $client->getDi();
@@ -45,7 +45,7 @@ class ClientTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name) use($serviceMock) {return $serviceMock;});
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
@@ -71,7 +71,7 @@ class ClientTest extends \BBTestCase {
             ->method('getClientBalance')
             ->will($this->returnValue($balanceAmount));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($name, $sub) use($serviceMock) {return $serviceMock;});
 
         $api = new \Box\Mod\Client\Api\Client();

@@ -14,7 +14,7 @@ declare(strict_types=1);
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
@@ -30,7 +30,7 @@ use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
 
-$di = new Box_Di();
+$di = new \Pimple\Container();
 
 /*
  * Returns the current FOSSBilling config from config.php
@@ -55,6 +55,9 @@ $di['logger'] = function () use ($di) {
     $log = new Box_Log();
     $log->setDi($di);
 
+    $monolog = new FOSSBilling_Monolog($di);
+    $log->addWriter($monolog);
+
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
 
     if ($log_to_db) {
@@ -70,9 +73,6 @@ $di['logger'] = function () use ($di) {
         }
 
         $log->addWriter($writer2);
-    } else {
-        $monolog = new FOSSBilling_Monolog($di);
-        $log->addWriter($monolog);
     }
 
     return $log;
@@ -139,7 +139,7 @@ $di['db'] = function () use ($di) {
     \RedBeanPHP\R::setup($di['pdo']);
     \RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
-    $helper = new Box_BeanHelper();
+    $helper = new \Box_BeanHelper();
     $helper->setDi($di);
 
     $mapper = new Facade();
@@ -199,7 +199,7 @@ $di['mod'] = $di->protect(function ($name) use ($di) {
  *
  * @param string $mod the name of the module to get
  *
- * @return mixed the service of the asociated module
+ * @return mixed the service of the associated module
  */
 $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
     return $di['mod']($mod)->getService($sub);
@@ -209,7 +209,7 @@ $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
  *
  * @param string $name the name of the module to get the configuration of
  *
- * @return mixed the configuration of the asociated module
+ * @return mixed the configuration of the associated module
  */
 $di['mod_config'] = $di->protect(function ($name) use ($di) {
     return $di['mod']($name)->getConfig();
@@ -535,6 +535,19 @@ $di['validator'] = function () use ($di) {
  *
  * @param void
  *
+ * @return \FOSSBilling_CentralAlerts
+ */
+$di['central_alerts'] = function () use ($di) {
+    $centralalerts = new \FOSSBilling_CentralAlerts();
+    $centralalerts->setDi($di);
+
+    return $centralalerts;
+};
+
+/*
+ *
+ * @param void
+ *
  * @return \FOSSBilling_ExtensionManager
  */
 $di['extension_manager'] = function () use ($di) {
@@ -616,7 +629,7 @@ $di['requirements'] = function () use ($di) {
 /*
  * Creates a new Box_Period object using the provided period code and returns it.
  *
- * @param string $code The two characture period code to create the period object with.
+ * @param string $code The two character period code to create the period object with.
  *
  * @return \Box_Period The new period object that was just created.
  */

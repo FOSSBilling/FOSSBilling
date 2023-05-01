@@ -8,7 +8,7 @@ class GuestTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $api = new \Box\Mod\Cron\Api\Guest();
         $api->setDi($di);
         $getDi = $api->getDi();

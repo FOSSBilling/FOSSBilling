@@ -15,7 +15,7 @@ class ServiceTest extends \BBTestCase
             "list"     => array(),
         );
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $pager = $this->getMockBuilder('Box_Pagination')->getMock();
         $pager->expects($this->atLeastOnce())
@@ -52,7 +52,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -88,7 +88,7 @@ class ServiceTest extends \BBTestCase
         $db->expects($this->atLeastOnce())
             ->method('find')
             ->will($this->returnValue(array()));
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -105,7 +105,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(5));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -126,7 +126,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(null));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
@@ -240,7 +240,7 @@ class ServiceTest extends \BBTestCase
         $db->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($category));
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -267,7 +267,7 @@ class ServiceTest extends \BBTestCase
             ->method('slug')
             ->will($this->returnValue('article-slug'));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['tools']  = $tools;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
@@ -301,7 +301,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -332,7 +332,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -405,7 +405,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Kb\Service();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $service->setDi($di);
 
@@ -428,7 +428,7 @@ class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -445,7 +445,7 @@ class ServiceTest extends \BBTestCase
             ->method('getAssoc')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -462,7 +462,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(0));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
@@ -486,7 +486,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(1));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
@@ -523,7 +523,7 @@ class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $serviceMock->setDi($di);
 
@@ -563,7 +563,7 @@ class ServiceTest extends \BBTestCase
             ->method('checkLimits')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $db;
         $di['tools']       = $tools;
         $di['logger']      = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
@@ -587,7 +587,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
@@ -610,7 +610,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -629,7 +629,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 

@@ -9,7 +9,7 @@ class ServiceTest extends \BBTestCase
     public function testDi()
     {
         $service = new Service();
-        $di      = new \Box_Di();
+        $di      = new \Pimple\Container();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
@@ -39,7 +39,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
@@ -73,7 +73,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(true));
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
@@ -110,7 +110,7 @@ class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($password);
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
@@ -154,7 +154,7 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
@@ -238,7 +238,7 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->never())->method('isEmailValid');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
@@ -293,7 +293,7 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
@@ -329,7 +329,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(true));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['db']     = $dbMock;
         $di['tools']  = new \Box_Tools();
@@ -365,7 +365,7 @@ class ServiceTest extends \BBTestCase
             ->with($password);
 
 
-        $di                   = new \Box_Di();
+        $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
@@ -383,14 +383,14 @@ class ServiceTest extends \BBTestCase
 
     public function testLogoutClient()
     {
-        $sessionMock = $this->getMockBuilder("Box_Session")
+        $sessionMock = $this->getMockBuilder("\Box_Session")
             ->disableOriginalConstructor()
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
             ->method("delete");
 
-        $di            = new \Box_Di();
+        $di            = new \Pimple\Container();
         $di['logger']  = new \Box_Log();
         $di['session'] = $sessionMock;
 

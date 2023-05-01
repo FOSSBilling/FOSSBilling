@@ -57,7 +57,7 @@ class Service implements InjectionAwareInterface
         // Load the engines and ping them
         foreach ($engines as $engine) {
             $id = $engine->getDetails()['id'];
-            
+
             if ($this->isEngineEnabled($id)) {
                 try {
                     $engine->setDi($this->di);
@@ -92,7 +92,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param string $engine - The ID of the engine to check
-     * 
+     *
      * @return bool
      */
     public function isEngineEnabled($engine)
@@ -105,7 +105,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * Load engines from the Engines directory.
-     * 
+     *
      * @return array
      */
     private function _getEngines()
@@ -113,7 +113,7 @@ class Service implements InjectionAwareInterface
         $engines = [];
         $dir = __DIR__ . '/Engines';
         $files = scandir($dir);
-        
+
         foreach ($files as $file) {
             if (substr($file, -4) == '.php') {
                 $engine = substr($file, 0, -4);
@@ -127,7 +127,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * Get the details of all engines.
-     * 
+     *
      * @return array
      */
     private function _getEngineDetails()

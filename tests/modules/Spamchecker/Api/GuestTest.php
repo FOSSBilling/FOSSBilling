@@ -17,7 +17,7 @@ class GuestTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -78,7 +78,7 @@ class GuestTest extends \BBTestCase
      */
     public function testrecaptcha($config, $expected)
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function () use ($config){
             return $config;
         });

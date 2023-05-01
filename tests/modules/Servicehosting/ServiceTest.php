@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -88,7 +88,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store')
             ->will($this->returnValue($newserviceHostingId));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
@@ -145,7 +145,7 @@ class ServiceTest extends \BBTestCase {
             ->method('_getAM')
             ->will($this->returnValue($AMresultArray));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['tools'] = $toolsMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
@@ -176,7 +176,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store');
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
@@ -195,7 +195,7 @@ class ServiceTest extends \BBTestCase {
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
@@ -223,7 +223,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store');
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
@@ -253,7 +253,7 @@ class ServiceTest extends \BBTestCase {
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
@@ -281,7 +281,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store');
 
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
@@ -311,7 +311,7 @@ class ServiceTest extends \BBTestCase {
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
@@ -338,7 +338,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
@@ -368,7 +368,7 @@ class ServiceTest extends \BBTestCase {
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
@@ -418,7 +418,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store')
             ->will($this->returnValue($newserviceHostingId));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
@@ -459,7 +459,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
@@ -488,7 +488,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -540,7 +540,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -593,7 +593,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -647,7 +647,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -701,7 +701,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -764,7 +764,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -797,7 +797,7 @@ class ServiceTest extends \BBTestCase {
 
         $serverManagerCustomMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
         $di['server_manager'] = $di->protect(function ($manager, $config) use($serverManagerCustomMock) {
@@ -823,7 +823,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
@@ -873,7 +873,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getAll')
             ->will($this->returnValue($queryResult));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -906,7 +906,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store')
             ->will($this->returnValue($newId));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -930,7 +930,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
@@ -966,7 +966,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -985,7 +985,7 @@ class ServiceTest extends \BBTestCase {
 
         $serverManagerCustom = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['server_manager'] = $di->protect(function ($manager, $config) use($serverManagerCustom) {
             return $serverManagerCustom;
         });
@@ -1012,7 +1012,7 @@ class ServiceTest extends \BBTestCase {
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['server_manager'] = $di->protect(function ($manager, $config) use($di) {
             return null;
         });
@@ -1066,7 +1066,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getAll')
             ->will($this->returnValue($queryResult));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1092,7 +1092,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
@@ -1131,7 +1131,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -1154,7 +1154,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->will($this->returnValue($newId));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -1171,7 +1171,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $model->config = '{}';
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['server_package'] = new \Server_Package();
 
         $this->service->setDi($di);
@@ -1203,7 +1203,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getLogger')
             ->will($this->returnValue(new \Box_Log()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $serviceMock->setDi($di);
@@ -1260,7 +1260,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetFreeTlds_FreeTldsAreNotSet()
     {
         $config  = array();
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
@@ -1298,7 +1298,7 @@ class ServiceTest extends \BBTestCase {
         $config  = array(
             'free_tlds' => array('.com'),
         );
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')

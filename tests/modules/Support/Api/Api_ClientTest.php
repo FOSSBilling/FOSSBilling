@@ -41,7 +41,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db']    = $dbMock;
 
@@ -74,7 +74,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
 
@@ -124,7 +124,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_SupportHelpdesk()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']        = $dbMock;
         $this->clientApi->setDi($di);
@@ -165,7 +165,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_SupportTicket()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']        = $dbMock;
         $this->clientApi->setDi($di);
@@ -206,7 +206,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(new \Model_SupportTicket()));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db']        = $dbMock;
         $this->clientApi->setDi($di);
@@ -243,7 +243,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di              = new \Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
 

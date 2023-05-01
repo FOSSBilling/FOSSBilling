@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -52,7 +52,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
         $this->api->setService($systemServiceMock);
@@ -89,7 +89,7 @@ class AdminTest extends \BBTestCase {
 
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($systemServiceMock) { return $systemServiceMock;});
         $di['logger'] = $loggerMock;
         $di['validator'] = $validatorMock;
@@ -130,7 +130,7 @@ class AdminTest extends \BBTestCase {
 
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use($systemServiceMock) { return $systemServiceMock;});
         $di['logger'] = $loggerMock;
         $di['validator'] = $validatorMock;
@@ -164,7 +164,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -195,7 +195,7 @@ class AdminTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 

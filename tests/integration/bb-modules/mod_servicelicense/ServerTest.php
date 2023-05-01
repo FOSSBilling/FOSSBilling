@@ -61,7 +61,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
                 ->will($this->returnValue(true));
         }
 
-        $di                = new Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = new Box_Log();
         $di['mod']         = $di->protect(function () use ($service) {
@@ -125,7 +125,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
             ->method('isValidPath')
             ->will($this->returnValue(true));
 
-        $di                = new Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = $this->di['logger'];
         $di['mod']         = $di->protect(function () use ($service) {
@@ -174,7 +174,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
             ->method('isValidPath')
             ->will($this->returnValue(true));
 
-        $di                = new Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = $this->di['logger'];
         $di['mod']         = $di->protect(function () use ($service) {
@@ -248,7 +248,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
             ->method('isValidPath')
             ->will($this->returnValue($validPath));
 
-        $di                = new Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = $this->di['logger'];
         $di['mod']         = $di->protect(function () use ($service) {

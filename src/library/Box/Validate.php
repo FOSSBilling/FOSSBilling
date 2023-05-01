@@ -19,7 +19,7 @@ class Box_Validate
     protected $di = null;
 
     /**
-     * @param Box_Di|null $di
+     * @param \Pimple\Container|null $di
      */
     public function setDi($di)
     {
@@ -27,7 +27,7 @@ class Box_Validate
     }
 
     /**
-     * @return Box_Di|null
+     * @return \Pimple\Container|null
      */
     public function getDi()
     {

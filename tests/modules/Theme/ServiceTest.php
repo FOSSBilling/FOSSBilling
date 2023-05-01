@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -49,7 +49,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getCurrentPreset')
             ->will($this->returnValue('CurrentPresetString'));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
         $di['db'] = $dbMock;
@@ -70,7 +70,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getName')
             ->will($this->returnValue('default'));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
         $di['db'] = $dbMock;
@@ -92,7 +92,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getName')
             ->will($this->returnValue('default'));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
         $di['db'] = $dbMock;
@@ -128,7 +128,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getPresetsFromSettingsDataFile')
             ->will($this->returnValue($corePresets));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
         $di['db'] = $dbMock;
@@ -159,7 +159,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getPresetsFromSettingsDataFile')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
         $di['db'] = $dbMock;
@@ -190,7 +190,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getName')
             ->will($this->returnValue('default'));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['db'] = $dbMock;
 
@@ -221,7 +221,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getPresetFromSettingsDataFile')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
@@ -251,7 +251,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getName')
             ->will($this->returnValue('default'));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $di['db'] = $dbMock;
 
@@ -294,7 +294,7 @@ class ServiceTest extends \BBTestCase {
         $toolsMock->expects($this->atLeastOnce())
             ->method('file_put_contents');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['tools'] = $toolsMock;
 
         $serviceMock->setDi($di);
@@ -311,7 +311,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getPathAssets')
             ->will($this->returnValue('location/Of/'));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
@@ -330,7 +330,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getCell')
             ->will($this->returnValue(''));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['config'] = $configMock;
 
@@ -366,7 +366,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getCell')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 

@@ -16,7 +16,7 @@ class GuestTest extends \BBTestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -46,7 +46,7 @@ class GuestTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -72,7 +72,7 @@ class GuestTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(array(array())));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -95,7 +95,7 @@ class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = new \Box_Validate();
 
         $guestApi->setDi($di);
@@ -110,7 +110,7 @@ class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = new \Box_Validate();
 
         $guestApi->setDi($di);
@@ -137,7 +137,7 @@ class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
@@ -169,7 +169,7 @@ class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();

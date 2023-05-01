@@ -43,9 +43,8 @@ class Box_EventManager implements \Box\InjectionAwareInterface
         $event = $data['event'];
         $subject = $data['subject'] ?? null;
         $params = $data['params'] ?? null;
-        $params = $this->hideSensitiveParameters($params);
 
-        $this->di['logger']->debug($event, $params);
+        $this->di['logger']->setChannel('event')->debug($event, $params);
 
         $e = new Box_Event($subject, $event, $params);
         $e->setDi($this->di);

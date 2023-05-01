@@ -20,7 +20,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -54,7 +54,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->with('ClientOrder')
             ->will($this->returnValue($clientOrderMock));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -84,7 +84,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->method('getAdvancedResultSet')
             ->will($this->returnValue(array('list' => array())));
 
-        $di          = new \Box_Di();
+        $di          = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
 
         $this->api->setDi($di);
@@ -109,7 +109,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
@@ -141,7 +141,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
@@ -162,7 +162,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
@@ -191,7 +191,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
@@ -209,7 +209,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($product));
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($productServiceMock) {
             return $productServiceMock;
@@ -227,7 +227,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
-        $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
@@ -252,7 +252,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
@@ -297,7 +297,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $client = new Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di              = new Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
@@ -330,7 +330,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $client = new Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di              = new Box_Di();
+        $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 

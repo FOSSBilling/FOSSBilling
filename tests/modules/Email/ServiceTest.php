@@ -7,7 +7,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $di['db'] = $db;
@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
     public function testGetSearchQuery($data, $query, $bindings)
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $service->setDi($di);
         $result = $service->getSearchQuery($data);
@@ -87,7 +87,7 @@ class ServiceTest extends \BBTestCase
     public function testEmailFindOneForClientById()
     {
         $service   = new \Box\Mod\Email\Service();
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $id        = 5;
         $client_id = 1;
 
@@ -120,7 +120,7 @@ class ServiceTest extends \BBTestCase
     public function testEmailRmByClient()
     {
         $service = new \Box\Mod\Email\Service();
-        $di      = new \Box_Di();
+        $di      = new \Pimple\Container();
 
 
         $model = new \Model_ActivityClientEmail();
@@ -150,7 +150,7 @@ class ServiceTest extends \BBTestCase
     public function testEmailRm()
     {
         $service = new \Box\Mod\Email\Service();
-        $di      = new \Box_Di();
+        $di      = new \Pimple\Container();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -216,7 +216,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
@@ -240,7 +240,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
@@ -269,7 +269,7 @@ class ServiceTest extends \BBTestCase
     public function testSendTemplateNotExists()
     {
         $service = new \Box\Mod\Email\Service();
-        $di      = new \Box_Di();
+        $di      = new \Pimple\Container();
 
         $data = array(
             'code'                => 'mod_email_test_not_existing',
@@ -330,7 +330,7 @@ class ServiceTest extends \BBTestCase
             ->method('sendMail')
             ->willReturn(true);
 
-        $di      = new \Box_Di();
+        $di      = new \Pimple\Container();
 
         $emailTemplate = new \Model_EmailTemplate();
         $emailTemplate->loadBean(new \DummyBean());
@@ -428,7 +428,7 @@ class ServiceTest extends \BBTestCase
             ->method('sendMail')
             ->willReturn(true);
 
-        $di      = new \Box_Di();
+        $di      = new \Pimple\Container();
 
         $emailTemplate = new \Model_EmailTemplate();
         $emailTemplate->loadBean(new \DummyBean());
@@ -532,7 +532,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $db       = $this->getMockBuilder('Box_Database')->getMock();
 
         $emailSettings = array(
@@ -627,7 +627,7 @@ class ServiceTest extends \BBTestCase
     public function testTemplateGetSearchQuery($data, $query, $bindings)
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
 
         $service->setDi($di);
         $result = $service->templateGetSearchQuery($data);
@@ -781,7 +781,7 @@ class ServiceTest extends \BBTestCase
 
         $twigMock = $this->getMockBuilder('Twig\Environment')->disableOriginalConstructor()->getMock();
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $loggerMock;
         $di['tools']  = $toolsMock;
@@ -816,7 +816,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -834,7 +834,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -861,7 +861,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->returnValue($emailTemplateModel));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
@@ -910,7 +910,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($isExtensionActiveReturn));
 
 
-        $di                = new \Box_Di();
+        $di                = new \Pimple\Container();
         $di['db']          = $db;
         $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod_service'] = $di->protect(function () use ($extension) {
@@ -934,7 +934,7 @@ class ServiceTest extends \BBTestCase
             ->method('exec')
             ->will($this->returnValue(true));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
@@ -953,7 +953,7 @@ class ServiceTest extends \BBTestCase
             ->method('exec')
             ->will($this->returnValue(true));
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
@@ -1013,7 +1013,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
        */
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod_service'] = $di->protect(function ($name) use ($extension,$activityMock) {
@@ -1058,7 +1058,7 @@ class ServiceTest extends \BBTestCase
 
         $twigMock = $this->getMockBuilder('Twig\Environment')->disableOriginalConstructor()->getMock();
 
-        $di           = new \Box_Di();
+        $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['tools']  = $toolsMock;
@@ -1087,7 +1087,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(false));
 
-        $di       = new \Box_Di();
+        $di       = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -1121,7 +1121,7 @@ class ServiceTest extends \BBTestCase
             ->method('isExtensionActive')
             ->will($this->returnValue($isExtensionActiveReturn));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();

@@ -25,6 +25,7 @@
         "lcharette/webpack-encore-twig": "1.1.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
+        "monolog/monolog": "^2.9",
         "nelexa/zip": "^4.0.2",
         "phpmyadmin/motranslator": "^5.3.0",
         "pimple/pimple": "^3.3",
@@ -59,16 +60,17 @@
         "ext-intl": "*"
     },
     "autoload": {
-        "psr-0": {"": "library"},
-        "psr-4": {"Box\\Mod\\": "modules"}
+        "psr-0": {"": "src/library"},
+        "psr-4": {"Box\\Mod\\": "src/modules"}
     },
     "autoload-dev": {
-        "psr-0": { "": "../tests/library" }
+        "psr-0": { "": "tests/library" }
     },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
             "phpstan/extension-installer": true
-        }
+        },
+        "vendor-dir": "src/vendor"
     }
 }

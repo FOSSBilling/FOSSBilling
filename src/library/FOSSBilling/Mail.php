@@ -28,7 +28,7 @@ class FOSSBilling_Mail
     private $dsn = null;
 
     /**
-     * @param Box_Di|null $di
+     * @param \Pimple\Container|null $di
      */
     public function setDi($di)
     {
@@ -36,7 +36,7 @@ class FOSSBilling_Mail
     }
 
     /**
-     * @return Box_Di|null
+     * @return \Pimple\Container|null
      */
     public function getDi()
     {
@@ -91,7 +91,7 @@ class FOSSBilling_Mail
      */
     public function addTo(string|array $toAddresses): void
     {
-        $this->email->addto($toAddresses);
+        $this->email->addTo($toAddresses);
     }
 
     /**
@@ -125,7 +125,7 @@ class FOSSBilling_Mail
      *
      * @return void
      */
-    public function addReplyto(string|array $replyToAddresses): void
+    public function addReplyTo(string|array $replyToAddresses): void
     {
         $this->email->addReplyTo($replyToAddresses);
     }

@@ -26,7 +26,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetDi()
     {
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -39,7 +39,7 @@ class ServiceTest extends \BBTestCase {
             ->method('counter')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
@@ -57,7 +57,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getAll')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -105,7 +105,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -128,7 +128,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -164,7 +164,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -198,7 +198,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -223,7 +223,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -252,7 +252,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -281,7 +281,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -306,7 +306,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -331,7 +331,7 @@ class ServiceTest extends \BBTestCase {
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
 
-        $di        = new \Box_Di();
+        $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
