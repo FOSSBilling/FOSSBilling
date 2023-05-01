@@ -16,7 +16,7 @@
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
-$url = $_GET['_url'] ?? '';
+$url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 $http_err_code = $_GET['_errcode'] ?? null;
 
 $admin_prefix = $di['config']['admin_area_prefix'];
