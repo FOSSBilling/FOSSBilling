@@ -64,7 +64,7 @@ class Box_Mod
         $this->mod = strtolower($mod);
     }
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }

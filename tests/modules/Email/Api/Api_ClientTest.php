@@ -60,6 +60,8 @@ class Api_ClientTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $clientApi->setDi($di);
 
@@ -91,6 +93,8 @@ class Api_ClientTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $clientApi->setDi($di);
 
@@ -126,6 +130,8 @@ class Api_ClientTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $clientApi->setDi($di);
 
@@ -155,6 +161,8 @@ class Api_ClientTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $clientApi->setDi($di);
 
@@ -220,6 +228,8 @@ class Api_ClientTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $clientApi->setDi($di);
 

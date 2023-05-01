@@ -15,7 +15,7 @@
 
 class Box_Crypt implements \Box\InjectionAwareInterface
 {
-    protected $di = NULL;
+    protected ?\Pimple\Container $di;
 
     const METHOD = 'aes-256-cbc';
 
@@ -26,12 +26,12 @@ class Box_Crypt implements \Box\InjectionAwareInterface
         }
     }
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

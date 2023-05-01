@@ -18,9 +18,9 @@ namespace Box\Mod\Custompages;
 
 class Service
 {
-    protected $di;
+    protected ?\Pimple\Container $di;
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }

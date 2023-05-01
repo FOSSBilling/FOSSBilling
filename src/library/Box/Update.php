@@ -17,15 +17,12 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Box_Update
 {
-    /**
-     * @var \Pimple\Container
-     */
-    protected $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di
      */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
@@ -33,7 +30,7 @@ class Box_Update
     /**
      * @return \Pimple\Container
      */
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }

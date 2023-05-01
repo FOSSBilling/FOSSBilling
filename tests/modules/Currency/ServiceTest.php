@@ -677,10 +677,18 @@ class ServiceTest extends \BBTestCase
         $conversion_rate = 0.6;
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('getByCode'))->getMock();
+        $di = new \Pimple\Container();
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di['db'] = $db;
+
+        $service->setDi($di);
+
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue(false));
             $this->expectException(\Box_Exception::class);
+
         $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); //Expecting \Box_Exception every time
     }
 
@@ -695,6 +703,13 @@ class ServiceTest extends \BBTestCase
         $model       = new \Model_Currency();
         $model->loadBean(new \DummyBean());
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('getByCode'))->getMock();
+        $di = new \Pimple\Container();
+
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di['db'] = $db;
+
+        $service->setDi($di);
+        
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue($model));

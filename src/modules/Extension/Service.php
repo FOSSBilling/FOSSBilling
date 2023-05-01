@@ -22,14 +22,14 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
 {
-    protected $di = null;
+    protected ?\Pimple\Container $di;
 
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi()
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }
