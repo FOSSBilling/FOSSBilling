@@ -18,7 +18,7 @@ namespace Box\Mod\Massmailer;
 
 class Service implements \Box\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     public function setDi(\Pimple\Container $di): void
     {

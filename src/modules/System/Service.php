@@ -20,7 +20,7 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class Service
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     public function setDi(\Pimple\Container $di): void
     {

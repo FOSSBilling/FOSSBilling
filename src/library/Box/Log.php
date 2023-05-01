@@ -50,7 +50,7 @@ class Box_Log implements \Box\InjectionAwareInterface
 
     protected $_extras = array();
 
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

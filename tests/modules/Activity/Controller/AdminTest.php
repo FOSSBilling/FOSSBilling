@@ -56,6 +56,11 @@ class AdminTest extends \BBTestCase {
             ->with('mod_activity_index');
 
         $controllerAdmin = new \Box\Mod\Activity\Controller\Admin();
+        $di = new \Pimple\Container();
+        $di['is_admin_logged'] = true;
+
+        $controllerAdmin->setDi($di);
+
         $controllerAdmin->get_index($boxAppMock);
     }
 }

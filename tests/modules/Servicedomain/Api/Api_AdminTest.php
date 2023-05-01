@@ -234,6 +234,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -259,6 +261,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -283,6 +287,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -308,6 +314,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -333,6 +341,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -361,6 +371,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -388,6 +400,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -414,6 +428,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -502,6 +518,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -531,6 +549,8 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
         $this->adminApi->setService($serviceMock);

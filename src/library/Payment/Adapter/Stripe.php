@@ -17,7 +17,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 {
     private $config = array();
 
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     private $stripe;
 

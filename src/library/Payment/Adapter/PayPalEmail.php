@@ -18,7 +18,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \Bo
 {
     private $config = array();
 
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     public function setDi(\Pimple\Container $di): void
     {

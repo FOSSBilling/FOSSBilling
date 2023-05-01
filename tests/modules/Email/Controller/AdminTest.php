@@ -37,6 +37,11 @@ class AdminTest extends \BBTestCase {
             ->with('mod_email_history');
 
         $controllerAdmin = new \Box\Mod\Email\Controller\Admin();
+        $di = new \Pimple\Container();
+        $di['is_admin_logged'] = true;
+
+        $controllerAdmin->setDi($di);
+
         $controllerAdmin->get_history($boxAppMock);
     }
 }

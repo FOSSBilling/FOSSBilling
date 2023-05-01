@@ -111,7 +111,9 @@ class GuestTest extends \BBTestCase {
 
     public function testlanguages()
     {
+        $di = new \Pimple\Container();
         $this->api->setDi($di);
+        
         $result = $this->api->languages();
         $this->assertIsArray($result);
     }

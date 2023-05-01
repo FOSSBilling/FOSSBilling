@@ -21,7 +21,7 @@ use Symfony\Component\Mime\Address;
 
 class FOSSBilling_Mail
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     private Email $email;
     private $transport = null;

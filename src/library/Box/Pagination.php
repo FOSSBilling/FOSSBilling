@@ -17,7 +17,7 @@ use Box\InjectionAwareInterface;
 
 class Box_Pagination implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
     protected $per_page = 100;
 
     public function setDi(\Pimple\Container $di): void

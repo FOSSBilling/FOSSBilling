@@ -15,7 +15,7 @@
 
 class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     public function setDi(\Pimple\Container $di): void
     {

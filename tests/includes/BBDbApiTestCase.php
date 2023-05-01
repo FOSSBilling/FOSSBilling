@@ -1,7 +1,7 @@
 <?php
 abstract class BBDbApiTestCase extends BBDatabaseTestCase
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
     protected $session = NULL;
     protected $api_guest = NULL;
     protected $api_client = NULL;

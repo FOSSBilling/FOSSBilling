@@ -18,7 +18,7 @@ namespace Box\Mod\Redirect\Controller;
 
 class Client implements \Box\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

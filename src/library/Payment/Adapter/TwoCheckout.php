@@ -16,7 +16,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
 {
     private $config = array();
 
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     public function setDi(\Pimple\Container $di): void
     {

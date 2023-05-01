@@ -15,7 +15,7 @@
 
 class Box_Tools
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container|null $di

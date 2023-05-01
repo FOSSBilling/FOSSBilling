@@ -15,7 +15,7 @@
 
 class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
     protected $value = null;
     protected $processed = false;
     protected $subject = null;

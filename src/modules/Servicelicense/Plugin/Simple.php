@@ -18,7 +18,7 @@ namespace Box\Mod\Servicelicense\Plugin;
 
 class Simple
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

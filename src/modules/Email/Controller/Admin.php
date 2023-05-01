@@ -18,7 +18,7 @@ namespace Box\Mod\Email\Controller;
 
 class Admin implements \Box\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

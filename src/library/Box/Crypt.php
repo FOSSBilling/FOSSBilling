@@ -15,7 +15,7 @@
 
 class Box_Crypt implements \Box\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     const METHOD = 'aes-256-cbc';
 

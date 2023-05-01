@@ -20,7 +20,7 @@ use Box\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container|null $di

@@ -26,7 +26,7 @@ class Client implements InjectionAwareInterface
 {
     private $_requests_left = null;
     private $_api_config = null;
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

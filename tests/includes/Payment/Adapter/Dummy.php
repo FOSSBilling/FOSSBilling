@@ -1,7 +1,7 @@
 <?php
 class Payment_Adapter_Dummy
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

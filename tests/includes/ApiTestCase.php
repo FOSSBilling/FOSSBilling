@@ -1,7 +1,7 @@
 <?php
 class ApiTestCase extends PHPUnit\Framework\TestCase
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
     protected $session = NULL;
     protected $api_guest = NULL;
     protected $api_client = NULL;

@@ -86,6 +86,7 @@ class ClientTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['password'] = new \Box_Password();
 

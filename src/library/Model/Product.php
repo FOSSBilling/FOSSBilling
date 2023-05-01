@@ -31,7 +31,7 @@ class Model_Product extends \FOSSBilling_Model implements \Box\InjectionAwareInt
     const SETUP_AFTER_PAYMENT   = 'after_payment';
     const SETUP_MANUAL          = 'manual';
 
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

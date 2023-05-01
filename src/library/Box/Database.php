@@ -19,7 +19,7 @@ use Box\InjectionAwareInterface;
 class Box_Database implements InjectionAwareInterface
 {
 
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
     protected $orm = null;
 
     public function setDataMapper($orm)

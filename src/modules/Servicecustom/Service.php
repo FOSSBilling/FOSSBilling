@@ -18,7 +18,7 @@ namespace Box\Mod\Servicecustom;
 
 class Service implements \Box\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     /**
      * @param \Pimple\Container $di

@@ -17,7 +17,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	/**
 	 * @var \Pimple\Container
 	 */
-	protected ?\Pimple\Container $di = null;
+	protected ?\Pimple\Container $di;
 	/**
 	 * @param \Pimple\Container $di
 	 */

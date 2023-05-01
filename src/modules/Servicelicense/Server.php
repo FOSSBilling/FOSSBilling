@@ -25,7 +25,7 @@ class Server implements \Box\InjectionAwareInterface
         'valid' => false,
     ];
 
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
 
     public function setDi(\Pimple\Container $di): void
     {
