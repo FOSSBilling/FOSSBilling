@@ -38,7 +38,7 @@ class FOSSBillingAutoloader
     }
 
     /**
-     * @param string $class Classname, after having and specialzed handling performed
+     * @param string $class Classname, after having and specialized handling performed
      * @param string $path The path associated with the prefix
      * @param mixed $prefix The prefix matching the classname.
      * @return string The completed file path.
