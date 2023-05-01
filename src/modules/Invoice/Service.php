@@ -42,28 +42,6 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSettingsRoutes()
-    {
-        return array(
-            'unpaid' => array(
-                'path' => '/invoice?status=unpaid',
-                'label' => __trans('Unpaid invoices'),
-            ),
-            'paid' => array(
-                'path' => '/invoice?status=paid',
-                'label' => __trans('Paid invoices'),
-            ),
-            'refunded' => array(
-                'path' => '/invoice?status=refunded',
-                'label' => __trans('Refunded invoices'),
-            ),
-            'all' => array(
-                'path' => '/invoice',
-                'label' => __trans('All invoices'),
-            ),
-        );
-    }
-
     public function getSearchQuery($data)
     {
         $sql = 'SELECT p.*

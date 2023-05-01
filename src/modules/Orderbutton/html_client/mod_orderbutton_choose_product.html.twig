@@ -12,7 +12,7 @@
                 <h2 style="margin-bottom: -5px;">{{ category.title }}</h2>
                 <span>{{ category.description|markdown }}</span>
                 <ul class="nav nav-list">
-                    {% for i, product in category.products %}
+                    {% for i, product in category.products|sort((a, b) => a.priority <=> b.priority) %}
                     <li>
                         <a href="{{ 'orderbutton'|link({ 'order': product.id, 'show_custom_form_values': request.show_custom_form_values }) }}">{{ product.title }} <span class="awe-arrow-right pull-right"><span></a>
                     </li>

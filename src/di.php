@@ -365,7 +365,7 @@ $di['twig'] = $di->factory(function () use ($di) {
 $di['is_client_logged'] = function () use ($di) {
     if (!$di['auth']->isClientLoggedIn()) {
         $api_str = '/api/';
-        $url = $_GET['_url'] ?? null;
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 
         if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
             // Throw Exception if api request
@@ -393,7 +393,8 @@ $di['is_client_logged'] = function () use ($di) {
 $di['is_admin_logged'] = function () use ($di) {
     if (!$di['auth']->isAdminLoggedIn()) {
         $api_str = '/api/';
-        $url = $_GET['_url'] ?? '';
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+
         if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
