@@ -77,6 +77,8 @@ const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
+const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'cache';
+
 
 /*
   Config paths & templates
@@ -100,6 +102,7 @@ require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Autoload.php';
 $loader = new \FOSSBillingAutoloader();
 $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS, 'psr4');
+$loader->checkClassMap();
 $loader->register();
 
 final class Box_Installer
