@@ -1,10 +1,10 @@
-name: Create a downloadable preview build
+name: Create Downloadable Preview Build
 
 on:
   push:
-    branches: [main]
+    branches: main
   pull_request:
-    branches: [main]
+    branches: main
 
 jobs:
   build:
