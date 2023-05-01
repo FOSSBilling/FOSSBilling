@@ -13,7 +13,7 @@ class FOSSBillingAutoloader
     private string $typePsr4 = 'psr4';
 
     /** 
-     * Checks for the existance of the classMap file. Will generate a new one if it doesn't exist.
+     * Checks for the existence of the classMap file. Will generate a new one if it doesn't exist.
      * After generating one / if it exists, the map is loaded to the classMap array to be used to speed up loading later.
      * @return void  
      */
@@ -38,7 +38,6 @@ class FOSSBillingAutoloader
             return;
         }
         $this->classMap = include self::$classMapPath;
-        return;
     }
 
     /** 
