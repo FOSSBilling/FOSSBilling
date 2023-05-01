@@ -17,7 +17,7 @@ use Monolog\Handler\StreamHandler;
 
 class FOSSBilling_Monolog implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?\Pimple\Container $di;
     protected $logger = null;
     public string $dateFormat = "d-M-Y H:i:s e";
     public string $outputFormat = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
@@ -31,25 +31,16 @@ class FOSSBilling_Monolog implements InjectionAwareInterface
         "event"
     ];
 
-    /**
-     * @param \Pimple\Container $di
-     */
-    public function setDi($di)
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container|null
-     */
-    public function getDi(): \Pimple\Container|null
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }
-
-    /**
-     * @param \Pimple\Container $di
-     */
+    
     public function __construct(\Pimple\Container $di)
     {
         $this->di = $di;
