@@ -49,17 +49,17 @@ FOSSBilling is designed to be extensible and to integrate easily with your favor
 
 The following environment is highly recommended for running FOSSBilling. It *may* be possible to install and run the software in other environments, but it will be untested and unsupported.
 
-- A suitable web server (Apache/nginx/LSWS/Lighttpd)
+- A suitable web server (Apache/nginx/LSWS)
 - PHP 8.0, 8.1 or 8.2
 - MySQL 8 (or higher), or MariaDB 10.3 (or higher) *Other direct MySQL compatible DBs should also work but are not supported.*
 - The Following PHP extensions:
-      - curl (optional, but recommended)
-      - intl
-      - mbstring (optional, but recommended)
-      - openssl
-      - pdo_mysql
-      - xml
-      - zlib
+  - curl (optional, but recommended)
+  - intl
+  - mbstring (optional, but recommended)
+  - openssl
+  - pdo_mysql
+  - xml
+  - zlib
 
 ## Installation
 
@@ -85,7 +85,7 @@ Your [pull requests](https://github.com/FOSSBilling/FOSSBilling/pulls) will be h
 
 Don't hesitate to create an [issue](https://github.com/FOSSBilling/FOSSBilling/issues), start a discussion in the [FOSSBilling Forum](https://forum.fossbilling.org/), or join us on [Discord](https://fossbilling.org/discord) to say hi.
 
-⭐ Not a developer? Feel free to help by starring the repository. It helps us catch the attention of new developers who'd like to contribute. 
+⭐ Not a developer? Feel free to help by starring the repository. It helps us catch the attention of new developers who'd like to contribute.
 
 ## Licensing
 
