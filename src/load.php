@@ -242,6 +242,14 @@ define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
 
+//Initial setup and checks passed, now we setup our custom autoloader.
+require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Autoload.php';
+$loader = new \FOSSBillingAutoloader();
+$loader->addPrefix('', PATH_LIBRARY, 'psr0');
+$loader->addPrefix('Box\\Mod\\', PATH_MODS, 'psr4');
+$loader->checkClassMap();
+$loader->register();
+
 // Check if SSL required, and enforce if so.
 checkSSL();
 
