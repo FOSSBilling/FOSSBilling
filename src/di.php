@@ -55,9 +55,6 @@ $di['logger'] = function () use ($di) {
     $log = new Box_Log();
     $log->setDi($di);
 
-    $monolog = new FOSSBilling_Monolog($di);
-    $log->addWriter($monolog);
-
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
 
     if ($log_to_db) {
@@ -73,6 +70,9 @@ $di['logger'] = function () use ($di) {
         }
 
         $log->addWriter($writer2);
+    } else {
+        $monolog = new FOSSBilling_Monolog($di);
+        $log->addWriter($monolog);
     }
 
     return $log;
