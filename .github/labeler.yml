@@ -1,36 +1,41 @@
-tests/CI:
-- tests/*
-
-front-end:
-- src/themes/*
-
-admin-panel:
-- src/themes/admin_*
-
-huraga:
-- src/themes/huraga/*
-
-composer:
-- composer.json
-- composer.lock
-
+# General.
+api:
+- any: [ 'src/library/Api/*', 'src/modules/**/Api/*' ]
 installer:
-- src/install/*
-- bin/install.sh
+- src/install/**/*
+library:
+- any: [ 'src/library/**/*', '!src/library/Payment/Adapter/*', '!src/library/Registrar/Adapter/*', '!src/library/Server/Manager/*' ]
+modules:
+- src/modules/**/**/*
 
-payments:
-- src/library/Payment*
-
-server-manager:
-- src/library/Server*
-
-github-config:
-- .github/*
-
-hosting:
+# Extensions.
+extensions:
+- any: [ 'src/library/Payment/Adapter/*', 'src/library/Registrar/Adapter/*', 'src/library/Server/Manager/*' ]
+payment-gateways:
+- src/library/Payment/Adapter/*
+domain-registrars:
+- src/library/Registrar/Adapter/*
+server-managers:
 - src/library/Server/Manager/*
 
-docker:
-- docker-compose.yaml
-- bin/install.sh
-- data/docker*
+# Front-end/Themes.
+front-end:
+- src/themes/*
+admin-panel:
+- src/themes/admin_*/**/*
+huraga:
+- src/themes/huraga/**/*
+
+# Github Actions/Config.
+github-config:
+- .github/**/*
+
+# Package Management.
+composer:
+- any: [ 'composer.json', 'composer.lock' ]
+npm:
+- any: [ 'package.json', 'package-lock.json' ]
+
+# Tests/CI.
+tests/CI:
+- tests/**/*

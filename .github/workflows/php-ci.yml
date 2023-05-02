@@ -1,0 +1,105 @@
+name: Build and Test
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+
+jobs:
+  composer:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [ 8.0, 8.1, 8.2 ]
+
+    name: PHP ${{ matrix.php }} - Build and Archive
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Validate composer.json and composer.lock
+        uses: php-actions/composer@v6
+        with:
+          command: validate
+
+      - name: Cache Composer Dependencies
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: ./src/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        if: steps.composer-cache.outputs.cache-hit != 'true'
+        uses: php-actions/composer@v6
+        with:
+          php_version: ${{ matrix.php }}
+
+      - name: Create Archive Build for Testing
+        run: |
+          cp ./src/config-sample.php ./src/config.php
+          mkdir -p ./src/data/cache
+          mkdir -p ./src/data/log
+          echo > ./src/data/log/license.log
+          echo > ./src/data/log/application.log
+          echo > ./src/data/log/php_error.log
+          rm -rf ./src/install
+          mkdir /tmp/builds/ && tar -cvf /tmp/builds/build.tar ./
+
+      - name: Upload Build Archive for Tests
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact ${{ matrix.php }}
+          path: /tmp/builds
+          retention-days: 1
+
+  phpstan:
+    runs-on: ubuntu-latest
+    needs: [ composer ]
+    strategy:
+      matrix:
+        php: [ 8.0 ]
+
+    name: PHPStan
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-artifact ${{ matrix.php }}
+          path: /tmp/builds
+
+      - name: Extract build archive
+        run: tar -xvf /tmp/builds/build.tar ./
+
+      - name: Run PHPStan
+        uses: php-actions/phpstan@v3
+        with:
+          php_version: ${{ matrix.php }}
+          configuration: phpstan.neon
+          memory_limit: 512M
+          version: latest
+
+  phpunit:
+    runs-on: ubuntu-latest
+    needs: [ composer, phpstan ]
+    strategy:
+      matrix:
+        php: [ 8.0, 8.1, 8.2 ]
+
+    name: PHP ${{ matrix.php }} - PHPUnit Tests
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-artifact ${{ matrix.php }}
+          path: /tmp/builds
+
+      - name: Extract Build Archive
+        run: tar -xvf /tmp/builds/build.tar ./
+
+      - name: Run PHPUnit Tests
+        uses: php-actions/phpunit@v3
+        with:
+          version: 9
+          php_version: ${{ matrix.php }}
+          configuration: phpunit.xml.dist
