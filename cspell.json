@@ -332,7 +332,9 @@
         "Coudn\\'t",
         "updatepassword",
         "datatable",
-        "FileCacheExcption"
+        "FileCacheExcption",
+        "Autoloader",
+        "autoloader"
     ],
     "ignorePaths": [
         "tests/**",

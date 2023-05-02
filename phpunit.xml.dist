@@ -18,8 +18,8 @@
     <testsuite name="Library">
       <directory>tests/library</directory>
     </testsuite>
-    <testsuite name="Integration">
-      <directory>tests/integration</directory>
+    <testsuite name="Modules">
+      <directory>tests/modules</directory>
     </testsuite>
   </testsuites>
   <php>
