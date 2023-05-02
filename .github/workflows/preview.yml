@@ -79,19 +79,19 @@ jobs:
           mv Version2.php Version.php
         working-directory: ./build/source/library/FOSSBilling
 
+      - name: Upload the Final Artifact to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: FOSSBilling Preview
+          path: ./build/source/*
+          if-no-files-found: error
+
       - name: Create the final archive
         run: zip -r ./FOSSBilling-preview.zip .
         working-directory: ./build/source/
 
       - name: Copy the archive to its final location
         run: cp ./build/source/FOSSBilling-preview.zip ./build/distribution
-
-      - name: Upload the final artifact to GitHub
-        uses: actions/upload-artifact@v3
-        with:
-          name: FOSSBilling Preview Archive
-          path: ./build/distribution/FOSSBilling-preview.zip
-          if-no-files-found: error
 
       - name: Upload the final artifact to our S3 bucket
         if: github.ref == 'refs/heads/main'
