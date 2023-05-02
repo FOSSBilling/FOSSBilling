@@ -33,7 +33,7 @@ class Box_Log implements \Box\InjectionAwareInterface
     const INFO = 6;  // Informational: informational messages
     const DEBUG = 7;  // Debug: debug messages
 
-    protected array $_priorities = array(
+    protected array $_priorities = [
         self::EMERG => 'EMERG',
         self::ALERT => 'ALERT',
         self::CRIT => 'CRIT',
@@ -42,13 +42,13 @@ class Box_Log implements \Box\InjectionAwareInterface
         self::NOTICE => 'NOTICE',
         self::INFO => 'INFO',
         self::DEBUG => 'DEBUG',
-    );
+    ];
 
     protected ?\Pimple\Container $di;
     protected $_min_priority = null;
     
-    protected array $_writers = array();
-    protected array $_extras = array();
+    protected array $_writers = [];
+    protected array $_extras = [];
     protected string $_channel = 'application';
 
     public function setDi(\Pimple\Container $di): void
@@ -118,7 +118,7 @@ class Box_Log implements \Box\InjectionAwareInterface
 
         // Check to see if any extra information was passed
         if (!empty($extras)) {
-            $info = array();
+            $info = [];
             if (is_array($extras)) {
                 foreach ($extras as $key => $value) {
                     if (is_string($key)) {
@@ -148,12 +148,12 @@ class Box_Log implements \Box\InjectionAwareInterface
 
     protected function _packEvent($message, $priority)
     {
-        return array_merge(array(
+        return array_merge([
             'timestamp' => date('Y-m-d H:i:s'),
             'message' => $message,
             'priority' => $priority,
             'priorityName' => $this->_priorities[$priority],
-        ),
+        ],
             $this->_extras
         );
     }
@@ -175,7 +175,7 @@ class Box_Log implements \Box\InjectionAwareInterface
      */
     public function setEventItem(string $name, mixed $value): static
     {
-        $this->_extras = array_merge($this->_extras, array($name => $value));
+        $this->_extras = array_merge($this->_extras, [$name => $value]);
         return $this;
     }
 

@@ -76,7 +76,7 @@ class FOSSBilling_Monolog implements InjectionAwareInterface
     public function parsePriority(int $priority): int
     {
         // Map numeric priority to Monolog priority
-        $map = array(
+        $map = [
             Box_Log::EMERG => Logger::EMERGENCY,
             Box_Log::ALERT => Logger::ALERT,
             Box_Log::CRIT => Logger::CRITICAL,
@@ -85,13 +85,9 @@ class FOSSBilling_Monolog implements InjectionAwareInterface
             Box_Log::NOTICE => Logger::NOTICE,
             Box_Log::INFO => Logger::INFO,
             Box_Log::DEBUG => Logger::DEBUG,
-        );
+        ];
 
-        if (isset($map[$priority])) {
-            return $map[$priority];
-        } else {
-            return Logger::DEBUG;
-        }
+        return $map[$priority] ?? Logger::DEBUG;
     }
 
     /**
@@ -102,7 +98,7 @@ class FOSSBilling_Monolog implements InjectionAwareInterface
     {
         $priority = $this->parsePriority($event['priority']);
         $message = $event['message'];
-        $context = isset($event['info']) && is_array($event['info']) ? $event['info'] : array();
+        $context = isset($event['info']) && is_array($event['info']) ? $event['info'] : [];
 
         $this->getChannel($channel)->log($priority, $message, $context);
     }
