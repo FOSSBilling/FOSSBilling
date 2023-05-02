@@ -13,7 +13,7 @@
  */
 
 
-class Model_Session extends \FOSSBilling_Model
+class Model_Session extends \RedBeanPHP\SimpleModel
 {
 
 }

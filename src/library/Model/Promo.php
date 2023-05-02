@@ -13,7 +13,7 @@
  */
 
 
-class Model_Promo extends FOSSBilling_Model
+class Model_Promo extends \RedBeanPHP\SimpleModel
 {
 	const PERCENTAGE    = 'percentage';
 	const ABSOLUTE      = 'absolute';

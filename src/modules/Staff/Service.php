@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Staff;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {

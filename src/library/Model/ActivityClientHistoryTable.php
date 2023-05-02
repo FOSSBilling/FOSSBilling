@@ -13,7 +13,7 @@
  */
 
 
-class Model_ActivityClientHistoryTable implements \Box\InjectionAwareInterface
+class Model_ActivityClientHistoryTable implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

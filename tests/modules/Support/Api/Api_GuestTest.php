@@ -22,7 +22,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForGuest')
             ->will($this->returnValue(sha1(uniqid())));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -53,7 +53,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('ticketCreateForGuest')
             ->will($this->returnValue(sha1(uniqid())));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -88,7 +88,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -117,7 +117,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicCloseTicket')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -146,7 +146,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReplyForGuest')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -167,4 +167,3 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 }
- 

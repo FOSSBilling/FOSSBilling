@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_KbArticle extends \FOSSBilling_Model
+class Model_KbArticle extends \RedBeanPHP\SimpleModel
 {
     const ACTIVE    = 'active';
     const DRAFT     = 'draft';

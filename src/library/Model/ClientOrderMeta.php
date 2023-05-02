@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientOrderMeta extends FOSSBilling_Model
+class Model_ClientOrderMeta extends \RedBeanPHP\SimpleModel
 {
 
 }

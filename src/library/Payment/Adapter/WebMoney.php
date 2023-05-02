@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
+class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
 {
 	/**
 	 * @var \Pimple\Container

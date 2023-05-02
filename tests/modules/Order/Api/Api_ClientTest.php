@@ -202,7 +202,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(array()));
 
         $product = new Model_Product();
-        $product->loadBean(new RedBeanPHP\OODBBean());
+        $product->loadBean(new \RedBeanPHP\OODBBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -266,8 +266,8 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $data   = array(
             'id' => rand(1, 100)
-        );        
-        
+        );
+
         $this->expectException(\Box_Exception::class);
         $result = $apiMock->delete($data);
 
@@ -276,7 +276,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetOrder()
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -312,7 +312,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetOrderNotFoundException()
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -345,4 +345,3 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->get($data);
     }
 }
- 

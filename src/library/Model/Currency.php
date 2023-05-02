@@ -13,7 +13,7 @@
  */
 
 
-class Model_Currency extends \FOSSBilling_Model
+class Model_Currency extends \RedBeanPHP\SimpleModel
 {
-    
+
 }

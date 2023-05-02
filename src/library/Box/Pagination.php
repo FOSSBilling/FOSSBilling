@@ -13,7 +13,7 @@
  */
 
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Box_Pagination implements InjectionAwareInterface
 {

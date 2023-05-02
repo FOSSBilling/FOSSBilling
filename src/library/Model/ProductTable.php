@@ -14,7 +14,7 @@
  */
 
 
-class Model_ProductTable implements \Box\InjectionAwareInterface
+class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
 {
     const CUSTOM            = 'custom';
     const LICENSE           = 'license';

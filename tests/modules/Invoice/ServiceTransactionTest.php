@@ -118,7 +118,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($newId));
 
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress');
 
@@ -666,4 +666,4 @@ class ServiceTransactionTest extends \BBTestCase
 
 
 }
- 
+

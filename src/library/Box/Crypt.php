@@ -13,7 +13,7 @@
  */
 
 
-class Box_Crypt implements \Box\InjectionAwareInterface
+class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

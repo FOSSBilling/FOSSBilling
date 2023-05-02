@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -13,10 +12,12 @@
  * with this source code in the file LICENSE
  */
 
-use Box\InjectionAwareInterface;
+namespace FOSSBilling;
+
+use \FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
-class FOSSBilling_ExtensionManager implements InjectionAwareInterface
+class ExtensionManager implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
@@ -30,9 +31,6 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
 
     private string $_url = 'https://extensions.fossbilling.org/api/';
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -135,7 +133,7 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
         $latest = $this->getLatestExtensionRelease($extension);
 
         if ($this->di['config']['update_branch'] === 'release') {
-            if (version_compare(\FOSSBilling_Version::VERSION, $latest['min_fossbilling_version'], '<')) {
+            if (version_compare(\FOSSBilling\Version::VERSION, $latest['min_fossbilling_version'], '<')) {
                 return false;
             }
         }
@@ -156,11 +154,11 @@ class FOSSBilling_ExtensionManager implements InjectionAwareInterface
     {
         $url = $this->_url . $endpoint;
 
-        $httpClient = HttpClient::create();
+        $httpClient = \Symfony\Component\HttpClient\HttpClient::create();
         $response = $httpClient->request('GET', $url, [
             'timeout' => 5,
             'query' => array_merge($params, [
-                'fossbilling_version' => \FOSSBilling_Version::VERSION,
+                'fossbilling_version' => \FOSSBilling\Version::VERSION,
             ]),
         ]);
 

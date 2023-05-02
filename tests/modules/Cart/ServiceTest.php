@@ -666,7 +666,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
 
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
             ->will($this->returnValue('1.1.1.1'));
@@ -733,7 +733,7 @@ class ServiceTest extends \BBTestCase
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
-        
+
         $this->expectException(\Box_Exception::class);
         $result = $serviceMock->checkoutCart($cart, $client);
 
@@ -808,7 +808,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->willThrowException(new \Box_Exception('Period parameter not passed'));
@@ -851,7 +851,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
@@ -1328,7 +1328,7 @@ class ServiceTest extends \BBTestCase
     public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult)
     {
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(json_decode($promo->client_groups, 1));

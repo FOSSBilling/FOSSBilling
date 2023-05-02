@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -9,21 +9,20 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
+namespace FOSSBilling;
 
-class Box_RequestFile extends SplFileInfo
+class RequestFile extends \SplFileInfo
 {
     protected $name;
-
 
     public function __construct(array $file)
     {
         $this->name = $file['name'];
         parent::__construct($file['tmp_name']);
     }
-
 
     public function getName()
     {

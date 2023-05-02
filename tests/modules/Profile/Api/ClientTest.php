@@ -81,11 +81,11 @@ class ClientTest extends \BBTestCase
             ->method('changeClientPassword')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
-        
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['password'] = new \Box_Password();
@@ -115,7 +115,7 @@ class ClientTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -147,4 +147,3 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 }
- 

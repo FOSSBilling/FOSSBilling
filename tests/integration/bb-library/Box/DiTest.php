@@ -24,23 +24,23 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertInstanceOf('\Box_Session', $di['session']);
         $this->assertInstanceOf('Box_Authorization', $di['auth']);
         $this->assertInstanceOf('Twig\Environment', $di['twig']);
-        $this->assertInstanceOf('Box_Tools', $di['tools']);
-        $this->assertInstanceOf('Box_Validate', $di['validator']);
+        $this->assertInstanceOf('\FOSSBilling\Tools', $di['tools']);
+        $this->assertInstanceOf('\FOSSBilling\Validate', $di['validator']);
 
         $this->assertTrue(isset($di['mod']));
         $this->assertTrue(isset($di['mod_config']));
         $this->assertInstanceOf('Box\\Mod\\Cron\\Service', $di['mod_service']('cron'));
-        $this->assertInstanceOf('\FOSSBilling_ExtensionManager', $di['extension_manager']);
+        $this->assertInstanceOf('\FOSSBilling\ExtensionManager', $di['extension_manager']);
         $this->assertInstanceOf('\Box_Update', $di['updater']);
         $this->assertInstanceOf('\Server_Package', $di['server_package']);
         $this->assertInstanceOf('\Server_Client', $di['server_client']);
         $this->assertInstanceOf('\Server_Account', $di['server_account']);
         $this->assertTrue(isset($di['server_manager']));
-        $this->assertInstanceOf('\FOSSBilling_Requirements', $di['requirements']);
+        $this->assertInstanceOf('\FOSSBilling\Requirements', $di['requirements']);
         $this->assertInstanceOf('\Box\Mod\Theme\Model\Theme', $di['theme']);
         $this->assertInstanceOf('\Model_Cart', $di['cart']);
         $this->assertInstanceOf('\GeoIp2\Database\Reader', $di['geoip']);
         $this->assertInstanceOf('\Box_Password', $di['password']);
         $this->assertInstanceOf('\Box_Translate', $di['translate']());
-    }    
+    }
 }

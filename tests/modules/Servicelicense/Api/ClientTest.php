@@ -63,7 +63,7 @@ class ClientTest extends \BBTestCase {
             ->with('ClientOrder')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -97,7 +97,7 @@ class ClientTest extends \BBTestCase {
             ->with('ClientOrder')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -117,4 +117,3 @@ class ClientTest extends \BBTestCase {
         $this->api->_getService($data);
     }
 }
- 

@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientOrderStatus extends FOSSBilling_Model
+class Model_ClientOrderStatus extends \RedBeanPHP\SimpleModel
 {
 
 }

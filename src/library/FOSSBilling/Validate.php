@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -9,17 +9,15 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
+namespace FOSSBilling;
 
-class Box_Validate
+class Validate
 {
     protected ?\Pimple\Container $di;
 
-    /**
-     * @param \Pimple\Container|null $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -30,8 +28,10 @@ class Box_Validate
         return $this->di;
     }
 
-
-    public function isSldValid($sld)
+    /**
+     * Check if second level domain (SLD) is valid.
+     */
+    public function isSldValid(string $sld) : bool
     {
         // allow punnycode
         if(substr($sld, 0, 4) == 'xn--') {
@@ -45,19 +45,11 @@ class Box_Validate
         }
     }
 
-    /*
-     * Deprecated. It is recommended to instead use validateAndSanitizeEmail() whenever possible.
-    */
-    public function isEmailValid($email, $throw = true)
-    {
-        $valid = (filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) ? true : false;
-        if(!$valid && $throw) {
-            throw new \Box_Exception('Email is invalid');
-        }
-        return $valid;
-    }
-    
-    public function isPasswordStrong($pwd)
+    /**
+     *
+     *
+     */
+    public function isPasswordStrong($pwd) : bool
     {
         if( strlen($pwd) < 8 ) {
             throw new \Box_Exception("Minimum password length is 8 characters.");
@@ -115,7 +107,7 @@ class Box_Validate
     public function isBirthdayValid($birthday = '')
     {
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
-            throw new \Box_Exception('Birthdate is invalid');
+            throw new \Box_Exception('Birth date is invalid');
         }
         return true;
     }

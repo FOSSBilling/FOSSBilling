@@ -75,7 +75,7 @@ class ServiceTest extends \BBTestCase {
         );
 
 
-        $reqMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $reqMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $reqMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
             ->willReturn($clientIp);
@@ -108,7 +108,7 @@ class ServiceTest extends \BBTestCase {
         );
 
 
-        $reqMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $reqMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $reqMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
             ->willReturn($clientIp);

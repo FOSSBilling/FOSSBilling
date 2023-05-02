@@ -13,7 +13,7 @@
  */
 
 
-class Model_Admin extends \FOSSBilling_Model
+class Model_Admin extends \RedBeanPHP\SimpleModel
 {
     const ROLE_ADMIN = 'admin';
     const ROLE_STAFF = 'staff';

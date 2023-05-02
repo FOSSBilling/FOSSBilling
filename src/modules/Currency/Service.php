@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Currency;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface

@@ -311,7 +311,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAdapterClassName')
             ->will($this->returnValue($expected));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(array());
@@ -347,7 +347,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAdapterClassName')
             ->will($this->returnValue(null));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(array());
@@ -514,4 +514,3 @@ class ServicePayGatewayTest extends \BBTestCase {
         $this->assertNull($result);
     }
 }
- 

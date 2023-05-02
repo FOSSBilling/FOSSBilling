@@ -78,7 +78,7 @@ class Admin extends \Api_Abstract
      */
     public function languages()
     {
-        return \FOSSBilling_i18n::getLocales(true);
+        return \FOSSBilling\i18n::getLocales(true);
     }
 
     /**

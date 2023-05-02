@@ -87,7 +87,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('toApiArray')
             ->will($this->returnValue($expected));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -127,7 +127,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di              = new \Pimple\Container();
 
-        $validatorMock   = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock   = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
@@ -156,7 +156,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -191,7 +191,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -219,7 +219,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -256,7 +256,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('trash')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -327,7 +327,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -365,7 +365,7 @@ class Api_AdminTest extends \BBTestCase
 
         $loggerMock = $this->getMockBuilder('Box_Log')->getMock();
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -392,7 +392,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -428,7 +428,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('templateCreate')
             ->will($this->returnValue($templateModel));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -445,7 +445,7 @@ class Api_AdminTest extends \BBTestCase
     public function testTemplate_sendToNotSetException()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -479,7 +479,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($emailTemplateModel));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -512,7 +512,7 @@ class Api_AdminTest extends \BBTestCase
         $emailService->expects($this->atLeastOnce())
             ->method('resetTemplateByCode')
             ->will($this->returnValue(true));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -615,11 +615,11 @@ class Api_AdminTest extends \BBTestCase
             ->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
-        
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
@@ -656,7 +656,7 @@ class Api_AdminTest extends \BBTestCase
         $systemService->expects($this->atLeastOnce())
             ->method('renderString')
             ->will($this->returnValue('rendered'));
-            
+
         $di['mod_service'] = $di->protect(function () use ($systemService) {
             return $systemService;
         });
@@ -672,7 +672,7 @@ class Api_AdminTest extends \BBTestCase
         $activityMock = $this->getMockBuilder('\Box\Mod\Email\Api\Admin')->setMethods(array('email_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('email_delete')->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

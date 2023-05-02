@@ -278,7 +278,7 @@ class AdminTest extends \BBTestCase
             ->method('createServer')
             ->will($this->returnValue($newServerId));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -308,7 +308,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -338,7 +338,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -369,7 +369,7 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -399,7 +399,7 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -469,7 +469,7 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -504,7 +504,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -538,7 +538,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -569,7 +569,7 @@ class AdminTest extends \BBTestCase
             ->method('createHp')
             ->will($this->returnValue($newHpId));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -603,7 +603,7 @@ class AdminTest extends \BBTestCase
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($model));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -640,7 +640,7 @@ class AdminTest extends \BBTestCase
             ->method('getOrderService')
             ->will($this->returnValue($model));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -658,4 +658,3 @@ class AdminTest extends \BBTestCase
     }
 
 }
- 

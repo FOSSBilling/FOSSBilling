@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Invoice;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class ServicePayGateway implements InjectionAwareInterface
 {

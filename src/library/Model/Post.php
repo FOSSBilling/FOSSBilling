@@ -13,7 +13,7 @@
  */
 
 
-class Model_Post extends \FOSSBilling_Model
+class Model_Post extends \RedBeanPHP\SimpleModel
 {
 
 }

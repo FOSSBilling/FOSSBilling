@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Api_Abstract implements InjectionAwareInterface
 {

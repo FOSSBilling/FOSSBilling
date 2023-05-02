@@ -290,7 +290,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getPathSettingsDataFile')
             ->will($this->returnValue('location/Of/Assets/file'));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('file_put_contents');
 

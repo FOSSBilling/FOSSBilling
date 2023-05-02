@@ -19,7 +19,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
             ->will($this->returnValue(true));
 
         $client = new Model_Client();
-        $client->loadBean(new RedBeanPHP\OODBBean());
+        $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = 1;
 
         $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
@@ -52,7 +52,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         );
 
         $client = new Model_Client();
-        $client->loadBean(new RedBeanPHP\OODBBean());
+        $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = 1;
 
         $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
@@ -72,7 +72,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         );
 
         $client = new Model_Client();
-        $client->loadBean(new RedBeanPHP\OODBBean());
+        $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = 1;
 
         $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();

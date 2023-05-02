@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -13,7 +12,18 @@
  * with this source code in the file LICENSE
  */
 
+namespace FOSSBilling;
 
-class FOSSBilling_Model extends \RedBeanPHP\SimpleModel
+interface InjectionAwareInterface
 {
+    /**
+     * @param \Pimple\Container $di
+     * @return void
+     */
+    public function setDi(\Pimple\Container $di): void;
+
+    /**
+     * @return \Pimple\Container|null
+     */
+    public function getDi(): ?\Pimple\Container;
 }

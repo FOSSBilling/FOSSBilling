@@ -13,7 +13,7 @@
  */
 
 
-class Model_ActivityAdminHistory extends FOSSBilling_Model
+class Model_ActivityAdminHistory extends \RedBeanPHP\SimpleModel
 {
 
 }

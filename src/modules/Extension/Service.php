@@ -16,9 +16,7 @@
 
 namespace Box\Mod\Extension;
 
-use Box\InjectionAwareInterface;
-use PhpZip\ZipFile;
-use Symfony\Component\HttpClient\HttpClient;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -334,7 +332,7 @@ class Service implements InjectionAwareInterface
         ];
 
         switch ($ext->type) {
-            case \FOSSBilling_ExtensionManager::TYPE_MOD:
+            case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $this->di['mod']($ext->name);
                 $manifest = $mod->getManifest();
                 $this->installModule($ext);
@@ -357,7 +355,7 @@ class Service implements InjectionAwareInterface
     public function deactivate(\Model_Extension $ext)
     {
         switch ($ext->type) {
-            case \FOSSBilling_ExtensionManager::TYPE_HOOK:
+            case \FOSSBilling\ExtensionManager::TYPE_HOOK:
                 $file = ucfirst($ext->name) . '.php';
                 $destination = PATH_LIBRARY . '/Hook/' . $file;
                 if (file_exists($destination)) {
@@ -365,7 +363,7 @@ class Service implements InjectionAwareInterface
                 }
                 break;
 
-            case \FOSSBilling_ExtensionManager::TYPE_MOD:
+            case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $ext->name;
                 if ($this->isCoreModule($mod)) {
                     throw new \Box_Exception('FOSSBilling core modules can not be managed');
@@ -396,7 +394,7 @@ class Service implements InjectionAwareInterface
         $this->deactivate($ext);
 
         switch ($ext->type) {
-            case \FOSSBilling_ExtensionManager::TYPE_MOD:
+            case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 break;
 
             default:
@@ -428,7 +426,7 @@ class Service implements InjectionAwareInterface
 
         // Download the extension archive and save it to the cache folder
         $fileHandler = fopen($zipPath, 'w');
-        $client = HttpClient::create();
+        $client = \Symfony\Component\HttpClient\HttpClient::create();
         $response = $client->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();
@@ -441,7 +439,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Extract the archive
-        $zip = new ZipFile();
+        $zip = new \PhpZip\ZipFile();
         try {
             $zip->openFile($zipPath);
             $zip->extractTo($extractedPath);
@@ -452,16 +450,16 @@ class Service implements InjectionAwareInterface
         }
 
         switch ($type) {
-            case \FOSSBilling_ExtensionManager::TYPE_MOD:
+            case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $destination = PATH_MODS . DIRECTORY_SEPARATOR . $id;
                 break;
-            case \FOSSBilling_ExtensionManager::TYPE_THEME:
+            case \FOSSBilling\ExtensionManager::TYPE_THEME:
                 $destination = PATH_THEMES . DIRECTORY_SEPARATOR . $id;
                 break;
-            case \FOSSBilling_ExtensionManager::TYPE_TRANSLATION:
+            case \FOSSBilling\ExtensionManager::TYPE_TRANSLATION:
                 $destination = PATH_LANGS . DIRECTORY_SEPARATOR . $id . '/LC_MESSAGES';
                 break;
-            case \FOSSBilling_ExtensionManager::TYPE_PG:
+            case \FOSSBilling\ExtensionManager::TYPE_PG:
                 $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . $id;
                 break;
         }
@@ -509,8 +507,8 @@ class Service implements InjectionAwareInterface
         }
 
         $info = $mod->getManifest();
-        if (isset($info['minimum_boxbilling_version']) && \FOSSBilling_Version::compareVersion($info['minimum_boxbilling_version']) > 0) {
-            throw new \Box_Exception('Module can not be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling_Version::VERSION]);
+        if (isset($info['minimum_boxbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_boxbilling_version']) > 0) {
+            throw new \Box_Exception('Module can not be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
         }
 
         // Allow install module even if no installer exists

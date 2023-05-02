@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Support;
 
-class Service implements \Box\InjectionAwareInterface
+class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

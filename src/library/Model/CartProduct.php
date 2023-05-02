@@ -13,7 +13,7 @@
  */
 
 
-class Model_CartProduct extends \FOSSBilling_Model
+class Model_CartProduct extends \RedBeanPHP\SimpleModel
 {
 
 }

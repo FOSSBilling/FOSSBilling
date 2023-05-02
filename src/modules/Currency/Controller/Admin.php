@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Currency\Controller;
 
-class Admin implements \Box\InjectionAwareInterface
+class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

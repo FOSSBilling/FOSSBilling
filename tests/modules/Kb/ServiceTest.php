@@ -262,7 +262,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->returnValue($model));
 
-        $tools = $this->getMockBuilder('Box_Tools')->setMethods(array('slug'))->getMock();
+        $tools = $this->getMockBuilder('\FOSSBilling\Tools')->setMethods(array('slug'))->getMock();
         $tools->expects($this->atLeastOnce())
             ->method('slug')
             ->will($this->returnValue('article-slug'));
@@ -310,7 +310,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
-   
+
     public function testUpdateArticleNotFoundException()
     {
         $service = new \Box\Mod\Kb\Service();
@@ -336,7 +336,7 @@ class ServiceTest extends \BBTestCase
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
-        $service->setDi($di); 
+        $service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $result = $service->updateArticle($randId, $kb_article_category_id, $title, $slug, $status, $content, $views);
         $this->assertIsBool($result);
@@ -552,7 +552,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->returnValue($articleCategoryModel));
 
-        $tools = $this->getMockBuilder('Box_Tools')->setMethods(array('slug'))->getMock();
+        $tools = $this->getMockBuilder('\FOSSBilling\Tools')->setMethods(array('slug'))->getMock();
         $tools->expects($this->atLeastOnce())
             ->method('slug')
             ->will($this->returnValue('article-slug'));

@@ -47,7 +47,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -74,7 +74,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('tldToApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -104,7 +104,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
 
@@ -123,7 +123,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheckSldNotValidException()
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(false));
         $validatorMock->expects($this->atLeastOnce())
@@ -154,7 +154,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
         $validatorMock->expects($this->atLeastOnce())
@@ -185,7 +185,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
         $validatorMock->expects($this->atLeastOnce())
@@ -214,7 +214,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -243,7 +243,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('canBeTransferred')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -257,7 +257,7 @@ class Api_GuestTest extends \BBTestCase
             'tld' => '.com',
             'sld' => 'example'
         );
-        
+
         $this->expectException(\Box_Exception::class);
         $this->guestApi->can_be_transferred($data);
     }
@@ -271,7 +271,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->will($this->returnValue(false));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -285,11 +285,10 @@ class Api_GuestTest extends \BBTestCase
             'tld' => '.com',
             'sld' => 'example'
         );
-        
+
         $this->expectException(\Box_Exception::class);
         $this->guestApi->can_be_transferred($data);
     }
 
 
 }
- 

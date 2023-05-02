@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -10,22 +9,21 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
-use Box\InjectionAwareInterface;
+namespace FOSSBilling;
+
+use \FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
-class FOSSBilling_CentralAlerts implements InjectionAwareInterface
+class CentralAlerts implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
     private string $_url = 'https://fossbilling.org/api/central-alerts/';
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -68,7 +66,7 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
      * @return array The filtered alerts
      * @throws \Box_Exception
      */
-    public function filterAlerts(array $type = [], string $version = FOSSBilling_Version::VERSION): array
+    public function filterAlerts(array $type = [], string $version = \FOSSBilling\Version::VERSION): array
     {
         $alerts = $this->getAlerts();
 
@@ -87,7 +85,7 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
                 $alerts = array_filter($alerts, function($alert) use ($version) {
                     $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');
                     $lessThanTheMaximum = version_compare(strtolower($version), strtolower($alert['max_fossbilling_version']), '<=');
-    
+
                     return $overThanTheMinimum && $lessThanTheMaximum;
                 });
             }
@@ -98,10 +96,10 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
 
     /**
      * Make a request to the FOSSBilling Central Alerts System API
-     * 
+     *
      * @param string $endpoint The API endpoint to call (e.g. list)
      * @param array $params The array of parameters to pass to the API endpoint
-     * 
+     *
      * @return array The API response
      * @throws \Box_Exception
      */
@@ -113,7 +111,7 @@ class FOSSBilling_CentralAlerts implements InjectionAwareInterface
         $response = $client->request('GET', $url, [
             'timeout' => 5,
             'query' => array_merge($params, [
-                'fossbilling_version' => FOSSBilling_Version::VERSION,
+                'fossbilling_version' => \FOSSBilling\Version::VERSION,
             ]),
         ]);
 

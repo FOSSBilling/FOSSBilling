@@ -355,6 +355,7 @@
         "src/library/Registrar/**",
         "src/library/Server/Manager/**",
         "src/library/Box/**",
+        "src/library/FOSSBilling/**",
         "src/library/Payment/Adapter/**",
         "src/locale/**",
         "src/modules/System/Service.php",

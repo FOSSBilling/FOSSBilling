@@ -34,7 +34,7 @@ class ServiceTest extends \BBTestCase
 
         $expected = array_merge(json_decode($productModel->config, 1), $data);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -64,7 +64,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(1));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -151,7 +151,7 @@ class ServiceTest extends \BBTestCase
         $productModel = new  \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $successfullyUploadedFileCount = 0;
-        $requestMock                   = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock                   = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));
@@ -175,9 +175,9 @@ class ServiceTest extends \BBTestCase
             'name'     => 'test',
             'tmp_name' => '12345',
         );
-        $fileMock = new \Box_RequestFile($file);
+        $fileMock = new \FOSSBilling\RequestFile($file);
 
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));
@@ -221,9 +221,9 @@ class ServiceTest extends \BBTestCase
             'name'     => 'test',
             'tmp_name' => '12345',
         );
-        $fileMock = new \Box_RequestFile($file);
+        $fileMock = new \FOSSBilling\RequestFile($file);
 
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));
@@ -260,7 +260,7 @@ class ServiceTest extends \BBTestCase
         $serviceDownloadableModel->loadBean(new \DummyBean());
 
         $successfullyUploadedFileCount = 0;
-        $requestMock                   = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock                   = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));

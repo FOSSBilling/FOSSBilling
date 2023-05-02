@@ -4,7 +4,7 @@
 namespace Box\Tests\Mod\Client;
 
 
-use RedBeanPHP\OODBBean;
+use \RedBeanPHP\OODBBean;
 
 class ServiceTest extends \BBTestCase {
 
@@ -64,7 +64,7 @@ class ServiceTest extends \BBTestCase {
         $database->expects($this->atLeastOnce())->method('store')
             ->will($this->returnValue(1));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('url')
             ->will($this->returnValue('fossbilling.org/index.php/client/confirm-email/'));
 
@@ -928,7 +928,7 @@ class ServiceTest extends \BBTestCase {
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $ip = '10.10.10.2';
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
@@ -1273,4 +1273,3 @@ class ServiceTest extends \BBTestCase {
         $this->assertNull($result);
     }
 }
- 

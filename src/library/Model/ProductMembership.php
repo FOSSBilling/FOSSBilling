@@ -13,7 +13,7 @@
  */
 
 
-class Model_ProductMembership extends \FOSSBilling_Model
+class Model_ProductMembership extends \RedBeanPHP\SimpleModel
 {
 
 }

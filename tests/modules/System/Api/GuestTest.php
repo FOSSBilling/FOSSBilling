@@ -28,7 +28,7 @@ class GuestTest extends \BBTestCase {
         $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $servuceMock->expects($this->atLeastOnce())
             ->method('getVersion')
-            ->will($this->returnValue(\FOSSBilling_Version::VERSION));
+            ->will($this->returnValue(\FOSSBilling\Version::VERSION));
 
         $this->api->setService($servuceMock);
         $result = $this->api->version();

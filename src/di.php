@@ -1,8 +1,4 @@
-<?php
-
-
-declare(strict_types=1);
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling.
  *
@@ -37,7 +33,7 @@ $di = new \Pimple\Container();
  *
  * @param void
  *
- * @return Box_Config
+ * @return array
  */
 $di['config'] = function () {
     $array = include PATH_ROOT . '/config.php';
@@ -71,7 +67,7 @@ $di['logger'] = function () use ($di) {
 
         $log->addWriter($writer2);
     } else {
-        $monolog = new FOSSBilling_Monolog($di);
+        $monolog = new \FOSSBilling\Monolog($di);
         $log->addWriter($monolog);
     }
 
@@ -248,10 +244,10 @@ $di['session'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Request
+ * @return \FOSSBilling\Request
  */
 $di['request'] = function () use ($di) {
-    $service = new Box_Request();
+    $service = new \FOSSBilling\Request();
     $service->setDi($di);
 
     return $service;
@@ -294,7 +290,7 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     // Get internationalisation settings from config, or use sensible defaults for
     // missing required settings.
-    $locale = \FOSSBilling_i18n::getActiveLocale();
+    $locale = \FOSSBilling\i18n::getActiveLocale();
     $timezone = $config['i18n']['timezone'] ?? 'UTC';
     $date_format = !empty($config['i18n']['date_format']) ? strtoupper($config['i18n']['date_format']) : 'MEDIUM';
     $time_format = !empty($config['i18n']['time_format']) ? strtoupper($config['i18n']['time_format']) : 'SHORT';
@@ -506,27 +502,21 @@ $di['api_system'] = function () use ($di) {
     return $di['api']('system');
 };
 
-/*
- *
- * @param void
- *
- * @return \Box_Tools
- */
-$di['tools'] = $di->factory(function () use ($di) {
-    $service = new Box_Tools();
+$di['tools'] = function () use ($di) {
+    $service = new \FOSSBilling\Tools();
     $service->setDi($di);
 
     return $service;
-});
+};
 
 /*
  *
  * @param void
  *
- * @return \Box_Validate
+ * @return \FOSSBilling\Validate
  */
 $di['validator'] = function () use ($di) {
-    $validator = new Box_Validate();
+    $validator = new \FOSSBilling\Validate();
     $validator->setDi($di);
 
     return $validator;
@@ -536,10 +526,10 @@ $di['validator'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling_CentralAlerts
+ * @return \FOSSBilling\CentralAlerts
  */
 $di['central_alerts'] = function () use ($di) {
-    $centralalerts = new \FOSSBilling_CentralAlerts();
+    $centralalerts = new \FOSSBilling\CentralAlerts();
     $centralalerts->setDi($di);
 
     return $centralalerts;
@@ -549,10 +539,23 @@ $di['central_alerts'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling_ExtensionManager
+ * @return \FOSSBilling\CentralAlerts
+ */
+$di['central_alerts'] = function () use ($di) {
+    $centralalerts = new \FOSSBilling\CentralAlerts();
+    $centralalerts->setDi($di);
+
+    return $centralalerts;
+};
+
+/*
+ *
+ * @param void
+ *
+ * @return \FOSSBilling\ExtensionManager
  */
 $di['extension_manager'] = function () use ($di) {
-    $extension = new \FOSSBilling_ExtensionManager();
+    $extension = new \FOSSBilling\ExtensionManager();
     $extension->setDi($di);
 
     return $extension;
@@ -618,10 +621,10 @@ $di['server_manager'] = $di->protect(function($manager, $config) use ($di) {
 /*
  * @param void
  *
- * @return FOSSBilling_Requirements
+ * @return \FOSSBilling\Requirements
  */
 $di['requirements'] = function () use ($di) {
-    $r = new FOSSBilling_Requirements();
+    $r = new \FOSSBilling\Requirements();
     $r->setDi($di);
 
     return $r;
@@ -682,7 +685,7 @@ $di['cart'] = function () use ($di) {
  * @return \Box_Table The new table object that was just created.
  */
 $di['table'] = $di->protect(function ($name) use ($di) {
-    $tools = new Box_Tools();
+    $tools = new \FOSSBilling\Tools();
     $tools->setDi($di);
     $table = $tools->getTable($name);
     $table->setDi($di);
@@ -734,7 +737,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
         $tr->setDomain($textDomain);
     }
 
-    $locale = \FOSSBilling_i18n::getActiveLocale();
+    $locale = \FOSSBilling\i18n::getActiveLocale();
 
     $tr->setDi($di);
     $tr->setLocale($locale);

@@ -13,7 +13,7 @@
  */
 
 
-class Model_PayGateway extends FOSSBilling_Model
+class Model_PayGateway extends \RedBeanPHP\SimpleModel
 {
 
 }

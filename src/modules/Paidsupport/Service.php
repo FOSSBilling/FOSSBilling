@@ -23,7 +23,7 @@
 
 namespace Box\Mod\Paidsupport;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {

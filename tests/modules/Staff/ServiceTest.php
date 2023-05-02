@@ -881,7 +881,7 @@ class ServiceTest extends \BBTestCase
 
         $di             = new \Pimple\Container();
         $di['db']       = $dbMock;
-        $di['tools']    = new \Box_Tools();
+        $di['tools']    = new \FOSSBilling\Tools();
         $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
@@ -1620,4 +1620,3 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Admin', $result);
     }
 }
- 

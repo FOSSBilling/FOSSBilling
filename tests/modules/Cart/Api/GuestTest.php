@@ -56,7 +56,7 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue(true));
 
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -93,7 +93,7 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue(true));
 
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -115,7 +115,7 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'currency' => 'EUR'
         );
-        
+
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage('Currency not found');
         $result = $this->guestApi->set_currency($data);
@@ -223,7 +223,7 @@ class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -261,7 +261,7 @@ class GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('isPromoAvailableForClientGroup')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -275,7 +275,7 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'promocode' => 'CODE'
         );
-        
+
         $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->apply_promo($data);
         $this->assertTrue($result);
@@ -300,7 +300,7 @@ class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->will($this->returnValue(false));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -314,7 +314,7 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'promocode' => 'CODE'
         );
-        
+
         $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->apply_promo($data);
 
@@ -338,7 +338,7 @@ class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->will($this->returnValue(false));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -352,7 +352,7 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'promocode' => 'CODE'
         );
-        
+
         $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->apply_promo($data);
 
@@ -393,7 +393,7 @@ class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('removeProduct')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -426,7 +426,7 @@ class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('addItem')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -474,7 +474,7 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue($cart));
 
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -503,4 +503,3 @@ class GuestTest extends \BBTestCase
 
 
 }
- 

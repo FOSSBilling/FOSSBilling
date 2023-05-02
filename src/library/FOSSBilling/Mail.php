@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -13,13 +12,16 @@
  * with this source code in the file LICENSE
  */
 
+namespace FOSSBilling;
+
+use \FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 
-class FOSSBilling_Mail
+class Mail implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
@@ -27,9 +29,6 @@ class FOSSBilling_Mail
     private $transport = null;
     private $dsn = null;
 
-    /**
-     * @param \Pimple\Container|null $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;

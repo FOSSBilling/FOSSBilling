@@ -111,7 +111,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -140,7 +140,7 @@ class AdminTest extends \BBTestCase {
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -159,4 +159,3 @@ class AdminTest extends \BBTestCase {
 
 
 }
- 

@@ -13,7 +13,7 @@
  */
 
 
-class Model_Tax extends FOSSBilling_Model
+class Model_Tax extends \RedBeanPHP\SimpleModel
 {
 
 }

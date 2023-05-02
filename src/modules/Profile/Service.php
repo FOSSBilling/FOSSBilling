@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Profile;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -124,8 +124,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($email)) {
-            $validator = $this->di['validator'];
-            $validator->isEmailValid($email);
+            $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {

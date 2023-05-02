@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientBalance extends FOSSBilling_Model
+class Model_ClientBalance extends \RedBeanPHP\SimpleModel
 {
 
 }

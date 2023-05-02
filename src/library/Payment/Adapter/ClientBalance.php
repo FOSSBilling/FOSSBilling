@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
+class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

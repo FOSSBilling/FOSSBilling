@@ -5,13 +5,13 @@
 class Api_Admin_ExtensionTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extensions.xml';
-    
+
     public function testSetup()
     {
         $data = array(
             'code' => 'extension',
         );
-        
+
         try {
             //do not allow install core extension
             $bool = $this->api_admin->extension_mod_install($data);
@@ -39,7 +39,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
 
         $this->assertTrue($bool);
     }
-    
+
     public function testUpdate()
     {
         $versions = array(
@@ -47,7 +47,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'version_new' => '2.2.2',
         );
         $extension =  new Model_Extension();
-        $extension->loadBean(new RedBeanPHP\OODBBean());
+        $extension->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->setMethods(array('update', 'findExtension'))->getMock();
         $serviceMock->expects($this->any())
@@ -69,7 +69,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $arr = $api->update($data);
         $this->assertEquals($arr, $versions);
     }
-    
+
     public function testConfigs()
     {
         $data = array(
@@ -81,16 +81,16 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'smtp_password' =>  'sasd132423%3@#//',
             'smtp_security' =>  'yes',
         );
-        
+
         $bool = $this->api_admin->extension_config_save($data);
         $this->assertTrue($bool);
-        
+
         $array = $this->api_admin->extension_config_get($data);
         $array['ext'] = 'mod_email';
         $this->assertIsArray($array);
         $this->assertEquals($data, $array);
     }
-    
+
     public function testActivations()
     {
         $data = array(
@@ -101,13 +101,13 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $this->assertIsArray($array);
         $bool = $this->api_guest->extension_is_on($data);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->extension_deactivate($data);
         $this->assertTrue($bool);
         $bool = $this->api_guest->extension_is_on($data);
         $this->assertFalse($bool);
     }
-    
+
     public function testLists()
     {
         $data = array(
@@ -115,25 +115,25 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         );
         $array = $this->api_admin->extension_get_list($data);
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->extension_get_list(array('active'=>true, 'type'=>'mod', 'search'=>'f'));
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->extension_get_list(array('installed'=>true));
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->extension_get_list(array('has_settings'=>true));
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->extension_get_latest();
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->extension_get_navigation();
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->extension_languages();
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->extension_languages();
         $this->assertIsArray($array);
     }
@@ -147,7 +147,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
     public function testInstall(){
 
         $extension =  new Model_Extension();
-        $extension->loadBean(new RedBeanPHP\OODBBean());
+        $extension->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->setMethods(array('downloadAndExtract'))->getMock();
         $serviceMock->expects($this->any())

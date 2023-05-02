@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Index\Controller;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Admin implements InjectionAwareInterface
 {

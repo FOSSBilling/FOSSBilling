@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Hook;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -41,7 +41,7 @@ class Service implements InjectionAwareInterface
     public function getSearchQuery($filter)
     {
         $q = "SELECT id, rel_type, rel_id, meta_value as event, created_at, updated_at
-            FROM extension_meta 
+            FROM extension_meta
             WHERE extension = 'mod_hook'
             AND rel_type = 'mod'
             AND meta_key = 'listener'
@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
         $params = $event->getParameters();
         if ('mod' == $params['type']) {
-            $q = "DELETE FROM extension_meta 
+            $q = "DELETE FROM extension_meta
                 WHERE extension = 'mod_hook'
                 AND rel_type = 'mod'
                 AND rel_id = :mod

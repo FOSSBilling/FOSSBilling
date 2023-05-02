@@ -13,7 +13,7 @@
  */
 
 
-class Model_FormField extends FOSSBilling_Model
+class Model_FormField extends \RedBeanPHP\SimpleModel
 {
 
 }

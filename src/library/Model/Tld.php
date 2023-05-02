@@ -13,6 +13,6 @@
  */
 
 
-class Model_Tld extends \FOSSBilling_Model
+class Model_Tld extends \RedBeanPHP\SimpleModel
 {
 }

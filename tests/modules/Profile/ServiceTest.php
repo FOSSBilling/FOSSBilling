@@ -77,7 +77,7 @@ class ServiceTest extends \BBTestCase
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['tools']          = new \Box_Tools();
+        $di['tools']          = new \FOSSBilling\Tools();
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -151,7 +151,7 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->will($this->returnValue(false));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
         $di                   = new \Pimple\Container();
@@ -235,7 +235,7 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->never())->
         method('emailAlreadyRegistered')->will($this->returnValue(false));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->never())->method('isEmailValid');
 
         $di                   = new \Pimple\Container();
@@ -290,7 +290,7 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
         $di                   = new \Pimple\Container();
@@ -332,7 +332,7 @@ class ServiceTest extends \BBTestCase
         $di           = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['db']     = $dbMock;
-        $di['tools']  = new \Box_Tools();
+        $di['tools']  = new \FOSSBilling\Tools();
         $model        = new \Model_Client();
         $model->loadBean(new \DummyBean());
 

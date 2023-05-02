@@ -13,7 +13,7 @@
  */
 
 
-class Model_ApiRequestTable implements \Box\InjectionAwareInterface
+class Model_ApiRequestTable implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
