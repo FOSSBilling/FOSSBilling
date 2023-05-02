@@ -29,7 +29,8 @@
         "unsuspended",
         "admdly",
         "Pictogrammers",
-        "Symfony"
+        "Symfony",
+        "EMERG"
     ],
 
     "ignoreWords": [

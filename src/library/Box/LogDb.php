@@ -35,16 +35,18 @@ class Box_LogDb
     /**
      * Write a message to the log.
      *
-     * @param  array  $event  event data
+     * @param array $event
+     * @param string $channel
+     *
      * @return void
      */
-    public function write($event)
+    public function write(array $event, string $channel = 'application'): void
     {
         try {
-            if(method_exists($this->service, 'logEvent')) {
+            if (method_exists($this->service, 'logEvent')) {
                 $this->service->logEvent($event);
             }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             error_log($e);
         }
     }

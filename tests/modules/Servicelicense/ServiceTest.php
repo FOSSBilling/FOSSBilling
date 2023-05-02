@@ -651,7 +651,7 @@ class ServiceTest extends \BBTestCase
         $loggerMock = $this->getMockBuilder('\Box_Log')
             ->getMock();
         $loggerMock->expects($this->atLeastOnce())
-            ->method('addWriter');
+            ->method('setChannel');
 
         $data = array(
             'format' => 2,
@@ -682,7 +682,7 @@ class ServiceTest extends \BBTestCase
         $loggerMock = $this->getMockBuilder('\Box_Log')
             ->getMock();
         $loggerMock->expects($this->atLeastOnce())
-            ->method('addWriter');
+            ->method('setChannel');
 
         $data = array();
 
@@ -704,4 +704,3 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 }
- 

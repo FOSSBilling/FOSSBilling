@@ -71,9 +71,8 @@ $di['logger'] = function () use ($di) {
 
         $log->addWriter($writer2);
     } else {
-        $logFile = $di['config']['path_logs'];
-        $writer = new Box_LogStream($logFile);
-        $log->addWriter($writer);
+        $monolog = new FOSSBilling_Monolog($di);
+        $log->addWriter($monolog);
     }
 
     return $log;
