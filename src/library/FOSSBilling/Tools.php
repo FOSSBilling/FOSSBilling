@@ -197,9 +197,9 @@ class Tools
         return stripslashes($string);
     }
 
-    public function to_camel_case($str, $capitalise_first_char = false)
+    public function to_camel_case($str, $capitalize_first_char = false)
     {
-        if ($capitalise_first_char) {
+        if ($capitalize_first_char) {
             $str[0] = strtoupper($str[0]);
         }
         $func = function ($c) {
