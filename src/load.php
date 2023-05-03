@@ -191,7 +191,7 @@ function exceptionHandler($e)
 
         echo $whoops->handleException($e);
     } else {
-        include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Error' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+        include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
         $errorPage = new \FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $e->getMessage());
     }
