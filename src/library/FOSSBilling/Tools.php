@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE.
  */
 
- namespace FOSSBilling;
+namespace FOSSBilling;
 
 class Tools
 {
@@ -219,7 +219,7 @@ class Tools
 
     public function decodeJ($json_str)
     {
-        if (isset($json_str)) {
+        if (isset($json_str) && is_string($json_str)) {
             $config = json_decode($json_str, true);
             return is_array($config) ? $config : array();
         } else {
