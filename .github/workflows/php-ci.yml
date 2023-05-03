@@ -37,7 +37,7 @@ jobs:
         with:
           php_version: ${{ matrix.php }}
 
-      - name: Create Archive Build for Testing
+      - name: Create Build Archive for Tests
         run: |
           cp ./src/config-sample.php ./src/config.php
           mkdir -p ./src/data/cache
@@ -51,7 +51,7 @@ jobs:
       - name: Upload Build Archive for Tests
         uses: actions/upload-artifact@v3
         with:
-          name: build-artifact ${{ matrix.php }}
+          name: build-archive-php${{ matrix.php }}
           path: /tmp/builds
           retention-days: 1
 
@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: build-artifact ${{ matrix.php }}
+          name: build-archive-php${{ matrix.php }}
           path: /tmp/builds
 
       - name: Extract build archive
@@ -87,11 +87,11 @@ jobs:
       matrix:
         php: [ 8.0, 8.1, 8.2 ]
 
-    name: PHP ${{ matrix.php }} - PHPUnit Tests
+    name: PHP ${{ matrix.php }} - PHPUnit
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: build-artifact ${{ matrix.php }}
+          name: build-archive-php${{ matrix.php }}
           path: /tmp/builds
 
       - name: Extract Build Archive
