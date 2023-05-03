@@ -13,7 +13,7 @@
 
 <a href="https://fossbilling.org/downloads/"><img src="https://raw.githubusercontent.com/FOSSBilling/fossbilling.org/main/public/img/gh-download-button.png" alt="Download button" width="400"/></a>
 
-[![PHP Composer](https://github.com/FOSSBilling/FOSSBilling/actions/workflows/php.yml/badge.svg)](https://github.com/FOSSBilling/FOSSBilling/actions/workflows/php.yml)
+[![PHP Composer](https://github.com/FOSSBilling/FOSSBilling/actions/workflows/php-ci.yml/badge.svg)](https://github.com/FOSSBilling/FOSSBilling/actions/workflows/php-ci.yml)
 [![Download Latest](https://img.shields.io/github/downloads/FOSSBilling/FOSSBilling/total)](https://github.com/FOSSBilling/FOSSBilling/releases/latest)
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 [![Discord](https://img.shields.io/discord/747432407757488179?color=%237289FA&logo=discord&logoColor=%23FFF)](https://fossbilling.org/discord)
