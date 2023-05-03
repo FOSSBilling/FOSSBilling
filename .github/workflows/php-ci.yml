@@ -98,7 +98,7 @@ jobs:
         run: tar -xvf /tmp/builds/build.tar ./
 
       - name: Run PHPUnit Tests
-        uses: php-actions/phpunit@v9
+        uses: php-actions/phpunit@v3
         with:
           version: 9
           php_version: ${{ matrix.php }}
