@@ -20,17 +20,11 @@ class Box_Update
 {
     protected ?\Pimple\Container $di;
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;

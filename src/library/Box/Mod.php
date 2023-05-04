@@ -17,9 +17,6 @@ class Box_Mod
 {
     private $mod = null;
 
-    /**
-     * @var \Pimple\Container
-     */
     private $di = null;
 
     private $core = array(

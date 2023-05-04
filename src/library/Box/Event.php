@@ -42,9 +42,6 @@ class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
         $this->api_guest = $api_guest;
     }
 
-    /**
-     * @param \Pimple\Container|null $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;

@@ -23,9 +23,6 @@ class Payment_Adapter_Custom
         $this->config = $config;
     }
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;

@@ -17,17 +17,11 @@ class Model_ApiRequestTable implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;

@@ -39,17 +39,11 @@ class Box_Translate implements \FOSSBilling\InjectionAwareInterface
         return $this;
     }
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return \Pimple\Container
-     */
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;

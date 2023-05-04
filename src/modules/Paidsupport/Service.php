@@ -28,9 +28,6 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
