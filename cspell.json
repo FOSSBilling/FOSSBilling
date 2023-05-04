@@ -336,8 +336,7 @@
         "Autoloader",
         "autoloader",
         "qwertyuiopasdfghjklzxccvbnm",
-        "QWERTYUIOPASDFGHJKLZXCVBNM",
-        "Servicecentovacast"
+        "QWERTYUIOPASDFGHJKLZXCVBNM"
     ],
     "ignorePaths": [
         "tests/**",
