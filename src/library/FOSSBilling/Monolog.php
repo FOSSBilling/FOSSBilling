@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -10,12 +9,14 @@
  * with this source code in the file LICENSE
  */
 
-use Box\InjectionAwareInterface;
+namespace FOSSBilling;
+
+use \FOSSBilling\InjectionAwareInterface;
 use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 
-class FOSSBilling_Monolog implements InjectionAwareInterface
+class Monolog implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
     protected $logger = null;
@@ -40,7 +41,7 @@ class FOSSBilling_Monolog implements InjectionAwareInterface
     {
         return $this->di;
     }
-    
+
     public function __construct(\Pimple\Container $di)
     {
         $this->di = $di;
@@ -77,14 +78,14 @@ class FOSSBilling_Monolog implements InjectionAwareInterface
     {
         // Map numeric priority to Monolog priority
         $map = [
-            Box_Log::EMERG => Logger::EMERGENCY,
-            Box_Log::ALERT => Logger::ALERT,
-            Box_Log::CRIT => Logger::CRITICAL,
-            Box_Log::ERR => Logger::ERROR,
-            Box_Log::WARN => Logger::WARNING,
-            Box_Log::NOTICE => Logger::NOTICE,
-            Box_Log::INFO => Logger::INFO,
-            Box_Log::DEBUG => Logger::DEBUG,
+            \Box_Log::EMERG => Logger::EMERGENCY,
+            \Box_Log::ALERT => Logger::ALERT,
+            \Box_Log::CRIT => Logger::CRITICAL,
+            \Box_Log::ERR => Logger::ERROR,
+            \Box_Log::WARN => Logger::WARNING,
+            \Box_Log::NOTICE => Logger::NOTICE,
+            \Box_Log::INFO => Logger::INFO,
+            \Box_Log::DEBUG => Logger::DEBUG,
         ];
 
         return $map[$priority] ?? Logger::DEBUG;

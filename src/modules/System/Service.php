@@ -178,13 +178,13 @@ class Service
     }
 
     /**
-     * @depricated Please use the \FOSSBilling_i18n::getLocales function, which provides the same functionality.
+     * @depricated Please use the \FOSSBilling\i18n::getLocales function, which provides the same functionality.
      * @param bool $deep
      * @return array
      */
     public function getLanguages($deep = false): array
     {
-        return \FOSSBilling_i18n::getLocales($deep);
+        return \FOSSBilling\i18n::getLocales($deep);
     }
 
     public function getParams($data)
@@ -279,7 +279,7 @@ class Service
 
     /**
      * Get the Central Alerts System messages sent to this installation.
-     * 
+     *
      * @return array - array of messages
      */
     public function getCasMessages(): array
@@ -1598,7 +1598,7 @@ class Service
 
     public function getVersion()
     {
-        return \FOSSBilling_Version::VERSION;
+        return \FOSSBilling\Version::VERSION;
     }
 
     public function getPendingMessages()

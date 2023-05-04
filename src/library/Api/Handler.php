@@ -13,7 +13,7 @@
  */
 
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 final class Api_Handler implements InjectionAwareInterface
 {

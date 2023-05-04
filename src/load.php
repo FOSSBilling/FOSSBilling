@@ -191,8 +191,8 @@ function exceptionHandler($e)
 
         echo $whoops->handleException($e);
     } else {
-        include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Error' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
-        $errorPage = new \FOSSBillingErrorPage();
+        include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+        $errorPage = new \FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $e->getMessage());
     }
 }
@@ -244,7 +244,7 @@ define('BB_URL_API', $config['url'] . 'api/');
 
 //Initial setup and checks passed, now we setup our custom autoloader.
 require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Autoload.php';
-$loader = new \FOSSBillingAutoloader();
+$loader = new \FOSSBilling\Autoloader();
 $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS, 'psr4');
 $loader->checkClassMap();

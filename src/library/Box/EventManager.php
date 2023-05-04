@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Box_EventManager implements \Box\InjectionAwareInterface
+class Box_EventManager implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

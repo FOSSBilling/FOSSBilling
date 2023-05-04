@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Notification;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -35,7 +35,7 @@ class Service implements InjectionAwareInterface
     public function getSearchQuery($filter)
     {
         $q = "SELECT *
-            FROM extension_meta 
+            FROM extension_meta
             WHERE extension = 'mod_notification'
             AND meta_key = 'message'
             ORDER BY id DESC

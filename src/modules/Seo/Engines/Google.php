@@ -16,7 +16,7 @@ namespace Box\Mod\Seo\Engines;
 
 use Symfony\Component\HttpClient\HttpClient;
 
-class Google implements \Box\InjectionAwareInterface
+class Google implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
@@ -42,7 +42,7 @@ class Google implements \Box\InjectionAwareInterface
     {
         $link = 'https://www.google.com/ping';
         $httpClient = HttpClient::create();
-        
+
         $request = $httpClient->request('GET', $link, [
             'query' => [
                 'sitemap'   => $url,

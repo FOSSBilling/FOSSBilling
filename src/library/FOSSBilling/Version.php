@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -9,22 +9,23 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
+namespace FOSSBilling;
 
-final class FOSSBilling_Version
+final class Version
 {
     const VERSION = '0.0.1';
 
     /**
      * Compare the specified FOSSBilling version string $version
-     * with the current FOSSBilling_Version::VERSION of FOSSBilling.
+     * with the current \FOSSBilling\Version::VERSION of FOSSBilling.
      *
-     * @param   string $version  A version string (e.g. "0.7.1").
+     * @param   string  $version  A version string (e.g. "0.7.1").
      * @return  integer           -1 if the $version is older,
-     *                           0 if they are the same,
-     *                           and +1 if $version is newer.
+     *                            0 if they are the same,
+     *                            and +1 if $version is newer.
      *
      */
     public static function compareVersion(string $version): int

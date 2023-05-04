@@ -99,12 +99,12 @@ class Box_Update
     public function getLatestVersion(): string
     {
         if ($this->getUpdateBranch() === "preview") {
-            return FOSSBilling_Version::VERSION;
+            return \FOSSBilling\Version::VERSION;
         }
 
         $response = $this->_getLatestVersionInfo();
         if (!isset($response['tag_name'])) {
-            return FOSSBilling_Version::VERSION;
+            return \FOSSBilling\Version::VERSION;
         }
         return $response['tag_name'];
     }
@@ -130,7 +130,7 @@ class Box_Update
     public function getCanUpdate(): bool
     {
         $version = $this->getLatestVersion();
-        $result = FOSSBilling_Version::compareVersion($version);
+        $result = \FOSSBilling\Version::compareVersion($version);
         $result = ($this->isPreviewVersion() && $this->getUpdateBranch() === "release") ? 1 : $result;
         return ($result > 0);
     }

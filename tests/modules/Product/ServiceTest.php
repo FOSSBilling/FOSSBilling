@@ -101,7 +101,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->onConsecutiveCalls($modelProductPayment, $modelProductCategory));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array()));
@@ -208,7 +208,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($newProductId));
 
-        $toolMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(1));
 
-        $toolMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array()));
@@ -441,7 +441,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
 
-        $toolMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
@@ -670,7 +670,7 @@ class ServiceTest extends \BBTestCase
 
         $di          = new \Pimple\Container();
         $di['db']    = $dbMock;
-        $di['tools'] = $this->getMockBuilder('\Box_Tools')->getMock();;
+        $di['tools'] = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();;
 
         $this->service->setDi($di);
 

@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Support;
 
-use RedBeanPHP\OODBBean;
+use \RedBeanPHP\OODBBean;
 
 class ServiceTest extends \BBTestCase
 {
@@ -793,7 +793,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->withConsecutive(['SupportHelpdesk'], ['Client'])
             ->willReturnOnConsecutiveCalls($helpdesk, new \Model_Client());
-        
+
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->will($this->returnValue(array(new \Model_SupportTicketNote())));
@@ -841,7 +841,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->withConsecutive(['SupportHelpdesk'], ['Client'])
             ->willReturnOnConsecutiveCalls(new \Model_SupportHelpdesk(), new \Model_Client());
-       
+
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->will($this->returnValue(array(new \Model_SupportTicketNote())));
@@ -1318,7 +1318,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -1352,7 +1352,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1397,14 +1397,14 @@ class ServiceTest extends \BBTestCase
             ->method('fire')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['validator']      = $validatorMock;
-        $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1471,7 +1471,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['events_manager'] = $eventMock;
         $di['mod']            = $di->protect(function () use ($supportModMock) {
             return $supportModMock;
@@ -1584,7 +1584,7 @@ class ServiceTest extends \BBTestCase
         $di            = new \Pimple\Container();
         $di['db']      = $dbMock;
         $di['logger']  = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request'] = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -1611,7 +1611,7 @@ class ServiceTest extends \BBTestCase
         $di            = new \Pimple\Container();
         $di['db']      = $dbMock;
         $di['logger']  = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request'] = $this->getMockBuilder('B\FOSSBilling\Request')->getMock();
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -2009,13 +2009,13 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['validator']      = $validatorMock;
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
@@ -2085,7 +2085,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -2120,7 +2120,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
+        $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -2605,4 +2605,3 @@ class ServiceTest extends \BBTestCase
 
     }
 }
- 

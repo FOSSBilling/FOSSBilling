@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -12,7 +12,9 @@
  * with this source code in the file LICENSE.
  */
 
-class Box_Request implements \Box\InjectionAwareInterface
+namespace FOSSBilling;
+
+class Request implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
@@ -74,7 +76,7 @@ class Box_Request implements \Box\InjectionAwareInterface
     {
         $files = array();
         foreach($_FILES as $file) {
-            $f = new Box_RequestFile($file);
+            $f = new \FOSSBilling\RequestFile($file);
             if($onlySuccessful) {
                 if($file['error'] == 0) {
                     $files[] = $f;

@@ -13,7 +13,7 @@
  * with this source code in the file LICENSE
  */
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use League\CommonMark\GithubFlavoredMarkdownConverter;
@@ -207,12 +207,12 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_script_tag($path)
     {
-        return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, FOSSBilling_Version::VERSION);
+        return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, \FOSSBilling\Version::VERSION);
     }
 
     public function twig_stylesheet_tag($path, $media = 'screen')
     {
-        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling_Version::VERSION, $media);
+        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, \FOSSBilling\Version::VERSION, $media);
     }
 
     public function twig_gravatar_filter($email, $size = 20)

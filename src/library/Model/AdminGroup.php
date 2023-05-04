@@ -13,7 +13,7 @@
  */
 
 
-class Model_AdminGroup extends FOSSBilling_Model
+class Model_AdminGroup extends \RedBeanPHP\SimpleModel
 {
 
 }

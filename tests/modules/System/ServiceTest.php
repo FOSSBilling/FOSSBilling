@@ -254,7 +254,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testclearCache()
     {
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('emptyFolder')
             ->will($this->returnValue(true));
@@ -327,7 +327,7 @@ class ServiceTest extends \BBTestCase {
     {
         $result = $this->service->getVersion();
         $this->assertIsString($result);
-        $this->assertEquals(\FOSSBilling_Version::VERSION, $result);
+        $this->assertEquals(\FOSSBilling\Version::VERSION, $result);
     }
 
     public function testgetPendingMessages()

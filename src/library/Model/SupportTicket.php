@@ -13,7 +13,7 @@
  */
 
 
-class Model_SupportTicket extends FOSSBilling_Model
+class Model_SupportTicket extends \RedBeanPHP\SimpleModel
 {
     const OPENED = 'open';
     const ONHOLD = 'on_hold';
@@ -23,7 +23,7 @@ class Model_SupportTicket extends FOSSBilling_Model
 
     const REL_STATUS_PENDING        = 'pending';
     const REL_STATUS_COMPLETE       = 'complete';
-    
+
     const REL_TASK_CANCEL   = 'cancel';
     const REL_TASK_UPGRADE  = 'upgrade';
 }

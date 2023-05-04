@@ -22,7 +22,7 @@
  * @method void info(string $message)
  * @method void debug(string $message)
  */
-class Box_Log implements \Box\InjectionAwareInterface
+class Box_Log implements \FOSSBilling\InjectionAwareInterface
 {
     const EMERG = 0;  // Emergency: system is unusable
     const ALERT = 1;  // Alert: action must be taken immediately
@@ -46,7 +46,7 @@ class Box_Log implements \Box\InjectionAwareInterface
 
     protected ?\Pimple\Container $di;
     protected $_min_priority = null;
-    
+
     protected array $_writers = [];
     protected array $_extras = [];
     protected string $_channel = 'application';

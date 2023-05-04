@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_ProductLicense extends \FOSSBilling_Model
+class Model_ProductLicense extends \RedBeanPHP\SimpleModel
 {
 
 }

@@ -92,25 +92,25 @@ class AdminTest extends \BBTestCase
     public function testChangePasswordExceptions()
     {
         $di = new \Pimple\Container();
-        $di['validator'] = new \Box_Validate();
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $adminApi = new \Box\Mod\Profile\Api\Admin();
         $adminApi->setDi($di);
-        
+
         $this->expectException(\Box_Exception::class);
         $adminApi->change_password(array());
         $this->fail('password should be passed');
-        
+
         $this->expectException(\Exception::class);
         $adminApi->change_password(array('password'=>'new_pass'));
         $this->fail('password confirmation should be passed');
-        
+
     }
 
     public function testChangePassword()
     {
         $di = new \Pimple\Container();
-        $di['validator'] = new \Box_Validate();
+        $di['validator'] = new \FOSSBilling\Validate();
         $di['password'] = new \Box_Password();
 
         $model = new \Model_Admin();
@@ -131,4 +131,3 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 }
- 

@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -13,13 +12,12 @@
  * with this source code in the file LICENSE.
  */
 
-class Box_Tools
+namespace FOSSBilling;
+
+class Tools
 {
     protected ?\Pimple\Container $di;
 
-    /**
-     * @param \Pimple\Container|null $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -41,7 +39,7 @@ class Box_Tools
         } else {
             $error = error_get_last();
 
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 sprintf(
                     'Could not write to %s: %s',
                     $target,
@@ -102,8 +100,8 @@ class Box_Tools
          * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
          */
         if (file_exists($folder)) {
-            $di = new RecursiveDirectoryIterator($folder, FilesystemIterator::SKIP_DOTS);
-            $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
+            $di = new \RecursiveDirectoryIterator($folder, \FilesystemIterator::SKIP_DOTS);
+            $ri = new \RecursiveIteratorIterator($di, \RecursiveIteratorIterator::CHILD_FIRST);
             foreach ($ri as $file) {
                 $file->isDir() ?  rmdir($file->getRealPath()) : unlink($file->getRealPath());
             }
@@ -129,7 +127,7 @@ class Box_Tools
         $symbols = '!@#$%&?()+-_';
 
         switch ($strength) {
-                //lowercase + uppsercase + numeric
+                //lowercase + uppercase + numeric
             case 3:
                 $lower = random_int(1, $length - 2);
                 $upper = random_int(1, $length - $lower - 1);
@@ -199,9 +197,9 @@ class Box_Tools
         return stripslashes($string);
     }
 
-    public function to_camel_case($str, $capitalise_first_char = false)
+    public function to_camel_case($str, $capitalize_first_char = false)
     {
-        if ($capitalise_first_char) {
+        if ($capitalize_first_char) {
             $str[0] = strtoupper($str[0]);
         }
         $func = function ($c) {
@@ -221,7 +219,7 @@ class Box_Tools
 
     public function decodeJ($json_str)
     {
-        if (isset($json_str)) {
+        if (isset($json_str) && is_string($json_str)) {
             $config = json_decode($json_str, true);
             return is_array($config) ? $config : array();
         } else {

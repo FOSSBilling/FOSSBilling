@@ -96,7 +96,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->service->action_create($orderModel);
     }
-   
+
     public function testaction_activate()
     {
         $orderModel = new \Model_ClientOrder();
@@ -110,7 +110,7 @@ class ServiceTest extends \BBTestCase {
             'username' => 'username',
             'password' => 'password'
         );
-        
+
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
@@ -123,7 +123,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($servhostingModel));
 
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('generatePassword')
             ->will($this->returnValue('generatePassword'));
@@ -1261,7 +1261,7 @@ class ServiceTest extends \BBTestCase {
     {
         $config  = array();
         $di = new \Pimple\Container();
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn($config);
@@ -1299,7 +1299,7 @@ class ServiceTest extends \BBTestCase {
             'free_tlds' => array('.com'),
         );
         $di = new \Pimple\Container();
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn($config);

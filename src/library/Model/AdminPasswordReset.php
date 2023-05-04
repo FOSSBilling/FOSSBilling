@@ -13,7 +13,7 @@
  */
 
 
-class Model_AdminPasswordReset extends FOSSBilling_Model
+class Model_AdminPasswordReset extends \RedBeanPHP\SimpleModel
 {
 
 }

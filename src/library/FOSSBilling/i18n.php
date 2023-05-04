@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -10,10 +9,12 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
-class FOSSBilling_i18n
+namespace FOSSBilling;
+
+class i18n
 {
     /**
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
@@ -42,9 +43,9 @@ class FOSSBilling_i18n
     {
         $header = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
         try {
-            $detectedLocale = @Locale::acceptFromHttp($header);
-            $detectedLocale = @Locale::canonicalize($detectedLocale . '.utf8');
-        } catch (Exception) {
+            $detectedLocale = @\Locale::acceptFromHttp($header);
+            $detectedLocale = @\Locale::canonicalize($detectedLocale . '.utf8');
+        } catch (\Exception) {
             $detectedLocale = '';
         }
 
@@ -53,8 +54,8 @@ class FOSSBilling_i18n
         }
 
         try {
-            $matchingLocale = Locale::lookup(self::getLocales(), $detectedLocale, false, null);
-        } catch (Exception) {
+            $matchingLocale = \Locale::lookup(self::getLocales(), $detectedLocale, false, null);
+        } catch (\Exception) {
             $matchingLocale = null;
         }
 

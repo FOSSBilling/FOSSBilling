@@ -85,7 +85,8 @@ class Admin extends \Api_Abstract
         }
 
         if (isset($data['from_email'])) {
-            $this->di['validator']->isEmailValid($data['from_email']);
+            $this->di['tools']->validateAndSanitizeEmail($data['from_email']);
+            $this->di['tools']->generatePassword(32);
             $model->from_email = $data['from_email'];
         }
 
@@ -118,13 +119,13 @@ Hi {{ c.first_name }} {{ c.last_name }},
 
 Your email is: {{ c.email }}
 
-Aenean vut sagittis in natoque tortor. Facilisis magnis duis nec eros! Augue 
-sed quis tortor porttitor? Rhoncus tortor pid et a enim dis adipiscing eros 
+Aenean vut sagittis in natoque tortor. Facilisis magnis duis nec eros! Augue
+sed quis tortor porttitor? Rhoncus tortor pid et a enim dis adipiscing eros
 facilisis nunc. Phasellus dis odio lacus pulvinar vel lundium dapibus turpis.
 
-Urna parturient, ultricies nascetur? Et a. Elementum in dapibus ut vel ut 
-magna tempor, dapibus lacus sed? Ut velit dignissim placerat, tristique pid 
-vut amet et nunc! Elementum dolor, dictumst porta ultrices. Rhoncus, amet. 
+Urna parturient, ultricies nascetur? Et a. Elementum in dapibus ut vel ut
+magna tempor, dapibus lacus sed? Ut velit dignissim placerat, tristique pid
+vut amet et nunc! Elementum dolor, dictumst porta ultrices. Rhoncus, amet.
 
 Order our services at {{ "order"|link }}
 

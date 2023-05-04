@@ -14,7 +14,7 @@
 
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
-class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \Box\InjectionAwareInterface
+class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FOSSBilling\InjectionAwareInterface
 {
     private $config = array();
 

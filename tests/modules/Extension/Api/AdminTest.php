@@ -50,7 +50,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling\ExtensionManager')->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtensionList')
@@ -68,7 +68,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array('type' => 'mod');
 
-        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling\ExtensionManager')->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtensionList')
@@ -117,7 +117,7 @@ class AdminTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
             ->will($this->returnValue(null));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -144,7 +144,7 @@ class AdminTest extends \BBTestCase {
             ->method('activateExistingExtension')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -185,7 +185,7 @@ class AdminTest extends \BBTestCase {
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -223,7 +223,7 @@ class AdminTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -264,7 +264,7 @@ class AdminTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -310,7 +310,7 @@ class AdminTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -335,7 +335,7 @@ class AdminTest extends \BBTestCase {
             ->method('getConfig')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -364,7 +364,7 @@ class AdminTest extends \BBTestCase {
         $serviceMock->expects($this->never())
             ->method('getConfig');
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

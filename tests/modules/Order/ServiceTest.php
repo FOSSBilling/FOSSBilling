@@ -790,7 +790,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($service));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('to_camel_case')
             ->will($this->returnValue('ServiceCustom'));
 
@@ -865,7 +865,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($order));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('from_camel_case')
             ->will($this->returnValue('servicecustom'));
 
@@ -887,7 +887,7 @@ class ServiceTest extends \BBTestCase
         $decoded   = array(
             'key' => 'value'
         );
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('decodeJ')
             ->will($this->returnValue($decoded));
 
@@ -1139,7 +1139,7 @@ class ServiceTest extends \BBTestCase
             ->with('Client', $model->client_id, $exceptionError)
             ->willReturn($modelClient);
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(array());
@@ -1954,4 +1954,3 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(2, $result);
     }
 }
- 

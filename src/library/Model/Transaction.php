@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_Transaction extends FOSSBilling_Model
+class Model_Transaction extends \RedBeanPHP\SimpleModel
 {
     const STATUS_RECEIVED        = 'received';
     const STATUS_APPROVED        = 'approved';

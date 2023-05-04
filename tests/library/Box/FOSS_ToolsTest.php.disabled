@@ -1,5 +1,4 @@
 <?php
-
 /**
  * FOSSBilling tools tests
  */
@@ -9,7 +8,7 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
     {
         $testEmail = 'example@example.com';
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
@@ -23,7 +22,7 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
     {
         $testEmail = 'example@example-tést.eu';
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
@@ -37,7 +36,7 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
     {
         $testEmail = '<a href="http://somethingnotgood.com">Totally an email</a>"';
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();

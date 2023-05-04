@@ -129,7 +129,7 @@ class AdminTest extends \BBTestCase {
             method('trash');
 
         $di['db'] = $databaseMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -147,7 +147,7 @@ class AdminTest extends \BBTestCase {
         $activityMock = $this->getMockBuilder('\Box\Mod\Activity\Api\Admin')->setMethods(array('log_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('log_delete')->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

@@ -13,7 +13,7 @@
  */
 
 
-class Model_ActivitySystem extends FOSSBilling_Model
+class Model_ActivitySystem extends \RedBeanPHP\SimpleModel
 {
 
 }

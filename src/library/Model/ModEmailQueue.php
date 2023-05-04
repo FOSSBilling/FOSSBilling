@@ -16,7 +16,7 @@
 /**
  * Class Model_ModEmailQueue
  */
-class Model_ModEmailQueue extends \FOSSBilling_Model
+class Model_ModEmailQueue extends \RedBeanPHP\SimpleModel
 {
 
 }

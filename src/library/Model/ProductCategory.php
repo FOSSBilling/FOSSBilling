@@ -12,7 +12,6 @@
  * with this source code in the file LICENSE
  */
 
-
-class Model_ProductCategory extends FOSSBilling_Model
+class Model_ProductCategory extends \RedBeanPHP\SimpleModel
 {
 }

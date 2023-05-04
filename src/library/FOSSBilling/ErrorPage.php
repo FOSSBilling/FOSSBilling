@@ -1,6 +1,20 @@
-<?php
+<?php declare(strict_types=1);
+/**
+ * FOSSBilling
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license   Apache-2.0
+ *
+ * This file may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
+ *
+ * This source file is subject to the Apache-2.0 License that is bundled
+ * with this source code in the file LICENSE.
+ */
 
-class FOSSBillingErrorPage
+namespace FOSSBilling;
+
+class ErrorPage
 {
     public function __construct()
     {
@@ -20,9 +34,9 @@ class FOSSBillingErrorPage
         }
     }
 
-    /** 
+    /**
      * Returns the list of error codes and their specialized messages. All Error code parameters are optional.
-     * 
+     *
      * @return array
      */
     private function getCodes(): array
@@ -86,9 +100,9 @@ class FOSSBillingErrorPage
 
     /**
      * Gets info for a specified error code, using placeholders for anything undefined.
-     * 
+     *
      * @param int $code The error code
-     * @return array 
+     * @return array
      */
     private function getCodeInfo(int $code): array
     {
@@ -122,7 +136,7 @@ class FOSSBillingErrorPage
     /**
      * @param int $code Error code
      * @param string $message The original exception message
-     * @return never 
+     * @return never
      */
     public function generatePage(int $code, string $message)
     {
@@ -252,7 +266,7 @@ class FOSSBillingErrorPage
                         <button id="toggle" class="button" onclick="toggle()">' . __trans("Show original message") . '</button>
                         <a class="button" target="_blank" href="' . $error['link']['href'] . '">' . $error['link']['label'] . '</a>
                     </div>
-                    
+
                     <div class="footer" style="clear:both">
                         <hr>
                         <p>Powered By FOSSBilling</p>

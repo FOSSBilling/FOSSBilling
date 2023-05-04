@@ -13,7 +13,7 @@
  */
 
 
-class Model_ExtensionMeta extends \FOSSBilling_Model
+class Model_ExtensionMeta extends \RedBeanPHP\SimpleModel
 {
 
 }

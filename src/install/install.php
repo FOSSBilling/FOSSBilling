@@ -99,7 +99,7 @@ set_include_path(implode(PATH_SEPARATOR, [
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Autoload.php';
-$loader = new \FOSSBillingAutoloader();
+$loader = new \FOSSBilling\Autoloader();
 $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS, 'psr4');
 $loader->checkClassMap();
@@ -214,7 +214,7 @@ final class Box_Installer
             default:
                 $this->session->set('agree', true);
 
-                $se = new FOSSBilling_Requirements();
+                $se = new \FOSSBilling\Requirements();
                 $options = $se->getOptions();
                 $vars = [
                     'tos' => $this->getLicense(),
@@ -223,7 +223,7 @@ final class Box_Installer
                     'files' => $se->files(),
                     'os' => PHP_OS,
                     'os_ok' => true,
-                    'fossbilling_ver' => FOSSBilling_Version::VERSION,
+                    'fossbilling_ver' => \FOSSBilling\Version::VERSION,
                     'fossbilling_ver_ok' => $se->isFOSSBillingVersionOk(),
                     'php_ver' => $options['php']['version'],
                     'php_ver_req' => $options['php']['min_version'],
@@ -276,7 +276,7 @@ final class Box_Installer
         $twig = new Twig\Environment($loader, $options);
         // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
-        $twig->addGlobal('version', FOSSBilling_Version::VERSION);
+        $twig->addGlobal('version', \FOSSBilling\Version::VERSION);
 
         return $twig->render($name, $vars);
     }
@@ -442,9 +442,9 @@ final class Box_Installer
 
     private function _getConfigOutput($ns): string
     {
-        $version = new FOSSBilling_Requirements();
+        $version = new \FOSSBilling\Requirements();
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
-        $updateBranch = (preg_match($reg, FOSSBilling_Version::VERSION, $matches) !== 0) ? "release" : "preview";
+        $updateBranch = (preg_match($reg, \FOSSBilling\Version::VERSION, $matches) !== 0) ? "release" : "preview";
 
         // TODO: Why not just take the defaults from the config-sample.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [

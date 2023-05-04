@@ -13,6 +13,6 @@
  */
 
 
-class Model_SupportPrCategory extends FOSSBilling_Model
+class Model_SupportPrCategory extends \RedBeanPHP\SimpleModel
 {
 }

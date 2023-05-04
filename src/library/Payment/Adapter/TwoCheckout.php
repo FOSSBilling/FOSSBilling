@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
+class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterface
 {
     private $config = array();
 

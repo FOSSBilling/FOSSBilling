@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_EmailTemplate extends \FOSSBilling_Model
+class Model_EmailTemplate extends \RedBeanPHP\SimpleModel
 {
 
 }

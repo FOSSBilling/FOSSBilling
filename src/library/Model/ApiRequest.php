@@ -13,7 +13,7 @@
  */
 
 
-class Model_ApiRequest extends \FOSSBilling_Model
+class Model_ApiRequest extends \RedBeanPHP\SimpleModel
 {
 
 }

@@ -105,7 +105,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testValidateOrderData($data, $finOneByTldCalled, $canBeTransferredCalled, $isDomainAvailableCalled)
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
 
@@ -148,7 +148,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testValidateOrderDataExceptions($data)
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
 
         $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -188,7 +188,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testValidateOrderDateOwndomainOwndomain($data, $isSldValidCalled, $isSldValidReturn)
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($isSldValidCalled)->method('isSldValid')
             ->will($this->returnValue($isSldValidReturn));
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
@@ -258,7 +258,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred)
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->will($this->returnValue($isSldValidArr['returns']));
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
@@ -356,7 +356,7 @@ class ServiceTest extends \BBTestCase
      */
     public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred)
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->will($this->returnValue($isSldValidArr['returns']));
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
@@ -590,7 +590,7 @@ class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
-        
+
         $this->expectException(\Box_Exception::class);
         $this->service->action_activate($order);
     }
@@ -668,7 +668,7 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
-        
+
         $this->expectException(\Box_Exception::class);
         $result           = $this->service->action_renew($order);
 
@@ -749,7 +749,7 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
-        
+
         $this->expectException(\Box_Exception::class);
         $result           = $this->service->action_cancel($order);
 
@@ -874,7 +874,7 @@ class ServiceTest extends \BBTestCase
     {
         $serviceDomainModel = new \Model_ServiceDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
-        
+
         $this->expectException(\Box_Exception::class);
         $this->service->updateNameservers($serviceDomainModel, $data);
     }
@@ -896,7 +896,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
             ->will($this->returnValue(true));
 
@@ -1142,7 +1142,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($tldRegistrar));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
 
@@ -1172,7 +1172,7 @@ class ServiceTest extends \BBTestCase
 
     public function testIsDomainAvailableSldNotValidException()
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(false));
 
@@ -1188,7 +1188,7 @@ class ServiceTest extends \BBTestCase
 
     public function testIsDomainAvailableSldNotAllowedToRegisterException()
     {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
 
@@ -1758,7 +1758,7 @@ class ServiceTest extends \BBTestCase
             'config_param' => 'config_value'
         );
 
-        $toolsMock = $this->getMockBuilder('Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue($config));

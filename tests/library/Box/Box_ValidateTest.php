@@ -3,7 +3,7 @@
 /**
  * @group Core
  */
-class Box_ValidateTest extends PHPUnit\Framework\TestCase
+class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 {
     public static function domains()
     {
@@ -26,7 +26,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
      */
     public function testValidator($domain, $valid)
     {
-        $v = new Box_Validate();
+        $v = new \FOSSBilling\Validate();
         $this->assertEquals($valid, $v->isSldValid($domain));
     }
 
@@ -40,18 +40,18 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
             'id'  => 'ID must be set',
             'key' => 'KEY must be set'
         );
-        $v        = new Box_Validate();
+        $v        = new \FOSSBilling\Validate
         $this->assertNull($v->checkRequiredParamsForArray($required, $data));
     }
 
-   
+
     public function testCheckRequiredParamsForArrayNotExist()
     {
         $data     = array();
         $required = array(
             'id' => 'ID must be set'
         );
-        $v        = new Box_Validate();
+        $v        = new \FOSSBilling\Validate();
         $this->expectException(Box_Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('ID must be set');
@@ -68,7 +68,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
             'id'  => 'ID must be set',
             'key' => 'KEY must be set'
         );
-        $v        = new Box_Validate();        
+        $v        = new \FOSSBilling\Validate();
         $this->expectException(Box_Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY must be set');
@@ -86,7 +86,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
         );
 
         $variables = array(':key' => 'placeholder_key');
-        $v         = new Box_Validate();       
+        $v         = new \FOSSBilling\Validate();
         $this->expectException(Box_Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY placeholder_key must be set');
@@ -107,7 +107,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
             ':key'   => 'placeholder_key',
             ':array' => 'config'
         );
-        $v         = new Box_Validate();   
+        $v         = new \FOSSBilling\Validate();
         $this->expectException(Box_Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY placeholder_key must be set for array config');
@@ -126,7 +126,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
         );
 
         $variables = array(':key' => 'placeholder_key');
-        $v         = new Box_Validate();   
+        $v         = new \FOSSBilling\Validate();
         $this->expectException(Box_Exception::class);
         $this->expectExceptionCode(12345);
         $this->expectExceptionMessage('KEY placeholder_key must be set');
@@ -143,7 +143,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
             'key' => 'KEY must be set'
         );
 
-        $v = new Box_Validate();
+        $v = new \FOSSBilling\Validate();
         $this->expectException(Box_Exception::class);
         $this->expectExceptionCode(54321);
         $this->expectExceptionMessage('KEY must be set');
@@ -159,7 +159,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
             'amount'  => 'amount must be set',
         );
 
-        $v = new Box_Validate();
+        $v = new \FOSSBilling\Validate();
         $v->checkRequiredParamsForArray($required, $data);
 
         //add needed assert, set to true if no exception called in $v->checkRequiredParamsForArray
@@ -175,7 +175,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
             'message'  => 'message must be set',
         );
 
-        $v = new Box_Validate();
+        $v = new \FOSSBilling\Validate();
 
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage($required['message']);
@@ -193,7 +193,7 @@ class Box_ValidateTest extends PHPUnit\Framework\TestCase
             'message'  => 'message must be set',
         );
 
-        $v = new Box_Validate();
+        $v = new \FOSSBilling\Validate();
 
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage($required['message']);

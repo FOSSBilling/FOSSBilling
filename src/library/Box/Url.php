@@ -14,7 +14,7 @@
  */
 
 
-class Box_Url implements Box\InjectionAwareInterface
+class Box_Url implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
     protected $baseUri;

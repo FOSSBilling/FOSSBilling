@@ -32,7 +32,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $order = $this->di['db']->load('ClientOrder', 1);
 
         $model = $service->create($order);
-        $this->assertInstanceOf('RedBeanPHP\OODBBean', $model);
+        $this->assertInstanceOf('\RedBeanPHP\OODBBean', $model);
 
 
         $this->expectException(\Box_Exception::class);
@@ -78,7 +78,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $result = $service->delete($order, $model);
         $this->assertTrue($result);
     }
-    
+
     public function testUninstall()
     {
         $service = new \Box\Mod\Serviceboxbillinglicense\Service();

@@ -13,7 +13,7 @@
  */
 
 
-class Model_Invoice extends FOSSBilling_Model
+class Model_Invoice extends \RedBeanPHP\SimpleModel
 {
     const STATUS_PAID   = 'paid';
     const STATUS_UNPAID = 'unpaid';

@@ -14,7 +14,7 @@
  */
 
 
-class Box_Translate implements \Box\InjectionAwareInterface
+class Box_Translate implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

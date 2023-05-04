@@ -13,7 +13,7 @@
  */
 
 
-class Model_SupportPTicket extends FOSSBilling_Model
+class Model_SupportPTicket extends \RedBeanPHP\SimpleModel
 {
     const OPENED = 'open';
     const ONHOLD = 'on_hold';

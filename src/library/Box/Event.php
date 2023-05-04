@@ -13,7 +13,7 @@
  * with this source code in the file LICENSE
  */
 
-class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
+class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
     protected $value = null;

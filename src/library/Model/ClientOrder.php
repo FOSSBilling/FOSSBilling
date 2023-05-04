@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientOrder extends FOSSBilling_Model
+class Model_ClientOrder extends \RedBeanPHP\SimpleModel
 {
 	const STATUS_PENDING_SETUP = "pending_setup";
 	const STATUS_FAILED_SETUP = "failed_setup";

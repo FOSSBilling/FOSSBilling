@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * FOSSBilling
  *
@@ -9,11 +9,12 @@
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * with this source code in the file LICENSE.
  */
 
+namespace FOSSBilling;
 
-class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
+class Requirements implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
@@ -71,7 +72,7 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
 
         $data['FOSSBilling']    = array(
             'BB_LOCALE'     =>  $this->di['config']['i18n']['locale'],
-            'version'       =>  FOSSBilling_Version::VERSION,
+            'version'       =>  \FOSSBilling\Version::VERSION,
         );
 
         $data['ini']    = array(
@@ -111,7 +112,7 @@ class FOSSBilling_Requirements implements \Box\InjectionAwareInterface
 
     public function isFOSSBillingVersionOk(): bool
     {
-        return FOSSBilling_Version::VERSION !== '0.0.1';
+        return \FOSSBilling\Version::VERSION !== '0.0.1';
     }
 
     /**

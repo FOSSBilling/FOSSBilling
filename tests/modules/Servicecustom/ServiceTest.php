@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Servicecustom;
 
-use RedBeanPHP\SimpleModel;
+use \RedBeanPHP\SimpleModel;
 
 class ServiceTest extends \BBTestCase
 {
@@ -436,7 +436,7 @@ class ServiceTest extends \BBTestCase
             'J' => 5,
             0   => 'N'
         );
-        $toolsMock = $this->getMockBuilder('Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue($decoded));
@@ -457,7 +457,7 @@ class ServiceTest extends \BBTestCase
 
     public function testToApiArray()
     {
-        $toolsMock = $this->getMockBuilder('Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array('config_param' => 'config_value')));

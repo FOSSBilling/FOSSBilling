@@ -278,7 +278,7 @@ class ServiceTest extends \BBTestCase {
             $mod->setDi($di);
             return $mod;
         });
-        $di['tools'] = new \Box_Tools();
+        $di['tools'] = new \FOSSBilling\Tools();
         $di['mod_service'] = $di->protect(function () use ($staffServiceMock) {return $staffServiceMock; });
         $di['pdo'] = $pdoMock;
         $di['url'] = $urlMock;
@@ -314,7 +314,7 @@ class ServiceTest extends \BBTestCase {
         $model->version = '2';
         $newversion = '3';
 
-        $extensionMock = $this->getMockBuilder('\FOSSBilling_ExtensionManager')->getMock();
+        $extensionMock = $this->getMockBuilder('\FOSSBilling\ExtensionManager')->getMock();
 
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
@@ -499,7 +499,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractDownloadUrlMissing()
     {
-        $extensionMock = $this->getMockBuilder(\FOSSBilling_ExtensionManager::class)->getMock();
+        $extensionMock = $this->getMockBuilder(\FOSSBilling\ExtensionManager::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getLatestExtensionRelease')
@@ -632,7 +632,7 @@ class ServiceTest extends \BBTestCase {
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
 
-        $toolsMock = $this->getMockBuilder(\Box_Tools::class)->getMock();
+        $toolsMock = $this->getMockBuilder(\FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array()));
@@ -690,7 +690,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getConfig')
             ->will($this->returnValue(array()));
 
-        $toolsMock = $this->getMockBuilder(\Box_Tools::class)->getMock();
+        $toolsMock = $this->getMockBuilder(\FOSSBilling\Tools::class)->getMock();
 
         $cryptMock = $this->getMockBuilder(\Box_Crypt::class)->getMock();
         $cryptMock->expects($this->atLeastOnce())

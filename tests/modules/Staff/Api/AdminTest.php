@@ -71,7 +71,7 @@ class AdminTest extends \BBTestCase {
             ->method('toModel_AdminApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -99,7 +99,7 @@ class AdminTest extends \BBTestCase {
             ->method('update')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -128,7 +128,7 @@ class AdminTest extends \BBTestCase {
             ->method('delete')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -157,7 +157,7 @@ class AdminTest extends \BBTestCase {
             'password_confirm' => 'test!23A',
         );
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('isPasswordStrong');
         $validatorMock->expects($this->atLeastOnce())
@@ -192,7 +192,7 @@ class AdminTest extends \BBTestCase {
             'password_confirm' => 'test',
         );
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -221,14 +221,14 @@ class AdminTest extends \BBTestCase {
             ->method('create')
             ->will($this->returnValue($newStaffId));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -252,7 +252,7 @@ class AdminTest extends \BBTestCase {
             ->method('getPermissions')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -287,7 +287,7 @@ class AdminTest extends \BBTestCase {
         $staffModel = new \Model_Admin();
         $staffModel->loadBean(new \DummyBean());
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -355,7 +355,7 @@ class AdminTest extends \BBTestCase {
             ->method('createGroup')
             ->will($this->returnValue($newGroupId));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -380,7 +380,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -409,7 +409,7 @@ class AdminTest extends \BBTestCase {
             ->method('deleteGroup')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -439,7 +439,7 @@ class AdminTest extends \BBTestCase {
             ->method('updateGroup')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -508,7 +508,7 @@ class AdminTest extends \BBTestCase {
             ->method('toActivityAdminHistoryApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -537,7 +537,7 @@ class AdminTest extends \BBTestCase {
             ->method('deleteLoginHistory')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -563,7 +563,7 @@ class AdminTest extends \BBTestCase {
         $activityMock = $this->getMockBuilder('\Box\Mod\Staff\Api\Admin')->setMethods(array('login_history_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -576,4 +576,3 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals(true, $result);
     }
 }
- 

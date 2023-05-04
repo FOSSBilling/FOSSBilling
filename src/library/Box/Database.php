@@ -14,7 +14,7 @@
  */
 
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Box_Database implements InjectionAwareInterface
 {
@@ -49,7 +49,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function store($modelOrBean)
     {
-        if ($modelOrBean instanceof \FOSSBilling_Model) {
+        if ($modelOrBean instanceof \RedBeanPHP\SimpleModel) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -150,7 +150,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function trash($modelOrBean)
     {
-        if ($modelOrBean instanceof \FOSSBilling_Model) {
+        if ($modelOrBean instanceof \RedBeanPHP\SimpleModel) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -170,7 +170,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function toArray($modelOrBean)
     {
-        if ($modelOrBean instanceof \FOSSBilling_Model) {
+        if ($modelOrBean instanceof \RedBeanPHP\SimpleModel) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -182,7 +182,7 @@ class Box_Database implements InjectionAwareInterface
      * @param string $modelName
      * @param int $id
      * @param string $message
-     * @return \FOSSBilling_Model
+     * @return \RedBeanPHP\SimpleModel
      * @throws \Box_Exception
      */
     public function getExistingModelById($modelName, $id, $message = "Model :name not found in the database")

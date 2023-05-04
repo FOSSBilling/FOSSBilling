@@ -12,13 +12,13 @@
  * with this source code in the file LICENSE
  */
 
-class Model_InvoiceItem extends FOSSBilling_Model
+class Model_InvoiceItem extends \RedBeanPHP\SimpleModel
 {
     const TYPE_DEPOSIT  = 'deposit'; // this type of item can not be charged with credits
     const TYPE_CUSTOM   = 'custom';
     const TYPE_ORDER    = 'order';
     const TYPE_HOOK_CALL= 'hook_call';
-    
+
     const TASK_VOID     = 'void';
     const TASK_ACTIVATE = 'activate';
     const TASK_RENEW    = 'renew';

@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box\InjectionAwareInterface
+class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

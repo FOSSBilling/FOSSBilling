@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientPasswordResetTable implements \Box\InjectionAwareInterface
+class Model_ClientPasswordResetTable implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
@@ -41,15 +41,15 @@ class Model_ClientPasswordResetTable implements \Box\InjectionAwareInterface
             $r->created_at  = date('Y-m-d H:i:s');
             $r->client_id   = $client->id;
         }
-        
+
         $r->ip          = $ip;
         $r->hash        = hash('sha256', random_int(50, random_int(10, 99)));
         $r->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($r);
-        
+
         return $r;
     }
-    
+
     public function rmByClient(Model_Client $client)
     {
         $models = $this->di['db']->find('ClientPasswordReset', 'client_id = ?', array($client->id));
@@ -57,5 +57,5 @@ class Model_ClientPasswordResetTable implements \Box\InjectionAwareInterface
             $this->di['db']->trash($model);
         }
     }
-    
+
 }

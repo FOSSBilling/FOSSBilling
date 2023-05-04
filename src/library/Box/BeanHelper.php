@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Box_BeanHelper extends \RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper implements \Box\InjectionAwareInterface
+class Box_BeanHelper extends \RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 
@@ -37,7 +37,7 @@ class Box_BeanHelper extends \RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper imple
         }
 
         $model = new $modelName();
-        if($model instanceof \Box\InjectionAwareInterface) {
+        if($model instanceof \FOSSBilling\InjectionAwareInterface) {
             $model->setDi( $this->di );
         }
 

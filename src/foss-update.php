@@ -18,7 +18,7 @@ const DIR_SEP = DIRECTORY_SEPARATOR;
 
 /**
  * Patch to remove the old FileCache class that was replaced with Symfony's Cache component
- * 
+ *
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
  */
 class FOSSPatch_33 extends FOSSPatchAbstract
@@ -33,8 +33,8 @@ class FOSSPatch_33 extends FOSSPatchAbstract
 }
 
 /**
- * Patch to remove the old phpmailer package, some leftover admin_default files, and old Box_ classes we've removed or replaced 
- * 
+ * Patch to remove the old phpmailer package, some leftover admin_default files, and old Box_ classes we've removed or replaced
+ *
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1091 and https://github.com/FOSSBilling/FOSSBilling/pull/1063
  */
 class FOSSPatch_32 extends FOSSPatchAbstract
@@ -65,7 +65,7 @@ class FOSSPatch_32 extends FOSSPatchAbstract
 
 /**
  * Patch to remove the old htaccess.txt file, any old config.php backup
- * 
+ *
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
  */
 class FOSSPatch_31 extends FOSSPatchAbstract
@@ -82,7 +82,7 @@ class FOSSPatch_31 extends FOSSPatchAbstract
 
 /**
  * Patch to remove the old guzzlehttp package, as we no longer use it. Also serves as an example for how to perform file action.
- * 
+ *
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/987
  */
 class FOSSPatch_30 extends FOSSPatchAbstract
@@ -98,8 +98,8 @@ class FOSSPatch_30 extends FOSSPatchAbstract
 
 /**
  * Patch to update email templates to use format_date/format_datetime filters
- * instead of removed bb_date/bb_datetime filters. 
- * 
+ * instead of removed bb_date/bb_datetime filters.
+ *
  * @see https://github.com/FOSSBilling/FOSSBilling/pull/948
  */
 class FOSSPatch_29 extends FOSSPatchAbstract
@@ -368,7 +368,7 @@ natsort($patches);
                 } ?>
             </tbody>
         </table>
-        <p>Update completed. You are using FOSSBilling <strong><?php echo FOSSBilling_Version::VERSION ?></strong></p>
+        <p>Update completed. You are using FOSSBilling <strong><?php echo \FOSSBilling\Version::VERSION ?></strong></p>
     </div>
 </body>
 

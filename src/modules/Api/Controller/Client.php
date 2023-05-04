@@ -20,7 +20,7 @@
 
 namespace Box\Mod\Api\Controller;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Client implements InjectionAwareInterface
 {
@@ -266,7 +266,7 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-        header('X-FOSSBilling-Version: ' . \FOSSBilling_Version::VERSION);
+        header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
         header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
@@ -320,7 +320,7 @@ class Client implements InjectionAwareInterface
         }
 
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
-         * Due to this, we whitelist the checkout URL. 
+         * Due to this, we whitelist the checkout URL.
          */
         if (str_contains($_SERVER['REQUEST_URI'], "/api/client/cart/checkout")) {
             return true;

@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Invoice;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 use Dompdf\Dompdf;
 
 class Service implements InjectionAwareInterface

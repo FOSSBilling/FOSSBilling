@@ -1,6 +1,20 @@
-<?php
+<?php declare(strict_types=1);
+/**
+ * FOSSBilling
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license   Apache-2.0
+ *
+ * This file may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
+ *
+ * This source file is subject to the Apache-2.0 License that is bundled
+ * with this source code in the file LICENSE.
+ */
 
-class FOSSBillingAutoloader
+namespace FOSSBilling;
+
+class Autoloader
 {
     private static string $classMapPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php';
 
@@ -12,15 +26,15 @@ class FOSSBillingAutoloader
     private string $typePsr0 = 'psr0';
     private string $typePsr4 = 'psr4';
 
-    /** 
+    /**
      * Checks for the existence of the classMap file. Will generate a new one if it doesn't exist.
      * After generating one / if it exists, the map is loaded to the classMap array to be used to speed up loading later.
-     * @return void  
+     * @return void
      */
     public function checkClassMap(): void
     {
         if (!file_exists(self::$classMapPath)) {
-            $generator = new Composer\ClassMapGenerator\ClassMapGenerator;
+            $generator = new \Composer\ClassMapGenerator\ClassMapGenerator;
 
             foreach ($this->psr0 as $path) {
                 $generator->scanPaths($path);
@@ -40,7 +54,7 @@ class FOSSBillingAutoloader
         $this->classMap = include self::$classMapPath;
     }
 
-    /** 
+    /**
      * Registers the autoloader.
      * @return void
      * */
@@ -53,7 +67,7 @@ class FOSSBillingAutoloader
      * @param string $prefix Class prefix. Use an empty prefix to allow this prefix to work with any path. Paths must already have directory separators normalized for the current system.
      * @param string $path Base path associated with the class prefix
      * @param string $type The type of PSR autoloader the prefix is associated with. EX: psr4
-     * @return void 
+     * @return void
      */
     public function addPrefix(string $prefix, string $path, string $type): void
     {
@@ -76,7 +90,7 @@ class FOSSBillingAutoloader
 
     /**
      * @param string $class Classname to load. If found, file will be included and execution will be completed.
-     * @return void 
+     * @return void
      */
     public function autoload(string $class): void
     {
@@ -147,7 +161,7 @@ class FOSSBillingAutoloader
 
     /**
      * Saves the current classMap array to the cache folder for later access.
-     * @return void 
+     * @return void
      */
     private function saveMap(): void
     {

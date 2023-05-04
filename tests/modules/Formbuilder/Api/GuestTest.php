@@ -29,7 +29,7 @@ class GuestTest extends \BBTestCase {
             ->method('getForm')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -44,4 +44,3 @@ class GuestTest extends \BBTestCase {
     }
 
 }
- 

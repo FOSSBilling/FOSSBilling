@@ -16,7 +16,7 @@
 
 namespace Box\Mod\Cart;
 
-use Box\InjectionAwareInterface;
+use \FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {

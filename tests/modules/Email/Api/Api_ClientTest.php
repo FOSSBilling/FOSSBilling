@@ -56,7 +56,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $clientApi->setService($service);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -74,7 +74,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertIsArray($result);
 
     }
-    
+
     public function testGetNotFoundException()
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
@@ -89,7 +89,7 @@ class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -126,7 +126,7 @@ class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -157,7 +157,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -195,7 +195,7 @@ class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -208,7 +208,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
 
     }
- 
+
     public function testDeleteNotFoundException()
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
@@ -224,7 +224,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
