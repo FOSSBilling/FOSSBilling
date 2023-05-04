@@ -52,8 +52,6 @@ return (new PhpCsFixer\Config())
                 'vendor',
                 'install',
                 'modules/Wysiwyg',
-                'modules/Servicecentovacast',
-                'modules/Servicesolusvm',
                 'modules/Spamchecker'
             ])
             ->notPath(
