@@ -243,10 +243,9 @@ define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
 
 //Initial setup and checks passed, now we setup our custom autoloader.
-require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Autoload.php';
-$loader = new \FOSSBilling\Autoloader();
+$loader = new AntCMS\AntLoader(PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php');
 $loader->addPrefix('', PATH_LIBRARY, 'psr0');
-$loader->addPrefix('Box\\Mod\\', PATH_MODS, 'psr4');
+$loader->addPrefix('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
 
