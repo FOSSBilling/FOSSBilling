@@ -3,9 +3,6 @@ class Payment_Adapter_Dummy
 {
     protected ?\Pimple\Container $di;
 
-    /**
-     * @param \Pimple\Container $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;

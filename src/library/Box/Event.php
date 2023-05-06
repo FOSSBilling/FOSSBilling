@@ -1,16 +1,11 @@
 <?php
-
 /**
- * FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
+ * Copyright 2011-2021 BoxBilling, Inc. 
+ * SPDX-License-Identifier: Apache-2.0
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license   Apache-2.0
- *
- * This file may contain code previously used in the BoxBilling project.
- * Copyright BoxBilling, Inc 2011-2021
- *
- * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
 class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
@@ -42,9 +37,6 @@ class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
         $this->api_guest = $api_guest;
     }
 
-    /**
-     * @param \Pimple\Container|null $di
-     */
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
