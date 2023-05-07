@@ -22,6 +22,8 @@ const PATH_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';
 const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
 
+require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
+
 // Set up the autoloader
 $loader = new AntCMS\AntLoader(PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php');
 $loader->addPrefix('', PATH_LIBRARY, 'psr0');
@@ -94,7 +96,7 @@ while (!$connected && $iter > 0) {
     }
 }
 
-function execSQL(PDO $db, string $sql): void
+function execSQL(PDO $db, string $sql)
 {
     $db->exec($sql);
     $error = $db->errorInfo();
@@ -105,21 +107,35 @@ function execSQL(PDO $db, string $sql): void
 }
 
 echo sprintf("Dropping database: %s", $dbname) . PHP_EOL;
-$execSQL($db, sprintf("DROP DATABASE IF EXISTS %s;", $dbname));
+execSQL($db, sprintf("DROP DATABASE IF EXISTS %s;", $dbname));
 
 echo sprintf("Creating database: %s", $dbname) . PHP_EOL;
-$execSQL($db, sprintf("CREATE DATABASE %s;", $dbname));
+execSQL($db, sprintf("CREATE DATABASE %s;", $dbname));
 
 echo sprintf("Connecting to the %s database with the user: %s", $dbname, $user) . PHP_EOL;
 $sql = sprintf("use %s;", $dbname);
 
 echo sprintf("Setting up the database structure from the dump: %s", $sqlStructure) . PHP_EOL;
 $sql = file_get_contents($sqlStructure);
-$execSQL($db, $sql);
+execSQL($db, $sql);
 
 echo sprintf("Importing the database content from the dump: %s", $sqlContent) . PHP_EOL;
 $sql = file_get_contents($sqlContent);
 $stmt = $db->prepare($sql);
 $stmt->execute();
+
+echo ("Creating the configuration file: config.php") . PHP_EOL;
+$payload = [
+    'db_host' => $host,
+    'db_name' => $dbname,
+    'db_user' => $user,
+    'db_pass' => $password,
+    'db_port' => $port,
+];
+
+require PATH_INSTALL . DIRECTORY_SEPARATOR . 'install.php';
+
+$installer = new Box_Installer();
+$installer->_createConfigurationFile($payload);
 
 echo ("Successfully set up FOSSBilling.") . PHP_EOL;

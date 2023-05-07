@@ -11,6 +11,7 @@
 use Box\Mod\Email\Service;
 use Twig\Loader\FilesystemLoader;
 use Symfony\Component\HttpClient\HttpClient;
+use \FOSSBilling\Environment;
 
 /**
  * @return bool
@@ -425,7 +426,7 @@ final class Box_Installer
         return true;
     }
 
-    private function _createConfigurationFile($data): void
+    public function _createConfigurationFile($data): void
     {
         $output = $this->_getConfigOutput($data);
         if (!file_put_contents(PATH_CONFIG, $output)) {
@@ -530,4 +531,9 @@ final class Box_Installer
 
 $action = $_GET['a'] ?? 'index';
 $installer = new Box_Installer();
-$installer->run($action);
+$env = new Environment();
+
+// Don't attempt to run the installer if we're not in a web environment. This is to prevent the installer from running when using prepare.php to prepare the environment for testing.
+if (!$env->isCLI()) {
+    $installer->run($action);
+}
