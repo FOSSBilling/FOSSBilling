@@ -1,7 +1,7 @@
 <?php
 /**
  * Copyright 2022-2023 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc. 
+ * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -798,7 +798,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForGuest($data)
     {
-        $this->di['validator']->isEmailValid($data['email']);
+        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientAddress();
@@ -1197,8 +1197,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function publicTicketCreate($data, \Model_Admin $identity)
     {
-        $this->di['validator']->isEmailValid($data['email']);
-
+        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 
         $ticket = $this->di['db']->dispense('SupportPTicket');

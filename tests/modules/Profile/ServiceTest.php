@@ -147,24 +147,24 @@ class ServiceTest extends \BBTestCase
                                           'allow_change_email' => 1
                                       )));
 
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->will($this->returnValue(false));
-
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
         $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['validator']      = $validatorMock;
         $di['mod_service']    = $di->protect(function ($name) use ($clientServiceMock) {
             return $clientServiceMock;
         });
         $di['mod']            = $di->protect(function () use ($modMock) {
             return $modMock;
         });
+        $di['tools']          = $toolsMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -235,14 +235,10 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->never())->
         method('emailAlreadyRegistered')->will($this->returnValue(false));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
-        $validatorMock->expects($this->never())->method('isEmailValid');
-
         $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['validator']      = $validatorMock;
         $di['mod_service']    = $di->protect(function ($name) use ($clientServiceMock) {
             return $clientServiceMock;
         });
@@ -286,24 +282,24 @@ class ServiceTest extends \BBTestCase
                                           'allow_change_email' => 1
                                       )));
 
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->will($this->returnValue(true));
-
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
         $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['validator']      = $validatorMock;
         $di['mod_service']    = $di->protect(function ($name) use ($clientServiceMock) {
             return $clientServiceMock;
         });
         $di['mod']            = $di->protect(function () use ($modMock) {
             return $modMock;
         });
+        $di['tools']          = $toolsMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -369,7 +365,6 @@ class ServiceTest extends \BBTestCase
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['validator']      = $validatorMock;
         $di['password']       = $passwordMock;
 
         $model = new \Model_Client();
