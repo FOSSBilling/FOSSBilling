@@ -80,6 +80,7 @@ class Environment
     public function loadDotEnv(): void
     {
         $dotenv = new Dotenv();
+        $dotenv->usePutenv(true);
 
         try {
             $dotenv->loadEnv(PATH_ROOT . '/.env', self::ENV_KEY, self::DEFAULT);

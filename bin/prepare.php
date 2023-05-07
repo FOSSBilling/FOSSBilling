@@ -20,8 +20,13 @@ const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_UPLOADS = PATH_ROOT . DIRECTORY_SEPARATOR . 'uploads';
 const PATH_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';
 const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
+const PATH_CONFIG_SAMPLE = PATH_ROOT . DIRECTORY_SEPARATOR . 'config-sample.php';
 const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
 const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'cache';
+
+const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
+const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
+
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
@@ -43,6 +48,10 @@ $env->loadDotEnv();
 $filesystem = new Filesystem();
 if (!$filesystem->exists(PATH_INSTALL)) {
     throw new Exception('The \'install\' folder is missing. Please clone the repository again.');
+}
+
+if (!$filesystem->exists(PATH_CONFIG_SAMPLE)) {
+    throw new Exception('The \'config-sample.php\' file is missing. Please clone the repository again.');
 }
 
 // Determine which SQL dump to use
@@ -125,17 +134,9 @@ $sql = file_get_contents($sqlContent);
 execSQL($db, $sql);
 
 echo ("Creating the configuration file: config.php") . PHP_EOL;
-$payload = [
-    'db_host' => $host,
-    'db_name' => $dbname,
-    'db_user' => $user,
-    'db_pass' => $password,
-    'db_port' => $port,
-];
+$filesystem->copy(PATH_CONFIG_SAMPLE, PATH_CONFIG, true);
 
-require PATH_INSTALL . DIRECTORY_SEPARATOR . 'install.php';
-
-$installer = new Box_Installer();
-$installer->_createConfigurationFile($payload);
+echo ("Creating the configuration file for Huraga") . PHP_EOL;
+$filesystem->copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG, true);
 
 echo ("Successfully set up FOSSBilling.") . PHP_EOL;
