@@ -11,6 +11,9 @@ src/vendor/*
 build
 composer.phar
 report/*
+src/.env.local
+src/.env.local.php
+src/.env.*.local
 
 ### phpunit/phpunit ###
 .phpunit.result.cache

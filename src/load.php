@@ -152,8 +152,7 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
-    $env = new Environment();
-    if ($env->isTesting()) {
+    if ($_ENV['APP_ENV'] === "test") {
         echo $e->getMessage() . PHP_EOL;
 
         return;
@@ -244,6 +243,9 @@ $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
+
+$env = new Environment();
+$env->loadDotEnv();
 
 // Check if SSL required, and enforce if so.
 checkSSL();

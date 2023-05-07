@@ -11,6 +11,7 @@
 namespace FOSSBilling;
 
 use Symfony\Component\Dotenv\Dotenv;
+use Symfony\Component\Dotenv\Exception\PathException;
 
 class Environment
 {
@@ -80,6 +81,10 @@ class Environment
     {
         $dotenv = new Dotenv();
 
-        $dotenv->loadEnv(PATH_ROOT . '/.env', self::ENV_KEY, self::PRODUCTION);
+        try {
+            $dotenv->loadEnv(PATH_ROOT . '/.env', self::ENV_KEY, self::DEFAULT);
+        } catch (PathException $e) {
+            // Do nothing
+        }
     }
 }
