@@ -1,4 +1,4 @@
-name: Build and Test
+name: CI
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   spellcheck:
     name: Spellcheck
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
