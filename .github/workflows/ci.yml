@@ -1,4 +1,4 @@
-name: Build and Test
+name: CI
 
 on:
   push:
@@ -7,8 +7,13 @@ on:
     branches: main
 
 jobs:
+  spellcheck:
+    name: Spellcheck
+    uses: ./.github/workflows/spellcheck.yml
+
   composer:
     runs-on: ubuntu-latest
+    needs: [ spellcheck ]
     strategy:
       matrix:
         php: [ 8.0, 8.1, 8.2 ]

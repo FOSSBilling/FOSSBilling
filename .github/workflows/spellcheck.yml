@@ -1,17 +1,14 @@
 name: Spellcheck
-on:
-  pull_request:
-  push:
 
-permissions:
-  contents: read
+on:
+  workflow_call:
 
 jobs:
   spellcheck:
+    name: Spellcheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: streetsidesoftware/cspell-action@v2
         with:
           incremental_files_only: true
-
