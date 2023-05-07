@@ -15,6 +15,7 @@
 namespace Box\Mod\Api\Controller;
 
 use \FOSSBilling\InjectionAwareInterface;
+use \FOSSBilling\Environment;
 
 class Client implements InjectionAwareInterface
 {
@@ -294,9 +295,10 @@ class Client implements InjectionAwareInterface
      */
     public function _checkCSRFToken()
     {
+        $env = new Environment();
         $this->_loadConfig();
         $csrfPrevention = $this->_api_config['CSRFPrevention'] ?? true;
-        if (!$csrfPrevention || php_sapi_name() == 'cli') {
+        if (!$csrfPrevention || $env->isCLI()) {
             return true;
         }
 

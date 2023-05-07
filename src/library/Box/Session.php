@@ -8,6 +8,8 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use \FOSSBilling\Environment;
+
 class Box_Session
 {
     public function setRandomId()
@@ -19,6 +21,7 @@ class Box_Session
 
     public function __construct($handler, $securityMode = 'regular', $cookieLifespan = 7200, $secure = true)
     {
+        $env = new Environment();
         if (!headers_sent()) {
             session_set_save_handler(
                 array($handler, 'open'),
@@ -29,7 +32,7 @@ class Box_Session
                 array($handler, 'gc')
             );
         }
-        if (php_sapi_name() !== 'cli') {
+        if ($env->isCLI()) {
             $currentCookieParams = session_get_cookie_params();
             $currentCookieParams["httponly"] = true;
             $currentCookieParams["lifetime"] = $cookieLifespan;

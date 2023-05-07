@@ -85,12 +85,13 @@ class Service
      */
     protected function _exec($api, $method, $params = null)
     {
+        $env = new Environment();
         try {
             $api->{$method}($params);
         } catch (\Exception $e) {
             throw new \Exception($e);
         } finally {
-            if ('cli' == php_sapi_name()) {
+            if ($env->isCLI()) {
                 echo "\e[32mSuccessfully ran " . $method . '(' . $params . ')' . ".\e[0m\n";
             }
         }
