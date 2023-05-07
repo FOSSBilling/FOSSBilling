@@ -14,6 +14,8 @@
 
 namespace Box\Mod\Queue\Api;
 
+use \FOSSBilling\Environment;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -150,6 +152,8 @@ class Admin extends \Api_Abstract
      */
     public function execute($data)
     {
+        $env = new Environment();
+
         $required = [
             'queue' => 'Queue name not provided',
         ];
@@ -185,7 +189,7 @@ class Admin extends \Api_Abstract
 
             if ($wait_for > 0.000001) {
                 $this->di['logger']->info('Waiting for ' . $wait_for . ' seconds to continue iteration');
-                if (APPLICATION_ENV != 'testing') {
+                if (!$env->isTesting()) {
                     sleep($wait_for);
                 }
             }

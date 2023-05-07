@@ -8,6 +8,8 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use \FOSSBilling\Environment;
+
 class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterface
 {
     private $config = array();
@@ -117,8 +119,9 @@ class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterfac
     {
         $tx = $api_admin->invoice_transaction_get(array('id'=>$id));
         $ipn = array_merge($data['get'], $data['post']);
+        $env = new Environment();
 
-        if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($ipn)) {
+        if(!$env->isTesting() && !$this->_isIpnValid($ipn)) {
             throw new Payment_Exception('2Checkout IPN is not valid');
         }
 

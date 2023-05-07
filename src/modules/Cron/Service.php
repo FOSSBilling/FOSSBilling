@@ -10,6 +10,8 @@
 
 namespace Box\Mod\Cron;
 
+use \FOSSBilling\Environment;
+
 class Service
 {
     protected ?\Pimple\Container $di;
@@ -47,6 +49,7 @@ class Service
     public function runCrons($interval = null)
     {
         $api = $this->di['api_system'];
+        $env = new Environment();
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs');
 
         // @core tasks
@@ -66,7 +69,7 @@ class Service
         $this->_exec($api, 'cart_batch_expire');
         $this->_exec($api, 'email_batch_sendmail');
 
-        $create = (APPLICATION_ENV == 'production');
+        $create = ($env->isProduction());
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 

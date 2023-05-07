@@ -11,8 +11,8 @@
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
+use \FOSSBilling\Environment;
 
-defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'production');
 const PATH_ROOT = __DIR__;
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
 const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR . 'library';
@@ -152,11 +152,13 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
-    if (APPLICATION_ENV === 'testing') {
+    $env = new Environment();
+    if ($env->isTesting()) {
         echo $e->getMessage() . PHP_EOL;
 
         return;
     }
+
     error_log($e->getMessage());
 
     if (defined('BB_MODE_API')) {

@@ -8,6 +8,8 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use \FOSSBilling\Environment;
+
 class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
 {
 	protected ?\Pimple\Container $di;
@@ -99,7 +101,9 @@ class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
-        if(APPLICATION_ENV != 'testing' && !$this->isIpnValid($data)) {
+		$env = new Environment();
+
+        if(!$env->isTesting() && !$this->isIpnValid($data)) {
             throw new Payment_Exception('WebMoney IPN is not valid');
         }
 

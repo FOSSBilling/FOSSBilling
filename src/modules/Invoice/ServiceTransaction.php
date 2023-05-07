@@ -11,6 +11,7 @@
 namespace Box\Mod\Invoice;
 
 use \FOSSBilling\InjectionAwareInterface;
+use \FOSSBilling\Environment;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
@@ -393,6 +394,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function process($tx)
     {
+        $env = new Environment();
         $transaction = $this->di['db']->load('Transaction', $tx->id);
 
         if ($this->_isProcessed($transaction)) {
@@ -419,7 +421,7 @@ class ServiceTransaction implements InjectionAwareInterface
             if (BB_DEBUG) {
                 error_log($e->getMessage());
             }
-            if (APPLICATION_ENV == 'testing') {
+            if ($env->isTesting()) {
                 throw $e;
             }
         }
@@ -473,6 +475,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _parseIpnAndApprove(\Model_Transaction &$tx)
     {
+        $env = new Environment();
         if (\Model_Transaction::STATUS_APPROVED == $tx->status) {
             return $tx;
         }
@@ -507,7 +510,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice);
         $mpi = $invoiceService->getPaymentInvoice($invoice);
 
-        if (APPLICATION_ENV != 'testing' && $tx->validate_ipn) {
+        if (!$env->isTesting() && $tx->validate_ipn) {
             if (!$adapter->isIpnValid($ipn, $mpi)) {
                 $tx->output = $adapter->getOutput();
                 throw new \Box_Exception('Instant payment notification (IPN) did not pass gateway :id validation', [':id' => $gtw->gateway], 706);
