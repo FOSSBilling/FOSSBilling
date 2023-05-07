@@ -336,7 +336,10 @@
         "Autoloader",
         "autoloader",
         "qwertyuiopasdfghjklzxccvbnm",
-        "QWERTYUIOPASDFGHJKLZXCVBNM"
+        "QWERTYUIOPASDFGHJKLZXCVBNM",
+        "phar",
+        "phpunit",
+        "friendsofphp"
     ],
     "ignorePaths": [
         "tests/**",
