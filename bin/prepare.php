@@ -21,6 +21,7 @@ const PATH_UPLOADS = PATH_ROOT . DIRECTORY_SEPARATOR . 'uploads';
 const PATH_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';
 const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
+const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'cache';
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
@@ -52,15 +53,15 @@ if ($env->isTesting()) {
     $sqlContent = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'content.sql';
 }
 
-$type = $_ENV['DB_TYPE'] ?? 'mysql';
-$host = $_ENV['DB_HOST'] ?? null;
-$dbname = $_ENV['DB_NAME'] ?? null;
-$user = $_ENV['DB_USER'] ?? null;
-$password = $_ENV['DB_PASSWORD'] ?? null;
-$port = $_ENV['DB_PORT'] ?? 3306;
+$type = 'mysql';
+$host = getenv('DB_HOST') ?? ($_ENV['DB_HOST'] ?? null);
+$dbname = getenv('DB_NAME') ?? ($_ENV['DB_NAME'] ?? null);
+$user = getenv('DB_USER') ?? ($_ENV['DB_USER'] ?? null);
+$password = getenv('DB_PASS') ?? ($_ENV['DB_PASS'] ?? null);
+$port = getenv('DB_PORT') ?? ($_ENV['DB_PORT'] ?? 3306);
 
 if (!$host || !$dbname || !$user || !$password) {
-    throw new Exception('Missing database credentials. Please set the DB_HOST, DB_NAME, DB_USER and DB_PASSWORD environment variables. You can also set the DB_PORT variable if you are not using the default port.');
+    throw new Exception('Missing database credentials. Please set the DB_HOST, DB_NAME, DB_USER and DB_PASS environment variables. You can also set the DB_PORT variable if you are not using the default port.');
 }
 
 echo sprintf("Setting up a new FOSSBilling instance for the %s environment", $env->getCurrentEnvironment()) . PHP_EOL;
@@ -113,7 +114,7 @@ echo sprintf("Creating database: %s", $dbname) . PHP_EOL;
 execSQL($db, sprintf("CREATE DATABASE %s;", $dbname));
 
 echo sprintf("Connecting to the %s database with the user: %s", $dbname, $user) . PHP_EOL;
-$sql = sprintf("use %s;", $dbname);
+execSQL($db, sprintf("USE %s;", $dbname));
 
 echo sprintf("Setting up the database structure from the dump: %s", $sqlStructure) . PHP_EOL;
 $sql = file_get_contents($sqlStructure);
@@ -121,8 +122,7 @@ execSQL($db, $sql);
 
 echo sprintf("Importing the database content from the dump: %s", $sqlContent) . PHP_EOL;
 $sql = file_get_contents($sqlContent);
-$stmt = $db->prepare($sql);
-$stmt->execute();
+execSQL($db, $sql);
 
 echo ("Creating the configuration file: config.php") . PHP_EOL;
 $payload = [
