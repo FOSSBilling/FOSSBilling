@@ -17,7 +17,7 @@ return [
      */
     'security' => [
         'mode' => 'strict',
-        'force_https' => getenv('FORCE_HTTPS') ?? true,
+        'force_https' => filter_var(getenv('FORCE_HTTPS') ?? true, FILTER_VALIDATE_BOOLEAN),
         'cookie_lifespan' => 7200,
     ],
 
@@ -26,7 +26,7 @@ return [
     /*
      * Full URL where FOSSBilling is installed with trailing slash.
      */
-    'url' => getenv('DB_HOST') ?: 'http://localhost/',
+    'url' => getenv('URL') ?? 'http://localhost/',
 
     /*
      * The URL prefix to access the BB admin area. Ex: '/admin' for https://example.com/admin.
@@ -136,7 +136,7 @@ return [
         /*
          * Database password.
          */
-        'password' => getenv('DB_PASS') ?: 'foo',
+        'password' => getenv('DB_PASS') ?: 'bar',
 
         /*
          * Database Port.
