@@ -88,7 +88,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return null
+     * @return
      */
     public function getService()
     {

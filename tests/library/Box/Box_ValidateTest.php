@@ -40,7 +40,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
             'id'  => 'ID must be set',
             'key' => 'KEY must be set'
         );
-        $v        = new \FOSSBilling\Validate
+        $v        = new \FOSSBilling\Validate();
         $this->assertNull($v->checkRequiredParamsForArray($required, $data));
     }
 

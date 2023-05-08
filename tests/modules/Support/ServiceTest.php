@@ -1397,15 +1397,15 @@ class ServiceTest extends \BBTestCase
             ->method('fire')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['validator']      = $validatorMock;
         $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
         $di['events_manager'] = $eventMock;
+        $di['tools']          = $toolsMock;
 
         $this->service->setDi($di);
 
@@ -2009,15 +2009,15 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
-        $di['validator']      = $validatorMock;
         $di['events_manager'] = $eventMock;
+        $di['tools']          = $toolsMock;
         $this->service->setDi($di);
 
         $admin = new \Model_Admin();
