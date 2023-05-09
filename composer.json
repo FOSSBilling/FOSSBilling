@@ -64,11 +64,6 @@
         "ext-gettext": "*",
         "ext-intl": "*"
     },
-    "autoload-dev": {
-        "psr-0": {
-            "": "tests/library"
-        }
-    },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
