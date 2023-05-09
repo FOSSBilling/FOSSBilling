@@ -55,7 +55,7 @@
         "phpstan/extension-installer": "^1.2",
         "phpstan/phpstan-deprecation-rules": "^1.1",
         "phpunit/phpunit": "^9.6",
-        "rector/rector": "^0.15.4",
+        "rector/rector": "^0.16.0",
         "symfony/deprecation-contracts": "^3.0.0",
         "symfony/phpunit-bridge": "^6.2"
     },
