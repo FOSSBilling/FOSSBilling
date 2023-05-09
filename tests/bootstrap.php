@@ -30,3 +30,8 @@ require_once 'FakeTemplateWrapper.php';
 require_once 'DummyBean.php';
 $di = include PATH_ROOT . '/di.php';
 $di['translate']();
+
+//Setup the autoloader
+$testsLoader = new AntCMS\AntLoader();
+$testsLoader->addPrefix('', DIRECTORY_SEPARATOR . 'library', 'psr0');
+$testsLoader->register();

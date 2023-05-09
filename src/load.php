@@ -240,10 +240,6 @@ define('BB_URL_API', $config['url'] . 'api/');
 $loader = new AntCMS\AntLoader(PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php');
 $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS);
-$testsPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'library';
-if (@is_dir($testsPath)) {
-    $loader->addPrefix('', $testsPath, 'psr0');
-}
 $loader->checkClassMap();
 $loader->register();
 
