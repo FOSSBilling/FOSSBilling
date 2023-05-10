@@ -31,7 +31,7 @@ class Environment
      */
     public function getCurrentEnvironment(): string
     {
-        return in_array($_ENV[self::ENV_KEY], self::POSSIBLE) ? $_ENV[self::ENV_KEY] : self::DEFAULT;
+        return in_array(getenv(self::ENV_KEY), self::POSSIBLE) ? getenv(self::ENV_KEY) : self::DEFAULT;
     }
 
     /**

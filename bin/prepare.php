@@ -63,11 +63,11 @@ if ($env->isTesting()) {
 }
 
 $type = 'mysql';
-$host = getenv('DB_HOST') ?? ($_ENV['DB_HOST'] ?? null);
-$dbname = getenv('DB_NAME') ?? ($_ENV['DB_NAME'] ?? null);
-$user = getenv('DB_USER') ?? ($_ENV['DB_USER'] ?? null);
-$password = getenv('DB_PASS') ?? ($_ENV['DB_PASS'] ?? null);
-$port = getenv('DB_PORT') ?? ($_ENV['DB_PORT'] ?? 3306);
+$host = getenv('DB_HOST') ?? null;
+$dbname = getenv('DB_NAME') ?? null;
+$user = getenv('DB_USER') ?? null;
+$password = getenv('DB_PASS') ?? null;
+$port = getenv('DB_PORT') ?? 3306;
 
 if (!$host || !$dbname || !$user || !$password) {
     throw new Exception('Missing database credentials. Please set the DB_HOST, DB_NAME, DB_USER and DB_PASS environment variables. You can also set the DB_PORT variable if you are not using the default port.');
