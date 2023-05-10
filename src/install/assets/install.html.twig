@@ -148,21 +148,21 @@
                             <div class="rowElem nobg">
                                 <label>Database hostname:</label>
                                 <div class="formRight">
-                                    <input type="text" id="db_host" name="db_host" value="{{ db_host|default('localhost') }}" required="required" placeholder="localhost"/>
+                                    <input type="text" id="db_host" name="db_host" value="{{ request.db_host|default(defaults.db_host) }}" required="required" placeholder={{ request.db_host|default(defaults.db_host) }}/>
                                 </div>
                                 <div class="fix"></div>
                             </div>
                             <div class="rowElem nobg">
                                 <label>Database Port:</label>
                                 <div class="formRight">
-                                    <input type="text" id="db_port" name="db_port" value="{{ db_port|default('3306') }}" required="required" placeholder="3306"/>
+                                    <input type="text" id="db_port" name="db_port" value="{{ request.db_port|default(defaults.db_port) }}" required="required" placeholder={{ request.db_port|default(defaults.db_port) }}/>
                                 </div>
                                 <div class="fix"></div>
                             </div>
                             <div class="rowElem">
                                 <label>Database name:</label>
                                 <div class="formRight">
-                                    <input type="text" id="db_name" name="db_name" value="{{ request.db_name|default(db_name) }}" required="required" placeholder="fossbilling"/>
+                                    <input type="text" id="db_name" name="db_name" value="{{ request.db_name|default(defaults.db_name) }}" required="required" placeholder={{ request.db_name|default(defaults.db_name) }}/>
                                 </div>
                                 <div class="fix"></div>
                             </div>

@@ -9,6 +9,8 @@
  */
 
 use Box\Mod\Email\Service;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Twig\Loader\FilesystemLoader;
 use Symfony\Component\HttpClient\HttpClient;
 use \FOSSBilling\Environment;
@@ -70,6 +72,9 @@ const PATH_SQL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install/sql/structure.sql';
 const PATH_SQL_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'install/sql/content.sql';
 const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
 const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
+const PATH_CONFIG_SAMPLE = PATH_ROOT . DIRECTORY_SEPARATOR . 'config-sample.php';
+const PATH_ENV = PATH_ROOT . DIRECTORY_SEPARATOR . '.env';
+const PATH_ENV_LOCAL = PATH_ROOT . DIRECTORY_SEPARATOR . '.env.local';
 const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
@@ -98,6 +103,9 @@ $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
+
+$env = new Environment();
+$env->loadDotEnv();
 
 final class Box_Installer
 {
@@ -171,7 +179,7 @@ final class Box_Installer
                     $this->session->set('currency_title', $currency_title);
                     $this->session->set('currency_format', $currency_format);
 
-                    $this->session->set('license', 'FOSSBilling CE');
+                    $this->session->set('license', 'FOSSBilling');
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
@@ -257,6 +265,12 @@ final class Box_Installer
 
     private function render($name, $vars = []): string
     {
+        $defaults = [
+            'db_host' => getenv('DB_HOST') ?: 'localhost',
+            'db_port' => getenv('DB_PORT') ?: '3306',
+            'db_name' => getenv('DB_NAME') ?: 'fossbilling',
+        ];
+
         $options = [
             'paths' => [PATH_INSTALL_THEMES],
             'debug' => true,
@@ -271,6 +285,7 @@ final class Box_Installer
         // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
         $twig->addGlobal('version', \FOSSBilling\Version::VERSION);
+        $twig->addGlobal('defaults', $defaults);
 
         return $twig->render($name, $vars);
     }
@@ -363,6 +378,7 @@ final class Box_Installer
     {
         $this->_isValidInstallData($ns);
         $this->_createConfigurationFile($ns);
+        $this->_createEnvironmentFile($ns);
 
         $pdo = $this->getPdo($ns->get('db_host').';'.$ns->get('db_port'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
 
@@ -428,83 +444,53 @@ final class Box_Installer
 
     public function _createConfigurationFile($data): void
     {
-        $output = $this->_getConfigOutput($data);
-        if (!file_put_contents(PATH_CONFIG, $output)) {
-            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
+        $filesystem = new Filesystem();
+        if (!$filesystem->exists(PATH_CONFIG_SAMPLE)) {
+            throw new Exception('Could not read the config-sample.php file. Please download the latest version of FOSSBilling again.');
+        }
+
+        // Copy the config-sample.php file to config.php
+        try {
+            $filesystem->copy(PATH_CONFIG_SAMPLE, PATH_CONFIG, true);
+        } catch (IOExceptionInterface $e) {
+            throw new Exception('Configuration file (' . PATH_CONFIG . ') is not writable. Please make sure the permissions are adjusted correctly.', 101);
         }
     }
 
-    private function _getConfigOutput($ns): string
+    public function _createEnvironmentFile($data): void
     {
-        $version = new \FOSSBilling\Requirements();
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
         $updateBranch = (preg_match($reg, \FOSSBilling\Version::VERSION, $matches) !== 0) ? "release" : "preview";
 
-        // TODO: Why not just take the defaults from the config-sample.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
-        $data = [
-            'security' => [
-                'mode' => 'strict',
-                'force_https' => isSSL() ? true : false,
-                'cookie_lifespan' => 7200,
-            ],
-            'debug' => false,
-            'update_branch' => $updateBranch,
-            'log_stacktrace' => true,
-            'stacktrace_length' => 25,
+        $filesystem = new Filesystem();
+        if (!$filesystem->exists(PATH_ENV)) {
+            throw new Exception('Could not read the .env file. Please download the latest version of FOSSBilling again.');
+        }
 
-            'maintenance_mode' => [
-                'enabled' => false,
-                'allowed_urls' => [],
-                'allowed_ips' => [],
-            ],
-
-            'salt' => md5(random_bytes(13)),
-            'url' => BB_URL,
-            'admin_area_prefix' => '/admin',
-            'disable_auto_cron' => false,
-
-            'i18n' => [
-                'locale' => 'en_US',
-                'timezone' => 'UTC',
-                'date_format' => 'medium',
-                'time_format' => 'short',
-            ],
-
-            'path_data' => PATH_ROOT . '/data',
-            'path_logs' => PATH_ROOT . '/data/log/application.log',
-
-            'log_to_db' => true,
-
-            'db' => [
-                'type' => 'mysql',
-                'host' => $ns->get('db_host'),
-                'port' => $ns->get('db_port'),
-                'name' => $ns->get('db_name'),
-                'user' => $ns->get('db_user'),
-                'password' => $ns->get('db_pass'),
-            ],
-
-            'twig' => [
-                'debug' => false,
-                'auto_reload' => true,
-                'cache' => PATH_ROOT . '/data/cache',
-            ],
-
-            'api' => [
-                'require_referrer_header' => false,
-                'allowed_ips' => [],
-                'rate_span' => 60 * 60,
-                'rate_limit' => 1000,
-                'throttle_delay' => 2,
-                'rate_span_login' => 60,
-                'rate_limit_login' => 20,
-                'CSRFPrevention' => true,
-            ],
+        $map = [
+            'DB_HOST' => $data->get('db_host'),
+            'DB_PORT' => $data->get('db_port'),
+            'DB_NAME' => $data->get('db_name'),
+            'DB_USER' => $data->get('db_user'),
+            'DB_PASS' => $data->get('db_pass'),
+            'SALT' => md5(random_bytes(13)),
+            'UPDATE_BRANCH' => $updateBranch,
+            'URL' => BB_URL,
+            'FORCE_HTTPS' => isSSL(),
         ];
-        $output = '<?php ' . PHP_EOL;
-        $output .= 'return ' . var_export($data, true) . ';';
 
-        return $output;
+        $env = file_get_contents(PATH_ENV);
+        $env = preg_replace('/#.*!!!\n/s', '', $env); // Remove the comment at the top of the file
+
+        foreach ($map as $key => $value) {
+            $env = preg_replace('/^' . $key . '=(.*)$/m', $key . '=' . $value, $env);
+        }
+
+        try {
+            $filesystem->dumpFile(PATH_ENV_LOCAL, $env);
+        } catch (IOExceptionInterface $e) {
+            throw new Exception('Environment file (' . PATH_ENV_LOCAL . ') is not writable. Please make sure the permissions are adjusted correctly.', 101);
+        }
     }
 
     private function _isValidInstallData($ns): void
@@ -531,7 +517,6 @@ final class Box_Installer
 
 $action = $_GET['a'] ?? 'index';
 $installer = new Box_Installer();
-$env = new Environment();
 
 // Don't attempt to run the installer if we're not in a web environment. This is to prevent the installer from running when using prepare.php to prepare the environment for testing.
 if (!$env->isCLI()) {

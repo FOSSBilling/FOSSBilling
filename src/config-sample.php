@@ -21,7 +21,7 @@ return [
         'cookie_lifespan' => 7200,
     ],
 
-    'salt' => '',
+    'salt' => getenv('SALT') ?? '',
 
     /*
      * Full URL where FOSSBilling is installed with trailing slash.
@@ -43,7 +43,7 @@ return [
      * Configure the update branch for the automatic updater.
      * Currently acceptable options are "release" or "preview".
      */
-    'update_branch' => 'release',
+    'update_branch' => getenv('UPDATE_BRANCH') ?? 'release',
 
     /*
      * Enable or disable stacktraces when an exception is thrown (also requires debug to be enabled).
