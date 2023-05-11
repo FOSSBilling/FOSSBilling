@@ -476,7 +476,7 @@ final class Box_Installer
             'SALT' => md5(random_bytes(13)),
             'UPDATE_BRANCH' => $updateBranch,
             'URL' => BB_URL,
-            'FORCE_HTTPS' => isSSL(),
+            'FORCE_HTTPS' => isSSL() ? 'true' : 'false',
         ];
 
         $env = file_get_contents(PATH_ENV);
