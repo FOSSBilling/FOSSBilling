@@ -311,7 +311,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function resend(\Model_ActivityClientEmail $email)
     {
         $di = $this->getDi();
-        $env = new Environment();
 
         $extensionService = $di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -321,7 +320,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $mail = new \FOSSBilling\Mail($email->sender, $email->recipients, $email->sender, $email->content_html, $settings['mailer'] ?? 'sendmail', $settings['custom_dsn'] ?? null);
 
-        if ($env->isTesting()) {
+        if (Environment::isTesting()) {
             if (BB_DEBUG) {
                 error_log('Skipping email sending in test environment');
             }
@@ -554,8 +553,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function _sendFromQueue(\Model_ModEmailQueue $queue)
     {
-        $env = new Environment();
-
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
@@ -588,8 +585,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->subject, $queue->content, $transport, $settings['custom_dsn'] ?? null);
 
-            if (!$env->isProduction()) {
-                error_log('Skip email sending. Application ENV: ' . $env->getCurrentEnvironment());
+            if (!Environment::isProduction()) {
+                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
 
                 return true;
             }

@@ -230,8 +230,7 @@ class Service implements InjectionAwareInterface
 
     public function sendDownload($filename, $path)
     {
-        $env = new Environment();
-        if ($env->isTesting()) {
+        if (Environment::isTesting()) {
             return;
         }
 

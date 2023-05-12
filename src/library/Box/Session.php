@@ -21,7 +21,6 @@ class Box_Session
 
     public function __construct($handler, $securityMode = 'regular', $cookieLifespan = 7200, $secure = true)
     {
-        $env = new Environment();
         if (!headers_sent()) {
             session_set_save_handler(
                 array($handler, 'open'),
@@ -32,7 +31,7 @@ class Box_Session
                 array($handler, 'gc')
             );
         }
-        if ($env->isCLI()) {
+        if (Environment::isCLI()) {
             $currentCookieParams = session_get_cookie_params();
             $currentCookieParams["httponly"] = true;
             $currentCookieParams["lifetime"] = $cookieLifespan;

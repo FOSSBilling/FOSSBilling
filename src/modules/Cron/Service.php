@@ -49,7 +49,6 @@ class Service
     public function runCrons($interval = null)
     {
         $api = $this->di['api_system'];
-        $env = new Environment();
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs');
 
         // @core tasks
@@ -69,7 +68,7 @@ class Service
         $this->_exec($api, 'cart_batch_expire');
         $this->_exec($api, 'email_batch_sendmail');
 
-        $create = ($env->isProduction());
+        $create = (Environment::isProduction());
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
@@ -85,13 +84,12 @@ class Service
      */
     protected function _exec($api, $method, $params = null)
     {
-        $env = new Environment();
         try {
             $api->{$method}($params);
         } catch (\Exception $e) {
             throw new \Exception($e);
         } finally {
-            if ($env->isCLI()) {
+            if (Environment::isCLI()) {
                 echo "\e[32mSuccessfully ran " . $method . '(' . $params . ')' . ".\e[0m\n";
             }
         }

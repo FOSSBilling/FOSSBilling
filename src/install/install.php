@@ -104,8 +104,7 @@ $loader->addPrefix('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
 
-$env = new Environment();
-$env->loadDotEnv();
+Environment::loadDotEnv();
 
 final class Box_Installer
 {
@@ -519,6 +518,6 @@ $action = $_GET['a'] ?? 'index';
 $installer = new Box_Installer();
 
 // Don't attempt to run the installer if we're not in a web environment. This is to prevent the installer from running when using prepare.php to prepare the environment for testing.
-if (!$env->isCLI()) {
+if (!Environment::isCLI()) {
     $installer->run($action);
 }

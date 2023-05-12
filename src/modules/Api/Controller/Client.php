@@ -295,10 +295,9 @@ class Client implements InjectionAwareInterface
      */
     public function _checkCSRFToken()
     {
-        $env = new Environment();
         $this->_loadConfig();
         $csrfPrevention = $this->_api_config['CSRFPrevention'] ?? true;
-        if (!$csrfPrevention || $env->isCLI()) {
+        if (!$csrfPrevention || Environment::isCLI()) {
             return true;
         }
 

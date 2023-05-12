@@ -101,9 +101,7 @@ class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
-		$env = new Environment();
-
-        if(!$env->isTesting() && !$this->isIpnValid($data)) {
+        if(!Environment::isTesting() && !$this->isIpnValid($data)) {
             throw new Payment_Exception('WebMoney IPN is not valid');
         }
 

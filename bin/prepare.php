@@ -41,8 +41,7 @@ use \FOSSBilling\Environment;
 use \Symfony\Component\Filesystem\Filesystem;
 
 // Load the environment variables
-$env = new Environment();
-$env->loadDotEnv();
+Environment::loadDotEnv();
 
 // Make sure the install folder exists
 $filesystem = new Filesystem();
@@ -56,7 +55,7 @@ if (!$filesystem->exists(PATH_CONFIG_SAMPLE)) {
 
 // Determine which SQL dump to use
 $sqlStructure = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'structure.sql';
-if ($env->isTesting()) {
+if (Environment::isTesting()) {
     $sqlContent = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'content_test.sql';
 } else {
     $sqlContent = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'content.sql';
@@ -73,7 +72,7 @@ if (!$host || !$dbname || !$user || !$password) {
     throw new Exception('Missing database credentials. Please set the DB_HOST, DB_NAME, DB_USER and DB_PASS environment variables. You can also set the DB_PORT variable if you are not using the default port.');
 }
 
-echo sprintf("Setting up a new FOSSBilling instance for the %s environment", $env->getCurrentEnvironment()) . PHP_EOL;
+echo sprintf("Setting up a new FOSSBilling instance for the %s environment", Environment::getCurrentEnvironment()) . PHP_EOL;
 echo sprintf("Attempting to connect to the database: %s@%s/%s", $user, $host, $dbname) . PHP_EOL;
 
 $iter = 30;

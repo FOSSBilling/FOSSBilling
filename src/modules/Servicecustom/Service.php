@@ -253,7 +253,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function callOnAdapter(\Model_ServiceCustom $model, $method, $params = [])
     {
-        $env = new Environment();
         $plugin = $model->plugin;
         if (empty($plugin)) {
             // error_log('Plugin is not used for this custom service');
@@ -262,7 +261,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = sprintf('Plugin/%s/%s.php', $plugin, $plugin);
-        if (!$env->isTesting() && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
+        if (!Environment::isTesting() && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
             $e = new \Box_Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (BB_DEBUG) {
                 error_log($e->getMessage());

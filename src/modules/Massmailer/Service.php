@@ -140,7 +140,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function sendMessage($model, $client_id)
     {
-        $env = new Environment();
         [$ps, $pc] = $this->getParsed($model, $client_id);
 
         $clientService = $this->di['mod_service']('client');
@@ -168,9 +167,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $mail->setFrom($data['from'], $data['from_name']);
         $mail->addTo($data['to'], $data['to_name']);
 
-        if (!$env->isProduction()) {
+        if (!Environment::isProduction()) {
             if ($this->di['config']['debug']) {
-                error_log('Skip email sending. Application ENV: ' . $env->getCurrentEnvironment());
+                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
 
             return true;

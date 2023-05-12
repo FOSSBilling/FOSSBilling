@@ -244,8 +244,7 @@ $loader->addPrefix('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
 
-$env = new Environment();
-$env->loadDotEnv();
+Environment::loadDotEnv();
 
 // Check if SSL required, and enforce if so.
 checkSSL();

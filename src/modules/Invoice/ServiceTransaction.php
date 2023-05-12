@@ -394,7 +394,6 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function process($tx)
     {
-        $env = new Environment();
         $transaction = $this->di['db']->load('Transaction', $tx->id);
 
         if ($this->_isProcessed($transaction)) {
@@ -421,7 +420,7 @@ class ServiceTransaction implements InjectionAwareInterface
             if (BB_DEBUG) {
                 error_log($e->getMessage());
             }
-            if ($env->isTesting()) {
+            if (Environment::isTesting()) {
                 throw $e;
             }
         }
@@ -475,7 +474,6 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _parseIpnAndApprove(\Model_Transaction &$tx)
     {
-        $env = new Environment();
         if (\Model_Transaction::STATUS_APPROVED == $tx->status) {
             return $tx;
         }
@@ -510,7 +508,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice);
         $mpi = $invoiceService->getPaymentInvoice($invoice);
 
-        if (!$env->isTesting() && $tx->validate_ipn) {
+        if (!Environment::isTesting() && $tx->validate_ipn) {
             if (!$adapter->isIpnValid($ipn, $mpi)) {
                 $tx->output = $adapter->getOutput();
                 throw new \Box_Exception('Instant payment notification (IPN) did not pass gateway :id validation', [':id' => $gtw->gateway], 706);

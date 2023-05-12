@@ -29,7 +29,7 @@ class Environment
      * 
      * @return string
      */
-    public function getCurrentEnvironment(): string
+    public static function getCurrentEnvironment(): string
     {
         return in_array(getenv(self::ENV_KEY), self::POSSIBLE) ? getenv(self::ENV_KEY) : self::DEFAULT;
     }
@@ -38,34 +38,34 @@ class Environment
      * Check if the current environment is a production environment.
      * @return bool
      */
-    public function isProduction(): bool
+    public static function isProduction(): bool
     {
-        return $this->getCurrentEnvironment() === self::PRODUCTION;
+        return self::getCurrentEnvironment() === self::PRODUCTION;
     }
 
     /**
      * Check if the current environment is a development environment.
      * @return bool
      */
-    public function isDevelopment(): bool
+    public static function isDevelopment(): bool
     {
-        return $this->getCurrentEnvironment() === self::DEVELOPMENT;
+        return self::getCurrentEnvironment() === self::DEVELOPMENT;
     }
 
     /**
      * Check if the current environment is a testing environment.
      * @return bool
      */
-    public function isTesting(): bool
+    public static function isTesting(): bool
     {
-        return $this->getCurrentEnvironment() === self::TESTING;
+        return self::getCurrentEnvironment() === self::TESTING;
     }
 
     /**
      * Check if the current environment is a CLI environment.
      * @return bool
      */
-    public function isCLI(): bool
+    public static function isCLI(): bool
     {
         return php_sapi_name() === 'cli';
     }
@@ -77,7 +77,7 @@ class Environment
      * @see https://symfony.com/components/Dotenv
      * @return void
      */
-    public function loadDotEnv(): void
+    public static function loadDotEnv(): void
     {
         $dotenv = new Dotenv();
         $dotenv->usePutenv(true);
