@@ -67,7 +67,7 @@ class Environment
      */
     public static function isCLI(): bool
     {
-        return php_sapi_name() === 'cli';
+        return (php_sapi_name() === 'cli' || !http_response_code());
     }
 
     /**
