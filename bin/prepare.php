@@ -24,9 +24,8 @@ const PATH_CONFIG_SAMPLE = PATH_ROOT . DIRECTORY_SEPARATOR . 'config-sample.php'
 const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
 const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'cache';
 
-const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
-const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
-
+const HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
+const HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
@@ -136,6 +135,6 @@ echo ("Creating the configuration file: config.php") . PHP_EOL;
 $filesystem->copy(PATH_CONFIG_SAMPLE, PATH_CONFIG, true);
 
 echo ("Creating the configuration file for Huraga") . PHP_EOL;
-$filesystem->copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG, true);
+$filesystem->copy(HURAGA_CONFIG_TEMPLATE, HURAGA_CONFIG, true);
 
 echo ("Successfully set up FOSSBilling.") . PHP_EOL;
