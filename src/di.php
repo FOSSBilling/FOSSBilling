@@ -424,7 +424,7 @@ $di['loggedin_client'] = function () use ($di) {
  * @throws \Box_Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
-    if (Environment::isCLI() || !http_response_code()) {
+    if (Environment::isCLI()) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
