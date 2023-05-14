@@ -77,7 +77,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
             'asset_url' => new TwigFilter('asset_url', [$this, 'twig_asset_url'], ['needs_environment' => true, 'is_safe' => ['html']]),
 
-            'library_url' => new TwigFilter('library_url', [$this, 'twig_library_url'], ['is_safe' => ['html']]),
+            'library_url' => new TwigFilter('library_url', [$this, 'twig_library_url'], ['needs_environment' => true, 'is_safe' => ['html']]),
 
             'money' => new TwigFilter('money', [$this, 'twig_money'], ['needs_environment' => true, 'is_safe' => ['html']]),
 

@@ -11,7 +11,6 @@
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
-use \FOSSBilling\Environment;
 
 const PATH_ROOT = __DIR__;
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
@@ -211,6 +210,9 @@ checkRequirements();
 
 // Requirements met - load required packages/files.
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
+require_once './library/FOSSBilling/Environment.php';
+
+\FOSSBilling\Environment::loadDotEnv();
 
 // Check web server and web server settings.
 checkWebServer();
@@ -243,8 +245,6 @@ $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
-
-Environment::loadDotEnv();
 
 // Check if SSL required, and enforce if so.
 checkSSL();
