@@ -1,7 +1,7 @@
 <?php
 /**
  * Copyright 2022-2023 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc. 
+ * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -31,7 +31,7 @@ class Box_Session
                 array($handler, 'gc')
             );
         }
-        if (Environment::isCLI()) {
+        if (!Environment::isCLI()) {
             $currentCookieParams = session_get_cookie_params();
             $currentCookieParams["httponly"] = true;
             $currentCookieParams["lifetime"] = $cookieLifespan;

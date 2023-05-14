@@ -11,6 +11,7 @@
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
+use \FOSSBilling\Environment;
 
 const PATH_ROOT = __DIR__;
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
@@ -210,9 +211,6 @@ checkRequirements();
 
 // Requirements met - load required packages/files.
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
-require_once './library/FOSSBilling/Environment.php';
-
-\FOSSBilling\Environment::loadDotEnv();
 
 // Check web server and web server settings.
 checkWebServer();
@@ -232,12 +230,9 @@ checkInstaller();
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 define('BB_DEBUG', $config['debug']);
-define('BB_URL', $config['url']);
 define('PATH_CACHE', $config['path_data'] . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
-define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
-define('BB_URL_API', $config['url'] . 'api/');
 
 //Initial setup and checks passed, now we setup our custom autoloader.
 $loader = new AntCMS\AntLoader(PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php');
@@ -245,6 +240,14 @@ $loader->addPrefix('', PATH_LIBRARY, 'psr0');
 $loader->addPrefix('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
+
+Environment::loadDotEnv();
+
+// Some of these constants rely on the environmental variables. We will refresh the configuration after loading the environmental variables.
+$config = require PATH_CONFIG;
+define('BB_URL', $config['url']);
+define('BB_SSL', str_starts_with($config['url'], 'https'));
+define('BB_URL_API', $config['url'] . 'api/');
 
 // Check if SSL required, and enforce if so.
 checkSSL();
