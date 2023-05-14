@@ -448,9 +448,11 @@ final class Box_Installer
             throw new Exception('Could not read the config-sample.php file. Please download the latest version of FOSSBilling again.');
         }
 
-        // Copy the config-sample.php file to config.php
+        $config = file_get_contents(PATH_CONFIG_SAMPLE);
+        $config = preg_replace('/^\/\*\*([^*]|\*(?!\/))*\*\//m', '', $config); // Remove the comment at the top of the file
+
         try {
-            $filesystem->copy(PATH_CONFIG_SAMPLE, PATH_CONFIG, true);
+            $filesystem->dumpFile(PATH_CONFIG, $config);
         } catch (IOExceptionInterface $e) {
             throw new Exception('Configuration file (' . PATH_CONFIG . ') is not writable. Please make sure the permissions are adjusted correctly.', 101);
         }
