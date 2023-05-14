@@ -27,7 +27,7 @@ class i18n
          * Next: if that didn't work, try to use the locale in the config file
          * Finally: As a last resort, default to en_US for the locale
          */
-        return $_COOKIE['BBLANG'] ?: self::getBrowserLocale() ?: $config['i18n']['locale'] ?: 'en_US';
+        return isset($_COOKIE['BBLANG']) ? $_COOKIE['BBLANG'] : (self::getBrowserLocale() ?: $config['i18n']['locale'] ?: 'en_US');
     }
 
     /**
