@@ -49,6 +49,7 @@ return [
      * Enable or disable stacktraces when an exception is thrown (also requires debug to be enabled).
      */
     'log_stacktrace' => true,
+
     /*
      * How long the stacktrace should be.
      */
@@ -113,34 +114,11 @@ return [
     'log_to_db' => true,
 
     'db' => [
-        /*
-         * Database type. Don't change this if in doubt.
-         */
         'type' => 'mysql',
-
-        /*
-         * Database hostname. Don't change this if in doubt.
-         */
         'host' => getenv('DB_HOST') ?: '127.0.0.1',
-
-        /*
-         * The name of the database for FOSSBilling.
-         */
         'name' => getenv('DB_NAME') ?: 'fossbilling',
-
-        /*
-         * Database username.
-         */
         'user' => getenv('DB_USER') ?: 'foo',
-
-        /*
-         * Database password.
-         */
         'password' => getenv('DB_PASS') ?: 'bar',
-
-        /*
-         * Database Port.
-         */
         'port' => getenv('DB_PORT') ?: '3306',
     ],
 
