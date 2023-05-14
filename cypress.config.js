@@ -17,6 +17,10 @@ module.exports = defineConfig({
         email: "client@fossbilling.org",
         password: "Client123+"
       }
-    }
+    },
+    downloadsFolder: 'tests/cypress/downloads',
+    fixturesFolder: 'tests/cypress/fixtures',
+    screenshotsFolder: 'tests/cypress/screenshots',
+    videosFolder: 'tests/cypress/videos',
   },
 });
