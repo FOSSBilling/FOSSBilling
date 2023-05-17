@@ -213,7 +213,7 @@ class Server_Manager_Whm extends Server_Manager
 		$var_hash = array(
 			'user'              => $a->getUsername(),
 			'pass'              => $new,
-			'db_pass_update'	=> false,
+			'db_pass_update'	=> true,
 		);
 
 		$result = $this->_request($action, $var_hash);
