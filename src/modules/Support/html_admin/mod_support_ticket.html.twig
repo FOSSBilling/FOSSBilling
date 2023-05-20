@@ -71,10 +71,8 @@
                         <td>{{ 'Time opened'|trans }}</td>
                         <td>{{ ticket.created_at|format_date }}</td>
                     </tr>
-                 </tbody>
 
                 {% set task = ticket.rel %}
-                <tbody>
                     {% if task.task %}
                     <tr>
                         <td><label>{{ 'Task'|trans }}</label></td>
