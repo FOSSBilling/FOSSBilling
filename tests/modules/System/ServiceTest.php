@@ -147,9 +147,9 @@ class ServiceTest extends \BBTestCase {
             ->method('getParamValue')
             ->will($this->returnValue(false));
 
-        $updaterMock = $this->getMockBuilder('\Box_Update')->getMock();
+        $updaterMock = $this->getMockBuilder('\FOSSBilling\Update')->getMock();
         $updaterMock->expects($this->atLeastOnce())
-            ->method('getCanUpdate')
+            ->method('isUpdateAvailable')
             ->will($this->returnValue(true));
         $updaterMock->expects($this->atLeastOnce())
             ->method('getLatestVersion')

@@ -215,7 +215,7 @@ class Service
 
         try {
             $updater = $this->di['updater'];
-            if ($updater->getCanUpdate()) {
+            if ($updater->isUpdateAvailable()) {
                 $version = $updater->getLatestVersion();
                 $updateUrl = $this->di['url']->adminLink('system/update');
                 $msgs['info'][] = [

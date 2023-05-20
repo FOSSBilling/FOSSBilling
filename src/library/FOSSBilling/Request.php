@@ -10,7 +10,7 @@
 
 namespace FOSSBilling;
 
-class Request implements \FOSSBilling\InjectionAwareInterface
+class Request implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di;
 

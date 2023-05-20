@@ -175,12 +175,11 @@ class Admin extends \Api_Abstract
     public function update_core($data)
     {
         $updater = $this->di['updater'];
-        if ('preview' !== $updater->getUpdateBranch() && !$updater->getCanUpdate()) {
+        if ('preview' !== $updater->getUpdateBranch() && !$updater->isUpdateAvailable()) {
             throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.', null, 930);
         }
 
         $new_version = $updater->getLatestVersion();
-
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
@@ -197,13 +196,13 @@ class Admin extends \Api_Abstract
      *
      * @throws \Box_Exception
      */
-    public function update_config()
+    public function manual_update()
     {
         $updater = $this->di['updater'];
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateConfig']);
-        $updater->performConfigUpdate();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateConfig']);
-        $this->di['logger']->info('Updated FOSSBilling config');
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);
+        $updater->performManualUpdate();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminManualUpdate']);
+        $this->di['logger']->info('Updated FOSSBilling - applied patches and updated configuration file.');
 
         return true;
     }
