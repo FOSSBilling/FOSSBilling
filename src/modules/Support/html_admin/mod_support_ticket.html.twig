@@ -36,7 +36,7 @@
             <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Manage'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-notes" data-bs-toggle="tab">{{ 'Notes'|trans }} {% if ticket.notes|length > 0%}({{ ticket.notes|length }}){% endif %}</a>
+            <a class="nav-link" href="#tab-notes" data-bs-toggle="tab">{{ 'Notes'|trans }} {% if ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-support" data-bs-toggle="tab">{{ 'Client tickets'|trans }}</a>
@@ -48,29 +48,24 @@
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
                     <tr>
-                        <td class=="w-25">{{ 'Ticket ID'|trans }}</td>
+                        <td class="w-25">{{ 'Ticket ID'|trans }}</td>
                         <td>#{{ ticket.id }}</td>
                     </tr>
                     <tr>
                         <td>{{ 'Client'|trans }}</td>
-                        <td>#{{ ticket.client.id }} <a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a></td>
+                        <td><a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td>
                     </tr>
                     <tr>
                         <td>{{ 'Help desk'|trans }}</td>
-                        <td class="shd">
-                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, ticket.support_helpdesk_id, 1) }}
-                        </td>
+                        <td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td>
                     </tr>
                     <tr>
                         <td>{{ 'Status'|trans }}</td>
-                        <td>
                             {% for tcode, tstatus in admin.support_ticket_get_statuses({ 'titles': 1 }) %}
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" id="radioStatus{{ tcode }}" class="tst" type="radio" name="status" value="{{ tcode }}"{% if ticket.status == tcode %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatus{{ tcode }}">{{ tstatus|trans }}</label>
-                                </div>
+                                {% if ticket.status == tcode %}
+                                <td>{{ tstatus|trans }}</td>
+                                {% endif %}
                             {% endfor %}
-                        </td>
                     </tr>
                     <tr>
                         <td>{{ 'Time opened'|trans }}</td>
@@ -83,7 +78,7 @@
                     {% if task.task %}
                     <tr>
                         <td><label>{{ 'Task'|trans }}</label></td>
-                        <td><strong>{{ mf.status_name(task.task) }}</strong></td>
+                        <td>{{ mf.status_name(task.task) }}</td>
                     </tr>
                     {% endif %}
 
@@ -112,7 +107,7 @@
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Close'|trans }}</span>
+                    <span>{{ 'Close'|trans }}</span>
                 </a>
                 {% endif %}
                 <a class="btn btn-primary api-link"
@@ -122,7 +117,7 @@
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+                    <span>{{ 'Delete'|trans }}</span>
                 </a>
 
                 {% if task.status == 'pending' %}
