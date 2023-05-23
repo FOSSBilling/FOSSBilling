@@ -23,23 +23,25 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     public function __construct($options)
     {
-        if (isset($options['api-key']) && !empty($options['api-key'])) {
+        if (!empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'API Key']);
         }
 
-        if (isset($options['username']) && !empty($options['username'])) {
+        if (!empty($options['username'])) {
             $this->config['username'] = $options['username'];
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'Username']);
         }
 
-        if (!isset($options['api-user-id']) || empty(trim($options['api-user-id']))) {
+        if (empty($options['api-user-id'])) {
             $this->config['api-user-id'] = $options['username'];
+        } else {
+            $this->config['api-user-id'] = $options['api-user-id'];
         }
 
-        if (isset($options['ip']) && !empty($options['ip'])) {
+        if (!empty($options['ip'])) {
             $this->config['ip'] = $options['ip'];
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'server IP address']);
@@ -148,8 +150,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 ]);
                 $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             } else {
-                $response = $client->request('GET', $callUrl.'?'.$this->_formatParams($params));
-                $this->getLog()->debug('API REQUEST: ' . $callUrl.'?'.$this->_formatParams($params));
+                $response = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
+                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             }
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
@@ -163,12 +165,12 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = simplexml_load_string($data);
 
-        if (isset($result['status']) && $result['status'] == 'error') {
-            throw new Registrar_Exception($result['error'], null, 102);
+        if (isset($result['status']) && strtolower($result['status']) == 'error') {
+            throw new Registrar_Exception("Error: :error", [':error' => $result['error']], 102);
         }
 
-        if (isset($result['status']) && $result['status'] == 'Failed') {
-            throw new Registrar_Exception($result['actionstatusdesc'], null, 103);
+        if (isset($result['status']) && strtolower($result['status']) == 'failed') {
+            throw new Registrar_Exception("Error: :error", [':error' => $result['actionstatusdesc']], 103);
         }
 
         return $result;
@@ -244,7 +246,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         // problem here: FOSSBilling doesn't display our error and will display 'nameservers updates' evern when this fails
 
         if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
-            throw new Registrar_Exception($message = 'Could not update name servers');
+            throw new Registrar_Exception('Could not update name servers');
         }
         return True;
     }
