@@ -10,7 +10,6 @@
 
 namespace FOSSBilling;
 
-use \FOSSBilling\InjectionAwareInterface;
 use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;

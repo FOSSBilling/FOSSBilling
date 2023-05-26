@@ -10,7 +10,6 @@
 
 namespace FOSSBilling;
 
-use \FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
 class ExtensionManager implements InjectionAwareInterface

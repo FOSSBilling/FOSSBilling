@@ -560,10 +560,10 @@ $di['extension_manager'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Update
+ * @return \FOSSBilling\Update
  */
 $di['updater'] = function () use ($di) {
-    $updater = new \Box_Update();
+    $updater = new \FOSSBilling\Update();
     $updater->setDi($di);
 
     return $updater;
