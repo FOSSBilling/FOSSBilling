@@ -10,6 +10,10 @@
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
+
 class UpdatePatcher implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di;
@@ -31,13 +35,19 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     public function applyConfigPatches(): void
     {
+        $filesystem = new Filesystem();
+
         $configPath = PATH_ROOT . '/config.php';
         $currentConfig = include $configPath;
 
         if (!is_array($currentConfig)) {
             throw new \Box_Exception('Unable to load existing configuration.');
         }
-        if (!copy($configPath, substr($configPath, 0, -4) . '.old.php')) {
+
+        // Create backup of current configuration.
+        try {
+            $filesystem->copy($configPath, substr($configPath, 0, -4) . '.old.php');
+        } catch (FileNotFoundException | IOException $e) {
             throw new \Box_Exception('Unable to create backup of configuration file. Cancelling config migration.');
         }
 
@@ -72,7 +82,11 @@ class UpdatePatcher implements InjectionAwareInterface
 
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($newConfig, true) . ';';
-        if (!file_put_contents($configPath, $output)) {
+
+        // Write updated configuration file.
+        try {
+            $filesystem->dumpFile($configPath, $output);
+        } catch (IOException $e) {
             throw new \Box_Exception('Error when writing updated configuration file.');
         }
     }
@@ -104,14 +118,17 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function executeFileActions(array $files): void
     {
+        $filesystem = new Filesystem();
+
         foreach ($files as $file => $action) {
-            if ($action == 'unlink' && file_exists($file) && !is_dir($file)) {
-                @unlink($file);
-            } elseif ($action == 'unlink' && is_dir($file)) {
-                @$this->di['tools']->emptyFolder($file);
-                @rmdir($file);
-            } elseif (file_exists($file)) {
-                @rename($file, $action);
+            try {
+                if ($action == 'unlink' && $filesystem->exists($file)) {
+                    $filesystem->remove($file);
+                } elseif ($filesystem->exists($file)) {
+                    $filesystem->rename($file, $action);
+                }
+            } catch (IOException $e) {
+                error_log($e->getMessage());
             }
         }
     }

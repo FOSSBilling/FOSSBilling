@@ -10,8 +10,14 @@
 
 namespace FOSSBilling;
 
+use PhpZip\Exception\ZipException;
+use PhpZip\ZipFile;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class Update implements InjectionAwareInterface
 {
@@ -90,12 +96,10 @@ class Update implements InjectionAwareInterface
 
                 try {
                     $releaseInfoUrl = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
-
                     $httpClient = HttpClient::create();
                     $response = $httpClient->request('GET', $releaseInfoUrl);
                     $releaseInfo = $response->toArray();
-                } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface|
-                \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
+                } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
                     error_log($e->getMessage());
                     throw new \Box_Exception('Failed to download the latest version information. Further details are available in the error log.');
                 }
@@ -146,7 +150,7 @@ class Update implements InjectionAwareInterface
     public function performManualUpdate(): void
     {
         // Apply system patches and migrate configuration file.
-        $patcher = new \FOSSBilling\UpdatePatcher;
+        $patcher = new UpdatePatcher;
         $patcher->setDi($this->di);
         $patcher->applyCorePatches();
         $patcher->applyConfigPatches();
@@ -185,8 +189,7 @@ class Update implements InjectionAwareInterface
                 fwrite($fileHandler, $chunk->getContent());
             }
             fclose($fileHandler);
-        } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface|
-        \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
+        } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
             error_log($e->getMessage());
             throw new \Box_Exception('Failed to download the update archive. Further details are available in the error log.');
         }
@@ -195,27 +198,32 @@ class Update implements InjectionAwareInterface
 
         // Extract latest version archive on top of the current version.
         try {
-            $zip = new \PhpZip\ZipFile();
+            $zip = new ZipFile();
             $zip->openFile($archiveFile);
             $zip->extractTo(PATH_ROOT);
             $zip->close();
-        } catch (\PhpZip\Exception\ZipException $e) {
+        } catch (ZipException $e) {
             error_log($e->getMessage());
             throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
         // Apply system patches and migrate configuration file.
-        $patcher = new \FOSSBilling\UpdatePatcher;
+        $patcher = new UpdatePatcher;
         $patcher->setDi($this->di);
         $patcher->applyCorePatches();
 
         // Apply configuration file patches.
         $patcher->applyConfigPatches();
 
-        // Clear cache and remove installer.
-        $this->di['tools']->emptyFolder(PATH_CACHE);
-        $this->di['tools']->emptyFolder(PATH_ROOT . '/install');
-        rmdir(PATH_ROOT . '/install');
+        // Clear cache and remove install folder.
+        try {
+            $filesystem = new Filesystem();
+            $filesystem->remove([PATH_CACHE, PATH_ROOT . '/install']);
+            $filesystem->mkdir(PATH_CACHE, 0777);
+        } catch (IOException $e) {
+            error_log($e->getMessage());
+            throw new \Box_Exception("Unable to clear cache and/or remove install folder. Further details are available in the error log.");
+        }
 
         // Log off the current user and destroy the session.
         unset($_COOKIE['BOXADMR']);
