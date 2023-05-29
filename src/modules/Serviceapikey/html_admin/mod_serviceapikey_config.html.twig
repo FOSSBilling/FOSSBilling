@@ -12,7 +12,7 @@
     
             <div class="mb-3 row">
                 <h2>{{ 'Custom Parameters'|trans }}</h2>
-                <p>{{ 'Here, you have the option to include custom parameters that can be requested from the API. This is particularly useful if you want to set specific limits for API keys. Your application can connect to the FOSSBilling API and retrieve the custom parameters you have defined for an API key.'|trans }}</p>            <label class="form-label col-3 col-form-label">{{ 'Custom Parameters'|trans }}:</label>
+                <p>{{ 'Here, you have the option to include custom parameters that can be requested from the API. This is particularly useful if you want to set specific limits for API keys. Your application can connect to the FOSSBilling API and retrieve the custom parameters you have defined for an API key.'|trans }}</p>
                 <P>{{ 'FOSSBilling will remove the "custom_" prefix from the value name when requesting them from the API. IE: custom_monthlyLimit will be named monthlyLimit when fetched through the API.'|trans}}
                 <div class="col" id="customParameters">
                     <span class="btn btn-primary" onclick="addNewField()">{{ 'Add new field'|trans }}</span>
@@ -33,14 +33,6 @@
             <input type="hidden" name="id" value="{{ product.id }}">
             <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
         </form>
-        <hr>
-        <div>
-            <h1>{{ 'License plugins'|trans }}</h1>
-            <p>{{ 'FOSSBilling gives you ability to provide your own license generation script. Follow the instructions bellow to install new license plugin'|trans }}</p>
-            <ul>
-                <li>{{ 'License plugin is PHP class "License_PluginName" with one method'|trans }} <strong>generate</strong></li>
-            </ul>
-        </div>
     </div>
     <script> 
     function addNewField() {

@@ -13,11 +13,11 @@ namespace Box\Mod\Serviceapikey\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Update an API key. Can be used to change it's validitiy and config, but not to reset / regenerate the key itself.
+     * Update an API key. Can be used to change it's validity and config, but not to reset / regenerate the key itself.
      * 
      * @param array $data - An associative array
      *               - int 'id' (required) The ID of the API key to reset. This should match it's ID in the database.
-     *               - bool 'valid' (optional) Determins if the API key is valid or not.
+     *               - bool 'valid' (optional) Used to set if an API key is valid or not.
      *               - array 'config' (optional) The new configuration for the API key.
      */
     public function update($data): bool

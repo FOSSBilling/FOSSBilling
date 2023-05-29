@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -187,7 +188,7 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception("You must provide either the API key or API key ID in order to reset it.");
         } elseif (!empty($data['id'])) {
             $model = $this->di['db']->findOne('service_apikey', 'id = :id', [':id' => $data['id']]);
-        } elseif (!empty($data['key'])) {
+        } else {
             $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         }
 
@@ -221,14 +222,6 @@ class Service implements InjectionAwareInterface
 
         if (is_null($model)) {
             throw new \Box_Exception("API key does not exist.");
-        }
-
-        // Ensure the currently logged in client matches the client ID for the order. If it doesn't, error out stating that it doesn't exist.
-        if ($this->di['is_client_logged']) {
-            $client = $this->di['loggedin_client'];
-            if ($client->id !== $model->client_id) {
-                throw new \Box_Exception("API key does not exist.");
-            }
         }
 
         if (isset($data['api_key']) && $model->api_key !== $data['api_key']) {
