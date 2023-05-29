@@ -23,7 +23,7 @@
     "autoprefixer": "^10.4.14",
     "core-js": "^3.30.2",
     "cypress": "^12.13.0",
-    "postcss": "^8.4.23",
+    "postcss": "^8.4.24",
     "postcss-loader": "^7.3.1",
     "sass": "^1.62.1",
     "sass-loader": "^13.3.1",
