@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "87c0dd90bb01eaecaf784cf43a97ef2e",
+    "content-hash": "bfc0792199fb35ad0cde504e202dadbd",
     "packages": [
         {
             "name": "antcms/antloader",
-            "version": "1.0.2",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AntCMS-org/AntLoader.git",
-                "reference": "9f34f0fdb0cb601ead37f07bdb303ef397a82db9"
+                "reference": "19c70b9038ff6cfee2f0e669d0ecbb55334b6e62"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/9f34f0fdb0cb601ead37f07bdb303ef397a82db9",
-                "reference": "9f34f0fdb0cb601ead37f07bdb303ef397a82db9",
+                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/19c70b9038ff6cfee2f0e669d0ecbb55334b6e62",
+                "reference": "19c70b9038ff6cfee2f0e669d0ecbb55334b6e62",
                 "shasum": ""
             },
             "require": {
@@ -47,9 +47,9 @@
             "description": "A small and simple autoloader for PHP applications",
             "support": {
                 "issues": "https://github.com/AntCMS-org/AntLoader/issues",
-                "source": "https://github.com/AntCMS-org/AntLoader/tree/1.0.2"
+                "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.0"
             },
-            "time": "2023-05-09T05:30:02+00:00"
+            "time": "2023-05-27T08:44:01+00:00"
         },
         {
             "name": "composer/ca-bundle",

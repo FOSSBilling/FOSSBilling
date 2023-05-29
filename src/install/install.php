@@ -93,9 +93,13 @@ set_include_path(implode(PATH_SEPARATOR, [
 ]));
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
-$loader = new AntCMS\AntLoader(PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php');
-$loader->addPrefix('', PATH_LIBRARY, 'psr0');
-$loader->addPrefix('Box\\Mod\\', PATH_MODS);
+
+$loader = new AntCMS\AntLoader([
+    'mode' => 'filesystem',
+    'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
+]);
+$loader->addNamespace('', PATH_LIBRARY, 'psr0');
+$loader->addNamespace('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
 
