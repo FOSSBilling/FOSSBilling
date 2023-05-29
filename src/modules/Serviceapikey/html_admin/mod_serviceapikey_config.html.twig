@@ -1,0 +1,114 @@
+{% import 'macro_functions.html.twig' as mf %}
+    <div class="card-body">
+        <h5>{{ 'API Key settings'|trans }}</h5>
+        <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'API key settings updated'|trans }}">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
+                <div class="col">
+                    <input type="number" class="form-control" name="config[length]" value="{{ product.config.length }}">
+                </div>
+            </div>
+    
+            <div class="mb-3 row">
+                <h2>{{ 'Custom Parameters'|trans }}</h2>
+                <p>{{ 'Here, you have the option to include custom parameters that can be requested from the API. This is particularly useful if you want to set specific limits for API keys. Your application can connect to the FOSSBilling API and retrieve the custom parameters you have defined for an API key.'|trans }}</p>            <label class="form-label col-3 col-form-label">{{ 'Custom Parameters'|trans }}:</label>
+                <P>{{ 'FOSSBilling will remove the "custom_" prefix from the value name when requesting them from the API. IE: custom_monthlyLimit will be named monthlyLimit when fetched through the API.'|trans}}
+                <div class="col" id="customParameters">
+                    <span class="btn btn-primary" onclick="addNewField()">{{ 'Add new field'|trans }}</span>
+                    {% for key, value in product.config %}
+                        {% if key starts with 'custom_' %}
+                            <div class="field-container row" id="{{key}}">
+                                <label class="form-label col-3 col-form-label">{{key}}:</label>
+                                <div class="col d-flex align-items-center">
+                                    <input type="text" class="form-control" value="{{value}}" name="config[{{key}}]"/><span
+                                    class="btn btn-primary ml-2" onclick='deleteField("{{key}}")'>Delete</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                      {% endfor %}                  
+                </div>
+            </div>
+            
+            <input type="hidden" name="id" value="{{ product.id }}">
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+        </form>
+        <hr>
+        <div>
+            <h1>{{ 'License plugins'|trans }}</h1>
+            <p>{{ 'FOSSBilling gives you ability to provide your own license generation script. Follow the instructions bellow to install new license plugin'|trans }}</p>
+            <ul>
+                <li>{{ 'License plugin is PHP class "License_PluginName" with one method'|trans }} <strong>generate</strong></li>
+            </ul>
+        </div>
+    </div>
+    <script> 
+    function addNewField() {
+        Modals.create({
+            type: 'prompt',
+            title: 'New field',
+            label: 'Give the new field a name',
+            value: 'monthlyLimit',
+            promptConfirmButton: 'Create',
+            promptConfirmCallback: function (name) {
+                // We use camel case to ensure it'll be programming-friendly & append 'custom_' to the start of it so they are easily identifiable as custom parameters.
+                name = 'custom_' + toCamelCase(name);
+                var container = document.getElementById('customParameters');
+    
+                // Create the container div
+                var fieldContainer = document.createElement('div');
+                fieldContainer.classList.add('field-container', 'row');
+                fieldContainer.setAttribute('id', name);
+    
+                // Create the label element
+                var label = document.createElement('label');
+                label.classList.add('form-label', 'col-3', 'col-form-label');
+                label.textContent = name + ':';
+    
+                // Create the div container for the input and button
+                var div = document.createElement('div');
+                div.classList.add('col', 'd-flex', 'align-items-center');
+    
+                // Create the input element
+                var input = document.createElement('input');
+                input.setAttribute('type', 'text');
+                input.classList.add('form-control');
+                input.setAttribute('name', 'config[' + name + ']');
+    
+                // Create the button element
+                var button = document.createElement('span');
+                button.classList.add('btn', 'btn-primary', 'ml-2');
+                button.textContent = 'Delete';
+                button.setAttribute('onclick', 'deleteField("' + name + '")');
+    
+                // Append elements
+                div.appendChild(input);
+                div.appendChild(button);
+    
+                // Append the label and div to the container div
+                fieldContainer.appendChild(label);
+                fieldContainer.appendChild(div);
+    
+                // Append the container div to the main container
+                container.appendChild(fieldContainer);
+            }
+        });
+    }
+    
+    function deleteField(id){
+        const element = document.getElementById(id);
+        element.remove();
+    }
+    
+    function toCamelCase(str) {
+        str = str.replace(/[^a-zA-Z0-9]/g, ' ');
+        var words = str.split(' ');
+        
+        // Capitalize the first letter of each word except the first word
+        for (var i = 1; i < words.length; i++) {
+            words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+        }
+    
+        return words.join('');
+    }
+    </script>

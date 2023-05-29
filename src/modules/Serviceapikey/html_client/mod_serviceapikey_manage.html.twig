@@ -1,0 +1,41 @@
+{% if order.status == 'active' %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{{ order.title }}</h1>
+            </header>
+            <section>
+               <h2>{{ 'API key details'|trans }}</h2>
+                <table class="table table-striped table-bordered table-condensed">
+                    <tbody>
+                    <tr>
+                        <td>{{ 'API key'|trans }}</td>
+                        <td>
+                            <strong>{{ service.api_key }}</strong>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <h2>{{ 'Reset API key'|trans }}</h2>
+                <div class="block">
+                    <p><button class="btn btn-primary" type="button" id="license-apikey">{{ 'Reset'|trans }}</button></p>
+                </div>
+            </section>
+        </div>
+    </article>
+</div>
+
+<script type="text/javascript">
+    document.querySelector('#license-apikey').addEventListener('click', (event) => {
+        event.preventDefault();
+
+        if (confirm("{{ 'Are you sure?'|trans }}")) {
+            API.client.post('serviceapikey/reset', { id: {{ service.id }} }, function(result) {
+                bb.msg("{{ 'API key was reset'|trans }}");
+            });
+        }
+    });
+</script>
+{% endif %}
