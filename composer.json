@@ -21,7 +21,7 @@
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
-        "antcms/antloader": "^1.0",
+        "antcms/antloader": "^2.0",
         "dompdf/dompdf": "^2.0.1",
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
