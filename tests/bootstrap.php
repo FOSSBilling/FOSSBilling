@@ -32,6 +32,8 @@ $di = include PATH_ROOT . '/di.php';
 $di['translate']();
 
 //Setup the autoloader
-$testsLoader = new AntCMS\AntLoader();
-$testsLoader->addPrefix('', DIRECTORY_SEPARATOR . 'library', 'psr0');
+$testsLoader = new AntCMS\AntLoader([
+    'mode' => 'filesystem'
+]);
+$testsLoader->addNamespace('', DIRECTORY_SEPARATOR . 'library', 'psr0');
 $testsLoader->register();
