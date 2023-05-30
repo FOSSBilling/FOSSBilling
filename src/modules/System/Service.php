@@ -10,13 +10,14 @@
 
 namespace Box\Mod\System;
 
+use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service
 {
-    protected ?\Pimple\Container $di;
+    protected ?Container $di;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
@@ -278,7 +279,16 @@ class Service
      */
     public function getCasMessages(): array
     {
-        return $this->di['central_alerts']->filterAlerts();
+        try {
+            return $this->di['central_alerts']->filterAlerts();
+        } catch (\Box_Exception $e) {
+            return [
+                [
+                    'type' => 'warning',
+                    'message' => 'Warning: ' . $e->getMessage(),
+                ]
+            ];
+        }
     }
 
     public function templateExists($file, $identity = null)
