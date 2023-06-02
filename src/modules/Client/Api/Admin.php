@@ -272,7 +272,6 @@ class Admin extends \Api_Abstract
         $client->email = (!empty($data['email']) ? $data['email'] : $client->email);
         $client->first_name = (!empty($data['first_name']) ? $data['first_name'] : $client->first_name);
         $client->last_name = (!empty($data['last_name']) ? $data['last_name'] : $client->last_name);
-        $client->last_name = (!empty($data['last_name']) ? $data['last_name'] : $client->last_name);
         $client->aid = (!empty($data['aid']) ? $data['aid'] : $client->aid);
         $client->gender = (!empty($data['gender']) ? $data['gender'] : $client->gender);
         $client->birthday = (!empty($data['birthday']) ? $data['birthday'] : $client->birthday);
