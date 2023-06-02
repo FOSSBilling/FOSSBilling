@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -107,6 +106,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    public function toApiArray(\RedBeanPHP\OODBBean $model): array
+    {
+        return [
+            'id'         => $model->id,
+            'valid'      => $model->valid,
+            'created_at' => $model->created_at,
+            'updated_at' => $model->updated_at,
+            'api_key'    => $model->api_key,
+            'config'     => json_decode($model->config, true),
+        ];
+    }
+
     /**
      * Checks if an API key is valid or not.
      * 
@@ -128,7 +139,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Checks if an API key is valid or not.
+     * Checks if an API key is valid or not and returns that + any configured custom parameters.
      * 
      * @param array $data 
      *              - 'key' What API key to check.
@@ -168,18 +179,13 @@ class Service implements InjectionAwareInterface
         return $data;
     }
 
-    public function toApiArray(\RedBeanPHP\OODBBean $model): array
-    {
-        return [
-            'id'         => $model->id,
-            'valid'      => $model->valid,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-            'api_key'    => $model->api_key,
-            'config'     => json_decode($model->config, true),
-        ];
-    }
-
+    /**
+     * Used to reset an API key using the API key generator.
+     * 
+     * @param array $data An array containing what API key to reset. At least one of the possible identification methods must be provided.
+     *              - int 'id' (optional) The ID of the API key to rest.
+     *              - string 'key' (optional) The API key to reset.
+     */
     public function resetApiKey(array $data): bool
     {
         if (empty($data['key']) && empty($data['id'])) {
@@ -214,6 +220,14 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Used to update an API key, but prevents changing the API key so we can ensure they use the reset function, thus using the secure generator. 
+     * 
+     * @param array $data An array containing what API key to update and what info to update.
+     *              - int 'id' The ID of the API key to update.
+     *              - array 'config' (optional) The new config to attach to the API key.
+     *              - bool 'valid' (optional) Sets if the API key is valid or not.
+     */
     public function updateApiKey(array $data): bool
     {
         if (empty($data['id'])) {
@@ -233,7 +247,7 @@ class Service implements InjectionAwareInterface
 
         //ID and client ID should remain constant so we don't try to update those here.
         $model->config = $config;
-        $model->valid = $data['valid'] ?? $model->valid;
+        $model->valid = !empty($data['valid']) ? (bool)$data['valid'] : $model->valid;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
@@ -269,6 +283,15 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Generates a new API using PHP's built-in cryptographically secure random_bytes to ensure the API keys are truly random and not predictable.
+     * 
+     * @param array $config (optional) An array of configuration options. All configuration keys are optional.
+     *              - int 'length' How long of an API key to generate.
+     *              - bool 'split' True to enable splitting of the API key using dashes. Does not count towards the total key length.
+     *              - int 'split_interval' How often the API key should be split with dashes. Example: 8 for every 8 characters.
+     *              - string 'case' What capitalization should be used for the generated API key. 'lower', 'upper', or 'mixed'.
+     */
     private function generateKey(array $config = []): string
     {
         $length = $config['length'] ?? 32;

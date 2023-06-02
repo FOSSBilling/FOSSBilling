@@ -18,7 +18,7 @@ class Admin extends \Api_Abstract
      * @param array $data - An associative array
      *               - int 'id' (required) The ID of the API key to reset. This should match it's ID in the database.
      *               - bool 'valid' (optional) Used to set if an API key is valid or not.
-     *               - array 'config' (optional) The new configuration for the API key.
+     *               - array 'config' (optional) The new configuration for the API key. Overrides the previous one, so you must send the complete config rather than only the parameters you want to change.
      */
     public function update($data): bool
     {

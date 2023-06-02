@@ -33,7 +33,7 @@
 
         if (confirm("{{ 'Are you sure?'|trans }}")) {
             API.client.post('serviceapikey/reset', { id: {{ service.id }} }, function(result) {
-                bb.msg("{{ 'API key was reset'|trans }}");
+                bb.reload();
             });
         }
     });
