@@ -64,9 +64,7 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Order does not exist.');
         }
 
-        $length = $config['length'] ?? 32;
-
-        $model->api_key = $this->generateKey($length);
+        $model->api_key = $this->generateKey($config);
         $model->valid = true;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -196,18 +194,21 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception("API key does not exist.");
         }
 
-        // Ensure the currently logged in client matches the client ID for the order. If it doesn't, error out stating that it doesn't exist.
-        if ($this->di['is_client_logged']) {
+
+        try {
+            $this->di['is_client_logged'];
             $client = $this->di['loggedin_client'];
-            if ($client->id !== $model->client_id) {
-                throw new \Box_Exception("API key does not exist.");
-            }
+        } catch (\Exception) {
+            $client = null;
         }
 
-        // Ensure we generate a new key with the same length.
-        $length = strlen(str_replace('-', '', $model->api_key));
+        if (!is_null($client) && $client->id !== $model->client_id) {
+            throw new \Box_Exception("API key does not exist.");
+        }
 
-        $model->api_key = $this->generateKey($length);
+        $config = json_decode($model->config, true);
+
+        $model->api_key = $this->generateKey($config);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
@@ -218,8 +219,8 @@ class Service implements InjectionAwareInterface
         if (empty($data['id'])) {
             throw new \Box_Exception("You must provide the API key ID in order to update it.");
         }
-        $model = $this->di['db']->findOne('service_apikey', 'id = :id', [':id' => $data['id']]);
 
+        $model = $this->di['db']->findOne('service_apikey', 'id = :id', [':id' => $data['id']]);
         if (is_null($model)) {
             throw new \Box_Exception("API key does not exist.");
         }
@@ -268,8 +269,13 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function generateKey(int $length = 32): string
+    private function generateKey(array $config = []): string
     {
+        $length = $config['length'] ?? 32;
+        $split = $config['split'] ?? true;
+        $splitLength = $config['split_interval'] ?? 8;
+        $case = $config['case'] ?? 'upper';
+
         $i = 0;
         do {
             // Try 10 times to generate a unique API key. Fail if we are unable to.
@@ -277,10 +283,38 @@ class Service implements InjectionAwareInterface
                 throw new \Box_Exception('Maximum number of iterations reached while generating API key');
             }
 
-            $randomBytesLength = ceil($length  / 2);
-            $randomBytes = random_bytes($randomBytesLength);
-            $apiKey = chunk_split(substr(bin2hex($randomBytes), 0, $length), 8, '-');
-            $apiKey = rtrim($apiKey, '-');
+            // Generate random bytes half the length of the configured length, as the length will doubled when converted to a hex string.
+            $randomBytes = random_bytes(ceil($length  / 2));
+            $apiKey = substr(bin2hex($randomBytes), 0, $length);
+
+            if ($split) {
+                $apiKey = chunk_split($apiKey, $splitLength, '-');
+                $apiKey = rtrim($apiKey, '-');
+            }
+
+            switch ($case) {
+                case 'lower':
+                    //Do nothing, the API key generated will be lowercase by default.
+                    break;
+                case 'upper':
+                    $apiKey = strtoupper($apiKey);
+                    break;
+                case 'mixed':
+                    $characters = str_split($apiKey);
+                    $result = '';
+
+                    foreach ($characters as $character) {
+                        if (mt_rand(0, 1) <= 0.5) {
+                            $character = strtoupper($character);
+                        }
+
+                        $result .= $character;
+                    }
+                    $apiKey = $result;
+                    break;
+                default:
+                    throw new \Box_Exception("Unknown uppercase option ':case'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case' => $case]);
+            }
         } while (null !== $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $apiKey]));
 
         return $apiKey;
