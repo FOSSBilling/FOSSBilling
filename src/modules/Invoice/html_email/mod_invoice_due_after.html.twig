@@ -1,23 +1,53 @@
 {% block subject %}[{{ guest.system_company.name }}] Invoice Due{% endblock %}
 {% block content %}
-{% apply markdown %}
-Hello {{ c.first_name }} {{ c.last_name }},
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<style type="text/css">
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 14px;
+			color: #333333;
+		}
 
-This is a payment reminder that your proforma invoice **{{ invoice.serie_nr }}** is already
-due for {{ days_passed }} days.   
+		h1 {
+			font-size: 24px;
+			font-weight: bold;
+			margin: 0 0 20px;
+		}
 
-Amount Due: {{ invoice.total | money(invoice.currency) }}
-Due Date: {{ invoice.due_at|format_date }}
+		p {
+			margin: 0 0 10px;
+		}
 
-You can view and pay the invoice at: {{'invoice'|link}}/{{invoice.hash}}
+		strong {
+			font-weight: bold;
+		}
 
-You may review your invoice history at any time by logging in to your client area.
+		.signature {
+			font-style: italic;
+			color: #999999;
+			margin-top: 20px;
+			border-top: 1px solid #cccccc;
+			padding-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Invoice past-due</h1>
+	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
+	<p>This is a payment reminder that your invoice <strong>{{ invoice.serie_nr }}</strong> is past-due by {{ days_passed }} days.</p>
+    <ul>
+        <li><strong>Amount Due:</strong> {{ invoice.total | money(invoice.currency) }}</li>
+        <li><strong>Due Date:</strong>  {{ invoice.due_at|format_date }}</li>
+    </ul>
 
-Login to members area: {{'login'|link({'email' : c.email }) }}
-View and manage invoices: {{'invoice'|link}}  
+    <p>You may view and pay the invoice <a href="{{'invoice'|link}}/{{invoice.hash}}" target="_blank">here.</a>
+    <a href="{{email_confirmation_link}}" target="_blank">{{email_confirmation_link}}</a>
+    <p>You may also <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'client/profile'|link}}" target="_blank">edit your profile.</a>
 
-
-{{ guest.system_company.signature }}
-
-{% endapply %}
+	<p class="signature">{{ guest.system_company.signature }}</p>
+</body>
+</html>
 {% endblock %}
