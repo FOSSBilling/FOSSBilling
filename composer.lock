@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "antcms/antloader",
-            "version": "2.0.0",
+            "version": "2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AntCMS-org/AntLoader.git",
-                "reference": "19c70b9038ff6cfee2f0e669d0ecbb55334b6e62"
+                "reference": "b0f3b484908ae438464e83e5098be815acf571c6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/19c70b9038ff6cfee2f0e669d0ecbb55334b6e62",
-                "reference": "19c70b9038ff6cfee2f0e669d0ecbb55334b6e62",
+                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/b0f3b484908ae438464e83e5098be815acf571c6",
+                "reference": "b0f3b484908ae438464e83e5098be815acf571c6",
                 "shasum": ""
             },
             "require": {
@@ -47,9 +47,9 @@
             "description": "A small and simple autoloader for PHP applications",
             "support": {
                 "issues": "https://github.com/AntCMS-org/AntLoader/issues",
-                "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.0"
+                "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.1"
             },
-            "time": "2023-05-27T08:44:01+00:00"
+            "time": "2023-06-08T06:44:00+00:00"
         },
         {
             "name": "composer/ca-bundle",
