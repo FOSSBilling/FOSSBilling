@@ -715,7 +715,7 @@ class Service implements InjectionAwareInterface
         if (method_exists($service, 'getCartProductTitle')) {
             return $service->getCartProductTitle($product, $config);
         } else {
-            return __trans(':product_title', [':product_title' => $product->title]);
+            return $product->title;
         }
     }
 
