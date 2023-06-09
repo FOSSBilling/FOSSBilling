@@ -37,7 +37,7 @@
 <body>
 	<h1>Order activated</h1>
 	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
-	<p>Your <strong>{{ order.title }}</strong> is now actived and ready for download.</p>
+	<p>Your <strong>{{ order.title }}</strong> is now activated and ready for download.</p>
 
     <p>You may <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{ 'servicedownloadable/get-file'|link }}/{{ order.id }}" target="_blank">download your order now.</a>
 
