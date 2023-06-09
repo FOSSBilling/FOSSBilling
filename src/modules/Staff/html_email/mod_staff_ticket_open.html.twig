@@ -35,13 +35,13 @@
 	</style>
 </head>
 <body>
-	<h1>Ticket opended</h1>
+	<h1>Ticket opened</h1>
 	<p>Hello {{ c.name }},</p>
 
     <p><strong>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</strong>  opened a new support ticket #{{ ticket.id }}</p>
 	<a href="{{'support/ticket'|alink }}/{{ ticket.id }}" target="_blank">Review the ticket</a>
 
-    <h2>Ticket contents<h2>
+    opened<h2>Ticket contents</h2>
     <p>{{ ticket.messages[0].content }}</p>
 
     <p>Ticket info</p>
