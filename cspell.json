@@ -30,7 +30,8 @@
         "admdly",
         "Pictogrammers",
         "Symfony",
-        "EMERG"
+        "EMERG",
+        "exploitability"
     ],
 
     "ignoreWords": [
