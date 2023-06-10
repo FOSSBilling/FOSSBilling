@@ -38,5 +38,5 @@ Such reports may reduce your credibility as a researcher on the Huntr.dev platfo
 - Weak SSL/TLS/SSH algorithms or protocols
 - Attacks involving physical access to a user’s device, or involving a device or network that’s already seriously compromised (eg man-in-the-middle).
 - The user attacks themselves
-- anything in `/tests`
-- anything in `/cypress`
+- Anything in `/tests`
+- Anything in `/cypress`
