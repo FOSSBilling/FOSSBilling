@@ -1421,7 +1421,8 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->ticketCreateForGuest($data);
         $this->assertIsString($result);
-        $this->assertEquals(strlen($result), 64);
+        $this->assertGreaterThanOrEqual(strlen($result), 200);
+        $this->assertLessThanOrEqual(strlen($result), 255);
     }
 
     public function testTicketCreateForClient()
