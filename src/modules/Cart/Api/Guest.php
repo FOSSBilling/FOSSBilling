@@ -167,7 +167,7 @@ class Guest extends \Api_Abstract
         $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         if ($product->is_addon) {
-            throw new \Box_Exception('Addon products cannot be added seperately.');
+            throw new \Box_Exception('Addon products cannot be added separately.');
         }
 
         $validAddons = json_decode($product->addons ?? '');
