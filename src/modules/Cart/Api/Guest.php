@@ -159,11 +159,27 @@ class Guest extends \Api_Abstract
         $required = [
             'id' => 'Product id not passed',
         ];
+
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $cart = $this->getService()->getSessionCart();
 
         $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+
+        if ($product->is_addon) {
+            throw new \Box_Exception('Addon products cannot be added seperately.');
+        }
+
+        $validAddons = json_decode($product->addons ?? '');
+        if(empty($validAddons)){
+            $validAddons = [];
+        }
+
+        foreach ($data['addons'] as $addon => $properties) {
+            if($properties['selected'] && !in_array($addon, $validAddons)){
+                throw new \Box_Exception('One or more of your selected addons are not valid for the associated product.');
+            }
+        }
 
         // reset cart by default
         if (!isset($data['multiple']) || !$data['multiple']) {
