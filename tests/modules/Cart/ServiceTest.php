@@ -654,12 +654,14 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('createFromCart', 'isClientAbleToUsePromo', 'rm'))->getMock();
+            ->setMethods(array('createFromCart', 'isClientAbleToUsePromo', 'rm', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('createFromCart')
             ->will($this->returnValue(array($order, rand(1, 100), array(rand(1, 100)))));
         $serviceMock->expects($this->atLeastOnce())->method('isClientAbleToUsePromo')
             ->will($this->returnValue(true));
         $serviceMock->expects($this->atLeastOnce())->method('rm')
+            ->will($this->returnValue(true));
+        $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->will($this->returnValue(true));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
@@ -670,8 +672,6 @@ class ServiceTest extends \BBTestCase
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
             ->will($this->returnValue('1.1.1.1'));
-
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
 
         $invoice = new \Model_Invoice();
         $invoice->loadBean(new \DummyBean());
@@ -693,7 +693,6 @@ class ServiceTest extends \BBTestCase
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $requestMock;
-        $di['tools']          = $toolsMock;
         $serviceMock->setDi($di);
 
         $result = $serviceMock->checkoutCart($cart, $client);

@@ -432,10 +432,6 @@ class Service implements InjectionAwareInterface
             if (!$this->isPromoAvailableForClientGroup($promo)) {
                 throw new \Box_Exception('Promo can not be applied to your account');
             }
-    
-            if (!$this->promoCanBeApplied($promo)) {
-                throw new \Box_Exception('Promo code is expired or does not exist');
-            }
         }
 
         $this->di['events_manager']->fire(
