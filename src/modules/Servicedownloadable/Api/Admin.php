@@ -29,6 +29,7 @@ class Admin extends \Api_Abstract
         $required = [
             'id' => 'Product ID is missing',
         ];
+
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
