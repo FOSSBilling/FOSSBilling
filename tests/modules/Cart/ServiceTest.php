@@ -671,6 +671,7 @@ class ServiceTest extends \BBTestCase
             ->method('getClientAddress')
             ->will($this->returnValue('1.1.1.1'));
 
+        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
 
         $invoice = new \Model_Invoice();
         $invoice->loadBean(new \DummyBean());
@@ -692,6 +693,7 @@ class ServiceTest extends \BBTestCase
         $di['db']             = $dbMock;
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $requestMock;
+        $di['tools']          = $toolsMock;
         $serviceMock->setDi($di);
 
         $result = $serviceMock->checkoutCart($cart, $client);
