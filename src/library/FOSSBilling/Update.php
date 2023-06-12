@@ -81,8 +81,8 @@ class Update implements InjectionAwareInterface
         $branch = (in_array($branch, ['release', 'preview'])) ? $branch : 'release';
 
         if ($branch === 'preview') {
-            $latestReleaseVersion = $this->getLatestVersionInfo('release')['version'];
-            $compareLink = "https://github.com/FOSSBilling/FOSSBilling/compare/{$latestReleaseVersion}...main";
+            $currentVersion = Version::VERSION;
+            $compareLink = "https://github.com/FOSSBilling/FOSSBilling/compare/{$currentVersion}...main";
             $downloadUrl = 'https://fossbilling.org/downloads/preview/';
 
             return [
