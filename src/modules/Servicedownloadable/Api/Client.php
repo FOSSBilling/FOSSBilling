@@ -36,7 +36,7 @@ class Client extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDownloadable) {
+        if (!$s instanceof \Model_ServiceDownloadable || $order->status !== 'active') {
             throw new \Box_Exception('Order is not activated');
         }
 
