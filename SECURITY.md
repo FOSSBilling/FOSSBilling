@@ -12,28 +12,31 @@
 ## Reporting Vulnerabilities
 
 To report a vulnerability, please make a submission on [Huntr.dev](https://huntr.dev/bounties/disclose/?target=https://github.com/FOSSBilling/FOSSBilling).
-Their website should give you a good idea on how to make a good vulnerability report.
-It's important to make the submission there as it keeps the vulnerability private which helps ensure it can't be exploited while a patch is in the works.
+Their website should provide guidance on how to create a comprehensive vulnerability report. It's crucial to submit vulnerabilities through their platform to keep them private and prevent exploitation while a patch is being developed.
 
-If you have a suggestion that is related to security but not an actual exploit, then [creating an issue](https://github.com/FOSSBilling/FOSSBilling/issues/new/choose) on GitHub is a suitable place.
+If you have a bug or a suggestion that is not related to an exploit, it should be reported on our [GitHub](https://github.com/FOSSBilling/FOSSBilling/issues/new/choose). 
 
-Usually a good report should include which file(s) has the exploit, how the vulnerability could be exploited, the potential ramifications of the vulnerability, a proof of concept exploit, and if possible insight into a solution.
-A proper vulnerability report is awarded with a cash reward, if you provide a patch there is usually a reward with that as well.  
+A well-written vulnerability report should include the following information:
+ - Identification of the file(s) affected by the exploit
+ - Description of how the vulnerability can be exploited
+ - Potential ramifications of the vulnerability
+ - A proof of concept exploit (if possible)
+ - Insights into a possible solution
 
-## Not a Vulnerability?
+Submitting a proper vulnerability report on Huntr.dev may entitle you to a cash reward. Additionally, if you provide a patch, you may also be eligible for a reward.
 
-**Reporting bugs**
-This section guides you through submitting a bug report for FOSSBilling.
-Following these guidelines helps maintainers and the community understand your report 📝, reproduce the behavior 💻 💻, and find related reports 🔎.
+### Non-Qualifying Vulnerabilities
+Reports covering any of the following topics will be rejected and do not qualify for bounties.
+Such reports may reduce your credibility as a researcher on the Huntr.dev platform or potentially cause you to be blocked from reporting vulnerabilities against FOSSBilling.
 
-Before creating bug reports, please check this list as you might find out that you don't need to create one.
-When you are creating a bug report, please include as many details as possible.
-
-**Note:** If you find a Closed issue that seems like it is the same thing that you're experiencing, open a new issue and include a link to the original issue in the body of your new one.
-
-Before Submitting A Bug Report
-Perform a cursory search to see if the problem has already been reported. If it has and the issue is still open, add a comment to the existing issue instead of opening a new one.
-
-### How Do I Submit A (Good) Bug Report?
-
-A detailed guide can be found here: [CONTRIBUTING](CONTRIBUTING.md#reporting-bugs). However if you're still unsure or it's too much to read drop a message on [Discord](https://fossbilling.org/discord). Sometimes it takes time to respond; please be patient!
+- Reports from automated tools or scanners
+- Theoretical attacks without proof of exploitability
+- Attacks that are the result of a third party library should be reported to the library maintainers
+- Social engineering
+- Reflected file download
+- Physical attacks
+- Weak SSL/TLS/SSH algorithms or protocols
+- Attacks involving physical access to a user’s device, or involving a device or network that’s already seriously compromised (eg man-in-the-middle).
+- The user attacks themselves
+- Anything in `/tests`
+- Anything in `/cypress`
