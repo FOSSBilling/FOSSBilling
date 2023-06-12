@@ -228,9 +228,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function creditInvoiceItem(\Model_InvoiceItem $item)
     {
         $total = $this->getTotalWithTax($item);
-        if ($total <= 0) {
-            return true;
-        }
 
         $invoice = $this->di['db']->getExistingModelById('Invoice', $item->invoice_id, 'Invoice not found');
         $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
