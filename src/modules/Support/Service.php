@@ -875,6 +875,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $rel_new_value = $data['rel_new_value'] ?? null;
         $rel_status = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
 
+        if ($rel_task == 'upgrade') {
+            if (empty($o) || empty($rel_new_value)) {
+                throw new \Box_Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
+            }
+
+            $product = $this->di['db']->getExistingModelById('Product', $o->product_id);
+            $allowedUpgrades = json_decode($product->upgrades ?? '');
+            if (!in_array($rel_new_value, $allowedUpgrades)) {
+                $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
+                throw new \Box_Exception('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
+            }
+        }
+
         // check if support ticket with same uncompleted task already exists
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {
             throw new \Box_Exception('We have already received this request.');
@@ -1198,7 +1211,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function publicTicketCreate($data, \Model_Admin $identity)
     {
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-        
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
