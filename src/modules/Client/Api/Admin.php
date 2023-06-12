@@ -286,7 +286,7 @@ class Admin extends \Api_Abstract
         $client->country = (!empty($data['country']) ? $data['country'] : $client->country);
         $client->postcode = (!empty($data['postcode']) ? $data['postcode'] : $client->postcode);
         $client->state = (!empty($data['state']) ? $data['state'] : $client->state);
-        $client->city = (!empty($data['city']) ? $data['city'] : $client->city);
+        $client->city = (!empty($data['phonestate_cc']) ? $data['phonestate_cc'] : $client->city);
 
         $client->status = (!empty($data['status']) ? $data['status'] : $client->status);
         $client->email_approved = (!empty($data['email_approved']) ? $data['email_approved'] : $client->email_approved);
@@ -304,7 +304,7 @@ class Admin extends \Api_Abstract
         $client->custom_9 = (!empty($data['custom_9']) ? $data['custom_9'] : $client->custom_9);
         $client->custom_10 = (!empty($data['custom_10']) ? $data['custom_10'] : $client->custom_10);
 
-        $client->client_group_id = (!empty($data['client_group_id']) ? $data['client_group_id'] : $client->client_group_id);
+        $client->client_group_id = (!empty($data['group_id']) ? $data['group_id'] : $client->client_group_id);
         $client->company_number = (!empty($data['company_number']) ? $data['company_number'] : $client->company_number);
         $client->type = (!empty($data['type']) ? $data['type'] : $client->type);
         $client->lang = (!empty($data['lang']) ? $data['lang'] : $client->lang);
