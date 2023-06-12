@@ -424,6 +424,14 @@ class Service implements InjectionAwareInterface
             if (!$this->isClientAbleToUsePromo($client, $promo)) {
                 throw new \Box_Exception('You have already used this promo code. Please remove promo code and checkout again.', null, 9874);
             }
+
+            if (!$promo instanceof \Model_Promo) {
+                throw new \Box_Exception('Promo code is expired or does not exist');
+            }
+    
+            if (!$this->isPromoAvailableForClientGroup($promo)) {
+                throw new \Box_Exception('Promo can not be applied to your account');
+            }
         }
 
         $this->di['events_manager']->fire(
