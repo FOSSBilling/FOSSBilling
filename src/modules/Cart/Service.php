@@ -500,6 +500,11 @@ class Service implements InjectionAwareInterface
         foreach ($this->getCartProducts($cart) as $p) {
             $item = $this->cartProductToApiArray($p);
 
+            $product = $this->di['db']->getExistingModelById('Product', $item['product_id']);
+            if (is_null($product) || $product->status !== 'enabled') {
+                throw new \Box_Exception("Unable to complete order. One or more of the selected products are invalid.");
+            }
+
             /*
              * Convert the domain name to lowercase letters.
              * Using a capital letter in a domain name still points to the same name, so this isn't going to break anything
@@ -514,7 +519,7 @@ class Service implements InjectionAwareInterface
             $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
 
             // Domain TLD must begin with a period - add if not present for owndomain.
-            $item['domain']['owndomain_tld'] = (isset( $item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
+            $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
 
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;
