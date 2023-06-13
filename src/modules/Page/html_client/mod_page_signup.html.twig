@@ -30,7 +30,7 @@
                     <div class="control-group">
                         <label class="control-label" for="reg-email">{{ 'Email Address'|trans }}</label>
                         <div class="controls">
-                            <input type="text" name="email" value="{{ request.email }}" required="required" id="reg-email">
+                            <input type="email" name="email" value="{{ request.email }}" required="required" id="reg-email">
                             <p class="help-block"></p>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                     <div class="control-group">
                         <label class="control-label" for="birthday">{{ 'Birthday'|trans }}</label>
                         <div class="controls">
-                            <input type="text" name="birthday" id="birthday" value="">
+                            <input type="date" name="birthday" id="birthday" value="">
                             <p class="help-block"></p>
                         </div>
                     </div>
