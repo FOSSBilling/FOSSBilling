@@ -120,7 +120,7 @@
                        <div class="control-group">
                            <label class="control-label" for="input">{{ 'Phone Number'|trans }}</label>
                            <div class="controls">
-                                <input type="text" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required="required" {% endif %}>
+                                <input type="phone" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required="required" {% endif %}>
                                <p class="help-block"></p>
                            </div>
                        </div>
