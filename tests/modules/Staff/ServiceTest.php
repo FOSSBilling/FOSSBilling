@@ -1174,8 +1174,6 @@ class ServiceTest extends \BBTestCase
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemService->expects($this->atLeastOnce())
-            ->method('getParamValue');
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
         $emailServiceMock->expects($this->atLeastOnce())

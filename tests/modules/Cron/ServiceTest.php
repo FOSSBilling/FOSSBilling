@@ -61,6 +61,11 @@ class ServiceTest extends \BBTestCase {
         $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
+        
+        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db->expects($this->atLeastOnce())
+            ->method('findAll')
+            ->will($this->returnValue([]));
 
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();

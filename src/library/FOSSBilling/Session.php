@@ -43,7 +43,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
             return;
         }
 
-        $this->checkFingerprint();
+        $this->canUseSession();
 
         if (!headers_sent()) {
             session_set_save_handler(
@@ -114,13 +114,18 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         return session_destroy();
     }
 
-    private function checkFingerprint()
+    /**
+     * Checks both the fingerprint and age of the current session to see if it can be used.
+     * If the session can't be used, it's destroyed from the database, forcing a new one to be created.
+     */
+    private function canUseSession():void
     {
         if (empty($_COOKIE['PHPSESSID'])) {
             return;
         }
 
         $sessionID = $_COOKIE['PHPSESSID'];
+        $maxAge = time() - $this->di['config']['security']['cookie_lifespan'];
 
         $fingerprint = new \FOSSBilling\Fingerprint;
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
@@ -129,12 +134,16 @@ class Session implements \FOSSBilling\InjectionAwareInterface
             return;
         }
 
-        if (!$fingerprint->checkFingerprint(json_decode($session->fingerprint, true))) {
+        if (!$fingerprint->checkFingerprint(json_decode($session->fingerprint, true)) || $session->modified_at <= $maxAge) {
             $this->di['db']->trash($session);
+            unset($_COOKIE['PHPSESSID']);
         }
     }
 
-    private function updateFingerprint()
+    /**
+     * Depending on the specifics, this will either set or update the fingerprint associated with the current session.
+     */
+    private function updateFingerprint():void
     {
         $sessionID = $_COOKIE['PHPSESSID'] ?? session_id();
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);

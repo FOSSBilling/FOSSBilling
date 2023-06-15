@@ -383,7 +383,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
-            ->method("delete");
+            ->method("destroy");
 
         $di            = new \Pimple\Container();
         $di['logger']  = new \Box_Log();

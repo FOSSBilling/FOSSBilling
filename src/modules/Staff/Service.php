@@ -50,6 +50,7 @@ class Service implements InjectionAwareInterface
             'role' => $model->role,
         ];
 
+        session_regenerate_id();
         $this->di['session']->set('admin', $result);
 
         $this->di['logger']->info(sprintf('Staff member %s logged in', $model->id));
