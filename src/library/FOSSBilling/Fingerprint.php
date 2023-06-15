@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-class fingerprint
+class Fingerprint
 {
     private array $fingerprintItems;
 
@@ -27,7 +27,7 @@ class fingerprint
         $this->fingerprintItems = [
             'agentString' => [
                 'source' => $agentDetails['userAgent'],
-                'wrongWeight' => 3,
+                'wrongWeight' => 2,
             ],
             'browser' => [
                 'source' => $agentDetails['browser'],
@@ -35,7 +35,7 @@ class fingerprint
             ],
             'browserVersion' => [
                 'source' => $agentDetails['browserVersion'],
-                'wrongWeight' => 100, // Always fail if this doesn't match.
+                'wrongWeight' => 2, // Always fail if this doesn't match.
             ],
             'os' => [
                 'source' => $agentDetails['os'],
