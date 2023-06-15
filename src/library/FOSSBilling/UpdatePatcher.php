@@ -276,7 +276,12 @@ class UpdatePatcher implements InjectionAwareInterface
                     __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'FileCache.php' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
-            }
+            },
+            34 => function() {
+                // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
+                $q = "ALTER TABLE session ADD fingerprint TEXT;";
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

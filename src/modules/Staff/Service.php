@@ -649,32 +649,6 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    protected function _sendMail($admin, $admin_pass)
-    {
-        $admin_name = $admin->name;
-        $admin_email = $admin->email;
-
-        $client_url = $this->di['url']->link('/');
-        $admin_url = $this->di['url']->adminLink('/');
-
-        $content = "Hello, $admin_name. " . PHP_EOL;
-        $content .= 'You have successfully installed FOSSBilling at ' . BB_URL . PHP_EOL;
-        $content .= 'Access the client area at: ' . $client_url . PHP_EOL;
-        $content .= 'Access the admin area at: ' . $admin_url . ' with login details:' . PHP_EOL;
-        $content .= 'Email: ' . $admin_email . PHP_EOL;
-        $content .= 'Password: ' . $admin_pass . PHP_EOL . PHP_EOL;
-
-        $content .= 'Read the FOSSBilling documentation to get started https://fossbilling.org/docs' . PHP_EOL;
-        $content .= 'Thank you for using FOSSBilling.' . PHP_EOL;
-
-        $subject = sprintf('FOSSBilling is ready at "%s"', BB_URL);
-
-        $systemService = $this->di['mod_service']('system');
-        $from = $systemService->getParamValue('company_email');
-        $emailService = $this->di['mod_service']('Email');
-        $emailService->sendMail($admin_email, $from, $subject, $content);
-    }
-
     public function authorizeAdmin($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, \Model_Admin::STATUS_ACTIVE]);
