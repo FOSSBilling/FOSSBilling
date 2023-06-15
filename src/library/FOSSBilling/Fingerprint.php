@@ -13,7 +13,7 @@ namespace FOSSBilling;
 
 class Fingerprint
 {
-    private array $fingerprintItems;
+    private array $fingerprintProperties;
 
     public function __construct()
     {
@@ -22,9 +22,11 @@ class Fingerprint
         /**
          * Sets up the fingerprint info for the existing request.
          * 'weight' is used to weigh specific parameters.
-         *      Example: The agent string is weight as 2 different properties, so a browser update wouldn't be enough to make the fingerprint fail it's check, but with only one or two more items that differ it will.
+         *      Example: The agent string has a weight of 2, one failure from it equal as 2 failures of other properties.
+         *      By doing this, we can prevent minor changes such as a browser update from requiring the user to re-authenticate.
+         *      But it does mean that if the that property and one-or-two other ones fail, the user will need to re-authenticate.
          */
-        $this->fingerprintItems = [
+        $this->fingerprintProperties = [
             'agentString' => [
                 'source' => $agentDetails['userAgent'],
                 'weight' => 2,
@@ -72,7 +74,7 @@ class Fingerprint
     {
         $fingerprint = [];
 
-        foreach ($this->fingerprintItems as $name => $properties) {
+        foreach ($this->fingerprintProperties as $name => $properties) {
             if (!empty($properties['source'])) {
                 $fingerprint[$name] = hash('md5', $properties['source']);
             }
@@ -86,7 +88,7 @@ class Fingerprint
         $itemCount = 0;
         $scoreSubtract = 0;
 
-        foreach ($this->fingerprintItems as $name => $properties) {
+        foreach ($this->fingerprintProperties as $name => $properties) {
             $exitsInFingerprint = array_key_exists($name, $fingerprint);
             $exitsInCurrentFingerprint = !empty($properties['source']);
 
@@ -96,11 +98,15 @@ class Fingerprint
                 $scoreSubtract += $properties['weight'];
             } elseif (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
                 // Do nothing in this case, as the property isn't in the existing fingerprint or the current one.
-            } elseif ($fingerprint[$name] !==  hash('md5', $properties['source'])) {
-                $itemCount++;
-                $scoreSubtract += $properties['weight'];
-            } elseif ($fingerprint[$name] ===  hash('md5', $properties['source'])) {
-                $itemCount++;
+            } else {
+                $hashedData = hash('md5', $properties['source']);
+                if ($fingerprint[$name] !== $hashedData) {
+                    $itemCount++;
+                    $scoreSubtract += $properties['weight'];
+                }
+                if ($fingerprint[$name] === $hashedData) {
+                    $itemCount++;
+                }
             }
         }
 

@@ -62,8 +62,8 @@ class ServiceTest extends \BBTestCase {
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
         
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
+        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
             ->method('findAll')
             ->will($this->returnValue([]));
 
@@ -73,6 +73,7 @@ class ServiceTest extends \BBTestCase {
         $di['api_system'] = $apiSystem;
         $di['mod_service'] = $di->protect(function() use($systemServiceMock) {return $systemServiceMock;});
         $serviceMock->setDi($di);
+        $di['db'] = $dbMock;
 
         $result = $serviceMock->runCrons();
         $this->assertTrue($result);

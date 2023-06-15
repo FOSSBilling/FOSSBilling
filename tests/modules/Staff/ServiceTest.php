@@ -1175,10 +1175,6 @@ class ServiceTest extends \BBTestCase
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
 
-        $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
-        $emailServiceMock->expects($this->atLeastOnce())
-            ->method('sendMail');
-
         $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
             ->method('link')
@@ -1196,12 +1192,9 @@ class ServiceTest extends \BBTestCase
         $di                = new \Pimple\Container();
         $di['logger']      = $logMock;
         $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService, $emailServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
             if ('system' == $serviceName) {
                 return $systemService;
-            }
-            if ('Email' == $serviceName) {
-                return $emailServiceMock;
             }
         });
         $di['url']         = $urlMock;
