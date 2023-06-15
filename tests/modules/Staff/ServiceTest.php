@@ -1175,15 +1175,6 @@ class ServiceTest extends \BBTestCase
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
 
-        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
-        $urlMock->expects($this->atLeastOnce())
-            ->method('link')
-            ->willReturn('');
-        $urlMock->expects($this->atLeastOnce())
-            ->method('adminLink')
-            ->willReturn('');
-
-
         $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
@@ -1197,7 +1188,6 @@ class ServiceTest extends \BBTestCase
                 return $systemService;
             }
         });
-        $di['url']         = $urlMock;
         $di['password']    = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
