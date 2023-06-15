@@ -53,7 +53,7 @@ class Fingerprint
             ],
             'forwardedFor' => [
                 'source' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
-                'weight' => 1,
+                'weight' => 3,
             ],
             'language' => [
                 'source' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
@@ -70,6 +70,9 @@ class Fingerprint
         ];
     }
 
+    /**
+     * Generates a fingerprint for the device that made the request to the server
+     */
     public function fingerprint(): array
     {
         $fingerprint = [];
@@ -83,6 +86,13 @@ class Fingerprint
         return $fingerprint;
     }
 
+    /**
+     * Compares a provided fingerprint against one generated for the device that made the request to the server.
+     * This function creates a baseline "score" with the total of properties in the fingerprint. The final score must be at least half of the baseline.
+     *      - Each property can define a weight. For example, if the IP address doesn't match and the weight is set to 3, 3 will be selected from the total.
+     *          - This means with a total of 9 properties, the IP address being wrong would effectively be weighted as 3 properties and only two more differing properties will make it fail the check.
+     *      - If any property is found in one of the fingerprints and not the other, the baseline is incremented and the final score is decreased by it's weight.
+     */
     public function checkFingerprint(array $fingerprint): bool
     {
         $itemCount = 0;
@@ -97,25 +107,23 @@ class Fingerprint
                 $itemCount++;
                 $scoreSubtract += $properties['weight'];
             } elseif (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
-                // Do nothing in this case, as the property isn't in the existing fingerprint or the current one.
+                // Do nothing in this case, as the property isn't in either fingerprint.
             } else {
+                $itemCount++;
                 $hashedData = hash('md5', $properties['source']);
+
                 if ($fingerprint[$name] !== $hashedData) {
-                    $itemCount++;
                     $scoreSubtract += $properties['weight'];
-                }
-                if ($fingerprint[$name] === $hashedData) {
-                    $itemCount++;
                 }
             }
         }
 
-        // Remove the total score from the total number of items. The final score must be at least half in order for the fingerprint to be considered valid still.
+        // Remove the total score from the total number of items. The final score must be at least half the number of properties in order for the fingerprint to be considered valid.
         $finalScore = $itemCount - $scoreSubtract;
         return $finalScore >= ($itemCount / 2);
     }
 
-    private function extractAgentInfo()
+    private function extractAgentInfo(): array
     {
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
