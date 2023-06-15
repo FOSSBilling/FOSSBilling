@@ -20,7 +20,7 @@ class Fingerprint
         $agentDetails = $this->extractAgentInfo();
 
         /**
-         * Sets up the fingerprint info for the existign request.
+         * Sets up the fingerprint info for the existing request.
          * 'wrongWeight' is used to weigh specific parameters.
          *      Example: The agent string is weight as 3 different properties, so a browser update wouldn't be enough to make the fingerprint fail it's check, but with only one or two more items that differ it will.
          */
@@ -144,9 +144,9 @@ class Fingerprint
         }
 
         return [
-            'browser' => $browser ?? '',
-            'browserVersion' => $version ?? '',
-            'os' => $os ?? '',
+            'browser' => $browser,
+            'browserVersion' => $version,
+            'os' => $os,
             'userAgent' => $userAgent,
         ];
     }

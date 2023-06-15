@@ -498,8 +498,6 @@ class Service implements InjectionAwareInterface
         $newId = $this->di['db']->store($admin);
 
         $this->di['logger']->info('Main administrator %s account created', $admin->email);
-        $this->_sendMail($admin, $data['password']);
-
         $data['remember'] = true;
 
         return $newId;

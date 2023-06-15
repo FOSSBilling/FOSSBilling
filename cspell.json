@@ -338,7 +338,9 @@
         "autoloader",
         "qwertyuiopasdfghjklzxccvbnm",
         "QWERTYUIOPASDFGHJKLZXCVBNM",
-        "subkeys"
+        "subkeys",
+        "httponly",
+        "samesite"
     ],
     "ignorePaths": [
         "tests/**",

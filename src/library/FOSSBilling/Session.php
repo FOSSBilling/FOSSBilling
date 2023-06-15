@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-class Session implements \FOSSBilling\Injectionawareinterface
+class Session implements \FOSSBilling\InjectionAwareInterface
 {
     private ?\Pimple\Container $di;
     private \PdoSessionHandler $handler;
