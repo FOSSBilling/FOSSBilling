@@ -188,7 +188,7 @@ class GuestTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')
             ->disableOriginalConstructor()
             ->getMock();
 

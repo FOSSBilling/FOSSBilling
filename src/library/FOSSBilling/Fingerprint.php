@@ -21,53 +21,49 @@ class Fingerprint
 
         /**
          * Sets up the fingerprint info for the existing request.
-         * 'wrongWeight' is used to weigh specific parameters.
-         *      Example: The agent string is weight as 3 different properties, so a browser update wouldn't be enough to make the fingerprint fail it's check, but with only one or two more items that differ it will.
+         * 'weight' is used to weigh specific parameters.
+         *      Example: The agent string is weight as 2 different properties, so a browser update wouldn't be enough to make the fingerprint fail it's check, but with only one or two more items that differ it will.
          */
         $this->fingerprintItems = [
             'agentString' => [
                 'source' => $agentDetails['userAgent'],
-                'wrongWeight' => 2,
+                'weight' => 2,
             ],
             'browser' => [
                 'source' => $agentDetails['browser'],
-                'wrongWeight' => 100, // Always fail if this doesn't match.
+                'weight' => 100, // Always fail if this doesn't match.
             ],
             'browserVersion' => [
                 'source' => $agentDetails['browserVersion'],
-                'wrongWeight' => 2, // Always fail if this doesn't match.
+                'weight' => 2,
             ],
             'os' => [
                 'source' => $agentDetails['os'],
-                'wrongWeight' => 100, // Always fail if this doesn't match.
+                'weight' => 100, // Always fail if this doesn't match.
             ],
             'ip' => [
                 'source' => $_SERVER['REMOTE_ADDR'] ?? '',
-                'wrongWeight' => 3,
+                'weight' => 3,
             ],
             'referrer' => [
                 'source' => $_SERVER['HTTP_REFERER'] ?? '',
-                'wrongWeight' => 1,
+                'weight' => 1,
             ],
             'forwardedFor' => [
                 'source' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
-                'wrongWeight' => 1,
+                'weight' => 1,
             ],
             'language' => [
                 'source' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
-                'wrongWeight' => 1,
+                'weight' => 1,
             ],
             'encoding' => [
                 'source' => $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '',
-                'wrongWeight' => 1,
-            ],
-            'memory' => [
-                'source' => $_SERVER['HTTP_DEVICE_MEMORY'] ?? '',
-                'wrongWeight' => 3,
+                'weight' => 1,
             ],
             'upgradeRequests' => [
                 'source' => $_SERVER['HTTP_UPGRADE_INSECURE_REQUESTS'] ?? '',
-                'wrongWeight' => 1,
+                'weight' => 1,
             ],
         ];
     }
@@ -97,12 +93,12 @@ class Fingerprint
             if ((!$exitsInFingerprint && $exitsInCurrentFingerprint) || ($exitsInFingerprint && !$exitsInCurrentFingerprint)) {
                 //The property exists in one fingerprint and not the other, so we increment the total count and deduct from the score.
                 $itemCount++;
-                $scoreSubtract += $properties['wrongWeight'];
+                $scoreSubtract += $properties['weight'];
             } elseif (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
                 // Do nothing in this case, as the property isn't in the existing fingerprint or the current one.
             } elseif ($fingerprint[$name] !==  hash('md5', $properties['source'])) {
                 $itemCount++;
-                $scoreSubtract += $properties['wrongWeight'];
+                $scoreSubtract += $properties['weight'];
             } elseif ($fingerprint[$name] ===  hash('md5', $properties['source'])) {
                 $itemCount++;
             }
