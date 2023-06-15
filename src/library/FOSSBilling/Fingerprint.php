@@ -37,7 +37,7 @@ class Fingerprint
             ],
             'browserVersion' => [
                 'source' => $agentDetails['browserVersion'],
-                'weight' => 2,
+                'weight' => 1,
             ],
             'os' => [
                 'source' => $agentDetails['os'],
@@ -57,7 +57,7 @@ class Fingerprint
             ],
             'language' => [
                 'source' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
-                'weight' => 1,
+                'weight' => 2,
             ],
             'encoding' => [
                 'source' => $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '',
