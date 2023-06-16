@@ -310,7 +310,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredFilter($array, $arrow)
     {
-        if(!$arrow instanceof Closure){
+        if (!$arrow instanceof Closure) {
             return;
         }
 
@@ -319,7 +319,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredMap($array, $arrow)
     {
-        if(!$arrow instanceof Closure){
+        if (!$arrow instanceof Closure) {
             return;
         }
 
@@ -333,7 +333,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredReduce($array, $arrow, $initial = null)
     {
-        if(!$arrow instanceof Closure){
+        if (!$arrow instanceof Closure) {
             return;
         }
 
@@ -347,7 +347,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredSort($array, $arrow)
     {
-        if(!$arrow instanceof Closure){
+        if (!$arrow instanceof Closure) {
             return;
         }
 
