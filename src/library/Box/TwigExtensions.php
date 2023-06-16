@@ -17,17 +17,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 {
     protected ?\Pimple\Container $di;
 
-    /**
-     * A list of functions we want to precent Twig code from being able to call.
-     * Primarily based on https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/README.md#twig---code-execution
-     * With some additions from https://stackoverflow.com/questions/3115559/exploitable-php-functions/3697776#3697776
-     */
-    private array $protectedFunctions = [
-        'escapeshellarg', 'escapeshellcmd', 'exec', 'passthru', 'proc_close', 'proc_get_status', 'proc_nice', 'proc_open', 'proc_terminate', 'shell_exec', 'system', 'pcntl_exec', 'php_info', 'popen',
-        'eval', 'assert', 'preg_replace', 'create_function', 'include', 'include_once', 'require', 'require_once', 'posix_mkfifo', 'posix_getlogin', 'posix_ttyname', 'getenv', 'get_current_user', 'proc_get_status',
-        'get_cfg_var', 'disk_free_space', 'disk_total_space', 'diskfreespace', 'getcwd', 'getlastmo', 'getmygid', 'getmyinode', 'getmypid', 'getmyuid'
-    ];
-
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -321,8 +310,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredFilter($array, $arrow)
     {
-        if (is_string($arrow) && in_array(strtolower($arrow), $this->protectedFunctions)) {
-            return $array;
+        if(!$arrow instanceof Closure){
+            return;
         }
 
         return array_filter($array, $arrow, \ARRAY_FILTER_USE_BOTH);
@@ -330,8 +319,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredMap($array, $arrow)
     {
-        if (is_string($arrow) && in_array(strtolower($arrow), $this->protectedFunctions)) {
-            return $array;
+        if(!$arrow instanceof Closure){
+            return;
         }
 
         $r = [];
@@ -344,8 +333,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredReduce($array, $arrow, $initial = null)
     {
-        if (is_string($arrow) && in_array(strtolower($arrow), $this->protectedFunctions)) {
-            return $array;
+        if(!$arrow instanceof Closure){
+            return;
         }
 
         $accumulator = $initial;
@@ -358,8 +347,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function filteredSort($array, $arrow)
     {
-        if (is_string($arrow) && in_array(strtolower($arrow), $this->protectedFunctions)) {
-            return $array;
+        if(!$arrow instanceof Closure){
+            return;
         }
 
         if ($array instanceof \Traversable) {
