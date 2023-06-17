@@ -170,14 +170,20 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Addon products cannot be added separately.');
         }
 
-        $validAddons = json_decode($product->addons ?? '');
-        if(empty($validAddons)){
-            $validAddons = [];
-        }
+        if (is_array($data['addons'] ?? '')) {
+            $validAddons = json_decode($product->addons ?? '');
+            if (empty($validAddons)) {
+                $validAddons = [];
+            }
 
-        foreach ($data['addons'] as $addon => $properties) {
-            if($properties['selected'] && !in_array($addon, $validAddons)){
-                throw new \Box_Exception('One or more of your selected addons are not valid for the associated product.');
+            foreach ($data['addons'] as $addon => $properties) {
+                if ($properties['selected']) {
+                    $addon = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
+
+                    if ($addon->status !== 'enabled' || !in_array($addon, $validAddons)) {
+                        throw new \Box_Exception('One or more of your selected addons are not valid for the associated product.');
+                    }
+                }
             }
         }
 
