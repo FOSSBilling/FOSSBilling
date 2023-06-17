@@ -178,9 +178,9 @@ class Guest extends \Api_Abstract
 
             foreach ($data['addons'] as $addon => $properties) {
                 if ($properties['selected']) {
-                    $addon = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
+                    $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
 
-                    if ($addon->status !== 'enabled' || !in_array($addon, $validAddons)) {
+                    if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
                         throw new \Box_Exception('One or more of your selected addons are not valid for the associated product.');
                     }
                 }
