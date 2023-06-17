@@ -39,7 +39,7 @@
 	<p>Hello {{ c.name }},</p>
 
     <p>Public ticket {{ticket.id}} has a new reply.</p>
-	<p>Reply at <a href="{{ 'support/public-ticket/'|alink }}/{{ticket.id}}" target="_blank">{{ 'support/public-ticket/'|alink }}/{{ticket.id}}</a></p>
+	<a href="{{ 'support/public-ticket/'|alink }}/{{ticket.id}}" target="_blank">Reply here.</a></p>
 
     <p>You may <a href="{{'admin/staff/login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'admin/staff/profile'|link}}" target="_blank">edit your profile.</a>
 

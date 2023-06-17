@@ -38,8 +38,8 @@
 	<h1>Ticket opened</h1>
 	<p>Hello {{ c.name }},</p>
     <p>New public ticket received.</p>
-	<p>Reply at <a href="{{'support/public-ticket'|alink }}/{{ ticket.id }}" target="_blank">{{'support/public-ticket'|alink }}/{{ ticket.id }}</a></p>
-    <p>Track the conversation at <a href="{{'support/contact-us/conversation'|link }}/{{ ticket.hash }}" target="_blank">{{'support/contact-us/conversation'|link }}/{{ ticket.hash }}</a></p>
+	<a href="{{'support/public-ticket'|alink }}/{{ ticket.id }}" target="_blank">Reply here.</a>
+    <p>Track the conversation <a href="{{'support/contact-us/conversation'|link }}/{{ ticket.hash }}" target="_blank">here.</a></p>
 
     <p>You may <a href="{{'admin/staff/login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'admin/staff/profile'|link}}" target="_blank">edit your profile.</a>
 

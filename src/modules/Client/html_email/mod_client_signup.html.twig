@@ -44,7 +44,7 @@
 
     {% if require_email_confirmation %}
         <p>Please verify your email by clicking on the link below:</p>
-        <a href="{{email_confirmation_link}}" target="_blank">{{email_confirmation_link}}</a>
+        <a href="{{email_confirmation_link}}" target="_blank">Verify email address.</a>
     {% endif %}
     
     <p>You may <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'client/profile'|link}}" target="_blank">edit your profile.</a>

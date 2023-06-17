@@ -37,7 +37,7 @@
 <body>
 	<h1>Ticket closed</h1>
 	<p>Hello {{ c.name }},</p>
-	<p>Public ticket <a href="{{ 'support/public-ticket/'|alink }}/{{ticket.id}}" target="_blank">{{ 'support/public-ticket/'|alink }}/{{ticket.id}}</a> was closed by the client.</p>
+	<p>Public ticket <a href="{{ 'support/public-ticket/'|alink }}/{{ticket.id}}" target="_blank">ID {{ticket.id}}</a> was closed by the client.</p>
 
     <p>You may <a href="{{'admin/staff/login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'admin/staff/profile'|link}}" target="_blank">edit your profile.</a>
 
