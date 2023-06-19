@@ -43,5 +43,8 @@
   },
   "engines": {
     "npm": ">=9"
+  },
+  "dependencies": {
+    "autosize": "^6.0.1"
   }
 }
