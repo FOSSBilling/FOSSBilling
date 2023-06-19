@@ -41,10 +41,10 @@
                     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                         <div class="card-body">
                             <div class="mb-3 row">
-                                <label class="col-sm-4 col-md-3 form-label">{{ 'Allow new signups'|trans }}</label>
+                                <label class="col-sm-4 col-md-3 form-label">{{ 'Disable new signups'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <label class="form-check form-switch">
-                                        <input class="form-check-input" name="allow_signup" type="checkbox" {% if params.allow_signup %} checked="checked"{% endif %}>
+                                        <input class="form-check-input" name="disable_signup" type="checkbox" {% if params.disable_signup %} checked="checked"{% endif %}>
                                     </label>
                                 </div>
                             </div>
@@ -59,10 +59,10 @@
                             </div>
 
                             <div class="mb-3 row">
-                                <label class="col-sm-4 col-md-3 form-label">{{ 'Allow email change'|trans }}</label>
+                                <label class="col-sm-4 col-md-3 form-label">{{ 'Disable email change'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <label class="form-check form-switch">
-                                        <input class="form-check-input" name="allow_change_email" type="checkbox" {% if params.allow_change_email %} checked="checked"{% endif %}>
+                                        <input class="form-check-input" name="disable_change_email" type="checkbox" {% if params.disable_change_email %} checked="checked"{% endif %}>
                                     </label>
                                 </div>
                             </div>

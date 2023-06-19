@@ -1131,7 +1131,7 @@ class ServiceTest extends \BBTestCase {
         $email = 'client@fossbilling.org';
 
         $config = array(
-            'allow_change_email' => true,
+            'disable_change_email' => true,
         );
 
         $di = new \Pimple\Container();
@@ -1154,7 +1154,7 @@ class ServiceTest extends \BBTestCase {
         $clientModel->email = $email;
 
         $config = array(
-            'allow_change_email' => true,
+            'disable_change_email' => true,
         );
 
         $di = new \Pimple\Container();
@@ -1194,7 +1194,7 @@ class ServiceTest extends \BBTestCase {
         $email = 'client@fossbilling.org';
 
         $config = array(
-            'allow_change_email' => false,
+            'disable_change_email' => false,
         );
 
         $di = new \Pimple\Container();

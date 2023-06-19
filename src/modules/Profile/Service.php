@@ -111,8 +111,8 @@ class Service implements InjectionAwareInterface
         $email = $data['email'] ?? '';
         if (
             $client->email != $email
-            && isset($config['allow_change_email'])
-            && !$config['allow_change_email']
+            && isset($config['disable_change_email'])
+            && $config['disable_change_email']
         ) {
             throw new \Box_Exception('Email can not be changed');
         }

@@ -59,7 +59,7 @@ class Guest extends \Api_Abstract
     {
         $config = $this->di['mod_config']('client');
 
-        if (isset($config['allow_signup']) && !$config['allow_signup']) {
+        if (isset($config['disable_signup']) && $config['disable_signup']) {
             throw new \Box_Exception('New registrations are temporary disabled');
         }
 
