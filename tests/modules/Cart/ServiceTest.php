@@ -51,7 +51,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $sessionMock = $this->getMockBuilder("\Box_Session")
+        $sessionMock = $this->getMockBuilder("\FOSSBilling\Session")
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -111,7 +111,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $sessionMock = $this->getMockBuilder("\Box_Session")
+        $sessionMock = $this->getMockBuilder("\FOSSBilling\Session")
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())

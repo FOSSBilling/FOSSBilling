@@ -109,7 +109,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('toSessionArray')->will($this->returnValue($sessionArray));
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())->
         method('set');
 

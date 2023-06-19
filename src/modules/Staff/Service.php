@@ -50,6 +50,7 @@ class Service implements InjectionAwareInterface
             'role' => $model->role,
         ];
 
+        session_regenerate_id();
         $this->di['session']->set('admin', $result);
 
         $this->di['logger']->info(sprintf('Staff member %s logged in', $model->id));
@@ -498,8 +499,6 @@ class Service implements InjectionAwareInterface
         $newId = $this->di['db']->store($admin);
 
         $this->di['logger']->info('Main administrator %s account created', $admin->email);
-        $this->_sendMail($admin, $data['password']);
-
         $data['remember'] = true;
 
         return $newId;
@@ -647,32 +646,6 @@ class Service implements InjectionAwareInterface
         $this->di['db']->trash($model);
 
         return true;
-    }
-
-    protected function _sendMail($admin, $admin_pass)
-    {
-        $admin_name = $admin->name;
-        $admin_email = $admin->email;
-
-        $client_url = $this->di['url']->link('/');
-        $admin_url = $this->di['url']->adminLink('/');
-
-        $content = "Hello, $admin_name. " . PHP_EOL;
-        $content .= 'You have successfully installed FOSSBilling at ' . BB_URL . PHP_EOL;
-        $content .= 'Access the client area at: ' . $client_url . PHP_EOL;
-        $content .= 'Access the admin area at: ' . $admin_url . ' with login details:' . PHP_EOL;
-        $content .= 'Email: ' . $admin_email . PHP_EOL;
-        $content .= 'Password: ' . $admin_pass . PHP_EOL . PHP_EOL;
-
-        $content .= 'Read the FOSSBilling documentation to get started https://fossbilling.org/docs' . PHP_EOL;
-        $content .= 'Thank you for using FOSSBilling.' . PHP_EOL;
-
-        $subject = sprintf('FOSSBilling is ready at "%s"', BB_URL);
-
-        $systemService = $this->di['mod_service']('system');
-        $from = $systemService->getParamValue('company_email');
-        $emailService = $this->di['mod_service']('Email');
-        $emailService->sendMail($admin_email, $from, $subject, $content);
     }
 
     public function authorizeAdmin($email, $plainTextPassword)

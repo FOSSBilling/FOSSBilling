@@ -334,7 +334,7 @@ class ServiceTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -351,7 +351,7 @@ class ServiceTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -375,7 +375,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('set')
             ->with('pending_messages');
@@ -393,7 +393,7 @@ class ServiceTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('delete')
             ->with('pending_messages');

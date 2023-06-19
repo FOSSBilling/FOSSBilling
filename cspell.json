@@ -226,7 +226,6 @@
         "gugl",
         "cclogin",
         "CURDATE",
-        "BOXCLR",
         "vatnum",
         "caid",
         "ECB's",
@@ -338,7 +337,9 @@
         "autoloader",
         "qwertyuiopasdfghjklzxccvbnm",
         "QWERTYUIOPASDFGHJKLZXCVBNM",
-        "subkeys"
+        "subkeys",
+        "httponly",
+        "samesite"
     ],
     "ignorePaths": [
         "tests/**",

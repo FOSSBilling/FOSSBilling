@@ -41,7 +41,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($admin));
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -1174,21 +1174,6 @@ class ServiceTest extends \BBTestCase
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemService->expects($this->atLeastOnce())
-            ->method('getParamValue');
-
-        $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
-        $emailServiceMock->expects($this->atLeastOnce())
-            ->method('sendMail');
-
-        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
-        $urlMock->expects($this->atLeastOnce())
-            ->method('link')
-            ->willReturn('');
-        $urlMock->expects($this->atLeastOnce())
-            ->method('adminLink')
-            ->willReturn('');
-
 
         $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
         $passwordMock->expects($this->atLeastOnce())
@@ -1198,15 +1183,11 @@ class ServiceTest extends \BBTestCase
         $di                = new \Pimple\Container();
         $di['logger']      = $logMock;
         $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService, $emailServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
             if ('system' == $serviceName) {
                 return $systemService;
             }
-            if ('Email' == $serviceName) {
-                return $emailServiceMock;
-            }
         });
-        $di['url']         = $urlMock;
         $di['password']    = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();

@@ -378,12 +378,12 @@ class ServiceTest extends \BBTestCase
 
     public function testLogoutClient()
     {
-        $sessionMock = $this->getMockBuilder("\Box_Session")
+        $sessionMock = $this->getMockBuilder("\FOSSBilling\Session")
             ->disableOriginalConstructor()
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
-            ->method("delete");
+            ->method("destroy");
 
         $di            = new \Pimple\Container();
         $di['logger']  = new \Box_Log();

@@ -136,14 +136,9 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Please check your login details.', [], 401);
         }
 
-        if (isset($data['remember'])) {
-            $email = $data['email'];
-            $cookie_time = (3600 * 24 * 30); // 30 days
-            setcookie('BOXCLR', 'e=' . base64_encode($email) . '&p=' . base64_encode($client->pass), time() + $cookie_time, '/');
-        }
-
         $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
 
+        session_regenerate_id();
         $result = $service->toSessionArray($client);
         $this->di['session']->set('client_id', $client->id);
 

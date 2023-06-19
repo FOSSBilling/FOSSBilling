@@ -70,6 +70,9 @@ class Service
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
+        $this->clearOldSessions();
+        $this->di['logger']->setChannel('cron')->info('Cleared outdated sessions from the database');
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
 
         $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs');
@@ -110,5 +113,16 @@ class Service
         $t2 = new \DateTime('-6min');
 
         return $t1 < $t2;
+    }
+
+    private function clearOldSessions()
+    {
+        $sessions = $this->di['db']->findAll('session');
+        foreach ($sessions as $session){
+            $maxAge = time() - $this->di['config']['security']['cookie_lifespan'];
+            if($session->modified_at <= $maxAge){
+                $this->di['db']->trash($session);
+            }
+        }
     }
 }
