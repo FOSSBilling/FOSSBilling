@@ -1,17 +1,52 @@
 {% block subject %}[{{ guest.system_company.name }}] Invoice Created{% endblock %}
 {% block content %}
-{% apply markdown %}
-Hello {{ c.first_name }} {{ c.last_name }},
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<style type="text/css">
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 14px;
+			color: #333333;
+		}
 
-This is to notify that proforma invoice {{ invoice.id }} was generated on {{ invoice.created_at|format_date }}.
-Amount Due: {{ invoice.total | money(invoice.currency) }}
-Due Date: {{ invoice.due_at|format_date }}
+		h1 {
+			font-size: 24px;
+			font-weight: bold;
+			margin: 0 0 20px;
+		}
 
-You can view and pay the invoice at: {{'invoice'|link}}/{{invoice.hash}}
+		p {
+			margin: 0 0 10px;
+		}
 
-Login to members area: {{'login'|link({'email' : c.email }) }}
+		strong {
+			font-weight: bold;
+		}
 
-{{ guest.system_company.signature }}
+		.signature {
+			font-style: italic;
+			color: #999999;
+			margin-top: 20px;
+			border-top: 1px solid #cccccc;
+			padding-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Invoice created</h1>
+	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
+	<p>This is to notify that invoice {{ invoice.id }} was generated on {{ invoice.created_at|format_date }}.</p>
+    <ul>
+        <li><strong>Amount Due:</strong> {{ invoice.total | money(invoice.currency) }}</li>
+        <li><strong>Due Date:</strong>  {{ invoice.due_at|format_date }}</li>
+    </ul>
 
-{% endapply %}
+    <p>You may view and pay the invoice <a href="{{'invoice'|link}}/{{invoice.hash}}" target="_blank">here.</a>
+    <p>You may also <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'client/profile'|link}}" target="_blank">edit your profile.</a>
+
+	<p class="signature">{{ guest.system_company.signature }}</p>
+</body>
+</html>
 {% endblock %}
