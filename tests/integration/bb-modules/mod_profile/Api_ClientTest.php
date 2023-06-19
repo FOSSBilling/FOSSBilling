@@ -67,7 +67,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
         //enable email change
         $config = array(
             'ext'                  =>  'mod_client',
-            'disable_change_email'   =>  true,
+            'disable_change_email'   =>  false,
         );
         $bool = $this->api_admin->extension_config_save($config);
         $this->assertTrue($bool);
@@ -78,7 +78,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
         //disable email change
         $config = array(
             'ext'                  =>  'mod_client',
-            'disable_change_email'   =>  false,
+            'disable_change_email'   =>  true,
         );
         $bool = $this->api_admin->extension_config_save($config);
         $this->assertTrue($bool);
