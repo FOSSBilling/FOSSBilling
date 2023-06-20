@@ -286,7 +286,7 @@ class Admin extends \Api_Abstract
         $client->country = (!empty($data['country']) ? $data['country'] : $client->country);
         $client->postcode = (!empty($data['postcode']) ? $data['postcode'] : $client->postcode);
         $client->state = (!empty($data['state']) ? $data['state'] : $client->state);
-        $client->city = (!empty($data['phonestate_cc']) ? $data['phonestate_cc'] : $client->city);
+        $client->city = (!empty($data['city']) ? $data['city'] : $client->city);
 
         $client->status = (!empty($data['status']) ? $data['status'] : $client->status);
         $client->email_approved = (!empty($data['email_approved']) ? $data['email_approved'] : $client->email_approved);
