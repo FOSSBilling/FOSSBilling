@@ -18,7 +18,7 @@ class GuestTest extends \BBTestCase {
     public function testcreate()
     {
         $configArr = array(
-            'allow_signup' => true,
+            'disable_signup' => false,
             'required' => array(),
         );
         $data = array(
@@ -72,7 +72,7 @@ class GuestTest extends \BBTestCase {
     public function testcreateExceptionClientExists()
     {
         $configArr = array(
-            'allow_signup' => true,
+            'disable_signup' => false,
         );
         $data = array(
             'email' => 'test@email.com',
@@ -118,7 +118,7 @@ class GuestTest extends \BBTestCase {
     public function testCreateSignupDoNotAllowed()
     {
         $configArr = array(
-            'allow_signup' => false,
+            'disable_signup' => true,
         );
         $data = array(
             'email' => 'test@email.com',
@@ -141,7 +141,7 @@ class GuestTest extends \BBTestCase {
     public function testCreatePasswordsDoNotMatchException()
     {
         $configArr = array(
-            'allow_signup' => true,
+            'disable_signup' => false,
         );
         $data = array(
             'email' => 'test@email.com',
