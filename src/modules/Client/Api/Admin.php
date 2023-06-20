@@ -257,8 +257,8 @@ class Admin extends \Api_Abstract
             }
         }
 
-        if (!is_null($data['birthday'] ?? null)) {
-            $this->di['validator']->isBirthdayValid($data['birthday'] ?? null);
+        if (!empty($data['birthday'])) {
+            $this->di['validator']->isBirthdayValid($data['birthday']);
         }
 
         if (($data['currency'] ?? null) && $service->canChangeCurrency($client, ($data['currency'] ?? null))) {
