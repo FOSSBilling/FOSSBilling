@@ -256,7 +256,10 @@ class Admin extends \Api_Abstract
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
         }
-        $this->di['validator']->isBirthdayValid($data['birthday'] ?? null);
+
+        if (!is_null($data['birthday'] ?? null)) {
+            $this->di['validator']->isBirthdayValid($data['birthday'] ?? null);
+        }
 
         if (($data['currency'] ?? null) && $service->canChangeCurrency($client, ($data['currency'] ?? null))) {
             $client->currency = $data['currency'] ?? $client->currency;
