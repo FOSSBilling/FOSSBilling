@@ -511,7 +511,7 @@ class Service implements InjectionAwareInterface
 
         $model->serie = $systemService->getParamValue('invoice_series');
         $model->nr = $model->id;
-        $model->hash = hash('sha256', random_bytes(13));
+        $model->hash = bin2hex(random_bytes(random_int(100, 127)));;
 
         $taxtitle = '';
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
@@ -628,7 +628,7 @@ class Service implements InjectionAwareInterface
 
                 $new = $this->di['db']->dispense('Invoice');
                 $new->client_id = $invoice->client_id;
-                $new->hash = hash('sha256', random_bytes(13));
+                $new->hash = bin2hex(random_bytes(random_int(100, 127)));;
                 $new->status = \Model_Invoice::STATUS_REFUNDED;
                 $new->currency = $invoice->currency;
                 $new->approved = true;
