@@ -30,7 +30,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/logs/php_error.log');
+ini_set('error_log', 'php_error.log');
 
 // If not connected via SSL, try and detect a valid SSL certificate on the server and then redirect to HTTPs.
 if(!isSSL()){

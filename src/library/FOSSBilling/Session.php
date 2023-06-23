@@ -118,7 +118,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
      * Checks both the fingerprint and age of the current session to see if it can be used.
      * If the session can't be used, it's destroyed from the database, forcing a new one to be created.
      */
-    private function canUseSession():void
+    private function canUseSession(): void
     {
         if (empty($_COOKIE['PHPSESSID'])) {
             return;
@@ -143,13 +143,16 @@ class Session implements \FOSSBilling\InjectionAwareInterface
     /**
      * Depending on the specifics, this will either set or update the fingerprint associated with the current session.
      */
-    private function updateFingerprint():void
+    private function updateFingerprint(): void
     {
         $sessionID = $_COOKIE['PHPSESSID'] ?? session_id();
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
 
-        $fingerprint = new \FOSSBilling\Fingerprint;
-        $session->fingerprint = json_encode($fingerprint->fingerprint());
-        $this->di['db']->store($session);
+        // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
+        if (!is_null($session)) {
+            $fingerprint = new \FOSSBilling\Fingerprint;
+            $session->fingerprint = json_encode($fingerprint->fingerprint());
+            $this->di['db']->store($session);
+        }
     }
 }
