@@ -339,7 +339,8 @@
         "QWERTYUIOPASDFGHJKLZXCVBNM",
         "subkeys",
         "httponly",
-        "samesite"
+        "samesite",
+        "IPCOUNTRY"
     ],
     "ignorePaths": [
         "tests/**",
