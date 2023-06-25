@@ -32,24 +32,6 @@ ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
 ini_set('error_log', 'php_error.log');
 
-// If not connected via SSL, try and detect a valid SSL certificate on the server and then redirect to HTTPs.
-if(!isSSL()){
-    $context = stream_context_create(array(
-        'ssl' => array(
-            'verify_peer' => true,
-            'verify_peer_name' => true,
-            'timeout' => 1,
-        ),
-    ));
-    $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-    $result = file_get_contents($url, false, $context);
-
-    if ($result !== false) {
-        header("Location: $url");
-        exit();
-    }
-}
-
 $protocol = isSSL() ? 'https' : 'http';
 $url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 $current_url = pathinfo($url, PATHINFO_DIRNAME);
