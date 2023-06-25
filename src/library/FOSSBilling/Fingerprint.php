@@ -45,7 +45,7 @@ class Fingerprint
             ],
             'ip' => [
                 'source' => $_SERVER['REMOTE_ADDR'] ?? '',
-                'weight' => 3,
+                'weight' => 2,
             ],
             'referrer' => [
                 'source' => $_SERVER['HTTP_REFERER'] ?? '',
@@ -53,11 +53,11 @@ class Fingerprint
             ],
             'forwardedFor' => [
                 'source' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
-                'weight' => 3,
+                'weight' => 1,
             ],
             'language' => [
                 'source' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
-                'weight' => 2,
+                'weight' => 3,
             ],
             'encoding' => [
                 'source' => $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '',
@@ -66,6 +66,18 @@ class Fingerprint
             'upgradeRequests' => [
                 'source' => $_SERVER['HTTP_UPGRADE_INSECURE_REQUESTS'] ?? '',
                 'weight' => 1,
+            ],
+            'platform' => [
+                'source' => $_SERVER['HTTP_SEC_CH_UA_PLATFORM'] ?? '',
+                'weight' => 100, // Should more-or-less match the 'OS'. This also should never randomly change
+            ],
+            'mobile' => [
+                'source' => $_SERVER['HTTP_SEC_CH_UA_MOBILE'] ?? '',
+                'weight' => 3,
+            ],
+            'cloudFlareCountry' => [
+                'source' => $_SERVER['HTTP_CF_IPCOUNTRY'] ?? '', // "IP Geolocation" must be enabled under Cloudflare's "network" settings
+                'weight' => 4,
             ],
         ];
     }
