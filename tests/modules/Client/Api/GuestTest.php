@@ -297,7 +297,7 @@ class GuestTest extends \BBTestCase {
         $client->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('If you have entered an E-Mail adress that is associated with an Account, a Password reset confirmation email was sent');
+        $this->expectExceptionMessage('If you have entered an E-Mail address that is associated with an Account, a Password reset confirmation email was sent');
         $client->reset_password($data);
     }
 
