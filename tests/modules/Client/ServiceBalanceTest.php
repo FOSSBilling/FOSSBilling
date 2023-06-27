@@ -69,7 +69,7 @@ class ServiceBalanceTest extends \BBTestCase
         );
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Funds description is not valid');
+        $this->expectExceptionMessage('Funds description is invalid');
         $service->deductFunds($clientModel, $amount, $description, $extra);
     }
 
@@ -88,7 +88,7 @@ class ServiceBalanceTest extends \BBTestCase
         );
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Funds amount is not valid');
+        $this->expectExceptionMessage('Funds amount is invalid');
         $service->deductFunds($clientModel, $amount, $description, $extra);
     }
 }

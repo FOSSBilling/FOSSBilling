@@ -560,7 +560,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Funds amount is not valid');
+        $this->expectExceptionMessage('Funds amount is invalid');
         $clientService->addFunds($modelClient, $amount, $description);
     }
 
@@ -578,7 +578,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Funds description is not valid');
+        $this->expectExceptionMessage('Funds description is invalid');
         $result = $clientService->addFunds($modelClient, $amount, $description);
         $this->assertTrue($result);
     }

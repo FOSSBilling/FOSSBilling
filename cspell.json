@@ -31,7 +31,9 @@
         "Pictogrammers",
         "Symfony",
         "EMERG",
-        "exploitability"
+        "exploitability",
+        "birthdate",
+        "Birthdate"
     ],
 
     "ignoreWords": [
