@@ -73,7 +73,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
-        throw new Registrar_Exception('Domain transfer checking is not implemented');
+        throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('checking domain transferability')]);
     }
 
     public function modifyNs(Registrar_Domain $domain)
@@ -169,7 +169,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     public function deleteDomain(Registrar_Domain $domain)
     {
-        throw new Registrar_Exception('Registrar does not support domain removal.');
+        throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('deleting domains')]);
     }
 
     public function registerDomain(Registrar_Domain $domain)
