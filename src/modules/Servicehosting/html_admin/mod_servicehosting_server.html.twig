@@ -102,6 +102,16 @@
 
             <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and test connection'|trans }}">
 
+            <h5>{{ 'Optionnal configuration'|trans }}</h5>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Users prefix'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="userprefix" value="{{ server.config.userprefix }}" placeholder="{{ 'Prefix for created users (especially for database)'|trans }}">
+                </div>
+            </div>
+
+            <hr>
+
             <h5>{{ 'Nameservers'|trans }}</h5>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>

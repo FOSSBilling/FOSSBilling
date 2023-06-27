@@ -487,6 +487,11 @@ class Service implements InjectionAwareInterface
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
+            if(!is_null($model->config)){
+                $result['config'] = json_decode($model->config, 1);
+            } else {
+                $result['config'] = [];
+            }
             $result['username'] = $model->username;
             $result['password'] = $model->password;
             $result['accesshash'] = $model->accesshash;
@@ -691,6 +696,7 @@ class Service implements InjectionAwareInterface
         $model->manager = $data['manager'] ?? $model->manager;
         $model->accesshash = $data['accesshash'] ?? $model->accesshash;
         $model->port = $data['port'] ?? $model->port;
+        $model->config = json_encode($data['config']) ?? $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
         $model->username = $data['username'] ?? $model->username;
         $model->password = $data['password'] ?? $model->password;
@@ -714,6 +720,11 @@ class Service implements InjectionAwareInterface
         $config['ip'] = $model->ip;
         $config['host'] = $model->hostname;
         $config['port'] = $model->port;
+        if(!is_null($model->config)){
+            $config['config'] = json_decode($model->config, 1);
+        } else {
+            $config['config'] = [];
+        }
         $config['secure'] = $model->secure;
         $config['username'] = $model->username;
         $config['password'] = $model->password;

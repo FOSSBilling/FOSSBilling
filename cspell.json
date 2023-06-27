@@ -91,6 +91,7 @@
         "UNCANCEL",
         "uncancel",
         "accesshash",
+        "userprefix",
         "qtys",
         "qnty",
         "rtable",
