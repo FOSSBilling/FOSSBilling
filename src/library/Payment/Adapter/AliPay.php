@@ -145,7 +145,7 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
 
 	public function recurrentPayment(Payment_Invoice $invoice)
 	{
-		throw new Payment_Exception('AliPay does not support recurrent payments');
+        throw new Payment_Exception(':type: does not support :action:', [':type:' => 'AliPay', ':action:' => __trans('reccurent payments')]);
 	}
 
 	public function getTransaction($data, Payment_Invoice $invoice)
