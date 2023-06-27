@@ -92,7 +92,7 @@ class Guest extends \Api_Abstract
         $sld = htmlspecialchars($data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            throw new \Box_Exception('Domain :domain is not valid', [':domain' => $sld]);
+            throw new \Box_Exception('Domain :domain is invalid', [':domain' => $sld]);
         }
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);

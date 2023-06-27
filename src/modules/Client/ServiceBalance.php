@@ -123,11 +123,11 @@ class ServiceBalance implements InjectionAwareInterface
     public function deductFunds(\Model_Client $client, $amount, $description, array $data = null)
     {
         if (!is_numeric($amount)) {
-            throw new \Box_Exception('Funds amount is not valid');
+            throw new \Box_Exception('Funds amount is invalid');
         }
 
         if (0 == strlen(trim($description))) {
-            throw new \Box_Exception('Funds description is not valid');
+            throw new \Box_Exception('Funds description is invalid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');

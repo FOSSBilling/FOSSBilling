@@ -342,7 +342,7 @@ class Api_AdminTest extends \BBTestCase
 
         $adminApi->setService($service);
         $adminApi->setDi($di);
-        $this->expectException(\Box_exception::class);
+        $this->expectException(\Box_Exception::class);
         $adminApi->create($data); //Expecting \Box_Exception every time
     }
 
@@ -516,7 +516,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $adminApi->setService($service);
-        $this->expectException(\Box_exception::class);
+        $this->expectException(\Box_Exception::class);
         $adminApi->set_default($data); //Expecting \Box_Exception every time
     }
 

@@ -965,7 +965,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         } elseif ($identity instanceof \Model_Client) {
             $msg->client_id = $identity->id;
         } else {
-            throw new \Box_Exception('Identity is not valid');
+            throw new \Box_Exception('Identity is invalid');
         }
         $msg->content = $content;
         $msg->ip = $this->di['request']->getClientAddress();

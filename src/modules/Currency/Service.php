@@ -478,7 +478,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($conversionRate)) {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
-                throw new \Box_Exception('Currency rate is not valid', null, 151);
+                throw new \Box_Exception('Currency rate is invalid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
         }

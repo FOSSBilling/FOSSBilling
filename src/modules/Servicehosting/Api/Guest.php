@@ -33,7 +33,8 @@ class Guest extends \Api_Abstract
         $product = $this->di['db']->getExistingModelById('Product', $product_id, 'Product was not found');
 
         if (\Model_Product::HOSTING !== $product->type) {
-            throw new \Box_Exception('Product type is invalid');
+            $friendlyName = ucfirst(__trans('Product type'));
+            throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
 
         return $this->getService()->getFreeTlds($product);

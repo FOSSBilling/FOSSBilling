@@ -173,7 +173,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \FOS
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(!$this->isIpnValid($data)) {
-            throw new Payment_Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is invalid');
         }
 
         $ipn = $data['post'];

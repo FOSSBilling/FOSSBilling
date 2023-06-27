@@ -80,7 +80,7 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(!$this->isIpnValid($data)) {
-            throw new Payment_Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is invalid');
         }
 
         $tx = $this->di['db']->load('Transaction', $id);

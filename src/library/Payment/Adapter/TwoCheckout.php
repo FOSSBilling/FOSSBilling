@@ -119,7 +119,7 @@ class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterfac
         $ipn = array_merge($data['get'], $data['post']);
 
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($ipn)) {
-            throw new Payment_Exception('2Checkout IPN is not valid');
+            throw new Payment_Exception('2Checkout IPN is invalid');
         }
 
         $api_admin->invoice_transaction_update(array('id' => $id, 'type' => 'ORDER CREATED'));

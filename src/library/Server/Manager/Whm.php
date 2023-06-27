@@ -415,7 +415,7 @@ class Server_Manager_Whm extends Server_Manager
         $json = json_decode($body);
 
         if(!is_object($json)) {
-            $msg = sprintf('Function call "%s" response is not valid, body: %s', $action, $body);
+            $msg = sprintf('Function call "%s" response is invalid, body: %s', $action, $body);
             $this->getLog()->crit($msg);
             throw new Server_Exception($msg);
         }

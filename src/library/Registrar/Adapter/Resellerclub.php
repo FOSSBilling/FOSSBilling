@@ -873,7 +873,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if($tld == '.ru' || $tld == '.com.ru' || $tld == '.org.ru' || $tld == '.net.ru') {
             if(strlen(trim($client->getBirthday())) === 0 || strtotime($client->getBirthday()) === false) {
-                throw new Registrar_Exception('Valid contact birth date is required while registering RU domain name');
+                throw new Registrar_Exception('Valid contact birthdate is required while registering RU domain name');
             }
 
             if(strlen(trim($client->getDocumentNr())) === 0 ) {
