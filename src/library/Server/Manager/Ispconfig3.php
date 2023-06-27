@@ -58,7 +58,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
     
     public function synchronizeAccount(Server_Account $a)
     {
-        throw new Server_Exception('Server manager does not support sync');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'ISPConfig 3', ':action:' => __trans('account synchronization')]);
     }
 
     public function createAccount(Server_Account $a)
@@ -187,17 +187,17 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support username changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'ISPConfig 3', ':action:' => __trans('username changes')]);
     }
     
     public function changeAccountDomain(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support domain changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'ISPConfig 3', ':action:' => __trans('changing the account domain')]);
     }
 
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support ip changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'ISPConfig 3', ':action:' => __trans('changing the account IP')]);
     }
     
     private function createSite(Server_Account &$a)
@@ -730,7 +730,8 @@ class Server_Manager_Ispconfig3 extends Server_Manager
         if(isset($soap_result)){
             return $soap_result;
         } else {
-            throw new Server_Exception("Error when making request to the server");
+            $placeholders = ['action' => $action, 'type' => 'ISPConfig 3'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
     }
 }

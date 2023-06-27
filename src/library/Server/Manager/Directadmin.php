@@ -326,17 +326,17 @@ class Server_Manager_Directadmin extends Server_Manager
     
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin does not support username changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('username changes')]);
     }
     
     public function changeAccountDomain(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin does not support domain changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account domain')]);
     }
     
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin does not support IP changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account IP')]);
     }
     
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
@@ -425,7 +425,7 @@ class Server_Manager_Directadmin extends Server_Manager
         }
         
         if(strlen(strstr($data, 'DirectAdmin Login')) > 0) {
-            throw new Server_Exception('Server Manager DirectAdmin Error: "Login failed"');
+            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
         }
         
         if(strlen(strstr($data, "The request you've made cannot be executed because it does not exist in your authority level")) > 0) {
@@ -435,7 +435,8 @@ class Server_Manager_Directadmin extends Server_Manager
         $r = $this->_parseResponse($data);
         
         if(isset($r['error']) && $r['error'] == 1) {
-            throw new Server_Exception('Server Manager DirectAdmin Error: :error', [':error' => $r['details']]);
+            $placeholders = ['action' => $command, 'type' => 'DirectAdmin'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         
         $response = empty($r) ? array() : $r;
