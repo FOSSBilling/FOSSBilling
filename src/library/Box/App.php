@@ -338,8 +338,6 @@ class Box_App
         /**
          * Block requests if the system is undergoing maintenance.
          * It will respect any URL/IP whitelisting under the configuration file.
-         *
-         * @since 4.22.0
          */
         $maintmode = isset($this->di['config']['maintenance_mode']) ? $this->di['config']['maintenance_mode']['enabled'] : false;
         if ($maintmode) {
@@ -349,7 +347,7 @@ class Box_App
                 header('HTTP/1.0 503 Service Unavailable');
 
                 if ('api' == $this->mod) {
-                    $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later.', [], 503);
+                    $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later', [], 503);
 
                     return (new \Box\Mod\Api\Controller\Client())->renderJson(null, $exc);
                 } else {

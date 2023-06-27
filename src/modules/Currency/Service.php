@@ -323,7 +323,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (null === $model->code || empty($model->code)) {
-            throw new \Box_Exception('Currency code not found');
+            throw new \Box_Exception('Currency not found');
         }
 
         $sql = 'DELETE FROM currency WHERE code = :code';

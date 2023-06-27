@@ -41,14 +41,14 @@ class UpdatePatcher implements InjectionAwareInterface
         $currentConfig = include $configPath;
 
         if (!is_array($currentConfig)) {
-            throw new \Box_Exception('Unable to load existing configuration.');
+            throw new \Box_Exception('Unable to load existing configuration');
         }
 
         // Create backup of current configuration.
         try {
             $filesystem->copy($configPath, substr($configPath, 0, -4) . '.old.php');
         } catch (FileNotFoundException | IOException $e) {
-            throw new \Box_Exception('Unable to create backup of configuration file. Cancelling config migration.');
+            throw new \Box_Exception('Unable to create backup of configuration file');
         }
 
         $newConfig = $currentConfig;

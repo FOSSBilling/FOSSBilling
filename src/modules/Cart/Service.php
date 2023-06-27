@@ -482,7 +482,7 @@ class Service implements InjectionAwareInterface
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
         if (0 == count($ca['items'])) {
-            throw new \Box_Exception('Can not checkout empty cart.');
+            throw new \Box_Exception('Can not checkout an empty cart');
         }
 
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
