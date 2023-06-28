@@ -340,7 +340,8 @@
         "subkeys",
         "httponly",
         "samesite",
-        "IPCOUNTRY"
+        "IPCOUNTRY",
+        "Serviceapikey"
     ],
     "ignorePaths": [
         "tests/**",

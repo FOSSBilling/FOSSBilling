@@ -1,0 +1,8 @@
+{
+  "id": "serviceapikey",
+  "type": "mod",
+  "name": "API Key Product",
+  "description": "A simple product type to allow you to generate and sell API keys for use in your applications",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
+}
