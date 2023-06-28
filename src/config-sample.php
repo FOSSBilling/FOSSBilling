@@ -183,8 +183,6 @@ return [
          * Any IP address within this list will not be put through the rate-limiter system.
          * This is useful if you have an application with a static IP address that needs to make frequent API requests to FOSSBilling.
          */
-        'rate_limit_whitelist' => [
-
-        ],
+        'rate_limit_whitelist' => [],
     ],
 ];
