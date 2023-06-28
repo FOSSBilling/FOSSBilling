@@ -332,7 +332,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact = $domain->getContactRegistrar();
 
             if(strlen(trim($contact->getCompanyNumber())) == 0 ) {
-                throw new Registrar_Exception('A valid contact company number is mandatory for registering an AU domain name');
+                throw new Registrar_Exception('A valid contact company number is mandatory for registering an .AU domain name');
             }
             $params['attr-name1'] = 'id-type';
             $params['attr-value1'] = 'ACN';
