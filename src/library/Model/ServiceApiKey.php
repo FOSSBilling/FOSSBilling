@@ -14,7 +14,6 @@ class Model_ServiceApiKey extends \RedBeanPHP\SimpleModel
     public int $client_id;
     public string $api_key;
     public string $config;
-    public bool $valid;
     public string $created_at;
     public string $updated_at;
 }
