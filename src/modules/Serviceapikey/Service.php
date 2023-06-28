@@ -184,8 +184,8 @@ class Service implements InjectionAwareInterface
      */
     public function resetApiKey(array $data): bool
     {
-        if (empty($data['key']) && empty($data['id'])) {
-            throw new \Box_Exception("You must provide either the API key or API key ID in order to reset it.");
+        if (empty($data['key']) && empty($data['order_id'])) {
+            throw new \Box_Exception("You must provide either the API key or API key order ID in order to reset it.");
         } elseif (!empty($data['order_id'])) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
             $orderService = $this->di['mod_service']('order');

@@ -32,7 +32,7 @@
         event.preventDefault();
 
         if (confirm("{{ 'Are you sure?'|trans }}")) {
-            API.client.post('serviceapikey/reset', { id: {{ service.id }} }, function(result) {
+            API.client.post('serviceapikey/reset', { order_id: {{ order.id }} }, function(result) {
                 bb.reload();
             });
         }
