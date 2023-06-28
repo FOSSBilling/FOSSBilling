@@ -16,7 +16,7 @@ class Admin extends \Api_Abstract
      * Update an API key. Can be used to change it's validity and config, but not to reset / regenerate the key itself.
      * 
      * @param array $data - An associative array
-     *               - int 'id' (required) The ID of the API key to reset. This should match it's ID in the database.
+     *               - int 'order_id' (required) The order ID of the API key to reset.
      *               - bool 'valid' (optional) Used to set if an API key is valid or not.
      *               - array 'config' (optional) The new configuration for the API key. Overrides the previous one, so you must send the complete config rather than only the parameters you want to change.
      */
@@ -30,7 +30,7 @@ class Admin extends \Api_Abstract
      * 
      * @param array $data - An associative array containing either the key or ID of whatever API key you want to reset.
      *               - string 'key' The API key to reset.
-     *               - int 'id' The ID of the API key to reset.
+     *               - int 'order_id' The order ID of the API key to reset.
      */
     public function reset($data): bool
     {

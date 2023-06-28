@@ -7,7 +7,7 @@
                 <P>{{ 'Here you can configured the length of the API keys that will be generated. We recommend making this no less than 16 at a minimum. When in doubt, leave this at 32.'|trans }}</p>
                 <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
                 <div class="col">
-                    <input type="number" class="form-control" name="config[length]" value="{{ product.config.length }}">
+                    <input type="number" class="form-control" name="config[length]" value="{{ product.config.length|default(32) }}">
                 </div>
             </div>
 

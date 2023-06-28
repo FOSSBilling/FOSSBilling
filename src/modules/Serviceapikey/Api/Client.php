@@ -17,7 +17,7 @@ class Client extends \Api_Abstract
      * 
      * @param array $data - An associative array containing either the key or ID of whatever API key you want to reset.
      *               - string 'key' The API key to reset.
-     *               - int 'id' The ID of the API key to reset.
+     *               - int 'order_id' The order ID of the API key to reset.
      */
     public function reset($data): bool
     {

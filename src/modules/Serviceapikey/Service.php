@@ -33,10 +33,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    /**
-     * @return array
-     */
-    public function attachOrderConfig(\Model_Product $product, array $data)
+    public function attachOrderConfig(\Model_Product $product, array $data): array
     {
         !empty($product->config) ?  $config = json_decode($product->config, true) : $config = [];
         return array_merge($config, $data);
@@ -46,7 +43,6 @@ class Service implements InjectionAwareInterface
     {
         $model = $this->di['db']->dispense('service_apikey');
         $model->client_id = $order->client_id;
-        $model->valid = false;
         $model->config = $order->config;
 
         $model->created_at = date('Y-m-d H:i:s');
@@ -64,7 +60,6 @@ class Service implements InjectionAwareInterface
         }
 
         $model->api_key = $this->generateKey($config);
-        $model->valid = true;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -73,7 +68,6 @@ class Service implements InjectionAwareInterface
 
     public function suspend(\RedBeanPHP\OODBBean $order, $model): bool
     {
-        $model->valid = false;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -82,7 +76,6 @@ class Service implements InjectionAwareInterface
 
     public function unsuspend(\RedBeanPHP\OODBBean $order, $model): bool
     {
-        $model->valid = true;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -110,7 +103,6 @@ class Service implements InjectionAwareInterface
     {
         return [
             'id'         => $model->id,
-            'valid'      => $model->valid,
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
             'api_key'    => $model->api_key,
@@ -132,10 +124,10 @@ class Service implements InjectionAwareInterface
 
         $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
-            throw new \Box_Exception("API key does not exist.");
+            throw new \Box_Exception("API key does not exist");
         }
 
-        return $model->valid;
+        return $this->isActive($model);
     }
 
     /**
@@ -152,7 +144,7 @@ class Service implements InjectionAwareInterface
 
         $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
-            throw new \Box_Exception("API key does not exist.");
+            throw new \Box_Exception("API key does not exist");
         }
 
         // Load the stored JSON config from the DB
@@ -162,16 +154,20 @@ class Service implements InjectionAwareInterface
             $rawConfig = [];
         }
 
-        // Then loop through it an only select the custom parameters, removing the 'custom_' prefix from the start so they are a bit cleaner to work with.
+        // Then loop through it and only select the custom parameters, removing the 'custom_' prefix & converting numerical strings to a float.
         foreach ($rawConfig as $key => $value) {
             if (str_starts_with($key, 'custom_')) {
                 $name = substr($key, 7);
-                $strippedConfig[$name] = $value;
+                if (is_numeric($value)) {
+                    $strippedConfig[$name] = floatval($value);
+                } else {
+                    $strippedConfig[$name] = $value;
+                }
             }
         }
 
         $data = [
-            'valid'  => $model->valid,
+            'valid'  => $this->isActive($model),
             'id'     => $model->id,
             'config' => $strippedConfig,
         ];
@@ -183,21 +179,23 @@ class Service implements InjectionAwareInterface
      * Used to reset an API key using the API key generator.
      * 
      * @param array $data An array containing what API key to reset. At least one of the possible identification methods must be provided.
-     *              - int 'id' (optional) The ID of the API key to rest.
+     *              - int 'order_id' (optional) The ID of the API key to rest.
      *              - string 'key' (optional) The API key to reset.
      */
     public function resetApiKey(array $data): bool
     {
         if (empty($data['key']) && empty($data['id'])) {
             throw new \Box_Exception("You must provide either the API key or API key ID in order to reset it.");
-        } elseif (!empty($data['id'])) {
-            $model = $this->di['db']->findOne('service_apikey', 'id = :id', [':id' => $data['id']]);
+        } elseif (!empty($data['order_id'])) {
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+            $orderService = $this->di['mod_service']('order');
+            $model = $orderService->getOrderService($order);
         } else {
             $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         }
 
         if (is_null($model)) {
-            throw new \Box_Exception("API key does not exist.");
+            throw new \Box_Exception("API key does not exist");
         }
 
 
@@ -209,7 +207,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_null($client) && $client->id !== $model->client_id) {
-            throw new \Box_Exception("API key does not exist.");
+            throw new \Box_Exception("API key does not exist");
         }
 
         $config = json_decode($model->config, true);
@@ -224,19 +222,21 @@ class Service implements InjectionAwareInterface
      * Used to update an API key, but prevents changing the API key so we can ensure they use the reset function, thus using the secure generator. 
      * 
      * @param array $data An array containing what API key to update and what info to update.
-     *              - int 'id' The ID of the API key to update.
+     *              - int 'order_id' The order ID of the API key to update.
      *              - array 'config' (optional) The new config to attach to the API key.
-     *              - bool 'valid' (optional) Sets if the API key is valid or not.
      */
     public function updateApiKey(array $data): bool
     {
-        if (empty($data['id'])) {
-            throw new \Box_Exception("You must provide the API key ID in order to update it.");
+        if (empty($data['order_id'])) {
+            throw new \Box_Exception("You must provide the API key order ID in order to update it.");
         }
 
-        $model = $this->di['db']->findOne('service_apikey', 'id = :id', [':id' => $data['id']]);
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+
         if (is_null($model)) {
-            throw new \Box_Exception("API key does not exist.");
+            throw new \Box_Exception("API key does not exist");
         }
 
         if (isset($data['api_key']) && $model->api_key !== $data['api_key']) {
@@ -247,7 +247,6 @@ class Service implements InjectionAwareInterface
 
         //ID and client ID should remain constant so we don't try to update those here.
         $model->config = $config;
-        $model->valid = !empty($data['valid']) ? (bool)$data['valid'] : $model->valid;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
@@ -264,7 +263,6 @@ class Service implements InjectionAwareInterface
             `client_id` bigint(20) NOT NULL,
             `api_key` varchar(255),
             `config` text NOT NULL,
-            `valid` bool NOT NULL,
             `created_at` datetime,
             `updated_at` datetime,
             PRIMARY KEY (`id`)
@@ -336,10 +334,20 @@ class Service implements InjectionAwareInterface
                     $apiKey = $result;
                     break;
                 default:
-                    throw new \Box_Exception("Unknown uppercase option ':case'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case' => $case]);
+                    throw new \Box_Exception("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
             }
         } while (null !== $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $apiKey]));
 
         return $apiKey;
+    }
+
+    private function isActive(\RedBeanPHP\OODBBean $model): bool
+    {
+        $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $model->id]);
+        if (is_null($order)) {
+            throw new \Box_Exception("API key does not exist");
+        }
+
+        return $order->status === 'active';
     }
 }
