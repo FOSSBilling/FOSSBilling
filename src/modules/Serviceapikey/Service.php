@@ -18,6 +18,7 @@
 namespace Box\Mod\Serviceapikey;
 
 use \FOSSBilling\InjectionAwareInterface;
+use \RedBeanPHP\OODBBean;
 
 class Service implements InjectionAwareInterface
 {
@@ -39,7 +40,7 @@ class Service implements InjectionAwareInterface
         return array_merge($config, $data);
     }
 
-    public function create(\RedBeanPHP\OODBBean $order)
+    public function create(OODBBean $order)
     {
         $model = $this->di['db']->dispense('service_apikey');
         $model->client_id = $order->client_id;
@@ -52,7 +53,7 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function activate(\RedBeanPHP\OODBBean $order, $model): bool
+    public function activate(OODBBean $order, OODBBean $model): bool
     {
         $config = json_decode($order->config, 1);
         if (!is_object($model)) {
@@ -66,7 +67,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function suspend(\RedBeanPHP\OODBBean $order, $model): bool
+    public function suspend(OODBBean $order, OODBBean $model): bool
     {
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -74,7 +75,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function unsuspend(\RedBeanPHP\OODBBean $order, $model): bool
+    public function unsuspend(OODBBean $order, OODBBean $model): bool
     {
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -82,24 +83,24 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function cancel(\RedBeanPHP\OODBBean $order, $model): bool
+    public function cancel(OODBBean $order, OODBBean $model): bool
     {
         return $this->suspend($order, $model);
     }
 
-    public function uncancel(\RedBeanPHP\OODBBean $order, $model): bool
+    public function uncancel(OODBBean $order, OODBBean $model): bool
     {
         return $this->unsuspend($order, $model);
     }
 
-    public function delete(\RedBeanPHP\OODBBean $order, $model): void
+    public function delete(OODBBean $order, OODBBean $model): void
     {
         if (is_object($model)) {
             $this->di['db']->trash($model);
         }
     }
 
-    public function toApiArray(\RedBeanPHP\OODBBean $model): array
+    public function toApiArray(OODBBean $model): array
     {
         return [
             'id'         => $model->id,
@@ -218,7 +219,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Used to update an API key, but prevents changing the API key so we can ensure they use the reset function, thus using the secure generator. 
+     * Used to update an API key, but prevents changing the API key so we can ensure they use the reset function.
      * 
      * @param array $data An array containing what API key to update and what info to update.
      *              - int 'order_id' The order ID of the API key to update.
