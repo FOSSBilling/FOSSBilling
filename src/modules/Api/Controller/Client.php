@@ -92,8 +92,12 @@ class Client implements InjectionAwareInterface
 
     private function checkRateLimit($method = null)
     {
+        if (in_array($this->_getIp(), $this->_api_config['rate_limit_whitelist'])) {
+            return true;
+        }
+
         $isLoginMethod = false;
-        if ('staff_login' == $method || 'client_login' == $method) {
+        if ($method == 'staff_login' || $method == 'client_login') {
             $rate_span = $this->_api_config['rate_span_login'];
             $rate_limit = $this->_api_config['rate_limit_login'];
             $isLoginMethod = true;
@@ -104,9 +108,8 @@ class Client implements InjectionAwareInterface
 
         $service = $this->di['mod_service']('api');
         $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp(), $isLoginMethod);
-        $requests_left = $rate_limit - $requests;
-        $this->_requests_left = $requests_left;
-        if ($requests_left < 0) {
+        $this->_requests_left = $rate_limit - $requests;
+        if ($this->_requests_left <= 0) {
             sleep($this->_api_config['throttle_delay']);
         }
 

@@ -485,6 +485,7 @@ final class Box_Installer
                 'rate_span_login' => 60,
                 'rate_limit_login' => 20,
                 'CSRFPrevention' => true,
+                'rate_limit_whitelist' => [],
             ],
         ];
         $output = '<?php ' . PHP_EOL;

@@ -346,8 +346,6 @@ class ServiceTransaction implements InjectionAwareInterface
     /**
      * New simplified transaction processing logic.
      *
-     * @since 2.9.11
-     *
      * @param type $id
      *
      * @return mixed
