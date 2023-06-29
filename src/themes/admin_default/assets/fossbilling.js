@@ -25,15 +25,17 @@ coloris({
 
 
 document.addEventListener('DOMContentLoaded', () => {
-
   if (localStorage.getItem('theme') === 'dark') {
-    document.body.classList.add('theme-dark');
+    document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'))
+  } else {
+    document.body.removeAttribute("data-bs-theme")
   }
+
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();
-      document.body.classList.toggle('theme-dark');
       localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
+      document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'))
     });
   });
 
