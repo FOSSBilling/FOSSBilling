@@ -40,10 +40,10 @@ class Box_Pagination implements InjectionAwareInterface
         }
         $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
-        if (!is_numeric($page) && $page < 1 ){
+        if (!is_numeric($page) || $page < 1 ){
            throw new \Box_Exception('Invalid page number');
         }
-        if (!is_numeric($per_page) && $per_page < 1 ){
+        if (!is_numeric($per_page) || $per_page < 1 ){
            throw new \Box_Exception('Invalid per page number');
         }
 
@@ -72,10 +72,10 @@ class Box_Pagination implements InjectionAwareInterface
         $page = $_GET['page'] ?? 1;
         $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
-        if (!is_numeric($page) && $page < 1 ){
+        if (!is_numeric($page) || $page < 1 ){
            throw new \Box_Exception('Invalid page number');
         }
-        if (!is_numeric($per_page) && $per_page < 1 ){
+        if (!is_numeric($per_page) || $per_page < 1 ){
            throw new \Box_Exception('Invalid per page number');
         }
 
