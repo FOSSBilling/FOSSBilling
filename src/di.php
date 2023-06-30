@@ -775,8 +775,8 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
         $headers = array_keys(reset($rows));
     }
 
-    $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject());
-
+    $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject);
+    $csv->addFormatter(new League\Csv\EscapeFormula);
     $csv->insertOne($headers);
     $csv->insertAll($rows);
 
