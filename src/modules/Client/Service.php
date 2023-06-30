@@ -177,8 +177,12 @@ class Service implements InjectionAwareInterface
     public function getPairs($data)
     {
         $limit = $data['per_page'] ?? 30;
+        if (!is_numeric($data['per_page']) && $data['per_page'] < 1 ){
+            throw new \Box_Exception('Invalid per page number');
+        }
+
         [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, CONCAT_WS('', c.first_name,  ' ', c.last_name) as full_name");
-        $sql = $sql . ' LIMIT ' . $limit;
+        $sql .= sprintf(' LIMIT %u', $limit);
 
         return $this->di['db']->getAssoc($sql, $params);
     }
