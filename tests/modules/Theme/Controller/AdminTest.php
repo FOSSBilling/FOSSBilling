@@ -108,8 +108,6 @@ class AdminTest extends \BBTestCase {
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('updateSettings');
         $themeServiceMock->expects($this->atLeastOnce())
-            ->method('uploadAssets');
-        $themeServiceMock->expects($this->atLeastOnce())
             ->method('regenerateThemeCssAndJsFiles');
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('regenerateThemeSettingsDataFile');
@@ -201,4 +199,3 @@ class AdminTest extends \BBTestCase {
     }
 
 }
- 

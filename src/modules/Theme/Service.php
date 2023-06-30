@@ -161,24 +161,6 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function uploadAssets(Model\Theme $theme, array $files)
-    {
-        $dest = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
-
-        foreach ($files as $filename => $f) {
-            if (UPLOAD_ERR_NO_FILE == $f['error']) {
-                continue;
-            }
-
-            $filename = str_replace('_', '.', $filename);
-            if (UPLOAD_ERR_OK != $f['error']) {
-                throw new \Box_Exception('Error uploading file :file Error code: :error', [':file' => $filename, ':error' => $f['error']]);
-            }
-
-            move_uploaded_file($f['tmp_name'], $dest . $filename);
-        }
-    }
-
     public function updateSettings(Model\Theme $theme, $preset, array $params)
     {
         $meta = $this->di['db']->findOne(
