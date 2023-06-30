@@ -33,12 +33,12 @@ class Box_Pagination implements InjectionAwareInterface
         return $this->per_page;
     }
 
-    public function getSimpleResultSet($q, $values, $per_page = 100, $page = null)
+    public function getSimpleResultSet($q, $values, ?int $per_page = 100, ?int $page = null)
     {
         if (is_null($page)){
             $page = $_GET['page'] ?? 1;
         }
-        $per_page = $_GET['per_page'] ?? $per_page;
+        $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
         if (!is_numeric($page) && $page < 1 ){
            throw new \Box_Exception('Invalid page number');
@@ -67,10 +67,10 @@ class Box_Pagination implements InjectionAwareInterface
         );
     }
 
-    public function getAdvancedResultSet($q, $values, $per_page = 100)
+    public function getAdvancedResultSet($q, $values, ?int $per_page = 100)
     {
         $page = $_GET['page'] ?? 1;
-        $per_page = $_GET['per_page'] ?? $per_page;
+        $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
         if (!is_numeric($page) && $page < 1 ){
            throw new \Box_Exception('Invalid page number');
