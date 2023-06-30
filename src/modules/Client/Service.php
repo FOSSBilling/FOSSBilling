@@ -177,7 +177,7 @@ class Service implements InjectionAwareInterface
     public function getPairs($data)
     {
         $limit = $data['per_page'] ?? 30;
-        if (!is_numeric($limit) && $limit < 1 ){
+        if (!is_numeric($limit) || $limit < 1 ){
             throw new \Box_Exception('Invalid per page number');
         }
 
