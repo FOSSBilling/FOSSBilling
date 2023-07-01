@@ -152,16 +152,17 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
+    $message = htmlspecialchars($e->getMessage());
     if (APPLICATION_ENV === 'testing') {
-        echo $e->getMessage() . PHP_EOL;
+        echo $message . PHP_EOL;
 
         return;
     }
-    error_log($e->getMessage());
+    error_log($message);
 
     if (defined('BB_MODE_API')) {
         $code = $e->getCode() ?: 9998;
-        $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
+        $result = ['result' => null, 'error' => ['message' => $message, 'code' => $code]];
         echo json_encode($result);
 
         return false;
@@ -187,7 +188,7 @@ function exceptionHandler($e)
     } else {
         include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
         $errorPage = new \FOSSBilling\ErrorPage();
-        $errorPage->generatePage($e->getCode(), $e->getMessage());
+        $errorPage->generatePage($e->getCode(), $message);
     }
 }
 

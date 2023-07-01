@@ -137,7 +137,7 @@ class ErrorPage
     public function generatePage(int $code, string $message)
     {
         $error = $this->getCodeInfo($code);
-        $error['message'] ??= __trans('Uh-oh! You\'ve received a generic error message: :errorMessage', [':errorMessage' => '<code>' . $message . '</code>']);
+        $error['message'] ??= __trans('You\'ve received a generic error message: :errorMessage', [':errorMessage' => '<code>' . $message . '</code>']);
 
         $page = '
         <!DOCTYPE html>
