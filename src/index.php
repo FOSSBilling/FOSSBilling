@@ -36,7 +36,7 @@ if($url === '/run-patcher'){
         $patcher->applyCorePatches();
         die("Patches have been applied");
     } catch(\Exception $e) {
-        die("An error occured while attempting to apply patches: <br>" . $e->getMessage());
+        die("An error occurred while attempting to apply patches: <br>" . $e->getMessage());
     }
 }
 
