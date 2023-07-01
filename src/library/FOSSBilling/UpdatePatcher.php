@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -26,6 +27,13 @@ class UpdatePatcher implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function isOutdated(): bool
+    {
+        $patchLevel = $this->getPatchLevel();
+        $patches = $this->getPatches($patchLevel);
+        return count($patches) !== 0;
     }
 
     /**
@@ -165,7 +173,7 @@ class UpdatePatcher implements InjectionAwareInterface
         return intval($result) ?: null;
     }
 
-     /**
+    /**
      * Set the current patch level of FOSSBilling.
      *
      * @param int
@@ -195,7 +203,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function getPatches($patchLevel = 0): array
     {
         $patches = [
-            25 => function() {
+            25 => function () {
                 // Migrate email templates to be compatible with Twig 3.x.
                 $q = "UPDATE email_template SET content = REPLACE(content, '{% filter markdown %}', '{% apply markdown %}')";
                 $this->executeSql($q);
@@ -203,23 +211,23 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
                 $this->executeSql($q);
             },
-            26 => function() {
+            26 => function () {
                 // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
                 $q = "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
                 $this->executeSql($q);
             },
-            27 => function() {
+            27 => function () {
                 // Migration steps to create table to allow admin users to do password reset.
                 $q = "CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
                 $this->executeSql($q);
             },
-            28 => function() {
+            28 => function () {
                 // Patch to remove .html from email templates action code.
                 // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
                 $q = "UPDATE email_template SET action_code = REPLACE(action_code, '.html', '')";
                 $this->executeSql($q);
             },
-            29 => function() {
+            29 => function () {
                 // Patch to update email templates to use format_date/format_datetime filters
                 // instead of removed bb_date/bb_datetime filters.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
@@ -228,7 +236,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "UPDATE email_template SET content = REPLACE(content, 'bb_datetime', 'format_datetime')";
                 $this->executeSql($q);
             },
-            30 => function() {
+            30 => function () {
                 // Patch to remove the old guzzlehttp package, as we no longer
                 // use it. Also serves as an example for how to perform file action.
                 $fileActions = [
@@ -236,7 +244,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            31 => function() {
+            31 => function () {
                 // Patch to remove the old htaccess.txt file, and any old config.php backup.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
                 $fileActions = [
@@ -245,7 +253,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            32 => function() {
+            32 => function () {
                 // Patch to remove the old phpmailer package, some leftover
                 // admin_default files, and old Box_ classes we've removed or replaced.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1091
@@ -270,7 +278,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            33 => function() {
+            33 => function () {
                 // Patch to remove the old FileCache class that was replaced with Symfony's Cache component.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
                 $fileActions = [
@@ -278,7 +286,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            34 => function() {
+            34 => function () {
                 // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
                 $q = "ALTER TABLE session ADD fingerprint TEXT;";
                 $this->executeSql($q);
@@ -286,7 +294,7 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, function($key) use ($patchLevel) {
+        return array_filter($patches, function ($key) use ($patchLevel) {
             return $key > $patchLevel;
         }, ARRAY_FILTER_USE_KEY);
     }
