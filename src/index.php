@@ -11,7 +11,7 @@
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
-$url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+$url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 $http_err_code = $_GET['_errcode'] ?? null;
 
 $admin_prefix = $di['config']['admin_area_prefix'];
@@ -21,6 +21,23 @@ if (0 === strncasecmp($url, $admin_prefix, strlen($admin_prefix))) {
 } else {
     $appUrl = $url;
     $app = new Box_AppClient();
+}
+
+if($url === '/run-patcher'){
+    $patcher = new FOSSBilling\UpdatePatcher;
+    $patcher->setDi($di);
+
+    if(!$patcher->isOutdated()){
+        die("There are no patches to apply");
+    }
+
+    try {
+        $patcher->applyConfigPatches();
+        $patcher->applyCorePatches();
+        die("Patches have been applied");
+    } catch(\Exception $e) {
+        die("An error occured while attempting to apply patches: <br>" . $e->getMessage());
+    }
 }
 
 $app->setUrl($appUrl);
