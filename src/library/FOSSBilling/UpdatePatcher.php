@@ -71,6 +71,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['rate_span_login'] ??= 60;
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
+        $newConfig['api']['rate_limit_whitelist'] ??= [];
 
         // Remove depreciated config keys/subkeys.
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
