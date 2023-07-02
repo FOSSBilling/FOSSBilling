@@ -153,22 +153,22 @@ class Service
 
         return [
             'www' => $baseUrl,
-            'name' => $results['company_name'] ?? null,
-            'email' => $results['company_email'] ?? null,
-            'tel' => $results['company_tel'] ?? null,
+            'name' => isset($results['company_name']) ? htmlspecialchars($results['company_name'], ENT_QUOTES, 'UTF-8') : null,
+            'email' => isset($results['company_email']) ? htmlspecialchars($results['company_email'], ENT_QUOTES, 'UTF-8') : null,
+            'tel' => isset($results['company_tel']) ? htmlspecialchars($results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
             'signature' => $results['company_signature'] ?? null,
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
             'favicon_url' => $faviconUrl,
-            'address_1' => $results['company_address_1'] ?? null,
-            'address_2' => $results['company_address_2'] ?? null,
-            'address_3' => $results['company_address_3'] ?? null,
+            'address_1' => isset($results['company_address_1']) ? htmlspecialchars($results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
+            'address_2' => isset($results['company_address_2']) ? htmlspecialchars($results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
+            'address_3' => isset($results['company_address_3']) ? htmlspecialchars($results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
             'account_number' => $results['company_account_number'] ?? null,
-            'number' => $results['company_number'] ?? null,
+            'number' => isset($results['company_number']) ? htmlspecialchars($results['company_number'], ENT_QUOTES, 'UTF-8') : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
             'tos' => $results['company_tos'] ?? null,
-            'vat_number' => $results['company_vat_number'] ?? null,
+            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars($results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
         ];
     }
 
