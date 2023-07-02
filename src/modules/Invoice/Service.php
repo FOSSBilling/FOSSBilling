@@ -1165,6 +1165,7 @@ class Service implements InjectionAwareInterface
 
     public function generatePDF($hash, $identity)
     {
+        $config = $this->di['config'];
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
         if (!$invoice instanceof \Model_Invoice) {
             throw new \Box_Exception('Invoice not found');
@@ -1177,28 +1178,17 @@ class Service implements InjectionAwareInterface
             $currencyCode = $client->currency;
         }
 
-        $config = $this->di['config'];
         $locale = $config['i18n']['locale'];
         $timezone = $config['i18n']['timezone'];
         $date_format = strtoupper($config['i18n']['date_format']);
         $time_format = strtoupper($config['i18n']['time_format']);
         $datetime_pattern = $config['i18n']['datetime_pattern'] ?? null;
+        $format = new \IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
+
         $invoice = $this->toApiArray($invoice, false, $identity);
-        $systemService = $this->di['mod_service']('System');
-        $company = $systemService->getCompany();
+        $company = $this->di['mod_service']('System')->getCompany();
 
-        $CustomCSSPath  = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR . 'custom-pdf.css';
-        $DefaultCSSPath = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR . 'default-pdf.css';
-
-        if (file_exists($CustomCSSPath)) {
-            $CSS = file_get_contents($CustomCSSPath);
-        } else {
-            $CSS = file_get_contents($DefaultCSSPath);
-        }
-
-        if (empty($CSS)) {
-            $CSS = file_get_contents($DefaultCSSPath);
-        }
+        $CSS = $this->getPdfCss();
 
         $pdf = new Dompdf();
         $options = $pdf->getOptions();
@@ -1207,131 +1197,89 @@ class Service implements InjectionAwareInterface
         $sellerLines = 0;
         $buyerLines = 0;
 
-        $html = '<!DOCTYPE html>
-                  <html>
-                  <head>
-                  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>';
-        $html .= '<title>' . $invoice['serie_nr'] . '</title>';
-        $html .= "<style>
-                  $CSS
-                  </style>
-                </head>
-                <body>";
-
-        if (isset($company['logo_url']) && !empty($company['logo_url'])) {
-            $url = parse_url($company['logo_url'], PHP_URL_PATH);
-            // prevent openbasedir error from preventing pdf creation when debug mode is enabled
-            if (@!file_exists($url)) {
-                $url = $_SERVER['DOCUMENT_ROOT'] . $url;
-                if (!file_exists($url)) {
-                    // Assume the URL points to an image not hosted on this server
-                    $url = $company['logo_url'];
-                    $options->set('isRemoteEnabled', true);
-                }
-            }
-            // Workaround to get SVG images to render. Please see https://github.com/dompdf/dompdf/issues/320
-            if (str_ends_with($url, '.svg')) {
-                $html .= '<img src="data:image/svg+xml;base64,' . base64_encode(file_get_contents($url)) . '" height="50" class="CompanyLogo"></img>';
-            } else {
-                $html .= '<img src="' . $url . '" height="50" class="CompanyLogo"></img>';
-            }
-            $html .= '<hr class="Rounded">';
+        if (!empty($company['logo_url'])) {
+            [$logoSource, $remote] = $this->getPdfLogoSource($company['logo_url']);
+            $options->set('isRemoteEnabled', $remote);
+            $logoHtml = '<img src="' . $logoSource . '" height="50" class="CompanyLogo"></img>';
+        } else {
+            $logoHtml = '';
         }
 
-        $format = new \IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone , null, $datetime_pattern);
+        $html =
+            "<!DOCTYPE html>
+        <html>
+        <head>
+            <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+            <title>" . $invoice['serie_nr'] . "</title>
+            <style>
+                $CSS
+            </style>
+        </head>
+        <body>
+            $logoHtml
+            <hr class='Rounded'>
+            <div class='InvoiceInfo'>
+                <p>Invoice number: " . $invoice['serie_nr'] . "</p>
+                <p>Invoice date: " . $format->format(strtotime($invoice['created_at'])) . "</p>
+                <p>Due date: " . $format->format(strtotime($invoice['due_at'])) . "</p>
+                <p>Invoice status: " . ucfirst($invoice['status']) . "</p>
+            </div>
 
+            <h3 class='CompanyInfo'>Company</h3>
+            <div class='CompanyInfo'>" . $this->getSellerPdfHtml($invoice, $sellerLines) . "</div>
 
-        $html .= '<div class="InvoiceInfo">';
-        $html .= '<p>Invoice number: ' . $invoice['serie_nr'] . '</p>';
-        $html .= '<p>Invoice date: ' . $format->format(strtotime($invoice['created_at'])) . '</p>';
-        $html .= '<p>Due date: ' . $format->format(strtotime($invoice['due_at'])) . '</p>';
-        $html .= '<p>Invoice status: ' . ucfirst($invoice['status']) . '</p>';
-        $html .= '</div>';
+            <h3 class='ClientInfo'>Client</h3>
+            <div class='ClientInfo'>" . $this->getBuyerPdfHtml($invoice, $buyerLines) . "</div>
+            <div class='Breakdown' style='top: " . (($buyerLines >= $sellerLines) ? (325 + (25 * $buyerLines)) : (325 + (25 * $sellerLines))) . "px'
+                <table style='width:100%'>
+                <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Quantity & Price</th>
+                    <th>Total</th>
+                </tr>
+        ";
 
-        $html .= '<h3 class="CompanyInfo">Company</h3>';
-        $html .= '<div class="CompanyInfo">';
-        $sellerData = [
-            'Name' => $invoice['seller']['company'],
-            'Address' => $invoice['seller']['address'],
-            'Company Vat' => $invoice['seller']['company_vat'],
-            'Company Number' => $invoice['seller']['company_number'],
-            'Phone' => $invoice['seller']['phone'],
-            'Email' => $invoice['seller']['email'],
-        ];
-        foreach ($sellerData as $label => $data) {
-            if (is_string($data)) {
-                $data = trim($data);
-                if (!empty($data)) {
-                    $html .= "<p>$label: $data</p>";
-                    $sellerLines++;
-                }
-            }
-        }
-        $html .= '</div>';
-
-        $html .= '<h3 class="ClientInfo">Client</h3>';
-        $html .= '<div class="ClientInfo">';
-        $buyerData = [
-            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
-            'Company' => $invoice['buyer']['company'],
-            'Address' => $invoice['buyer']['address'],
-            'Phone' => $invoice['buyer']['phone'],
-        ];
-        foreach ($buyerData as $label => $data) {
-            if (is_string($data)) {
-                $data = trim($data);
-                if (!empty($data)) {
-                    $html .= "<p>$label: $data</p>";
-                    $buyerLines++;
-                }
-            }
-        }
-        $top = ($buyerLines >= $sellerLines) ? (325 + (25 * $buyerLines)) : (325 + (25 * $sellerLines));
-        $html .= '</div>';
-        $html .= '<div class="Breakdown" style="top: ' . $top . 'px">
-        <table style="width:100%">
-        <tr>
-            <th>#</th>
-            <th>Product</th>
-            <th>Quantity & Price</th>
-            <th>Total</th>
-        </tr>';
         $nr = 1;
         foreach ($invoice['lines'] as $row) {
-            $html .= '<tr>';
-            $html .= '<th>' . $nr++ . '</th>';
-            $html .= '<th>' . $row['title'] . '</th>';
-            $html .= '<th>' . $row['quantity'] . 'x ' . $this->money($row['price'], $currencyCode) . '</th>';
-            $html .= '<th>' . $this->money($row['total'], $currencyCode) . '</th>';
-            $html .= '</tr>';
+            $html .=
+            "<tr>
+                <th>" . $nr++ . "</th>
+                <th>" . $row['title'] . "</th>
+                <th>" . $row['quantity'] . 'x ' . $this->money($row['price'], $currencyCode) . "</th>
+                <th>" . $this->money($row['total'], $currencyCode) . "</th>
+            </tr>";
         }
 
-        $html .= '<tr>';
-        $html .= '<th colspan="4">___________________________________________________________________________________________</th>';
-        $html .= '</tr>';
+        $html .=
+            "<tr>
+            <th colspan='4'>___________________________________________________________________________________________</th>
+        </tr>";
 
         if ($invoice['tax'] > 0) {
-            $html .= '<tr>';
-            $html .= '<th class="right" colspan="3">' . $invoice['taxname'] . ' ' . $invoice['taxrate'] . '% Tax:</th>';
-            $html .= '<th>' . $invoice['tax'] . $currencyCode . '</th>';
-            $html .= '</tr>';
+            $html .=
+            "<tr>
+                <th class='right' colspan='3'>" . $invoice['taxname'] . " " . $invoice['taxrate'] . "% Tax:</th>
+                <th>" . $invoice['tax'] . $currencyCode . "</th>
+            </tr>";
         }
 
         if (isset($invoice['discount']) && $invoice['discount'] > 0) {
-            $html .= '<tr>';
-            $html .= '<th class="right" colspan="3">Discount:</th>';
-            $html .= '<th>' . $invoice['discount'] . $currencyCode . '</th>';
-            $html .= '</tr>';
+            $html .=
+            "<tr>
+                <th class='right' colspan='3'>Discount:</th>
+                <th>" . $invoice['discount'] . $currencyCode . "</th>
+            </tr>";
         }
 
-        $html .= '<tr>';
-        $html .= '<th class="right" colspan="3">Total:</th>';
-        $html .= '<th>' . $invoice['total'] . $currencyCode . '</th>';
-        $html .= '</tr>';
-
-        $html .= '</table>';
-        $html .= '</body>
-                  </html>';
+        $html .=
+        "<tr>
+            <th class='right' colspan='3'>Total:</th>
+            <th>" . $invoice['total'] . $currencyCode . "</th>
+        </tr>
+        </table>
+        </body>
+        </html>";
 
         $pdf->setOptions($options);
         $pdf->loadHtml($html);
@@ -1546,4 +1494,88 @@ class Service implements InjectionAwareInterface
         }
         return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
     }
+
+    // Start of PDF related functions. (TODO: Relocate / remove these once we are using twig templates)
+    private function getPdfCss(): string
+    {
+        $basePath = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR;
+
+        if (file_exists($basePath . 'custom-pdf.css')) {
+            $CSS = file_get_contents($basePath . 'custom-pdf.css');
+        } else {
+            $CSS = file_get_contents($basePath . 'default-pdf.css');
+        }
+
+        if (empty($CSS)) {
+            $CSS = file_get_contents($basePath . 'default-pdf.css');
+        }
+
+        return $CSS;
+    }
+
+    private function getPdfLogoSource(string $originalUrl): array
+    {
+        $source = parse_url($originalUrl, PHP_URL_PATH);
+        $remote = false;
+        // prevent openbasedir error from preventing pdf creation when debug mode is enabled
+        if (@!file_exists($source)) {
+            $source = $_SERVER['DOCUMENT_ROOT'] . $source;
+            if (!file_exists($source)) {
+                // Assume the URL points to an image not hosted on this server
+                $source = $originalUrl;
+                $remote = true;
+            }
+        }
+
+        if (str_ends_with($source, '.svg')) {
+            $source = 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($source));
+            $remote = false; // The contents of the SVG are directly added to the page, so we can safely disable remote files for the PDFs.
+        }
+        return [$source, $remote];
+    }
+
+    private function getSellerPdfHtml(array $invoice, int &$lines)
+    {
+        $html = '';
+        $sourceData = [
+            'Name' => $invoice['seller']['company'],
+            'Address' => $invoice['seller']['address'],
+            'Company Vat' => $invoice['seller']['company_vat'],
+            'Company Number' => $invoice['seller']['company_number'],
+            'Phone' => $invoice['seller']['phone'],
+            'Email' => $invoice['seller']['email'],
+        ];
+        foreach ($sourceData as $label => $data) {
+            if (is_string($data)) {
+                $data = trim($data);
+                if (!empty($data)) {
+                    $html .= "<p>$label: $data</p>";
+                    $lines++;
+                }
+            }
+        }
+        return $html;
+    }
+
+    private function getBuyerPdfHtml(array $invoice, int &$lines)
+    {
+        $html = '';
+        $sourceData = [
+            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
+            'Company' => $invoice['buyer']['company'],
+            'Address' => $invoice['buyer']['address'],
+            'Phone' => $invoice['buyer']['phone'],
+        ];
+        foreach ($sourceData as $label => $data) {
+            if (is_string($data)) {
+                $data = trim($data);
+                if (!empty($data)) {
+                    $html .= "<p>$label: $data</p>";
+                    $lines++;
+                }
+            }
+        }
+        return $html;
+    }
+    // End of PDF related functions
 }
