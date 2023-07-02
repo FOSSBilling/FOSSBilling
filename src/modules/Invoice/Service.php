@@ -1519,16 +1519,16 @@ class Service implements InjectionAwareInterface
         $remote = false;
         // prevent openbasedir error from preventing pdf creation when debug mode is enabled
         if (@!file_exists($source)) {
-            $url = $_SERVER['DOCUMENT_ROOT'] . $source;
-            if (!file_exists($url)) {
+            $source = $_SERVER['DOCUMENT_ROOT'] . $source;
+            if (!file_exists($source)) {
                 // Assume the URL points to an image not hosted on this server
-                $url = $originalUrl;
+                $source = $originalUrl;
                 $remote = true;
             }
         }
 
-        if (str_ends_with($url, '.svg')) {
-            $source = 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($url));
+        if (str_ends_with($source, '.svg')) {
+            $source = 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($source));
             $remote = false; // The contents of the SVG are directly added to the page, so we can safely disable remote files for the PDFs.
         }
         return [$source, $remote];
