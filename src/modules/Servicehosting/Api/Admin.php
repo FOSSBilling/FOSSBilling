@@ -272,6 +272,7 @@ class Admin extends \Api_Abstract
      * @optional string $username - server API login username
      * @optional string $password - server API login password
      * @optional string $accesshash - server API login access hash
+     * @optional string $userprefix - prefix for created user
      * @optional string $port - server API port
      * @optional bool $secure - flag to define whether to use secure connection (https) to server or not (http)
      * @optional bool $active - flag to enable/disable server
@@ -289,6 +290,10 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
+
+        $data['config'] = [
+            'userprefix' => $data['userprefix'] ?? null,
+        ];
 
         return (bool) $service->updateServer($model, $data);
     }

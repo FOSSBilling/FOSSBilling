@@ -19,6 +19,7 @@ abstract class Server_Manager
         'username'   =>  NULL,
         'password'   =>  NULL,
         'accesshash' =>  NULL,
+        'config'     =>  NULL,
         'port'       =>  NULL,
     );
 
@@ -33,6 +34,7 @@ abstract class Server_Manager
      *                       - 'username': Username for authenticating the connection.
      *                       - 'password': Password for authenticating the connection.
      *                       - 'accesshash': Access hash for authenticating the connection. (API Key)
+     *                       - 'config': Optional configuration for the server manager.
      *                       - 'port': Custom port number for the connection.
      */
     public function __construct($options)
@@ -66,6 +68,13 @@ abstract class Server_Manager
         }
 
         /**
+         * Custom configuration.
+         */
+        if (isset($options['config'])) {
+            $this->_config['config'] = $options['config'];
+        }
+
+        /**
          * Custom connection port to API.
          * If not provided, using default server manager port
          */
@@ -88,7 +97,7 @@ abstract class Server_Manager
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
         $username = substr($username, 0, 7);
         $randnum = random_int(0, 9);
-        return $username . $randnum;
+        return $this->_config['config']['userprefix'] . $username . $randnum;
     }
 
     /**
