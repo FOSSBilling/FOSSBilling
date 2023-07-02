@@ -35,8 +35,8 @@ class ServicePayGateway implements InjectionAwareInterface
         $search = $data['search'] ?? null;
         $params = [];
         if ($search) {
-            $sql .= 'AND m.name LIKE :search';
-            $params['search'] = "%$search%";
+            $sql .= 'AND name LIKE :search';
+            $params[':search'] = "%$search%";
         }
 
         $sql .= ' ORDER by gateway ASC';

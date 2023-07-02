@@ -290,7 +290,7 @@ class ServiceTransactionTest extends \BBTestCase
      */
     public function testgetSearchQuery($data, $expectedParams, $expectedStringPart)
     {
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);

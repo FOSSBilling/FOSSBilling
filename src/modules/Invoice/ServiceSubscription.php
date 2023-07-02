@@ -128,7 +128,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $params = [];
         if ($status) {
             $sql .= ' AND status = :status';
-            $params['status'] = $status;
+            $params[':status'] = $status;
         }
 
         if ($invoice_id) {
@@ -138,43 +138,43 @@ class ServiceSubscription implements InjectionAwareInterface
 
         if ($gateway_id) {
             $sql .= ' AND gateway_id = :gateway_id';
-            $params['gateway_id'] = $gateway_id;
+            $params[':gateway_id'] = $gateway_id;
         }
 
         if ($client_id) {
-            $sql .= ' AMD client_id  = :client_id';
-            $params['client_id'] = $client_id;
+            $sql .= ' AND client_id  = :client_id';
+            $params[':client_id'] = $client_id;
         }
 
         if ($currency) {
             $sql .= ' AND currency =  :currency ';
-            $params['currency'] = $currency;
+            $params[':currency'] = $currency;
         }
 
         if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = $date_from;
+            $sql .= ' AND UNIX_TIMESTAMP(created_at) >= :date_from';
+            $params[':date_from'] = $date_from;
         }
 
         if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = $date_to;
+            $sql .= ' AND UNIX_TIMESTAMP(created_at) <= :date_to';
+            $params[':date_to'] = $date_to;
         }
 
         if ($search) {
-            $sql .= ' AND sid = :sid OR m.id = :mid ';
-            $params['sid'] = $search;
-            $params['mid'] = $search;
+            $sql .= ' AND sid = :sid OR id = :mid ';
+            $params[':sid'] = $search;
+            $params[':mid'] = $search;
         }
 
         if ($id) {
             $sql .= ' AND id = :id';
-            $params['id'] = $id;
+            $params[':id'] = $id;
         }
 
         if ($sid) {
             $sql .= ' AND sid = :sid';
-            $params['sid'] = $sid;
+            $params[':sid'] = $sid;
         }
 
         $sql .= ' ORDER BY id DESC';

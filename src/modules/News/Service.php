@@ -59,12 +59,12 @@ class Service
 
         if (null !== $status) {
             $sql .= ' AND status = :status';
-            $params['status'] = $status;
+            $params[':status'] = $status;
         }
 
         if (null !== $search) {
-            $sql .= ' AND (m.title LIKE :search OR m.content LIKE :search)';
-            $params['search'] = '%' . $search . '%';
+            $sql .= ' AND (title LIKE :search OR content LIKE :search)';
+            $params[':search'] = '%' . $search . '%';
         }
 
         $sql .= ' ORDER BY created_at DESC';
