@@ -166,15 +166,15 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = simplexml_load_string($data);
 
         if (isset($result['status']) && strtolower($result['status']) == 'error') {
-            error_log("Namecheap errrr: " . $result['error']);
+            error_log("Namecheap error: " . PHP_EOL . $result['error']);
             $placeholders = ['action' => $params['Command'], 'type' => 'Namecheap'];
-			throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($result['status']) && strtolower($result['status']) == 'failed') {
-            error_log("Namecheap errrr: " . $result['actionstatusdesc']);
+            error_log("Namecheap error: " . PHP_EOL . $result['actionstatusdesc']);
             $placeholders = ['action' => $params['Command'], 'type' => 'Namecheap'];
-			throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         return $result;
@@ -251,7 +251,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
             $placeholders = ['action' => __trans('update nameservers'), 'type' => 'Namecheap'];
-			throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         return True;
     }
@@ -348,7 +348,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         if (!isset($result->CommandResponse->DomainContactsResult)) {
             $placeholders = ['action' => __trans('retrieve domain details'), 'type' => 'Namecheap'];
-			throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         $contacts = $result->CommandResponse->DomainContactsResult;
