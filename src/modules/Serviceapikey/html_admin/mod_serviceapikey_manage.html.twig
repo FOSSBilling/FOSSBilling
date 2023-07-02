@@ -17,7 +17,7 @@
 <div class="card-footer text-center">
     {{ order_actions }}
     <a class="btn btn-primary api-link"
-        href="{{ 'api/admin/serviceapikey/reset'|link({ 'id': service.id, 'CSRFToken': CSRFToken }) }}"
+        href="{{ 'api/admin/serviceapikey/reset'|link({ 'order_id': order.id, 'CSRFToken': CSRFToken }) }}"
         data-api-confirm="{{ 'Are you sure?'|trans }}"
         data-api-reload="1">
         <svg class="icon" width="24" height="24">
