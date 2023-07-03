@@ -3,6 +3,7 @@
 @import "flags";
 @import "~tom-select/dist/css/tom-select.bootstrap5.css";
 @import "theme_settings";
+@import 'sortable-tablesort/sortable-base.css';
 
 .page {
     min-height: calc(100vh - 2px);
