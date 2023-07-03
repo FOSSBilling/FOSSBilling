@@ -115,7 +115,7 @@ class AdminTest extends \BBTestCase {
         $data = array();
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(2684);
-        $this->expectExceptionMessage('Form field type is not valid');
+        $this->expectExceptionMessage('Form field type is invalid');
         $this->api->add_field($data);
     }
 

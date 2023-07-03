@@ -81,7 +81,7 @@ class Service implements InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$this->isPeriodEnabledForProduct($product, $data['period'])) {
-                throw new \Box_Exception('Selected billing period is not valid');
+                throw new \Box_Exception('Selected billing period is invalid');
             }
         }
 
@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
                         $this->di['validator']->checkRequiredParamsForArray($required, $ac);
 
                         if (!$this->isPeriodEnabledForProduct($addon, $ac['period'])) {
-                            throw new \Box_Exception('Selected billing period is not valid for the selected addon');
+                            throw new \Box_Exception('Selected billing period is invalid for the selected addon');
                         }
                     }
                     $ac['parent_id'] = $product->id;
@@ -482,7 +482,7 @@ class Service implements InjectionAwareInterface
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
         if (0 == count($ca['items'])) {
-            throw new \Box_Exception('Can not checkout empty cart.');
+            throw new \Box_Exception('Can not checkout an empty cart');
         }
 
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');

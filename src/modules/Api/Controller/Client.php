@@ -245,7 +245,7 @@ class Client implements InjectionAwareInterface
     {
         $allowed = ['guest', 'client', 'admin'];
         if (!in_array($role, $allowed)) {
-            throw new \Box_Exception('Unknown API call', null, 701);
+            new \Box_Exception('Unknown API call :call', [':call' => ''], 701);
         }
 
         return true;
@@ -324,7 +324,7 @@ class Client implements InjectionAwareInterface
         }
 
         if (!is_null($expectedToken) && $expectedToken !== $token) {
-            throw new \Box_Exception('CSRF token invalid.', null, 403);
+            throw new \Box_Exception('CSRF token invalid', null, 403);
         }
     }
 }

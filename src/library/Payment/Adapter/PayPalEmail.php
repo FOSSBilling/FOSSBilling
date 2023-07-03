@@ -74,7 +74,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
-            throw new Payment_Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is invalid');
         }
 
         $ipn = $data['post'];

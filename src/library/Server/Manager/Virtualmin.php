@@ -48,7 +48,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($result['status']) && $result['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Connection to server failed');
+    		throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'Virtualmin']);
     	}
     }
 
@@ -160,17 +160,17 @@ class Server_Manager_Virtualmin extends Server_Manager
 
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support username changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Virtualmin', ':action:' => __trans('changing the account IP')]);
     }
 
     public function changeAccountDomain(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support domain changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Virtualmin', ':action:' => __trans('changing the account IP')]);
     }
 
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support ip changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Virtualmin', ':action:' => __trans('changing the account IP')]);
     }
 
     /**
@@ -307,7 +307,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to create reseller\'s account');
+			$placeholders = ['action' => __trans('create reseller account'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -388,7 +389,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to create account');
+			$placeholders = ['action' => __trans('create account'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -410,7 +412,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to suspend user\'s account');
+			$placeholders = ['action' => __trans('suspend account'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -432,7 +435,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to unsuspend user\'s account');
+			$placeholders = ['action' => __trans('unsuspend account'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -455,7 +459,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to change user\'s password');
+			$placeholders = ['action' => __trans('change account password'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -477,7 +482,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to delete user\'s account');
+			$placeholders = ['action' => __trans('cancel account'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -506,7 +512,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to modify domain details');
+			$placeholders = ['action' => __trans('modify domain details'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -533,7 +540,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to enable features');
+			$placeholders = ['action' => __trans('enable features'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -560,7 +568,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to disable features');
+			$placeholders = ['action' => __trans('disable features'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 
@@ -647,7 +656,8 @@ class Server_Manager_Virtualmin extends Server_Manager
     	if (isset($response['status']) && $response['status'] == 'success') {
     		return true;
     	} else {
-    		throw new Server_Exception('Failed to create reseller\'s account');
+			$placeholders = ['action' => __trans('create reseller account'), 'type' => 'Virtualmin'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	}
     }
 }

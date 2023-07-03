@@ -280,7 +280,8 @@ class Tools
 
         if (!filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) {
             if ($throw) {
-                throw new \Box_Exception('Email address is invalid');
+                $friendlyName = ucfirst(__trans('Email address'));
+                throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
             } else {
                 return false;
             }

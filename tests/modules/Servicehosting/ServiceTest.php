@@ -29,8 +29,8 @@ class ServiceTest extends \BBTestCase {
         return array(
             array('server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701),
             array('hosting_plan_id', 'Hosting product is not configured completely. Configure hosting plan for hosting product.', 702),
-            array('sld', 'Domain name is not valid.', 703),
-            array('tld', 'Domain extension is not valid.', 704),
+            array('sld', 'Domain name is invalid.', 703),
+            array('tld', 'Domain extension is invalid.', 704),
         );
     }
 
@@ -560,7 +560,7 @@ class ServiceTest extends \BBTestCase {
         $data = array();
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Account username is missing or is not valid');
+        $this->expectExceptionMessage('Account username is missing or is invalid');
         $this->service->changeAccountUsername($orderModel, $model, $data);
     }
 
@@ -613,7 +613,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Account ip is missing or is not valid');
+        $this->expectExceptionMessage('Account ip is missing or is invalid');
         $this->service->changeAccountIp($orderModel, $model, $data);
     }
 
@@ -721,7 +721,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Account password is missing or is not valid');
+        $this->expectExceptionMessage('Account password is missing or is invalid');
         $this->service->changeAccountPassword($orderModel, $model, $data);
     }
 
@@ -1019,7 +1019,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage(sprintf('Server manager %s is not valid', $hostingServerModel->manager));
+        $this->expectExceptionMessage(sprintf('Server manager %s is invalid', $hostingServerModel->manager));
         $this->service->getServerManager($hostingServerModel);
     }
 

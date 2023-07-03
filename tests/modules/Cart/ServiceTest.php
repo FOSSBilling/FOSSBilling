@@ -861,7 +861,7 @@ class ServiceTest extends \BBTestCase
         $productModel->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Selected billing period is not valid');
+        $this->expectExceptionMessage('Selected billing period is invalid');
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 

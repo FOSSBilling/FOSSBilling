@@ -27,7 +27,7 @@ class Server_Manager_CWP extends Server_Manager
 		if (empty($this->_config['accesshash'])) {
 			throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'API Key / Access Hash']);
 		} else {
-			$this->_config['accesshash'] = preg_replace("'(\r|\n)'", "", $this->_config['accesshash']);
+			$this->_config['accesshash'] = trim($this->_config['accesshash']);
 		}
 
 		if (empty($this->_config['port'])) {
@@ -83,7 +83,7 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			throw new Server_Exception('Failed to connect to server');
+			throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'CWP']);
 		}
 	}
 
@@ -140,7 +140,8 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			throw new Server_Exception('Failed to create account!');
+			$placeholders = ['action' => __trans('create account'), 'type' => 'CWP'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
 
@@ -156,7 +157,8 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			throw new Server_Exception('Failed to suspend account!');
+			$placeholders = ['action' => __trans('suspend account'), 'type' => 'CWP'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
 
@@ -172,7 +174,8 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			throw new Server_Exception('Failed to unsuspend account!');
+			$placeholders = ['action' => __trans('unsuspend account'), 'type' => 'CWP'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
 
@@ -191,7 +194,8 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			throw new Server_Exception('Failed to cancel / delete account!');
+			$placeholders = ['action' => __trans('cancel account'), 'type' => 'CWP'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
 
@@ -210,7 +214,8 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('changepack', $data)) {
 			return true;
 		} else {
-			throw new Server_Exception('Failed to change the account package!');
+			$placeholders = ['action' => __trans('change account package'), 'type' => 'CWP'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
 
@@ -227,7 +232,8 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('changepass', $data)) {
 			return true;
 		} else {
-			throw new Server_Exception('Failed to change the account password!');
+			$placeholders = ['action' => __trans('change account password'), 'type' => 'CWP'];
+			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
 
@@ -236,17 +242,17 @@ class Server_Manager_CWP extends Server_Manager
 	 */
 	public function changeAccountUsername(Server_Account $a, $new)
 	{
-		throw new Server_Exception('CWP does not support username changes');
+		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('username changes')]);
 	}
 
 	public function changeAccountDomain(Server_Account $a, $new)
 	{
-		throw new Server_Exception('CWP does not support changing the primary domain name');
+		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account domain')]);
 	}
 
 	public function changeAccountIp(Server_Account $a, $new)
 	{
-		throw new Server_Exception('CWP does not support changing the IP');
+		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account IP')]);
 	}
 
 	/**

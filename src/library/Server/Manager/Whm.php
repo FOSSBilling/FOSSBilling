@@ -415,29 +415,31 @@ class Server_Manager_Whm extends Server_Manager
         $json = json_decode($body);
 
         if(!is_object($json)) {
-            $msg = sprintf('Function call "%s" response is not valid, body: %s', $action, $body);
+            $msg = sprintf('Function call "%s" response is invalid, body: %s', $action, $body);
             $this->getLog()->crit($msg);
-            throw new Server_Exception($msg);
+
+            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if(isset($json->cpanelresult) && isset($json->cpanelresult->error)) {
-            $msg = sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error);
-            $this->getLog()->crit($msg);
-            throw new Server_Exception($msg);
+            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error));
+            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if(isset($json->data) && isset($json->data->result) && $json->data->result == '0') {
-            $msg = sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason);
-            $this->getLog()->crit($msg);
-            throw new Server_Exception($msg);
+            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason));
+            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if(isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
-            $msg = sprintf('WHM server response error calling action %s: "%s"',$action, $json->result[0]->statusmsg);
-            $this->getLog()->crit($msg);
-            throw new Server_Exception($msg);
+            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"',$action, $json->result[0]->statusmsg));
+            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if(isset($json->status) && $json->status != '1') {
-            $msg = sprintf('WHM server response error calling action %s: "%s"',$action, $json->statusmsg);
-            $this->getLog()->crit($msg);
-            throw new Server_Exception($msg);
+            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"',$action, $json->statusmsg));
+            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         return $json;

@@ -44,7 +44,7 @@ class Server_Manager_Plesk extends Server_Manager
         $stats = $this->_client->server()->getStatistics();
 
         if ($stats->other->uptime < 0) {
-            throw new Server_Exception('Connection to server failed');
+            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'Plesk']);
         }
 
         return true;
@@ -52,7 +52,7 @@ class Server_Manager_Plesk extends Server_Manager
     
     public function synchronizeAccount(Server_Account $a)
     {
-        throw new Server_Exception('The server adapter does not support account synchronization');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
     }
 
     public function createAccount(Server_Account $a)
@@ -83,7 +83,8 @@ class Server_Manager_Plesk extends Server_Manager
     	$id = $this->_createClient($a);
         $client = $a->getClient();
     	if (!$id) {
-    		throw new Server_Exception('Failed to create new account');
+    		$placeholders = ['action' => __trans('create account'), 'type' => 'Plesk'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	} else {
             $client->setId((string)$id);
     	}
@@ -197,7 +198,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support username changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
     }
     
     public function changeAccountDomain(Server_Account $a, $new)
@@ -224,7 +225,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support changing IP addresses');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('changing the account IP')]);
     }
 
     private function _getIps() {

@@ -141,7 +141,7 @@ final class Box_Installer
                     $admin_pass = $_POST['admin_pass'];
                     $admin_name = $_POST['admin_name'];
                     if (!$this->isValidAdmin($admin_email, $admin_pass, $admin_name)) {
-                        throw new Exception('Administrator\'s account is not valid');
+                        throw new Exception('Administrator\'s account is invalid');
                     }
 
                     $this->session->set('admin_email', $admin_email);
@@ -501,7 +501,7 @@ final class Box_Installer
         }
 
         if (!$this->isValidAdmin($ns->get('admin_email'), $ns->get('admin_pass'), $ns->get('admin_name'))) {
-            throw new Exception('Administrators account is not valid');
+            throw new Exception('Administrator\'s account is invalid');
         }
     }
 

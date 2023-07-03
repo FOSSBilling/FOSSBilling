@@ -62,11 +62,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
                 $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
+                throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
             $required = [
-                'owndomain_tld' => 'Domain TLD is not valid.',
+                'owndomain_tld' => 'Domain TLD is invalid.',
                 'owndomain_sld' => 'Domain name is required.',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -79,7 +79,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
                 $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
+                throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
             $required = [
@@ -110,7 +110,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             if (!$validator->isSldValid($data['register_sld'])) {
                 $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
+                throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
             $required = [
@@ -518,7 +518,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function canBeTransferred(\Model_Tld $model, $sld)
     {
         if (empty($sld)) {
-            throw new \Box_Exception('Domain name is not valid');
+            throw new \Box_Exception('Domain name is invalid');
         }
 
         if (!$model->allow_transfer) {
@@ -539,13 +539,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function isDomainAvailable(\Model_Tld $model, $sld)
     {
         if (empty($sld)) {
-            throw new \Box_Exception('Domain name is not valid');
+            throw new \Box_Exception('Domain name is invalid');
         }
 
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
             $safe_dom = htmlspecialchars($sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
+            throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
         }
 
         if (!$model->allow_register) {

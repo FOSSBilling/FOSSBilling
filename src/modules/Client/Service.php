@@ -238,11 +238,11 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_numeric($amount)) {
-            throw new \Box_Exception('Funds amount is not valid');
+            throw new \Box_Exception('Funds amount is invalid');
         }
 
         if (empty($description)) {
-            throw new \Box_Exception('Funds description is not valid');
+            throw new \Box_Exception('Funds description is invalid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');

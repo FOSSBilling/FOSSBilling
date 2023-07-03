@@ -122,7 +122,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \FOS
 	*/
     public function recurrentPayment(Payment_Invoice $invoice)
     {
-        throw new Payment_Exception('Interkassa payment gateway do not support recurrent payments');
+        throw new Payment_Exception(':type: does not support :action:', [':type:' => 'Interkassa', ':action:' => __trans('reccurent payments')]);
     }
 
     /**
@@ -173,7 +173,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \FOS
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(!$this->isIpnValid($data)) {
-            throw new Payment_Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is invalid');
         }
 
         $ipn = $data['post'];

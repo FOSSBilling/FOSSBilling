@@ -85,7 +85,7 @@ class Admin extends \Api_Abstract
      *
      * @param string $_tpl - Template text to be parsed
      *
-     * @optional bool $_try - if true, will not throw error if template is not valid, returns _tpl string
+     * @optional bool $_try - if true, will not throw error if template is invalid, returns _tpl string
      * @optional int $_client_id - if passed client id, then client API will also be available
      *
      * @return string
@@ -176,7 +176,7 @@ class Admin extends \Api_Abstract
     {
         $updater = $this->di['updater'];
         if ('preview' !== $updater->getUpdateBranch() && !$updater->isUpdateAvailable()) {
-            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.', null, 930);
+            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         $new_version = $updater->getLatestVersion();

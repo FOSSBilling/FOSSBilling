@@ -112,7 +112,7 @@ class Admin extends \Api_Abstract
         }
 
         if (!array_key_exists($data['code'] ?? null, $service->getAvailableCurrencies())) {
-            throw new \Box_Exception('Currency code is not valid');
+            throw new \Box_Exception('Currency code is invalid');
         }
 
         $title = $data['title'] ?? null;

@@ -332,7 +332,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact = $domain->getContactRegistrar();
 
             if(strlen(trim($contact->getCompanyNumber())) == 0 ) {
-                throw new Registrar_Exception('Valid contact company number is required while registering AU domain name');
+                throw new Registrar_Exception('A valid contact company number is mandatory for registering an .AU domain name');
             }
             $params['attr-name1'] = 'id-type';
             $params['attr-value1'] = 'ACN';
@@ -395,7 +395,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         );
         $data = $this->_makeRequest('domains/details', $params);
         if(!isset($data['domsecret'])) {
-            throw new Registrar_Exception('Domain EPP code can be retrieved from domain registrar');
+            $placeholders = ['action' => __trans('get the transfer code'), 'type' => 'ResellerClub'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         return $data['domsecret'];
     }
@@ -703,15 +704,21 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if(isset($json['status']) && $json['status'] == 'ERROR') {
-            throw new Registrar_Exception($json['message'], null, 101);
+            error_log("ResellerClub error: " . $json['message']);
+            $placeholders = ['action' => $url, 'type' => 'ResellerClub'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if(isset($json['status']) && $json['status'] == 'error') {
-            throw new Registrar_Exception($json['error'], null, 102);
+            error_log("ResellerClub error: " . $json['error']);
+            $placeholders = ['action' => $url, 'type' => 'ResellerClub'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         
         if(isset($json['status']) && $json['status'] == 'Failed') {
-            throw new Registrar_Exception($json['actionstatusdesc'], null, 103);
+            error_log("ResellerClub error: " . $json['actionstatusdesc']);
+            $placeholders = ['action' => $url, 'type' => 'ResellerClub'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         return $json;
@@ -873,7 +880,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if($tld == '.ru' || $tld == '.com.ru' || $tld == '.org.ru' || $tld == '.net.ru') {
             if(strlen(trim($client->getBirthday())) === 0 || strtotime($client->getBirthday()) === false) {
-                throw new Registrar_Exception('Valid contact birth date is required while registering RU domain name');
+                throw new Registrar_Exception('Valid contact birthdate is required while registering RU domain name');
             }
 
             if(strlen(trim($client->getDocumentNr())) === 0 ) {

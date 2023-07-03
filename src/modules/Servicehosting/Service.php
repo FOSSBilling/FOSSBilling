@@ -49,10 +49,10 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Hosting product is not configured completely. Configure hosting plan for hosting product.', null, 702);
         }
         if (!isset($data['sld']) || empty($data['sld'])) {
-            throw new \Box_Exception('Domain name is not valid.', null, 703);
+            throw new \Box_Exception('Domain name is invalid.', null, 703);
         }
         if (!isset($data['tld']) || empty($data['tld'])) {
-            throw new \Box_Exception('Domain extension is not valid.', null, 704);
+            throw new \Box_Exception('Domain extension is invalid.', null, 704);
         }
     }
 
@@ -252,7 +252,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['username']) || empty($data['username'])) {
-            throw new \Box_Exception('Account username is missing or is not valid');
+            throw new \Box_Exception('Account username is missing or is invalid');
         }
 
         $u = strtolower($data['username']);
@@ -274,7 +274,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
-            throw new \Box_Exception('Account ip is missing or is not valid');
+            throw new \Box_Exception('Account ip is missing or is invalid');
         }
 
         $ip = $data['ip'];
@@ -324,7 +324,7 @@ class Service implements InjectionAwareInterface
             !isset($data['password']) || !isset($data['password_confirm'])
             || $data['password'] != $data['password_confirm']
         ) {
-            throw new \Box_Exception('Account password is missing or is not valid');
+            throw new \Box_Exception('Account password is missing or is invalid');
         }
 
         $newPassword = $data['password'];
@@ -733,7 +733,7 @@ class Service implements InjectionAwareInterface
         $manager = $this->di['server_manager']($model->manager, $config);
 
         if (!$manager instanceof \Server_Manager) {
-            throw new \Box_Exception('Server manager :adapter is not valid', [':adapter' => $model->manager]);
+            throw new \Box_Exception('Server manager :adapter is invalid', [':adapter' => $model->manager]);
         }
 
         return $manager;

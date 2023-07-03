@@ -103,7 +103,8 @@ class Validate
     public function isBirthdayValid($birthday = '')
     {
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
-            throw new \Box_Exception('Birth date is invalid');
+            $friendlyName = ucfirst(__trans('Birthdate'));
+            throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
         return true;
     }

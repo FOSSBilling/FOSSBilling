@@ -76,7 +76,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         if (!isset($data['type']) || !$service->typeValidation($data['type'])) {
-            throw new \Box_Exception('Form field type is not valid', null, 2684);
+            throw new \Box_Exception('Form field type is invalid', null, 2684);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
             throw new \Box_Exception('This input type must have unique values', null, 3658);

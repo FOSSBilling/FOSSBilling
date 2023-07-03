@@ -893,7 +893,7 @@ class Admin extends \Api_Abstract
     {
         $required = [
             'name' => 'Tax name is missing',
-            'taxrate' => 'Tax rate is missing or is not valid',
+            'taxrate' => 'Tax rate is missing or is invalid',
         ];
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);

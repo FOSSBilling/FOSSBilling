@@ -76,7 +76,6 @@ class Payment_Adapter_Custom
 
     public function process($tx)
     {
-        //do processing
         return true;
     }
 }

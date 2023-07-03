@@ -181,7 +181,7 @@ class Guest extends \Api_Abstract
                     $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
 
                     if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
-                        throw new \Box_Exception('One or more of your selected addons are not valid for the associated product.');
+                        throw new \Box_Exception('One or more of your selected addons are invalid for the associated product.');
                     }
                 }
             }

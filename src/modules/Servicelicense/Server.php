@@ -84,7 +84,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         $model = $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
 
         if (!$model instanceof \Model_ServiceLicense) {
-            throw new \LogicException('Your license key is not valid.', 1005);
+            throw new \LogicException('Your license key is invalid.', 1005);
         }
 
         $model->pinged_at = date('Y-m-d H:i:s');
@@ -120,11 +120,11 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!$service->isValidVersion($model, $version)) {
-            throw new \LogicException(sprintf('Version "%s" is not valid for this license', $version), 1009);
+            throw new \LogicException(sprintf('Version "%s" is invalid for this license', $version), 1009);
         }
 
         if (!$service->isValidPath($model, $path)) {
-            throw new \LogicException(sprintf('Software install path "%s" is not valid for this license', $path), 1010);
+            throw new \LogicException(sprintf('Software install path "%s" is invalid for this license', $path), 1010);
         }
 
         $this->_result['licensed_to'] = $service->getOwnerName($model);

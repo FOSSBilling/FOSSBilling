@@ -392,7 +392,7 @@ class Service implements InjectionAwareInterface
                 return new $class_name();
             }
         }
-        error_log(sprintf('License #%s plugin %s is not valid', $model->id, $model->plugin));
+        error_log(sprintf('License #%s plugin %s is invalid', $model->id, $model->plugin));
 
         return null;
     }
