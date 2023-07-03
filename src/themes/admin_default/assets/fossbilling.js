@@ -25,12 +25,6 @@ coloris({
 
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (localStorage.getItem('theme') === 'dark') {
-    document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'))
-  } else {
-    document.body.removeAttribute("data-bs-theme")
-  }
-
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();

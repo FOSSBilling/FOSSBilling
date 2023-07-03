@@ -25,13 +25,19 @@
 </head>
 
 <body data-bs-theme="dark">
-    {% if not admin %}
     <script>
-        $(function () {
-            bb.redirect("{{ 'staff/login'|alink }}");
-        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'));
+        } else {
+            document.body.removeAttribute("data-bs-theme");
+        }
+
+        {% if not admin %}
+            $(function () {
+                bb.redirect("{{ 'staff/login'|alink }}");
+            });
+        {% else %}
     </script>
-    {% else %}
     {% if hide_menu %}
     {% block content_wide %}{% endblock %}
     {% else %}
