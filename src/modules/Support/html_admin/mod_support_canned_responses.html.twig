@@ -51,12 +51,12 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
             {% include 'partial_search.html.twig' %}
-            <table class="table card-table table-vcenter table-striped text-nowrap">
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
                         <th>{{ 'Title'|trans }}</th>
                         <th class="text-center">{{ 'Category'|trans }}</th>
-                        <th class="w-1"></th>
+                        <th class="w-1 no-sort"></th>
                     </tr>
                 </thead>
                 <tbody>

@@ -39,7 +39,7 @@
             <div class="table-responsive">
                 <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
                             <tr>
                                 <th>{{ 'Type'|trans }}</th>
