@@ -179,7 +179,7 @@ class Update implements InjectionAwareInterface
         // Download latest version archive for configured update branch.
         try {
             $httpClient = HttpClient::create([
-                'timeout' => 5,
+                'timeout' => 30,
                 'max_duration' => 120
             ]);
             $response = $httpClient->request('GET', $this->getLatestVersionInfo($updateBranch)['download_url']);
@@ -227,7 +227,6 @@ class Update implements InjectionAwareInterface
 
         // Log off the current user and destroy the session.
         unset($_COOKIE['BOXADMR']);
-        $this->di['session']->delete('admin');
-        session_destroy();
+        $this->di['session']->destroy('admin');
     }
 }
