@@ -70,8 +70,8 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['maintenance_mode']['allowed_urls'] ??= [];
         $newConfig['maintenance_mode']['allowed_ips'] ??= [];
         $newConfig['disable_auto_cron'] ??= false;
-        $newConfig['i18n']['locale'] = $currentConfig['locale'] ?? 'en_US';
-        $newConfig['i18n']['timezone'] = $currentConfig['timezone'] ?? 'UTC';
+        $newConfig['i18n']['locale'] ??= $currentConfig['locale'] ?? 'en_US';
+        $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['port'] ??= '3306';
