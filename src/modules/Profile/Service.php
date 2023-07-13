@@ -222,4 +222,81 @@ class Service implements InjectionAwareInterface
 
         return true;
     }
+
+    public function invalidateSessions(?string $type = null, ?int $id = null): bool
+    {
+        if (empty($type)) {
+            $auth = new \Box_Authorization($this->di);
+            if ($auth->isAdminLoggedIn()) {
+                $type = 'admin';
+            } elseif ($auth->isClientLoggedIn()) {
+                $type = 'client';
+            } else {
+                throw new \Box_Exception("Unable to invalidate sessions, nobody is logged in");
+            }
+        }
+
+        if (empty($id)) {
+            switch ($type) {
+                case 'admin':
+                    $admin = $this->di['session']->get('admin');
+                    $id = $admin['id'];
+                    break;
+                case 'client':
+                    $id = $this->di['session']->get('client_id');
+                    break;
+            }
+        }
+
+        switch ($type) {
+            case 'admin':
+                $sessions = $this->getSessions();
+                foreach ($sessions as $session) {
+                    // Decode the data for the current session and then verify it is for an admin
+                    $data = base64_decode($session['content']);
+                    if (!str_starts_with($data, 'admin|')) {
+                        continue;
+                    }
+
+                    // If it is for an admin, we can now unserialize the data and trash the session if it matches the user ID we are looking for. 
+                    $data = str_replace('admin|', '', $data);
+                    $dataArray = unserialize($data);
+                    if ($dataArray['id'] === $id) {
+                        $bean = $this->di['db']->dispense('session');
+                        $bean->import($session);
+                        $this->di['db']->trash($bean);
+                    }
+                }
+                break;
+            case 'client':
+                $sessions = $this->getSessions();
+                foreach ($sessions as $session) {
+                    // Decode the data for the current session and then verify it is for a client
+                    $data = base64_decode($session['content']);
+                    if (!str_starts_with($data, 'client_id|')) {
+                        continue;
+                    }
+
+                    // If it is for an client, we can now unserialize the data and trash the session if it matches the user ID we are looking for. 
+                    $data = str_replace('client_id|', '', $data);
+                    if (unserialize($data) === $id) {
+                        $bean = $this->di['db']->dispense('session');
+                        $bean->import($session);
+                        $this->di['db']->trash($bean);
+                    }
+                }
+                break;
+            default:
+                throw new \Box_Exception("Unable to invalidate sessions, an invalid type was used");
+        }
+
+        return true;
+    }
+
+    private function getSessions(): array
+    {
+        $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
+        $sessions = $this->di['db']->getAll($query);
+        return $sessions;
+    }
 }
