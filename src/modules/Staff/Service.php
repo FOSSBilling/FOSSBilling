@@ -443,6 +443,9 @@ class Service implements InjectionAwareInterface
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
+        $profileService = $this->di['mod_service']('profile');
+        $profileService->invalidateSessions('admin', $model->id);
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
         $this->di['logger']->info('Changed staff member %s password', $model->id);
