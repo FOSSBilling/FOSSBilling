@@ -97,7 +97,8 @@ abstract class Server_Manager
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
         $username = substr($username, 0, 7);
         $randnum = random_int(0, 9);
-        return $this->_config['config']['userprefix'] . $username . $randnum;
+        $prefix = $this->_config['config']['userprefix'] ?? '';
+        return  $prefix . $username . $randnum;
     }
 
     /**
