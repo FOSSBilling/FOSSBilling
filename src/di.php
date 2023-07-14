@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -115,6 +117,11 @@ $di['pdo'] = function () use ($di) {
         $pdo->exec('SET character_set_server = utf8');
         $pdo->exec('SET SESSION interactive_timeout = 28800');
         $pdo->exec('SET SESSION wait_timeout = 28800');
+
+        // Get the timezone offset in the PDO format
+        $datetime = new DateTime('now');
+        $offset = $datetime->format('P');
+        $pdo->exec("SET time_zone = '{$offset}'");
     }
 
     return $pdo;
@@ -609,7 +616,7 @@ $di['server_account'] = function () {
  *
  * @return \Server_Manager The new server manager object that was just created.
  */
-$di['server_manager'] = $di->protect(function($manager, $config) use ($di) {
+$di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
     $class = sprintf('Server_Manager_%s', ucfirst($manager));
 
     $s = new $class($config);
