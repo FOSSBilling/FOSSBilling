@@ -70,7 +70,7 @@ class Service
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
-        $count = $this->clearOldSessions();
+        $count = $this->clearOldSessions() ?? 0;
         $this->di['logger']->setChannel('cron')->info("Cleared $count outdated sessions from the database");
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
@@ -115,7 +115,7 @@ class Service
         return $t1 < $t2;
     }
 
-    private function clearOldSessions(): int
+    private function clearOldSessions(): ?int
     {
         $maxAge = time() - $this->di['config']['security']['cookie_lifespan'];
         $sql = 'DELETE FROM session WHERE modified_at <= :age';
