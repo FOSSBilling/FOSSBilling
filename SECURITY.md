@@ -30,6 +30,7 @@ Submitting a proper vulnerability report on Huntr.dev may entitle you to a cash 
 Reports covering any of the following topics will be rejected and do not qualify for bounties.
 Such reports may reduce your credibility as a researcher on the Huntr.dev platform or potentially cause you to be blocked from reporting vulnerabilities against FOSSBilling.
 
+- Reports describing the lack of granular permissions within FOSSBilling. This is a known limitation and the permission system will be completely replaced before FOSSBilling is considered production-ready (version 1.0.0).
 - Reports from automated tools or scanners
 - Theoretical attacks without proof of exploitability
 - Attacks that are the result of a third party library should be reported to the library maintainers
