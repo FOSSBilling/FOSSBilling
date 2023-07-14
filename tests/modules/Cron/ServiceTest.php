@@ -64,8 +64,7 @@ class ServiceTest extends \BBTestCase {
         
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('findAll')
-            ->will($this->returnValue([]));
+            ->method('exec');
 
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
