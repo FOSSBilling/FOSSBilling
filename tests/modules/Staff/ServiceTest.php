@@ -1027,12 +1027,17 @@ class ServiceTest extends \BBTestCase
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($plainTextPassword);
+        
+        $profileService = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
 
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
         $di['password']       = $passwordMock;
+        $di['mod_service'] = $di->protect(function () use ($profileService) {
+            return $profileService;
+        });
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);

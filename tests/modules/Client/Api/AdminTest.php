@@ -449,6 +449,8 @@ class AdminTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
+        $profileService = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
+
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventMock;
@@ -459,7 +461,9 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
-
+        $di['mod_service'] = $di->protect(function () use ($profileService) {
+            return $profileService;
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
