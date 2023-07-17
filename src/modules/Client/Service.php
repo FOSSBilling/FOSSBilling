@@ -177,7 +177,7 @@ class Service implements InjectionAwareInterface
     public function getPairs($data)
     {
         $limit = $data['per_page'] ?? 30;
-        if (!is_numeric($limit) || $limit < 1 ){
+        if (!is_numeric($limit) || $limit < 1) {
             throw new \Box_Exception('Invalid per page number');
         }
 
@@ -343,6 +343,7 @@ class Service implements InjectionAwareInterface
             'id' => $model->id,
             'aid' => $model->aid,
             'email' => $model->email,
+            'email_approved' => $model->email_approved,
             'type' => $model->type,
             'group_id' => $model->client_group_id,
             'company' => $model->company,
@@ -598,23 +599,20 @@ class Service implements InjectionAwareInterface
             return null;
         }
 
-        $config = $this->di['mod_config']('client');
-        if (isset($config['require_email_confirmation']) && (int) $config['require_email_confirmation']) {
-            if (!$model->email_approved) {
-                $meta = $this->di['db']->findOne('ExtensionMeta', ' extension = "mod_client" AND meta_key = "confirm_email" AND client_id = :client_id', [':client_id' => $model->id]);
-                if (!is_null($meta)) {
-                    throw new \Box_Exception('Please check your mailbox and confirm email address.');
-                } else {
-                    $this->sendEmailConfirmationForClient($model);
-                    throw new \Box_Exception('Confirmation email was sent to your email address. Please click on link in it in order to verify your email.');
-                }
+        if (!$this->di['is_client_email_validated']($model)) {
+            $meta = $this->di['db']->findOne('ExtensionMeta', ' extension = "mod_client" AND meta_key = "confirm_email" AND client_id = :client_id', [':client_id' => $model->id]);
+            if (!is_null($meta)) {
+                throw new \Box_Exception('Please check your mailbox and confirm email address.');
+            } else {
+                $this->sendEmailConfirmationForClient($model);
+                throw new \Box_Exception('Confirmation email was sent to your email address. Please click on link in it in order to verify your email.');
             }
         }
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 
-    private function sendEmailConfirmationForClient(\Model_Client $client)
+    public function sendEmailConfirmationForClient(\Model_Client $client)
     {
         try {
             $email = [];
@@ -689,3 +687,4 @@ class Service implements InjectionAwareInterface
         return $this->di['table_export_csv']('client', 'clients.csv', $headers);
     }
 }
+
