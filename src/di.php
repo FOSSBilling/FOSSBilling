@@ -417,7 +417,7 @@ $di['loggedin_client'] = function () use ($di) {
     $client_id = $di['session']->get('client_id');
 
     try {
-        $clientModel = $di['db']->getExistingModelById('Client', $client_id);
+        return $di['db']->getExistingModelById('Client', $client_id);
     } catch (Exception $e) {
         // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
         $di['session']->destroy('client');
@@ -432,10 +432,9 @@ $di['loggedin_client'] = function () use ($di) {
             // Redirect to login page if browser request
             $login_url = $di['url']->link('login');
             header("Location: $login_url");
+            exit;
         }
     }
-
-    return $clientModel;
 };
 
 /*
@@ -456,7 +455,7 @@ $di['loggedin_admin'] = function () use ($di) {
     $admin = $di['session']->get('admin');
 
     try {
-        $adminModel = $di['db']->getExistingModelById('Admin', $admin['id']);
+        return $di['db']->getExistingModelById('Admin', $admin['id']);
     } catch (Exception $e) {
         // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
         $di['session']->destroy('admin');
@@ -471,10 +470,9 @@ $di['loggedin_admin'] = function () use ($di) {
             // Redirect to login page if browser request
             $login_url = $di['url']->adminLink('staff/login');
             header("Location: $login_url");
+            exit;
         }
     }
-
-    return $adminModel;
 };
 
 /*
