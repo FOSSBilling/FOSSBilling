@@ -248,46 +248,13 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        switch ($type) {
-            case 'admin':
-                $sessions = $this->getSessions();
-                foreach ($sessions as $session) {
-                    // Decode the data for the current session and then verify it is for an admin
-                    $data = base64_decode($session['content']);
-                    if (!str_starts_with($data, 'admin|')) {
-                        continue;
-                    }
+        if ($type !== 'admin' && $type !== 'client') {
+            throw new \Box_Exception("Unable to invalidate sessions, an invalid type was used");
+        }
 
-                    // If it is for an admin, we can now unserialize the data and trash the session if it matches the user ID we are looking for. 
-                    $data = str_replace('admin|', '', $data);
-                    $dataArray = unserialize($data);
-                    if ($dataArray['id'] === $id) {
-                        $bean = $this->di['db']->dispense('session');
-                        $bean->import($session);
-                        $this->di['db']->trash($bean);
-                    }
-                }
-                break;
-            case 'client':
-                $sessions = $this->getSessions();
-                foreach ($sessions as $session) {
-                    // Decode the data for the current session and then verify it is for a client
-                    $data = base64_decode($session['content']);
-                    if (!str_starts_with($data, 'client_id|')) {
-                        continue;
-                    }
-
-                    // If it is for an client, we can now unserialize the data and trash the session if it matches the user ID we are looking for. 
-                    $data = str_replace('client_id|', '', $data);
-                    if (unserialize($data) === $id) {
-                        $bean = $this->di['db']->dispense('session');
-                        $bean->import($session);
-                        $this->di['db']->trash($bean);
-                    }
-                }
-                break;
-            default:
-                throw new \Box_Exception("Unable to invalidate sessions, an invalid type was used");
+        $sessions = $this->getSessions();
+        foreach ($sessions as $session) {
+            $this->deleteSessionIfMatching($session, $type, $id);
         }
 
         return true;
@@ -298,5 +265,37 @@ class Service implements InjectionAwareInterface
         $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
         $sessions = $this->di['db']->getAll($query);
         return $sessions;
+    }
+
+    private function deleteSessionIfMatching(array $session, string $type, int $id): void
+    {
+        // Decode the data for the current session and then verify it is for the selected type
+        $data = base64_decode($session['content']);
+        $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
+        if (!str_starts_with($data, $stringStart)) {
+            return;
+        }
+
+        // Now we strip off the starting portion so we can unserialize the data
+        $data = str_replace($stringStart, '', $data);
+
+        // Finally, perform the check depending on what type of session we are looking for and trash it if it's a match
+        if ($type === 'admin') {
+            $dataArray = unserialize($data);
+            if ($dataArray['id'] === $id) {
+                $this->trashSessionByArray($session);
+            }
+        } else {
+            if (unserialize($data) === $id) {
+                $this->trashSessionByArray($session);
+            }
+        }
+    }
+
+    private function trashSessionByArray(array $session): void
+    {
+        $bean = $this->di['db']->dispense('session');
+        $bean->import($session);
+        $this->di['db']->trash($bean);
     }
 }
