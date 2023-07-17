@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -415,7 +416,26 @@ $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
     $client_id = $di['session']->get('client_id');
 
-    return $di['db']->getExistingModelById('Client', $client_id);
+    try {
+        $clientModel = $di['db']->getExistingModelById('Client', $client_id);
+    } catch (Exception $e) {
+        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
+        $di['session']->destroy('client');
+
+        // Then either give an appropriate API response or redirect to the login page.
+        $api_str = '/api/';
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
+            // Throw Exception if api request
+            throw new Exception('Client is not logged in');
+        } else {
+            // Redirect to login page if browser request
+            $login_url = $di['url']->link('login');
+            header("Location: $login_url");
+        }
+    }
+
+    return $clientModel;
 };
 
 /*
@@ -435,7 +455,26 @@ $di['loggedin_admin'] = function () use ($di) {
     $di['is_admin_logged'];
     $admin = $di['session']->get('admin');
 
-    return $di['db']->getExistingModelById('Admin', $admin['id']);
+    try {
+        $adminModel = $di['db']->getExistingModelById('Admin', $admin['id']);
+    } catch (Exception $e) {
+        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
+        $di['session']->destroy('admin');
+
+        // Then either give an appropriate API response or redirect to the login page.
+        $api_str = '/api/';
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
+            // Throw Exception if api request
+            throw new Exception('Admin is not logged in');
+        } else {
+            // Redirect to login page if browser request
+            $login_url = $di['url']->adminLink('staff/login');
+            header("Location: $login_url");
+        }
+    }
+
+    return $adminModel;
 };
 
 /*
@@ -609,7 +648,7 @@ $di['server_account'] = function () {
  *
  * @return \Server_Manager The new server manager object that was just created.
  */
-$di['server_manager'] = $di->protect(function($manager, $config) use ($di) {
+$di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
     $class = sprintf('Server_Manager_%s', ucfirst($manager));
 
     $s = new $class($config);
