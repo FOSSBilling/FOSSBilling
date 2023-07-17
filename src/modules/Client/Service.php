@@ -599,16 +599,6 @@ class Service implements InjectionAwareInterface
             return null;
         }
 
-        if (!$this->di['is_client_email_validated']($model)) {
-            $meta = $this->di['db']->findOne('ExtensionMeta', ' extension = "mod_client" AND meta_key = "confirm_email" AND client_id = :client_id', [':client_id' => $model->id]);
-            if (!is_null($meta)) {
-                throw new \Box_Exception('Please check your mailbox and confirm email address.');
-            } else {
-                $this->sendEmailConfirmationForClient($model);
-                throw new \Box_Exception('Confirmation email was sent to your email address. Please click on link in it in order to verify your email.');
-            }
-        }
-
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 
