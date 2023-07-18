@@ -54,4 +54,14 @@ class Client extends \Api_Abstract
     {
         return $this->getService()->isClientTaxable($this->identity);
     }
+
+    public function resend_email_verification()
+    {
+        if($this->identity->email_approved){
+            // Email is already validated, so we don't need to do so again
+            return true;
+        }
+
+        return $this->getService()->sendEmailConfirmationForClient($this->identity);
+    }
 }
