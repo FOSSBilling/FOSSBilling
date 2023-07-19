@@ -68,7 +68,7 @@
             </table>
         </div>
         <div class="card-footer text-center">
-            <a href="{{ cron.cron_url }}" class="btn btn-primary" target="_blank">
+            <a href="{{'api/admin/cron/run'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" target="_blank" data-api-msg="{{ 'Cron executed'|trans }}">
                 <svg class="icon icon-tabler">
                     <use xlink:href="#play"/>
                 </svg>

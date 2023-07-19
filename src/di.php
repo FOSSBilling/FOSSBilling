@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
@@ -383,6 +382,20 @@ $di['is_client_logged'] = function () use ($di) {
     return true;
 };
 
+/**
+ * @param mixed $model The client DB model to check 
+ * @return bool Returns true if the client's email address is valid or if email confirmation is disabled.
+ */
+$di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
+    $config = $di['mod_config']('client');
+    if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
+        return (bool) $model->email_approved; 
+    } else {
+        return true;
+    }
+    return true;
+});
+
 /*
  * Checks whether an admin is logged in and throws an exception or redirects to the login page if not.
  *
@@ -422,7 +435,25 @@ $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
     $client_id = $di['session']->get('client_id');
 
-    return $di['db']->getExistingModelById('Client', $client_id);
+    try {
+        return $di['db']->getExistingModelById('Client', $client_id);
+    } catch (Exception $e) {
+        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
+        $di['session']->destroy('client');
+
+        // Then either give an appropriate API response or redirect to the login page.
+        $api_str = '/api/';
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
+            // Throw Exception if api request
+            throw new Exception('Client is not logged in');
+        } else {
+            // Redirect to login page if browser request
+            $login_url = $di['url']->link('login');
+            header("Location: $login_url");
+            exit;
+        }
+    }
 };
 
 /*
@@ -442,7 +473,25 @@ $di['loggedin_admin'] = function () use ($di) {
     $di['is_admin_logged'];
     $admin = $di['session']->get('admin');
 
-    return $di['db']->getExistingModelById('Admin', $admin['id']);
+    try {
+        return $di['db']->getExistingModelById('Admin', $admin['id']);
+    } catch (Exception $e) {
+        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
+        $di['session']->destroy('admin');
+
+        // Then either give an appropriate API response or redirect to the login page.
+        $api_str = '/api/';
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
+            // Throw Exception if api request
+            throw new Exception('Admin is not logged in');
+        } else {
+            // Redirect to login page if browser request
+            $login_url = $di['url']->adminLink('staff/login');
+            header("Location: $login_url");
+            exit;
+        }
+    }
 };
 
 /*
@@ -452,7 +501,7 @@ $di['loggedin_admin'] = function () use ($di) {
  *
  * @return \Api_Handler The new API object that was just created.
  *
- * @throws \Exception If the specified role is not recognized.
+ * @throws \Exception If the specified role is not recognized or if a client is trying to use the API while their email is not valid.
  */
 $di['api'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
@@ -462,6 +511,23 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         'system' => $di['mod_service']('staff')->getCronAdmin(),
         default => throw new Exception('Unrecognized Handler type: ' . $role),
     };
+
+    // Checks to enforce email validation for clients
+    if($role === 'client' && !$di['is_client_email_validated']($identity)){
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+    
+        // If it's an API request, only allow requests to the "client" and "profile" modules so they can change their email address or resend the confirmation email.
+        if(strncasecmp($url, '/api/', strlen('/api/')) === 0){
+            if(0 !== strncasecmp($url, '/api/client/client/', strlen('/api/client/client/')) && 0 !== strncasecmp($url, '/api/client/profile/', strlen('/api/client/profile/'))){
+                throw new Exception('Please check your mailbox and confirm email address.');
+            }   
+        } elseif (strncasecmp($url, '/client/profile', strlen('/client/profile')) !== 0) {
+            // If they aren't attempting to access their profile, redirect them to it.
+            $login_url = $di['url']->link('client/profile');
+            header("Location: $login_url");
+            exit;
+        }
+    }
 
     $api = new Api_Handler($identity);
     $api->setDi($di);

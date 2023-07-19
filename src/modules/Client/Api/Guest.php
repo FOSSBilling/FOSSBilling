@@ -90,7 +90,7 @@ class Guest extends \Api_Abstract
 
         $client = $service->guestCreateClient($data);
 
-        if (isset($config['require_email_confirmation']) && (int) $config['require_email_confirmation'] && !$client->email_approved) {
+        if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation'] && !$client->email_approved) {
             throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.', null, 7777);
         }
 
@@ -280,5 +280,11 @@ class Guest extends \Api_Abstract
         $config = $this->di['mod_config']('client');
 
         return $config['custom_fields'] ?? [];
+    }
+
+    public function is_email_validation_required(): bool
+    {
+        $config = $this->di['mod_config']('client');
+        return (bool) ($config['require_email_confirmation'] ?? false);
     }
 }

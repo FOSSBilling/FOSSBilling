@@ -64,8 +64,7 @@ class ServiceTest extends \BBTestCase {
         
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('findAll')
-            ->will($this->returnValue([]));
+            ->method('exec');
 
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
@@ -74,6 +73,13 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use($systemServiceMock) {return $systemServiceMock;});
         $serviceMock->setDi($di);
         $di['db'] = $dbMock;
+        $di['config'] = [
+            'security' => [
+                'mode' => 'strict',
+                'force_https' => true,
+                'cookie_lifespan' => 7200,
+            ],
+        ];
 
         $result = $serviceMock->runCrons();
         $this->assertTrue($result);
