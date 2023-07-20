@@ -222,4 +222,80 @@ class Service implements InjectionAwareInterface
 
         return true;
     }
+
+    public function invalidateSessions(?string $type = null, ?int $id = null): bool
+    {
+        if (empty($type)) {
+            $auth = new \Box_Authorization($this->di);
+            if ($auth->isAdminLoggedIn()) {
+                $type = 'admin';
+            } elseif ($auth->isClientLoggedIn()) {
+                $type = 'client';
+            } else {
+                throw new \Box_Exception("Unable to invalidate sessions, nobody is logged in");
+            }
+        }
+
+        if (empty($id)) {
+            switch ($type) {
+                case 'admin':
+                    $admin = $this->di['session']->get('admin');
+                    $id = $admin['id'];
+                    break;
+                case 'client':
+                    $id = $this->di['session']->get('client_id');
+                    break;
+            }
+        }
+
+        if ($type !== 'admin' && $type !== 'client') {
+            throw new \Box_Exception("Unable to invalidate sessions, an invalid type was used");
+        }
+
+        $sessions = $this->getSessions();
+        foreach ($sessions as $session) {
+            $this->deleteSessionIfMatching($session, $type, $id);
+        }
+
+        return true;
+    }
+
+    private function getSessions(): array
+    {
+        $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
+        $sessions = $this->di['db']->getAll($query);
+        return $sessions;
+    }
+
+    private function deleteSessionIfMatching(array $session, string $type, int $id): void
+    {
+        // Decode the data for the current session and then verify it is for the selected type
+        $data = base64_decode($session['content']);
+        $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
+        if (!str_starts_with($data, $stringStart)) {
+            return;
+        }
+
+        // Now we strip off the starting portion so we can unserialize the data
+        $data = str_replace($stringStart, '', $data);
+
+        // Finally, perform the check depending on what type of session we are looking for and trash it if it's a match
+        if ($type === 'admin') {
+            $dataArray = unserialize($data);
+            if ($dataArray['id'] === $id) {
+                $this->trashSessionByArray($session);
+            }
+        } else {
+            if (unserialize($data) === $id) {
+                $this->trashSessionByArray($session);
+            }
+        }
+    }
+
+    private function trashSessionByArray(array $session): void
+    {
+        $bean = $this->di['db']->dispense('session');
+        $bean->import($session);
+        $this->di['db']->trash($bean);
+    }
 }

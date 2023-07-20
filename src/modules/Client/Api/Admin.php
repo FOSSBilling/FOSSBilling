@@ -354,6 +354,9 @@ class Admin extends \Api_Abstract
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 
+        $profileService = $this->di['mod_service']('profile');
+        $profileService->invalidateSessions('client', $data['id']);
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
 
         $this->di['logger']->info('Changed client #%s password', $client->id);

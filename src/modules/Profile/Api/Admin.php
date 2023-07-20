@@ -116,10 +116,26 @@ class Admin extends \Api_Abstract
 
         $staff = $this->getIdentity();
 
-        if(!$this->di['password']->verify($data['current_password'], $staff->pass)) {
+        if (!$this->di['password']->verify($data['current_password'], $staff->pass)) {
             throw new \Exception('Current password incorrect');
         }
 
+        $this->getService()->invalidateSessions();
         return $this->getService()->changeAdminPassword($staff, $data['new_password']);
+    }
+
+    /**
+     * Used to destroy / invalidate all existing sessions for a given user
+     * @param array $data An array with the options.
+     *                    The array can contain the following sub-keys:
+     *                    - string|null $data['type'] The user type (admin or staff) (optional).
+     *                    - id|null $data['id'] The session ID (optional).
+     * @return bool 
+     */
+    public function destroy_sessions(array $data): bool
+    {
+        $data['type'] ??= null;
+        $data['id'] ??= null;
+        return $this->getService()->invalidateSessions($data['type'], $data['id']);
     }
 }

@@ -120,10 +120,11 @@ class Client extends \Api_Abstract
 
         $client = $this->getIdentity();
 
-        if(!$this->di['password']->verify($data['current_password'], $client->pass)) {
+        if (!$this->di['password']->verify($data['current_password'], $client->pass)) {
             throw new \Exception('Current password incorrect');
         }
 
+        $this->getService()->invalidateSessions();
         return $this->getService()->changeClientPassword($client, $data['new_password']);
     }
 
@@ -135,5 +136,14 @@ class Client extends \Api_Abstract
     public function logout()
     {
         return $this->getService()->logoutClient();
+    }
+
+    /**
+     * Used to destroy / invalidate all existing sessions for the current client
+     * @return bool 
+     */
+    public function destroy_sessions(array $data): bool
+    {
+        return $this->getService()->invalidateSessions();
     }
 }
