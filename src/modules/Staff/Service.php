@@ -84,7 +84,7 @@ class Service implements InjectionAwareInterface
         $pdo = $this->di['pdo'];
         $stmt = $pdo->prepare($sql);
         $stmt->execute(['id' => $member_id]);
-        $json = $stmt->fetchColumn();
+        $json = $stmt->fetchColumn() ?? '';
         $permissions = json_decode($json, 1);
         if (!$permissions) {
             return [];
