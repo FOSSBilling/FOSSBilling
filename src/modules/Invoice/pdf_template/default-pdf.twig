@@ -1,0 +1,78 @@
+{% if buyer_html_lines >= seller_html_lines %}
+	{% set top = 325 + (25 * buyer_html_lines) %}
+{% else %}
+	{% set top = 325 + (25 * seller_html_lines) %}
+{% endif %}
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+		<title>{{ invoice_serie_nr }}</title>
+		<style>
+			{{css}}</style>
+	</head>
+	<body>
+		{{ logo_html|raw }}
+		<hr class='Rounded'>
+		<div class='InvoiceInfo'>
+			<p>Invoice number:
+				{{ invoice_serie_nr }}</p>
+			<p>Invoice date:
+				{{ invoice_created_at_formatted }}</p>
+			<p>Due date:
+				{{ invoice_due_at_formatted }}</p>
+			<p>Invoice status:
+				{{ invoice_status }}</p>
+		</div>
+
+		<h3 class='CompanyInfo'>Company</h3>
+		<div class='CompanyInfo'>{{ seller_html|raw }}</div>
+
+		<h3 class='ClientInfo'>Client</h3>
+		<div class='ClientInfo'>{{ buyer_html|raw }}</div>
+
+		<div class='Breakdown' style='top: {{top}}px'>
+			<table style='width:100%'>
+				<tr>
+					<th>#</th>
+					<th>Product</th>
+					<th>Quantity & Price</th>
+					<th>Total</th>
+				</tr>
+				{% set nr = 0 %}
+				{% for item in invoice_lines %}
+					{% set nr = nr + 1 %}
+					<tr>
+						<th>{{ nr }}</th>
+						<th>{{ item.title }}</th>
+						<th>{{ item.quantity }}
+							x
+							{{ item.price|format_currency(currency_code) }}</th>
+						<th>{{ item.total|format_currency(currency_code) }}</th>
+					</tr>
+				{% endfor %}
+				<tr>
+					<th colspan='4'>___________________________________________________________________________________________</th>
+				</tr>
+				{% if invoice_tax > 0 %}
+					<tr>
+						<th class='right' colspan='3'>{{ invoice_taxname }}
+							{{ invoice_taxrate }}% Tax:</th>
+						<th>{{ invoice_tax|format_currency(currency_code) }}</th>
+					</tr>
+				{% endif %}
+				{% if invoice_discount|default and invoice_discount > 0 %}
+					<tr>
+						<th class='right' colspan='3'>Discount:</th>
+						<th>{{ invoice_discount|format_currency(currency_code) }}</th>
+					</tr>
+				{% endif %}
+				<tr>
+					<th class='right' colspan='3'>Total:</th>
+					<th>{{ invoice_total|format_currency(currency_code) }}</th>
+				</tr>
+			</table>
+		</div>
+	</body>
+</html>

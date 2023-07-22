@@ -11,6 +11,8 @@
 namespace Box\Mod\Invoice;
 
 use \FOSSBilling\InjectionAwareInterface;
+use Twig\Loader\FilesystemLoader;
+use Twig\Extra\Intl\IntlExtension;
 use Dompdf\Dompdf;
 
 class Service implements InjectionAwareInterface
@@ -1205,81 +1207,40 @@ class Service implements InjectionAwareInterface
             $logoHtml = '';
         }
 
-        $html =
-            "<!DOCTYPE html>
-        <html>
-        <head>
-            <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
-            <title>" . $invoice['serie_nr'] . "</title>
-            <style>
-                $CSS
-            </style>
-        </head>
-        <body>
-            $logoHtml
-            <hr class='Rounded'>
-            <div class='InvoiceInfo'>
-                <p>Invoice number: " . $invoice['serie_nr'] . "</p>
-                <p>Invoice date: " . $format->format(strtotime($invoice['created_at'])) . "</p>
-                <p>Due date: " . $format->format(strtotime($invoice['due_at'])) . "</p>
-                <p>Invoice status: " . ucfirst($invoice['status']) . "</p>
-            </div>
+        // new code
+        $vars = [
+            'invoice_serie_nr' => $invoice['serie_nr'],
+            'css'          => $CSS,
+            'logo_html' => $logoHtml,
+            'invoice_created_at_formatted' => $format->format(strtotime($invoice['created_at'])),
+            'invoice_due_at_formatted' => $format->format(strtotime($invoice['due_at'])),
+            'invoice_status' => ucfirst($invoice['status']),
+            'invoice_lines' => $invoice['lines'],
+            'invoice_tax' => $invoice['tax'],
+            'invoice_taxname' => $invoice['taxname'],
+            'invoice_taxrate' => $invoice['taxrate'],
+            'invoice_discount' => $invoice['discount'],
+            'invoice_total' => $invoice['total'],
+            'seller_html' => $this->getSellerPdfHtml($invoice, $sellerLines),
+            'seller_html_lines' => $sellerLines,
+            'buyer_html' => $this->getBuyerPdfHtml($invoice, $buyerLines),
+            'buyer_html_lines' => $buyerLines,
+            'currency_code' => $currencyCode,
+        ];
+        $twigOptions = [
+            'paths' => [dirname(__DIR__) . DIRECTORY_SEPARATOR .  'Invoice' . DIRECTORY_SEPARATOR . 'pdf_template'],
+            'debug' => true,
+            'charset' => 'utf-8',
+            'optimizations' => 1,
+            'autoescape' => 'html',
+            'auto_reload' => true,
+            'cache' => false,
+        ];
+        $loader = new FilesystemLoader($twigOptions['paths']);
+        $twig = new \Twig\Environment($loader, $twigOptions);
+        $twig->addExtension(new IntlExtension());
 
-            <h3 class='CompanyInfo'>Company</h3>
-            <div class='CompanyInfo'>" . $this->getSellerPdfHtml($invoice, $sellerLines) . "</div>
-
-            <h3 class='ClientInfo'>Client</h3>
-            <div class='ClientInfo'>" . $this->getBuyerPdfHtml($invoice, $buyerLines) . "</div>
-            <div class='Breakdown' style='top: " . (($buyerLines >= $sellerLines) ? (325 + (25 * $buyerLines)) : (325 + (25 * $sellerLines))) . "px'
-                <table style='width:100%'>
-                <tr>
-                    <th>#</th>
-                    <th>Product</th>
-                    <th>Quantity & Price</th>
-                    <th>Total</th>
-                </tr>
-        ";
-
-        $nr = 1;
-        foreach ($invoice['lines'] as $row) {
-            $html .=
-            "<tr>
-                <th>" . $nr++ . "</th>
-                <th>" . $row['title'] . "</th>
-                <th>" . $row['quantity'] . 'x ' . $this->money($row['price'], $currencyCode) . "</th>
-                <th>" . $this->money($row['total'], $currencyCode) . "</th>
-            </tr>";
-        }
-
-        $html .=
-            "<tr>
-            <th colspan='4'>___________________________________________________________________________________________</th>
-        </tr>";
-
-        if ($invoice['tax'] > 0) {
-            $html .=
-            "<tr>
-                <th class='right' colspan='3'>" . $invoice['taxname'] . " " . $invoice['taxrate'] . "% Tax:</th>
-                <th>" . $invoice['tax'] . $currencyCode . "</th>
-            </tr>";
-        }
-
-        if (isset($invoice['discount']) && $invoice['discount'] > 0) {
-            $html .=
-            "<tr>
-                <th class='right' colspan='3'>Discount:</th>
-                <th>" . $invoice['discount'] . $currencyCode . "</th>
-            </tr>";
-        }
-
-        $html .=
-        "<tr>
-            <th class='right' colspan='3'>Total:</th>
-            <th>" . $invoice['total'] . $currencyCode . "</th>
-        </tr>
-        </table>
-        </body>
-        </html>";
+        $html = $twig->render("default-pdf.twig", $vars);
 
         $pdf->setOptions($options);
         $pdf->loadHtml($html);
