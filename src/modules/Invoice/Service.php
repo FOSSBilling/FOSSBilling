@@ -1238,7 +1238,7 @@ class Service implements InjectionAwareInterface
         function($string) use ($currencyCode) {
             return $this->money($string, $currencyCode);
         }));
-        $html = $twig->render("default-pdf.twig", $vars);
+        $html = $twig->render($this->getPdfTemplate(), $vars);
 
         $pdf->setOptions($options);
         $pdf->loadHtml($html);
@@ -1470,6 +1470,17 @@ class Service implements InjectionAwareInterface
         }
 
         return $CSS;
+    }
+
+    private function getPdfTemplate(): string
+    {
+        $basePath = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR;
+
+        if (file_exists($basePath . 'custom-pdf.twig')) {
+            return 'custom-pdf.twig';
+        }
+
+        return 'default-pdf.twig';
     }
 
     private function getPdfLogoSource(string $originalUrl): array
