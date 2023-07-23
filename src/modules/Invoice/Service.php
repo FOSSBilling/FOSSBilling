@@ -1230,6 +1230,14 @@ class Service implements InjectionAwareInterface
         $loader = new FilesystemLoader($twigOptions['paths']);
         $twig = new \Twig\Environment($loader, $twigOptions);
         $twig->addExtension(new IntlExtension());
+        $twig->addFilter(new \Twig\TwigFilter('fossbilling_format_time', 
+        function($string) use ($format) {
+            return $format->format(strtotime($string));
+        }));
+        $twig->addFilter(new \Twig\TwigFilter('fossbilling_format_currency', 
+        function($string) use ($currencyCode) {
+            return $this->money($string, $currencyCode);
+        }));
         $html = $twig->render("default-pdf.twig", $vars);
 
         $pdf->setOptions($options);
