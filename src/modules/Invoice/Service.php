@@ -1209,14 +1209,14 @@ class Service implements InjectionAwareInterface
 
         // new code
         $vars = [
-            'css'          => $CSS,
-            'logo_html' => $logoHtml,
-            'invoice' => $invoice,
-            'seller_html' => $this->getSellerPdfHtml($invoice, $sellerLines),
-            'seller_html_lines' => $sellerLines,
-            'buyer_html' => $this->getBuyerPdfHtml($invoice, $buyerLines),
-            'buyer_html_lines' => $buyerLines,
             'currency_code' => $currencyCode,
+            'css'          => $CSS,
+            'html_logo' => $logoHtml,
+            'html_seller' => $this->getSellerPdfHtml($invoice, $sellerLines),
+            'html_seller_lines' => $sellerLines,
+            'html_buyer' => $this->getBuyerPdfHtml($invoice, $buyerLines),
+            'html_buyer_lines' => $buyerLines,
+            'invoice' => $invoice,
         ];
         $twigOptions = [
             'paths' => [dirname(__DIR__) . DIRECTORY_SEPARATOR .  'Invoice' . DIRECTORY_SEPARATOR . 'pdf_template'],
