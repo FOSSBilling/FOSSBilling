@@ -1,36 +1,36 @@
-{% if buyer_html_lines >= seller_html_lines %}
-	{% set top = 325 + (25 * buyer_html_lines) %}
+{% if html_buyer_lines >= html_seller_lines %}
+	{% set top = 325 + (25 * html_buyer_lines) %}
 {% else %}
-	{% set top = 325 + (25 * seller_html_lines) %}
+	{% set top = 325 + (25 * html_seller_lines) %}
 {% endif %}
 
 <!DOCTYPE html>
 <html>
 	<head>
 		<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
-		<title>{{ invoice_serie_nr }}</title>
+		<title>{{ invoice.serie_nr }}</title>
 		<style>
 			{{css}}</style>
 	</head>
 	<body>
-		{{ logo_html|raw }}
+		{{ html_logo|raw }}
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
 			<p>Invoice number:
-				{{ invoice_serie_nr }}</p>
+				{{ invoice.serie_nr }}</p>
 			<p>Invoice date:
-				{{ invoice_created_at_formatted }}</p>
+				{{ invoice.created_at|fossbilling_format_time }}</p>
 			<p>Due date:
-				{{ invoice_due_at_formatted }}</p>
+				{{ invoice.due_at|fossbilling_format_time }}</p>
 			<p>Invoice status:
-				{{ invoice_status }}</p>
+				{{ invoice.status|capitalize }}</p>
 		</div>
 
 		<h3 class='CompanyInfo'>Company</h3>
-		<div class='CompanyInfo'>{{ seller_html|raw }}</div>
+		<div class='CompanyInfo'>{{ html_seller|raw }}</div>
 
 		<h3 class='ClientInfo'>Client</h3>
-		<div class='ClientInfo'>{{ buyer_html|raw }}</div>
+		<div class='ClientInfo'>{{ html_buyer|raw }}</div>
 
 		<div class='Breakdown' style='top: {{top}}px'>
 			<table style='width:100%'>
@@ -41,36 +41,36 @@
 					<th>Total</th>
 				</tr>
 				{% set nr = 0 %}
-				{% for item in invoice_lines %}
+				{% for item in invoice.lines %}
 					{% set nr = nr + 1 %}
 					<tr>
 						<th>{{ nr }}</th>
 						<th>{{ item.title }}</th>
 						<th>{{ item.quantity }}
 							x
-							{{ item.price|format_currency(currency_code) }}</th>
-						<th>{{ item.total|format_currency(currency_code) }}</th>
+							{{ item.price|fossbilling_format_currency }}</th>
+						<th>{{ item.total|fossbilling_format_currency }}</th>
 					</tr>
 				{% endfor %}
 				<tr>
 					<th colspan='4'>___________________________________________________________________________________________</th>
 				</tr>
-				{% if invoice_tax > 0 %}
+				{% if invoice.tax > 0 %}
 					<tr>
-						<th class='right' colspan='3'>{{ invoice_taxname }}
-							{{ invoice_taxrate }}% Tax:</th>
-						<th>{{ invoice_tax|format_currency(currency_code) }}</th>
+						<th class='right' colspan='3'>{{ invoice.taxname }}
+							{{ invoice.taxrate }}% Tax:</th>
+						<th>{{ invoice.tax|fossbilling_format_currency }}</th>
 					</tr>
 				{% endif %}
-				{% if invoice_discount|default and invoice_discount > 0 %}
+				{% if invoice.discount|default and invoice.discount > 0 %}
 					<tr>
 						<th class='right' colspan='3'>Discount:</th>
-						<th>{{ invoice_discount|format_currency(currency_code) }}</th>
+						<th>{{ invoice.discount|fossbilling_format_currency }}</th>
 					</tr>
 				{% endif %}
 				<tr>
 					<th class='right' colspan='3'>Total:</th>
-					<th>{{ invoice_total|format_currency(currency_code) }}</th>
+					<th>{{ invoice.total }}{{ currency_code }}</th>
 				</tr>
 			</table>
 		</div>
