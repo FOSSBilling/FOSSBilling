@@ -1209,18 +1209,9 @@ class Service implements InjectionAwareInterface
 
         // new code
         $vars = [
-            'invoice_serie_nr' => $invoice['serie_nr'],
             'css'          => $CSS,
             'logo_html' => $logoHtml,
-            'invoice_created_at_formatted' => $format->format(strtotime($invoice['created_at'])),
-            'invoice_due_at_formatted' => $format->format(strtotime($invoice['due_at'])),
-            'invoice_status' => ucfirst($invoice['status']),
-            'invoice_lines' => $invoice['lines'],
-            'invoice_tax' => $invoice['tax'],
-            'invoice_taxname' => $invoice['taxname'],
-            'invoice_taxrate' => $invoice['taxrate'],
-            'invoice_discount' => $invoice['discount'],
-            'invoice_total' => $invoice['total'],
+            'invoice' => $invoice,
             'seller_html' => $this->getSellerPdfHtml($invoice, $sellerLines),
             'seller_html_lines' => $sellerLines,
             'buyer_html' => $this->getBuyerPdfHtml($invoice, $buyerLines),
@@ -1239,7 +1230,6 @@ class Service implements InjectionAwareInterface
         $loader = new FilesystemLoader($twigOptions['paths']);
         $twig = new \Twig\Environment($loader, $twigOptions);
         $twig->addExtension(new IntlExtension());
-
         $html = $twig->render("default-pdf.twig", $vars);
 
         $pdf->setOptions($options);
