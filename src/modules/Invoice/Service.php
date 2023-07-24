@@ -1207,7 +1207,6 @@ class Service implements InjectionAwareInterface
             $logoHtml = '';
         }
 
-        // new code
         $vars = [
             'currency_code' => $currencyCode,
             'css'          => $CSS,
