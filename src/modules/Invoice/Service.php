@@ -1194,21 +1194,19 @@ class Service implements InjectionAwareInterface
         if (!empty($company['logo_url'])) {
             [$logoSource, $remote] = $this->getPdfLogoSource($company['logo_url']);
             $options->set('isRemoteEnabled', $remote);
-            $logoHtml = '<img src="' . $logoSource . '" height="50" class="CompanyLogo"></img>';
-        } else {
-            $logoHtml = '';
         }
 
         $vars = [
             'currency_code' => $currencyCode,
             'css'          => $CSS,
-            'html_logo' => $logoHtml,
-            'html_seller' => $this->getSellerPdfHtml($invoice, $sellerLines),
-            'html_seller_lines' => $sellerLines,
-            'html_buyer' => $this->getBuyerPdfHtml($invoice, $buyerLines),
-            'html_buyer_lines' => $buyerLines,
+            'logo_source'  => $logoSource,
+            'seller' => $this->getSellerData($invoice, $sellerLines),
+            'seller_lines' => $sellerLines,
+            'buyer' => $this->getBuyerData($invoice, $buyerLines),
+            'buyer_lines' => $buyerLines,
             'invoice' => $invoice,
         ];
+
         $loader = new FilesystemLoader(__DIR__  . DIRECTORY_SEPARATOR . 'pdf_template');
         $twig = $this->di['twig'];
         $twig->setLoader($loader);
@@ -1476,9 +1474,8 @@ class Service implements InjectionAwareInterface
         return [$source, $remote];
     }
 
-    private function getSellerPdfHtml(array $invoice, int &$lines)
+    private function getSellerData(array $invoice, int &$lines)
     {
-        $html = '';
         $sourceData = [
             'Name' => $invoice['seller']['company'],
             'Address' => $invoice['seller']['address'],
@@ -1488,20 +1485,17 @@ class Service implements InjectionAwareInterface
             'Email' => $invoice['seller']['email'],
         ];
         foreach ($sourceData as $label => $data) {
-            if (is_string($data)) {
-                $data = trim($data);
-                if (!empty($data)) {
-                    $html .= "<p>$label: $data</p>";
-                    $lines++;
-                }
+            if (!is_string($data) || empty($data)) {
+                unset($sourceData[$label]);   
+            } else {
+                $lines++;
             }
         }
-        return $html;
+        return $sourceData;
     }
 
-    private function getBuyerPdfHtml(array $invoice, int &$lines)
+    private function getBuyerData(array $invoice, int &$lines)
     {
-        $html = '';
         $sourceData = [
             'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
             'Company' => $invoice['buyer']['company'],
@@ -1509,15 +1503,13 @@ class Service implements InjectionAwareInterface
             'Phone' => $invoice['buyer']['phone'],
         ];
         foreach ($sourceData as $label => $data) {
-            if (is_string($data)) {
-                $data = trim($data);
-                if (!empty($data)) {
-                    $html .= "<p>$label: $data</p>";
-                    $lines++;
-                }
+            if (!is_string($data) || empty($data)) {
+                unset($sourceData[$label]);   
+            } else {
+                $lines++;
             }
         }
-        return $html;
+        return $sourceData;
     }
     // End of PDF related functions
 }

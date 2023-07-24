@@ -1,7 +1,7 @@
-{% if html_buyer_lines >= html_seller_lines %}
-	{% set top = 325 + (25 * html_buyer_lines) %}
+{% if buyer_lines >= seller_lines %}
+	{% set top = 325 + (25 * buyer_lines) %}
 {% else %}
-	{% set top = 325 + (25 * html_seller_lines) %}
+	{% set top = 325 + (25 * seller_lines) %}
 {% endif %}
 
 <!DOCTYPE html>
@@ -13,7 +13,9 @@
 			{{css}}</style>
 	</head>
 	<body>
-		{{ html_logo|raw }}
+		{% if logo_source is not empty %}
+			<img src='{{ logo_source }}' height="50" class="CompanyLogo"></img>
+		{% endif %}
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
 			<p>Invoice number:
@@ -27,10 +29,20 @@
 		</div>
 
 		<h3 class='CompanyInfo'>Company</h3>
-		<div class='CompanyInfo'>{{ html_seller|raw }}</div>
+		<div class='CompanyInfo'>
+		{% for key, value in seller %}
+			<p>{{ key }}:
+				{{ value }}</p>
+		{% endfor %}
+		</div>
 
 		<h3 class='ClientInfo'>Client</h3>
-		<div class='ClientInfo'>{{ html_buyer|raw }}</div>
+		<div class='ClientInfo'>
+		{% for key, value in buyer %}
+			<p>{{ key }}:
+				{{ value }}</p>
+		{% endfor %}
+		</div>
 
 		<div class='Breakdown' style='top: {{top}}px'>
 			<table style='width:100%'>
