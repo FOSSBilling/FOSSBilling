@@ -48,8 +48,8 @@
 						<th>{{ item.title }}</th>
 						<th>{{ item.quantity }}
 							x
-							{{ item.price|fossbilling_format_currency }}</th>
-						<th>{{ item.total|fossbilling_format_currency }}</th>
+							{{ item.price|money_convert }}</th>
+						<th>{{ item.total|money_convert }}</th>
 					</tr>
 				{% endfor %}
 				<tr>
@@ -59,13 +59,13 @@
 					<tr>
 						<th class='right' colspan='3'>{{ invoice.taxname }}
 							{{ invoice.taxrate }}% Tax:</th>
-						<th>{{ invoice.tax|fossbilling_format_currency }}</th>
+						<th>{{ invoice.tax|money_convert }}</th>
 					</tr>
 				{% endif %}
 				{% if invoice.discount|default and invoice.discount > 0 %}
 					<tr>
 						<th class='right' colspan='3'>Discount:</th>
-						<th>{{ invoice.discount|fossbilling_format_currency }}</th>
+						<th>{{ invoice.discount|money_convert }}</th>
 					</tr>
 				{% endif %}
 				<tr>

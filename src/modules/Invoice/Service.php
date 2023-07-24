@@ -12,7 +12,6 @@ namespace Box\Mod\Invoice;
 
 use \FOSSBilling\InjectionAwareInterface;
 use Twig\Loader\FilesystemLoader;
-use Twig\Extra\Intl\IntlExtension;
 use Dompdf\Dompdf;
 
 class Service implements InjectionAwareInterface
@@ -1217,25 +1216,12 @@ class Service implements InjectionAwareInterface
             'html_buyer_lines' => $buyerLines,
             'invoice' => $invoice,
         ];
-        $twigOptions = [
-            'paths' => [dirname(__DIR__) . DIRECTORY_SEPARATOR .  'Invoice' . DIRECTORY_SEPARATOR . 'pdf_template'],
-            'debug' => true,
-            'charset' => 'utf-8',
-            'optimizations' => 1,
-            'autoescape' => 'html',
-            'auto_reload' => true,
-            'cache' => false,
-        ];
-        $loader = new FilesystemLoader($twigOptions['paths']);
-        $twig = new \Twig\Environment($loader, $twigOptions);
-        $twig->addExtension(new IntlExtension());
+        $loader = new FilesystemLoader(__DIR__  . DIRECTORY_SEPARATOR . 'pdf_template');
+        $twig = $this->di['twig'];
+        $twig->setLoader($loader);
         $twig->addFilter(new \Twig\TwigFilter('fossbilling_format_time', 
         function($string) use ($format) {
             return $format->format(strtotime($string));
-        }));
-        $twig->addFilter(new \Twig\TwigFilter('fossbilling_format_currency', 
-        function($string) use ($currencyCode) {
-            return $this->money($string, $currencyCode);
         }));
         $html = $twig->render($this->getPdfTemplate(), $vars);
 
