@@ -19,9 +19,9 @@
 			<p>Invoice number:
 				{{ invoice.serie_nr }}</p>
 			<p>Invoice date:
-				{{ invoice.created_at|fossbilling_format_time }}</p>
+				{{ invoice.created_at|format_datetime }}</p>
 			<p>Due date:
-				{{ invoice.due_at|fossbilling_format_time }}</p>
+				{{ invoice.due_at|format_datetime }}</p>
 			<p>Invoice status:
 				{{ invoice.status|capitalize }}</p>
 		</div>

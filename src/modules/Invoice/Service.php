@@ -1179,13 +1179,6 @@ class Service implements InjectionAwareInterface
             $currencyCode = $client->currency;
         }
 
-        $locale = $config['i18n']['locale'];
-        $timezone = $config['i18n']['timezone'];
-        $date_format = strtoupper($config['i18n']['date_format']);
-        $time_format = strtoupper($config['i18n']['time_format']);
-        $datetime_pattern = $config['i18n']['datetime_pattern'] ?? null;
-        $format = new \IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-
         $invoice = $this->toApiArray($invoice, false, $identity);
         $company = $this->di['mod_service']('System')->getCompany();
 
@@ -1219,10 +1212,6 @@ class Service implements InjectionAwareInterface
         $loader = new FilesystemLoader(__DIR__  . DIRECTORY_SEPARATOR . 'pdf_template');
         $twig = $this->di['twig'];
         $twig->setLoader($loader);
-        $twig->addFilter(new \Twig\TwigFilter('fossbilling_format_time', 
-        function($string) use ($format) {
-            return $format->format(strtotime($string));
-        }));
         $html = $twig->render($this->getPdfTemplate(), $vars);
 
         $pdf->setOptions($options);
