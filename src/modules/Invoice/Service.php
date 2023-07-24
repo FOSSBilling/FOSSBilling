@@ -1459,9 +1459,7 @@ class Service implements InjectionAwareInterface
 
     private function getPdfTemplate(): string
     {
-        $basePath = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR;
-
-        if (file_exists($basePath . 'custom-pdf.twig')) {
+        if (file_exists(__DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR . 'custom-pdf.twig')) {
             return 'custom-pdf.twig';
         }
 
