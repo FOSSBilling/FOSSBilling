@@ -1191,6 +1191,8 @@ class Service implements InjectionAwareInterface
         $sellerLines = 0;
         $buyerLines = 0;
 
+        $logoSource = '';
+
         if (!empty($company['logo_url'])) {
             [$logoSource, $remote] = $this->getPdfLogoSource($company['logo_url']);
             $options->set('isRemoteEnabled', $remote);
