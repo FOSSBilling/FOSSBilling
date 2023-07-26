@@ -444,13 +444,11 @@ class ServiceTest extends \BBTestCase
     public function testmarkAsPaid()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('countIncome', 'getNextInvoiceNumber'))
+            ->setMethods(array('countIncome'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('countIncome');
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -802,7 +800,7 @@ class ServiceTest extends \BBTestCase
         $total       = 10;
         $tax         = 2.2;
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal', 'getTax', 'countIncome', 'addNote', 'getNextInvoiceNumber'))
+            ->setMethods(array('getTotal', 'getTax', 'countIncome', 'addNote'))
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -815,8 +813,6 @@ class ServiceTest extends \BBTestCase
             ->method('countIncome');
         $serviceMock->expects($this->exactly(3))
             ->method('addNote');
-        $serviceMock->expects($this->once())
-            ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
