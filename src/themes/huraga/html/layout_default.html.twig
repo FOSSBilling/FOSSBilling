@@ -190,19 +190,18 @@
 
                         {% block content_before %}{% endblock %}
                         <div class="content-block" role="main">
-                            {% block content %}{% endblock %}
-                
                             {% if settings.show_breadcrumb %}
-                            {% block breadcrumbs %}
-                            <ul class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
-                                {% block breadcrumb %}
-                                <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
+                                {% block breadcrumbs %}
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
+                                    {% block breadcrumb %}
+                                        <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
+                                    {% endblock %}
+                                </ul>
                                 {% endblock %}
-                            </ul>
-                            {% endblock %}
                             {% endif %}
 
+                            {% block content %}{% endblock %}
                             {% if settings.show_page_header %}
                             {# block page_header %}
                                 <article>
