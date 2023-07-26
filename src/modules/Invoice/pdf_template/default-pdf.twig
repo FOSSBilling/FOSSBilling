@@ -14,18 +14,14 @@
 	</head>
 	<body>
 		{% if logo_source is not empty %}
-			<img src='{{ logo_source }}' height="50" class="CompanyLogo"></img>
+			<img src='{{ logo_source }}' height='50' class='CompanyLogo'></img>
 		{% endif %}
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
-			<p>Invoice number:
-				{{ invoice.serie_nr }}</p>
-			<p>Invoice date:
-				{{ invoice.created_at|format_datetime }}</p>
-			<p>Due date:
-				{{ invoice.due_at|format_datetime }}</p>
-			<p>Invoice status:
-				{{ invoice.status|capitalize }}</p>
+			<p>Invoice number: {{ invoice.serie_nr }}</p>
+			<p>Invoice date: {{ invoice.created_at|format_datetime }}</p>
+			<p>Due date: {{ invoice.due_at|format_datetime }}</p>
+			<p>Invoice status: {{ invoice.status|capitalize }}</p>
 		</div>
 
 		<h3 class='CompanyInfo'>Company</h3>
@@ -58,9 +54,7 @@
 					<tr>
 						<th>{{ nr }}</th>
 						<th>{{ item.title }}</th>
-						<th>{{ item.quantity }}
-							x
-							{{ item.price|money_convert }}</th>
+						<th>{{ item.quantity }}x {{ item.price|money_convert }}</th>
 						<th>{{ item.total|money_convert }}</th>
 					</tr>
 				{% endfor %}

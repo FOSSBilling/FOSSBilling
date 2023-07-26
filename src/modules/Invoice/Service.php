@@ -1166,7 +1166,6 @@ class Service implements InjectionAwareInterface
 
     public function generatePDF($hash, $identity)
     {
-        $config = $this->di['config'];
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
         if (!$invoice instanceof \Model_Invoice) {
             throw new \Box_Exception('Invoice not found');
@@ -1190,7 +1189,6 @@ class Service implements InjectionAwareInterface
 
         $sellerLines = 0;
         $buyerLines = 0;
-
         $logoSource = '';
 
         if (!empty($company['logo_url'])) {
@@ -1219,11 +1217,6 @@ class Service implements InjectionAwareInterface
         $pdf->render();
         $pdf->stream($invoice['serie_nr'], ['Attachment' => false]);
         exit(0);
-    }
-
-    private function money($price, $currencyCode)
-    {
-        return $this->di['api_guest']->currency_format(['price' => $price, 'code' => $currencyCode, 'convert' => false]);
     }
 
     public function addNote(\Model_Invoice $model, $note)
@@ -1428,7 +1421,7 @@ class Service implements InjectionAwareInterface
         return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
     }
 
-    // Start of PDF related functions. (TODO: Relocate / remove these once we are using twig templates)
+    // Start of PDF related functions
     private function getPdfCss(): string
     {
         $basePath = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR;
@@ -1459,6 +1452,7 @@ class Service implements InjectionAwareInterface
     {
         $source = parse_url($originalUrl, PHP_URL_PATH);
         $remote = false;
+
         // prevent openbasedir error from preventing pdf creation when debug mode is enabled
         if (@!file_exists($source)) {
             $source = $_SERVER['DOCUMENT_ROOT'] . $source;
@@ -1473,6 +1467,7 @@ class Service implements InjectionAwareInterface
             $source = 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($source));
             $remote = false; // The contents of the SVG are directly added to the page, so we can safely disable remote files for the PDFs.
         }
+
         return [$source, $remote];
     }
 
@@ -1486,13 +1481,15 @@ class Service implements InjectionAwareInterface
             'Phone' => $invoice['seller']['phone'],
             'Email' => $invoice['seller']['email'],
         ];
+
         foreach ($sourceData as $label => $data) {
-            if (!is_string($data) || empty($data)) {
+            if (empty(trim($data))) {
                 unset($sourceData[$label]);   
             } else {
                 $lines++;
             }
         }
+
         return $sourceData;
     }
 
@@ -1504,13 +1501,15 @@ class Service implements InjectionAwareInterface
             'Address' => $invoice['buyer']['address'],
             'Phone' => $invoice['buyer']['phone'],
         ];
+
         foreach ($sourceData as $label => $data) {
-            if (!is_string($data) || empty($data)) {
+            if (empty(trim($data))) {
                 unset($sourceData[$label]);   
             } else {
                 $lines++;
             }
         }
+    
         return $sourceData;
     }
     // End of PDF related functions
