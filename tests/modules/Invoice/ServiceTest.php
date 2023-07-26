@@ -819,6 +819,10 @@ class ServiceTest extends \BBTestCase
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
 
+        $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventManagerMock->expects($this->atLeastOnce())
+            ->method('fire');
+
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemService->expects($this->atLeastOnce())
