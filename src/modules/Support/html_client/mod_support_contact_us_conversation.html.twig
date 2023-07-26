@@ -6,7 +6,7 @@
 
 {% block body_class %}support-contact-us-conversation{% endblock %}
 {% block breadcrumb %}
-<li><a href="{{ 'support/contact-us' | link}}">{{ 'Contact us'|trans }}</a><span class="divider">/</span></li>
+<li><a href="{{ 'support/contact-us' | link}}">{{ 'Contact us'|trans }}</a><span class="dropdown-divider">/</span></li>
 <li class="active">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -24,7 +24,7 @@
                 </div>
             </header>
             <section>
-                <table class="table table-striped table-bordered table-condensed">
+                <table class="table table-striped table-bordered table-sm">
                     <tbody>
                     <tr>
                         <td>{{ 'Subject'|trans }}</td>
@@ -44,7 +44,7 @@
                     <tr>
                         <td>{{ 'Status'|trans }}</td>
                         <td>
-                            <div class="label {% if ticket.status=='open' %}label-success{% elseif ticket.status == 'on_hold' %}label-warning{% endif %}">{{ mf.status_name(ticket.status) }}</div>
+                            <div class="badge {% if ticket.status=='open' %}badge-success{% elseif ticket.status == 'on_hold' %}badge-warning{% endif %}">{{ mf.status_name(ticket.status) }}</div>
                         </td>
                     </tr>
 

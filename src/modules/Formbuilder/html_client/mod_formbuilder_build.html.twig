@@ -13,7 +13,7 @@
     {% if form.style.type == 'horizontal' %}
        <div class="control-group">
     {% endif %}
-            {% if field.hide_label!=1 %}<label {% if form.style.type == 'horizontal' %}class="control-label"{% endif %} for="{{ field.name }}">{{ field.label }}</label>{% endif %}
+            {% if field.hide_label!=1 %}<label {% if form.style.type == 'horizontal' %}class="col-form-label"{% endif %} for="{{ field.name }}">{{ field.label }}</label>{% endif %}
        {% if form.style.type == 'horizontal' %}
            <div class="controls">
        {% endif %}
@@ -38,7 +38,7 @@
     
                 {% elseif field.type == "checkbox" %}
                     {% for k,v in field.options %}
-                    <label class="checkbox"><input type="checkbox" name="{{field.name}}[]" value="{{v}}"
+                    <label class="form-check-label"><input type="form-check-input" name="{{field.name}}[]" value="{{v}}"
                     {% if field.readonly==1 %}readonly="readonly"{% endif %}
                     {% if v in field.default_value %}checked="checked"{% endif %}
                         />{{k}}
@@ -63,7 +63,7 @@
                     {% if field.readonly==1%}readonly="readonly"{% endif %}
                 >{{field.default_value}}</textarea>
                 {% endif %}
-                <span class="help-block">{{field.description}}</span>
+                <span class="form-text">{{field.description}}</span>
     {% if form.style.type == 'horizontal' %}
         </div>
         </div>

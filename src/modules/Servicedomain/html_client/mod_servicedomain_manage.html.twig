@@ -17,7 +17,7 @@
             <section class="tab-content">
                 <div class="tab-pane active" id="details">
                     <h2>{{ 'Domain details'|trans }}</h2>
-                    <table class="table table-striped table-bordered table-condensed">
+                    <table class="table table-striped table-bordered table-sm">
                         <tbody>
                         <tr>
                             <td>{{ 'Domain'|trans }}</td>
@@ -64,29 +64,29 @@
                     <h2>{{ 'Update Nameservers'|trans }}</h2>
                     <div class="block">
                         <p class="alert alert-info">{{ 'If you would like to host this domain with another company you can update nameservers.'|trans }}</p>
-                        <form action="" method="post" id="update-nameservers" class="form-horizontal">
+                        <form action="" method="post" id="update-nameservers">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <fieldset>
                             <div class="control-group">
-                                <label class="control-label" >{{ 'Nameserver 1'|trans }}: </label>
+                                <label class="col-form-label" >{{ 'Nameserver 1'|trans }}: </label>
                                 <div class="controls">
                                     <input type="text" name="ns1" value="{{ request.ns1|default(service.ns1) }}" required="required">
                                 </div>
                             </div>
                             <div class="control-group">
-                                <label class="control-label" >{{ 'Nameserver 2'|trans }}: </label>
+                                <label class="col-form-label" >{{ 'Nameserver 2'|trans }}: </label>
                                 <div class="controls">
                                     <input type="text" name="ns2" value="{{ request.ns2|default(service.ns2) }}" required="required">
                                 </div>
                             </div>
                             <div class="control-group">
-                                <label class="control-label" >{{ 'Nameserver 3'|trans }}: </label>
+                                <label class="col-form-label" >{{ 'Nameserver 3'|trans }}: </label>
                                 <div class="controls">
                                     <input type="text" name="ns3" value="{{ request.ns3|default(service.ns3) }}">
                                 </div>
                             </div>
                             <div class="control-group">
-                                <label class="control-label" >{{ 'Nameserver 4'|trans }}: </label>
+                                <label class="col-form-label" >{{ 'Nameserver 4'|trans }}: </label>
                                 <div class="controls">
                                     <input type="text" name="ns4" value="{{ request.ns4|default(service.ns4) }}">
                                 </div>
@@ -106,88 +106,88 @@
                     <h2>{{ 'Update domain contact details'|trans }}</h2>
                     <div class="block">
                         <p class="alert alert-info">{{ 'Domain contact details will be displayed once someone will check WHOIS output (which is public) of your service. This will update Technical, Billing and Admin contacts for this service. You can enable domain privacy protection if you want to hide your public WHOIS information.'|trans }}</p>
-                        <form method="post" action="" id="update-contact" class="form-horizontal">
+                        <form method="post" action="" id="update-contact">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <fieldset>
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'First Name'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'First Name'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[first_name]" value="{{ request.first_name|default(service.contact.first_name) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Last Name'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Last Name'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[last_name]" value="{{ request.last_name|default(service.contact.last_name) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Email'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Email'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[email]" value="{{ request.email|default(service.contact.email) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Company'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Company'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[company]" value="{{ request.company|default(service.contact.company) }}">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Address Line 1'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Address Line 1'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[address1]" value="{{ request.address1|default(service.contact.address1) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Address Line 2'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Address Line 2'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Country'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Country'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[country]" value="{{ request.country|default(service.contact.country) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'City'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'City'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[city]" value="{{ request.city|default(service.contact.city) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'State'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'State'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[state]" value="{{ request.state|default(service.contact.state) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Zip'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Zip'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[postcode]" value="{{ request.postcode|default(service.contact.postcode) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Phone Country Code'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Phone Country Code'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[phone_cc]" value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required="required">
                                     </div>
                                 </div>
 
                                 <div class="control-group">
-                                    <label class="control-label" >{{ 'Phone number'|trans }}: </label>
+                                    <label class="col-form-label" >{{ 'Phone number'|trans }}: </label>
                                     <div class="controls">
                                         <input type="text" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required="required">
                                     </div>

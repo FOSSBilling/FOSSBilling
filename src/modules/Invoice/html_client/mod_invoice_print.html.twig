@@ -17,10 +17,10 @@
     margin-right: 75%;
         left: 0px;
     }
-    .dl-horizontal dt{
+    .row dt{
         width: auto;
     }
-    .dl-horizontal dd{
+    .row dd{
         margin-left: 30%;
     }
     .invoice-well dt{
@@ -42,10 +42,10 @@
         margin-right: 9%;
         left: 0px;
     }
-    .dl-horizontal dt{
+    .row dt{
         width: auto;
     }
-    .dl-horizontal dd{
+    .row dd{
         margin-left: 30%;
     }
     .invoice-well dt{
@@ -80,7 +80,7 @@
                                 {% if company.logo_url %}
                                 <img src="{{ company.logo_url }}" alt="Logo">
                                 {% endif %}
-                                <dl class="dl-horizontal">
+                                <dl class="row">
                                     <dt>{{ 'Invoice number'|trans }}:</dt>
                                     <dd>{{ nr }}</dd>
                                     <dt>{{ 'Invoice Date'|trans }}:</dt>
@@ -99,7 +99,7 @@
                                     </dd>
                                     <dt>{{ 'Invoice Status'|trans }}:</dt>
                                     <dd>
-                                    <span class="label {% if invoice.status == 'paid' %} label-success{% elseif invoice.status == 'unpaid' %}label-warning{% endif %}">
+                                    <span class="badge {% if invoice.status == 'paid' %} badge-success{% elseif invoice.status == 'unpaid' %}badge-warning{% endif %}">
                                           <span class="{% if invoice.status == 'paid' %}awe-ok-sign{% elseif invoice.status == 'unpaid' %}awe-exclamation-sign{% endif %}"></span>
                                           {{ invoice.status | capitalize }}
                                     </span>
@@ -110,7 +110,7 @@
                         <div class="span4">
                             <div class="well small">
                                 <h4>{{ 'Company'|trans }}</h4>
-                                <dl class="dl-horizontal">
+                                <dl class="row">
                                     {% if seller.company %}
                                     <dt>{{ 'Name'|trans }}:</dt>
                                     <dd>{{seller.company}}</dd>
@@ -153,7 +153,7 @@
                         <div class="span4">
                             <div class="well small">
                                 <h4>{{ 'Billing & Delivery address'|trans }}</h4>
-                                <dl class="dl-horizontal">
+                                <dl class="row">
                                     {% if buyer.first_name or buyer.last_name %}
                                     <dt>{{ 'Name'|trans }}:</dt>
                                     <dd>{{buyer.first_name}} {{buyer.last_name}}</dd>

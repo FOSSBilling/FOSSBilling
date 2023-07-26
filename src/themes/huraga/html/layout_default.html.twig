@@ -75,10 +75,9 @@
                                     <span class="flag  {{ countryCode | lower }}"></span>
                                     {% for lang in languages %}
                                     {% if lang.locale == currentLang %}
-                                            {{ lang.title }}
+                                            <span class="dropdown-item">{{ lang.title }}</span>
                                        {% endif %}
                                     {% endfor %}
-                                    <span class="caret"></span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     {% for lang in languages %}
@@ -193,9 +192,9 @@
             {% if settings.show_breadcrumb %}
             {% block breadcrumbs %}
             <ul class="breadcrumb">
-                <li><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="divider">/</span></li>
+                <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
                 {% block breadcrumb %}
-                <li class="active">{{ 'Dashboard'|trans }}</li>
+                <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
                 {% endblock %}
             </ul>
             {% endblock %}
@@ -203,7 +202,7 @@
 
             {% if settings.show_page_header %}
             {# block page_header %}
-                <article class="page-header">
+                <article>
                     <h1>{{ block('meta_title') }}</h1>
                     <p>{{ block('meta_description') }}</p>
                 </article>
@@ -221,7 +220,7 @@
                         </header>
                         <section>
                             <p>{{ 'You are logged out'|trans }}</p>
-                            <ul class="dl-horizontal">
+                            <ul class="row">
                                 <li>
                                     <a class="btn btn-alt btn-inverse" href="{{ '/login'|link }}">{{ 'Login'|trans }}</a>
                                     <a class="btn btn-alt btn-inverse" href="{{ '/signup'|link }}">{{ 'Register'|trans }}</a>
@@ -238,7 +237,7 @@
                         </header>
                         <section>
                             <p>{{ 'Products and services'|trans }}</p>
-                            <ul class="dl-horizontal">
+                            <ul class="row">
                                 <li>
                                     <a class="btn btn-alt btn-inverse" href="{{ '/order'|link }}">{{ 'Order'|trans }}</a>
                                 </li>
@@ -256,7 +255,7 @@
                         </header>
                         <section>
                             <p>{{ 'Latest news and announcements' | trans }}</p>
-                            <ul class="dl-horizontal">
+                            <ul class="row">
                                 <li>
                                     <a class="btn btn-alt btn-inverse" href="{{ '/news'|link }}">{{ 'Announcements'|trans }}</a>
                                 </li>
@@ -273,7 +272,7 @@
                         </header>
                         <section>
                             <p>{{ 'Browse our KB for answers and FAQ' | trans }}</p>
-                            <ul class="dl-horizontal">
+                            <ul class="row">
                                 <li>
                                     <a class="btn btn-alt btn-inverse" href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
                                 </li>

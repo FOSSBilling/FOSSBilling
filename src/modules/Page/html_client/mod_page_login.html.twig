@@ -25,22 +25,20 @@
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="control-group">
-                        <label class="control-label" for="email">{{ 'Email Address'|trans }}</label>
+                        <label class="col-form-label" for="email">{{ 'Email Address'|trans }}</label>
                         <div class="controls">
                             <input id="icon" type="text" placeholder="{{ 'Your email address'|trans }}" name="email" value="{{ request.email }}" required="required" autofocus>
-                            <div class="help-block"></div>
                         </div>
                     </div>
                     <div class="control-group">
-                        <label class="control-label" for="password">{{ 'Password'|trans }}</label>
+                        <label class="col-form-label" for="password">{{ 'Password'|trans }}</label>
                         <div class="controls">
                             <input id="password" type="password" placeholder="{{ 'Password'|trans }}" name="password" required="required" value="{{ request.password }}">
                             {% if settings.login_page_show_remember_me %}
-                            <label class="checkbox">
+                            <label class="form-check-label">
                                 <input type="checkbox" name="remember" checked="checked"> {{ 'Remember me'|trans }}
                             </label>
                             {% endif %}
-                            <div class="help-block"></div>
                         </div>
                     </div>
                     <div class="form-actions">

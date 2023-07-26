@@ -16,7 +16,7 @@
                     <fieldset>
                         <div class="control-group">
                             <label>{{ 'Register a new domain'|trans }}</label>
-                            <div class="form-horizontal">
+                            <div>
                                 <input type="text" name="register_sld" style="width: 55%" value="{{ request.register_sld }}" placeholder="{{ 'Enter new domain name to register'|trans }}">
                                 {% set tlds = guest.serviceDomain_tlds({"allow_register":1})%}
                                 <select name="register_tld" style="width: 20%">
@@ -33,7 +33,7 @@
                                     <select name="register_years" id="registration-years"></select>
                                 </label>
                                 <br/>
-                                <label class="checkbox"><input type="checkbox" onclick="$('#nameservers').slideToggle();">{{ 'I want to use my nameservers'|trans }}</label>
+                                <label class="form-check-label"><input type="checkbox" onclick="$('#nameservers').slideToggle();">{{ 'I want to use my nameservers'|trans }}</label>
                                 <div id="nameservers" style="display:none; margin: 10px 0;">
                                     <div class="row-fluid">
                                         <input type="text" name="ns1" value="" placeholder="{{ 'Nameserver 1'|trans }}"/>
@@ -60,7 +60,7 @@
                     <fieldset>
                         <div class="control-group">
                             <label>{{ 'Transfer a new domain'|trans }}</label>
-                            <div class="form-horizontal">
+                            <div>
                                 <input type="text" name="transfer_sld" style="width: 55%" value="{{ request.transfer_sld }}" placeholder="{{ 'Enter your domain name to transfer'|trans }}">
                                 <select name="transfer_tld" style="width: 20%">
                                     {% for tld in transfer_tlds%}
@@ -71,7 +71,7 @@
                             </div>
                             </div>
                             <div class="control-group">
-                                <div class="form-horizontal">
+                                <div>
                                     <div id="domain-transfer-config" style="display:none;">
                                         <p>{{ 'Transfer price'|trans }}: <span id="transfer-price"></span></p>
                                         <input type="text" name="transfer_code" value="{{ request.transfer_code }}" style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">

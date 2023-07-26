@@ -3,16 +3,16 @@
 
 <div class="pagination pagination-centered">
     <ul>
-        <li {% if not request.page or request.page == 1 %}class="disabled"{% endif %}>
+        <li class="page-link {% if not request.page or request.page == 1 %}disabled{% endif %}">
             <a href="{% if request.page and request.page != 1%}?{% for k,v in {}|merge(request)|merge({'page': 1}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}">«</a>
         </li>
 
-        <li {% if not request.page or request.page == 1 %}class="disabled"{% endif %}>
+        <li class="page-link {% if not request.page or request.page == 1 %}disabled{% endif %}">
         <a href="{% if request.page  and request.page != '1' %}?{% for k,v in {}|merge(request)|merge({'page': request.page - 1}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}"> <span class="awe-arrow-left"></span> </a>
         </li>
 
         {% for i in 1..list.pages %}
-            <li  {% if i == page %}class="active" {% endif%}>
+            <li  {% if i == page %}class="active page-item" {% endif%}>
             {% if i == request.page  or (not request.page and i == 1)%}
                 <a href="#" onclick="return false;">{{ i }}</a>
             {%else%}
@@ -21,11 +21,11 @@
             </li>
         {% endfor %}
 
-        <li {% if request.page == list.pages %}class="disabled"{% endif %}>
+        <li class="page-link {% if request.page == list.pages %}disabled{% endif %}">
             <a href="{% if request.page and request.page != list.pages %}?{% for k,v in {}|merge(request)|merge({'page': request.page + 1}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% elseif not request.page %}?{% for k,v in {}|merge(request)|merge({'page': 2}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}"><span class="awe-arrow-right"></span> </a>
         </li>
 
-        <li {% if request.page == list.pages %}class="disabled"{% endif %}>
+        <li class="page-link {% if request.page == list.pages %} disabled {% endif %}">
             <a href="{% if not request.page or request.page != list.pages %}?{% for k,v in {}|merge(request)|merge({'page': list.pages}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}">»</a>
         </li>
     </ul>

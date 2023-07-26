@@ -41,7 +41,7 @@
                 <h1>{{ 'Update details'|trans }}</h1>
                 <p>{{ 'Keep your personal data up to date.'|trans }}</p>
             </header>
-            <form method="post" action="" id="profile-update" class="form-horizontal">
+            <form method="post" action="" id="profile-update">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="alert alert-block alert-success">
@@ -51,39 +51,35 @@
                         </div>
                     </div>
                         <div class="control-group">
-                            <label class="control-label" for="input">{{ 'Email Address'|trans }}</label>
+                            <label class="col-form-label" for="input">{{ 'Email Address'|trans }}</label>
                             <div class="controls">
                                 <input type="email" class="input-xlarge" name="email" value="{{ profile.email }}" required="required">
-                                <p class="help-block"></p>
                             </div>
                         </div>
 
                        <div class="control-group">
-                           <label class="control-label" for="input">{{ 'First Name'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'First Name'|trans }}</label>
                            <div class="controls">
                                 <input type="text" name="first_name" value="{{ profile.first_name }}" required="required">
-                                <p class="help-block"></p>
                            </div>
                        </div>
 
                        <div class="control-group">
-                           <label class="control-label" for="input">{{ 'Last Name'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'Last Name'|trans }}</label>
                            <div class="controls">
                                 <input type="text" name="last_name" value="{{ profile.last_name }}" {% if last_name in required|keys %} required="required" {% endif %}>
-                               <p class="help-block"></p>
                            </div>
                        </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="birthday">{{ 'Birthdate'|trans }}</label>
+                        <label class="col-form-label" for="birthday">{{ 'Birthdate'|trans }}</label>
                         <div class="controls">
                             <input type="date" id="birthday" name="birthday" value="{{ profile.birthday }}" {% if birthday in required|keys %} required="required" {% endif %}>
                         </div>
-                        <p class="help-block"></p>
                     </div>
 
                        <div class="control-group">
-                        <label class="control-label" for="input">{{ 'Gender'|trans }}</label>
+                        <label class="col-form-label" for="input">{{ 'Gender'|trans }}</label>
                         <div class="controls">
                             <select name="gender" id="gender" {% if gender in required|keys %} required="required" {% endif %}>
                                 <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>Male</option>
@@ -91,76 +87,67 @@
                                 <option value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>Non-binary</option>
                                 <option value="other" {% if profile.gender not in ['male', 'female', 'nonbinary'] %} selected {% endif %}>Other</option>
                             </select>
-                            <p class="help-block"></p>
                         </div>
                     </div>
 
                        <div class="control-group">
-                           <label class="control-label" for="input">{{ 'Company Name'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'Company Name'|trans }}</label>
                            <div class="controls">
                                 <input type="text" name="company" value="{{ profile.company }}" {% if company in required|keys %} required="required" {% endif %}>
-                               <p class="help-block"></p>
                            </div>
                        </div>
 
                     <div class="control-group">
-                           <label class="control-label" for="input">{{ 'Company VAT'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'Company VAT'|trans }}</label>
                            <div class="controls">
                                 <input type="text" name="company_vat" value="{{ profile.company_vat }}">
-                               <p class="help-block"></p>
                            </div>
                        </div>
 
                     <div class="control-group">
-                           <label class="control-label" for="input">{{ 'Company Number'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'Company Number'|trans }}</label>
                            <div class="controls">
                                 <input type="text" name="company_number" value="{{ profile.company_number }}">
-                               <p class="help-block"></p>
                            </div>
                        </div>
 
                         <div class="control-group">
-                            <label class="control-label" for="input">{{ 'Phone Country Code'|trans }}</label>
+                            <label class="col-form-label" for="input">{{ 'Phone Country Code'|trans }}</label>
                             <div class="controls">
                                 <input type="text" name="phone_cc" value="{{ profile.phone_cc }}" {% if phone in required|keys %} required="required" {% endif %}>
-                                <p class="help-block"></p>
                             </div>
                         </div>
 
                        <div class="control-group">
-                           <label class="control-label" for="input">{{ 'Phone Number'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'Phone Number'|trans }}</label>
                            <div class="controls">
                                 <input type="phone" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required="required" {% endif %}>
-                               <p class="help-block"></p>
                            </div>
                        </div>
 
                         <div class="control-group">
-                            <label class="control-label" for="input">{{ 'Address'|trans }}</label>
+                            <label class="col-form-label" for="input">{{ 'Address'|trans }}</label>
                             <div class="controls">
                                 <input type="text" name="address_1" value="{{ profile.address_1 }}" {% if address_1 in required|keys %} required="required" {% endif %}>
-                                <p class="help-block"></p>
                             </div>
                         </div>
 
                        <div class="control-group">
-                           <label class="control-label" for="input">{{ 'Address 2'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'Address 2'|trans }}</label>
                            <div class="controls">
                                 <input type="text" name="address_2" value="{{ profile.address_2 }}" {% if address_2 in required|keys %} required="required" {% endif %}>
-                               <p class="help-block"></p>
                            </div>
                        </div>
 
                         <div class="control-group">
-                            <label class="control-label" for="input">{{ 'City'|trans }}</label>
+                            <label class="col-form-label" for="input">{{ 'City'|trans }}</label>
                             <div class="controls">
                                 <input type="text" name="city" value="{{ profile.city }}" {% if city in required|keys %} required="required" {% endif %}>
-                                <p class="help-block"></p>
                             </div>
                         </div>
 
                         <div class="control-group">
-                            <label class="control-label" for="input">{{ 'Country'|trans }}</label>
+                            <label class="col-form-label" for="input">{{ 'Country'|trans }}</label>
                             <div class="controls">
                                 <select name="country" {% if country in required|keys %} required="required" {% endif %}>
                                 <option value="">{{ '-- Select country --'|trans }}</option>
@@ -168,32 +155,28 @@
                                 <option value="{{ val }}" label="{{ label|e }}" {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
                                 {% endfor %}
                                 </select>
-                                <p class="help-block"></p>
                             </div>
                         </div>
 
                        <div class="control-group">
-                           <label class="control-label" for="input">{{ 'State'|trans }}</label>
+                           <label class="col-form-label" for="input">{{ 'State'|trans }}</label>
                            <div class="controls">
                                 {# mf.selectbox('state', guest.system_states, profile.state, 0, 'Select state') #}
                                 <input type="text" name="state" value="{{ profile.state }}" {% if state in required|keys %} required="required" {% endif %}/>
-                               <p class="help-block"></p>
                            </div>
                        </div>
 
                       <div class="control-group">
-                          <label class="control-label" for="input">{{ 'Zip/Postal Code'|trans }}</label>
+                          <label class="col-form-label" for="input">{{ 'Zip/Postal Code'|trans }}</label>
                           <div class="controls">
                                 <input type="text" name="postcode" value="{{ profile.postcode }}" {% if postcode in required|keys %} required="required" {% endif %}>
-                              <p class="help-block"></p>
                           </div>
                       </div>
 
                       <div class="control-group">
-                          <label class="control-label" for="input">{{ 'Passport number'|trans }}</label>
+                          <label class="col-form-label" for="input">{{ 'Passport number'|trans }}</label>
                           <div class="controls">
                                 <input type="text" name="document_nr" value="{{ profile.document_nr}}" >
-                              <p class="help-block"></p>
                           </div>
                       </div>
 
@@ -202,7 +185,7 @@
                       {% set current = guest.client_custom_fields[custom] %}
                       {% if current.active %}
                       <div class="control-group">
-                          <label class="control-label" for="input">{{ current.title }}</label>
+                          <label class="col-form-label" for="input">{{ current.title }}</label>
                           <div class="controls">
                             <input type="text" name="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required="required" {% endif %}>
                           </div>
@@ -221,22 +204,22 @@
                 <h1>{{ 'Change Password'|trans }}</h1>
                 <p>{{ 'Please enter new password two times in order avoid mistypes'|trans }}</p>
             </header>
-            <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="form-horizontal api-form" data-api-msg="{{ 'Password Changed'|trans }}">
+            <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password Changed'|trans }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="control-group">
-                    <label class="control-label" for="current_password">{{ 'Current Password'|trans }}</label>
+                    <label class="col-form-label" for="current_password">{{ 'Current Password'|trans }}</label>
                     <div class="controls">
                         <input type="password" name="current_password" id="current_password" required>
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label" for="new_password">{{ 'New Password'|trans }}</label>
+                    <label class="col-form-label" for="new_password">{{ 'New Password'|trans }}</label>
                     <div class="controls">
                         <input type="password" name="new_password" id="new_password" required>
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
+                    <label class="col-form-label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
                     <div class="controls">
                         <input type="password" name="confirm_password" id="confirm_password" required>
                     </div>
@@ -251,14 +234,14 @@
                 <h1>{{ 'API key'|trans }}</h1>
                 <p>{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
             </header>
-            <form method="post" action="" id="change-api-key" class="form-horizontal">
+            <form method="post" action="" id="change-api-key">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="alert alert-block">
                      <h4><p>{{ 'Warning! Resetting the key will break existing applications using it!'|trans }}</p></h4>
                     </div>
                     <div class="control-group">
-                        <label class="control-label" for="api-key">{{ 'Your API key'|trans }}: </label>
+                        <label class="col-form-label" for="api-key">{{ 'Your API key'|trans }}: </label>
                         <div class="controls">
                         <input type="text" value="{{ client.profile_api_key_get }}" class="input-xlarge" id="api-key">
                         </div>

@@ -8,7 +8,7 @@
 
 {% block body_class %}invoice-invoice{% endblock %}
 {% block breadcrumb %}
-    <li><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a> <span class="divider">/</span></li>
+    <li><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a> <span class="dropdown-divider">/</span></li>
     <li class="active">{% if invoice.status == 'paid' %} {{ 'Receipt'|trans }} {% else %}  {{ 'Invoice'|trans }} {% endif %}{{ nr }}</li>
 {% endblock %}
 
@@ -64,7 +64,7 @@
                         {% if company.logo_url %}
                         <img src="{{ company.logo_url }}" alt="Logo">
                         {% endif %}
-                        <dl class="dl-horizontal">
+                        <dl class="row">
                             <dt>{{ 'Invoice Number'|trans }}:</dt>
                             <dd>{{ nr }}</dd>
                             <dt>{{ 'Invoice Date'|trans }}:</dt>
@@ -83,7 +83,7 @@
                             </dd>
                             <dt>{{ 'Invoice Status'|trans }}:</dt>
                             <dd>
-                                <span class="label {% if invoice.status == 'paid' %} label-success{% elseif invoice.status == 'unpaid' %}label-warning{% endif %}">
+                                <span class="badge {% if invoice.status == 'paid' %} badge-success{% elseif invoice.status == 'unpaid' %}badge-warning{% endif %}">
                                       {{ invoice.status|capitalize }}
                                 </span>
                             </dd>
@@ -92,7 +92,7 @@
                     <div class="span4">
                         <div class="well small">
                             <h4>{{ 'Company'|trans }}</h4>
-                            <dl class="dl-horizontal">
+                            <dl class="row">
                                 {% if seller.company %}
                                 <dt>{{ 'Name'|trans }}:</dt>
                                 <dd>{{ seller.company }}</dd>
@@ -134,7 +134,7 @@
                     <div class="span4">
                         <div class="well small">
                             <h4>{{ 'Billing & Delivery address'|trans }}</h4>
-                            <dl class="dl-horizontal">
+                            <dl class="row">
                                 {% if buyer.first_name or buyer.last_name %}
                                 <dt>{{ 'Name'|trans }}:</dt>
                                 <dd>{{ buyer.first_name }} {{ buyer.last_name }}</dd>
@@ -177,7 +177,7 @@
                     </div>
                 {% endif %}
 
-                <table class="table table-striped table-bordered table-condensed table-hover">
+                <table class="table table-striped table-bordered table-sm table-hover">
                     <thead>
                         <tr>
                             <th>{{ '#'|trans }}</th>

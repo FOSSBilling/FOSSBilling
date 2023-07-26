@@ -6,14 +6,14 @@
     </header>
 </section>
 <div class="row-fluid">
-        <table class="table table-condensed">
+        <table class="table table-sm">
             <tbody>
             {% for addon in product.addons %}
             <label for="addon_{{ addon.id }}">
             <tr>
                 <td>
                     <input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
-                    <input type="checkbox" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
+                    <input type="form-check-input" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
                 </td>
 
                 <td {% if not addon.icon_url%}style="display: none"{% endif %}>

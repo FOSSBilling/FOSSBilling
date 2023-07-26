@@ -7,7 +7,7 @@
 {% block breadcrumbs %}
     {% if not settings.hide_dashboard_breadcrumb %}
         <ul class="breadcrumb">
-            <li><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="divider">/</span></li>
+            <li><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
             <li class="active">{{ 'Dashboard'|trans }}</li>
         </ul>
     {% endif %}
@@ -41,7 +41,7 @@
     <h2>{{ 'Tickets waiting your reply'|trans }}</h2>
 </header>
 <section id="slimScroll1">
-    <table class="table table-striped table-bordered table-condensed table-hover">
+    <table class="table table-striped table-bordered table-sm table-hover">
         <thead>
         <tr>
             <th>{{ 'Id'|trans }}</th>
@@ -58,7 +58,7 @@
             <td>{{ ticket.id }}</td>
             <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}">{{ ticket.subject }}</a></td>
             <td>{{ ticket.helpdesk.name }}</td>
-            <td><span class="label">{{ mf.status_name(ticket.status) }}</span></td>
+            <td><span class="badge">{{ mf.status_name(ticket.status) }}</span></td>
             <td title="{{ ticket.updated_at|format_datetime }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
             <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="btn btn-small btn-inverse">{{ 'Reply'|trans }}</a></td>
         </tr>
@@ -88,7 +88,7 @@
             </ul>
         </header>
         <section>
-            <dl class="dl-horizontal">
+            <dl class="row">
                 <dt>{{ 'ID'|trans }}</dt>
                 <dd>#{{ profile.id }}</dd>
                 <dt>{{ 'Email'|trans }}</dt>
@@ -111,7 +111,7 @@
             </ul>
         </header>
         <section>
-            <dl class="dl-horizontal">
+            <dl class="row">
                 <dt>{{ 'Total'|trans }}</dt>
                     <dd>{{ client.invoice_get_list().total }}</dd>
                 <dt>{{ 'Paid'|trans }}</dt>
@@ -137,7 +137,7 @@
                 </ul>
             </header>
             <section>
-                <dl class="dl-horizontal">
+                <dl class="row">
                     <dt>{{ 'Total'|trans }}</dt>
                     <dd>{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
                     <dt>{{ 'Active'|trans }}</dt>
@@ -161,7 +161,7 @@
                 </ul>
             </header>
             <section>
-                <dl class="dl-horizontal">
+                <dl class="row">
                     <dt>{{ 'Total'|trans }}</dt>
                     <dd>{{ client.support_ticket_get_list().total }}</dd>
                     <dt>{{ 'Open'|trans }}</dt>
@@ -181,7 +181,7 @@
                 <h2>{{ 'Recent orders'|trans }}</h2>
             </header>
             <section>
-                <table class="table table-striped table-bordered table-condensed table-hover">
+                <table class="table table-striped table-bordered table-sm table-hover">
                     <tbody>
                     {% for i, order in client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
                     <tr class="{{ cycle(['odd', 'even'], i) }}">
@@ -189,7 +189,7 @@
                             <a href="{{ 'order/service/manage'|link }}/{{ order.id }}">{{ order.title|truncate(30) }}</a>
                         </td>
                         <td>
-                            <span class="label {% if order.status == 'active' %}label-success{% elseif order.status == 'pending_setup' %}label-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
+                            <span class="badge {% if order.status == 'active' %}badge-success{% elseif order.status == 'pending_setup' %}badge-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
                         </td>
                     </tr>
                     {% else %}
@@ -209,7 +209,7 @@
                 <h2>{{ 'Recent emails'|trans }}</h2>
             </header>
             <section>
-                <table class="table table-striped table-bordered table-condensed table-hover">
+                <table class="table table-striped table-bordered table-sm table-hover">
                     <tbody>
                     {% for i, email in client.email_get_list({ "per_page": 5 }).list %}
                     <tr class="{{ cycle(['odd', 'even'], i) }}">

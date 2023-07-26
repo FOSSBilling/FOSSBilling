@@ -28,28 +28,25 @@
                 <fieldset>
                     {% set r = guest.client_required %}
                     <div class="control-group">
-                        <label class="control-label" for="reg-email">{{ 'Email Address'|trans }}</label>
+                        <label class="col-form-label" for="reg-email">{{ 'Email Address'|trans }}</label>
                         <div class="controls">
                             <input type="email" name="email" value="{{ request.email }}" required="required" id="reg-email">
-                            <p class="help-block"></p>
                         </div>
                     </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="first-name">{{ 'First Name'|trans }}</label>
+                        <label class="col-form-label" for="first-name">{{ 'First Name'|trans }}</label>
                         <div class="controls">
                             <input type="text" name="first_name" id="first-name" value="{{ request.first_name }}" required="required">
-                            <p class="help-block"></p>
                         </div>
                     </div>
 
 
                     {% if 'last_name' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="last_name">{{ 'Last Name'|trans }}</label>
+                        <label class="col-form-label" for="last_name">{{ 'Last Name'|trans }}</label>
                         <div class="controls">
                             <input type="text" name="last_name" id="last_name" value="{{ request.last_name }}" required="required">
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
@@ -57,27 +54,25 @@
 
                     {% if 'company' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="company">{{ 'Company'|trans }}</label>
+                        <label class="col-form-label" for="company">{{ 'Company'|trans }}</label>
                         <div class="controls">
                             <input type="text" name="company" id="company" value="{{ request.company }}" required="required">
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'birthday' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="birthday">{{ 'Birthday'|trans }}</label>
+                        <label class="col-form-label" for="birthday">{{ 'Birthday'|trans }}</label>
                         <div class="controls">
                             <input type="date" name="birthday" id="birthday" value="">
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'gender' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="gender">{{ 'You are'|trans }}</label>
+                        <label class="col-form-label" for="gender">{{ 'You are'|trans }}</label>
                         <div class="controls">
                             <select name="gender" id="gender">
                                 <option value="male">Male</option>
@@ -85,44 +80,40 @@
                                 <option value="nonbinary">Non-binary</option>
                                 <option value="other">Other</option>
                             </select>
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'address_1' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="address_1">{{ 'Address'|trans }}</label>
+                        <label class="col-form-label" for="address_1">{{ 'Address'|trans }}</label>
                         <div class="controls">
                             <input type="text" name="address_1" id="address_1" value="{{ request.address_1 }}">
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'address_2' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="address_2">{{ 'Address 2'|trans }}</label>
+                        <label class="col-form-label" for="address_2">{{ 'Address 2'|trans }}</label>
                         <div class="controls">
                             <input type="text" name="address_2" id="address_2" value="{{ request.address_2 }}">
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'city' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="city">{{ 'City'|trans }}</label>
+                        <label class="col-form-label" for="city">{{ 'City'|trans }}</label>
                         <div class="controls">
                             <input type="text" name="city" id="city" value="{{ request.city }}">
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'country' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="country">{{ 'Country'|trans }}</label>
+                        <label class="col-form-label" for="country">{{ 'Country'|trans }}</label>
                         <div class="controls">
                             <select name="country" required="required">
                                 <option value="">{{ '-- Select country --'|trans }}</option>
@@ -130,40 +121,36 @@
                                 <option value="{{ val }}" label="{{ label|e }}">{{ label|e }}</option>
                                 {% endfor %}
                             </select>
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'state' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="state">{{ 'State'|trans }}</label>
+                        <label class="col-form-label" for="state">{{ 'State'|trans }}</label>
                         <div class="controls">
                             {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
                             <input type="text" name="state" id="state" value="{{ request.state }}" />
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'postcode' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
+                        <label class="col-form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
                         <div class="controls">
                             <input type="text" name="postcode" id="postcode" value="{{ request.postcode }}">
-                            <p class="help-block"></p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if 'phone' in r %}
                     <div class="control-group">
-                        <label class="control-label" for="phone">{{ 'Phone Number'|trans }}</label>
+                        <label class="col-form-label" for="phone">{{ 'Phone Number'|trans }}</label>
                             <div class="input-prepend">
                                 <input type="text" name="phone_cc" value="" style="width:20%">
                                 <input id="phone" type="text" name="phone" value="{{ request.phone }}" style="width:70%">
                             </div>
-                            <p class="help-block"></p>
                     </div>
                     {% endif %}
 
@@ -171,28 +158,25 @@
                     {% for field_name, field in custom_fields %}
                         {% if field.active %}
                             <div class="control-group">
-                                <label class="control-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+                                <label class="col-form-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
                                 <div class="controls">
                                     <input type="text" name="{{ field_name }}" id="{{ field_name }}" value="{{ attribute(request, field_name) }}" {% if field.required %}required="required"{% endif %}>
-                                    <p class="help-block"></p>
                                 </div>
                             </div>
                         {% endif %}
                     {% endfor %}
 
                     <div class="control-group">
-                        <label class="control-label" for="reg-password">{{ 'Password'|trans }}</label>
+                        <label class="col-form-label" for="reg-password">{{ 'Password'|trans }}</label>
                         <div class="controls">
                             <input type="password" name="password" value="" required="required" id="reg-password">
-                            <p class="help-block"></p>
                         </div>
                     </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="password-confirm">{{ 'Password confirm'|trans }}</label>
+                        <label class="col-form-label" for="password-confirm">{{ 'Password confirm'|trans }}</label>
                         <div class="controls">
                             <input type="password" name="password_confirm" name="password-confirm" value="" required="required">
-                            <p class="help-block"></p>
                         </div>
                     </div>
 

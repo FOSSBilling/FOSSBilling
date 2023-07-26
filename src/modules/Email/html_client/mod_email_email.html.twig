@@ -3,7 +3,7 @@
 {% block meta_title %}{{ 'Email'|trans }}{% endblock %}
 
 {% block breadcrumb %}
-<li><a href="{{ 'email' | link}}">{{ 'Emails'|trans }}</a><span class="divider">/</span></li>
+<li><a href="{{ 'email' | link}}">{{ 'Emails'|trans }}</a><span class="dropdown-divider">/</span></li>
 {{ email.subject }}
 {% endblock %}
 {% block body_class %}email-email{% endblock %}
