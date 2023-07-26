@@ -169,7 +169,6 @@ class GuestTest extends \BBTestCase {
         $data = array(
             'email' => 'test@example.com',
             'password' => 'sezam',
-            'remember' => true,
         );
 
         $model = new \Model_Client();

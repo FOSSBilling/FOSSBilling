@@ -60,8 +60,6 @@ class Guest extends \Api_Abstract
      * @param string $email    - admin email
      * @param string $password - admin password
      *
-     * @optional string $remember  - pass value "1" to create remember me cookie
-     *
      * @return array
      *
      * @throws \Box_Exception

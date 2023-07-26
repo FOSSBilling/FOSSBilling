@@ -35,11 +35,6 @@
                         <label class="control-label" for="password">{{ 'Password'|trans }}</label>
                         <div class="controls">
                             <input id="password" type="password" placeholder="{{ 'Password'|trans }}" name="password" required="required" value="{{ request.password }}">
-                            {% if settings.login_page_show_remember_me %}
-                            <label class="checkbox">
-                                <input type="checkbox" name="remember" checked="checked"> {{ 'Remember me'|trans }}
-                            </label>
-                            {% endif %}
                             <div class="help-block"></div>
                         </div>
                     </div>
