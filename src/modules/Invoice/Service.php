@@ -371,7 +371,6 @@ class Service implements InjectionAwareInterface
         $ctable = $this->di['mod_service']('Currency');
 
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
-        $invoice->nr = $this->getNextInvoiceNumber($invoice);
         $invoice->approved = true;
         $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
         $invoice->status = \Model_Invoice::STATUS_PAID;

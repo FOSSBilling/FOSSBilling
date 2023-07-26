@@ -444,13 +444,11 @@ class ServiceTest extends \BBTestCase
     public function testmarkAsPaid()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('countIncome', 'getNextInvoiceNumber'))
+            ->setMethods(array('countIncome'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('countIncome');
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -534,9 +532,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $result = $this->service->getNextInvoiceNumber($invoiceModel);
-        $this->assertIsInt($result);
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $invoiceModel -> nr);
     }
 
     public function testcountIncome()
@@ -815,8 +811,6 @@ class ServiceTest extends \BBTestCase
             ->method('countIncome');
         $serviceMock->expects($this->exactly(3))
             ->method('addNote');
-        $serviceMock->expects($this->once())
-            ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -824,10 +818,6 @@ class ServiceTest extends \BBTestCase
 
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
-
-        $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
 
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
