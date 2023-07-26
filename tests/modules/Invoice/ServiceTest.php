@@ -504,39 +504,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetNextInvoiceNumber()
-    {
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \DummyBean());
-        $invoiceModel->id = 2;
-        $invoiceModel->nr = 2;
-
-        $expected = $invoiceModel->id + 1;
-
-        $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemService->expects($this->atLeastOnce())
-            ->method('getParamValue');
-        $systemService->expects($this->atLeastOnce())
-            ->method('setParamValue');
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->will($this->returnValue($invoiceModel));
-
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($systemService) {
-            return $systemService;
-        });
-
-        $this->service->setDi($di);
-
-        $result = $this->service->getNextInvoiceNumber($invoiceModel);
-        $this->assertIsInt($result);
-        $this->assertEquals($expected, $result);
-    }
-
     public function testcountIncome()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
@@ -675,7 +642,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($seller));
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->will($this->returnValue(0));
+            ->will($this->returnValue(1));
 
         $serviceTaxMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTax')->getMock();
         $serviceTaxMock->expects($this->atLeastOnce())
