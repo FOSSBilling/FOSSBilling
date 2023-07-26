@@ -213,5 +213,78 @@
     </div>
   </div>
 </div>
+{% else %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>{{ 'Profile'|trans }}</h2>
+                </div>
+                <div class="card-body">
+                    <p>{{ 'You are logged out'|trans }}</p>
+                    <ul class="list-unstyled">
+                        <li>
+                            <a class="btn btn-dark" href="{{ '/login'|link }}">{{ 'Login'|trans }}</a>
+                            <a class="btn btn-dark" href="{{ '/signup'|link }}">{{ 'Register'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>{{ 'Order'|trans }}</h2>
+                </div>
+                <div class="card-body">
+                    <p>{{ 'Products and services'|trans }}</p>
+                    <ul class="list-unstyled">
+                        <li>
+                            <a class="btn btn-dark" href="{{ '/order'|link }}">{{ 'Order'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {% if guest.extension_is_on({"mod":"news"}) %}
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>{{ 'News'|trans }}</h2>
+                </div>
+                <div class="card-body">
+                    <p>{{ 'Latest news and announcements' | trans }}</p>
+                    <ul class="list-unstyled">
+                        <li>
+                            <a class="btn btn-dark" href="{{ '/order'|link }}">{{ 'Announcements'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if guest.extension_is_on({"mod":"kb"}) %}
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>{{ 'Knowledge base'|trans }}</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ 'Browse our KB for answers and FAQ' | trans }}</p>
+                        <ul class="list-unstyled">
+                            <li>
+                                <a class="btn btn-dark" href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endif %}
 {% endblock %}
