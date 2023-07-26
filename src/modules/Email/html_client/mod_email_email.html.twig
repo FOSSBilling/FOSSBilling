@@ -32,7 +32,7 @@
                         <h3>{{ email.subject }}</h3>
                         <p> {{email.content_html | raw}}</p>
                     </div>
-                    <a class="btn btn-inverse email-resend" href="#" mail-id="{{email.id}}">{{ 'Resend'|trans }}</a>
+                    <a class="btn btn-dark email-resend" href="#" mail-id="{{email.id}}">{{ 'Resend'|trans }}</a>
                     <a class="btn btn-danger email-delete" href="#"  mail-id="{{email.id}}">{{ 'Delete'|trans }}</a>
                 </div>
             </section>

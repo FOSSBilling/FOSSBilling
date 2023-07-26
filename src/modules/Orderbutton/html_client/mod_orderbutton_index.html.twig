@@ -1,9 +1,3 @@
-{% if settings.color_scheme %}
-    {% set theme_color = 'css/huraga-'~settings.color_scheme~'.css' %}
-{% else %}
-    {% set theme_color = 'css/huraga-green.css' %}
-{% endif %}
-
 {% set loader_nr = request.loader | default("8")%}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 <!DOCTYPE html>
@@ -15,13 +9,13 @@
     <meta charset="utf-8">
     <title>Order</title>
     {{ 'css/font-awesome.css' | asset_url | stylesheet_tag }}
-    {{ 'css/huraga-main.css' | asset_url | stylesheet_tag }}
-    {{ theme_color | asset_url | stylesheet_tag }}
+
     {{ 'css/plugins/jquery.jgrowl.css' | asset_url | stylesheet_tag }}
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url }}"></script>
     <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
+
     <style type="text/css">
         body{
             background:none transparent;

@@ -38,7 +38,7 @@
                             {{ (item.total) | money_convert }}
                         {% endif %}
                     </td>
-                    <td><button data-cart-item-id="{{ item.id }}" class="btn btn-inverse btn-mini remove-cart-item" title="{{ 'Remove item'|trans }}"><strong><i class="awe-remove"></i></strong></button></td>
+                    <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-mini remove-cart-item" title="{{ 'Remove item'|trans }}"><strong><i class="awe-remove"></i></strong></button></td>
                 </tr>
 
                 {% if request.show_custom_form_values %}

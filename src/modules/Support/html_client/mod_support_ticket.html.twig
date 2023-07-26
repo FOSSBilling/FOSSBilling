@@ -130,7 +130,7 @@
                                 <header>#{{ i+1 }} | {{ message.created_at|format_date }}
                                     {% if ticket.status != 'closed' %}
                                     <div class="pull-right">
-                                        <a href="#" class="btn btn-inverse reply-to-message" message-quote="{{ mf.markdown_quote(message.content) }}">{{ 'Reply'|trans }}</a>
+                                        <a href="#" class="btn btn-dark reply-to-message" message-quote="{{ mf.markdown_quote(message.content) }}">{{ 'Reply'|trans }}</a>
                                     </div>
                                     {% endif %}
                                 </header>

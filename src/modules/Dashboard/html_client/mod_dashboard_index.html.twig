@@ -21,7 +21,7 @@
     <div class="hero-unit">
         <p>{{ settings.showcase_text |markdown }}</p>
         {% if (settings.showcase_button_url) and (settings.showcase_button_title) %}
-        <p><a class="btn btn-alt btn-primary btn-large" href="{{ settings.showcase_button_url }}">{{ settings.showcase_button_title }}</a></p>
+        <p><a class="btn btn-primary btn-large" href="{{ settings.showcase_button_url }}">{{ settings.showcase_button_title }}</a></p>
         {% endif %}
     </div>
     {% endif %}
@@ -55,7 +55,7 @@
             <td>{{ ticket.helpdesk.name }}</td>
             <td><span class="badge">{{ mf.status_name(ticket.status) }}</span></td>
             <td title="{{ ticket.updated_at|format_datetime }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
-            <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="btn btn-small btn-inverse">{{ 'Reply'|trans }}</a></td>
+            <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="btn btn-small btn-dark">{{ 'Reply'|trans }}</a></td>
         </tr>
         {% else %}
         <tr>
@@ -78,7 +78,7 @@
             <h2>{{ 'Profile'|trans }}</h2>
             <ul class="data-header-actions">
                 <li>
-                    <a class="btn btn-alt btn-inverse" href="{{ 'client/profile'|link }}">{{ 'Update'|trans }}</a>
+                    <a class="btn btn-dark" href="{{ 'client/profile'|link }}">{{ 'Update'|trans }}</a>
                 </li>
             </ul>
         </header>
@@ -101,7 +101,7 @@
             <h2>{{ 'Invoices'|trans }}</h2>
             <ul class="data-header-actions">
                 <li>
-                    <a class="btn btn-alt btn-inverse" href="{{ 'invoice'|link }}">{{ 'All Invoices'|trans }}</a>
+                    <a class="btn btn-dark" href="{{ 'invoice'|link }}">{{ 'All Invoices'|trans }}</a>
                 </li>
             </ul>
         </header>
@@ -126,8 +126,8 @@
                 <h2>{{ 'Orders'|trans }}</h2>
                 <ul class="data-header-actions">
                     <li>
-                        <a class="btn btn-alt btn-info order-button" href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
-                        <a class="btn btn-alt btn-inverse" href="{{ 'order/service'|link }}">{{ 'All orders'|trans }}</a>
+                        <a class="btn btn-info order-button" href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
+                        <a class="btn btn-dark" href="{{ 'order/service'|link }}">{{ 'All orders'|trans }}</a>
                     </li>
                 </ul>
             </header>
@@ -150,8 +150,8 @@
                 <h2>{{ 'Tickets'|trans }}</h2>
                 <ul class="data-header-actions">
                     <li>
-                        <a class="btn btn-alt btn-info" href="{{ 'support'|link({ 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
-                        <a class="btn btn-alt btn-inverse" href="{{ 'support'|link }}">{{ 'All tickets'|trans }}</a>
+                        <a class="btn btn-info" href="{{ 'support'|link({ 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
+                        <a class="btn btn-dark" href="{{ 'support'|link }}">{{ 'All tickets'|trans }}</a>
                     </li>
                 </ul>
             </header>

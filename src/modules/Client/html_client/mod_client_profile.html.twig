@@ -21,7 +21,7 @@
         <span>You must verify your email address before you may access our services.</span>
     </div>
     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-    <a href="{{ 'api/client/client/resend_email_verification'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-alt btn-primary api-link" data-api-msg="{{ 'Verification email has been resent'|trans }}">{{ 'Resend verification email'|trans }}</a>
+    <a href="{{ 'api/client/client/resend_email_verification'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="{{ 'Verification email has been resent'|trans }}">{{ 'Resend verification email'|trans }}</a>
 </div>
 {% endif %}
 
@@ -194,7 +194,7 @@
                       {% endfor %}
 
                     <div class="form-actions">
-                        <button class="btn btn-alt btn-large btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
+                        <button class="btn btn-large btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
                     </div>
                 </fieldset>
             </form>
@@ -225,7 +225,7 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button class="btn btn-alt btn-large btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
+                    <button class="btn btn-large btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
                  </div>
             </form>
         </div>
@@ -246,7 +246,7 @@
                         <input type="text" value="{{ client.profile_api_key_get }}" class="input-xlarge" id="api-key">
                         </div>
                         <div class="form-actions">
-                            <button class="btn btn-alt btn-large btn-primary" type="submit">{{ 'Reset key'|trans }}</button>
+                            <button class="btn btn-large btn-primary" type="submit">{{ 'Reset key'|trans }}</button>
                         </div>                    </div>
                 </fieldset>
             </form>        </div>

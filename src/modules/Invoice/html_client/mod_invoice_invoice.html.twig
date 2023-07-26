@@ -50,10 +50,10 @@
             {{ 'You can print this invoice or export it to PDF file by clicking on corresponding button.'|trans }}
             <ul class="data-header-actions">
                 <li>
-                    <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" class="btn btn-alt btn-inverse">{{ 'PDF'|trans }}</a>
+                    <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" class="btn btn-dark">{{ 'PDF'|trans }}</a>
                 </li>
                 <li>
-                    <a href="{{ 'invoice/print'|link }}/{{ invoice.hash }}" target="_blank" class="btn btn-alt btn-inverse">{{ 'Print'|trans }}</a>
+                    <a href="{{ 'invoice/print'|link }}/{{ invoice.hash }}" target="_blank" class="btn btn-dark">{{ 'Print'|trans }}</a>
                 </li>
             </ul>
         </header>
