@@ -8,7 +8,8 @@
 
 {% block body_class %}order-manage{% endblock %}
 {% block breadcrumb %}
-<li><a href="{{ 'service' | link}}">{{ 'Orders'|trans }}</a><span class="dropdown-divider">/</span></li>
+<li class="breadcrumb-item"><a href="{{ 'service' | link}}">{{ 'Orders'|trans }}</a><span class="dropdown-divider">/</span></li>
+<li class="breadcrumb-item active" aria-current="page">{{ 'Invoices'|trans }}</li>
 {{ order.title }}
 {% endblock %}
 

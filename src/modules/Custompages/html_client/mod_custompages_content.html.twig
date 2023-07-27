@@ -3,7 +3,7 @@
 {% block meta_title %}{{ page.title }}{% endblock %}
 {% block meta_description %}{{ page.description }}{% endblock %}
 {% block meta_keywords %}{{ page.keywords }}{% endblock %}
-{% block breadcrumb %} <li class="active">{{ page.title }}</li>{% endblock %}
+{% block breadcrumb %} <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>{% endblock %}
 
 {% block body_class %}custom-page{% endblock %}
 {% block page_header %}

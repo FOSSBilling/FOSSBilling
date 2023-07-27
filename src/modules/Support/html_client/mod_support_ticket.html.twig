@@ -6,8 +6,8 @@
 
 {% block body_class %}support-ticket{% endblock %}
 {% block breadcrumb %}
-<li><a href="{{ 'support' | link}}">{{ 'Support tickets'|trans }}</a><span class="dropdown-divider">/</span></li>
-{{ticket.subject}}
+<li class="breadcrumb-item"><a href="{{ 'support' | link}}">{{ 'Support tickets'|trans }}</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ticket.subject}}</li>
 {% endblock %}
 
 {% block content %}

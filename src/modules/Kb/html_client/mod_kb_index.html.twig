@@ -3,7 +3,7 @@
 {% block meta_title %}{{ 'Knowledge base'|trans }}{% endblock %}
 
 {% block body_class %}kb-index{% endblock %}
-{% block breadcrumb %}{{ 'Knowledge base'|trans }}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Knowledge base'|trans }}</li>{% endblock %}
 
 {% block content %}
     {% if request.q %}

@@ -8,8 +8,8 @@
 
 {% block body_class %}invoice-invoice{% endblock %}
 {% block breadcrumb %}
-    <li><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a> <span class="dropdown-divider">/</span></li>
-    <li class="active">{% if invoice.status == 'paid' %} {{ 'Receipt'|trans }} {% else %}  {{ 'Invoice'|trans }} {% endif %}{{ nr }}</li>
+    <li class="breadcrumb-item"><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if invoice.status == 'paid' %} {{ 'Receipt'|trans }} {% else %}  {{ 'Invoice'|trans }} {% endif %}{{ nr }}</li>
 {% endblock %}
 
 {% block content %}

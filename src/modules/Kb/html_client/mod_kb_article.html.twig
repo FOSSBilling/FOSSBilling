@@ -4,13 +4,13 @@
 
 {% block body_class %}kb-article{% endblock %}
 {% block breadcrumb %}
-<li>
-    <a href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a> <span class="dropdown-divider">/</span>
+<li class="breadcrumb-item">
+    <a href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
 </li>
-<li>
-    <a href="{{ '/kb'|link }}/{{ article.category.slug }}">{{ article.category.title }}</a><span class="dropdown-divider">/</span>
+<li class="breadcrumb-item">
+    <a href="{{ '/kb'|link }}/{{ article.category.slug }}">{{ article.category.title }}</a>
 </li>
-<li class="active">{{ article.title }}</li>
+<li class="breadcrumb-item active" aria-current="page">{{ article.title }}</li>
 {% endblock %}
 
 {% block content %}

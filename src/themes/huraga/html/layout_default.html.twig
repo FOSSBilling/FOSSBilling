@@ -192,12 +192,14 @@
                         <div class="content-block" role="main">
                             {% if settings.show_breadcrumb %}
                                 {% block breadcrumbs %}
-                                <ul class="breadcrumb">
-                                    <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
-                                    {% block breadcrumb %}
-                                        <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
-                                    {% endblock %}
-                                </ul>
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb">
+                                        <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a></li>
+                                        {% block breadcrumb %}
+                                            <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
+                                        {% endblock %}
+                                    </ol>
+                                </nav>
                                 {% endblock %}
                             {% endif %}
 

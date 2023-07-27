@@ -6,8 +6,8 @@
 
 {% block body_class %}support-contact-us-conversation{% endblock %}
 {% block breadcrumb %}
-<li><a href="{{ 'support/contact-us' | link}}">{{ 'Contact us'|trans }}</a><span class="dropdown-divider">/</span></li>
-<li class="active">{{ ticket.subject }}</li>
+<li class="breadcrumb-item"><a href="{{ 'support/contact-us' | link}}">{{ 'Contact us'|trans }}</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
 {% block content_before %}

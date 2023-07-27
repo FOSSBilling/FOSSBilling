@@ -3,7 +3,7 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ 'Payment history'|trans }}{% endblock %}
-{% block breadcrumb %} <li class="active">{{ 'Payment history'|trans }}</li>{% endblock %}
+{% block breadcrumb %} <li class="breadcrumb-item active" aria-current="page">{{ 'Payment history'|trans }}</li>{% endblock %}
 
 {% set profile = client.profile_get %}
 
