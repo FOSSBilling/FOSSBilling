@@ -344,7 +344,8 @@
         "httponly",
         "samesite",
         "IPCOUNTRY",
-        "Serviceapikey"
+        "Serviceapikey",
+        "haspopup"
     ],
     "ignorePaths": [
         "tests/**",
