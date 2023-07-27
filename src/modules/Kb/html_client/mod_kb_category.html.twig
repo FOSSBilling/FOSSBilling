@@ -9,25 +9,22 @@
 {% endblock %}
 
 {% block content %}
-<div class="content-block" role="main">
-    <div class="row">
-        <article class=" span12 data-block">
-            <div class="data-container">
-                <header>
-                    <h1>{{ category.title }}</h1>
-                    <p class="meta">{{ category.description }}</p>
-                </header>
-                <section>
-                    <ul>
-                        {% for i, article in category.articles %}
-                        <li><a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}">{{ article.title }}</a></li>
-                        <hr/>
-                        {% endfor %}
-                    </ul>
-                    <a class="btn btn-small" href="{{ 'kb'|link }}">{{ 'Back to list'|trans }}</a>
-                </section>
+<div class="row">
+    <div class="card ml-3 w-100">
+        <div class="card-header">
+            <h1>{{ category.title }}</h1>
+            <p>{{ category.description }}</p>
+        </div>
+        <div class="card-body">
+            <div class="list-group ml-2">
+                {% for i, article in category.articles %}
+                    <a class="list-group-item list-group-item-action" href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a>
+                {% endfor %}
             </div>
-        </article>
+        </div>
+        <div class="card-footer">
+            <a class="btn btn-primary" href="{{ 'kb'|link }}">{{ 'Back to list'|trans }}</a>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -12,52 +12,40 @@
         {% set kbcategories = guest.kb_category_get_list %}
     {% endif %}
 
-<div class="content-block" role="main">
-    <div class="row">
-        <article class=" span12 data-block">
-            <div class="data-container">
-                <header>
-                    <h1>{{ 'Knowledge base'|trans }}</h1><br/>
-                    {{ 'Please try to read related topics in knowledge base before contacting support.'|trans }}
-                    <form method="get" action="" class="form form-search pull-right" style="background: none; border: 0px">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                        <p>
-                            <input class="" name="_url" type="hidden" value="/kb">
-                            <input class="search-query text" name="q" type="text" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">
-                            <input class="btn btn-primary" value="{{ 'Search'|trans }}" type="submit">
-                        </p>
-                    </form>
-                </header>
-                <section>
+<div class="row">
+    <div class="card ml-3 w-100">
+        <div class="card-header">
+            <h1>{{ 'Knowledge base'|trans }}</h1>
+            <p>{{ 'Please try to read related topics in knowledge base before contacting support.'|trans }}</p>
 
-                    <div class="row" >
-                        {% for i, category in kbcategories.list %}
-                        <article class="data-block">
-                            <div class="data-container">
-                                <header>
-                                    <h2 id="category-{{category.id}}">
-                                        <a href="{{ 'kb'|link }}/{{ category.slug }}">{{ category.title }}</a>
-                                    </h2>
-                                </header>
-                                <section>
-                                    <ul>
-                                        {% for i, article in category.articles %}
-                                        <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a></li>
-                                        {% endfor %}
-                                    </ul>
-                                </section>
-                            </div>
-                        </article>
-                        {% else %}
-                        <p class="alert alert-block alert-danger">
-                            {{ 'Try using other keyword. No matches found for keyword:'|trans }}
-                            <strong>{{ request.q }}</strong>
-                        </p>
+            <form method="get" action="" class="form">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <input name="_url" type="hidden" value="/kb">
+                <span class="ml-1 row">
+                    <input class="form-control w-50 mr-2" name="q" type="text" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">
+                    <input class="btn btn-primary" value="{{ 'Search'|trans }}" type="submit">
+                </span>
+            </form>
+        </div>
+        <div class="card-body">
+            {% for i, category in kbcategories.list %}
+                <div class="card-body">
+                    <h2 id="category-{{category.id}}">
+                        <a href="{{ 'kb'|link }}/{{ category.slug }}">{{ category.title }}</a>
+                    </h2>
+                    <div class="list-group ml-2">
+                        {% for i, article in category.articles %}
+                            <a class="list-group-item list-group-item-action" href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a>
                         {% endfor %}
                     </div>
-                </section>
-            </div>
-        </article>
+                </div>
+            {% else %}
+                <p class="alert alert-block alert-danger">
+                    {{ 'Try using other keyword. No matches found for keyword:'|trans }}
+                    <strong>{{ request.q }}</strong>
+                </p>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

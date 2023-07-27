@@ -92,7 +92,7 @@
                                 {% set currentLocaleName = lang.title %}
                             {% endfor %}
         
-                            <li class="nav-item f16">
+                            <li class="nav-item f16 mr-1">
                                 <div class="dropdown">
                                     <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="langDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="flag {{ currentCountryCode | lower }}"></span> {{ currentLocaleName }}</button>
                                     <div class="dropdown-menu" aria-labelledby="langDropdown">
@@ -106,19 +106,19 @@
                         {% endif %}
 
                         {% if settings.top_menu_dashboard %}
-                            <li class="nav-item">
+                            <li class="nav-item mr-1">
                                 <a href="{{ ''|link }}" class="btn btn-secondary btn-sm" title="{{ 'Dashboard'|trans }}">{{ 'Dashboard'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_order %}
-                            <li class="nav-item">
+                            <li class="nav-item mr-1">
                                 <a href="#" class="order-button btn btn-secondary btn-sm" title="{{ 'Order'|trans }}">{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_profile %}
-                            <li class="nav-item">
+                            <li class="nav-item mr-1">
                                 {% if client %}
                                     <a href="{{ 'client/profile'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Profile'|trans }}">{{ 'Profile'|trans }}</a>
                                 {% else %}
@@ -128,7 +128,7 @@
                         {% endif %}
 
                         {% if settings.top_menu_signout %}
-                            <li class="nav-item">
+                            <li class="nav-item mr-1">
                                 {% if client %}
                                     <a href="{{ 'client/logout'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Sign out'|trans }}">{{ 'Sign out'|trans }}</a>
                                 {% else %}
