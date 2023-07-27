@@ -7,21 +7,21 @@
 
 {% block content %}
 <div class="row">
-    <article class="span12 data-block">
-        <div class="data-container">
-            <header>
-                <div class="row-fluid"></div>
-                <h1>{{ 'News & Announcements'|trans }}</h1>
-                <p>{{ 'Track our latest information.'|trans }}</p>
-            </header>
-            <section>
-                {% set posts = guest.news_get_list({ "page": request.page, "per_page": 5 }) %}
-                {% for i, post in posts.list %}
-                <div class="article{% if loop.last %} last{% endif%} data-container">
-                    <header>
-                        <h2><a href="{{ '/news'|link }}/{{post.slug}}">{{ post.title }}</a></h2>
-                        <div class="pull-right"><h5>{{ post.updated_at|format_datetime }}</h5></div>
-                    </header>
+    <div class="card ml-3 w-100">
+        <div class="card-header">
+            <h1>{{ 'News & Announcements'|trans }}</h1>
+            <p>{{ 'Track our latest information.'|trans }}</p>
+        </div>
+        <div class="card-body">
+            {% set posts = guest.news_get_list({ "page": request.page, "per_page": 5 }) %}
+            {% for i, post in posts.list %}
+            <div class="card mb-2">
+                <div class="card-body">
+                    <span class="row">
+                        <h3><a href="{{ '/news'|link }}/{{post.slug}}">{{ post.title }}</a></h3>
+                        <div class="float-right ml-4 mt-2 font-weight-light"><h5>{{ post.updated_at|format_datetime }}</h5></div>
+                    </span>
+
                    <section>
                        {% if post.excerpt %}
                             {{ post.excerpt|markdown }}
@@ -31,12 +31,11 @@
                    </section>
                     <a class="btn btn-primary btn-small read_more" href="{{ '/news'|link }}/{{post.slug}}">{{ 'Read more ...'|trans }}</a>
                 </div>
-                {% else %}
-                <p>The list is empty</p>
-                {% endfor %}
-            </section>
+            </div>
+            {% else %}
+                {{ 'The list is empty'|trans }}
+            {% endfor %}
         </div>
-        {% include "partial_pagination.html.twig" with { 'list': posts } %}
-    </article>
+    </div>
 </div>
 {% endblock %}

@@ -26,45 +26,23 @@
 
 {% block content %}
 <div class="row">
-    <article class="span12 data-block">
-        <div class="data-container">
-            <header>
-                <h1>{{post.title}}</h1>
-                <div class="pull-right"><h5>{{ post.created_at|format_datetime }}</h5></div>
-                <p>{{ 'by '|trans }} {{ post.author.name }}</p>
-            </header>
+    <div class="card ml-3 w-100">
+        <div class="card-header">
+            <h1>{{post.title}}</h1>
+            <div class="float-right"><h5>{{ post.created_at|format_datetime }}</h5></div>
+            <p>{{ 'by '|trans }} {{ post.author.name }}</p>
+        </div>
+        <div class="card-body">
             <section>
                 {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
                 {{ post.content|markdown }}
                 {# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
-
+    
                 {% if guest.extension_is_on({ "mod": "comment" }) %}{% include "mod_comment_block.html.twig" %}{% endif %}
                 <hr/>
-                <p><a class="btn btn-small" href="{{ 'news'|link }}">{{ 'Back to list'|trans }}</a></p>
+                <p><a class="btn btn-primary" href="{{ 'news'|link }}">{{ 'Back to list'|trans }}</a></p>
             </section>
         </div>
-    </article>
+    </div>
 </div>
 {% endblock %}
-
-{# block sidebar2 %}
-<div class="row">
-    <article class="span6 data-block">
-        <div class="data-container">
-            <header>
-                <h2>{{ 'Other recent posts'|trans }}</h2>
-            </header>
-            <section>
-                <ul class="menu">
-                    {% set posts = guest.news_get_list({ "per_page": 5 }) %}
-                    {% for i, post in posts.list %}
-                    <li>
-                        <a href="{{ '/news'|link }}/{{ post.slug }}">{{ post.title|truncate(35) }}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </section>
-        </div>
-    </article>
-</div>
-{% endblock #}
