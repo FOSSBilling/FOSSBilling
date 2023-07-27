@@ -248,7 +248,15 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getTotalWithTax(\Model_InvoiceItem $item)
     {
-        return $this->getTotal($item) + $this->getTax($item) * $item->quantity;
+        $currencyService = $this->di['mod_service']('Currency');
+
+        // Calculate total with tax
+        $total_with_tax = $this->getTotal($item) + $this->getTax($item) * $item->quantity;
+        // Round according to currencies rounding precision
+        $currency_rounding_precision = $currencyService->getByCode($item->currency)->rounding_precision;
+        $total_with_tax = floor($total_with_tax/$currency_rounding_precision)*$currency_rounding_precision;
+
+        return $total_with_tax;
     }
 
     public function getOrderId(\Model_InvoiceItem $item)

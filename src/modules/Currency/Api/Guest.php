@@ -81,6 +81,7 @@ class Guest extends \Api_Abstract
             3 => number_format($p, 2, ',', '.'),
             4 => number_format($p, 0, '', ','),
             5 => number_format($p, 0, '', ''),
+            6 => number_format($p, 2, '\''),
             default => number_format($p, 2, '.', ''),
         };
 

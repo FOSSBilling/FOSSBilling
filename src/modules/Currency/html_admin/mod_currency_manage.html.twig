@@ -45,6 +45,12 @@
                 </div>
             </div>
             <div class="mb-3 row">
+                <label class="col-md-3 col-form-label">{{ 'Rounding Precision'|trans }}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" name="rounding_precision" value="{{ currency.rounding_precision }}" required>
+                </div>
+            </div>
+            <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Format'|trans }}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" name="format" value="{{ currency.format }}" required placeholder="$ {{ price|raw }}">
@@ -66,6 +72,10 @@
                         <label class="form-check-label" for="radioPriceFormat3">1.234,56</label>
                     </div>
                     <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioPriceFormat5" type="radio" name="price_format" value="6"{% if currency.price_format == 6 %} checked{% endif %}>
+                        <label class="form-check-label" for="radioPriceFormat5">1'234.00</label>
+                    </div>
+                    <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioPriceFormat4" type="radio" name="price_format" value="4"{% if currency.price_format == 4 %} checked{% endif %}>
                         <label class="form-check-label" for="radioPriceFormat4">1,234</label>
                     </div>
@@ -73,6 +83,7 @@
                         <input class="form-check-input" id="radioPriceFormat5" type="radio" name="price_format" value="5"{% if currency.price_format == 5 %} checked{% endif %}>
                         <label class="form-check-label" for="radioPriceFormat5">1234</label>
                     </div>
+
                 </div>
             </div>
         </div>
