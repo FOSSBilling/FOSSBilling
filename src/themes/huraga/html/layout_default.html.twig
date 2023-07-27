@@ -108,7 +108,7 @@
 
                         {% if settings.top_menu_order %}
                             <li class="nav-item mr-1">
-                                <a href="#" class="order-button btn btn-secondary btn-sm" title="{{ 'Order'|trans }}">{{ 'Order'|trans }}</a>
+                                <a href="{{ '/order'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Order'|trans }}">{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
@@ -290,10 +290,6 @@
         <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 
         {% endblock %}
-
-        {% if settings.top_menu_order or settings.side_menu_order %}
-        <script src="{{'orderbutton/js'|link({ 'options': '1', 'width': 600, 'theme_color': 'green', 'background_color': 'black', 'background_opacity': 50, 'background_close': 1, 'bind_selector': '.order-button', 'border_radius': 0, 'loader': 8 }) }}"></script>
-        {% endif %}
 
         {% if settings.inject_javascript %}
             {{ settings.inject_javascript | raw}}

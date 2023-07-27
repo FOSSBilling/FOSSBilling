@@ -4,7 +4,7 @@
     {% endif %}
 
     {% if settings.side_menu_order %}
-        <a class="list-group-item list-group-item-action order-button" href="#"><span class="awe-shopping-cart"></span> {{ 'Order'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/order'|link }}"><span class="awe-shopping-cart"></span> {{ 'Order'|trans }}</a>
     {% endif %}
 
     {% if settings.side_menu_support %}
@@ -35,16 +35,3 @@
         <a class="list-group-item list-group-item-action" href="{{ '/kb'|link }}"><span class="awe-book"></span> {{ 'Knowledge base'|trans }}</a>
     {% endif %}
 </div>
-
-<script type="text/javascript">
-    $('.main-menu').each(function(index){
-        var menu_link = $(this).children('a').attr('href');
-        if ("{{ guest.system_current_url }}" =="{{ '/'|link }}"){
-            $('.main-menu:first').addClass("current");
-        }
-        else if ('{{ guest.system_current_url }}'.indexOf(menu_link) >= 0 && menu_link != "{{ '/'|link }}"){
-            $(this).addClass("current");
-      }
-    });
-
-</script>
