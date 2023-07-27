@@ -151,7 +151,7 @@
                                     <span class="label {% if addon.status == 'active' %}label-success{% elseif addon.status == 'pending_setup' %}label-warning{% endif %}">{{ mf.status_name(addon.status) }}</span>
                                 </td>
                                 <td class="actions">
-                                    <a class="bb-button" href="{{ '/order/service/manage'|link }}/{{ addon.id }}">
+                                    <a class="btn btn-primary" href="{{ '/order/service/manage'|link }}/{{ addon.id }}">
                                         <span class="dark-icon i-drag"></span>
                                     </a>
                                 </td>
