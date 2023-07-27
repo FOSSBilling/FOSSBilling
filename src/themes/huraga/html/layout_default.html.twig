@@ -72,14 +72,9 @@
                   </button>
                   <div class="collapse navbar-collapse" id="navbarExample01">
                     {% if settings.show_company_logo and company.logo_url %}
-                        <div class="container-fluid pl-5">
-                            <a class="navbar-brand" href="{{'/'|link }}">
-                                <img src="{{company.logo_url}}" alt="{{company.name}}" title="{{company.name}}" style="max-height: 75px" class="d-inline-block align-text-top">
-                                {% if settings.show_company_name %}
-                                    {{company.name}}
-                                {% endif %}
-                            </a>
-                        </div>
+                        <a class="navbar-brand" href="{{'/'|link }}">
+                            <img src="{{company.logo_url}}" alt="{{company.name}}" height="55" title="{{company.name}}">
+                        </a>
                     {% endif %}
 
                     <ul class="navbar-nav ml-auto pr-5 mb-2 mb-lg-0">  
