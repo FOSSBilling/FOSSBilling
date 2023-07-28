@@ -57,26 +57,24 @@
     <div class="col"></div>
     <div class="col-12">
         <header>
-            {% if settings.show_page_header %}
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <div class="container-fluid">
-                  <button
-                    class="navbar-toggler"
+            <nav class="navbar navbar-expand-md navbar-light bg-light">
+                {% if settings.show_company_logo and company.logo_url %}
+                    <a class="navbar-brand d-none d-md-block" href="{{'/'|link }}">
+                        <img src="{{company.logo_url}}" alt="{{company.name}}" height="55" title="{{company.name}}">
+                    </a>
+                {% endif %}
+                
+                <button
+                    class="mt-2 navbar-toggler"
                     type="button"
-                    data-mdb-toggle="collapse"
-                    data-mdb-target="#navbarExample01"
-                    aria-controls="navbarExample01"
+                    data-toggle="collapse"
+                    data-target="#navbar"
+                    aria-controls="navbar"
                     aria-expanded="false"
-                    aria-label="Toggle navigation"
-                  > <span>{{ 'Menu'|trans }}</span>
+                    aria-label="Toggle navigation">
+                    <span class="awe-reorder"></span>
                   </button>
-                  <div class="collapse navbar-collapse" id="navbarExample01">
-                    {% if settings.show_company_logo and company.logo_url %}
-                        <a class="navbar-brand" href="{{'/'|link }}">
-                            <img src="{{company.logo_url}}" alt="{{company.name}}" height="55" title="{{company.name}}">
-                        </a>
-                    {% endif %}
-
+                  <div class="collapse navbar-collapse" id="navbar">
                     <ul class="navbar-nav ml-auto pr-5 mb-2 mb-lg-0">  
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
@@ -97,7 +95,7 @@
                                         {% endfor %}
                                     </div>
                                 </div>
-                        </li>
+                            </li>
                         {% endif %}
 
                         {% if settings.top_menu_dashboard %}
@@ -132,20 +130,18 @@
                             </li>
                         {% endif %}
                     </ul>
-                  </div>
                 </div>
-              </nav>
-            {% endif %}
+            </nav>
         </header>
 
         <hr class="hr"/>
 
         <div class="container">
             <div class="row">
-            <div class="col-3">
+            <div class="col-3 d-none d-lg-block">
                 {% include 'partial_menu.html.twig' %}
             </div>
-            <div class="col-9">
+            <div class="col-12 col-lg-9">
                 <div id="wrapper">
                     <section class="container" role="main">
                         <div class="navigation-block">
