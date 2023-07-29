@@ -88,6 +88,9 @@ class Admin extends \Api_Abstract
             $charge = true;
             return $this->getService()->markAsPaid($invoice, $charge, $execute);
             }
+        else {
+            return $this->getService()->markAsPaid($invoice, $charge, $execute);
+        }
     }
 
     /**
