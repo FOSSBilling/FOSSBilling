@@ -312,6 +312,7 @@ $.fn.simpleTabs = function () {
 
 };//end function
 
+// Your script with corrected modifications
 globalThis.FOSSBilling = {
   message: (message, type = 'info') => {
     let color;
@@ -326,39 +327,40 @@ globalThis.FOSSBilling = {
         color = 'primary';
     }
 
-    const container = document.createElement('div');
-    container.classList.add('position-fixed', 'bottom-0', 'end-0', 'p-3');
-    container.style.zIndex = 1070;
+    const container = document.querySelector('.toast-container'); // Get the existing container or create if not present
 
     const element = document.createElement('div');
-    element.setAttribute('id', 'liveToast');
-    element.classList.add('toast');
+    container.appendChild(element); // Append the toast container to the container
+    element.classList.add('toast', 'show'); // Add 'show' class to display the toast immediately
     element.setAttribute('role', 'alert');
     element.setAttribute('aria-live', 'assertive');
     element.setAttribute('aria-atomic', 'true');
 
     element.innerHTML = `
-            <div class="toast-header">
-                <span class="p-2 border border-light bg-${color} rounded-circle me-2"></span>
-                <strong class="me-auto">System message</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">${message}</div>
-        `;
+      <div class="toast-header">
+        <span class="p-2 border border-light bg-${color} rounded-circle me-2"></span>
+        <strong class="me-auto">System message</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">${message}</div>
+    `;
 
     element.addEventListener('hidden.bs.toast', () => {
-      container.remove();
+      container.removeChild(element); // Remove the toast element from the container when it's hidden
+      if (container.children.length === 0) {
+        container.remove(); // If no toasts left, remove the container as well
+      }
     });
 
+    container.appendChild(element); // Append the toast to the container
+
+    // Create a new Bootstrap toast instance and show it
     const toast = new bootstrap.Toast(element);
-
-    container.appendChild(element);
-
-    document.querySelector('body').appendChild(container);
-
     toast.show();
   }
 };
+
+
 
 $(function () {
 
