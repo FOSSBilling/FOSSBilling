@@ -371,6 +371,8 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $ctable = $this->di['mod_service']('Currency');
 
+
+
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->nr = $this->getNextInvoiceNumber($invoice);
         $invoice->approved = true;
@@ -383,6 +385,8 @@ class Service implements InjectionAwareInterface
         $this->countIncome($invoice);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
+
+
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
@@ -1484,7 +1488,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($sourceData as $label => $data) {
             if (empty(trim($data))) {
-                unset($sourceData[$label]);   
+                unset($sourceData[$label]);
             } else {
                 $lines++;
             }
@@ -1504,12 +1508,12 @@ class Service implements InjectionAwareInterface
 
         foreach ($sourceData as $label => $data) {
             if (empty(trim($data))) {
-                unset($sourceData[$label]);   
+                unset($sourceData[$label]);
             } else {
                 $lines++;
             }
         }
-    
+
         return $sourceData;
     }
     // End of PDF related functions
