@@ -101,6 +101,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue($model));
 
         $di = new \Pimple\Container();
+        $di['mod_service'] = $serviceMock;
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
