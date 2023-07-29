@@ -291,6 +291,11 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "ALTER TABLE session ADD fingerprint TEXT;";
                 $this->executeSql($q);
             },
+            34 => function () {
+                // Patch to add update_orders field to servicedownloadable table.
+                $q = "ALTER TABLE service_downloadable ADD update_orders TINYINT(1) NOT NULL DEFAULT '0';";
+                $this->executeSql($q);
+            }
         ];
         ksort($patches, SORT_NATURAL);
 
