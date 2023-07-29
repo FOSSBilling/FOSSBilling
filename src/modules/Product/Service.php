@@ -1056,4 +1056,15 @@ class Service implements InjectionAwareInterface
 
         return false;
     }
+
+    // Function to get all orders for a product
+    public function getOrdersForProduct(\Model_Product $product)
+    {
+        // return type Model_ClientOrder that have product_id = $product->id
+        $sql = 'SELECT * FROM client_order WHERE product_id = :product_id';
+        $orders = $this->di['db']->getAll($sql, ['product_id' => $product->id], '\Model_ClientOrder');
+
+        return $orders;
+    }
+
 }

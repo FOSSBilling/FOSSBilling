@@ -68,4 +68,23 @@ class Admin extends \Api_Abstract
 
         return $service->updateProductFile($serviceDownloadable, $order);
     }
+
+    /**
+     * Save configuration for product.
+     *
+     **/
+    public function config_save($data)
+    {
+        $required = [
+            'id' => 'Product ID is missing',
+        ];
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+
+        $service = $this->getService();
+
+        return $service->saveProductConfig($model, $data);
+    }
 }
