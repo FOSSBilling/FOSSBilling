@@ -67,9 +67,27 @@ class Admin extends \Api_Abstract
         if (isset($data['execute']) && $data['execute']) {
             $execute = true;
         }
-        $model = $this->_getInvoice($data);
+        $invoice = $this->_getInvoice($data);
+        $gateway_id = [ 'id' => $invoice->gateway_id ];
+        $payGateway = $this->gateway_get($gateway_id);
+        $charge = false;
+        // Check if the payment type is "Custom Payment", Add funds, then set the "Charge" flag to true
+        if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
 
-        return $this->getService()->markAsPaid($model, false, $execute);
+            $clientService = $this->di['mod_service']('client');
+            $client = $clientService->get(['id' => $invoice->client_id]);
+            $invoiceService = $this->di['mod_service']('Invoice');
+            $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
+            $chargeInfo = [
+                'amount'        =>  $invoiceTotal,
+                'description'   =>  $payGateway['title'] . ' transaction No.' . $data['transactionId'],
+                'type'          =>  'custom',
+            ];
+
+            $clientService->addFunds($client, $chargeInfo['amount'], $chargeInfo['description'], $chargeInfo);
+            $charge = true;
+            return $this->getService()->markAsPaid($invoice, $charge, $execute);
+            }
     }
 
     /**
