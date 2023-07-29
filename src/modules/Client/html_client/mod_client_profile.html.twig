@@ -6,299 +6,210 @@
 
 {% block body_class %}client-profile{% endblock %}
 {% block content %}
-<div class="row-fluid">
-
-<article class="span12 data-block">
-<div class="data-container">
-
-<section class="tab-content">
-
-<div class="tab-pane active" id="two">
-
 {% if (guest.client_is_email_validation_required) and (not profile.email_approved) %}
 <div class="alert alert-block alert-danger">
     <div class="row">
-        <span>You must verify your email address before you may access our services.</span>
+        <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
     </div>
-    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
     <a href="{{ 'api/client/client/resend_email_verification'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="{{ 'Verification email has been resent'|trans }}">{{ 'Resend verification email'|trans }}</a>
 </div>
 {% endif %}
 
-<!-- Second level tabs -->
-<div class="tabbable tabs-left">
-    <ul class="nav nav-tabs">
-        <li class="active"><a href="#tab1" data-toggle="tab">{{ 'Details'|trans }}</a></li>
-        <li class=""><a href="#tab-password" data-toggle="tab">{{ 'Change Password'|trans }}</a></li>
-        <li class=""><a href="#tab3" data-toggle="tab">{{ 'API key'|trans }}</a></li>
-        <li class=""><a href="#tab4" data-toggle="tab">{{ 'Currency'|trans }}</a></li>
+<div class="row">
+    <ul class="nav nav-tabs ml-3 mr-3">
+        <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" href="#details">{{ 'Details'|trans }}</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#pass">{{ 'Change Password'|trans }}</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#apikey">{{ 'API Key'|trans }}</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#currency">{{ 'Currency'|trans }}</a>
+        </li>
     </ul>
 
-    <div class="tab-content">
-        {% set required = guest.client_required %}
-        <div class="tab-pane active" id="tab1">
-            <header>
+    <div class="ml-3 w-100 tab-content">
+        <div class="card tab-pane active" id="details">
+            <div class="card-header">
                 <h1>{{ 'Update details'|trans }}</h1>
                 <p>{{ 'Keep your personal data up to date.'|trans }}</p>
-            </header>
-            <form method="post" action="" id="profile-update">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                <fieldset>
+            </div>
+
+            <div class="card-body">
+                <form method="post" action="client/profile/update" id="profile-update" class="api-form" data-api-msg="Profile updated">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                     <div class="alert alert-block alert-success">
                         <div class="row">
-                        <div class="span3"><img src="{{ profile.email|gravatar }}" alt="Gravatar"></div>
-                        <div class="span6">{{ 'Please register with'|trans }} <strong>{{ profile.email }}</strong> {{ 'at '|trans }}<a target="_blank" href="https://gravatar.com">Gravatar.com</a> {{ 'to change your profile image. Gravatar image updates may not appear immediately.'|trans }}</div>
-                        </div>
-                    </div>
-                        <div class="control-group">
-                            <label class="col-form-label" for="input">{{ 'Email Address'|trans }}</label>
-                            <div class="controls">
-                                <input type="email" class="input-xlarge" name="email" value="{{ profile.email }}" required="required">
+                            <div class="col-md-3"><img src="{{ profile.email|gravatar }}" alt="Gravatar"></div>
+                            <div class="col-md-6">
+                                {{ 'Please register with'|trans }} <strong>{{ profile.email }}</strong> {{ 'at '|trans }}<a target="_blank" href="https://gravatar.com">Gravatar.com</a> {{ 'to change your profile image. Gravatar image updates may not appear immediately.'|trans }}
                             </div>
                         </div>
-
-                       <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'First Name'|trans }}</label>
-                           <div class="controls">
-                                <input type="text" name="first_name" value="{{ profile.first_name }}" required="required">
-                           </div>
-                       </div>
-
-                       <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'Last Name'|trans }}</label>
-                           <div class="controls">
-                                <input type="text" name="last_name" value="{{ profile.last_name }}" {% if last_name in required|keys %} required="required" {% endif %}>
-                           </div>
-                       </div>
-
-                    <div class="control-group">
-                        <label class="col-form-label" for="birthday">{{ 'Birthdate'|trans }}</label>
-                        <div class="controls">
-                            <input type="date" id="birthday" name="birthday" value="{{ profile.birthday }}" {% if birthday in required|keys %} required="required" {% endif %}>
-                        </div>
                     </div>
-
-                       <div class="control-group">
-                        <label class="col-form-label" for="input">{{ 'Gender'|trans }}</label>
-                        <div class="controls">
-                            <select name="gender" id="gender" {% if gender in required|keys %} required="required" {% endif %}>
+                    <fieldset>
+                        <div class="form-group">
+                            <label class="col-form-label" for="email">{{ 'Email Address'|trans }}</label>
+                            <input type="email" class="form-control" name="email" value="{{ profile.email }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="first_name">{{ 'First Name'|trans }}</label>
+                            <input type="text" class="form-control" name="first_name" value="{{ profile.first_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="last_name">{{ 'Last Name'|trans }}</label>
+                            <input type="text" class="form-control" name="last_name" value="{{ profile.last_name }}" {% if last_name in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="birthday">{{ 'Birthdate'|trans }}</label>
+                            <input type="date" class="form-control" id="birthday" name="birthday" value="{{ profile.birthday }}" {% if birthday in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="gender">{{ 'Gender'|trans }}</label>
+                            <select class="form-control" name="gender" id="gender" {% if gender in required|keys %} required {% endif %}>
                                 <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>Male</option>
                                 <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>Female</option>
                                 <option value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>Non-binary</option>
                                 <option value="other" {% if profile.gender not in ['male', 'female', 'nonbinary'] %} selected {% endif %}>Other</option>
                             </select>
                         </div>
-                    </div>
-
-                       <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'Company Name'|trans }}</label>
-                           <div class="controls">
-                                <input type="text" name="company" value="{{ profile.company }}" {% if company in required|keys %} required="required" {% endif %}>
-                           </div>
-                       </div>
-
-                    <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'Company VAT'|trans }}</label>
-                           <div class="controls">
-                                <input type="text" name="company_vat" value="{{ profile.company_vat }}">
-                           </div>
-                       </div>
-
-                    <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'Company Number'|trans }}</label>
-                           <div class="controls">
-                                <input type="text" name="company_number" value="{{ profile.company_number }}">
-                           </div>
-                       </div>
-
-                        <div class="control-group">
-                            <label class="col-form-label" for="input">{{ 'Phone Country Code'|trans }}</label>
-                            <div class="controls">
-                                <input type="text" name="phone_cc" value="{{ profile.phone_cc }}" {% if phone in required|keys %} required="required" {% endif %}>
-                            </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="company">{{ 'Company Name'|trans }}</label>
+                            <input type="text" class="form-control" name="company" value="{{ profile.company }}" {% if company in required|keys %} required {% endif %}>
                         </div>
-
-                       <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'Phone Number'|trans }}</label>
-                           <div class="controls">
-                                <input type="phone" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required="required" {% endif %}>
-                           </div>
-                       </div>
-
-                        <div class="control-group">
-                            <label class="col-form-label" for="input">{{ 'Address'|trans }}</label>
-                            <div class="controls">
-                                <input type="text" name="address_1" value="{{ profile.address_1 }}" {% if address_1 in required|keys %} required="required" {% endif %}>
-                            </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="company_vat">{{ 'Company VAT'|trans }}</label>
+                            <input type="text" class="form-control" name="company_vat" value="{{ profile.company_vat }}">
                         </div>
-
-                       <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'Address 2'|trans }}</label>
-                           <div class="controls">
-                                <input type="text" name="address_2" value="{{ profile.address_2 }}" {% if address_2 in required|keys %} required="required" {% endif %}>
-                           </div>
-                       </div>
-
-                        <div class="control-group">
-                            <label class="col-form-label" for="input">{{ 'City'|trans }}</label>
-                            <div class="controls">
-                                <input type="text" name="city" value="{{ profile.city }}" {% if city in required|keys %} required="required" {% endif %}>
-                            </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="company_number">{{ 'Company Number'|trans }}</label>
+                            <input type="text" class="form-control" name="company_number" value="{{ profile.company_number }}">
                         </div>
-
-                        <div class="control-group">
-                            <label class="col-form-label" for="input">{{ 'Country'|trans }}</label>
-                            <div class="controls">
-                                <select name="country" {% if country in required|keys %} required="required" {% endif %}>
+                        <div class="form-group">
+                            <label class="col-form-label" for="phone_cc">{{ 'Phone Country Code'|trans }}</label>
+                            <input type="text" class="form-control" name="phone_cc" value="{{ profile.phone_cc }}" {% if phone in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="phone">{{ 'Phone Number'|trans }}</label>
+                            <input type="phone" class="form-control" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="address_1">{{ 'Address'|trans }}</label>
+                            <input type="text" class="form-control" name="address_1" value="{{ profile.address_1 }}" {% if address_1 in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="address_2">{{ 'Address 2'|trans }}</label>
+                            <input type="text" class="form-control" name="address_2" value="{{ profile.address_2 }}" {% if address_2 in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="city">{{ 'City'|trans }}</label>
+                            <input type="text" class="form-control" name="city" value="{{ profile.city }}" {% if city in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="country">{{ 'Country'|trans }}</label>
+                            <select class="form-control" name="country" {% if country in required|keys %} required {% endif %}>
                                 <option value="">{{ '-- Select country --'|trans }}</option>
                                 {% for val,label in guest.system_countries %}
-                                <option value="{{ val }}" label="{{ label|e }}" {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
+                                    <option value="{{ val }}" label="{{ label|e }}" {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
                                 {% endfor %}
-                                </select>
-                            </div>
+                            </select>
                         </div>
-
-                       <div class="control-group">
-                           <label class="col-form-label" for="input">{{ 'State'|trans }}</label>
-                           <div class="controls">
-                                {# mf.selectbox('state', guest.system_states, profile.state, 0, 'Select state') #}
-                                <input type="text" name="state" value="{{ profile.state }}" {% if state in required|keys %} required="required" {% endif %}/>
-                           </div>
-                       </div>
-
-                      <div class="control-group">
-                          <label class="col-form-label" for="input">{{ 'Zip/Postal Code'|trans }}</label>
-                          <div class="controls">
-                                <input type="text" name="postcode" value="{{ profile.postcode }}" {% if postcode in required|keys %} required="required" {% endif %}>
-                          </div>
-                      </div>
-
-                      <div class="control-group">
-                          <label class="col-form-label" for="input">{{ 'Passport number'|trans }}</label>
-                          <div class="controls">
-                                <input type="text" name="document_nr" value="{{ profile.document_nr}}" >
-                          </div>
-                      </div>
-
-                      {% for i in 1..10 %}
-                      {% set custom = 'custom_' ~ i %}
-                      {% set current = guest.client_custom_fields[custom] %}
-                      {% if current.active %}
-                      <div class="control-group">
-                          <label class="col-form-label" for="input">{{ current.title }}</label>
-                          <div class="controls">
-                            <input type="text" name="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required="required" {% endif %}>
-                          </div>
-                      </div>
-                      {% endif %}
-                      {% endfor %}
-
-                    <div class="form-actions">
-                        <button class="btn btn-large btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
-                    </div>
-                </fieldset>
-            </form>
+                        <div class="form-group">
+                            <label class="col-form-label" for="state">{{ 'State'|trans }}</label>
+                            <input type="text" class="form-control" name="state" value="{{ profile.state }}" {% if state in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
+                            <input type="text" class="form-control" name="postcode" value="{{ profile.postcode }}" {% if postcode in required|keys %} required {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="document_nr">{{ 'Passport number'|trans }}</label>
+                            <input type="text" class="form-control" name="document_nr" value="{{ profile.document_nr }}">
+                        </div>
+                        {% for i in 1..10 %}
+                            {% set custom = 'custom_' ~ i %}
+                            {% set current = guest.client_custom_fields[custom] %}
+                            {% if current.active %}
+                                <div class="form-group">
+                                    <label class="col-form-label" for="{{ custom }}">{{ current.title }}</label>
+                                    <input type="text" class="form-control" name="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        <div class="form-actions">
+                            <button class="btn btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
+                        </div>
+                    </fieldset>
+                </form>                
+            </div>
         </div>
-        <div class="tab-pane" id="tab-password">
-            <header>
+
+        <div class="card tab-pane fade" id="pass">
+            <div class="card-header">
                 <h1>{{ 'Change Password'|trans }}</h1>
                 <p>{{ 'Please enter new password two times in order avoid mistypes'|trans }}</p>
-            </header>
-            <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password Changed'|trans }}">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                <div class="control-group">
-                    <label class="col-form-label" for="current_password">{{ 'Current Password'|trans }}</label>
-                    <div class="controls">
-                        <input type="password" name="current_password" id="current_password" required>
+            </div>
+
+            <div class="card-body">
+                <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="api-form">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+                    <div class="form-group">
+                        <label class="col-form-label" for="current_password">{{ 'Current Password'|trans }}</label>
+                        <input type="password" name="current_password" id="current_password" class="form-control" required>
                     </div>
-                </div>
-                <div class="control-group">
-                    <label class="col-form-label" for="new_password">{{ 'New Password'|trans }}</label>
-                    <div class="controls">
-                        <input type="password" name="new_password" id="new_password" required>
+                    <div class="form-group">
+                        <label class="col-form-label" for="new_password">{{ 'New Password'|trans }}</label>
+                        <input type="password" name="new_password" id="new_password" class="form-control" required>
                     </div>
-                </div>
-                <div class="control-group">
-                    <label class="col-form-label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
-                    <div class="controls">
-                        <input type="password" name="confirm_password" id="confirm_password" required>
+                    <div class="form-group">
+                        <label class="col-form-label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
                     </div>
-                </div>
-                <div class="form-actions">
-                    <button class="btn btn-large btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
-                 </div>
-            </form>
+                    <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
+                </form>
+            </div>
         </div>
-        <div class="tab-pane" id="tab3">
-            <header>
+
+        <div class="card tab-pane fade" id="apikey">
+            <div class="card-header">
                 <h1>{{ 'API key'|trans }}</h1>
                 <p>{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
-            </header>
-            <form method="post" action="" id="change-api-key">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                <fieldset>
-                    <div class="alert alert-block">
-                     <h4><p>{{ 'Warning! Resetting the key will break existing applications using it!'|trans }}</p></h4>
+            </div>
+
+            <div class="card-body">
+                <form class="api-form" method="post" action="client/profile/api_key_reset" id="change-api-key" data-api-msg="API key was changed">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <div class="alert alert-danger">
+                        <span>{{ 'Warning! Resetting the key will break existing applications using it!'|trans }}</span>
                     </div>
-                    <div class="control-group">
-                        <label class="col-form-label" for="api-key">{{ 'Your API key'|trans }}: </label>
-                        <div class="controls">
-                        <input type="text" value="{{ client.profile_api_key_get }}" class="input-xlarge" id="api-key">
+                    <div class="form-group">
+                        <label for="api-key">{{ 'Your API key'|trans }}: </label>
+                        <div class="row">
+                            <input type="text" value="{{ client.profile_api_key_get }}" class="ml-2 form-control w-50" id="api-key">
+                            <button class="ml-2 btn btn-primary" type="submit">{{ 'Reset key'|trans }}</button>
                         </div>
-                        <div class="form-actions">
-                            <button class="btn btn-large btn-primary" type="submit">{{ 'Reset key'|trans }}</button>
-                        </div>                    </div>
-                </fieldset>
-            </form>        </div>
-        <div class="tab-pane" id="tab4">
-            <header>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card tab-pane fade" id="currency">
+            <div class="card-header">
                 <h1>{{ 'Currency'|trans }}</h1>
                 <p>{{ 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and can not be changed.'|trans }}</p>
-            </header>
-            {% if profile.currency %}
-                <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency }}</strong></p>
-                <p>{{ 'Create new client profile if you want to manage your money in other currency'|trans }}</p>
-            {% endif %}
+            </div>
+
+            <div class="card-body">
+                {% if profile.currency %}
+                    <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency }}</strong></p>
+                    <p>{{ 'Create new client profile if you want to manage your money in other currency.'|trans }}</p>
+                {% else %}
+                    <p>{{ 'You do not yet have a currency associated with your profile. You can select the correct one when making your first order.'|trans }}</p>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
-
-</div>
-
-</section>
-</div>
-</article>
-
-</div>
-{% endblock %}
-
-{% block js %}
-<script>
-$(function() {
-    $('#change-api-key').on('submit', function(event) {
-        bb.post(
-            'client/profile/api_key_reset',
-            $(this).serialize(),
-            function(result) {
-                $('#api-key').val(result);
-                bb.msg('API key was changed');
-            }
-        );
-
-        return false;
-    });
-
-    $('#profile-update').on('submit', function(event) {
-        bb.post(
-            'client/profile/update',
-            $(this).serialize(),
-            function(result) {
-                bb.msg('Profile updated');
-            }
-        );
-
-        return false;
-    });
-});
-</script>
 {% endblock %}
