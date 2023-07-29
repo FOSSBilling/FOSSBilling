@@ -1,267 +1,200 @@
 {% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
 {% set seller = invoice.seller %}
 {% set buyer = invoice.buyer %}
-{% set company  = guest.system_company %}
+{% set company = guest.system_company %}
 
+<!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <link rel='stylesheet' type='text/css' href="{{ ('css/bootstrap.css') | asset_url }}">
-
-        <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
-
-        <style>
-    @media print {
-
-    html, body{
-    margin-right: 75%;
-        left: 0px;
-    }
-    .row dt{
-        width: auto;
-    }
-    .row dd{
-        margin-left: 30%;
-    }
-    .invoice-well dt{
-        padding-right: 5px;
-    }
-    #proforma-invoice{
-        width: 650px;
-        margin-left: auto;
-        margin-right: auto;
-        display: block;
-    }
-
-    #invoice-title{
-        text-align: center;
-        padding-bottom: 3%;
-    }
-}
-    html, body{
-        margin-right: 9%;
-        left: 0px;
-    }
-    .row dt{
-        width: auto;
-    }
-    .row dd{
-        margin-left: 30%;
-    }
-    .invoice-well dt{
-        padding-right: 5px;
-    }
-    #proforma-invoice{
-        width: 650px;
-        margin-left: auto;
-        margin-right: auto;
-        display: block;
-    }
-
-    #invoice-title{
-        text-align: center;
-        padding-bottom: 3%;
-    }
-
-</style>
-    </head>
-    <body>
-    <div class="row" id="proforma-invoice">
-        <article class="span10 data-block" style="margin-left: 0px">
-            <div class="data-container">
-                <header>
-                    <h2 id="invoice-title">{{ 'Invoice'|trans }} {{ nr }}</h2>
-                </header>
-                <section>
-                    <div class="row-fluid">
-                        <div class="span4">
-
-                            <div class="well small invoice-well">
-                                {% if company.logo_url %}
-                                <img src="{{ company.logo_url }}" alt="Logo">
-                                {% endif %}
-                                <dl class="row">
-                                    <dt>{{ 'Invoice number'|trans }}:</dt>
-                                    <dd>{{ nr }}</dd>
-                                    <dt>{{ 'Invoice Date'|trans }}:</dt>
-                                    <dd>{% if invoice.created_at %}
-                                        {{ invoice.created_at | format_date }}
-                                        {% else %}
-                                        -----
-                                        {% endif %}
-                                    </dd>
-                                    <dt>{{ 'Due Date'|trans }}:</dt>
-                                    <dd>{% if invoice.due_at %}
-                                        {{ invoice.due_at | format_date }}
-                                        {% else %}
-                                        -----
-                                        {% endif %}
-                                    </dd>
-                                    <dt>{{ 'Invoice Status'|trans }}:</dt>
-                                    <dd>
-                                    <span class="badge {% if invoice.status == 'paid' %} badge-success{% elseif invoice.status == 'unpaid' %}badge-warning{% endif %}">
-                                          <span class="{% if invoice.status == 'paid' %}awe-ok-sign{% elseif invoice.status == 'unpaid' %}awe-exclamation-sign{% endif %}"></span>
-                                          {{ invoice.status | capitalize }}
-                                    </span>
-                                    </dd>
-                                </dl>
-                            </div>
-                        </div>
-                        <div class="span4">
-                            <div class="well small">
-                                <h4>{{ 'Company'|trans }}</h4>
-                                <dl class="row">
-                                    {% if seller.company %}
-                                    <dt>{{ 'Name'|trans }}:</dt>
-                                    <dd>{{seller.company}}</dd>
-                                    {% endif %}
-
-                                    {% if seller.company_vat%}
-                                    <dt>{{ 'VAT'|trans }}:</dt>
-                                    <dd>{{seller.company_vat}}</dd>
-                                    {% endif %}
-
-                                    {% if seller.address%}
-                                    <dt>{{ 'Address'|trans }}:</dt>
-                                    <dd>{{seller.address}}</dd>
-                                    {% endif %}
-
-                                    {% if seller.phone %}
-                                    <dt>{{ 'Phone'|trans }}:</dt>
-                                    <dd>{{seller.phone}}</dd>
-                                    {% endif %}
-
-                                    {% if seller.email %}
-                                    <dt>{{ 'Email'|trans }}:</dt>
-                                    <dd>{{seller.email}}</dd>
-                                    {% endif %}
-
-                                    {% if seller.account_number %}
-                                    <dt>{{ 'Account'|trans }}:</dt>
-                                    <dd>{{seller.account_number}}</dd>
-                                    {% endif %}
-
-                                    {% if seller.note %}
-                                    <dt>{{ 'Note'|trans }}:</dt>
-                                    <dd>{{seller.note}}</dd>
-                                    {% endif %}
-                                </dl>
-                            </div>
-                        </div>
-
-
-                        <div class="span4">
-                            <div class="well small">
-                                <h4>{{ 'Billing & Delivery address'|trans }}</h4>
-                                <dl class="row">
-                                    {% if buyer.first_name or buyer.last_name %}
-                                    <dt>{{ 'Name'|trans }}:</dt>
-                                    <dd>{{buyer.first_name}} {{buyer.last_name}}</dd>
-                                    {% endif %}
-
-                                    {% if buyer.company %}
-                                    <dt>{{ 'Company'|trans }}:</dt>
-                                    <dd>{{buyer.company}}</dd>
-                                    {% endif %}
-
-                                    {% if buyer.company_number %}
-                                    <dt>{{ 'Company number'|trans }}:</dt>
-                                    <dd>{{buyer.company_number}}</dd>
-                                    {% endif %}
-
-                                    {% if buyer.company_vat %}
-                                    <dt>{{ 'Company VAT'|trans }}:</dt>
-                                    <dd>{{buyer.company_vat}}</dd>
-                                    {% endif %}
-
-                                    {% if buyer.address %}
-                                    <dt>{{ 'Address'|trans }}:</dt>
-                                    <dd>{{buyer.address}}</dd>
-                                    <dd>{{buyer.city}}, {{buyer.state}}</dd>
-                                    <dd>{{buyer.zip}}, {{guest.system_countries[buyer.country]}}</dd>
-                                    {% endif %}
-
-                                    {% if buyer.phone %}
-                                    <dt>{{ 'Phone'|trans }}:</dt>
-                                    <dd>{{buyer.phone}}</dd>
-                                    {% endif %}
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if invoice.text_1 %}
-                    <div class="well">
-                        {{ invoice.text_1|markdown }}
-                    </div>
-                    {% endif %}
-
-                    <table class="table">
-                        <thead>
-                        <tr>
-                            <th>{{ '#'|trans }}</th>
-                            <th>{{ 'Title'|trans }}</th>
-                            <th>{{ 'Price'|trans }}</th>
-                            <th>{{ 'Total'|trans }}</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for i, item in invoice.lines %}
-                        <tr>
-                            <td>{{ i+1 }}.</td>
-                            <td>
-                                {% if item.order_id%}
-                                {{ item.title }}
-                                {% else %}
-                                {{ item.title }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ item.price | money(invoice.currency) }}
-                                {% if item.quantity > 1 %}
-                                x {{ item.quantity }} {# item.unit #}
-                                {% endif %}
-                            </td>
-                            <td >{{ item.total | money(invoice.currency) }}</td>
-                        </tr>
-
-                        {% endfor %}
-                        </tbody>
-
-                    </table>
-                    <hr/>
-                    <div class="row-fluid">
-                        <div class="span4 offset8">
-                            <table class="table">
-                                {% if invoice.tax > 0 %}
-                                <tr>
-                                    <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                                    <td>{{ invoice.tax | money(invoice.currency) }}</td>
-                                </tr>
-                                {% endif %}
-                                {% if invoice.discount > 0 %}
-                                <tr>
-                                    <td>{{ 'Discount'|trans }}</td>
-                                    <td>{{ invoice.discount | money(invoice.currency) }}</td>
-                                </tr>
-                                {% endif %}
-
-                                <tr>
-                                    <td><strong>{{ 'Total'|trans }}</strong></td>
-                                    <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-
-                    {% if invoice.text_2 %}
-                    <div class="well">
-                        {{ invoice.text_2|markdown }}
-                    </div>
-                    {% endif %}
-                </section>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="text-center">
+                <h2 id="invoice-title">{{ 'Invoice'|trans }} {{ nr }}</h2>
             </div>
-        </article>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            {% if company.logo_url %}
+                                <img src="{{ company.logo_url }}" alt="Logo" class="img-fluid">
+                            {% endif %}
+                            <dl class="row">
+                                <dt class="col-sm-6">{{ 'Invoice number'|trans }}:</dt>
+                                <dd class="col-sm-6">{{ nr }}</dd>
+                                <dt class="col-sm-6">{{ 'Invoice Date'|trans }}:</dt>
+                                <dd class="col-sm-6">
+                                    {% if invoice.created_at %}
+                                        {{ invoice.created_at | format_date }}
+                                    {% else %}
+                                        -----
+                                    {% endif %}
+                                </dd>
+                                <dt class="col-sm-6">{{ 'Due Date'|trans }}:</dt>
+                                <dd class="col-sm-6">
+                                    {% if invoice.due_at %}
+                                        {{ invoice.due_at | format_date }}
+                                    {% else %}
+                                        -----
+                                    {% endif %}
+                                </dd>
+                                <dt class="col-sm-6">{{ 'Invoice Status'|trans }}:</dt>
+                                <dd class="col-sm-6">
+                                    <span class="badge {% if invoice.status == 'paid' %}badge-success{% elseif invoice.status == 'unpaid' %}badge-warning{% endif %}">
+                                        <span class="{% if invoice.status == 'paid' %}awe-ok-sign{% elseif invoice.status == 'unpaid' %}awe-exclamation-sign{% endif %}"></span>
+                                        {{ invoice.status | capitalize }}
+                                    </span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4>{{ 'Company'|trans }}</h4>
+                            <dl class="row">
+                                {% if seller.company %}
+                                    <dt class="col-sm-6">{{ 'Name'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ seller.company }}</dd>
+                                {% endif %}
+                                {% if seller.company_vat %}
+                                    <dt class="col-sm-6">{{ 'VAT'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ seller.company_vat }}</dd>
+                                {% endif %}
+                                {% if seller.address %}
+                                    <dt class="col-sm-6">{{ 'Address'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ seller.address }}</dd>
+                                {% endif %}
+                                {% if seller.phone %}
+                                    <dt class="col-sm-6">{{ 'Phone'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ seller.phone }}</dd>
+                                {% endif %}
+                                {% if seller.email %}
+                                    <dt class="col-sm-6">{{ 'Email'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ seller.email }}</dd>
+                                {% endif %}
+                                {% if seller.account_number %}
+                                    <dt class="col-sm-6">{{ 'Account'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ seller.account_number }}</dd>
+                                {% endif %}
+                                {% if seller.note %}
+                                    <dt class="col-sm-6">{{ 'Note'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ seller.note }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4>{{ 'Billing & Delivery address'|trans }}</h4>
+                            <dl class="row">
+                                {% if buyer.first_name or buyer.last_name %}
+                                    <dt class="col-sm-6">{{ 'Name'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ buyer.first_name }} {{ buyer.last_name }}</dd>
+                                {% endif %}
+                                {% if buyer.company %}
+                                    <dt class="col-sm-6">{{ 'Company'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ buyer.company }}</dd>
+                                {% endif %}
+                                {% if buyer.company_number %}
+                                    <dt class="col-sm-6">{{ 'Company number'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ buyer.company_number }}</dd>
+                                {% endif %}
+                                {% if buyer.company_vat %}
+                                    <dt class="col-sm-6">{{ 'Company VAT'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ buyer.company_vat }}</dd>
+                                {% endif %}
+                                {% if buyer.address %}
+                                    <dt class="col-sm-6">{{ 'Address'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ buyer.address }}</dd>
+                                    <dd class="col-sm-6">{{ buyer.city }}, {{ buyer.state }}</dd>
+                                    <dd class="col-sm-6">{{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}</dd>
+                                {% endif %}
+                                {% if buyer.phone %}
+                                    <dt class="col-sm-6">{{ 'Phone'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{ buyer.phone }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if invoice.text_1 %}
+                <div class="card mt-3">
+                    <div class="card-body">
+                        {{ invoice.text_1 | markdown }}
+                    </div>
+                </div>
+            {% endif %}
+
+            <table class="table mt-3">
+                <thead>
+                <tr>
+                    <th>{{ '#'|trans }}</th>
+                    <th>{{ 'Title'|trans }}</th>
+                    <th>{{ 'Price'|trans }}</th>
+                    <th>{{ 'Total'|trans }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for i, item in invoice.lines %}
+                    <tr>
+                        <td>{{ i+1 }}.</td>
+                        <td>{{ item.title }}</td>
+                        <td>
+                            {{ item.price | money(invoice.currency) }}
+                            {% if item.quantity > 1 %}
+                                x {{ item.quantity }} {# item.unit #}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.total | money(invoice.currency) }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="row">
+                <div class="col-md-4 offset-md-8">
+                    <table class="table">
+                        {% if invoice.tax > 0 %}
+                            <tr>
+                                <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
+                                <td>{{ invoice.tax | money(invoice.currency) }}</td>
+                            </tr>
+                        {% endif %}
+                        {% if invoice.discount > 0 %}
+                            <tr>
+                                <td>{{ 'Discount'|trans }}</td>
+                                <td>{{ invoice.discount | money(invoice.currency) }}</td>
+                            </tr>
+                        {% endif %}
+                        <tr>
+                            <td><strong>{{ 'Total'|trans }}</strong></td>
+                            <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            {% if invoice.text_2 %}
+                <div class="card mt-3">
+                    <div class="card-body">
+                        {{ invoice.text_2 | markdown }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    </body>
+</div>
+</body>
 </html>
