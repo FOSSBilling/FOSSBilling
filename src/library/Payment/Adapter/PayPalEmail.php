@@ -256,7 +256,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         foreach($data as $key => $value) {
             $form .= sprintf('<input type="hidden" name="%s" value="%s" />', $key, $value) . PHP_EOL;
         }
-        $form .=  '<input class="bb-button bb-button-submit" type="submit" value="Pay with PayPal" id="payment_button"/>'. PHP_EOL;
+        $form .=  '<input class="btn btn-primary" type="submit" value="Pay with PayPal" id="payment_button"/>'. PHP_EOL;
         $form .=  '</form>' . PHP_EOL . PHP_EOL;
 
         if(isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {

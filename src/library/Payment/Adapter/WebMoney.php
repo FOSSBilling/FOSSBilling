@@ -306,7 +306,7 @@ class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
         foreach($data as $key => $value) {
             $form .= sprintf('<input type="hidden" name="%s" value="%s" />', $key, $value) . PHP_EOL;
         }
-        $form .=  '<input class="bb-button bb-button-submit" type="submit" value="Please click here to continue if this page does not redirect automatically in 5 seconds" id="payment_button"/>'. PHP_EOL;
+        $form .=  '<input class="btn btn-primary" type="submit" value="Please click here to continue if this page does not redirect automatically in 5 seconds" id="payment_button"/>'. PHP_EOL;
         $form .=  '</form>' . PHP_EOL . PHP_EOL;
 
         if(isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {
