@@ -345,7 +345,8 @@
         "samesite",
         "IPCOUNTRY",
         "Serviceapikey",
-        "homoglyph"
+        "homoglyph",
+        "rulesets"
     ],
     "ignorePaths": [
         "tests/**",
