@@ -344,8 +344,6 @@ class Admin extends \Api_Abstract
 
         // Ensure $hosting_services is an array before counting its elements
         $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
-
-        $count = count($hosting_services);
         if ($count > 0)
         {
             throw new \Box_Exception('Hosting plan is used by :count: service hostings', [':count:'=> $count], 704);
