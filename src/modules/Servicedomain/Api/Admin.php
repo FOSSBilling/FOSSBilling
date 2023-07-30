@@ -355,13 +355,17 @@ class Admin extends \Api_Abstract
 
         // check if registrar is used by any domain
         $servicedomains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = ?', ['tld_registrar_id' => $model->id]);
-        $count = count($servicedomains);
-        if ($servicedomains) {
+
+        // Ensure $servicedomains is an array before counting its elements
+        $count = is_array($servicedomains) ? count($servicedomains) : 0; // Handle the case where $servicedomains might be null
+
+        if ($count > 0) {
             throw new \Box_Exception('Registrar is used by :count: domains', ['count' => $count], 707);
         }
 
         return $this->getService()->registrarRm($model);
     }
+
 
     /**
      * Copy domain registrar.
@@ -447,5 +451,9 @@ class Admin extends \Api_Abstract
         }
 
         return $s;
+    }
+
+    public function findServiceDomain($tld) {
+        return $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $tld]);
     }
 }
