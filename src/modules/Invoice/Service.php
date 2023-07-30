@@ -927,6 +927,15 @@ class Service implements InjectionAwareInterface
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price);
 
+        // search for orders with the same group_id and add them to invoice
+        $orders = $this->di['db']->find('ClientOrder', 'group_id = ? AND status = ?', [$order->group_id, \Model_ClientOrder::STATUS_ACTIVE]);
+        foreach ($orders as $order) {
+            $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $order->price);
+            // also update order with unpaid invoice id so it will not be generated again
+            $order->unpaid_invoice_id = $proforma->id;
+        }
+
+
         // invoice due date
         if ($due_days > 0) {
             $proforma->due_at = date('Y-m-d H:i:s', strtotime('+' . $due_days . ' days'));
@@ -1484,7 +1493,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($sourceData as $label => $data) {
             if (empty(trim($data))) {
-                unset($sourceData[$label]);   
+                unset($sourceData[$label]);
             } else {
                 $lines++;
             }
@@ -1504,12 +1513,12 @@ class Service implements InjectionAwareInterface
 
         foreach ($sourceData as $label => $data) {
             if (empty(trim($data))) {
-                unset($sourceData[$label]);   
+                unset($sourceData[$label]);
             } else {
                 $lines++;
             }
         }
-    
+
         return $sourceData;
     }
     // End of PDF related functions
