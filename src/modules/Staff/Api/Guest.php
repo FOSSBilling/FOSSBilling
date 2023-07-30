@@ -151,7 +151,7 @@ class Guest extends \Api_Abstract
         $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
 
         if (!$c instanceof \Model_Admin) {
-            throw new \Box_Exception('Email not found in our database');
+            return true;
         }
         $hash = hash('sha256', time().random_bytes(13));
 

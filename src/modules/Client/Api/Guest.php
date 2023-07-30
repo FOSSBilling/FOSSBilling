@@ -169,7 +169,7 @@ class Guest extends \Api_Abstract
 
         $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
         if (!$c instanceof \Model_Client) {
-            throw new \Box_Exception('If you have entered an E-Mail address that is associated with an Account, a Password reset confirmation email was sent');
+            return true;
         }
 
         $hash = hash('sha256', time() . random_bytes(13));
