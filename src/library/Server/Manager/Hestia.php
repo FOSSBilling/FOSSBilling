@@ -201,6 +201,16 @@ class Server_Manager_Hestia extends Server_Manager
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if (0 !== intval($result2)) {
+            $postvars3 = [
+                'returncode' => 'yes',
+                'cmd' => 'v-remove-user',
+                'arg1' => $a->getUsername(),
+            ];
+            $result3 = $this->_makeRequest($postvars3);
+            if(0 !== intval($result3)) {
+                $placeholders = ['action1' => __trans('delete domain'), 'action2' => __trans('create domain'), 'type' => 'HestiaCP'];
+                throw new Server_Exception('Failed to :action1: on the :type: server after failed to :action2:, check the error logs for further details', $placeholders);
+            }
             $placeholders = ['action' => __trans('create domain'), 'type' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
