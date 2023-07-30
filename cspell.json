@@ -348,7 +348,8 @@
         "oldconfig",
         "ordermodel",
         "ordermodel",
-        "homoglyph"
+        "homoglyph",
+        "TINYINT"
     ],
     "ignorePaths": [
         "tests/**",
