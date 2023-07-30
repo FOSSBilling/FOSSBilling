@@ -16,7 +16,7 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->skip([
         __DIR__ . '/src/vendor',
         JsonThrowOnErrorRector::class,
-        LongArrayToShortArrayRector::class, // As much as I'd like to use this, Rector will destroy the formattiong of large, multi-line arrays when it applys this & PHP-CS-Fixer doesn't fix it.
+        LongArrayToShortArrayRector::class, // As much as I'd like to use this, Rector will destroy the formatting of large, multi-line arrays when it applies this & PHP-CS-Fixer doesn't fix it.
     ]);
 
     
