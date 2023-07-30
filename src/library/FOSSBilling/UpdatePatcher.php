@@ -55,7 +55,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // Create backup of current configuration.
         try {
             $filesystem->copy($configPath, substr($configPath, 0, -4) . '.old.php');
-        } catch (FileNotFoundException | IOException $e) {
+        } catch (FileNotFoundException | IOException) {
             throw new \Box_Exception('Unable to create backup of configuration file');
         }
 
