@@ -344,7 +344,10 @@
         "httponly",
         "samesite",
         "IPCOUNTRY",
-        "Serviceapikey"
+        "Serviceapikey",
+        "oldconfig",
+        "ordermodel",
+        "TINYINT",
     ],
     "ignorePaths": [
         "tests/**",
