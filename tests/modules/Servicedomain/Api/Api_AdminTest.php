@@ -288,8 +288,13 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
+        $dbMock = $this->getMockBuilder('\Pimple\Container')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())->method('find')
+            ->will($this->returnValue(array())); // return empty array to simulate no domains using the TLD
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock; // add db mock to DI container
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -301,6 +306,7 @@ class Api_AdminTest extends \BBTestCase
 
         $this->assertIsArray($result);
     }
+
 
     public function testTld_deleteTldNotFoundException()
     {
@@ -570,32 +576,45 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
+        // Mocking the database
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($registrar));
 
+        // Mocking the Service
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarRm')
             ->will($this->returnValue(true));
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
+
+        // Mocking the Validator
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
-        $this->adminApi->setDi($di);
 
+        $this->adminApi->setDi($di);
         $this->adminApi->setService($serviceMock);
 
-        $data   = array(
+        $data = array(
             'id' => rand(1, 100)
         );
-        $result = $this->adminApi->registrar_delete($data);
 
+        // Test case 1: No servicedomains associated with the registrar
+        $serviceMock->expects($this->once())->method('registrarRm')->will($this->returnValue(true));
+        $result = $this->adminApi->registrar_delete($data);
         $this->assertTrue($result);
+
+        // Test case 2: Servicedomains associated with the registrar
+        $serviceMock->expects($this->never())->method('registrarRm'); // Since there are servicedomains, registrarRm should not be called
+        $dbMock->expects($this->once())->method('find')->will($this->returnValue([new \Model_ServiceDomain()])); // Mocking the find() method to return servicedomains
+        $this->expectException('\Box_Exception'); // Expecting an exception to be thrown
+        $this->expectExceptionCode(707); // Expecting the exception code to be 707
+        $result = $this->adminApi->registrar_delete($data); // This should throw an exception
     }
 
     public function testRegistrar_deleteIdNotSetException()
