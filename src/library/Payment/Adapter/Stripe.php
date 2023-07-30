@@ -136,10 +136,6 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 []
             );
 
-            if (!isset($charge)) {
-                throw new \Exception("Failed to get the charge item from Stripe.");
-            }
-
             $tx->txn_status = $charge->status;
             $tx->txn_id = $charge->id;
             $tx->amount = $charge->amount / 100;
@@ -166,7 +162,8 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
             }
 
-        } catch (\Stripe\Exception\CardException|\Stripe\Exception\InvalidRequestException|\Stripe\Exception\AuthenticationException|\Stripe\Exception\ApiConnectionException $e) {
+        } catch (\Stripe\Exception\CardException|\Stripe\Exception\InvalidRequestException|\Stripe\Exception\AuthenticationException|\Stripe\Exception\ApiConnectionException|\Stripe\Exception\ApiErrorException $e) {
+            throw new Box_Exception("There was an error when processing the transaction");
             $this->logError($e, $tx);
         }
 
