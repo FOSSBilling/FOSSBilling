@@ -301,7 +301,6 @@ class Server_Manager_Whm extends Server_Manager
 			$var_hash['maxpop']			= $package->getMaxPop();
             
 			$var_hash['cgi']			= $package->getCustomValue('cgi');
-			$var_hash['frontpage']		= $package->getCustomValue('frontpage');
             $var_hash['cpmod']			= $package->getCustomValue('cpmod');
 			$var_hash['maxlst']			= $package->getCustomValue('maxlst');
             $var_hash['hasshell']		= $package->getCustomValue('hasshell');

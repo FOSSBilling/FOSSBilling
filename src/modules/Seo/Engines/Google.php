@@ -45,7 +45,7 @@ class Google implements \FOSSBilling\InjectionAwareInterface
 
         $request = $httpClient->request('GET', $link, [
             'query' => [
-                'sitemap'   => $url,
+                'sitemap' => $url,
             ],
         ]);
 

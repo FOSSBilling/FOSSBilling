@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -38,8 +38,6 @@ class Admin extends \Api_Abstract
     /**
      * Get staff member by id.
      *
-     * @param int $id - staff member ID
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -58,8 +56,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update staff member.
-     *
-     * @param int $id - staff member ID
      *
      * @optional string $email - new email
      * @optional string $name - new name
@@ -90,8 +86,6 @@ class Admin extends \Api_Abstract
     /**
      * Completely delete staff member. Removes all related activity from logs.
      *
-     * @param int $id - staff member ID
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -110,10 +104,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change staff member password.
-     *
-     * @param int    $id               - staff member ID
-     * @param string $password         - new staff member password
-     * @param string $password_confirm - repeat new staff member password
      *
      * @return bool
      *
@@ -143,11 +133,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new staff member.
      *
-     * @param string $email          - email of new staff member
-     * @param string $password       - password of new staff member
-     * @param string $name           - name of new staff member
-     * @param string $admin_group_id - admin group id of new staff member
-     *
      * @optional string $signature - signature of new staff member
      *
      * @return int - ID of newly created staff member
@@ -175,8 +160,6 @@ class Admin extends \Api_Abstract
     /**
      * Return staff member permissions.
      *
-     * @param int $id - staff member id
-     *
      * @return array
      */
     public function permissions_get($data)
@@ -193,9 +176,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update staff member permissions.
-     *
-     * @param int   $id          - staff member id
-     * @param array $permissions - staff member permissions
      *
      * @return bool
      */
@@ -247,8 +227,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new staff members group.
      *
-     * @param string $name - name of staff members group
-     *
      * @return int - new staff group ID
      *
      * @throws \Box_Exception
@@ -265,8 +243,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Return staff group details.
-     *
-     * @param int $id - group id
      *
      * @return array - group details
      *
@@ -287,8 +263,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove staff group.
      *
-     * @param int $id - group id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -307,8 +281,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update staff group.
-     *
-     * @param int $id - group id
      *
      * @optional int $name - new group name
      *
@@ -351,8 +323,6 @@ class Admin extends \Api_Abstract
     /**
      * Get details of login history event.
      *
-     * @param int $id - event id
-     *
      * @return array
      *
      * @throws ErrorException
@@ -372,8 +342,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete login history event.
      *
-     * @param int $id - event id
-     *
      * @return bool
      *
      * @throws ErrorException
@@ -391,8 +359,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes admin login logs with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */

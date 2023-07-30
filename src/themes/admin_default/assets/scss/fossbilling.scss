@@ -83,8 +83,8 @@
     resize: none;
 }
 
-[data-bs-theme=dark] 
-{ 
+[data-bs-theme=dark]
+{
   .toast {
     background: var(--tblr-bg-surface);
     border: var(--tblr-border-width) var(--tblr-border-style) var(--tblr-secondary);
@@ -93,3 +93,7 @@
     color: var(--tblr-secondary);
    }
 }
+
+.toast {
+    position: relative;
+  }

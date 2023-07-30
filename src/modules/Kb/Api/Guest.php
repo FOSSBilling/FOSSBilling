@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -44,9 +44,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get active knowledge base article.
-     *
-     * @param int    $id   - knowledge base article ID. Required only if SLUG is not passed.
-     * @param string $slug - knowledge base article slug. Required only if ID is not passed.
      *
      * @return array
      */
@@ -109,9 +106,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get knowledge base category by ID or SLUG.
-     *
-     * @param int    $id   - knowledge base category ID. Required only if SLUG is not passed.
-     * @param string $slug - knowledge base category slug. Required only if ID is not passed.
      *
      * @return array
      */

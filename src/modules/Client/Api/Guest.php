@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,11 +18,6 @@ class Guest extends \Api_Abstract
 {
     /**
      * Client signup action.
-     *
-     * @param string $email            - Email
-     * @param string $first_name       - First name
-     * @param string $password         - password
-     * @param string $password_confirm - must be same as password
      *
      * @optional bool $auto_login - Auto login client after signup
      * @optional string $last_name - last name
@@ -108,9 +103,6 @@ class Guest extends \Api_Abstract
     /**
      * Client login action.
      *
-     * @param string $email    - client email
-     * @param string $password - client password
-     *
      * @return array - session data
      *
      * @throws \Box_Exception
@@ -133,6 +125,7 @@ class Guest extends \Api_Abstract
 
         if (!$client instanceof \Model_Client) {
             $this->di['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
+
             throw new \Box_Exception('Please check your login details.', [], 401);
         }
 
@@ -149,8 +142,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Password reset confirmation email will be sent to email.
-     *
-     * @param string $email - client email
      *
      * @return bool
      *
@@ -169,7 +160,7 @@ class Guest extends \Api_Abstract
 
         $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
         if (!$c instanceof \Model_Client) {
-            throw new \Box_Exception('Email not found in our database');
+            return true;
         }
 
         $hash = hash('sha256', time() . random_bytes(13));
@@ -197,8 +188,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Confirm password reset action.
-     *
-     * @param string $hash - hash received in email
      *
      * @return bool
      *
@@ -241,9 +230,6 @@ class Guest extends \Api_Abstract
      * Check if given vat number is valid EU country VAT number
      * This method uses http://isvat.appspot.com/ method to validate VAT.
      *
-     * @param string $country - Country CODE: FR - France etc
-     * @param string $vat     - VAT number
-     *
      * @return bool- true if VAT is valid, false if not
      */
     public function is_vat($data)
@@ -285,6 +271,7 @@ class Guest extends \Api_Abstract
     public function is_email_validation_required(): bool
     {
         $config = $this->di['mod_config']('client');
+
         return (bool) ($config['require_email_confirmation'] ?? false);
     }
 }

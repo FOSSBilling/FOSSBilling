@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -32,8 +32,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete custom page.
      *
-     * @param int $id - custom page ID
-     *
      * @return bool
      */
     public function delete($data)
@@ -51,8 +49,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete custom pages.
      *
-     * @param array $ids - custom page IDs
-     *
      * @return bool
      */
     public function batch_delete($data)
@@ -69,9 +65,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Create new custom page.
-     *
-     * @param string $title   - custom page title
-     * @param string $content - custom page content
      *
      * @optional string $description - custom page meta description
      * @optional string $keywords - custom page meta keywords
@@ -97,10 +90,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update custom page.
-     *
-     * @param string $id      - custom page id
-     * @param string $slug    - custom page slug
-     * @param string $content - custom page content
      *
      * @optional string $description - custom page meta description
      * @optional string $keywords - custom page meta keywords
@@ -129,8 +118,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get custom page by id.
-     *
-     * @param string $id - custom page id
      *
      * @return array
      */

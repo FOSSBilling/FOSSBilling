@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -44,8 +44,6 @@ class Client extends \Api_Abstract
     /**
      * Get order details.
      *
-     * @param int $id - order id
-     *
      * @return array
      */
     public function get($data)
@@ -57,8 +55,6 @@ class Client extends \Api_Abstract
 
     /**
      * Get order addons.
-     *
-     * @param int $id - order id
      *
      * @return array
      */
@@ -77,8 +73,6 @@ class Client extends \Api_Abstract
     /**
      * Get order service. Order must be activated before service can be retrieved.
      *
-     * @param int $id - order id
-     *
      * @return array
      */
     public function service($data)
@@ -90,8 +84,6 @@ class Client extends \Api_Abstract
 
     /**
      * List of product pairs offered as an upgrade.
-     *
-     * @param int $id - order id
      *
      * @return array
      */
@@ -106,8 +98,6 @@ class Client extends \Api_Abstract
 
     /**
      * Can delete only pending setup and failed setup orders.
-     *
-     * @param int $id - order id
      */
     public function delete($data)
     {
