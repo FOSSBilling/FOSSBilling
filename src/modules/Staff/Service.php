@@ -30,7 +30,6 @@ class Service implements InjectionAwareInterface
     {
         $event_params = [];
         $event_params['email'] = $email;
-        $event_params['password'] = $password;
         $event_params['ip'] = $ip;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminLogin', 'params' => $event_params]);
