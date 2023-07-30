@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -17,10 +17,6 @@ class Client extends \Api_Abstract
 {
     /**
      * Change domain nameservers. Method sends action to registrar.
-     *
-     * @param int    $order_id - domain order id
-     * @param string $ns1      - 1 Nameserver hostname, ie: ns1.mydomain.com
-     * @param string $ns2      - 2 Nameserver hostname, ie: ns2.mydomain.com
      *
      * @optional string $ns3 - 3 Nameserver hostname, ie: ns3.mydomain.com
      * @optional string $ns4 - 4 Nameserver hostname, ie: ns4.mydomain.com
@@ -43,9 +39,6 @@ class Client extends \Api_Abstract
     /**
      * Change domain WHOIS contact details. Method sends action to registrar.
      *
-     * @param int   $order_id - domain order id
-     * @param array $contact  - Contact array must contain these fields: first_name, last_name, email, company, address1, address2, country, city, state, postcode, phone_cc, phone
-     *
      * @return true
      */
     public function update_contacts($data)
@@ -60,8 +53,6 @@ class Client extends \Api_Abstract
     /**
      * Enable domain privacy protection.
      *
-     * @param int $order_id - domain order id
-     *
      * @return true
      */
     public function enable_privacy_protection($data)
@@ -73,8 +64,6 @@ class Client extends \Api_Abstract
 
     /**
      * Disable domain privacy protection.
-     *
-     * @param int $order_id - domain order id
      *
      * @return true
      */
@@ -88,8 +77,6 @@ class Client extends \Api_Abstract
     /**
      * Retrieve domain transfer code.
      *
-     * @param int $order_id - domain order id
-     *
      * @return string - transfer code
      */
     public function get_transfer_code($data)
@@ -102,8 +89,6 @@ class Client extends \Api_Abstract
     /**
      * Lock domain.
      *
-     * @param int $order_id - domain order id
-     *
      * @return bool
      */
     public function lock($data)
@@ -115,8 +100,6 @@ class Client extends \Api_Abstract
 
     /**
      * Unlock domain.
-     *
-     * @param int $order_id - domain order id
      *
      * @return bool
      */

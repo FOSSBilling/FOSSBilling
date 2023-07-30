@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -17,13 +17,9 @@ class Client extends \Api_Abstract
 {
     /**
      * Checkout a shopping cart that has products in it.
-     * 
+     *
      * @param array $data Checkout data
-     * 
-     * @param int $data['gateway_id'] ID of the payment gateway to use for the payment
-     * 
-     * @return mixed
-    */
+     */
     public function checkout($data)
     {
         $gateway_id = $data['gateway_id'] ?? null;

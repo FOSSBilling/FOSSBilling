@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,8 +18,6 @@ class Admin extends \Api_Abstract
 {
     /**
      * Get order details.
-     *
-     * @param int $id - Order id
      *
      * @return array
      */
@@ -59,9 +57,6 @@ class Admin extends \Api_Abstract
     /**
      * Place new order for client. Admin is able to order disabled products.
      *
-     * @param int $client_id  - Client id
-     * @param int $product_id - Product id to be ordered
-     *
      * @optional array $config - Depending on product type, you may need to pass product configuration options
      * @optional int $quantity - Quantity of products to order. Default 1
      * @optional float $price - Overridden unit price in default currency. Default is product price for selected period.
@@ -92,8 +87,6 @@ class Admin extends \Api_Abstract
     /**
      * Update order settings.
      *
-     * @param int $id - Order id
-     *
      * @optional string $period - Order billing period, ie: 1Y
      * @optional string $expires_at - Order expiration date, ie: 2022-12-29
      * @optional string $activated_at - Order activation date, ie: 2022-12-29
@@ -116,8 +109,6 @@ class Admin extends \Api_Abstract
     /**
      * Activate order depending on current status.
      *
-     * @param int $id - Order id
-     *
      * @optional bool $force - Skip order status checking. Force activate even active order
      *
      * @return bool
@@ -132,15 +123,13 @@ class Admin extends \Api_Abstract
     /**
      * Activate order depending on current status.
      *
-     * @param int $id - Order id
-     *
      * @return bool
      */
     public function renew($data)
     {
         $order = $this->_getOrder($data);
 
-        if (\Model_ClientOrder::STATUS_PENDING_SETUP == $order->status || \Model_ClientOrder::STATUS_FAILED_SETUP == $order->status) {
+        if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP || $order->status == \Model_ClientOrder::STATUS_FAILED_SETUP) {
             return $this->activate($data);
         }
 
@@ -149,8 +138,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Suspend order.
-     *
-     * @param int $id - Order id
      *
      * @optional string $reason - Suspension reason message
      * @optional bool $skip_event - Skip calling event hooks
@@ -170,14 +157,12 @@ class Admin extends \Api_Abstract
     /**
      * Unsuspend suspended order.
      *
-     * @param int $id - Order id
-     *
      * @return bool
      */
     public function unsuspend($data)
     {
         $order = $this->_getOrder($data);
-        if (\Model_ClientOrder::STATUS_SUSPENDED != $order->status) {
+        if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
             throw new \Box_Exception('Only suspended orders can be unsuspended');
         }
 
@@ -186,8 +171,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Cancel order.
-     *
-     * @param int $id - Order id
      *
      * @optional bool $skip_event - Skip calling event hooks
      *
@@ -206,14 +189,12 @@ class Admin extends \Api_Abstract
     /**
      * Uncancel canceled order.
      *
-     * @param int $id - Order id
-     *
      * @return bool
      */
     public function uncancel($data)
     {
         $order = $this->_getOrder($data);
-        if (\Model_ClientOrder::STATUS_CANCELED != $order->status) {
+        if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
             throw new \Box_Exception('Only canceled orders can be uncanceled');
         }
 
@@ -222,8 +203,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete order.
-     *
-     * @param int $id - Order id
      *
      * @optional bool $delete_addons - Remove addons also. Default false.
      *
@@ -268,9 +247,6 @@ class Admin extends \Api_Abstract
     /**
      * Update order config.
      *
-     * @param int   $id     - Order id
-     * @param array $config - list of key value pairs of configuration fields
-     *
      * @return bool
      */
     public function update_config($data)
@@ -289,8 +265,6 @@ class Admin extends \Api_Abstract
     /**
      * Get order service data.
      *
-     * @param int $id - Order id
-     *
      * @return array
      */
     public function service($data)
@@ -302,8 +276,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get paginated order statuses history list.
-     *
-     * @param int $id - Order id
      *
      * @return array
      */
@@ -321,9 +293,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Add order status history change.
-     *
-     * @param int    $id     - Order id
-     * @param string $status - order status
      *
      * @return array
      */
@@ -343,8 +312,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove order status history item.
-     *
-     * @param int $id - History line id
      *
      * @return bool
      */
@@ -400,8 +367,6 @@ class Admin extends \Api_Abstract
     /**
      * Return order addons list.
      *
-     * @param int $id - Order id
-     *
      * @return array
      */
     public function addons($data)
@@ -429,8 +394,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes orders with given IDs.
      *
-     * @param array $ids - Order ids for deletion
-     *
      * @optional bool $delete_addons - Remove addons also. Default false.
      *
      * @return bool
@@ -454,6 +417,7 @@ class Admin extends \Api_Abstract
     public function export_csv($data)
     {
         $data['headers'] ??= [];
+
         return $this->getService()->exportCSV($data['headers']);
     }
 }

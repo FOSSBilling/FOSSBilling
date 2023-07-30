@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Staff\Controller;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Admin implements InjectionAwareInterface
 {
@@ -59,10 +59,11 @@ class Admin implements InjectionAwareInterface
         // if not show admin create form
         $service = $this->di['mod_service']('staff');
         $count = $service->getAdminsCount();
-        $create = (0 == $count);
-        if($this->di['auth']->isAdminLoggedIn()){
+        $create = ($count == 0);
+        if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->redirect('');
         }
+
         return $app->render('mod_staff_login', ['create_admin' => $create]);
     }
 
@@ -112,7 +113,7 @@ class Admin implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();
-        if ( isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0'){
+        if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             throw new \Box_Exception('Password reset has been disabled');
         }
         // send confirmation email
@@ -121,13 +122,13 @@ class Admin implements InjectionAwareInterface
         if (!$reset instanceof \Model_AdminPasswordReset) {
             throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
         }
-        if(strtotime($reset -> created_at) - time() + 900 <  0){
+        if (strtotime($reset->created_at) - time() + 900 < 0) {
             throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
         }
-        $admin = $this->di['db']->getExistingModelById('Admin', $reset -> admin_id, 'User not found');
-        $data['hash'] = $reset -> hash;
-        $data['email'] = $admin -> email;
-        return $app->render('mod_staff_password_update', ['data' => $data]);
+        $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
+        $data['hash'] = $reset->hash;
+        $data['email'] = $admin->email;
 
+        return $app->render('mod_staff_password_update', ['data' => $data]);
     }
 }

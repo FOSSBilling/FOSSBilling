@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Servicedownloadable;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -29,7 +29,7 @@ class Service implements InjectionAwareInterface
     public function attachOrderConfig(\Model_Product $product, array &$data)
     {
         $config = $product->config;
-        isset($config) ?  $config = json_decode($config, true) : $config = [];
+        isset($config) ? $config = json_decode($config, true) : $config = [];
         $required = [
             'filename' => 'Product is not configured completely.',
         ];
@@ -164,7 +164,7 @@ class Service implements InjectionAwareInterface
     public function uploadProductFile(\Model_Product $productModel)
     {
         $request = $this->di['request'];
-        if (0 == $request->hasFiles()) {
+        if ($request->hasFiles() == 0) {
             throw new \Box_Exception('Error uploading file');
         }
         $files = $request->getUploadedFiles();
@@ -195,7 +195,7 @@ class Service implements InjectionAwareInterface
     public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order)
     {
         $request = $this->di['request'];
-        if (0 == $request->hasFiles()) {
+        if ($request->hasFiles() == 0) {
             throw new \Box_Exception('Error uploading file');
         }
         $productService = $this->di['mod_service']('product');

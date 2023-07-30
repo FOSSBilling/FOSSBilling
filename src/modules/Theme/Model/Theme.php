@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -182,12 +182,12 @@ class Theme
         $tags = array_unique($tags[1]);
 
         if (is_array($tags) && !empty($tags)) {
-            if (false === $invert) {
+            if ($invert === false) {
                 return preg_replace('@<(?!(?:' . implode('|', $tags) . ')\b)(\w+)\b.*?>.*?</\1>@si', '', $text);
             } else {
                 return preg_replace('@<(' . implode('|', $tags) . ')\b.*?>.*?</\1>@si', '', $text);
             }
-        } elseif (false === $invert) {
+        } elseif ($invert === false) {
             return preg_replace('@<(\w+)\b.*?>.*?</\1>@si', '', $text);
         }
 

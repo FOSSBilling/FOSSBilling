@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -40,7 +40,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
      */
     private function getServer($key = null, $default = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $_SERVER;
         }
 
@@ -50,10 +50,10 @@ class Server implements \FOSSBilling\InjectionAwareInterface
     private function getIp($checkProxy = true)
     {
         $ip = null;
-        if ($checkProxy && null != $this->getServer('HTTP_CLIENT_IP')) {
+        if ($checkProxy && $this->getServer('HTTP_CLIENT_IP') != null) {
             $ip = $this->getServer('HTTP_CLIENT_IP');
         } else {
-            if ($checkProxy && null != $this->getServer('HTTP_X_FORWARDED_FOR')) {
+            if ($checkProxy && $this->getServer('HTTP_X_FORWARDED_FOR') != null) {
                 $ip = $this->getServer('HTTP_X_FORWARDED_FOR');
             } else {
                 $ip = $this->getServer('REMOTE_ADDR');

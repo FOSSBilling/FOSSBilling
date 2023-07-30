@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Cart;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -88,7 +88,7 @@ class Service implements InjectionAwareInterface
         $qty = $data['quantity'] ?? 1;
         // check stock
         if (!$this->isStockAvailable($product, $qty)) {
-            throw new \Box_Exception("This item is currently out of stock");
+            throw new \Box_Exception('This item is currently out of stock');
         }
 
         $addons = $data['addons'] ?? [];
@@ -181,14 +181,14 @@ class Service implements InjectionAwareInterface
         $productTable = $model->getTable();
         $pricing = $productTable->getPricingArray($model);
 
-        return isset($pricing['type']) && \Model_ProductPayment::RECURRENT == $pricing['type'];
+        return isset($pricing['type']) && $pricing['type'] == \Model_ProductPayment::RECURRENT;
     }
 
     public function isPeriodEnabledForProduct(\Model_Product $model, $period)
     {
         $productTable = $model->getTable();
         $pricing = $productTable->getPricingArray($model);
-        if (\Model_ProductPayment::RECURRENT == $pricing['type']) {
+        if ($pricing['type'] == \Model_ProductPayment::RECURRENT) {
             return (bool) $pricing['recurrent'][$period]['enabled'];
         }
 
@@ -292,7 +292,7 @@ class Service implements InjectionAwareInterface
     {
         $cartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
 
-        return 0 == count($cartProducts);
+        return count($cartProducts) == 0;
     }
 
     public function rm(\Model_Cart $cart)
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT id FROM client_order WHERE promo_id = :promo AND client_id = :cid LIMIT 1';
         $promoId = $this->di['db']->getCell($sql, [':promo' => $promo->id, ':cid' => $client->id]);
 
-        return null !== $promoId;
+        return $promoId !== null;
     }
 
     public function getCartProducts(\Model_Cart $model)
@@ -428,7 +428,7 @@ class Service implements InjectionAwareInterface
             if (!$promo instanceof \Model_Promo) {
                 throw new \Box_Exception('Promo code is expired or does not exist');
             }
-    
+
             if (!$this->isPromoAvailableForClientGroup($promo)) {
                 throw new \Box_Exception('Promo can not be applied to your account');
             }
@@ -470,7 +470,7 @@ class Service implements InjectionAwareInterface
         ];
 
         // invoice may not be created if total is 0
-        if ($invoice instanceof \Model_Invoice && \Model_Invoice::STATUS_UNPAID == $invoice->status) {
+        if ($invoice instanceof \Model_Invoice && $invoice->status == \Model_Invoice::STATUS_UNPAID) {
             $result['invoice_hash'] = $invoice->hash;
         }
 
@@ -481,7 +481,7 @@ class Service implements InjectionAwareInterface
     {
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
-        if (0 == count($ca['items'])) {
+        if (count($ca['items']) == 0) {
             throw new \Box_Exception('Can not checkout an empty cart');
         }
 
@@ -510,7 +510,7 @@ class Service implements InjectionAwareInterface
 
             $product = $this->di['db']->getExistingModelById('Product', $item['product_id']);
             if (is_null($product) || $product->status !== 'enabled') {
-                throw new \Box_Exception("Unable to complete order. One or more of the selected products are invalid.");
+                throw new \Box_Exception('Unable to complete order. One or more of the selected products are invalid.');
             }
 
             /*
@@ -536,7 +536,7 @@ class Service implements InjectionAwareInterface
             $order->form_id = $item['form_id'];
 
             $order->group_id = $cart->id;
-            $order->group_master = (0 == $i);
+            $order->group_master = ($i == 0);
             $order->invoice_option = 'issue-invoice';
             $order->title = $item['title'];
             $order->currency = $currency->code;
@@ -604,7 +604,7 @@ class Service implements InjectionAwareInterface
             }
 
             // define master order to be returned
-            if (null === $master_order) {
+            if ($master_order === null) {
                 $master_order = $order;
             }
 
@@ -621,7 +621,7 @@ class Service implements InjectionAwareInterface
 
             $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => $useCredits]);
 
-            if (\Model_Invoice::STATUS_UNPAID == $invoiceModel->status) {
+            if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
                 foreach ($orders as $order) {
                     $order->unpaid_invoice_id = $invoiceModel->id;
                     $this->di['db']->store($order);
@@ -636,16 +636,17 @@ class Service implements InjectionAwareInterface
             $ids[] = $order->id;
             $oa = $orderService->toApiArray($order, false, $client);
             $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
+
             try {
-                if (\Model_ProductTable::SETUP_AFTER_ORDER == $product->setup) {
+                if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER) {
                     $orderService->activateOrder($order);
                 }
 
-                if ($ca['total'] <= 0 && \Model_ProductTable::SETUP_AFTER_PAYMENT == $product->setup && $oa['total'] - $oa['discount'] <= 0) {
+                if ($ca['total'] <= 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0) {
                     $orderService->activateOrder($order);
                 }
 
-                if ($ca['total'] > 0 && \Model_ProductTable::SETUP_AFTER_PAYMENT == $product->setup && \Model_Invoice::STATUS_PAID == $invoiceModel->status) {
+                if ($ca['total'] > 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $invoiceModel->status == \Model_Invoice::STATUS_PAID) {
                     $orderService->activateOrder($order);
                 }
             } catch (\Exception $e) {

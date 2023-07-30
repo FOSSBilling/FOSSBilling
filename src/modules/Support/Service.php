@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -473,7 +473,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function canBeReopened(\Model_SupportTicket $model)
     {
-        if (\Model_SupportTicket::CLOSED != $model->status) {
+        if ($model->status != \Model_SupportTicket::CLOSED) {
             return true;
         }
 
@@ -498,7 +498,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $client = $this->di['db']->load('Client', $model->client_id);
 
-        if (\Model_SupportTicket::REL_TYPE_ORDER == $model->rel_type) {
+        if ($model->rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
             $orderService = $this->di['mod_service']('order');
             $o = $orderService->findForClientById($client, $model->rel_id);
             if ($o instanceof \Model_ClientOrder) {
@@ -815,7 +815,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));;
+        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $subject;
@@ -863,7 +863,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $rel_id = $data['rel_id'] ?? null;
         $rel_type = $data['rel_type'] ?? null;
 
-        if (!is_null($rel_id) && \Model_SupportTicket::REL_TYPE_ORDER == $rel_type) {
+        if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
             $orderService = $this->di['mod_service']('order');
             $o = $orderService->findForClientById($client, $rel_id);
             if (!$o instanceof \Model_ClientOrder) {
@@ -884,6 +884,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $allowedUpgrades = json_decode($product->upgrades ?? '');
             if (!in_array($rel_new_value, $allowedUpgrades)) {
                 $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
+
                 throw new \Box_Exception('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
             }
         }
@@ -1215,7 +1216,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));;
+        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $data['subject'];

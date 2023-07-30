@@ -269,6 +269,8 @@ class Box_App
         $adminApiPrefixes = [
             '/api/guest/staff/login',
             '/api/admin',
+            'api/admin',
+            '/index.php?_url=/api/admin/',
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix) {
@@ -348,8 +350,9 @@ class Box_App
 
                 if ('api' == $this->mod) {
                     $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later', [], 503);
-
-                    return (new \Box\Mod\Api\Controller\Client())->renderJson(null, $exc);
+                    $apiController = new \Box\Mod\Api\Controller\Client;
+                    $apiController->setDi($this->di);
+                    return $apiController->renderJson(null, $exc);
                 } else {
                     return $this->render('mod_system_maintenance');
                 }

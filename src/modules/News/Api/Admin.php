@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -38,8 +38,6 @@ class Admin extends \Api_Abstract
     /**
      * Get news item by ID.
      *
-     * @param int $id - news item ID
-     *
      * @return array
      */
     public function get($data)
@@ -69,8 +67,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update news item.
-     *
-     * @param int $id - news item ID
      *
      * @optional string $title - news item title
      * @optional string $description - news item description
@@ -138,8 +134,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new news item.
      *
-     * @param string $title - news item title
-     *
      * @optional string $content - news item content
      * @optional string $status - news item status
      *
@@ -172,8 +166,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete news item by ID.
      *
-     * @param int $id - news item ID
-     *
      * @return bool
      */
     public function delete($data)
@@ -193,8 +185,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes news items with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */

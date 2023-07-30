@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -39,8 +39,6 @@ class Client extends \Api_Abstract
     /**
      * Get invoice details.
      *
-     * @param string $hash - invoice hash
-     *
      * @return type
      *
      * @throws \Box_Exception
@@ -63,8 +61,6 @@ class Client extends \Api_Abstract
     /**
      * Update Invoice details. Only unpaid invoice details can be updated.
      *
-     * @param string $hash - invoice hash
-     *
      * @optional int $gateway_id - selected payment gateway id
      *
      * @return bool
@@ -82,7 +78,7 @@ class Client extends \Api_Abstract
         if (!$invoice) {
             throw new \Box_Exception('Invoice was not found');
         }
-        if ('paid' == $invoice->status) {
+        if ($invoice->status == 'paid') {
             throw new \Box_Exception('Paid Invoice can not be modified');
         }
 
@@ -96,8 +92,6 @@ class Client extends \Api_Abstract
      * Generates new invoice for selected order. If unpaid invoice for selected order
      * already exists, new invoice will not be generated, and old invoice hash
      * is returned.
-     *
-     * @param int $order_id - ID of order to generate new invoice for
      *
      * @return string - invoice hash
      *
@@ -131,8 +125,6 @@ class Client extends \Api_Abstract
      * Deposit money in advance. Generates new invoice for depositing money.
      * Clients currency must be defined.
      *
-     * @param float $amount - amount to be deposited
-     *
      * @return string - invoice hash
      */
     public function funds_invoice($data)
@@ -157,8 +149,6 @@ class Client extends \Api_Abstract
 
     /**
      * Client removes unpaid invoice.
-     *
-     * @param string $hash - invoice hash
      *
      * @return bool
      *
