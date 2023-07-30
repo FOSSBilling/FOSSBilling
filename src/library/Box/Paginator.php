@@ -12,34 +12,14 @@ class Box_Paginator extends Paginator {}
 class Paginator {
 
     /**
-     * @var int current displayed page
-     */
-    protected $currentPage;
-
-    /**
-     * @var int items limit (items per page)
-     */
-    protected $limit;
-
-    /**
      * @var int total number of pages
      */
     protected $numPages;
 
     /**
-     * @var int items limit (items per page)
-     */
-    protected $itemsCount;
-
-    /**
      * @var int offset
      */
     protected $offset;
-
-    /**
-     * @var int pages to show at left and right of current page
-     */
-    protected $midRange;
 
     /**
      * @var array range
@@ -57,14 +37,8 @@ class Paginator {
      * @param int $limit
      * @param int $midRange
      */
-    public function __construct($itemsCount = 0, $currentPage = 1, $limit = 20, $midRange = 7)
+    public function __construct(protected $itemsCount = 0, protected $currentPage = 1, protected $limit = 20, protected $midRange = 7)
     {
-        //set total items count from controller
-        $this->itemsCount = $itemsCount;
-        $this->currentPage = $currentPage;
-        $this->limit = $limit;
-        $this->midRange= $midRange;
-
         //Set defaults
         $this->setDefaults();
 

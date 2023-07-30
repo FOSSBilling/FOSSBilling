@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -114,7 +114,6 @@ class ServiceBalance implements InjectionAwareInterface
     /**
      * @param float  $amount
      * @param string $description
-     * @param array  $data
      *
      * @return \Model_ClientBalance
      *

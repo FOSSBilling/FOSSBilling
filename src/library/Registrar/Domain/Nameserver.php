@@ -8,7 +8,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-class Registrar_Domain_Nameserver
+class Registrar_Domain_Nameserver implements \Stringable
 {
     private $host = null;
     private $ip = null;
@@ -35,7 +35,7 @@ class Registrar_Domain_Nameserver
         return $this->ip;
     }
 
-    public function __toString() {
+    public function __toString(): string {
         $c = '';
         $c .= sprintf("Host: %s", $this->getHost()).PHP_EOL;
         $c .= sprintf("Ip: %s", $this->getIp()).PHP_EOL;

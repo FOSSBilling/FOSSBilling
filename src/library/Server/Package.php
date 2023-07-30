@@ -10,7 +10,7 @@
 
 class Server_Package
 {
-    private $name                   = 'FOSSBilling';
+    private string $name                   = 'FOSSBilling';
     private $quota                  = NULL;
     private $bandwidth              = NULL;
     
@@ -21,7 +21,7 @@ class Server_Package
     private $maxsql                 = NULL;
     private $maxpop                 = NULL;
     
-    private $custom                 = array();
+    private array $custom                 = array();
 
     public function __call($name, $arguments)
     {
@@ -32,7 +32,7 @@ class Server_Package
             // Get only the stack frames we need (PHP 5.4 only).
             $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         }
-        error_log(sprintf("Calling %s inaccessible method %s from %s::%d", get_class($this), $name, $backtrace[1]['file'], $backtrace[1]['line']));
+        error_log(sprintf("Calling %s inaccessible method %s from %s::%d", static::class, $name, $backtrace[1]['file'], $backtrace[1]['line']));
         return '';
     }
     
@@ -53,7 +53,7 @@ class Server_Package
      */
     public function getCustomValue($param)
     {
-        return isset($this->custom[$param]) ? $this->custom[$param] : NULL;
+        return $this->custom[$param] ?? NULL;
     }
     
     public function setName($param)

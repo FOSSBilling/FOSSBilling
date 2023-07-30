@@ -11,27 +11,17 @@
 class Box_LogDb
 {
     /**
-     * $service - module service class
-     *
-     * @var object $service
-     */
-    protected $service = null;
-
-    /**
      * Class constructor
      *
      * @param object $service - module service class object
      */
-    public function __construct($service)
+    public function __construct(protected $service)
     {
-        $this->service = $service;
     }
 
     /**
      * Write a message to the log.
      *
-     * @param array $event
-     * @param string $channel
      *
      * @return void
      */

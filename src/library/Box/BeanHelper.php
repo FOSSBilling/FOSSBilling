@@ -10,7 +10,7 @@
 
 class Box_BeanHelper extends \RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -48,7 +48,7 @@ class Box_BeanHelper extends \RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper imple
         {
             $string[0] = strtoupper($string[0]);
         }
-        $func = function($c){ return strtoupper($c[1]); };
+        $func = fn($c) => strtoupper($c[1]);
         return preg_replace_callback('/_([a-z])/', $func, $string);
     }
 }

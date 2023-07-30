@@ -10,16 +10,9 @@
 
 abstract class Payment_AdapterAbstract
 {
-    const TYPE_HTML         	= 'html';
-    const TYPE_FORM         	= 'form';
-    const TYPE_API          	= 'api';
-
-    /**
-     * Adapter settings
-     *
-     * @var array
-     */
-    protected $_config = array();
+    public const TYPE_HTML         	= 'html';
+    public const TYPE_FORM         	= 'form';
+    public const TYPE_API          	= 'api';
 
     /**
      * Response text for notify_url
@@ -46,14 +39,12 @@ abstract class Payment_AdapterAbstract
     /**
      * Constructs a new Payment_Adapter object
      *
-     * @param array $config The configuration for the payment adapter as configured within the admin panel
+     * @param array $_config The configuration for the payment adapter as configured within the admin panel
      *
      * @throws Payment_Exception
      */
-    public function __construct($config)
+    public function __construct(protected $_config)
     {
-        $this->_config = $config;
-
         /**
          * Redirect client after successful payment, usually to invoice
          */
@@ -173,7 +164,7 @@ abstract class Payment_AdapterAbstract
      */
     public function getParam($param)
     {
-        return isset($this->_config[$param]) ? $this->_config[$param] : NULL;
+        return $this->_config[$param] ?? NULL;
     }
 
     /**

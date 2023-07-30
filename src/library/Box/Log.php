@@ -20,14 +20,14 @@
  */
 class Box_Log implements \FOSSBilling\InjectionAwareInterface
 {
-    const EMERG = 0;  // Emergency: system is unusable
-    const ALERT = 1;  // Alert: action must be taken immediately
-    const CRIT = 2;  // Critical: critical conditions
-    const ERR = 3;  // Error: error conditions
-    const WARN = 4;  // Warning: warning conditions
-    const NOTICE = 5;  // Notice: normal but significant condition
-    const INFO = 6;  // Informational: informational messages
-    const DEBUG = 7;  // Debug: debug messages
+    public const EMERG = 0;  // Emergency: system is unusable
+    public const ALERT = 1;  // Alert: action must be taken immediately
+    public const CRIT = 2;  // Critical: critical conditions
+    public const ERR = 3;  // Error: error conditions
+    public const WARN = 4;  // Warning: warning conditions
+    public const NOTICE = 5;  // Notice: normal but significant condition
+    public const INFO = 6;  // Informational: informational messages
+    public const DEBUG = 7;  // Debug: debug messages
 
     protected array $_priorities = [
         self::EMERG => 'EMERG',
@@ -40,7 +40,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         self::DEBUG => 'DEBUG',
     ];
 
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
     protected $_min_priority = null;
 
     protected array $_writers = [];
@@ -67,7 +67,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
     {
         $priority = strtoupper($method);
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
-            switch (count($params)) {
+            switch (is_countable($params) ? count($params) : 0) {
                 case 0:
                     throw new \Box_Exception('Missing log message');
                 case 1:

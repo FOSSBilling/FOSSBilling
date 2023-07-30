@@ -17,7 +17,7 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
-    private ?\Pimple\Container $di;
+    private ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -95,7 +95,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // Write updated configuration file.
         try {
             $filesystem->dumpFile($configPath, $output);
-        } catch (IOException $e) {
+        } catch (IOException) {
             throw new \Box_Exception('Error when writing updated configuration file.');
         }
     }
@@ -294,8 +294,6 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, function ($key) use ($patchLevel) {
-            return $key > $patchLevel;
-        }, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 }
