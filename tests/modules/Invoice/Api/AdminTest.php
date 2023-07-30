@@ -82,20 +82,22 @@ class AdminTest extends \BBTestCase {
         $data = array(
             'id' => 1,
             'execute' => true,
+            'transactionId' => 'transaction123', // Assuming this key is required in the $data array
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsPaid')
             ->will($this->returnValue(true));
+
+        // Mocking the gateway_get method
         $serviceMock->expects($this->atLeastOnce())
             ->method('gateway_get')
-            ->will($this->returnValue(new \Model_PayGateway()));
+            ->will($this->returnValue(['code' => 'Custom', 'enabled' => 1, 'title' => 'Custom Gateway']));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
@@ -114,6 +116,7 @@ class AdminTest extends \BBTestCase {
         $result = $this->api->mark_as_paid($data);
         $this->assertTrue($result);
     }
+
 
     public function testprepare()
     {
