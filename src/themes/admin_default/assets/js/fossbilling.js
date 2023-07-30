@@ -312,7 +312,6 @@ $.fn.simpleTabs = function () {
 
 };//end function
 
-// Your script with corrected modifications
 globalThis.FOSSBilling = {
   message: (message, type = 'info') => {
     let color;
@@ -347,9 +346,6 @@ globalThis.FOSSBilling = {
 
     element.addEventListener('hidden.bs.toast', () => {
       container.removeChild(element); // Remove the toast element from the container when it's hidden
-      if (container.children.length === 0) {
-        container.remove(); // If no toasts left, remove the container as well
-      }
     });
 
     container.appendChild(element); // Append the toast to the container

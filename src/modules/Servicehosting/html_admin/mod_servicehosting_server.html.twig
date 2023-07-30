@@ -160,13 +160,13 @@
               API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  data , function (result) {
                 return bb._afterComplete(formElement, result);
               }, function (error) {
-                FOSSBilling.message(`${error.message} (${error.code}) AAAA`, 'error A');
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
               });
 
               API.makeRequest(formElement.getAttribute('method'), bb.restUrl('admin/servicehosting/server_test_connection'),  { id: {{ server.id }}, CSRFToken: "{{ CSRFToken }}" }, function (result) {
                   FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');
                 }, function (error) {
-                  FOSSBilling.message(`${error.message} (${error.code}) BBBB`, 'error B');
+                  FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                 });
             return false;
         });
