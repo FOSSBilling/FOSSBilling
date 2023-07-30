@@ -383,6 +383,7 @@
         "phpstan.neon",
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",
-        ".github/**"
+        ".github/**",
+        ".gitignore"
     ]
 }
