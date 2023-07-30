@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use Rector\CodeQuality\Rector\Class_\InlineConstructorDefaultToPropertyRector;
+use Rector\Php54\Rector\Array_\LongArrayToShortArrayRector;
+use Rector\Php73\Rector\FuncCall\JsonThrowOnErrorRector;
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 
@@ -14,6 +15,8 @@ return static function (RectorConfig $rectorConfig): void {
 
     $rectorConfig->skip([
         __DIR__ . '/src/vendor',
+        JsonThrowOnErrorRector::class,
+        LongArrayToShortArrayRector::class, // As much as I'd like to use this, Rector will destroy the formattiong of large, multi-line arrays when it applys this & PHP-CS-Fixer doesn't fix it.
     ]);
 
     

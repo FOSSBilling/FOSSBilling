@@ -1,12 +1,12 @@
 name: Rector and Code Styling
 
 on:
-  pull_request:
+  push:
     branches: main
 
 jobs:
   php-cs-fixer:
-    name: PHP-CS-Fixer
+    name: Rector & PHP-CS-Fixer
     runs-on: ubuntu-latest
 
     steps:
@@ -41,15 +41,15 @@ jobs:
       run: php src/vendor/bin/rector
 
     - name: Run PHP CS Fixer
-      run: php src/vendor/bin/rector
+      run: php src/vendor/bin/php-cs-fixer fix
 
     - name: Create a Pull Request
       uses: peter-evans/create-pull-request@v5
       with:
-        title: Update CKEditor and Related Dependencies
-        commit-message: Update CKEditor and Related Dependencies
+        title: Apply PHP Code Styling & Quality Changes
+        commit-message: Apply PHP Code Styling & Quality Changes
         branch: rector-and-CS
-        body: Automated run of PHP CS Fixer and Rector to ensure code styling, quality, and modern practices.
+        body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
         delete-branch: true
         token: ${{ secrets.BOT_TOKEN }}
         committer: FOSSBilling Bot <fossbilling-bot>
