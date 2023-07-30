@@ -103,7 +103,7 @@ class AdminTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
