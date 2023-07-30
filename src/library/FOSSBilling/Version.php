@@ -12,7 +12,7 @@ namespace FOSSBilling;
 
 final class Version
 {
-    const VERSION = '8cd9c47';
+    const VERSION = '0.0.1';
 
     /**
      * Compare the specified FOSSBilling version string $version
