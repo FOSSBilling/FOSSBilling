@@ -10,8 +10,8 @@
 
 class Box_Password {
 
-    private $algo = PASSWORD_DEFAULT;
-    private $options = array();
+    private string $algo = PASSWORD_DEFAULT;
+    private array $options = array();
 
     public function setAlgo ($algo)
     {

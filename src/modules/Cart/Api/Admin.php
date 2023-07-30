@@ -71,7 +71,7 @@ class Admin extends \Api_Abstract
                 $this->di['db']->exec('DELETE FROM `cart_product` WHERE cart_id = :id', [':id' => $id]);
                 $this->di['db']->exec('DELETE FROM `cart` WHERE id = :id', [':id' => $id]);
             }
-            $this->di['logger']->info('Removed %s expired shopping carts', count($list));
+            $this->di['logger']->info('Removed %s expired shopping carts', is_countable($list) ? count($list) : 0);
         }
 
         return true;

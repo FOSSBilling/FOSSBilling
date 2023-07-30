@@ -71,7 +71,7 @@ class Server_Manager_Virtualmin extends Server_Manager
 	    		}
     		}
     	} catch (Exception $e) {
-    		if (strpos(strtolower($e->getMessage()), strtolower('You are already hosting this domain')) === false) {
+    		if (!str_contains(strtolower($e->getMessage()), strtolower('You are already hosting this domain'))) {
     			throw new Server_Exception($e->getMessage());
     		} else {
     			return true;
@@ -230,7 +230,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     	$html = new DOMDocument();
     	try {
     		$html->loadHTML($result);
-    	} catch (Exception $e) {
+    	} catch (Exception) {
     		return $result;
     	}
 
@@ -258,7 +258,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Creates reseller
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return boolean
      */
@@ -331,7 +330,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     private function _checkCommand($command) {
     	$commands = $this->_getCommands();
 
-    	if (strpos($commands, $command) === false) {
+    	if (!str_contains($commands, $command)) {
     		return false;
     	} else {
     		return true;
@@ -341,7 +340,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Creates user's account
-     * @param Server_Account $a
      * @throws Server_Exception
      * @returns boolean
      */
@@ -395,12 +393,11 @@ class Server_Manager_Virtualmin extends Server_Manager
     }
 
 	/**
-	 *
-	 * Suspends user's account
-	 * @param Server_Account $a
-	 * @throws Server_Exception
-	 * @return boolean
-	 */
+     *
+     * Suspends user's account
+     * @throws Server_Exception
+     * @return boolean
+     */
     private function _suspendUser(Server_Account $a)
     {
     	$params = array(
@@ -420,7 +417,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Unsuspends user's account
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return booblean
      */
@@ -443,7 +439,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Changes user's password
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return boolean
      */
@@ -467,7 +462,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Cancels user's account
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return boolean
      */
@@ -490,7 +484,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Modifies domain
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return boolean
      */
@@ -520,7 +513,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Enables features for user
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return boolean
      */
@@ -548,7 +540,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Disable not needed features for user
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return boolean
      */

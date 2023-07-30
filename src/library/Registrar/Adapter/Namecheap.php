@@ -14,7 +14,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     public function isKeyValueNotEmpty($array, $key)
     {
-        $value = isset($array[$key]) ? $array[$key] : '';
+        $value = $array[$key] ?? '';
         if (strlen(trim($value)) == 0) {
             return false;
         }
@@ -216,7 +216,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @param array $params
      * @return array
      */
     public function includeAuthorizationParams(array $params)

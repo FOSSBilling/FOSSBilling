@@ -17,7 +17,7 @@ class Box_App
     protected $after_filters = [];
     protected $shared = [];
     protected $options;
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
     protected $ext = 'html.twig';
     protected $mod = 'index';
     protected $url = '/';
@@ -51,7 +51,7 @@ class Box_App
             $mod = 'index';
         } else {
             $requestUri = trim($requestUri, '/');
-            if (false === strpos($requestUri, '/')) {
+            if (!str_contains($requestUri, '/')) {
                 $mod = $requestUri;
             } else {
                 [$mod] = explode('/', $requestUri);
@@ -134,7 +134,7 @@ class Box_App
     protected function run_filter($arr_filter, $methodName)
     {
         if (isset($arr_filter[$methodName])) {
-            $counted = count($arr_filter[$methodName]);
+            $counted = is_countable($arr_filter[$methodName]) ? count($arr_filter[$methodName]) : 0;
             for ($i = 0; $i < $counted; ++$i) {
                 $return = call_user_func([$this, $arr_filter[$methodName][$i]]);
 
@@ -197,7 +197,7 @@ class Box_App
         if ($class instanceof InjectionAwareInterface) {
             $class->setDi($this->di);
         }
-        $reflection = new ReflectionMethod(get_class($class), $methodName);
+        $reflection = new ReflectionMethod($class::class, $methodName);
         $args = [];
         $args[] = $this; // first param always app instance
 
@@ -219,7 +219,7 @@ class Box_App
             return $return;
         }
 
-        $reflection = new ReflectionMethod(get_class($this), $methodName);
+        $reflection = new ReflectionMethod(static::class, $methodName);
         $args = [];
 
         foreach ($reflection->getParameters() as $param) {
@@ -298,13 +298,13 @@ class Box_App
 
         // Check if the visitor is in using of the allowed IPs/networks
         foreach ($allowedIPs as $network) {
-            if (false == strpos($network, '/')) {
+            if (!str_contains($network, '/')) {
                 $network .= '/32';
             }
             [$network, $netmask] = explode('/', $network, 2);
             $network_decimal = ip2long($network);
             $ip_decimal = ip2long($visitorIP);
-            $wildcard_decimal = pow(2, (32 - $netmask)) - 1;
+            $wildcard_decimal = 2 ** (32 - $netmask) - 1;
             $netmask_decimal = ~$wildcard_decimal;
             if (($ip_decimal & $netmask_decimal) == ($network_decimal & $netmask_decimal)) {
                 return false;

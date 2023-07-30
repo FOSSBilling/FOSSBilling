@@ -10,19 +10,19 @@
 
 class Model_ClientOrder extends \RedBeanPHP\SimpleModel
 {
-	const STATUS_PENDING_SETUP = "pending_setup";
-	const STATUS_FAILED_SETUP = "failed_setup";
-    const STATUS_FAILED_RENEW = "failed_renew";
-	const STATUS_ACTIVE = "active";
-	const STATUS_CANCELED = "canceled";
-	const STATUS_SUSPENDED = "suspended";
+	public const STATUS_PENDING_SETUP = "pending_setup";
+	public const STATUS_FAILED_SETUP = "failed_setup";
+    public const STATUS_FAILED_RENEW = "failed_renew";
+	public const STATUS_ACTIVE = "active";
+	public const STATUS_CANCELED = "canceled";
+	public const STATUS_SUSPENDED = "suspended";
 
-    const ACTION_CREATE     = 'create';
-    const ACTION_ACTIVATE   = 'activate';
-    const ACTION_RENEW      = 'renew';
-    const ACTION_SUSPEND    = 'suspend';
-    const ACTION_UNSUSPEND  = 'unsuspend';
-    const ACTION_CANCEL     = 'cancel';
-    const ACTION_UNCANCEL   = 'uncancel';
-    const ACTION_DELETE     = 'delete';
+    public const ACTION_CREATE     = 'create';
+    public const ACTION_ACTIVATE   = 'activate';
+    public const ACTION_RENEW      = 'renew';
+    public const ACTION_SUSPEND    = 'suspend';
+    public const ACTION_UNSUSPEND  = 'unsuspend';
+    public const ACTION_CANCEL     = 'cancel';
+    public const ACTION_UNCANCEL   = 'uncancel';
+    public const ACTION_DELETE     = 'delete';
 }

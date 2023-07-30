@@ -11,7 +11,7 @@
 class Server_Manager_Ispconfig3 extends Server_Manager
 {
     private $_session = null;
-    private $_c = null;
+    private ?\SoapClient $_c = null;
 
 	public function init()
     {
@@ -83,7 +83,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 	        $this->createSite($a);
         	$this->dnsCreateZone($a);
 		} catch (Exception $e) {
-			if (strpos(strtolower($e->getMessage()), strtolower('domain_error_unique')) === false) {
+			if (!str_contains(strtolower($e->getMessage()), strtolower('domain_error_unique'))) {
 				throw new Server_Exception($e->getMessage());
 			} else {
 				return true;
@@ -116,6 +116,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
     public function cancelAccount(Server_Account $a)
     {
+        $pa = [];
         $ci = $this->getClient($a);
 
         $params = array(
@@ -202,6 +203,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
     
     private function createSite(Server_Account &$a)
     {
+        $site_params = [];
         if($this->isSiteCreated($a)) {
             return true;
         }
@@ -243,6 +245,10 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
     private function dnsCreateZone(Server_Account &$a)
     {
+        $dns_domain_params = [];
+        $pa = [];
+        $dns_a_params = [];
+        $mail_domain_params = [];
         $client     = $a->getClient();
 		
 
@@ -443,7 +449,8 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
     private function getClient(Server_Account $a)
     {
-		$params['username'] = $a->getUsername();
+		$params = [];
+  $params['username'] = $a->getUsername();
         $result = $this->_request('client_get_by_username',$params);
         return $result;
     }
@@ -464,6 +471,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
     private function getClientSites(Server_Account $a)
     {
+        $site_params = [];
         $user_info = $this->getClient($a);
         $site_params['sys_userid']	= $user_info['userid'];
         $site_params['groups'] 		= $user_info['groups'];
@@ -488,6 +496,8 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
     private function getSiteInfo(Server_Account $a)
     {
+        $server_params = [];
+        $section = null;
         $server_params['server_id'] 	= $this->getServerId();
         $server_params['section'] 		= $section;
         return $this->_request('server_get',$server_params);
@@ -495,6 +505,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
     private function getServerInfo($section = 'web')
     {
+        $server_params = [];
         $server_params['server_id'] 	= $this->getServerId();
         $server_params['section'] 		= $section;
         return $this->_request('server_get',$server_params);

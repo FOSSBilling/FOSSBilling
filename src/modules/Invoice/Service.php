@@ -16,7 +16,7 @@ use Twig\Loader\FilesystemLoader;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -954,7 +954,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('Order');
         $orders = $orderService->getSoonExpiringActiveOrders();
 
-        if (count($orders) == 0) {
+        if ((is_countable($orders) ? count($orders) : 0) == 0) {
             return true;
         }
 
@@ -1332,7 +1332,7 @@ class Service implements InjectionAwareInterface
                 ->setTax($item['tax'])
                 ->setQuantity($item['quantity']);
             $items[] = $pi;
-            if (is_null($first_title) && count($proforma['lines']) == 1) {
+            if (is_null($first_title) && (is_countable($proforma['lines']) ? count($proforma['lines']) : 0) == 1) {
                 $first_title = $item['title'];
             }
         }

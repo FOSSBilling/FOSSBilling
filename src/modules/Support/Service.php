@@ -12,7 +12,7 @@ namespace Box\Mod\Support;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -647,7 +647,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $id = $model->id;
 
         $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
-        if (count($tickets) > 0) {
+        if ((is_countable($tickets) ? count($tickets) : 0) > 0) {
             throw new \Box_Exception('Can not remove helpdesk which has tickets');
         }
         $this->di['db']->trash($model);

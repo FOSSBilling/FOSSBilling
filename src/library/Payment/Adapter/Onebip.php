@@ -65,7 +65,6 @@ class Payment_Adapter_Onebip extends Payment_AdapterAbstract
      * Init call to webservice or return form params
      *
      * @see http://www.onebip.com/website/docs/Onebip_API.pdf
-     * @param Payment_Invoice $invoice
      */
     public function singlePayment(Payment_Invoice $invoice)
     {
@@ -106,7 +105,6 @@ class Payment_Adapter_Onebip extends Payment_AdapterAbstract
 
     /**
      * Perform recurent payment
-     * @param Payment_Invoice $invoice
      */
     public function recurrentPayment(Payment_Invoice $invoice)
     {

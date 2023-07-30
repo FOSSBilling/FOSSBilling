@@ -10,19 +10,19 @@
 
 class Payment_Transaction
 {
-    const STATUS_UNKNOWN        = 'unknown';
-    const STATUS_PENDING        = 'pending';
-    const STATUS_COMPLETE       = 'complete';
+    public const STATUS_UNKNOWN        = 'unknown';
+    public const STATUS_PENDING        = 'pending';
+    public const STATUS_COMPLETE       = 'complete';
 
-    const TXTYPE_PAYMENT        = 'payment';
-    const TXTYPE_REFUND         = 'refund';
-    const TXTYPE_SUBSCR_CREATE  = 'subscription_create';
-    const TXTYPE_SUBSCR_CANCEL  = 'subscription_cancel';
-    const TXTYPE_UNKNOWN        = 'unknown';
+    public const TXTYPE_PAYMENT        = 'payment';
+    public const TXTYPE_REFUND         = 'refund';
+    public const TXTYPE_SUBSCR_CREATE  = 'subscription_create';
+    public const TXTYPE_SUBSCR_CANCEL  = 'subscription_cancel';
+    public const TXTYPE_UNKNOWN        = 'unknown';
 
     private $id                 = NULL;
-    private $type               = self::TXTYPE_UNKNOWN;
-    private $status             = self::STATUS_UNKNOWN;
+    private string $type               = self::TXTYPE_UNKNOWN;
+    private string $status             = self::STATUS_UNKNOWN;
     private $currency           = NULL;
     private $amount             = NULL;
     private $subscription_id    = NULL;
@@ -34,7 +34,7 @@ class Payment_Transaction
      *
      * @return $this The current object, for method chaining.
      */
-    public function setId($param)
+    public function setId(mixed $param)
     {
         $this->id = $param;
         return $this;

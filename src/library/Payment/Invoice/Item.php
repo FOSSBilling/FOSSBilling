@@ -13,7 +13,7 @@ class Payment_Invoice_Item
     private $id;
     private $title;
     private $description;
-    private $qty = 1;
+    private int $qty = 1;
     private $price;
     private $tax;
 
