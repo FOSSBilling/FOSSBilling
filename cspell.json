@@ -345,6 +345,8 @@
         "samesite",
         "IPCOUNTRY",
         "Serviceapikey",
+        "oldconfig",
+        "ordermodel",
         "homoglyph"
     ],
     "ignorePaths": [
