@@ -348,7 +348,8 @@
         "homoglyph",
         "oldconfig",
         "ordermodel",
-        "TINYINT"
+        "TINYINT",
+        "hostings"
     ],
     "ignorePaths": [
         "tests/**",
