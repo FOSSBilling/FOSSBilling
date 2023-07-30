@@ -227,7 +227,6 @@ class Service implements InjectionAwareInterface
         $file = $files[0];
         move_uploaded_file($file->getRealPath(), $productService->getSavePath($file->getName()));
         // End upload
-        // Check if update_orders is true and update all orders
 
         $serviceDownloadable->filename = $file->getName();
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
