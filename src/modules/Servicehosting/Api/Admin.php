@@ -258,7 +258,6 @@ class Admin extends \Api_Abstract
      *
      * @throws \Box_Exception
      */
-
     public function server_update($data)
     {
         $required = [
@@ -340,17 +339,16 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         // check if hosting plan is not used by any service_hostings
-        $hosting_services = $this->di['db']->find('ServiceHosting', 'service_hosting_hp_id = :cart_id',[':cart_id' => $data['id']]);
+        $hosting_services = $this->di['db']->find('ServiceHosting', 'service_hosting_hp_id = :cart_id', [':cart_id' => $data['id']]);
 
         // Ensure $hosting_services is an array before counting its elements
         $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
-        if ($count > 0)
-        {
-            throw new \Box_Exception('Hosting plan is used by :count: service hostings', [':count:'=> $count], 704);
+        if ($count > 0) {
+            throw new \Box_Exception('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
         }
+
         return (bool) $this->getService()->deleteHp($model);
     }
-
 
     /**
      * Get hosting plan details.

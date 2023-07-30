@@ -19,17 +19,9 @@ class Admin extends \Api_Abstract
     /**
      * Get a list of clients.
      *
+     * @param array $data filtering options
      *
-     * @param array $data Filtering options.
-     *
-     *
-     * @param string $data['status'] [optional] Filter clients by status. Available options: 'active', 'suspended', 'canceled'.
-     *
-     *
-     * @param int $data['per_page'] [optional] Number of clients to display per page.
-     *
-     *
-     * @return array List of clients in a paginated manner.
+     * @return array list of clients in a paginated manner
      */
     public function get_list($data)
     {
@@ -48,10 +40,7 @@ class Admin extends \Api_Abstract
     /**
      * Get a list of clients.
      *
-     *
      * @param array $data Filtering options
-     *
-     * @param int $data['per_page'] [optional] Number of clients to display per page.
      *
      * @return array List of clients in a paginated manner
      */
@@ -578,10 +567,9 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
-        $clients = $this->di['db']->find('Client', 'client_group_id = :group_id',[':group_id' => $data['id']]);
+        $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
 
-        if (count($clients) > 0)
-        {
+        if ((is_countable($clients) ? count($clients) : 0) > 0) {
             throw new \Box_Exception('Group has clients assigned. Please reassign them first.');
         }
 
