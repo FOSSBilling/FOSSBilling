@@ -8,7 +8,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-class Registrar_Domain_Contact
+class Registrar_Domain_Contact implements \Stringable
 {
     private $id;
     private $name;
@@ -24,7 +24,7 @@ class Registrar_Domain_Contact
     private $fax;
     private $fax_cc;
     private $company;
-    private $company_number = '';
+    private string $company_number = '';
     private $address_1;
     private $address_2;
     private $address_3;
@@ -33,8 +33,8 @@ class Registrar_Domain_Contact
     private $document_type;
     private $document_nr;
     private $job_title;
-    private $birthday = '';
-    private $idn_language_code = '';
+    private string $birthday = '';
+    private string $idn_language_code = '';
 
     /**
      * @return string
@@ -124,7 +124,7 @@ class Registrar_Domain_Contact
     	
     	$bits = explode(' ', $this->name);
     	
-    	return isset($bits[0]) ? $bits[0] : '';
+    	return $bits[0] ?? '';
     }
 
     public function setLastName($param)
@@ -350,7 +350,7 @@ class Registrar_Domain_Contact
         return implode(' ', $data);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         $c = '';
         $c .= sprintf("Id: %s", $this->getId()).PHP_EOL;

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Servicehosting;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -226,7 +226,7 @@ class Service implements InjectionAwareInterface
         $service = $orderService->getOrderService($order);
         if ($service instanceof \Model_ServiceHosting) {
             // cancel if not canceled
-            if (\Model_ClientOrder::STATUS_CANCELED != $order->status) {
+            if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
             $this->di['db']->trash($service);
@@ -295,8 +295,8 @@ class Service implements InjectionAwareInterface
     public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (
-            !isset($data['tld']) || empty($data['tld']) ||
-            !isset($data['sld']) || empty($data['sld'])
+            !isset($data['tld']) || empty($data['tld'])
+            || !isset($data['sld']) || empty($data['sld'])
         ) {
             throw new \Box_Exception('Domain sld or tld is missing');
         }
@@ -334,7 +334,7 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountPassword($account, $newPassword);
         }
 
-        $model->pass = "******";
+        $model->pass = '******';
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s password', $model->id);
@@ -370,7 +370,7 @@ class Service implements InjectionAwareInterface
             $c = $orderService->getConfig($o);
             if (isset($c['domain']) && isset($c['domain']['action'])) {
                 $action = $c['domain']['action'];
-                if ('register' == $action || 'transfer' == $action) {
+                if ($action == 'register' || $action == 'transfer') {
                     return $orderService->getRelatedOrderIdByType($o, 'domain');
                 }
             }
@@ -381,18 +381,19 @@ class Service implements InjectionAwareInterface
 
     private function _performOnService(\Model_ClientOrder $order)
     {
-        return \Model_ClientOrder::STATUS_FAILED_SETUP != $order->status;
+        return $order->status != \Model_ClientOrder::STATUS_FAILED_SETUP;
     }
 
     private function _getServerMangerForOrder($model)
     {
         $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
+
         return $this->getServerManager($server);
     }
 
     public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null)
     {
-        if (null === $hp) {
+        if ($hp === null) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
 
@@ -487,7 +488,7 @@ class Service implements InjectionAwareInterface
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
-            if(!is_null($model->config)){
+            if (!is_null($model->config)) {
                 $result['config'] = json_decode($model->config, 1);
             } else {
                 $result['config'] = [];
@@ -517,12 +518,12 @@ class Service implements InjectionAwareInterface
 
         [$sld, $tld] = [null, null];
 
-        if ('owndomain' == $data['domain']['action']) {
+        if ($data['domain']['action'] == 'owndomain') {
             $sld = $data['domain']['owndomain_sld'];
             $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
-        if ('register' == $data['domain']['action']) {
+        if ($data['domain']['action'] == 'register') {
             $required = [
                 'register_sld' => 'Hosting product must have defined register_sld parameter',
                 'register_tld' => 'Hosting product must have defined register_tld parameter',
@@ -533,7 +534,7 @@ class Service implements InjectionAwareInterface
             $tld = $data['domain']['register_tld'];
         }
 
-        if ('transfer' == $data['domain']['action']) {
+        if ($data['domain']['action'] == 'transfer') {
             $required = [
                 'transfer_sld' => 'Hosting product must have defined transfer_sld parameter',
                 'transfer_tld' => 'Hosting product must have defined transfer_tld parameter',
@@ -581,7 +582,7 @@ class Service implements InjectionAwareInterface
         $files = [];
         $directory = opendir($dir);
         while ($item = readdir($directory)) {
-            if (('.' != $item) && ('..' != $item) && ('.svn' != $item)) {
+            if (($item != '.') && ($item != '..') && ($item != '.svn')) {
                 $files[] = pathinfo($item, PATHINFO_FILENAME);
             }
         }
@@ -720,7 +721,7 @@ class Service implements InjectionAwareInterface
         $config['ip'] = $model->ip;
         $config['host'] = $model->hostname;
         $config['port'] = $model->port;
-        if(!is_null($model->config)){
+        if (!is_null($model->config)) {
             $config['config'] = json_decode($model->config, 1);
         } else {
             $config['config'] = [];
@@ -877,7 +878,7 @@ class Service implements InjectionAwareInterface
 
     public function getServerPackage(\Model_ServiceHostingHp $model)
     {
-        $config = json_decode(($model->config ?? ''), 1);
+        $config = json_decode($model->config ?? '', 1);
         if (!is_array($config)) {
             $config = [];
         }
@@ -943,7 +944,7 @@ class Service implements InjectionAwareInterface
 
         $drepo = $this->di['mod_service']('servicedomain');
         $drepo->validateOrderData($dc);
-        if ('owndomain' == $action) {
+        if ($action == 'owndomain') {
             return false;
         }
 

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,7 +12,7 @@ namespace Box\Mod\Servicedomain;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -26,14 +26,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getCartProductTitle($product, array $data)
     {
-        if (isset($data['action']) && 'register' == $data['action'] &&
-            isset($data['register_tld']) && isset($data['register_sld'])
+        if (isset($data['action']) && $data['action'] == 'register'
+            && isset($data['register_tld']) && isset($data['register_sld'])
         ) {
             return __trans('Domain :domain registration', [':domain' => $data['register_sld'] . $data['register_tld']]);
         }
 
-        if (isset($data['action']) && 'transfer' == $data['action'] &&
-            isset($data['transfer_tld']) && isset($data['transfer_sld'])
+        if (isset($data['action']) && $data['action'] == 'transfer'
+            && isset($data['transfer_tld']) && isset($data['transfer_sld'])
         ) {
             return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
         }
@@ -55,13 +55,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \Box_Exception('Invalid domain action.');
         }
 
-        if ('owndomain' == $action) {
+        if ($action == 'owndomain') {
             if (!isset($data['owndomain_sld'])) {
                 throw new \Box_Exception('Order data must contain :field configuration field', [':field' => 'owndomain_sld']);
             }
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
                 $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
                 throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
@@ -72,13 +73,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
         }
 
-        if ('transfer' == $action) {
+        if ($action == 'transfer') {
             if (!isset($data['transfer_sld'])) {
                 throw new \Box_Exception('Order data must contain :field configuration field', [':field' => 'transfer_sld']);
             }
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
                 $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
                 throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
@@ -103,13 +105,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['quantity'] = 1;
         }
 
-        if ('register' == $action) {
+        if ($action == 'register') {
             if (!isset($data['register_sld'])) {
                 throw new \Box_Exception('Order data must contain :field configuration field', [':field' => 'register_sld']);
             }
 
             if (!$validator->isSldValid($data['register_sld'])) {
                 $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
                 throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
@@ -217,11 +220,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        if ('register' == $model->action) {
+        if ($model->action == 'register') {
             $adapter->registerDomain($domain);
         }
 
-        if ('transfer' == $model->action) {
+        if ($model->action == 'transfer') {
             $adapter->transferDomain($domain);
         }
 
@@ -314,7 +317,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($service instanceof \Model_ServiceDomain) {
             // cancel if not canceled
-            if (\Model_ClientOrder::STATUS_CANCELED != $order->status) {
+            if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
             $this->di['db']->trash($service);
@@ -330,7 +333,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $whois = $adapter->getDomainDetails($domain);
 
         $locked = $whois->getLocked();
-        if (null !== $locked) {
+        if ($locked !== null) {
             $model->locked = $locked;
         }
 
@@ -545,6 +548,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
             $safe_dom = htmlspecialchars($sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
             throw new \Box_Exception('Domain name :domain is invalid', [':domain' => $safe_dom]);
         }
 
@@ -614,17 +618,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $action = $data['action'];
         [$sld, $tld] = [null, null];
 
-        if ('owndomain' == $action) {
+        if ($action == 'owndomain') {
             $sld = $data['owndomain_sld'];
             $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
-        if ('transfer' == $action) {
+        if ($action == 'transfer') {
             $sld = $data['transfer_sld'];
             $tld = $data['transfer_tld'];
         }
 
-        if ('register' == $action) {
+        if ($action == 'register') {
             $sld = $data['register_sld'];
             $tld = $data['register_tld'];
         }
@@ -809,11 +813,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $where[] = 'active = 1';
         }
 
-        if (null !== $allow_register) {
+        if ($allow_register !== null) {
             $where[] = 'allow_register = 1';
         }
 
-        if (null !== $allow_transfer) {
+        if ($allow_transfer !== null) {
             $where[] = 'allow_transfer = 1';
         }
 
@@ -1019,7 +1023,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function registrarRm(\Model_TldRegistrar $model)
     {
         $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
-        if (count($domains) > 0) {
+        if ((is_countable($domains) ? count($domains) : 0) > 0) {
             throw new \Box_Exception('Can not remove registrar which has domains');
         }
 

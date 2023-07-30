@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,7 +12,7 @@ namespace Box\Mod\Cron;
 
 class Service
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -90,7 +90,7 @@ class Service
         } catch (\Exception $e) {
             throw new \Exception($e);
         } finally {
-            if ('cli' == php_sapi_name()) {
+            if (php_sapi_name() == 'cli') {
                 echo "\e[32mSuccessfully ran " . $method . '(' . $params . ')' . ".\e[0m\n";
             }
         }
@@ -119,6 +119,7 @@ class Service
     {
         $maxAge = time() - $this->di['config']['security']['cookie_lifespan'];
         $sql = 'DELETE FROM session WHERE modified_at <= :age';
+
         return $this->di['db']->exec($sql, [':age' => $maxAge]);
     }
 }

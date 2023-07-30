@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -28,8 +28,6 @@ class Admin extends \Api_Abstract
     /**
      * Get redirect by id.
      *
-     * @param int $id - int
-     *
      * @return array
      */
     public function get($data)
@@ -50,9 +48,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Create new redirect.
-     *
-     * @param string $path   - redirect path
-     * @param string $target - redirect target
      *
      * @return int redirect id
      */
@@ -82,8 +77,6 @@ class Admin extends \Api_Abstract
     /**
      * Update redirect.
      *
-     * @param int $id - redirect id
-     *
      * @optional string $path - redirect path
      * @optional string $target - redirect target
      *
@@ -110,8 +103,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete redirect.
-     *
-     * @param int $id - redirect id
      *
      * @return true
      */

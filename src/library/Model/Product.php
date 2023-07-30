@@ -10,23 +10,23 @@
 
 class Model_Product extends \RedBeanPHP\SimpleModel implements \FOSSBilling\InjectionAwareInterface
 {
-    const STATUS_ENABLED    = 'enabled';
-    const STATUS_DISABLED   = 'disabled';
+    public const STATUS_ENABLED    = 'enabled';
+    public const STATUS_DISABLED   = 'disabled';
 
-    const CUSTOM            = 'custom';
-    const LICENSE           = 'license';
-    const ADDON             = 'addon';
-    const DOMAIN            = 'domain';
-    const DOWNLOADABLE      = 'downloadable';
-    const HOSTING           = 'hosting';
-    const MEMBERSHIP        = 'membership';
-    const VPS               = 'vps';
+    public const CUSTOM            = 'custom';
+    public const LICENSE           = 'license';
+    public const ADDON             = 'addon';
+    public const DOMAIN            = 'domain';
+    public const DOWNLOADABLE      = 'downloadable';
+    public const HOSTING           = 'hosting';
+    public const MEMBERSHIP        = 'membership';
+    public const VPS               = 'vps';
 
-    const SETUP_AFTER_ORDER     = 'after_order';
-    const SETUP_AFTER_PAYMENT   = 'after_payment';
-    const SETUP_MANUAL          = 'manual';
+    public const SETUP_AFTER_ORDER     = 'after_order';
+    public const SETUP_AFTER_PAYMENT   = 'after_payment';
+    public const SETUP_MANUAL          = 'manual';
 
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {

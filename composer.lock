@@ -1873,29 +1873,30 @@
         },
         {
             "name": "plesk/api-php-lib",
-            "version": "v2.0.0",
+            "version": "v2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/plesk/api-php-lib.git",
-                "reference": "ce25ff423cb2b999f2259240cfdb2a4247c54ebc"
+                "reference": "8989791c3d02f7ad097a8976b6b30e160d65177a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/plesk/api-php-lib/zipball/ce25ff423cb2b999f2259240cfdb2a4247c54ebc",
-                "reference": "ce25ff423cb2b999f2259240cfdb2a4247c54ebc",
+                "url": "https://api.github.com/repos/plesk/api-php-lib/zipball/8989791c3d02f7ad097a8976b6b30e160d65177a",
+                "reference": "8989791c3d02f7ad097a8976b6b30e160d65177a",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
+                "ext-dom": "*",
                 "ext-simplexml": "*",
                 "ext-xml": "*",
-                "php": "^7.4 || ^8.0"
+                "php": "^7.4 || ^8.0 || ^8.2"
             },
             "require-dev": {
                 "phpunit/phpunit": "^9",
                 "spatie/phpunit-watcher": "^1.22",
                 "squizlabs/php_codesniffer": "^3.6",
-                "vimeo/psalm": "^4.10"
+                "vimeo/psalm": "^4.10 || ^5.0"
             },
             "type": "library",
             "extra": {
@@ -1925,9 +1926,9 @@
             "description": "PHP object-oriented library for Plesk XML-RPC API",
             "support": {
                 "issues": "https://github.com/plesk/api-php-lib/issues",
-                "source": "https://github.com/plesk/api-php-lib/tree/v2.0.0"
+                "source": "https://github.com/plesk/api-php-lib/tree/v2.1.0"
             },
-            "time": "2022-03-29T07:07:28+00:00"
+            "time": "2023-07-14T15:24:46+00:00"
         },
         {
             "name": "psr/cache",
@@ -2239,16 +2240,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v10.18.0",
+            "version": "v10.19.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "c32549e443a619d1b885b99d624568ecae82d6a0"
+                "reference": "9ea3ba13791217bd697e896bb839d905d170cba6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/c32549e443a619d1b885b99d624568ecae82d6a0",
-                "reference": "c32549e443a619d1b885b99d624568ecae82d6a0",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/9ea3ba13791217bd697e896bb839d905d170cba6",
+                "reference": "9ea3ba13791217bd697e896bb839d905d170cba6",
                 "shasum": ""
             },
             "require": {
@@ -2294,9 +2295,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v10.18.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v10.19.0"
             },
-            "time": "2023-07-20T16:59:49+00:00"
+            "time": "2023-07-27T23:18:52+00:00"
         },
         {
             "name": "symfony/asset",

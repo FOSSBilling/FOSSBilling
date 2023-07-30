@@ -12,14 +12,14 @@ class Server_Client
 {
     private $id         = NULL;
     private $email      = NULL;
-    private $full_name  = 'FOSSBilling Client';
-    private $company    = 'FOSSBilling';
-    private $www        = 'www.fossbilling.org';
+    private string $full_name  = 'FOSSBilling Client';
+    private string $company    = 'FOSSBilling';
+    private string $www        = 'www.fossbilling.org';
     private $address_1  = NULL;
     private $address_2  = NULL;
     private $street     = NULL;
-    private $state      = 'n/a';
-    private $country    = 'US';
+    private string $state      = 'n/a';
+    private string $country    = 'US';
     private $city       = NULL;
     private $zip        = NULL;
     private $telephone  = NULL;
@@ -34,7 +34,7 @@ class Server_Client
             // Get only the stack frames we need (PHP 5.4 only).
             $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         }
-        error_log(sprintf("Calling %s inaccessible method %s from %s::%d", get_class($this), $name, $backtrace[1]['file'], $backtrace[1]['line']));
+        error_log(sprintf("Calling %s inaccessible method %s from %s::%d", static::class, $name, $backtrace[1]['file'], $backtrace[1]['line']));
         return '';
     }
 

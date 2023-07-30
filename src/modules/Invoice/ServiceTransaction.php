@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Invoice;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -102,7 +102,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $transaction->status = 'received';
         $transaction->ip = $this->di['request']->getClientAddress();
         $transaction->ipn = json_encode($ipn);
-        $transaction->note = (isset($data['note'])) ? $data['note'] : null;
+        $transaction->note = $data['note'] ?? null;
         $transaction->created_at = date('Y-m-d H:i:s');
         $transaction->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($transaction);
@@ -325,7 +325,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $output = $this->processTransaction($model->id);
         } catch (\Box_Exception $e) {
             // if gateway does not support new logic use old logic
-            if (705 == $e->getCode()) {
+            if ($e->getCode() == 705) {
                 $output = $this->oldProcessLogic($model);
             } else {
                 $model->status = \Model_Transaction::STATUS_ERROR;
@@ -333,6 +333,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 $model->error_code = $e->getCode();
                 $model->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
+
                 throw $e;
             }
         }
@@ -349,8 +350,6 @@ class ServiceTransaction implements InjectionAwareInterface
      * @since 2.9.11
      *
      * @param type $id
-     *
-     * @return mixed
      *
      * @throws \Box_Exception
      */
@@ -429,7 +428,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _isProcessed(\Model_Transaction $tx)
     {
-        if (\Model_Transaction::STATUS_PROCESSED == $tx->status) {
+        if ($tx->status == \Model_Transaction::STATUS_PROCESSED) {
             $tx->error = null;
             $tx->error_code = null;
             $tx->updated_at = date('Y-m-d H:i:s');
@@ -473,7 +472,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _parseIpnAndApprove(\Model_Transaction &$tx)
     {
-        if (\Model_Transaction::STATUS_APPROVED == $tx->status) {
+        if ($tx->status == \Model_Transaction::STATUS_APPROVED) {
             return $tx;
         }
 
@@ -510,6 +509,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if (APPLICATION_ENV != 'testing' && $tx->validate_ipn) {
             if (!$adapter->isIpnValid($ipn, $mpi)) {
                 $tx->output = $adapter->getOutput();
+
                 throw new \Box_Exception('Instant payment notification (IPN) did not pass gateway :id validation', [':id' => $gtw->gateway], 706);
             }
             $tx->output = $adapter->getOutput();
@@ -656,7 +656,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _validateApprovedTransaction(\Model_Transaction $tx)
     {
-        if (\Model_Transaction::STATUS_APPROVED != $tx->status) {
+        if ($tx->status != \Model_Transaction::STATUS_APPROVED) {
             throw new \Box_Exception('Only approved transaction can be processed');
         }
 
@@ -672,7 +672,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         // check that payment status is completed if
-        if (\Payment_Transaction::STATUS_PENDING == $tx->txn_status) {
+        if ($tx->txn_status == \Payment_Transaction::STATUS_PENDING) {
             throw new \Box_Exception('Transaction status on payment gateway is Pending. Only Complete or Unknown transactions can be processed.', null, 712);
         }
     }

@@ -1,0 +1,84 @@
+{% if buyer_lines >= seller_lines %}
+	{% set top = 325 + (25 * buyer_lines) %}
+{% else %}
+	{% set top = 325 + (25 * seller_lines) %}
+{% endif %}
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+		<title>{{ invoice.serie_nr }}</title>
+		<style>
+			{{css}}</style>
+	</head>
+	<body>
+		{% if logo_source is not empty %}
+			<img src='{{ logo_source }}' height='50' class='CompanyLogo'></img>
+		{% endif %}
+		<hr class='Rounded'>
+		<div class='InvoiceInfo'>
+			<p>Invoice number: {{ invoice.serie_nr }}</p>
+			<p>Invoice date: {{ invoice.created_at|format_datetime }}</p>
+			<p>Due date: {{ invoice.due_at|format_datetime }}</p>
+			<p>Invoice status: {{ invoice.status|capitalize }}</p>
+		</div>
+
+		<h3 class='CompanyInfo'>Company</h3>
+		<div class='CompanyInfo'>
+		{% for key, value in seller %}
+			<p>{{ key }}:
+				{{ value }}</p>
+		{% endfor %}
+		</div>
+
+		<h3 class='ClientInfo'>Client</h3>
+		<div class='ClientInfo'>
+		{% for key, value in buyer %}
+			<p>{{ key }}:
+				{{ value }}</p>
+		{% endfor %}
+		</div>
+
+		<div class='Breakdown' style='top: {{top}}px'>
+			<table style='width:100%'>
+				<tr>
+					<th>#</th>
+					<th>Product</th>
+					<th>Quantity & Price</th>
+					<th>Total</th>
+				</tr>
+				{% set nr = 0 %}
+				{% for item in invoice.lines %}
+					{% set nr = nr + 1 %}
+					<tr>
+						<th>{{ nr }}</th>
+						<th>{{ item.title }}</th>
+						<th>{{ item.quantity }}x {{ item.price|money_convert }}</th>
+						<th>{{ item.total|money_convert }}</th>
+					</tr>
+				{% endfor %}
+				<tr>
+					<th colspan='4'>___________________________________________________________________________________________</th>
+				</tr>
+				{% if invoice.tax > 0 %}
+					<tr>
+						<th class='right' colspan='3'>{{ invoice.taxname }}
+							{{ invoice.taxrate }}% Tax:</th>
+						<th>{{ invoice.tax|money_convert }}</th>
+					</tr>
+				{% endif %}
+				{% if invoice.discount|default and invoice.discount > 0 %}
+					<tr>
+						<th class='right' colspan='3'>Discount:</th>
+						<th>{{ invoice.discount|money_convert }}</th>
+					</tr>
+				{% endif %}
+				<tr>
+					<th class='right' colspan='3'>Total:</th>
+					<th>{{ invoice.total }}{{ currency_code }}</th>
+				</tr>
+			</table>
+		</div>
+	</body>
+</html>

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -91,10 +91,6 @@ class Admin extends \Api_Abstract
     /**
      * Change password for currently logged in staff member.
      *
-     * @param string $current_password - staff member current password
-     * @param string $new_password     - staff member new password
-     * @param string $confirm_password - staff member new password confirmation
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -121,21 +117,23 @@ class Admin extends \Api_Abstract
         }
 
         $this->getService()->invalidateSessions();
+
         return $this->getService()->changeAdminPassword($staff, $data['new_password']);
     }
 
     /**
-     * Used to destroy / invalidate all existing sessions for a given user
+     * Used to destroy / invalidate all existing sessions for a given user.
+     *
      * @param array $data An array with the options.
      *                    The array can contain the following sub-keys:
      *                    - string|null $data['type'] The user type (admin or staff) (optional).
      *                    - id|null $data['id'] The session ID (optional).
-     * @return bool 
      */
     public function destroy_sessions(array $data): bool
     {
         $data['type'] ??= null;
         $data['id'] ??= null;
+
         return $this->getService()->invalidateSessions($data['type'], $data['id']);
     }
 }

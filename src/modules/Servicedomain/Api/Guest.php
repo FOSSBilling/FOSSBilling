@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -31,11 +31,11 @@ class Guest extends \Api_Abstract
         $where = [];
         $where[] = 'active = 1';
 
-        if (null !== $allow_register) {
+        if ($allow_register !== null) {
             $where[] = 'allow_register = 1';
         }
 
-        if (null !== $allow_transfer) {
+        if ($allow_transfer !== null) {
             $where[] = 'allow_transfer = 1';
         }
 
@@ -52,8 +52,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get TLD pricing information.
-     *
-     * @param string $tld - Top level domain, ie: .com
      *
      * @return array
      */
@@ -75,9 +73,6 @@ class Guest extends \Api_Abstract
     /**
      * Check if domain is available for registration. Domain registrar must be
      * configured in order to get correct results.
-     *
-     * @param string $sld - second level domain, ie: mydomain
-     * @param string $tld - top level domain, ie: .com
      *
      * @return true
      */
@@ -110,9 +105,6 @@ class Guest extends \Api_Abstract
     /**
      * Check if domain can be transferred. Domain registrar must be
      * configured in order to get correct results.
-     *
-     * @param string $sld - second level domain, ie: mydomain
-     * @param string $tld - top level domain, ie: .com
      *
      * @return true
      */

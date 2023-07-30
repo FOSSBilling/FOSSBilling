@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,11 +18,6 @@ class Guest extends \Api_Abstract
 {
     /**
      * Submit new public ticket.
-     *
-     * @param string $name    - Ticket author name
-     * @param string $email   - Ticket author email
-     * @param string $subject - Ticket subject
-     * @param string $message - Ticket message
      *
      * @return string - ticket hash
      */
@@ -46,8 +41,6 @@ class Guest extends \Api_Abstract
     /**
      * Get public ticket.
      *
-     * @param string $hash - public ticket hash
-     *
      * @return array - ticket details
      */
     public function ticket_get($data)
@@ -65,8 +58,6 @@ class Guest extends \Api_Abstract
     /**
      * Close public ticket.
      *
-     * @param string $hash - public ticket hash
-     *
      * @return bool
      */
     public function ticket_close($data)
@@ -83,9 +74,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Reply to public ticket.
-     *
-     * @param string $hash    - public ticket hash
-     * @param string $message - public ticket reply message
      *
      * @return string - ticket hash
      */

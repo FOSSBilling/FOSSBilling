@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -32,8 +32,9 @@ class Guest extends \Api_Abstract
         $product_id = $data['product_id'] ?? 0;
         $product = $this->di['db']->getExistingModelById('Product', $product_id, 'Product was not found');
 
-        if (\Model_Product::HOSTING !== $product->type) {
+        if ($product->type !== \Model_Product::HOSTING) {
             $friendlyName = ucfirst(__trans('Product type'));
+
             throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
 

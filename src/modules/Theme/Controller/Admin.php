@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,7 +12,7 @@ namespace Box\Mod\Theme\Controller;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -32,9 +32,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Save theme settings.
-     *
-     * @param string $code - client area theme code
-     *
      */
     public function save_theme_settings(\Box_App $app, $theme)
     {
@@ -58,6 +55,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         unset($_POST['save-current-setting']);
 
         $error = null;
+
         try {
             if (!$t->isAssetsPathWritable()) {
                 throw new \Box_Exception('Theme ":name" assets folder is not writable. Files can not be uploaded and settings can not be saved. Set folder permissions to 777', [':name' => $t->getName()]);

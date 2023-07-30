@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Product;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -27,7 +27,7 @@ class Service implements InjectionAwareInterface
     public const SETUP_AFTER_PAYMENT = 'after_payment';
     public const SETUP_MANUAL = 'manual';
 
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -210,12 +210,12 @@ class Service implements InjectionAwareInterface
             $pricing = $data['pricing'];
             $productPayment->type = $data['pricing']['type'];
 
-            if (\Model_ProductPayment::ONCE == $data['pricing']['type']) {
+            if ($data['pricing']['type'] == \Model_ProductPayment::ONCE) {
                 $productPayment->once_setup_price = (float) $data['pricing']['once']['setup'];
                 $productPayment->once_price = (float) $data['pricing']['once']['price'];
             }
 
-            if (\Model_ProductPayment::RECURRENT == $data['pricing']['type']) {
+            if ($data['pricing']['type'] == \Model_ProductPayment::RECURRENT) {
                 if (isset($pricing['recurrent']['1W'])) {
                     $productPayment->w_setup_price = $pricing['recurrent']['1W']['setup'];
                     $productPayment->w_price = $pricing['recurrent']['1W']['price'];
@@ -272,12 +272,12 @@ class Service implements InjectionAwareInterface
 
         $model->product_category_id = $data['product_category_id'] ?? $model->product_category_id;
         $model->form_id = empty($form_id) ? null : $form_id;
-        $model->icon_url =  $data['icon_url'] ?? $model->icon_url;
-        $model->status =  $data['status'] ?? $model->status;
-        $model->hidden = (int)  $data['hidden'] ?? $model->hidden;
-        $model->slug =  $data['slug'] ?? $model->slug;
-        $model->setup =  $data['setup'] ?? $model->setup;
-        //remove empty value in data['upgrades];
+        $model->icon_url = $data['icon_url'] ?? $model->icon_url;
+        $model->status = $data['status'] ?? $model->status;
+        $model->hidden = (int) $data['hidden'] ?? $model->hidden;
+        $model->slug = $data['slug'] ?? $model->slug;
+        $model->setup = $data['setup'] ?? $model->setup;
+        // remove empty value in data['upgrades];
         if (is_array($data['upgrades'] ?? null)) {
             $upgrades = array_values(array_filter($data['upgrades']));
             if (empty($upgrades)) {
@@ -287,7 +287,7 @@ class Service implements InjectionAwareInterface
             }
         }
         if (is_array($data['addons'] ?? null)) {
-            $addons =  array_values(array_filter($data['addons']));
+            $addons = array_values(array_filter($data['addons']));
             if (is_null($addons)) {
                 $model->addons = null;
             } else {
@@ -342,10 +342,10 @@ class Service implements InjectionAwareInterface
         }
 
         if (
-            isset($data['new_config_name']) &&
-            isset($data['new_config_value']) &&
-            !empty($data['new_config_name']) &&
-            !empty($data['new_config_value'])
+            isset($data['new_config_name'])
+            && isset($data['new_config_value'])
+            && !empty($data['new_config_name'])
+            && !empty($data['new_config_value'])
         ) {
             $config[$data['new_config_name']] = $data['new_config_value'];
         }
@@ -384,11 +384,11 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->dispense('Product');
         $model->product_payment_id = $paymentId;
         $model->product_category_id = null;
-        $model->status = (isset($status)) ? $status : \Model_Product::STATUS_DISABLED;
+        $model->status = $status ?? \Model_Product::STATUS_DISABLED;
         $model->title = $title;
         $model->slug = $this->di['tools']->slug($title);
         $model->type = self::CUSTOM;
-        $model->setup = (isset($setup)) ? $setup : self::SETUP_AFTER_PAYMENT;
+        $model->setup = $setup ?? self::SETUP_AFTER_PAYMENT;
         $model->is_addon = 1;
 
         $model->icon_url = $iconUrl;
@@ -535,7 +535,7 @@ class Service implements InjectionAwareInterface
             $products[] = $pa;
             $startingPrice = $pa['price_starting_from'] ?? 0;
 
-            if (0 == $min_price) {
+            if ($min_price == 0) {
                 $min_price = $startingPrice;
             } elseif ($startingPrice < $min_price) {
                 $min_price = $startingPrice;
@@ -600,7 +600,7 @@ class Service implements InjectionAwareInterface
 
     public function getStartingFromPrice(\Model_Product $model)
     {
-        if (self::DOMAIN == $model->type) {
+        if ($model->type == self::DOMAIN) {
             return $this->getStartingDomainPrice();
         }
 
@@ -642,7 +642,7 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
-        $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; // same as RedBean genSlots() method
+        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM product WHERE id in (' . $slots . ')', $ids);
 
@@ -689,15 +689,15 @@ class Service implements InjectionAwareInterface
 
     public function getStartingPrice(\Model_ProductPayment $model)
     {
-        if ('free' == $model->type) {
+        if ($model->type == 'free') {
             return 0;
         }
 
-        if ('once' == $model->type) {
+        if ($model->type == 'once') {
             return $model->once_price;
         }
 
-        if ('recurrent' == $model->type) {
+        if ($model->type == 'recurrent') {
             $p = [];
 
             if ($model->w_enabled) {
@@ -728,7 +728,11 @@ class Service implements InjectionAwareInterface
                 $p[] = $model->tria_price;
             }
 
-            return min($p);
+            if ($p) {
+                return min($p);
+            } else {
+                return null;
+            }
         }
 
         return null;
@@ -737,7 +741,7 @@ class Service implements InjectionAwareInterface
     public function getSavePath($filename = null)
     {
         $path = $this->di['config']['path_data'] . '/uploads/';
-        if (null !== $filename) {
+        if ($filename !== null) {
             $path .= md5($filename);
         }
 
@@ -750,6 +754,7 @@ class Service implements InjectionAwareInterface
             $f = $this->getSavePath($config['filename']);
             if (file_exists($f)) {
                 unlink($f);
+
                 return true;
             }
         }
@@ -790,7 +795,7 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
-        $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; // same as RedBean genSlots() method
+        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
         array_unshift($ids, (int) $model->id); // adding product ID as first param in array
 
         return $this->di['db']->find('Product', 'type = "custom" and is_addon= 1 and id != ? and id IN (' . $slots . ')', $ids);
@@ -850,14 +855,17 @@ class Service implements InjectionAwareInterface
                 $sql .= ' AND start_at <= :start_at AND end_at >= :end_at';
                 $params['start_at'] = time();
                 $params['end_at'] = time();
+
                 break;
             case 'not-started':
                 $sql .= ' AND start_at <= :start_at';
                 $params['start_at'] = time();
+
                 break;
             case 'expired':
                 $sql .= ' AND start_at <= :end_at';
                 $params['end_at'] = time();
+
                 break;
         }
 
@@ -907,7 +915,7 @@ class Service implements InjectionAwareInterface
         $result['applies_to'] = $products;
         $result['cgroups'] = $clientGroups;
         $result['products'] = $model->products ? json_decode($model->products, 1) : null;
-        $result['periods'] =  $model->periods ? json_decode($model->periods, 1) : null;
+        $result['periods'] = $model->periods ? json_decode($model->periods, 1) : null;
         $result['client_groups'] = $model->client_groups ? json_decode($model->client_groups, 1) : null;
 
         return $result;
@@ -929,7 +937,7 @@ class Service implements InjectionAwareInterface
         if (!is_array($data['products'] ?? null)) {
             $model->products = null;
         } else {
-            $products =  array_values(array_filter($data['products'] ?? null));
+            $products = array_values(array_filter($data['products'] ?? null));
             if (empty($products)) {
                 $model->products = null;
             } else {
@@ -1009,7 +1017,7 @@ class Service implements InjectionAwareInterface
         $repo = $product->getTable();
         $price = $repo->getProductPrice($product, $config);
 
-        if (0 == $price) {
+        if ($price == 0) {
             return 0;
         }
 
@@ -1019,6 +1027,7 @@ class Service implements InjectionAwareInterface
         switch ($promo->type) {
             case \Model_Promo::ABSOLUTE:
                 $discount += $promo->value;
+
                 break;
 
             case \Model_Promo::PERCENTAGE:
@@ -1027,6 +1036,7 @@ class Service implements InjectionAwareInterface
                 }
 
                 $discount += round($price * $quantity * $promo->value / 100, 2);
+
                 break;
 
             default:

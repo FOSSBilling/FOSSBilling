@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,12 +10,12 @@
 
 namespace Box\Mod\Currency;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -54,7 +54,7 @@ class Service implements InjectionAwareInterface
     public function getBaseCurrencyRate($foreign_code)
     {
         $f_rate = $this->getRateByCode($foreign_code);
-        if (0 == $f_rate) {
+        if ($f_rate == 0) {
             throw new \Box_Exception('Currency conversion rate can not be zero');
         }
 
@@ -69,7 +69,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
         $currency = $db->getCell($sql, $values);
 
-        if (null === $currency) {
+        if ($currency === null) {
             return $this->getDefault();
         }
 
@@ -105,7 +105,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
         $default = $db->findOne('Currency', 'is_default = 1');
 
-        if (is_array($default) && 0 == count($default)) {
+        if (is_array($default) && count($default) == 0) {
             $default = $db->load('Currency', '1');
         }
 
@@ -120,7 +120,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        if (null === $currency->code || empty($currency->code)) {
+        if ($currency->code === null || empty($currency->code)) {
             throw new \Box_Exception('Currency code not provided');
         }
 
@@ -322,7 +322,7 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Can not remove default currency');
         }
 
-        if (null === $model->code || empty($model->code)) {
+        if ($model->code === null || empty($model->code)) {
             throw new \Box_Exception('Currency not found');
         }
 
@@ -358,7 +358,6 @@ class Service implements InjectionAwareInterface
      * @todo maybe make this extensible so people can choose their data provider?
      *
      * @since 4.22.0
-     *
      */
     public function updateKey($key)
     {
@@ -383,7 +382,7 @@ class Service implements InjectionAwareInterface
 
         $pairs = $db->getAssoc($sql);
 
-        if (isset($pairs['currency_cron_enabled']) && '1' == $pairs['currency_cron_enabled']) {
+        if (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == '1') {
             return true;
         } else {
             return false;
@@ -396,13 +395,12 @@ class Service implements InjectionAwareInterface
      * @since 4.22.0
      *
      * @var int
-     *
      */
     public function setCron($data)
     {
         $sql = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
 
-        if ('1' == $data) {
+        if ($data == '1') {
             $key = '1';
         } else {
             $key = '0';
@@ -535,29 +533,30 @@ class Service implements InjectionAwareInterface
         $from_Currency = urlencode($from);
         $to_Currency = urlencode($to);
 
-        if ('EUR' == $from_Currency && empty($this->getKey())) {
+        if ($from_Currency == 'EUR' && empty($this->getKey())) {
             $XML = simplexml_load_file('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
             foreach ($XML->Cube->Cube->Cube as $rate) {
                 if ($rate['currency'] == $to_Currency) {
                     return (float) $rate['rate'];
                 }
             }
-            throw new \Box_Exception("Failed to get currency rates for :currency from the European Central Bank API", [':currency' => $to_Currency]);
+
+            throw new \Box_Exception('Failed to get currency rates for :currency from the European Central Bank API', [':currency' => $to_Currency]);
         } else {
             $client = HttpClient::create();
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
                 'query' => [
-                    'currencies'    => $to_Currency,
-                    'source'        => $from_Currency,
+                    'currencies' => $to_Currency,
+                    'source' => $from_Currency,
                 ],
                 'headers' => [
                     'Content-Type' => 'text/plain',
-                    'apikey' => $this->getKey()
+                    'apikey' => $this->getKey(),
                 ],
             ]);
             $array = $response->toArray();
 
-            if (true !== $array['success']) {
+            if ($array['success'] !== true) {
                 throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
             } else {
                 return (float) $array['quotes'][$from_Currency . $to_Currency];

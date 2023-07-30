@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -34,18 +34,18 @@ class Admin extends \Api_Abstract
      * Get list of extensions from extensions.fossbilling.org
      * which can be installed on current version of FOSSBilling.
      *
-     * @param string $type - extensions type: mod, theme, ... (optional)
-     *
      * @return array - list of extensions
      */
     public function get_latest($data)
     {
         $type = $data['type'] ?? null;
+
         try {
             $list = $this->di['extension_manager']->getExtensionList($type);
-        } catch(\Exception) {
-            $list = array();
+        } catch (\Exception) {
+            $list = [];
         }
+
         return $list;
     }
 
@@ -78,9 +78,6 @@ class Admin extends \Api_Abstract
     /**
      * Update existing extension.
      *
-     * @param string $type - extensions type: mod, theme, gateway ...
-     * @param string $id   - extension id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -99,9 +96,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Activate existing extension.
-     *
-     * @param string $type - extensions type: mod, theme, gateway ...
-     * @param string $id   - extension id
      *
      * @return array
      *
@@ -123,9 +117,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deactivate existing extension.
-     *
-     * @param string $type - extensions type: mod, theme, gateway ...
-     * @param string $id   - extension id
      *
      * @return bool - true
      *
@@ -150,9 +141,6 @@ class Admin extends \Api_Abstract
     /**
      * Completely remove extension from FOSSBilling.
      *
-     * @param string $type - extensions type: mod, theme, gateway ...
-     * @param string $id   - extension id
-     *
      * @return bool
      */
     public function uninstall($data)
@@ -170,9 +158,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Install new extension from extensions site.
-     *
-     * @param string $type - extensions type: mod, theme, gateway ...
-     * @param string $id   - extension id
      *
      * @return array
      *
@@ -207,8 +192,6 @@ class Admin extends \Api_Abstract
      * using this method. Automatic decryption is available
      * All parameters in "public" array will be accessible by guest API.
      *
-     * @param string $ext - extension name, ie: mod_news
-     *
      * @return array - configuration parameters
      *
      * @throws \Box_Exception
@@ -232,8 +215,6 @@ class Admin extends \Api_Abstract
      * Always pass all configuration parameters to this method.
      *
      * Config is automatically encrypted and stored in database
-     *
-     * @param string $ext - extension name, ie: mod_news
      *
      * @optional string $any - Any variable passed to this method is config parameter
      *

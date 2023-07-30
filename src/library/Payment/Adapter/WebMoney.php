@@ -10,7 +10,7 @@
 
 class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
 {
-	protected ?\Pimple\Container $di;
+	protected ?\Pimple\Container $di = null;
 	
 	public function setDi(\Pimple\Container $di): void
 	{
@@ -22,24 +22,21 @@ class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
 		return $this->di;
 	}
 
-    private $config = array();
-
 	public $testMode = false;
 
-	const USD = 'Z';
-	const RUB = 'R';
-	const EUR = 'E';
-	const UAH = 'U';
-	const BYR = 'B';
+	public const USD = 'Z';
+	public const RUB = 'R';
+	public const EUR = 'E';
+	public const UAH = 'U';
+	public const BYR = 'B';
 
-	const REQUEST_TYPE_PREREQUEST = 'prerequest';
-	const REQUEST_TYPE_NOTIFICATION = 'notification';
-	const REQUEST_TYPE_CONFIRMATION = 'confirm';
+	public const REQUEST_TYPE_PREREQUEST = 'prerequest';
+	public const REQUEST_TYPE_NOTIFICATION = 'notification';
+	public const REQUEST_TYPE_CONFIRMATION = 'confirm';
 
-	public function __construct($config)
+	public function __construct(private $config)
     {
-        $this->config = $config;
-		$this->testMode = (isset($config['test_mode']) && $config['test_mode']) ? true : false;
+        $this->testMode = (isset($config['test_mode']) && $config['test_mode']) ? true : false;
 
         if(!$this->config['purse']) {
 			throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'WebMoney', ':missing' => 'Purse']);
@@ -330,7 +327,7 @@ class Payment_Adapter_WebMoney implements \FOSSBilling\InjectionAwareInterface
         );
 
         $rows = $this->di['db']->getAll($sql, $bindings);
-        if (count($rows) > 1){
+        if ((is_countable($rows) ? count($rows) : 0) > 1){
             return true;
         }
 

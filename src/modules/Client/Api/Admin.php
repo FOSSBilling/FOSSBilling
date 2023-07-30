@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,14 +18,10 @@ class Admin extends \Api_Abstract
 {
     /**
      * Get a list of clients.
-     * 
-     * @param array $data Filtering options.
-     * 
-     * @param string $data['status'] [optional] Filter clients by status. Available options: 'active', 'suspended', 'canceled'.
-     * 
-     * @param int $data['per_page'] [optional] Number of clients to display per page.
-     * 
-     * @return array List of clients in a paginated manner.
+     *
+     * @param array $data filtering options
+     *
+     * @return array list of clients in a paginated manner
      */
     public function get_list($data)
     {
@@ -43,11 +39,9 @@ class Admin extends \Api_Abstract
 
     /**
      * Get a list of clients.
-     * 
+     *
      * @param array $data Filtering options
-     * 
-     * @param int $data['per_page'] [optional] Number of clients to display per page.
-     * 
+     *
      * @return array List of clients in a paginated manner
      */
     public function get_pairs($data)
@@ -59,8 +53,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get client by id or email. Email is also unique in database.
-     *
-     * @param int $id - client ID
      *
      * @optional string $email - client email
      *
@@ -76,8 +68,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Login to clients area with client id.
-     *
-     * @param int $id - client ID
      *
      * @return array - client details
      */
@@ -102,9 +92,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Creates new client.
-     *
-     * @param string $email      - client email, must not be registered on system
-     * @param string $first_name - client first name
      *
      * @optional string $password - client password
      * @optional string $auth_type - client authorization type. Default null
@@ -174,8 +161,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes client from system.
      *
-     * @param string $id - client ID
-     *
      * @return bool
      */
     public function delete($data)
@@ -200,8 +185,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update client profile.
-     *
-     * @param string $id - client ID
      *
      * @optional string $email - client email
      * @optional string $first_name - client first_name
@@ -261,7 +244,7 @@ class Admin extends \Api_Abstract
             $this->di['validator']->isBirthdayValid($data['birthday']);
         }
 
-        if (($data['currency'] ?? null) && $service->canChangeCurrency($client, ($data['currency'] ?? null))) {
+        if (($data['currency'] ?? null) && $service->canChangeCurrency($client, $data['currency'] ?? null)) {
             $client->currency = $data['currency'] ?? $client->currency;
         }
 
@@ -324,10 +307,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change client password.
-     *
-     * @param int    $id               - Client ID
-     * @param string $password         - new client password
-     * @param string $password_confirm - repeat same new client password
      *
      * @return bool
      */
@@ -392,8 +371,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove row from clients balance.
      *
-     * @param int $id - Balance line id
-     *
      * @return bool
      */
     public function balance_delete($data)
@@ -418,10 +395,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Adds funds to clients balance.
-     *
-     * @param int $id          - Client ID
-     * @param int $amount      - Amount of clients currency to added to balance
-     * @param int $description - Description of this transaction
      *
      * @optional string $type - Related item type
      * @optional string $rel_id - Related item id
@@ -496,8 +469,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove log entry form clients logins history.
      *
-     * @param int $id - Log entry ID
-     *
      * @return bool
      */
     public function login_history_delete($data)
@@ -543,8 +514,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new clients group.
      *
-     * @param string $title - New group title
-     *
      * @return int $id - newly created group id
      */
     public function group_create($data)
@@ -559,8 +528,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update client group.
-     *
-     * @param int $id - client group ID
      *
      * @optional string $title - new group title
      *
@@ -587,8 +554,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete client group.
      *
-     * @param int $id - client group ID
-     *
      * @return bool
      *
      * @throws ErrorException
@@ -602,13 +567,17 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
+        $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
+
+        if ((is_countable($clients) ? count($clients) : 0) > 0) {
+            throw new \Box_Exception('Group has clients assigned. Please reassign them first.');
+        }
+
         return $this->getService()->deleteGroup($model);
     }
 
     /**
      * Get client group details.
-     *
-     * @param int $id - client group ID
      *
      * @return array
      *
@@ -629,8 +598,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes clients with given IDs.
      *
-     * @param array $ids - IDs for deletion
-     *
      * @return bool
      */
     public function batch_delete($data)
@@ -649,8 +616,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes client login logs with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */
@@ -671,6 +636,7 @@ class Admin extends \Api_Abstract
     public function export_csv($data)
     {
         $data['headers'] ??= [];
+
         return $this->getService()->exportCSV($data['headers']);
     }
 }

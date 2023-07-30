@@ -18,7 +18,7 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class Google implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -45,7 +45,7 @@ class Google implements \FOSSBilling\InjectionAwareInterface
 
         $request = $httpClient->request('GET', $link, [
             'query' => [
-                'sitemap'   => $url,
+                'sitemap' => $url,
             ],
         ]);
 

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -41,8 +41,6 @@ class Admin extends \Api_Abstract
     /**
      * Return ticket full details.
      *
-     * @param int $id - ticket id
-     *
      * @return array
      */
     public function ticket_get($data)
@@ -59,8 +57,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update ticket details.
-     *
-     * @param int $id - ticket id
      *
      * @optional int $support_helpdesk_id - ticket helpdesk id
      * @optional string $status - ticket status
@@ -84,9 +80,6 @@ class Admin extends \Api_Abstract
     /**
      * Update ticket message.
      *
-     * @param int    $id      - ticket id
-     * @param string $content - new message content
-     *
      * @return bool
      */
     public function ticket_message_update($data)
@@ -105,8 +98,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete ticket.
      *
-     * @param int $id - ticket id
-     *
      * @return bool
      */
     public function ticket_delete($data)
@@ -123,9 +114,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Add new conversation message to to ticket.
-     *
-     * @param int    $id      - ticket id
-     * @param string $content - ticket message content
      *
      * @return int - ticket message id
      */
@@ -147,8 +135,6 @@ class Admin extends \Api_Abstract
     /**
      * Close ticket.
      *
-     * @param int $id - ticket id
-     *
      * @return bool
      */
     public function ticket_close($data)
@@ -160,7 +146,7 @@ class Admin extends \Api_Abstract
 
         $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
-        if (\Model_SupportTicket::CLOSED == $ticket->status) {
+        if ($ticket->status == \Model_SupportTicket::CLOSED) {
             return true;
         }
 
@@ -170,11 +156,6 @@ class Admin extends \Api_Abstract
     /**
      * Method to create open new ticket. Tickets can have tasks assigned to them
      * via optional parameters.
-     *
-     * @param int    $client_id           - ticket client id
-     * @param string $content             - ticket message content
-     * @param string $subject             - ticket subject
-     * @param int    $support_helpdesk_id - Ticket helpdesk id
      *
      * @optional string $status - Ticket status. Default - on hold
      *
@@ -276,11 +257,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new inquiry. Send email.
      *
-     * @param string $name    - receivers name
-     * @param string $email   - receivers email
-     * @param string $subject - email subject
-     * @param string $message - email message
-     *
      * @return int - inquiry id
      *
      * @throws \Box_Exception
@@ -301,8 +277,6 @@ class Admin extends \Api_Abstract
     /**
      * Get inquiry details.
      *
-     * @param int $id - inquiry id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -321,8 +295,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete inquiry.
-     *
-     * @param int $id - inquiry id
      *
      * @return bool
      *
@@ -343,8 +315,6 @@ class Admin extends \Api_Abstract
     /**
      * Set id status to closed.
      *
-     * @param int $id - inquiry id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -363,8 +333,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update inquiry details.
-     *
-     * @param int $id - inquiry id
      *
      * @optional string $subject - subject
      * @optional string $status - status
@@ -387,9 +355,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Post new reply to inquiry.
-     *
-     * @param int    $id      - inquiry id
-     * @param string $content - text message
      *
      * @return bool
      *
@@ -446,8 +411,6 @@ class Admin extends \Api_Abstract
     /**
      * Get helpdesk details.
      *
-     * @param int $id - helpdesk id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -466,8 +429,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update helpdesk parameters.
-     *
-     * @param int $id - helpdesk id
      *
      * @optional string $name - helpdesk name
      * @optional string $email - helpdesk email
@@ -494,8 +455,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new helpdesk.
      *
-     * @param string $name - new helpdesk title
-     *
      * @optional string $email - helpdesk email
      * @optional string $can_reopen - flag to enable/disable ability to reopen closed tickets
      * @optional int $close_after - time to wait for reply before auto closing ticket
@@ -517,8 +476,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete helpdesk.
-     *
-     * @param int $id - helpdesk id
      *
      * @return bool
      *
@@ -574,8 +531,6 @@ class Admin extends \Api_Abstract
     /**
      * Get canned response details.
      *
-     * @param int $id - canned response id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -595,8 +550,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete canned response.
      *
-     * @param id $id - canned response id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -615,9 +568,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Create new canned response.
-     *
-     * @param string $title       - canned response title
-     * @param int    $category_id - canned response category id
      *
      * @optional string $content - canned response content
      *
@@ -640,8 +590,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update canned response.
-     *
-     * @param int $id - canned response id
      *
      * @optional string $title - canned response title
      * @optional int $category_id - canned response category id
@@ -676,8 +624,6 @@ class Admin extends \Api_Abstract
     /**
      * Get canned response category.
      *
-     * @param int $id - canned response category id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -696,8 +642,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get canned response category.
-     *
-     * @param int $id - canned response category id
      *
      * @optional string $title - new category title
      *
@@ -722,8 +666,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete canned response category.
      *
-     * @param int $id - canned response category id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -743,8 +685,6 @@ class Admin extends \Api_Abstract
     /**
      * Create canned response category.
      *
-     * @param string $title - canned response category title
-     *
      * @return int - new category id
      *
      * @throws \Box_Exception
@@ -761,9 +701,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Add note to support ticket.
-     *
-     * @param int    $ticket_id - support ticket id to add note to
-     * @param string $note      - note
      *
      * @return int - new note id
      *
@@ -785,8 +722,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete note from support ticket.
      *
-     * @param int $id - note id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -805,8 +740,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Set support ticket related task to completed.
-     *
-     * @param int $id - support ticket id
      *
      * @return bool
      *
@@ -827,8 +760,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes tickets with given IDs.
      *
-     * @param array $ids - IDs for deletion
-     *
      * @return bool
      */
     public function batch_delete($data)
@@ -847,8 +778,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes tickets with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */

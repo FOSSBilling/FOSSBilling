@@ -12,7 +12,7 @@ namespace FOSSBilling;
 
 class Validate
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -30,7 +30,7 @@ class Validate
     public function isSldValid(string $sld) : bool
     {
         // allow punnycode
-        if(substr($sld, 0, 4) == 'xn--') {
+        if(str_starts_with($sld, 'xn--')) {
             return true;
         }
 

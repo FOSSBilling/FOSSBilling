@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Client;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -62,6 +62,7 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
         $config = $di['mod_config']('client');
         $emailService = $di['mod_service']('email');
+
         try {
             $email = [];
             $email['to_client'] = $params['id'];
@@ -526,9 +527,9 @@ class Service implements InjectionAwareInterface
         $client->custom_9 = $data['custom_9'] ?? null;
         $client->custom_10 = $data['custom_10'] ?? null;
 
-        $client->ip =  $data['ip'] ?? null;
+        $client->ip = $data['ip'] ?? null;
 
-        $created_at =  $data['created_at'] ?? null;
+        $created_at = $data['created_at'] ?? null;
         $client->created_at = !empty($created_at) ? date('Y-m-d H:i:s', strtotime($created_at)) : date('Y-m-d H:i:s');
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
@@ -595,7 +596,7 @@ class Service implements InjectionAwareInterface
     public function authorizeClient($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$email, \Model_Client::ACTIVE]);
-        if (null == $model) {
+        if ($model == null) {
             return null;
         }
 
@@ -640,6 +641,7 @@ class Service implements InjectionAwareInterface
         foreach ($required as $field) {
             if (!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
+
                 throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
             }
         }
@@ -655,6 +657,7 @@ class Service implements InjectionAwareInterface
             if ($active && $required) {
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
                     $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
+
                     throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
                 }
             }
@@ -674,7 +677,7 @@ class Service implements InjectionAwareInterface
         } else {
             $headers = ['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency'];
         }
+
         return $this->di['table_export_csv']('client', 'clients.csv', $headers);
     }
 }
-

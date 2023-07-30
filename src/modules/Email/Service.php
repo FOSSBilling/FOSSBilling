@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,7 +12,7 @@ namespace Box\Mod\Email;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -44,7 +44,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $bindings[':content_html'] = $search;
         }
 
-        if (null !== $client_id) {
+        if ($client_id !== null) {
             $where[] = 'client_id = :client_id';
             $bindings[':client_id'] = $client_id;
         }
@@ -273,6 +273,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $queue->updated_at = date('Y-m-d H:i:s');
         $queue->priority = 1;
         $queue->tries = 0;
+
         try {
             $db->store($queue);
         } catch (\Exception $e) {
@@ -589,6 +590,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             $mail->send($settings);
+
             try {
                 $this->di['db']->trash($queue);
             } catch (\Exception $e) {
@@ -600,7 +602,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             // Prevent mass retries of emails if one of them is "invalid"
             if (str_contains($message, 'Invalid address:')) {
-
                 try {
                     $this->di['db']->trash($queue);
                 } catch (\Exception $e) {
@@ -618,7 +619,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ++$queue->tries;
             $queue->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($queue);
-            $maxTries = (isset($settings['cancel_after'])) ? $settings['cancel_after'] : 5;
+            $maxTries = $settings['cancel_after'] ?? 5;
             if ($queue->tries > $maxTries) {
                 $this->di['db']->trash($queue);
             }

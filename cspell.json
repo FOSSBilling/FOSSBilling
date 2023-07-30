@@ -345,7 +345,13 @@
         "samesite",
         "IPCOUNTRY",
         "Serviceapikey",
-        "haspopup"
+        "haspopup",
+        "homoglyph",
+        "oldconfig",
+        "ordermodel",
+        "TINYINT",
+        "hostings",
+        "rulesets"
     ],
     "ignorePaths": [
         "tests/**",
@@ -382,6 +388,7 @@
         "phpstan.neon",
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",
-        ".github/**"
+        ".github/**",
+        ".gitignore"
     ]
 }

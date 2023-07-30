@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -17,7 +17,7 @@ class Guest extends \Api_Abstract
 {
     /**
      * Get the contents of the current shopping cart.
-     * 
+     *
      * @return array Contents of the shopping cart
      */
     public function get()
@@ -41,8 +41,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Set shopping cart currency.
-     *
-     * @param string $data['currency'] New currency code to applied to shopping cart
      *
      * @return bool
      */
@@ -83,8 +81,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Apply Promo code to shopping cart.
-     *
-     * @param string $promocode Promo code to apply to shopping cart
      *
      * @return bool
      */
@@ -128,8 +124,6 @@ class Guest extends \Api_Abstract
     /**
      * Removes product from shopping cart.
      *
-     * @param int $data['id'] Shopping cart item id
-     *
      * @return bool
      */
     public function remove_item($data)
@@ -146,12 +140,9 @@ class Guest extends \Api_Abstract
 
     /**
      * Add a product to the shopping cart.
-     * 
+     *
      * @param array $data Product data
-     * 
-     * @param int $data['id'] ID of the product to add
-     * @param bool $data['multiple'] [optional] Allow multiple items in the cart. Default is `false`
-     * 
+     *
      * @return bool
      */
     public function add_item($data)

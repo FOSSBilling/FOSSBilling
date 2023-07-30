@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,9 +18,6 @@ class Client extends \Api_Abstract
     /**
      * Change hosting account username.
      *
-     * @param int    $order_id - Hosting account order id
-     * @param string $username - New username
-     *
      * @return bool
      */
     public function change_username($data)
@@ -33,10 +30,6 @@ class Client extends \Api_Abstract
     /**
      * Change hosting account domain.
      *
-     * @param int    $order_id         - Hosting account order id
-     * @param string $password         - New second level domain name, ie: mydomain
-     * @param string $password_confirm - New top level domain, ie: .com
-     *
      * @return bool
      */
     public function change_domain($data)
@@ -48,10 +41,6 @@ class Client extends \Api_Abstract
 
     /**
      * Change hosting account password.
-     *
-     * @param int    $order_id         - Hosting account order id
-     * @param string $password         - New account password
-     * @param string $password_confirm - Repeat new password
      *
      * @return bool
      */

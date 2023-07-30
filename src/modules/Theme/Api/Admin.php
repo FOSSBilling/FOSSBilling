@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -39,8 +39,6 @@ class Admin extends \Api_Abstract
     /**
      * Get theme by code.
      *
-     * @param string $code - theme code
-     *
      * @return array
      */
     public function get($data)
@@ -55,8 +53,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Set new theme as default.
-     *
-     * @param string $code - theme code
      *
      * @return bool
      */
@@ -84,9 +80,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete theme preset.
      *
-     * @param string $code   - theme code
-     * @param string $preset - theme preset code
-     *
      * @return bool
      */
     public function preset_delete($data)
@@ -107,9 +100,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Select new theme preset.
-     *
-     * @param string $code   - theme code
-     * @param string $preset - theme preset code
      *
      * @return bool
      */
