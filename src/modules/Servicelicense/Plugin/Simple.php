@@ -12,7 +12,7 @@ namespace Box\Mod\Servicelicense\Plugin;
 
 class Simple
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -37,7 +37,7 @@ class Simple
         $length = $config['length'] ?? 25;
         $prefix = $config['prefix'] ?? null;
 
-        $character_array = array_merge(range('A', 'Z'), range(1, 9));
+        $character_array = [...range('A', 'Z'), ...range(1, 9)];
         $size = count($character_array) - 1;
         $string = '';
         for ($i = 1; $i < $length; ++$i) {

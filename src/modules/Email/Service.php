@@ -12,7 +12,7 @@ namespace Box\Mod\Email;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -619,7 +619,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ++$queue->tries;
             $queue->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($queue);
-            $maxTries = (isset($settings['cancel_after'])) ? $settings['cancel_after'] : 5;
+            $maxTries = $settings['cancel_after'] ?? 5;
             if ($queue->tries > $maxTries) {
                 $this->di['db']->trash($queue);
             }

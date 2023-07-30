@@ -219,7 +219,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
         if ($domain->getTld() == '.fr' || $domain->getTld() == '.re')
         {
-            $tm = random_int(100000000, 999999999);
+            $tm = random_int(100_000_000, 999_999_999);
             $params['registrant_dotFRContactEntityType'] = 'OTHER';
             $params['admin_dotFRContactEntityType'] = 'OTHER';
             $params['registrant_dotFRContactEntityName'] = $c->getName();
@@ -361,7 +361,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
 		foreach ($lines as $line)
         {
-			list($varName, $value) = explode("=", $line);
+			[$varName, $value] = explode("=", $line);
 			$result[strtolower(trim($varName))] = trim($value);
 		}
         
@@ -394,7 +394,6 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     /**
      * Creates domain object from received data array.
-     * @param Registrar_Domain $domain
      * @return Registrar_Domain
      */
     private function _createDomainObj($result, Registrar_Domain $domain)
@@ -462,7 +461,6 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     /**
      * Checks whether privacy is enabled.
-     * @param Registrar_Domain $domain
      * @return bool
      */
     private function _isPrivacyEnabled(Registrar_Domain $domain)

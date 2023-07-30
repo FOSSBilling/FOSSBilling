@@ -10,12 +10,10 @@
 
 class Payment_Adapter_Custom
 {
-    private $config = array();
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
-    public function __construct($config)
+    public function __construct(private $config)
     {
-        $this->config = $config;
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -68,7 +66,7 @@ class Payment_Adapter_Custom
         $vars = array(
             '_client_id'    => $invoice['client']['id'],
             'invoice'   =>  $invoice,
-            '_tpl'      =>  $subscription ? (isset($this->config['recurrent']) ? $this->config['recurrent'] : '"Custom" payment adapter is not fully configured.') : (isset($this->config['single']) ? $this->config['single'] : '"Custom" payment adapter is not fully configured.'),
+            '_tpl'      =>  $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.'),
         );
         $systemService = $this->di['mod_service']('System');
         return $systemService->renderString($vars['_tpl'], true, $vars);

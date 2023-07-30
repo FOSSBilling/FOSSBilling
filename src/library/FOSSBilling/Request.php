@@ -13,7 +13,7 @@ namespace FOSSBilling;
 
 class Request implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -40,8 +40,8 @@ class Request implements InjectionAwareInterface
         }
 
         if (is_string($address)) {
-            if (strpos($address, ',') !== false) {
-                list($address) = explode(',', $address);
+            if (str_contains($address, ',')) {
+                [$address] = explode(',', $address);
             }
         }
         return $address;

@@ -15,17 +15,11 @@ class Server_Account
     private $domain     = NULL;
     private $ip         = NULL;
 
-    /**
-     * @var Server_Package
-     */
-    private $package    = NULL;
+    private ?\Server_Package $package    = NULL;
 
-    /**
-     * @var Server_Client
-     */
-    private $client     = NULL;
-    private $reseller   = NULL;
-    private $suspended  = NULL;
+    private ?\Server_Client $client     = NULL;
+    private ?bool $reseller   = NULL;
+    private ?bool $suspended  = NULL;
     private $ns_1       = NULL;
     private $ns_2       = NULL;
     private $ns_3       = NULL;
@@ -77,7 +71,6 @@ class Server_Account
     }
 
     /**
-     * @param Server_Client $param
      * @return $this
      */
     public function setClient(Server_Client $param)
@@ -95,7 +88,6 @@ class Server_Account
     }
 
     /**
-     * @param Server_Package $param
      * @return $this
      */
     public function setPackage(Server_Package $param)

@@ -1,0 +1,56 @@
+name: Rector and Code Styling
+
+on:
+  push:
+    branches: main
+
+jobs:
+  php-cs-fixer:
+    name: Rector & PHP-CS-Fixer
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Validate composer.json and composer.lock
+      uses: php-actions/composer@v6
+      with:
+        command: validate
+
+    - name: Cache Composer Dependencies
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: ./src/vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+
+    - name: Install Composer Dependencies
+      if: steps.composer-cache.outputs.cache-hit != 'true'
+      uses: php-actions/composer@v6
+      with:
+        php_version: 8.2
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+
+    - name: Run Reactor
+      run: php src/vendor/bin/rector
+
+    - name: Run PHP CS Fixer
+      run: php src/vendor/bin/php-cs-fixer fix
+
+    - name: Create a Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        title: Apply PHP Code Styling & Quality Changes
+        commit-message: Apply PHP Code Styling & Quality Changes
+        branch: rector-and-CS
+        body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
+        delete-branch: true
+        token: ${{ secrets.BOT_TOKEN }}
+        committer: FOSSBilling Bot <fossbilling-bot>
+        author: FOSSBilling Bot <fossbilling-bot>

@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -429,6 +429,7 @@ class Service implements InjectionAwareInterface
      */
     public function checkLicenseDetails(array $data)
     {
+        $result = [];
         $log = $this->di['logger']->setChannel('license');
         if ($this->di['config']['debug']) {
             $log->debug(print_r($data, 1));

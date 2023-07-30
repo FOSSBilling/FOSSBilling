@@ -100,7 +100,7 @@ class Server_Manager_Hestia extends Server_Manager
         ]);
         $result = $response->getContent();
 
-        if (false !== strpos($result, 'Error')) {
+        if (str_contains($result, 'Error')) {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'HestiaCP']);
         } elseif (0 !== intval($result)) {
             error_log("HestiaCP returned error code $result for the " . $params['cmd'] . "command");
@@ -201,6 +201,16 @@ class Server_Manager_Hestia extends Server_Manager
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if (0 !== intval($result2)) {
+            $postvars3 = [
+                'returncode' => 'yes',
+                'cmd' => 'v-delete-user',
+                'arg1' => $a->getUsername(),
+            ];
+            $result3 = $this->_makeRequest($postvars3);
+            if(0 !== intval($result3)) {
+                $placeholders = ['action1' => __trans('delete domain'), 'action2' => __trans('create domain'), 'type' => 'HestiaCP'];
+                throw new Server_Exception('Failed to :action1: on the :type: server after failed to :action2:, check the error logs for further details', $placeholders);
+            }
             $placeholders = ['action' => __trans('create domain'), 'type' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }

@@ -200,9 +200,7 @@ $di['mod'] = $di->protect(function ($name) use ($di) {
  *
  * @return mixed the service of the associated module
  */
-$di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
-    return $di['mod']($mod)->getService($sub);
-});
+$di['mod_service'] = $di->protect(fn ($mod, $sub = '') => $di['mod']($mod)->getService($sub));
 
 /*
  *
@@ -210,9 +208,7 @@ $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
  *
  * @return mixed the configuration of the associated module
  */
-$di['mod_config'] = $di->protect(function ($name) use ($di) {
-    return $di['mod']($name)->getConfig();
-});
+$di['mod_config'] = $di->protect(fn ($name) => $di['mod']($name)->getConfig());
 
 /*
  *
@@ -266,10 +262,9 @@ $di['request'] = function () use ($di) {
  *
  * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
-$di['cache'] = function () {
+$di['cache'] = fn () =>
     // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
-    return new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
-};
+    new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
 /*
  *
@@ -277,9 +272,7 @@ $di['cache'] = function () {
  *
  * @return \Box_Authorization
  */
-$di['auth'] = function () use ($di) {
-    return new Box_Authorization($di);
-};
+$di['auth'] = fn () => new Box_Authorization($di);
 
 /*
  * Creates a new Twig environment that's configured for FOSSBilling.
@@ -441,7 +434,7 @@ $di['loggedin_client'] = function () use ($di) {
 
     try {
         return $di['db']->getExistingModelById('Client', $client_id);
-    } catch (Exception $e) {
+    } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
         $di['session']->destroy('client');
 
@@ -479,7 +472,7 @@ $di['loggedin_admin'] = function () use ($di) {
 
     try {
         return $di['db']->getExistingModelById('Admin', $admin['id']);
-    } catch (Exception $e) {
+    } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
         $di['session']->destroy('admin');
 
@@ -545,9 +538,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_guest'] = function () use ($di) {
-    return $di['api']('guest');
-};
+$di['api_guest'] = fn () => $di['api']('guest');
 
 /*
  *
@@ -555,9 +546,7 @@ $di['api_guest'] = function () use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_client'] = function () use ($di) {
-    return $di['api']('client');
-};
+$di['api_client'] = fn () => $di['api']('client');
 
 /*
  *
@@ -565,9 +554,7 @@ $di['api_client'] = function () use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_admin'] = function () use ($di) {
-    return $di['api']('admin');
-};
+$di['api_admin'] = fn () => $di['api']('admin');
 
 /*
  *
@@ -575,9 +562,7 @@ $di['api_admin'] = function () use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_system'] = function () use ($di) {
-    return $di['api']('system');
-};
+$di['api_system'] = fn () => $di['api']('system');
 
 $di['tools'] = function () use ($di) {
     $service = new \FOSSBilling\Tools();
@@ -656,27 +641,21 @@ $di['updater'] = function () use ($di) {
  *
  * @return Server_Package
  */
-$di['server_package'] = function () {
-    return new Server_Package();
-};
+$di['server_package'] = fn () => new Server_Package();
 
 /*
  * @param void
  *
  * @return Server_Client
  */
-$di['server_client'] = function () {
-    return new Server_Client();
-};
+$di['server_client'] = fn () => new Server_Client();
 
 /*
  * @param void
  *
  * @return Server_Account
  */
-$di['server_account'] = function () {
-    return new Server_Account();
-};
+$di['server_account'] = fn () => new Server_Account();
 
 /*
  * Creates a new server manager object and returns it.
@@ -714,9 +693,7 @@ $di['requirements'] = function () use ($di) {
  *
  * @return \Box_Period The new period object that was just created.
  */
-$di['period'] = $di->protect(function ($code) {
-    return new \Box_Period($code);
-});
+$di['period'] = $di->protect(fn ($code) => new \Box_Period($code));
 
 /*
  * Gets the current client area theme.
@@ -787,18 +764,14 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \GeoIp2\Database\Reader
  */
-$di['geoip'] = function () {
-    return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
-};
+$di['geoip'] = fn () => new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
 
 /*
  * @param void
  *
  * @return \Box_Password
  */
-$di['password'] = function () {
-    return new Box_Password();
-};
+$di['password'] = fn () => new Box_Password();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
@@ -839,15 +812,11 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
         $beans = $di['db']->findAll($table);
     }
 
-    $rows = array_map(function ($bean) {
-        return $bean->export();
-    }, $beans);
+    $rows = array_map(fn ($bean) => $bean->export(), $beans);
 
     // If we've been provided a list of headers, use that. Otherwise, pull the keys from the rows and use that for the CSV header
     if ($headers) {
-        $rows = array_map(function ($row) use ($headers) {
-            return array_intersect_key($row, array_flip($headers));
-        }, $rows);
+        $rows = array_map(fn ($row) => array_intersect_key($row, array_flip($headers)), $rows);
     } else {
         $headers = array_keys(reset($rows));
     }

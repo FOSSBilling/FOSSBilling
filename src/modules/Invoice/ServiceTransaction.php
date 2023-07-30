@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -102,7 +102,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $transaction->status = 'received';
         $transaction->ip = $this->di['request']->getClientAddress();
         $transaction->ipn = json_encode($ipn);
-        $transaction->note = (isset($data['note'])) ? $data['note'] : null;
+        $transaction->note = $data['note'] ?? null;
         $transaction->created_at = date('Y-m-d H:i:s');
         $transaction->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($transaction);

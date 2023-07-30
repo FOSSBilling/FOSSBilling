@@ -24,7 +24,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function isKeyValueNotEmpty($array, $key)
     {
-        $value = isset ($array[$key]) ? $array[$key] : '';
+        $value = $array[$key] ?? '';
         if (strlen(trim($value)) == 0){
             return false;
         }
@@ -304,7 +304,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $ns[] = $domain->getNs4();
         }
 
-        list($reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id) = $this->_getAllContacts($tld, $customer_id, $domain->getContactRegistrar());
+        [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id] = $this->_getAllContacts($tld, $customer_id, $domain->getContactRegistrar());
 
         $params = array(
             'domain-name'       =>  $domain->getName(),
@@ -428,7 +428,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         try {
             $result = $this->_makeRequest('customers/details', $params);
-        } catch(Registrar_Exception $e) {
+        } catch(Registrar_Exception) {
             $this->_createCustomer($domain);
             $result = $this->_makeRequest('customers/details', $params);
         }
@@ -624,7 +624,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 'options'       =>  'All',
             );
             $data = $this->_makeRequest('domains/details', $params);
-        } catch(Exception $e) {
+        } catch(Exception) {
             return false;
         }
         
@@ -649,7 +649,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     }
 
     /**
-     * @param array $params
      * @return array
      */
     public function includeAuthorizationParams(array $params)
@@ -850,7 +849,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         }
 
-        if ($tld == '.co' || substr($tld, -3) == '.co'){
+        if ($tld == '.co' || str_ends_with($tld, '.co')){
             $contact['type'] = 'CoContact';
         }
 
@@ -934,9 +933,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         // by default special contact is also admin, tech and billing contact, but not always
-        $admin_contact_id = isset($special_contact_id) ? $special_contact_id : $reg_contact_id;
-        $tech_contact_id = isset($special_contact_id) ? $special_contact_id : $reg_contact_id;
-        $billing_contact_id = isset($special_contact_id) ? $special_contact_id : $reg_contact_id;
+        $admin_contact_id = $special_contact_id ?? $reg_contact_id;
+        $tech_contact_id = $special_contact_id ?? $reg_contact_id;
+        $billing_contact_id = $special_contact_id ?? $reg_contact_id;
 
         // override some parameters
         if(in_array($tld, array('.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu'))) {

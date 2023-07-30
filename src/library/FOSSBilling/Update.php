@@ -21,7 +21,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class Update implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -40,7 +40,7 @@ class Update implements InjectionAwareInterface
      */
     public function getUpdateBranch(): string
     {
-        return (isset($this->di['config']['update_branch'])) ? $this->di['config']['update_branch'] : 'release';
+        return $this->di['config']['update_branch'] ?? 'release';
     }
 
     /**
