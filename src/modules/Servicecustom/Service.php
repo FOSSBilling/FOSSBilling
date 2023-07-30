@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -30,14 +30,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $formbuilderService = $this->di['mod_service']('formbuilder');
             $form = $formbuilderService->getForm($product['form_id']);
             foreach ($form['fields'] as $field) {
-                if (1 == $field['required']) {
+                if ($field['required'] == 1) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
                         throw new \Box_Exception('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
-                if (1 == $field['readonly']) {
+                if ($field['readonly'] == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
                         throw new \Box_Exception('Field ' . $field['label'] . ' is read only. You can not change its value', null, 5468);

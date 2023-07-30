@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Hook;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -51,7 +51,7 @@ class Service implements InjectionAwareInterface
         } else {
             $di = $event->getDi();
             $ext = $di['db']->load('extension', $params['id']);
-            if (is_object($ext) && 'mod' == $ext->type) {
+            if (is_object($ext) && $ext->type == 'mod') {
                 $service = $di['mod_service']('hook');
                 $service->batchConnect($ext->name);
             }
@@ -63,7 +63,7 @@ class Service implements InjectionAwareInterface
     {
         $di = $event->getDi();
         $params = $event->getParameters();
-        if ('mod' == $params['type']) {
+        if ($params['type'] == 'mod') {
             $q = "DELETE FROM extension_meta
                 WHERE extension = 'mod_hook'
                 AND rel_type = 'mod'
@@ -76,14 +76,12 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param string $mod module name
-     *
      * @return bool
      */
     public function batchConnect($mod_name = null)
     {
         $mods = [];
-        if (null !== $mod_name) {
+        if ($mod_name !== null) {
             $mods[] = $mod_name;
         } else {
             $extensionService = $this->di['mod_service']('extension');
@@ -114,9 +112,6 @@ class Service implements InjectionAwareInterface
 
     /**
      * Connect event for module.
-     *
-     * @param string $event - event name, ie: onAfterAdminDeactivateExtension
-     * @param string $mod   - module name where hook is located
      *
      * @return bool
      *
@@ -188,18 +183,21 @@ class Service implements InjectionAwareInterface
                 $mod = $this->di['mod']($mod_name);
                 if (!$mod->hasService()) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+
                     continue;
                 }
 
                 $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $mod_name]);
                 if (!$ext) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+
                     continue;
                 }
 
                 $s = $mod->getService();
                 if (!method_exists($s, $event)) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+
                     continue;
                 }
             } catch (\Exception $e) {

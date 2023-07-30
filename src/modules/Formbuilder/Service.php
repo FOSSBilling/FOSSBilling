@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Formbuilder;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -78,10 +78,10 @@ class Service implements InjectionAwareInterface
         $label = $field['label'] ?? $types[$type] . ' ' . $field_number;
         $name = $field['name'] ?? $this->slugify('new_' . $type) . '_' . $field_number;
 
-        if ('select' == $type || 'checkbox' == $type || 'radio' == $type) {
+        if ($type == 'select' || $type == 'checkbox' || $type == 'radio') {
             $field['options'] = '{"First option":"1", "Second option": "2", "Third option":"3"}';
         }
-        if ('textarea' == $field['type'] && !isset($field['options'])) {
+        if ($field['type'] == 'textarea' && !isset($field['options'])) {
             $field['options'] = '{"height":"100", "width": "300"}';
         }
         if (isset($field['default_value'])) {
@@ -166,7 +166,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($field['type'])) {
-            if ('checkbox' == $field['type'] || 'radio' == $field['type'] || 'select' == $field['type']) {
+            if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
                 if (!$this->isArrayUnique(array_filter($field['values'], 'strlen'))) {
                     throw new \Box_Exception(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
@@ -177,7 +177,7 @@ class Service implements InjectionAwareInterface
                 $field['options'] = array_filter($field['options'], 'strlen');
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
-            if ('textarea' == $field['type']) {
+            if ($field['type'] == 'textarea') {
                 if (count($field['textarea_size']) != count(array_filter($field['textarea_size'], 'is_numeric'))) {
                     throw new \Box_Exception('Textarea size options must be integer values', null, 3510);
                 }

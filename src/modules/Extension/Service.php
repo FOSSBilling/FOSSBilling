@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Extension;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -35,7 +35,7 @@ class Service implements InjectionAwareInterface
 
     public function isExtensionActive($type, $id)
     {
-        if ('mod' == $type && $this->isCoreModule($id)) {
+        if ($type == 'mod' && $this->isCoreModule($id)) {
             return true;
         }
 
@@ -80,7 +80,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        return 0 == $removedItems ? true : $removedItems;
+        return $removedItems == 0 ? true : $removedItems;
     }
 
     public function getSearchQuery($filter)
@@ -92,12 +92,12 @@ class Service implements InjectionAwareInterface
         $sql = "SELECT * FROM extension
             WHERE status = 'installed' ";
 
-        if (null !== $type) {
+        if ($type !== null) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
         }
 
-        if (null !== $search) {
+        if ($search !== null) {
             $sql .= ' AND name LIKE :search';
             $params[':search'] = '%' . $search . '%';
         }
@@ -135,13 +135,14 @@ class Service implements InjectionAwareInterface
             $manifest = json_decode($im['manifest'], 1);
             if (!is_array($manifest)) {
                 error_log('Error decoding module json file. ' . $im['name']);
+
                 continue;
             }
             $m = $this->di['mod']($im['name']);
             $manifest['version'] = $im['version'];
 
             $manifest['status'] = $im['status'];
-            if ('mod' == $im['type'] && 'installed' == $im['status']) {
+            if ($im['type'] == 'mod' && $im['status'] == 'installed') {
                 $manifest['has_settings'] = $m->hasSettingsPage();
             }
 
@@ -166,7 +167,7 @@ class Service implements InjectionAwareInterface
                 $manifest['status'] = null;
                 $manifest['has_settings'] = false;
                 $manifest['has_settings_routes'] = false;
-                $manifest['settings_routes'] = array();
+                $manifest['settings_routes'] = [];
 
                 $result[] = $manifest;
             }
@@ -226,6 +227,7 @@ class Service implements InjectionAwareInterface
 
                 if (!$mod->hasManifest()) {
                     error_log('Module ' . $m . ' manifest file is missing or is not readable.');
+
                     continue;
                 }
 
@@ -269,7 +271,7 @@ class Service implements InjectionAwareInterface
                     foreach ($n['subpages'] as $nn) {
                         if (is_array($nn)) {
                             $nn['active'] = false;
-                            array_push($subpages, $nn);
+                            $subpages[] = $nn;
                         }
                     }
                 }
@@ -280,11 +282,13 @@ class Service implements InjectionAwareInterface
         foreach ($subpages as $page) {
             if (!isset($page['location'])) {
                 error_log('Invalid module menu item: ' . print_r($page, 1));
+
                 continue;
             }
 
             if (!isset($nav[$page['location']])) {
                 error_log('Submenu item belongs to not existing location: ' . $page['location']);
+
                 continue;
             }
 
@@ -334,6 +338,7 @@ class Service implements InjectionAwareInterface
                 $ext->manifest = json_encode($manifest);
                 $result['redirect'] = $mod->hasAdminController();
                 $result['has_settings'] = $mod->hasSettingsPage();
+
                 break;
 
             default:
@@ -355,6 +360,7 @@ class Service implements InjectionAwareInterface
                 if (file_exists($destination)) {
                     unlink($destination);
                 }
+
                 break;
 
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
@@ -367,7 +373,7 @@ class Service implements InjectionAwareInterface
                     $mm = $this->di['mod']($mod);
                     $mm->uninstall();
                 } catch (\Box_Exception $e) {
-                    if (408 != $e->getCode()) {
+                    if ($e->getCode() != 408) {
                         throw $e;
                     }
                 }
@@ -425,7 +431,7 @@ class Service implements InjectionAwareInterface
 
         $code = $response->getStatusCode();
         if ($code !== 200) {
-            throw new \Box_Exception("Failed to download the extension with error :code", [':code' => $code]);
+            throw new \Box_Exception('Failed to download the extension with error :code', [':code' => $code]);
         }
 
         foreach ($client->stream($response) as $chunk) {
@@ -434,27 +440,33 @@ class Service implements InjectionAwareInterface
 
         // Extract the archive
         $zip = new \PhpZip\ZipFile();
+
         try {
             $zip->openFile($zipPath);
             $zip->extractTo($extractedPath);
             $zip->close();
         } catch (\PhpZip\Exception\ZipException $e) {
             error_log($e->getMessage());
+
             throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
         switch ($type) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $destination = PATH_MODS . DIRECTORY_SEPARATOR . $id;
+
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_THEME:
                 $destination = PATH_THEMES . DIRECTORY_SEPARATOR . $id;
+
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_TRANSLATION:
                 $destination = PATH_LANGS . DIRECTORY_SEPARATOR . $id . '/LC_MESSAGES';
+
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_PG:
                 $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . $id;
+
                 break;
         }
 
@@ -511,7 +523,7 @@ class Service implements InjectionAwareInterface
         try {
             $mod->install();
         } catch (\Box_Exception $e) {
-            if (408 != $e->getCode()) {
+            if ($e->getCode() != 408) {
                 throw $e;
             }
         }
@@ -536,10 +548,12 @@ class Service implements InjectionAwareInterface
         }
         $ext_id ??= $ext->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminActivateExtension', 'params' => ['id' => $ext_id]]);
+
         try {
             $result = $this->activate($ext);
         } catch (\Exception $e) {
             $this->di['db']->trash($ext);
+
             throw $e;
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminActivateExtension', 'params' => ['id' => $ext_id]]);

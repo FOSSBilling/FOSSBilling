@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -49,8 +49,6 @@ class Client extends \Api_Abstract
     /**
      * Get email details.
      *
-     * @param int $id - Email id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -75,8 +73,6 @@ class Client extends \Api_Abstract
     /**
      * Resend email to client once again.
      *
-     * @param int $id - Email id
-     *
      * @return type
      *
      * @throws \Box_Exception
@@ -99,8 +95,6 @@ class Client extends \Api_Abstract
 
     /**
      * Remove email from system.
-     *
-     * @param int $id - Email id
      *
      * @return type
      *

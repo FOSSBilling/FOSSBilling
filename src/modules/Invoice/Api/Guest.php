@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,8 +18,6 @@ class Guest extends \Api_Abstract
 {
     /**
      * Get invoice details.
-     *
-     * @param string $hash - invoice hash
      *
      * @return array
      *
@@ -43,8 +41,6 @@ class Guest extends \Api_Abstract
     /**
      * Update Invoice details. Only unpaid invoice details can be updated.
      *
-     * @param string $hash - invoice hash
-     *
      * @optional int $gateway_id - selected payment gateway id
      *
      * @return bool
@@ -62,7 +58,7 @@ class Guest extends \Api_Abstract
         if (!$invoice) {
             throw new \Box_Exception('Invoice was not found');
         }
-        if ('paid' == $invoice->status) {
+        if ($invoice->status == 'paid') {
             throw new \Box_Exception('Paid Invoice can not be modified');
         }
 
@@ -94,9 +90,6 @@ class Guest extends \Api_Abstract
      * Tries to detect if invoice can be subscribed and if payment gateway supports subscriptions
      * uses subscription payment.
      *
-     * @param string $hash       - invoice hash
-     * @param int    $gateway_id - payment gateway id
-     *
      * @optional bool $auto_redirect - should payment adapter automatically redirect client or just print pay now button
      *
      * @return array
@@ -119,8 +112,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Generates PDF for given invoice.
-     *
-     * @param string $hash - invoice hash
      *
      * @throws \Box_Exception
      */

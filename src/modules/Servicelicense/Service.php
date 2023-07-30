@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Servicelicense;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -34,7 +34,8 @@ class Service implements InjectionAwareInterface
     public function attachOrderConfig(\Model_Product $product, array $data)
     {
         $config = $product->config;
-        isset($config) ?  $config = json_decode($config, true) : $config = [];
+        isset($config) ? $config = json_decode($config, true) : $config = [];
+
         return array_merge($config, $data);
     }
 
@@ -53,12 +54,12 @@ class Service implements InjectionAwareInterface
      */
     public function getLicensePlugins()
     {
-        $dir = dirname(__FILE__) . '/Plugin/';
+        $dir = __DIR__ . '/Plugin/';
         $files = [];
         $directory = opendir($dir);
         while ($item = readdir($directory)) {
             // We filter the elements that we don't want to appear ".", ".." and ".svn"
-            if (('.' != $item) && ('..' != $item) && ('.svn' != $item)) {
+            if (($item != '.') && ($item != '..') && ($item != '.svn')) {
                 $info = pathinfo($item);
                 $info['path'] = $dir . $item;
                 $files[] = $info;
@@ -131,7 +132,7 @@ class Service implements InjectionAwareInterface
             if ($i++ >= $iterations) {
                 throw new \Box_Exception('Maximum number of iterations reached while generating license key');
             }
-        } while (null !== $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $licenseKey]));
+        } while ($this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $licenseKey]) !== null);
 
         $model->license_key = $licenseKey;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -237,7 +238,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
         if ($o instanceof \Model_ClientOrder) {
-            return \Model_ClientOrder::STATUS_ACTIVE == $o->status;
+            return $o->status == \Model_ClientOrder::STATUS_ACTIVE;
         }
 
         return false;
@@ -439,7 +440,7 @@ class Service implements InjectionAwareInterface
          *
          * @since v2.7.1
          */
-        if (isset($data['format']) && 2 == $data['format']) {
+        if (isset($data['format']) && $data['format'] == 2) {
             $server = $this->di['license_server'];
 
             try {

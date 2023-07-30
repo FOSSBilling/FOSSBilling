@@ -17,7 +17,7 @@ namespace Box\Mod\Seo\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Returns SEO information. When the pings were was last sent
+     * Returns SEO information. When the pings were was last sent.
      *
      * @return array
      */
@@ -27,7 +27,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Ping every search engine to let them know that the sitemap has been updated
+     * Ping every search engine to let them know that the sitemap has been updated.
      *
      * @return bool
      */

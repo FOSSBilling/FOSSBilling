@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -17,9 +17,6 @@ class Admin extends \Api_Abstract
 {
     /**
      * Change hosting account plan.
-     *
-     * @param int $order_id - Hosting account order id
-     * @param int $plan_id  - New hosting plan id
      *
      * @return bool
      */
@@ -40,9 +37,6 @@ class Admin extends \Api_Abstract
     /**
      * Change hosting account username.
      *
-     * @param int    $order_id - Hosting account order id
-     * @param string $username - New username
-     *
      * @return bool
      */
     public function change_username($data)
@@ -55,9 +49,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change hosting account ip.
-     *
-     * @param int    $order_id - Hosting account order id
-     * @param string $username - New username
      *
      * @return bool
      */
@@ -72,10 +63,6 @@ class Admin extends \Api_Abstract
     /**
      * Change hosting account domain.
      *
-     * @param int    $order_id - Hosting account order id
-     * @param string $tld      - Top level domain value, ie: .com
-     * @param string $sld      - Second level domain value, ie: domain name
-     *
      * @return bool
      */
     public function change_domain($data)
@@ -88,10 +75,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change hosting account password.
-     *
-     * @param int    $order_id         - Hosting account order id
-     * @param string $password         - New account password
-     * @param string $password_confirm - Must be same value as password field
      *
      * @return bool
      */
@@ -106,8 +89,6 @@ class Admin extends \Api_Abstract
     /**
      * Synchronize account with server values.
      *
-     * @param int $order_id - Hosting account order id
-     *
      * @return bool
      */
     public function sync($data)
@@ -121,8 +102,6 @@ class Admin extends \Api_Abstract
     /**
      * Update account information on FOSSBilling database.
      * This does not send actions to real account on hosting server.
-     *
-     * @param int $order_id - Hosting account order id
      *
      * @optional string $username - Hosting account username
      * @optional string $ip - Hosting account ip
@@ -182,10 +161,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new hosting server.
      *
-     * @param string $name    - server name
-     * @param string $ip      - server ip
-     * @param string $manager - server manager code
-     *
      * @optional string $hostname - server hostname
      * @optional string $ns1 - default nameserver 1
      * @optional string $ns2 - default nameserver 2
@@ -219,8 +194,6 @@ class Admin extends \Api_Abstract
     /**
      * Get server details.
      *
-     * @param int $id - server id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -241,8 +214,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete server.
      *
-     * @param int $id - server id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -261,8 +232,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update server configuration.
-     *
-     * @param int $id - server id
      *
      * @optional string $hostname - server hostname
      * @optional string $ns1 - default nameserver 1
@@ -300,8 +269,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Test connection to server.
-     *
-     * @param int $id - server id
      *
      * @return bool
      *
@@ -350,8 +317,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete hosting plan.
      *
-     * @param int $id - hosting plan id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -371,8 +336,6 @@ class Admin extends \Api_Abstract
     /**
      * Get hosting plan details.
      *
-     * @param int $id - hosting plan id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -391,8 +354,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update hosting plan details.
-     *
-     * @param int $id - hosting plan id
      *
      * @optional string $name - hosting plan name. Used as identifier on server
      *
@@ -416,8 +377,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update hosting plan details.
-     *
-     * @param string $name - hosting plan name. Used as identifier on server
      *
      * @return int - new hosting plan id
      *
