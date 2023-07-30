@@ -96,6 +96,12 @@ class AdminTest extends \BBTestCase {
             ->method('gateway_get')
             ->will($this->returnValue(['code' => 'Custom', 'enabled' => 1, 'title' => 'Custom Gateway']));
 
+        // Create a partial mock for the Admin class and mock the gateway_get method
+        $adminPartialMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')
+            ->setMethods(['gateway_get']) // Specify the method(s) to mock
+            ->getMock();
+        $adminPartialMock->method('gateway_get')->willReturn($payGatewayMock);
+
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
@@ -115,9 +121,10 @@ class AdminTest extends \BBTestCase {
         // Set the mocked PayGateway to the container
         $di['pay_gateway'] = $payGatewayMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-        $result = $this->api->mark_as_paid($data);
+        $adminPartialMock->setDi($di);
+        $adminPartialMock->setService($serviceMock);
+
+        $result = $adminPartialMock->mark_as_paid($data);
         $this->assertTrue($result);
     }
 
