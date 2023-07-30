@@ -346,7 +346,12 @@
         "IPCOUNTRY",
         "Serviceapikey",
         "homoglyph",
+        "oldconfig",
+        "ordermodel",
+        "TINYINT",
+        "hostings",
         "rulesets"
+
     ],
     "ignorePaths": [
         "tests/**",

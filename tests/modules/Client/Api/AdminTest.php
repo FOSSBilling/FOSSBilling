@@ -757,6 +757,9 @@ class AdminTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->will($this->returnValue($model));
+        $dbMock->expects($this->once())
+            ->method('find')->with('Client', 'client_group_id = :group_id',[':group_id' => $data['id']])
+            ->will($this->returnValue([])); // Return an empty array to simulate no clients assigned to the group
 
         $serviceMock = $this->getMockBuilder('\Box\Client\Service')
             ->setMethods(array('deleteGroup'))

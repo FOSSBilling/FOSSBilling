@@ -324,8 +324,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testserver_delete()
+    public function testServerDelete()
     {
+        // Test case 1: Server can be deleted
         $data['id'] = 1;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')->getMock();
@@ -347,14 +348,43 @@ class AdminTest extends \BBTestCase
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
 
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_delete($data);
-        $this->assertIsBool($result);
         $this->assertTrue($result);
+
+        // Test case 2: Server is used by service_hostings and cannot be deleted
+        $data['id'] = 2;
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->will($this->returnValue(new \Model_ServiceHostingServer));
+
+        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        // Mock the 'find' method to return a non-empty array, simulating the server being used by service hostings
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->will($this->returnValue(['dummy_data']));
+
+        $di              = new \Pimple\Container();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
+
+        $this->api->setDi($di);
+
+        // Now, we expect an exception to be thrown because the server is used by service_hostings
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(704);
+
+        $this->api->server_delete($data);
     }
+
 
     public function testserver_update()
     {
@@ -481,10 +511,19 @@ class AdminTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
-        $result = $this->api->hp_delete($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
+        // Add a try-catch block to handle the exception thrown in the hp_delete function
+        try {
+            $result = $this->api->hp_delete($data);
+
+            // If the function doesn't throw an exception, then the test should assert the result
+            $this->assertIsBool($result);
+            $this->assertTrue($result);
+        } catch (\Box_Exception $e) {
+            // If the function throws an exception, the test should fail
+            $this->fail("Exception thrown: " . $e->getMessage());
+        }
     }
+
 
     public function testhp_get()
     {
@@ -609,7 +648,9 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) {
+            return $orderServiceMock;
+        });
         $di['db']          = $dbMock;
         $di['validator']   = $validatorMock;
 
@@ -646,7 +687,9 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) {
+            return $orderServiceMock;
+        });
         $di['db']          = $dbMock;
         $di['validator']   = $validatorMock;
 
@@ -656,5 +699,4 @@ class AdminTest extends \BBTestCase
         $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }
-
 }
