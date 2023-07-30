@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -61,12 +61,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
         $status = $data['status'] ?? null;
 
-        if (null !== $status) {
+        if ($status !== null) {
             $sql .= ' AND status = :status';
             $params[':status'] = $status;
         }
 
-        if (null !== $search) {
+        if ($search !== null) {
             $sql .= ' AND (subject LIKE :search OR content LIKE :search OR from_email LIKE :search OR from_name LIKE :search)';
             $params[':search'] = '%' . $search . '%';
         }

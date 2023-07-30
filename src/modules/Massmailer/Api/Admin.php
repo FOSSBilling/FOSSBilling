@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -35,8 +35,6 @@ class Admin extends \Api_Abstract
     /**
      * Get mail message by id.
      *
-     * @param int $id - mail message ID
-     *
      * @return array
      */
     public function get($data)
@@ -48,8 +46,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update mail message.
-     *
-     * @param int $id - mail message id
      *
      * @optional string $subject - mail message title
      * @optional string $content - mail message content
@@ -94,8 +90,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Create mail message.
-     *
-     * @param string $subject - mail message subject
      *
      * @optional string $content - mail message content
      *
@@ -148,8 +142,6 @@ Order our services at {{ "order"|link }}
     /**
      * Send test mail message by ID to client.
      *
-     * @param int $id - mail message ID
-     *
      * @return bool
      */
     public function send_test($data)
@@ -170,8 +162,6 @@ Order our services at {{ "order"|link }}
 
     /**
      * Send mail message by ID.
-     *
-     * @param int $id - mail message ID
      *
      * @return bool
      */
@@ -213,8 +203,6 @@ Order our services at {{ "order"|link }}
     /**
      * Copy mail message by ID.
      *
-     * @param int $id - mail message ID
-     *
      * @return bool
      */
     public function copy($data)
@@ -241,8 +229,6 @@ Order our services at {{ "order"|link }}
     /**
      * Get message receivers list.
      *
-     * @param int $id - mail message ID
-     *
      * @return array
      */
     public function receivers($data)
@@ -254,8 +240,6 @@ Order our services at {{ "order"|link }}
 
     /**
      * Delete mail message by ID.
-     *
-     * @param int $id - mail message ID
      *
      * @return bool
      */
@@ -273,8 +257,6 @@ Order our services at {{ "order"|link }}
 
     /**
      * Generate preview text.
-     *
-     * @param int $id - message id
      *
      * @return array - parsed subject and content strings
      */

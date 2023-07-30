@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -44,8 +44,6 @@ class Client extends \Api_Abstract
     /**
      * Return ticket full details.
      *
-     * @param int $id - ticket id
-     *
      * @return array
      */
     public function ticket_get($data)
@@ -74,10 +72,6 @@ class Client extends \Api_Abstract
      * Method to create open new ticket. Tickets can have tasks assigned to them
      * via optional parameters.
      *
-     * @param string $content             - ticket message content
-     * @param string $subject             - ticket subject
-     * @param string $support_helpdesk_id - Ticket helpdesk id
-     *
      * @optional int $rel_type - Ticket relation type
      * @optional int $rel_id - Ticket relation id
      * @optional int $rel_task - Ticket task codename
@@ -105,9 +99,6 @@ class Client extends \Api_Abstract
 
     /**
      * Add new conversation message to ticket. Ticket will be reopened if closed.
-     *
-     * @param int    $id      - ticket id
-     * @param string $content - ticket message
      *
      * @return bool
      */
@@ -144,8 +135,6 @@ class Client extends \Api_Abstract
 
     /**
      * Close ticket.
-     *
-     * @param int $id - ticket id
      *
      * @return bool
      */

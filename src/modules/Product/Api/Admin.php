@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -51,8 +51,6 @@ class Admin extends \Api_Abstract
     /**
      * Get product details.
      *
-     * @param int $id - product id
-     *
      * @return type
      */
     public function get($data)
@@ -76,9 +74,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new product. Set default values depending on type.
      *
-     * @param string $title - product title
-     * @param string $type  - product type
-     *
      * @optional string $product_category_id - category id
      *
      * @return int - new product id
@@ -95,7 +90,7 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
         // allow having only one domain product
-        if ('domain' == $data['type']) {
+        if ($data['type'] == 'domain') {
             $model = $service->getMainDomainProduct();
             if ($model instanceof \Model_Product) {
                 throw new \Box_Exception('You have already created domain product.', null, 413);
@@ -114,8 +109,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update product settings.
-     *
-     * @param int $id - product id
      *
      * @optional array $pricing - product pricing configuration
      * @optional array $config - product configuration options depending on type
@@ -148,8 +141,6 @@ class Admin extends \Api_Abstract
     /**
      * Change products sorting order.
      *
-     * @param array $priority - id => number key value pairs to define sort order for all products
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -167,8 +158,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Convenience method to update product config only.
-     *
-     * @param int $id - product id
      *
      * @optional array $config - product config key value array
      *
@@ -196,8 +185,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new addon.
      *
-     * @param string $title - addon title
-     *
      * @return int - new addon id
      *
      * @throws \Box_Exception
@@ -223,8 +210,6 @@ class Admin extends \Api_Abstract
     /**
      * Get addon details.
      *
-     * @param int $id - addon id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -247,8 +232,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Addon update.
-     *
-     * @param int $id - addon id
      *
      * @optional array $pricing - product pricing configuration
      * @optional array $config - product configuration options depending on type
@@ -289,8 +272,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove addon.
      *
-     * @param int $id - addon id
-     *
      * @return bool
      */
     public function addon_delete($data)
@@ -300,8 +281,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove product.
-     *
-     * @param int $id - addon id
      *
      * @return bool
      */
@@ -325,8 +304,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Method to update category.
-     *
-     * @param int $id - category id
      *
      * @optional string $title - category title
      * @optional string $icon_url - icon url
@@ -376,8 +353,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new product category.
      *
-     * @param string $title - new category title
-     *
      * @optional string $icon_url - icon url
      * @optional string $description - description
      *
@@ -403,8 +378,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove product category.
-     *
-     * @param int $id - category id
      *
      * @return bool
      *
@@ -444,10 +417,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Create new promo code.
-     *
-     * @param string $code  - promo code
-     * @param string $type  - promo code type: percentage|absolute
-     * @param string $value - promo code value. Percents or discount amount in currency
      *
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
@@ -493,8 +462,6 @@ class Admin extends \Api_Abstract
     /**
      * Get promo code details.
      *
-     * @param int $id - promo code id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -513,8 +480,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Promo code update.
-     *
-     * @param int $id - promo code id
      *
      * @optional string $code - promo code
      * @optional string $type - promo code type: percentage|absolute
@@ -550,8 +515,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete promo code.
-     *
-     * @param int $id - promo code id
      *
      * @return bool
      *

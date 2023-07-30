@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Staff;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -37,6 +37,7 @@ class Service implements InjectionAwareInterface
         $model = $this->authorizeAdmin($email, $password);
         if (!$model instanceof \Model_Admin) {
             $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
+
             throw new \Box_Exception('Check your login details', null, 403);
         }
 
@@ -94,7 +95,7 @@ class Service implements InjectionAwareInterface
 
     public function hasPermission($member, $mod, $method = null)
     {
-        if (\Model_Admin::ROLE_CRON == $member->role || \Model_Admin::ROLE_ADMIN == $member->role) {
+        if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN) {
             return true;
         }
 
@@ -559,7 +560,7 @@ class Service implements InjectionAwareInterface
     public function deleteGroup(\Model_AdminGroup $model)
     {
         $id = $model->id;
-        if (1 == $model->id) {
+        if ($model->id == 1) {
             throw new \Box_Exception('Administrators group can not be removed');
         }
 
@@ -652,7 +653,7 @@ class Service implements InjectionAwareInterface
     public function authorizeAdmin($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, \Model_Admin::STATUS_ACTIVE]);
-        if (null == $model) {
+        if ($model == null) {
             return null;
         }
 

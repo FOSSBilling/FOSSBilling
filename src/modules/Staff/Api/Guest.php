@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -23,14 +23,11 @@ class Guest extends \Api_Abstract
      * config.php file must already be present and configured.
      * Used by automated FOSSBilling installer.
      *
-     * @param string $email    - admin email
-     * @param string $password - admin password
-     *
      * @return bool
      */
     public function create($data)
     {
-        $allow = (!is_countable($this->di['db']->findOne('Admin', '1=1')) || 0 == count($this->di['db']->findOne('Admin', '1=1')));
+        $allow = (!is_countable($this->di['db']->findOne('Admin', '1=1')) || count($this->di['db']->findOne('Admin', '1=1')) == 0);
         if (!$allow) {
             throw new \Box_Exception('Administrator account already exists', null, 55);
         }
@@ -56,9 +53,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Login to admin area and save information to session.
-     *
-     * @param string $email    - admin email
-     * @param string $password - admin password
      *
      * @return array
      *
@@ -90,53 +84,55 @@ class Guest extends \Api_Abstract
         return $this->getService()->login($data['email'], $data['password'], $this->getIp());
     }
 
-    public function update_password($data){
-       $config = $this->getMod()->getConfig();
-       if ( isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0'){
-           throw new \Box_Exception('Password reset has been disabled');
-       }
-       $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
-       $required = [
-           'code' => 'Code required',
-           'password' => 'Password required',
-           'password_confirm' => 'Password confirmation required',
-       ];
+    public function update_password($data)
+    {
+        $config = $this->getMod()->getConfig();
+        if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
+            throw new \Box_Exception('Password reset has been disabled');
+        }
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+        $required = [
+            'code' => 'Code required',
+            'password' => 'Password required',
+            'password_confirm' => 'Password confirmation required',
+        ];
 
-       $validator = $this->di['validator'];
-       $validator->checkRequiredParamsForArray($required, $data);
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
 
-       if ($data['password'] != $data['password_confirm']) {
-           throw new \Box_Exception('Passwords do not match');
-       }
+        if ($data['password'] != $data['password_confirm']) {
+            throw new \Box_Exception('Passwords do not match');
+        }
 
-       $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
-       if (!$reset instanceof \Model_AdminPasswordReset) {
-           throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
-       }
+        $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
+        if (!$reset instanceof \Model_AdminPasswordReset) {
+            throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
+        }
 
-       if(strtotime($reset -> created_at) - time() + 900 <  0){
-           throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
-       }
+        if (strtotime($reset->created_at) - time() + 900 < 0) {
+            throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
+        }
 
-       $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
-       $c->pass = $this->di['password']->hashIt($data['password']);
-       $this->di['db']->store($c);
+        $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
+        $c->pass = $this->di['password']->hashIt($data['password']);
+        $this->di['db']->store($c);
 
-       $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);
+        $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);
 
-       // send email
-       $email = [];
-       $email['to_admin'] = $c->id;
-       $email['code'] = 'mod_staff_password_reset_approve';
-       $emailService = $this->di['mod_service']('email');
-       $emailService->sendTemplate($email);
+        // send email
+        $email = [];
+        $email['to_admin'] = $c->id;
+        $email['code'] = 'mod_staff_password_reset_approve';
+        $emailService = $this->di['mod_service']('email');
+        $emailService->sendTemplate($email);
 
-       $this->di['db']->trash($reset);
+        $this->di['db']->trash($reset);
     }
 
-    public function passwordreset($data){
+    public function passwordreset($data)
+    {
         $config = $this->getMod()->getConfig();
-        if ( isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0'){
+        if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             throw new \Box_Exception('Password reset has been disabled');
         }
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
@@ -151,7 +147,7 @@ class Guest extends \Api_Abstract
         if (!$c instanceof \Model_Admin) {
             throw new \Box_Exception('Email not found in our database');
         }
-        $hash = hash('sha256', time().random_bytes(13));
+        $hash = hash('sha256', time() . random_bytes(13));
 
         $c->pass = $hash;
 

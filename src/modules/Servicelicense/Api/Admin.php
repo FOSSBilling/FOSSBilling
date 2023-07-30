@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -36,8 +36,6 @@ class Admin extends \Api_Abstract
      * Update license parameters. Set which validation rules must be applied
      * for license.
      *
-     * @param int $order_id - License order id
-     *
      * @optional string $plugin - New license plugin name
      * @optional bool $validate_ip - True to validate IP; False - to allow all IPs for this license
      * @optional bool $validate_host - True to validate hostname; False - to allow all hostnames for this license
@@ -59,8 +57,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Reset license validation rules.
-     *
-     * @param int $order_id - License service order id
      *
      * @return bool
      */

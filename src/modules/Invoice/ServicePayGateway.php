@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Invoice;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class ServicePayGateway implements InjectionAwareInterface
 {
@@ -79,11 +79,11 @@ class ServicePayGateway implements InjectionAwareInterface
         }
         $pattern = PATH_LIBRARY . '/Payment/Adapter/*/*.php';
         foreach (glob($pattern) as $path) {
-            $directory = explode('/',pathinfo($path, PATHINFO_DIRNAME));
+            $directory = explode('/', pathinfo($path, PATHINFO_DIRNAME));
             $adapter = end($directory);
             if (!array_key_exists($adapter, $exists)) {
-                if($path == PATH_LIBRARY . '/Payment/Adapter/'.$adapter.'/'.$adapter.'.php'){
-                $adapters[] = $adapter;
+                if ($path == PATH_LIBRARY . '/Payment/Adapter/' . $adapter . '/' . $adapter . '.php') {
+                    $adapters[] = $adapter;
                 }
             }
         }
@@ -191,28 +191,29 @@ class ServicePayGateway implements InjectionAwareInterface
         $gateways = $this->di['db']->find('PayGateway', 'enabled = 1 ORDER BY id desc');
         $result = [];
         foreach ($gateways as $gtw) {
-            if ('pairs' == $format) {
+            if ($format == 'pairs') {
                 $result[$gtw->id] = $gtw->name;
             } else {
-                $gateway =  $this->toApiArray($gtw);
-                $adapter = $this -> getPaymentAdapter($gtw);
-                if ( array_key_exists('logo',$adapter->getConfig())){
+                $gateway = $this->toApiArray($gtw);
+                $adapter = $this->getPaymentAdapter($gtw);
+                if (array_key_exists('logo', $adapter->getConfig())) {
                     $gateway['logo'] = $adapter->getConfig()['logo'];
-                    if(file_exists(PATH_LIBRARY . '/Payment/Adapter/'.$adapter->getConfig()['logo']['logo'])){
+                    if (file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $adapter->getConfig()['logo']['logo'])) {
                         $gateway['logo']['logo'] = $this->di['tools']->url('/library/Payment/Adapter/' . $adapter->getConfig()['logo']['logo']);
-                    }else{
-                        if(file_exists(PATH_DATA . '/assets/gateways/'. $adapter->getConfig()['logo']['logo'])){
+                    } else {
+                        if (file_exists(PATH_DATA . '/assets/gateways/' . $adapter->getConfig()['logo']['logo'])) {
                             $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/' . $adapter->getConfig()['logo']['logo']);
-                        }else{
-                           $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/default.png');
+                        } else {
+                            $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/default.png');
                         }
                     }
-                }else{
+                } else {
                     $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/default.png');
                 }
                 $result[] = $gateway;
             }
         }
+
         return $result;
     }
 
@@ -276,7 +277,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $class = $this->getAdapterClassName($pg);
         if (!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '.php')) {
-            if(!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/'.$pg->gateway.'.php')){
+            if (!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/' . $pg->gateway . '.php')) {
                 throw new \Box_Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
             }
         }
@@ -297,17 +298,18 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getAdapterClassName(\Model_PayGateway $pg)
     {
         $class = sprintf('Payment_Adapter_%s', $pg->gateway);
-        if(!class_exists($class)){
-            include PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/'.$pg->gateway.'.php';
+        if (!class_exists($class)) {
+            include PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/' . $pg->gateway . '.php';
+
             return sprintf('Payment_Adapter_%s', $pg->gateway);
-        }else{
+        } else {
             return $class;
         }
     }
 
     public function getAcceptedCurrencies(\Model_PayGateway $model)
     {
-        if (null === $model->accepted_currencies || empty($model->accepted_currencies)) {
+        if ($model->accepted_currencies === null || empty($model->accepted_currencies)) {
             $currencyService = $this->di['mod_service']('Currency');
 
             return array_keys($currencyService->getPairs());

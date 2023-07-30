@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Order;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -203,7 +203,7 @@ class Service implements InjectionAwareInterface
 
     public function getOrderService(\Model_ClientOrder $order)
     {
-        if (null !== $order->service_id) {
+        if ($order->service_id !== null) {
             // @deprecated
             // @todo remove this when doctrine is removed
             $core_services = [
@@ -312,7 +312,7 @@ class Service implements InjectionAwareInterface
         $where = [];
         $bindings = [];
 
-        if (null !== $client_id) {
+        if ($client_id !== null) {
             $where[] = 'client_id = :client_id';
             $bindings[':client_id'] = $client_id;
         }
@@ -611,7 +611,7 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Created order #%s', $id);
 
         // invoice options
-        if ('issue-invoice' == $invoiceOption && $order->price > 0) {
+        if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
             $invoiceService = $this->di['mod_service']('invoice');
             $invoice = $invoiceService->generateForOrder($order);
 
@@ -723,7 +723,7 @@ class Service implements InjectionAwareInterface
 
         // set automatic order expiration
         if (!empty($order->period)) {
-            $from_time = (null === $order->expires_at) ? time() : strtotime($order->expires_at);
+            $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at);
 
             $period = $this->di['period']($order->period);
             $order->expires_at = date('Y-m-d H:i:s', $period->getExpirationTime($from_time));
@@ -907,7 +907,7 @@ class Service implements InjectionAwareInterface
 
         // activate all addons on initial activation
         // @see https://github.com/boxbilling/boxbilling/issues/54
-        if ($order->group_master && \Model_ClientOrder::STATUS_PENDING_SETUP == $order->status) {
+        if ($order->group_master && $order->status == \Model_ClientOrder::STATUS_PENDING_SETUP) {
             $list = $this->getOrderAddonsList($order);
             foreach ($list as $addon) {
                 try {
@@ -940,14 +940,14 @@ class Service implements InjectionAwareInterface
 
         // set automatic order expiration
         if (!empty($order->period)) {
-            $from_time = (null === $order->expires_at) ? time() : strtotime($order->expires_at); // from expiration date
+            $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at); // from expiration date
 
             $config = $this->di['mod_config']('order');
             $logic = $config['order_renewal_logic'] ?? '';
 
-            if ('from_today' == $logic) {
+            if ($logic == 'from_today') {
                 $from_time = time(); // renew order from the date renewal occurred
-            } elseif ('from_greater' == $logic) {
+            } elseif ($logic == 'from_greater') {
                 if (strtotime($order->expires_at) > time()) {
                     $from_time = strtotime($order->expires_at);
                 } else {
@@ -974,7 +974,7 @@ class Service implements InjectionAwareInterface
             $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderSuspend', 'params' => ['id' => $order->id]]);
         }
 
-        if (\Model_ClientOrder::STATUS_ACTIVE != $order->status) {
+        if ($order->status != \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \Box_Exception('Only active orders can be suspended');
         }
 
@@ -986,7 +986,7 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
-        $note = (null === $reason) ? 'Order suspended' : 'Order suspended for ' . $reason;
+        $note = ($reason === null) ? 'Order suspended' : 'Order suspended for ' . $reason;
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
@@ -1040,7 +1040,7 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
-        $note = (null === $reason) ? 'Order canceled' : 'Canceled order for ' . $reason;
+        $note = ($reason === null) ? 'Order canceled' : 'Canceled order for ' . $reason;
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
@@ -1121,7 +1121,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderDelete', 'params' => ['id' => $order->id]]);
 
-        if (\Model_ClientOrder::STATUS_PENDING_SETUP == $order->status) {
+        if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP) {
             $this->rmInvoiceItemByOrder($order);
         }
 
@@ -1236,7 +1236,7 @@ class Service implements InjectionAwareInterface
         $where = [];
         $bindings = [];
 
-        if (null !== $oid) {
+        if ($oid !== null) {
             $where[] = 'client_order_id = :client_order_id';
 
             $bindings[':client_order_id'] = $oid;
@@ -1355,6 +1355,7 @@ class Service implements InjectionAwareInterface
         if (!$headers) {
             $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];
         }
+
         return $this->di['table_export_csv']('client_order', 'orders.csv', $headers);
     }
 }

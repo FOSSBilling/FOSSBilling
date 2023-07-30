@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Profile;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -133,7 +133,7 @@ class Service implements InjectionAwareInterface
         $client->gender = $data['gender'] ?? $client->gender;
 
         $birthday = $data['birthday'] ?? null;
-        if (strlen(trim($birthday)) > 0 && false === strtotime($birthday)) {
+        if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
             throw new \Box_Exception('Invalid birthdate value');
         }
         $client->birthday = $birthday;
@@ -223,7 +223,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function invalidateSessions(?string $type = null, ?int $id = null): bool
+    public function invalidateSessions(string $type = null, int $id = null): bool
     {
         if (empty($type)) {
             $auth = new \Box_Authorization($this->di);
@@ -232,7 +232,7 @@ class Service implements InjectionAwareInterface
             } elseif ($auth->isClientLoggedIn()) {
                 $type = 'client';
             } else {
-                throw new \Box_Exception("Unable to invalidate sessions, nobody is logged in");
+                throw new \Box_Exception('Unable to invalidate sessions, nobody is logged in');
             }
         }
 
@@ -241,15 +241,17 @@ class Service implements InjectionAwareInterface
                 case 'admin':
                     $admin = $this->di['session']->get('admin');
                     $id = $admin['id'];
+
                     break;
                 case 'client':
                     $id = $this->di['session']->get('client_id');
+
                     break;
             }
         }
 
         if ($type !== 'admin' && $type !== 'client') {
-            throw new \Box_Exception("Unable to invalidate sessions, an invalid type was used");
+            throw new \Box_Exception('Unable to invalidate sessions, an invalid type was used');
         }
 
         $sessions = $this->getSessions();
@@ -264,6 +266,7 @@ class Service implements InjectionAwareInterface
     {
         $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
         $sessions = $this->di['db']->getAll($query);
+
         return $sessions;
     }
 

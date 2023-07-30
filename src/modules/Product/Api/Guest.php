@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -57,8 +57,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get product by ID.
-     *
-     * @param int $id - product id
      *
      * @return array
      *
@@ -124,8 +122,6 @@ class Guest extends \Api_Abstract
      *
      * @optional string $type - product type for slider - default = hosting
      * @optional string $format - return format. Default is array . You can choose json format, to directly inject to javascript
-     *
-     * @return mixed
      */
     public function get_slider($data)
     {
@@ -154,7 +150,7 @@ class Guest extends \Api_Abstract
             }
             $slider[] = $s;
         }
-        if ('json' == $format) {
+        if ($format == 'json') {
             return json_encode($slider);
         }
 
