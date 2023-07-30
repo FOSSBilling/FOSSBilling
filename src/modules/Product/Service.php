@@ -728,7 +728,11 @@ class Service implements InjectionAwareInterface
                 $p[] = $model->tria_price;
             }
 
-            return min($p);
+            if ($p) {
+                return min($p);
+            } else {
+                return null;
+            }
         }
 
         return null;
