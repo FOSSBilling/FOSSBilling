@@ -510,7 +510,7 @@ class Service implements InjectionAwareInterface
 
         $model->serie = $systemService->getParamValue('invoice_series');
         $model->nr = $this->getNextInvoiceNumber();
-        $model->hash = bin2hex(random_bytes(random_int(100, 127)));;
+        $model->hash = bin2hex(random_bytes(random_int(100, 127)));
 
         $taxtitle = '';
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
