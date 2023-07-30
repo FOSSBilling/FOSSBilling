@@ -38,7 +38,7 @@
                             <span class="badge {% if order.status == 'active' %}badge-success{% elseif order.status == 'pending_setup' %}badge-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
                         </td>
                         <td class="actions">
-                            <a class="btn btn-primary" href="{{ '/order/service/manage'|link }}/{{order.id}}"><span class="dark-icon i-drag"></span></a>
+                            <a class="btn btn-primary awe-cog" href="{{ '/order/service/manage'|link }}/{{order.id}}"></a>
                         </td>
                     </tr>
                     {% else %}

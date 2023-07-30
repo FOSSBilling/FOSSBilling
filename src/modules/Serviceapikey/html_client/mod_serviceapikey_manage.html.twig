@@ -1,30 +1,26 @@
 {% if order.status == 'active' %}
-<div class="row">
-    <article class="span12 data-block">
-        <div class="data-container">
-            <header>
-                <h1>{{ order.title }}</h1>
-            </header>
-            <section>
-               <h2>{{ 'API key details'|trans }}</h2>
-                <table class="table table-striped table-bordered table-sm">
-                    <tbody>
-                    <tr>
-                        <td>{{ 'API key'|trans }}</td>
-                        <td>
-                            <strong>{{ service.api_key }}</strong>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+<div class="card ml-3 w-100 mt-2">
+    <div class="card-header">
+        <h1>{{ order.title }}</h1>
+    </div>
+    <div class="card-body">
+        <h2>{{ 'API key details'|trans }}</h2>
+        <table class="table table-striped table-bordered table-sm">
+            <tbody>
+                <tr>
+                    <td>{{ 'API key'|trans }}</td>
+                    <td>
+                        <strong>{{ service.api_key }}</strong>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
 
-                <h2>{{ 'Reset API key'|trans }}</h2>
-                <div class="block">
-                    <p><button class="btn btn-primary" type="button" id="license-apikey">{{ 'Reset'|trans }}</button></p>
-                </div>
-            </section>
+        <h2>{{ 'Reset API key'|trans }}</h2>
+        <div class="block">
+            <p><button class="btn btn-primary" type="button" id="license-apikey">{{ 'Reset'|trans }}</button></p>
         </div>
-    </article>
+    </div>
 </div>
 
 <script type="text/javascript">
