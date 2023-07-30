@@ -277,28 +277,30 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTld_delete()
     {
+        $tldMock = $this->getMockBuilder('\Model_Tld')->getMock();
+        $tldMock->tld = '.com';
+
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
-            ->will($this->returnValue(new \Model_Tld()));
+            ->will($this->returnValue($tldMock));
         $serviceMock->expects($this->atLeastOnce())->method('tldRm')
-            ->will($this->returnValue(array()));
-        $serviceMock->expects($this->atLeastOnce())->method('findServiceDomain')
-            ->will($this->returnValue(array())); // return empty array to simulate no domains using the TLD
+            ->will($this->returnValue(true));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->once())->method('find')
+            ->with($this->equalTo('ServiceDomain'), $this->equalTo('tld = ?'), $this->equalTo(['tld' => $tldMock->tld]))
+            ->will($this->returnValue([])); // No domains found
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
-        $dbMock = $this->getMockBuilder('\Pimple\Container')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())->method('find')
-            ->will($this->returnValue(array())); // return empty array to simulate no domains using the TLD
-
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['db'] = $dbMock; // add db mock to DI container
-        $this->adminApi->setDi($di);
+        $di['db'] = $dbMock;
 
+        $this->adminApi->setDi($di);
         $this->adminApi->setService($serviceMock);
 
         $data   = array(
@@ -306,8 +308,9 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->tld_delete($data);
 
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
+
 
 
 
