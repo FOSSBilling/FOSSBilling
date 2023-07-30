@@ -203,7 +203,7 @@ class Server_Manager_Hestia extends Server_Manager
         if (0 !== intval($result2)) {
             $postvars3 = [
                 'returncode' => 'yes',
-                'cmd' => 'v-remove-user',
+                'cmd' => 'v-delete-user',
                 'arg1' => $a->getUsername(),
             ];
             $result3 = $this->_makeRequest($postvars3);
