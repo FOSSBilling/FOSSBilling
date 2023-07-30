@@ -69,7 +69,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
 
         // Username must start with a-z.
-        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(rand(97,122)), 0, 1) : $username;
+        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97,122)), 0, 1) : $username;
 
         // Username must be at most 10 characters long, and sufficiently random to avoid collisons.
         $username = substr($username, 0, 7);
@@ -192,11 +192,11 @@ class Server_Manager_Directadmin extends Server_Manager
             }
         }
         
-        if(strpos(implode('', $results), 'Unable to assign the Reseller ANY ips') !== false) {
+        if(str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
             throw new Server_Exception('Unable to assign the Reseller ANY ips. Make sure to have free, un-assigned ips.');
         }
         
-        if(strpos(implode('', $results), 'Error Creating User') !== false) {
+        if(str_contains(implode('', $results), 'Error Creating User')) {
             throw new Server_Exception('Error creating user');
         }
         
@@ -384,7 +384,7 @@ class Server_Manager_Directadmin extends Server_Manager
     private function getIps()
     {
         $results = $this->_request('CMD_API_SHOW_RESELLER_IPS');
-        return isset($results['list']) ? $results['list'] : array();
+        return $results['list'] ?? array();
     }
     
     /**

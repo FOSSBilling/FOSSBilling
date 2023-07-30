@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -46,7 +46,7 @@ class Service implements InjectionAwareInterface
     {
         $unique = array_unique($data);
 
-        return count($data) === count($unique);
+        return (is_countable($data) ? count($data) : 0) === count($unique);
     }
 
     public function addNewForm($data)
@@ -133,7 +133,7 @@ class Service implements InjectionAwareInterface
         $text = strtolower($text);
 
         // remove unwanted characters
-        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = preg_replace('~[^\-\w]+~', '', $text);
 
         if (is_numeric(substr($text, 0, 1))) {
             throw new \Box_Exception('Field name can not start with number.', null, 1649);
@@ -178,7 +178,7 @@ class Service implements InjectionAwareInterface
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
             if ($field['type'] == 'textarea') {
-                if (count($field['textarea_size']) != count(array_filter($field['textarea_size'], 'is_numeric'))) {
+                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count((array) array_filter($field['textarea_size'], 'is_numeric'))) {
                     throw new \Box_Exception('Textarea size options must be integer values', null, 3510);
                 }
                 $field['options'] = array_combine($field['textarea_option'], $field['textarea_size']);

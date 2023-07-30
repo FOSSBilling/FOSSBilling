@@ -349,7 +349,9 @@
         "oldconfig",
         "ordermodel",
         "TINYINT",
-        "hostings"
+        "hostings",
+        "rulesets"
+
     ],
     "ignorePaths": [
         "tests/**",
@@ -386,6 +388,7 @@
         "phpstan.neon",
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",
-        ".github/**"
+        ".github/**",
+        ".gitignore"
     ]
 }

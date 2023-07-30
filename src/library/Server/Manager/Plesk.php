@@ -12,7 +12,7 @@ use PleskX\Api\Client;
 
 class Server_Manager_Plesk extends Server_Manager
 {
-    private $_client;
+    private ?\PleskX\Api\Client $_client = null;
 
     public function init() {
         $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
@@ -73,7 +73,7 @@ class Server_Manager_Plesk extends Server_Manager
                 // throw new Server_Exception('Out of free IP adresses');
             }
             */
-            if (count($ips['exclusive']) > 0) {
+            if ((is_countable($ips['exclusive']) ? count($ips['exclusive']) : 0) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
     		    $rand = array_rand($ips['exclusive']);
     		    $a->setIp($ips['exclusive'][$rand]['ip']);
@@ -165,7 +165,8 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
-    	$id = $this->_modifyClient($a);
+    	$domainId = null;
+     $id = $this->_modifyClient($a);
         $client = $a->getClient();
     	if (!$id) {
     		throw new Server_Exception('Can\'t modify client');
@@ -372,19 +373,19 @@ class Server_Manager_Plesk extends Server_Manager
                         'limit'	=> array(
                             array(
                                 'name'	=>	'max_db',
-                                'value'	=>	$p->getMaxSql() ? $p->getMaxSql() : 0,
+                                'value'	=>	$p->getMaxSql() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_maillists',
-                                'value'	=>	$p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
+                                'value'	=>	$p->getMaxEmailLists() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_maillists',
-                                'value'	=>	$p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
+                                'value'	=>	$p->getMaxEmailLists() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_box',
-                                'value'	=>	$p->getMaxPop() ? $p->getMaxPop() : 0,
+                                'value'	=>	$p->getMaxPop() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_traffic',
@@ -396,11 +397,11 @@ class Server_Manager_Plesk extends Server_Manager
                             ),
                             array(
                                 'name'	=>	'max_subdom',
-                                'value'	=>	$p->getMaxSubdomains() ? $p->getMaxSubdomains() : 0,
+                                'value'	=>	$p->getMaxSubdomains() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_subftp_users',
-                                'value'	=>	$p->getMaxFtp() ? $p->getMaxFtp() : 0,
+                                'value'	=>	$p->getMaxFtp() ?: 0,
                             ),
                         ), 
                     ),
@@ -468,7 +469,6 @@ class Server_Manager_Plesk extends Server_Manager
 
     /**
      * Creates a new client account
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return integer client's Plesk id
      */

@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -571,7 +571,7 @@ class Service implements InjectionAwareInterface
         if (isset($data['price'])) {
             $order->price = $data['price'];
         } else {
-            $repo = $product->getTable($product->type);
+            $repo = $product->getTable();
             $rate = $currencyService->getRateByCode($currency->code);
             $order->price = $repo->getProductPrice($product, $config) * $rate;
         }

@@ -15,7 +15,7 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class Service
 {
-    protected ?Container $di;
+    protected ?Container $di = null;
 
     public function setDi(Container $di): void
     {
@@ -144,7 +144,7 @@ class Service
         if ($logoUrlDark !== null && !str_contains($logoUrlDark, 'http')) {
             $logoUrlDark = $baseUrl . $logoUrlDark;
         }
-        $logoUrlDark = ($logoUrlDark === null) ? $logoUrl : $logoUrlDark;
+        $logoUrlDark ??= $logoUrl;
 
         $faviconUrl = $results['company_favicon'] ?? null;
         if ($faviconUrl !== null && !str_contains($faviconUrl, 'http')) {
@@ -965,7 +965,7 @@ class Service
         if (isset($config['countries'])) {
             preg_match_all('#([A-Z]{2})=(.+)#', $config['countries'], $matches);
             if (isset($matches[1]) && !empty($matches[1]) && isset($matches[2]) && !empty($matches[2])) {
-                if (count($matches[1]) == count($matches[2])) {
+                if ((is_countable($matches[1]) ? count($matches[1]) : 0) == (is_countable($matches[2]) ? count($matches[2]) : 0)) {
                     $countries = array_combine($matches[1], $matches[2]);
                 }
             }

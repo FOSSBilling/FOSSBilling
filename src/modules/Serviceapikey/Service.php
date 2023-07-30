@@ -22,7 +22,7 @@ use RedBeanPHP\OODBBean;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -115,7 +115,6 @@ class Service implements InjectionAwareInterface
     /**
      * Checks if an API key is valid or not.
      *
-     * @param array $data
      *                    - 'key' What API key to check
      */
     public function isValid(array $data): bool
@@ -135,7 +134,6 @@ class Service implements InjectionAwareInterface
     /**
      * Checks if an API key is valid or not and returns that + any configured custom parameters.
      *
-     * @param array $data
      *                    - 'key' What API key to check
      */
     public function getInfo(array $data): array
@@ -329,7 +327,7 @@ class Service implements InjectionAwareInterface
                     $result = '';
 
                     foreach ($characters as $character) {
-                        if (mt_rand(0, 1) <= 0.5) {
+                        if (random_int(0, 1) <= 0.5) {
                             $character = strtoupper($character);
                         }
 

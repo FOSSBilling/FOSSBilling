@@ -12,7 +12,7 @@ namespace Box\Mod\Queue;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -124,7 +124,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $sql = 'SELECT COUNT(id) FROM queue_message WHERE queue_id = :id GROUP BY queue_id';
         $count = $this->di['db']->getCell($sql, ['id' => $row['id']]);
-        $row['messages_count'] = ($count) ? $count : 0;
+        $row['messages_count'] = $count ?: 0;
 
         return $row;
     }

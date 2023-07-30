@@ -12,7 +12,7 @@ namespace Box\Mod\Custompages;
 
 class Service
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {

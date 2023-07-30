@@ -18,9 +18,9 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Client implements InjectionAwareInterface
 {
-    private $_requests_left;
+    private int|float|null $_requests_left = null;
     private $_api_config;
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -271,7 +271,7 @@ class Client implements InjectionAwareInterface
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
         if ($e !== null) {
             error_log($e->getMessage() . ' ' . $e->getCode());
-            $code = $e->getCode() ? $e->getCode() : 9999;
+            $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
             $authFailed = [201, 202, 206, 204, 205, 203, 403, 1004, 1002];
 

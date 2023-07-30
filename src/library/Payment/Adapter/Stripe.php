@@ -10,11 +10,9 @@
 
 class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
 {
-    private $config = array();
+    protected ?\Pimple\Container $di = null;
 
-    protected ?\Pimple\Container $di;
-
-    private $stripe;
+    private \Stripe\StripeClient $stripe;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -26,10 +24,8 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct($config)
+    public function __construct(private $config)
     {
-        $this->config = $config;
-
         if (!isset($this->config['api_key'])) {
             throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'API key']);
         }
@@ -103,7 +99,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             ':title' => $invoiceItems[0]['title']
         ];
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
-        if (count($invoiceItems) > 1) {
+        if ((is_countable($invoiceItems) ? count($invoiceItems) : 0) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
         }
         return $title;
@@ -140,10 +136,6 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 []
             );
 
-            if (!isset($charge)) {
-                throw new \Exception("Failed to get the charge item from Stripe.");
-            }
-
             $tx->txn_status = $charge->status;
             $tx->txn_id = $charge->id;
             $tx->amount = $charge->amount / 100;
@@ -170,14 +162,9 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
             }
 
-        } catch (\Stripe\Exception\CardException $e) {
+        } catch (\Stripe\Exception\CardException|\Stripe\Exception\InvalidRequestException|\Stripe\Exception\AuthenticationException|\Stripe\Exception\ApiConnectionException|\Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
-        } catch (\Stripe\Exception\InvalidRequestException $e) {
-            $this->logError($e, $tx);
-        } catch (\Stripe\Exception\AuthenticationException $e) {
-            $this->logError($e, $tx);
-        } catch (\Stripe\Exception\ApiConnectionException $e) {
-            $this->logError($e, $tx);
+            throw new \Box_Exception("There was an error when processing the transaction");
         }
 
         $paymentStatus = match ($charge->status) {

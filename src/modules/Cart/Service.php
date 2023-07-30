@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -292,7 +292,7 @@ class Service implements InjectionAwareInterface
     {
         $cartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
 
-        return count($cartProducts) == 0;
+        return (is_countable($cartProducts) ? count($cartProducts) : 0) == 0;
     }
 
     public function rm(\Model_Cart $cart)
@@ -481,7 +481,7 @@ class Service implements InjectionAwareInterface
     {
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
-        if (count($ca['items']) == 0) {
+        if ((is_countable($ca['items']) ? count($ca['items']) : 0) == 0) {
             throw new \Box_Exception('Can not checkout an empty cart');
         }
 

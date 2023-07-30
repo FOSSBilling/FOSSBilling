@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -103,7 +103,7 @@ class Service implements InjectionAwareInterface
         $files = scandir($dir);
 
         foreach ($files as $file) {
-            if (substr($file, -4) == '.php') {
+            if (str_ends_with($file, '.php')) {
                 $engine = substr($file, 0, -4);
                 $class = 'Box\\Mod\\Seo\\Engines\\' . $engine;
                 $engines[$engine] = new $class();

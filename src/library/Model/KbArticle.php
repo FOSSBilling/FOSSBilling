@@ -10,6 +10,6 @@
 
 class Model_KbArticle extends \RedBeanPHP\SimpleModel
 {
-    const ACTIVE    = 'active';
-    const DRAFT     = 'draft';
+    public const ACTIVE    = 'active';
+    public const DRAFT     = 'draft';
 }
