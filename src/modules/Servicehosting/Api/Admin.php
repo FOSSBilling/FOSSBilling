@@ -227,6 +227,14 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
+        // check if server is not used by any service_hostings
+        $hostings = $this->di['db']->find('ServiceHosting', 'service_hosting_server_id = :cart_id',[':cart_id' => $data['id']]);
+        $count = count($hostings);
+        if ($count > 0)
+        {
+            throw new \Box_Exception('Hosting server is used by :count: service hostings', [':count:'=> $count], 704);
+        }
+
         return (bool) $this->getService()->deleteServer($model);
     }
 
@@ -330,6 +338,13 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
+        // check if hosting plan is not used by any service_hostings
+        $hostings = $this->di['db']->find('ServiceHosting', 'service_hosting_hp_id = :cart_id',[':cart_id' => $data['id']]);
+        $count = count($hostings);
+        if ($count > 0)
+        {
+            throw new \Box_Exception('Hosting plan is used by :count: service hostings', [':count:'=> $count], 704);
+        }
         return (bool) $this->getService()->deleteHp($model);
     }
 
