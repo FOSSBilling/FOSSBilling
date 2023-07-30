@@ -214,8 +214,8 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('TLD not found');
         }
         // check if tld is used by any domain
-        $servicedomains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
-        $count = count($servicedomains);
+        $service_domains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
+        $count = count($service_domains);
         if ($count > 0) {
             throw new \Box_Exception('TLD is used by :count: domains', ['count' => $count], 707);
         }
@@ -354,10 +354,10 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         // check if registrar is used by any domain
-        $servicedomains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = ?', ['tld_registrar_id' => $model->id]);
+        $service_domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = ?', ['tld_registrar_id' => $model->id]);
 
-        // Ensure $servicedomains is an array before counting its elements
-        $count = is_array($servicedomains) ? count($servicedomains) : 0; // Handle the case where $servicedomains might be null
+        // Ensure $service_domains is an array before counting its elements
+        $count = is_array($service_domains) ? count($service_domains) : 0; // Handle the case where $service_domains might be null
 
         if ($count > 0) {
             throw new \Box_Exception('Registrar is used by :count: domains', ['count' => $count], 707);
