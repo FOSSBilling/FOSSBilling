@@ -10,7 +10,7 @@
 
 class Server_Package
 {
-    private string $name                   = 'FOSSBilling';
+    private ?string $name           = 'FOSSBilling';
     private $quota                  = NULL;
     private $bandwidth              = NULL;
     
