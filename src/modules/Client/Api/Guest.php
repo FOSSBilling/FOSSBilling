@@ -160,7 +160,7 @@ class Guest extends \Api_Abstract
 
         $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
         if (!$c instanceof \Model_Client) {
-            throw new \Box_Exception('Email not found in our database');
+            return true;
         }
 
         $hash = hash('sha256', time() . random_bytes(13));
