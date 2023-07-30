@@ -82,25 +82,12 @@ class AdminTest extends \BBTestCase {
         $data = array(
             'id' => 1,
             'execute' => true,
-            'transactionId' => 'transaction123', // Assuming this key is required in the $data array
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsPaid')
             ->will($this->returnValue(true));
-
-        // Mock the PayGateway model or class which provides the gateway_get method
-        $payGatewayMock = $this->getMockBuilder('\Model_PayGateway')->getMock();
-        $payGatewayMock->expects($this->atLeastOnce())
-            ->method('gateway_get')
-            ->will($this->returnValue(['code' => 'Custom', 'enabled' => 1, 'title' => 'Custom Gateway']));
-
-        // Create a partial mock for the Admin class and mock the gateway_get method
-        $adminPartialMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')
-            ->setMethods(['gateway_get']) // Specify the method(s) to mock
-            ->getMock();
-        $adminPartialMock->method('gateway_get')->willReturn($payGatewayMock);
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -114,17 +101,13 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue($model));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $serviceMock;
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
-        // Set the mocked PayGateway to the container
-        $di['pay_gateway'] = $payGatewayMock;
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
-        $adminPartialMock->setDi($di);
-        $adminPartialMock->setService($serviceMock);
-
-        $result = $adminPartialMock->mark_as_paid($data);
+        $result = $this->api->mark_as_paid($data);
         $this->assertTrue($result);
     }
 
