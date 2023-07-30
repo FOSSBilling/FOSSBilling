@@ -190,7 +190,7 @@ class Admin extends \Api_Abstract
 
         return $this->getService()->tldToApiArray($model);
     }
-    
+
     /**
      * Get top level domain details by id.
      *
@@ -200,7 +200,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \Box_Exception
      */
-     
+
     public function tld_get_id($data)
     {
         $required = [
@@ -237,6 +237,13 @@ class Admin extends \Api_Abstract
         if (!$model instanceof \Model_Tld) {
             throw new \Box_Exception('TLD not found');
         }
+        // check if tld is used by any domain
+        $servicedomains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
+        $count = count($servicedomains);
+        if ($count > 0) {
+            throw new \Box_Exception('TLD is used by :count: domains', ['count' => $count], 707);
+        }
+
 
         return $this->getService()->tldRm($model);
     }
@@ -381,6 +388,13 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
+
+        // check if registrar is used by any domain
+        $servicedomains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = ?', ['tld_registrar_id' => $model->id]);
+        $count = count($servicedomains);
+        if ($servicedomains) {
+            throw new \Box_Exception('Registrar is used by :count: domains', ['count' => $count], 707);
+        }
 
         return $this->getService()->registrarRm($model);
     }
