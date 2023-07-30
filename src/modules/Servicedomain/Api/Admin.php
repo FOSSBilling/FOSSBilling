@@ -170,7 +170,6 @@ class Admin extends \Api_Abstract
         return $this->getService()->tldToApiArray($model);
     }
 
-
     /**
      * Get top level domain details by id.
      *
@@ -178,7 +177,6 @@ class Admin extends \Api_Abstract
      *
      * @throws \Box_Exception
      */
-
     public function tld_get_id($data)
     {
         $required = [
@@ -215,11 +213,10 @@ class Admin extends \Api_Abstract
         }
         // check if tld is used by any domain
         $service_domains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
-        $count = count($service_domains);
+        $count = is_countable($service_domains) ? count($service_domains) : 0;
         if ($count > 0) {
             throw new \Box_Exception('TLD is used by :count: domains', [':count:' => $count], 707);
         }
-
 
         return $this->getService()->tldRm($model);
     }
@@ -366,7 +363,6 @@ class Admin extends \Api_Abstract
         return $this->getService()->registrarRm($model);
     }
 
-
     /**
      * Copy domain registrar.
      *
@@ -453,7 +449,8 @@ class Admin extends \Api_Abstract
         return $s;
     }
 
-    public function findServiceDomain($tld) {
+    public function findServiceDomain($tld)
+    {
         return $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $tld]);
     }
 }
