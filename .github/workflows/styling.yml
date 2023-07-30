@@ -1,0 +1,26 @@
+name: Code Styling
+
+on:
+  pull_request:
+    branches: main
+
+jobs:
+  php-cs-fixer:
+    name: PHP-CS-Fixer
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.BOT_TOKEN }}
+
+    - name: Run php-cs-fixer
+      uses: docker://oskarstark/php-cs-fixer-ga
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Apply PHP-CS-Fixer changes
+        commit_user_name: fossbilling-bot
+        commit_user_email: 121974958+fossbilling-bot@users.noreply.github.com
+        commit_author: fossbilling-bot <121974958+fossbilling-bot@users.noreply.github.com>

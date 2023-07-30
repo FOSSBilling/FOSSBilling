@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -47,8 +47,6 @@ class Admin extends \Api_Abstract
     /**
      * Get sent email details.
      *
-     * @param int $id - email ID
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -69,13 +67,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Email send.
-     *
-     * @param string $to        - email to
-     * @param string $to_name   - to name
-     * @param string $from_name - from name
-     * @param string $from      - from email
-     * @param string $subject   - from email
-     * @param string $content   - from email
      *
      * @optional int $client_id - log this message to client history
      *
@@ -111,8 +102,6 @@ class Admin extends \Api_Abstract
     /**
      * Resend email.
      *
-     * @param int $id - email ID
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -136,8 +125,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete sent email from logs.
-     *
-     * @param int $id - email ID
      *
      * @return bool
      *
@@ -193,8 +180,6 @@ class Admin extends \Api_Abstract
     /**
      * Get email template full details.
      *
-     * @param int $id - template id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -214,8 +199,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete email template.
-     *
-     * @param int $id - email template ID
      *
      * @return bool
      *
@@ -247,10 +230,6 @@ class Admin extends \Api_Abstract
      * Create new email template. Creating new email template can be
      * combined with custom event hook.
      *
-     * @param string $action_code - template action code
-     * @param string $subject     - Email subject
-     * @param string $content     - Email body
-     *
      * @return int - newly created template id
      *
      * @throws \Box_Exception
@@ -274,8 +253,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update email template.
-     *
-     * @param int $id - template id
      *
      * @return bool
      *
@@ -302,8 +279,6 @@ class Admin extends \Api_Abstract
     /**
      * Reset email template to default.
      *
-     * @param string $code - template code
-     *
      * @return bool
      */
     public function template_reset($data)
@@ -318,8 +293,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Generates email template preview.
-     *
-     * @param int $id - template id
      *
      * @optional string $_tpl - string to be rendered. Default is email template.
      *
@@ -388,14 +361,13 @@ class Admin extends \Api_Abstract
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }
+
         return $this->getService()->batchSend();
     }
 
     /**
      * Send email template to email, client or staff members. If template with code does not exist,
      * it will be created. Default email template file must exist at mod_example/html_email/mod_example_code.html.twig file.
-     *
-     * @param string $code - Template code to send. Must be mod_%s_%s structure
      *
      * @optional string $to_staff - True to send to all active staff members. Default false
      * @optional string $to_client - Set client ID to send email to client. Default null
@@ -425,8 +397,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes email logs with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */

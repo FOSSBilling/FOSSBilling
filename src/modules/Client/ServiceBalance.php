@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Client;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {
@@ -83,22 +83,22 @@ class ServiceBalance implements InjectionAwareInterface
         $where = [];
         $params = [];
 
-        if (null !== $id) {
+        if ($id !== null) {
             $where[] = 'm.id = :id';
             $params[':id'] = $id;
         }
 
-        if (null !== $client_id) {
+        if ($client_id !== null) {
             $where[] = 'm.client_id = :client_id';
             $params[':client_id'] = $client_id;
         }
 
-        if (null !== $date_from) {
+        if ($date_from !== null) {
             $where[] = 'm.created_at >= :date_from';
             $params[':date_from'] = strtotime($date_from);
         }
 
-        if (null !== $date_to) {
+        if ($date_to !== null) {
             $where[] = 'm.created_at <= :date_to';
             $params[':date_to'] = strtotime($date_to);
         }
@@ -126,7 +126,7 @@ class ServiceBalance implements InjectionAwareInterface
             throw new \Box_Exception('Funds amount is invalid');
         }
 
-        if (0 == strlen(trim($description))) {
+        if (strlen(trim($description)) == 0) {
             throw new \Box_Exception('Funds description is invalid');
         }
 

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -23,9 +23,9 @@ class Admin extends \Api_Abstract
      */
     public function article_get_list($data)
     {
-        $status =  $data['status'] ?? null;
-        $search =  $data['search'] ?? null;
-        $cat =  $data['cat'] ?? null;
+        $status = $data['status'] ?? null;
+        $search = $data['search'] ?? null;
+        $cat = $data['cat'] ?? null;
 
         $pager = $this->getService()->searchArticles($status, $search, $cat);
 
@@ -39,8 +39,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get knowledge base article.
-     *
-     * @param int $id - knowledge base article ID
      *
      * @return array
      */
@@ -62,9 +60,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Create new knowledge base article.
-     *
-     * @param int    $kb_article_category_id - knowledge base category ID
-     * @param string $title                  - knowledge base article title
      *
      * @optional string $status - knowledge base article status
      * @optional string $content - knowledge base article content
@@ -89,8 +84,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update knowledge base article.
-     *
-     * @param int $id - knowledge base article ID
      *
      * @optional string $title - knowledge base article title
      * @optional int $kb_article_category_id - knowledge base category ID
@@ -120,8 +113,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete knowledge base article.
-     *
-     * @param int $id - knowledge base article ID
      *
      * @return bool
      */
@@ -165,8 +156,6 @@ class Admin extends \Api_Abstract
     /**
      * Get knowledge base category.
      *
-     * @param int $id - knowledge base category ID
-     *
      * @return array
      */
     public function category_get($data)
@@ -188,8 +177,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new knowledge base category.
      *
-     * @param string $title - knowledge base category title
-     *
      * @optional string $description - knowledge base category description
      *
      * @return array
@@ -209,8 +196,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update knowledge base category.
-     *
-     * @param int $id - knowledge base category ID
      *
      * @optional string $title - knowledge base category title
      * @optional string $slug  - knowledge base category slug
@@ -240,8 +225,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete knowledge base category.
-     *
-     * @param int $id - knowledge base category ID
      *
      * @return bool
      */

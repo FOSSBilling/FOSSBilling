@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,9 +18,9 @@ class Admin extends \Api_Abstract
 {
     /**
      * Get a list of activity messages.
-     * 
+     *
      * @param array $data Search parameters
-     * 
+     *
      * @return array An array containing the list of activity messages and the pager information
      */
     public function log_get_list($data)
@@ -48,14 +48,9 @@ class Admin extends \Api_Abstract
 
     /**
      * Add a message to the log.
-     * 
+     *
      * @param array $data Message data
-     * 
-     * @param string $data['m'] Message text
-     * @param int $data['admin_id'] [optional] Admin ID
-     * @param int $data['client_id'] [optional] Client ID
-     * @param string $data['priority'] [optional] Log priority
-     * 
+     *
      * @return bool
      */
     public function log($data)
@@ -81,16 +76,9 @@ class Admin extends \Api_Abstract
 
     /**
      * Add an email to the log.
-     * 
+     *
      * @param array $data Email data
-     * 
-     * @param string $data['subject'] Email subject
-     * @param int $data['client_id'] [optional] Client ID
-     * @param string $data['sender'] [optional] Email sender
-     * @param string $data['recipients'] [optional] Email recipients
-     * @param string $data['content_html'] [optional] Email content in HTML format
-     * @param string $data['content_text'] [optional] Email content in plain text format
-     * 
+     *
      * @return bool
      */
     public function log_email($data)
@@ -113,11 +101,9 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove an activity message from the log.
-     * 
+     *
      * @param array $data Message data
-     * 
-     * @param int $data['id'] ID of the message to delete
-     * 
+     *
      * @return bool True if the message was deleted, false otherwise
      */
     public function log_delete($data)
@@ -136,11 +122,9 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete multiple activity messages from the log.
-     * 
+     *
      * @param array $data Deletion data
-     * 
-     * @param int $data['ids'] IDs of the messages to delete
-     * 
+     *
      * @return bool True if the messages were deleted, false otherwise
      */
     public function batch_delete($data)

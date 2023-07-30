@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -16,13 +16,10 @@ namespace Box\Mod\Cart\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * 
      * @param array $data
-     * 
-     * @param int $data['per_page'] [optional]
-     * 
+     *
      * @return array
-    */
+     */
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
@@ -39,13 +36,11 @@ class Admin extends \Api_Abstract
 
     /**
      * Get the contents of a shopping cart by ID.
-     * 
+     *
      * @param array $data Data array
-     * 
-     * @param int $data['id'] ID of the shopping cart
-     * 
+     *
      * @return array Contents of the shopping cart
-    */
+     */
     public function get($data)
     {
         $required = [

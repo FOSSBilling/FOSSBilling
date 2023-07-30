@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -57,12 +57,12 @@ class Service
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
 
-        if (null !== $status) {
+        if ($status !== null) {
             $sql .= ' AND status = :status';
             $params[':status'] = $status;
         }
 
-        if (null !== $search) {
+        if ($search !== null) {
             $sql .= ' AND (title LIKE :search OR content LIKE :search)';
             $params[':search'] = '%' . $search . '%';
         }
@@ -102,7 +102,7 @@ class Service
             'excerpt' => $excerpt,
         ];
 
-        if ('admin' == $role) {
+        if ($role == 'admin') {
             $data['status'] = $row->status;
         }
 
