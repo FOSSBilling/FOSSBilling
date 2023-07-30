@@ -12,7 +12,7 @@ namespace FOSSBilling;
 
 class Tools
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -142,16 +142,16 @@ class Tools
         $passOrder = array();
 
         for ($i = 0; $i < $upper; $i++) {
-            $passOrder[] = $upper_letters[random_int(0, getrandmax()) % strlen($upper_letters)];
+            $passOrder[] = $upper_letters[random_int(0, mt_getrandmax()) % strlen($upper_letters)];
         }
         for ($i = 0; $i < $lower; $i++) {
-            $passOrder[] = $lower_letters[random_int(0, getrandmax()) % strlen($lower_letters)];
+            $passOrder[] = $lower_letters[random_int(0, mt_getrandmax()) % strlen($lower_letters)];
         }
         for ($i = 0; $i < $numeric; $i++) {
-            $passOrder[] = $numbers[random_int(0, getrandmax()) % strlen($numbers)];
+            $passOrder[] = $numbers[random_int(0, mt_getrandmax()) % strlen($numbers)];
         }
         for ($i = 0; $i < $other; $i++) {
-            $passOrder[] = $symbols[random_int(0, getrandmax()) % strlen($symbols)];
+            $passOrder[] = $symbols[random_int(0, mt_getrandmax()) % strlen($symbols)];
         }
 
         shuffle($passOrder);
@@ -198,18 +198,14 @@ class Tools
         if ($capitalize_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = function ($c) {
-            return strtoupper($c[1]);
-        };
+        $func = fn($c) => strtoupper($c[1]);
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
 
     public function from_camel_case($str)
     {
         $str[0] = strtolower($str[0]);
-        $func = function ($c) {
-            return "-" . strtolower($c[1]);
-        };
+        $func = fn($c) => "-" . strtolower($c[1]);
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
@@ -229,7 +225,7 @@ class Tools
 
         $values = array();
         foreach ($array as $id => $value) {
-            $values[$id] = isset($value[$key]) ? $value[$key] : '';
+            $values[$id] = $value[$key] ?? '';
         }
 
         if ($asc) {
@@ -262,7 +258,7 @@ class Tools
             return array();
         }
 
-        $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; //same as RedBean genSlots() method
+        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; //same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 

@@ -10,7 +10,7 @@
 
 class Box_Translate implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     protected $domain = 'messages';
 

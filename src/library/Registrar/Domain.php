@@ -8,40 +8,28 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-class Registrar_Domain
+class Registrar_Domain implements \Stringable
 {
     private $_tld = null;
     private $_sld = null;
     private $_registered_at = null;
     private $_expires_at = null;
-    private $_period = null;
+    private ?int $_period = null;
     private $_epp = null;
-    private $_privacy = null;
+    private ?bool $_privacy = null;
     private $_locked = null;
     private $_ns1 = null;
     private $_ns2 = null;
     private $_ns3 = null;
     private $_ns4 = null;
 
-    /**
-     * @var Registrar_Domain_Contact
-     */
-    private $_contact_registrar = null;
+    private ?\Registrar_Domain_Contact $_contact_registrar = null;
 
-    /**
-     * @var Registrar_Domain_Contact
-     */
-    private $_contact_admin = null;
+    private ?\Registrar_Domain_Contact $_contact_admin = null;
 
-    /**
-     * @var Registrar_Domain_Contact
-     */
-    private $_contact_tech = null;
+    private ?\Registrar_Domain_Contact $_contact_tech = null;
 
-    /**
-     * @var Registrar_Domain_Contact
-     */
-    private $_contact_billing = null;
+    private ?\Registrar_Domain_Contact $_contact_billing = null;
 
     public function setRegistrationPeriod($years)
     {
@@ -227,7 +215,7 @@ class Registrar_Domain
         return $this->_locked;
     }
 
-    public function __toString() {
+    public function __toString(): string {
         $c = '';
         $c .= sprintf("Name: %s", $this->getName()).PHP_EOL;
         $c .= sprintf("TLD: %s", $this->getTld()).PHP_EOL;

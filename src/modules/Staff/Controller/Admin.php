@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Admin implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -49,8 +49,8 @@ class Admin implements InjectionAwareInterface
         $app->get('/staff/profile', 'get_profile', [], static::class);
         $app->get('/staff/logins', 'get_history', [], static::class);
         // staff password reset
-        $app->get('/staff/passwordreset', 'get_passwordreset', [], get_class($this));
-        $app->get('/staff/email/:hash', 'get_updatepassword', ['hash' => '[a-zA-Z0-9]+'], get_class($this));
+        $app->get('/staff/passwordreset', 'get_passwordreset', [], static::class);
+        $app->get('/staff/email/:hash', 'get_updatepassword', ['hash' => '[a-zA-Z0-9]+'], static::class);
     }
 
     public function get_login(\Box_App $app)
@@ -110,6 +110,7 @@ class Admin implements InjectionAwareInterface
 
     public function get_updatepassword(\Box_App $app, $hash)
     {
+        $data = [];
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();

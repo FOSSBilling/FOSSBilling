@@ -10,7 +10,7 @@
 
 class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -87,12 +87,11 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \FOS
     }
 
 	/**
-	 * Init single payment call to webservice
-	 * Invoice id is passed via notify_url
+     * Init single payment call to webservice
+     * Invoice id is passed via notify_url
      *
-     * @param Payment_Invoice $invoice
-	 * @return array
-	*/
+     * @return array
+     */
     public function singlePayment(Payment_Invoice $invoice)
     {
         return array(
@@ -251,7 +250,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \FOS
         );
 
         $rows = $this->di['db']->getAll($sql, $bindings);
-        if (count($rows) > 1){
+        if ((is_countable($rows) ? count($rows) : 0) > 1){
             return true;
         }
 

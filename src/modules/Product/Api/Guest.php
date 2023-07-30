@@ -129,7 +129,7 @@ class Guest extends \Api_Abstract
         $type = $data['type'] ?? 'hosting';
 
         $products = $this->di['db']->find('Product', 'type = :type', [':type' => $type]);
-        if (count($products) <= 0) {
+        if ((is_countable($products) ? count($products) : 0) <= 0) {
             return [];
         }
 
