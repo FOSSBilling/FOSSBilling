@@ -21,7 +21,6 @@ class Box_App
     protected $ext = 'html.twig';
     protected $mod = 'index';
     protected $url = '/';
-    private $_api_config = null;
 
     public $uri = null;
 
