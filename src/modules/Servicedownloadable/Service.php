@@ -187,9 +187,12 @@ class Service implements InjectionAwareInterface
                 $ordermodel = $this->di['db']->getExistingModelById('ClientOrder', $order['id']);
                 $serviceDownloadable = $orderService->getOrderService($ordermodel);
                 $this->updateProductFile($serviceDownloadable, $ordermodel);
-                // Save new filename to Order configuration
+
+                // Update the filename
                 $oldconfig = json_decode($order['config'], 1);
                 $oldconfig['filename'] = $file->getName();
+
+                // Save the change to the DB
                 $ordermodel->config = json_encode($oldconfig);
                 $ordermodel->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($ordermodel);
