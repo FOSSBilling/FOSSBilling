@@ -88,10 +88,14 @@ class AdminTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsPaid')
             ->will($this->returnValue(true));
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('gateway_get')
+            ->will($this->returnValue(new \Model_PayGateway()));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
+
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
@@ -107,7 +111,6 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
-
         $result = $this->api->mark_as_paid($data);
         $this->assertTrue($result);
     }
