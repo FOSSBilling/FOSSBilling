@@ -37,6 +37,8 @@ class Service implements InjectionAwareInterface
 
         $model = $this->authorizeAdmin($email, $password);
         if (!$model instanceof \Model_Admin) {
+            $password = '****************';
+            $event_params['password'] = '****************';
             $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
             throw new \Box_Exception('Check your login details', null, 403);
         }
