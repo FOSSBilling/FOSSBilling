@@ -345,7 +345,10 @@
         "samesite",
         "IPCOUNTRY",
         "Serviceapikey",
-        "homoglyph"
+        "homoglyph",
+        "oldconfig",
+        "ordermodel",
+        "TINYINT"
     ],
     "ignorePaths": [
         "tests/**",
