@@ -388,17 +388,14 @@ class Box_App
         if (headers_sent()) {
             return;
         }
-        $this->_api_config = null;
-        if (is_null($this->_api_config)) {
-            $this->_api_config = $this->di['config']['api'];
-        }
+        $this->_api_config = $this->di['config']['api'];
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
         header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
         header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
-        header('X-RateLimit-Remaining: ' . '9999');
+        header('X-RateLimit-Remaining: 9999');
         if (null !== $e) {
             error_log($e->getMessage() . ' ' . $e->getCode());
             $code = $e->getCode() ? $e->getCode() : 9999;
