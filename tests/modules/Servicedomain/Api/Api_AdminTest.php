@@ -290,8 +290,13 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
+        $dbMock = $this->getMockBuilder('\Pimple\Container')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())->method('find')
+            ->will($this->returnValue(array())); // return empty array to simulate no domains using the TLD
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock; // add db mock to DI container
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);

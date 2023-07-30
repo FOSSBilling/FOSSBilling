@@ -19,11 +19,15 @@ class Admin extends \Api_Abstract
     /**
      * Get a list of clients.
      *
+     *
      * @param array $data Filtering options.
+     *
      *
      * @param string $data['status'] [optional] Filter clients by status. Available options: 'active', 'suspended', 'canceled'.
      *
+     *
      * @param int $data['per_page'] [optional] Number of clients to display per page.
+     *
      *
      * @return array List of clients in a paginated manner.
      */
