@@ -10,7 +10,7 @@
 
 abstract class Server_Manager
 {
-    private $_log = null;
+    private ?\Box_Log $_log = null;
 
     protected $_config = array(
         'ip'         =>  NULL,
@@ -92,7 +92,7 @@ abstract class Server_Manager
      * @param mixed $domain_name The domain name used to generate the username.
      * @return string The generated username.
      */
-    public function generateUsername($domain_name)
+    public function generateUsername(mixed $domain_name)
     {
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
         $username = substr($username, 0, 7);

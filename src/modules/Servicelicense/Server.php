@@ -12,14 +12,14 @@ namespace Box\Mod\Servicelicense;
 
 class Server implements \FOSSBilling\InjectionAwareInterface
 {
-    private $_result = [
+    private array $_result = [
         'licensed_to' => null,
         'created_at' => null,
         'expires_at' => null,
         'valid' => false,
     ];
 
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -69,7 +69,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
     public function process($data)
     {
         if (!is_array($data)) {
-            $data = (json_decode($data, true)) ? json_decode($data, true) : [];
+            $data = json_decode($data, true) ?: [];
         }
 
         if (empty($data)) {

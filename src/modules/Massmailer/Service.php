@@ -12,7 +12,7 @@ namespace Box\Mod\Massmailer;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {

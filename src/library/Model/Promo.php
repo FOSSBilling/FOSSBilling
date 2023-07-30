@@ -10,6 +10,6 @@
 
 class Model_Promo extends \RedBeanPHP\SimpleModel
 {
-	const PERCENTAGE    = 'percentage';
-	const ABSOLUTE      = 'absolute';
+	public const PERCENTAGE    = 'percentage';
+	public const ABSOLUTE      = 'absolute';
 }

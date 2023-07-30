@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -389,6 +389,7 @@ class Service implements InjectionAwareInterface
 
     public function getEncoreInfo(): array
     {
+        $encoreInfo = [];
         $entrypoint = 'entrypoints';
         $manifest = 'manifest';
         $encoreInfo['is_encore_theme'] = true;

@@ -10,9 +10,9 @@
 
 class Model_Client extends \RedBeanPHP\SimpleModel
 {
-    const ACTIVE                    = 'active';
-    const SUSPENDED                 = 'suspended';
-    const CANCELED                  = 'canceled';
+    public const ACTIVE                    = 'active';
+    public const SUSPENDED                 = 'suspended';
+    public const CANCELED                  = 'canceled';
 
     public function getFullName()
     {

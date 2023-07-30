@@ -295,9 +295,9 @@ class GuestTest extends \BBTestCase {
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Email not found in our database');
-        $client->reset_password($data);
+        // expects true because we don't want to give away if the email exists or not
+        $result = $client->reset_password($data);
+        $this->assertTrue($result);
     }
 
     public function testconfirm_reset()

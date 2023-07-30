@@ -18,7 +18,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class CentralAlerts implements InjectionAwareInterface
 {
-    protected ?Container $di;
+    protected ?Container $di = null;
 
     private string $_url = 'https://fossbilling.org/api/central-alerts/';
 
@@ -69,16 +69,12 @@ class CentralAlerts implements InjectionAwareInterface
         $alerts = $this->getAlerts();
 
         if (is_array($type) && !empty($type)) {
-            $alerts = array_filter($alerts, function($alert) use ($type) {
-                return in_array($alert['type'], $type);
-            });
+            $alerts = array_filter($alerts, fn($alert) => in_array($alert['type'], $type));
         }
 
         if ($version) {
             if ($this->di['config']['update_branch'] === 'preview') {
-                $alerts = array_filter($alerts, function($alert) {
-                    return $alert['include_preview_branch'];
-                });
+                $alerts = array_filter($alerts, fn($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function($alert) use ($version) {
                     $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');

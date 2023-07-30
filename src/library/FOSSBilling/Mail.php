@@ -18,11 +18,11 @@ use Symfony\Component\Mime\Address;
 
 class Mail implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     private Email $email;
-    private $transport = null;
-    private $dsn = null;
+    private ?string $transport = null;
+    private ?string $dsn = null;
 
     public function setDi(\Pimple\Container $di): void
     {

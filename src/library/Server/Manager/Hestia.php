@@ -100,7 +100,7 @@ class Server_Manager_Hestia extends Server_Manager
         ]);
         $result = $response->getContent();
 
-        if (false !== strpos($result, 'Error')) {
+        if (str_contains($result, 'Error')) {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'HestiaCP']);
         } elseif (0 !== intval($result)) {
             error_log("HestiaCP returned error code $result for the " . $params['cmd'] . "command");

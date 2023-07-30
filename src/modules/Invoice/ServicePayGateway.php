@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class ServicePayGateway implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -332,7 +332,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $config = $this->getAdapterConfig($model);
 
-        return (isset($config['description'])) ? $config['description'] : null;
+        return $config['description'] ?? null;
     }
 
     /**
