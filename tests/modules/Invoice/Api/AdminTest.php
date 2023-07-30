@@ -90,8 +90,9 @@ class AdminTest extends \BBTestCase {
             ->method('markAsPaid')
             ->will($this->returnValue(true));
 
-        // Mocking the gateway_get method
-        $serviceMock->expects($this->atLeastOnce())
+        // Mock the PayGateway model or class which provides the gateway_get method
+        $payGatewayMock = $this->getMockBuilder('\Model_PayGateway')->getMock();
+        $payGatewayMock->expects($this->atLeastOnce())
             ->method('gateway_get')
             ->will($this->returnValue(['code' => 'Custom', 'enabled' => 1, 'title' => 'Custom Gateway']));
 
@@ -111,11 +112,15 @@ class AdminTest extends \BBTestCase {
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
+        // Set the mocked PayGateway to the container
+        $di['pay_gateway'] = $payGatewayMock;
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->mark_as_paid($data);
         $this->assertTrue($result);
     }
+
 
 
     public function testprepare()
