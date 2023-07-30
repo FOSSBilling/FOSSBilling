@@ -217,7 +217,7 @@ class Admin extends \Api_Abstract
         $service_domains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
         $count = count($service_domains);
         if ($count > 0) {
-            throw new \Box_Exception('TLD is used by :count: domains', ['count' => $count], 707);
+            throw new \Box_Exception('TLD is used by :count: domains', [':count:' => $count], 707);
         }
 
 
@@ -360,7 +360,7 @@ class Admin extends \Api_Abstract
         $count = is_array($service_domains) ? count($service_domains) : 0; // Handle the case where $service_domains might be null
 
         if ($count > 0) {
-            throw new \Box_Exception('Registrar is used by :count: domains', ['count' => $count], 707);
+            throw new \Box_Exception('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
         return $this->getService()->registrarRm($model);
