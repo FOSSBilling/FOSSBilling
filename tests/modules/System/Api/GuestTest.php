@@ -22,35 +22,100 @@ class GuestTest extends \BBTestCase {
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
     }
-
-    public function testversion()
+    public function testVersionAdmin()
     {
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
-            ->method('getVersion')
-            ->will($this->returnValue(\FOSSBilling\Version::VERSION));
+        $authMock = $this->getMockBuilder('\Box\Auth')->getMock();
+        $authMock->method('isAdminLoggedIn')->willReturn(true);
 
-        $this->api->setService($servuceMock);
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getVersion')
+            ->willReturn(\FOSSBilling\Version::VERSION);
+
+        $this->api->setDi(['auth' => $authMock]);
+        $this->api->setService($serviceMock);
         $result = $this->api->version();
+
         $this->assertIsString($result);
         $this->assertNotEmpty($result);
     }
 
-    public function testcompany()
+    public function testVersionShowPublicOn()
     {
-        $data = array(
+        $authMock = $this->getMockBuilder('\Box\Auth')->getMock();
+        $authMock->method('isAdminLoggedIn')->willReturn(false);
 
-        );
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
-            ->method('getCompany')
-            ->will($this->returnValue(array()));
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getVersion')
+            ->willReturn(\FOSSBilling\Version::VERSION);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('show_version_public')
+            ->willReturn(1);
 
-        $this->api->setService($servuceMock);
+        $this->api->setDi(['auth' => $authMock]);
+        $this->api->setService($serviceMock);
+        $result = $this->api->version();
 
-        $result = $this->api->company($data);
-        $this->assertIsArray($result);
+        $this->assertIsString($result);
+        $this->assertNotEmpty($result);
     }
+
+    public function testVersionShowPublicOff()
+    {
+        $authMock = $this->getMockBuilder('\Box\Auth')->getMock();
+        $authMock->method('isAdminLoggedIn')->willReturn(false);
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('show_version_public')
+            ->willReturn(0);
+
+        $this->api->setDi(['auth' => $authMock]);
+        $this->api->setService($serviceMock);
+        $result = $this->api->version();
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    public function testCompanyShowPublicOn()
+    {
+        $companyData = array('companyName' => 'TestCo');
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getCompany')
+            ->willReturn($companyData);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('show_company_public')
+            ->willReturn(1);
+
+        $this->api->setService($serviceMock);
+        $result = $this->api->company();
+
+        $this->assertIsArray($result);
+        $this->assertNotEmpty($result);
+    }
+
+    public function testCompanyShowPublicOff()
+    {
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('show_company_public')
+            ->willReturn(0);
+
+        $this->api->setService($serviceMock);
+        $result = $this->api->company();
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
 
     public function testphone_codes()
     {
