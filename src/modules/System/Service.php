@@ -50,7 +50,8 @@ class Service
     public function setParamValue($param, $value, $createIfNotExists = true)
     {
         $pdo = $this->di['pdo'];
-
+        // log param and value to the logfile
+        $this->di['logger']->info('Setting parameter value', ['param' => $param, 'value' => $value]);
         if ($this->paramExists($param)) {
             $query = 'UPDATE setting SET value = :value WHERE param = :param';
             $stmt = $pdo->prepare($query);

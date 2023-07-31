@@ -23,6 +23,19 @@ class Guest extends \Api_Abstract
      */
     public function version()
     {
+        // check if the user is logged in as admin and if so, return the version
+        if ($this->di['auth']->isAdminLoggedIn()) {
+            return $this->getService()->getVersion();
+        }
+
+        // check if the "show_version_public" parameter is set to true
+        $showVersionPublic = $this->getService()->getParamValue('show_version_public');
+        if ($showVersionPublic == 1) {
+            return $this->getService()->getVersion();
+        } else {
+            // return 0.0.0
+            return '0.0.0';
+        }
         return $this->getService()->getVersion();
     }
 
@@ -33,7 +46,14 @@ class Guest extends \Api_Abstract
      */
     public function company()
     {
-        return $this->getService()->getCompany();
+        // check if the "show_company_public" parameter is set to true
+        $showCompanyPublic = $this->getService()->getParamValue('show_company_public');
+        if ($showCompanyPublic == 1) {
+            return $this->getService()->getCompany();
+        } else {
+            // return empty array
+            return [];
+        }
     }
 
     /**

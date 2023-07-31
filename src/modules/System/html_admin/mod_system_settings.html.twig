@@ -113,6 +113,44 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
+                                <label class="form-label col-3 col-form-label">
+                                    {{ 'Show Version information Publicly' | trans }}:
+                                </label>
+                                <div class="col">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" id="radio_showPublicYes" type="radio" name="show_version_public" value="1" {% if params.show_version_public == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="radio_showPublicYes">
+                                            {{ 'Yes' | trans }}
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" id="radio_showPublicNo" type="radio" name="show_version_public" value="0" {% if params.show_version_public == "0" %}checked{% endif %}>
+                                        <label class="form-check-label" for="radio_showPublicNo">
+                                            {{ 'No' | trans }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="form-label col-3 col-form-label">
+                                    {{ 'Show Company Information Publicly' | trans }}:
+                                </label>
+                                <div class="col">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" id="radio_showCompanyPublicYes" type="radio" name="show_company_public" value="1" {% if params.show_company_public == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="radio_showCompanyublicYes">
+                                            {{ 'Yes' | trans }}
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" id="radio_showCompanyPublicNo" type="radio" name="show_company_public" value="0" {% if params.show_company_public == "0" %}checked{% endif %}>
+                                        <label class="form-check-label" for="radio_showCompanyPublicNo">
+                                            {{ 'No' | trans }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Signature'|trans }}</label>
                                 <div class="col-md-6">
                                     <textarea class="form-control" name="company_signature" rows="2">{{ params.company_signature }}</textarea>
