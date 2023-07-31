@@ -105,23 +105,7 @@ class Admin extends \Api_Abstract
 
         $categoryId = $data['product_category_id'] ?? null;
 
-        $productID = $service->createProduct($data['title'], $data['type'], $categoryId);
-
-        // check if product type is downloadable
-        if ($data['type'] == 'downloadable') {
-            // get downloadable service
-            $downloadableService = $this->di['mod_service']('Servicedownloadable');
-            // Create config array
-            $config = [
-                'product_id' => $productID,
-                'update_orders' => 1,
-            ];
-            // Get Product model
-            $product = $this->di['db']->getExistingModelById('Product', $productID, 'Product not found');
-
-            $downloadableService->saveProductConfig($product, $config);
-            }
-            return (int) $productID;
+        return (int) $service->createProduct($data['title'], $data['type'], $categoryId);
     }
 
     /**
