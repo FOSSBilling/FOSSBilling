@@ -33,8 +33,8 @@ class Guest extends \Api_Abstract
         if ($showVersionPublic == 1) {
             return $this->getService()->getVersion();
         } else {
-            // return 0.0.0
-            return '0.0.0';
+            // return empty array
+            return [];
         }
         return $this->getService()->getVersion();
     }
