@@ -18,7 +18,7 @@
     {% include 'partial_bb_meta.html.twig' %}
 
     {{ encore_entry_link_tags('fossbilling') }}
-    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
+    {{ "Api/API.js" | library_url | script_tag }}
     {{ encore_entry_script_tags('fossbilling') }}
 
     {% block head %}{% endblock %}
