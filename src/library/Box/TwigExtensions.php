@@ -69,7 +69,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'money_without_currency' => new TwigFilter('money_without_currency', [$this, 'twig_money_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_convert' => new TwigFilter('money_convert', [$this, 'twig_money_convert'], ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', [$this, 'money_convert_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
-
+            // Twig filter to provide FOSSBilling Version
+            'fb_version' => new TwigFilter('fb_version', [$this, 'twig_fb_version'], ['needs_environment' => true, 'is_safe' => ['html']]),
             // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
             'filter' => new TwigFilter('filter', [$this, 'filteredFilter']),
             'map' => new TwigFilter('map', [$this, 'filteredMap']),
@@ -204,7 +205,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         if(empty($email)){
             return '';
         }
-    
+
         $url = 'https://www.gravatar.com/avatar/';
         $url .= md5(strtolower(trim($email)));
         $url .= "?s=$size&d=mp&r=g";
@@ -310,6 +311,12 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $value;
+    }
+
+    // Function to provide Version
+    public function twig_fb_version(Twig\Environment $env, $data)
+    {
+        return $data . \FOSSBilling\Version::VERSION;
     }
 
     public function filteredFilter($array, $arrow)
