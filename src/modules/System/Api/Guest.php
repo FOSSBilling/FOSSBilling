@@ -30,7 +30,7 @@ class Guest extends \Api_Abstract
 
         // check if the "show_version_public" parameter is set to true
         $showVersionPublic = $this->getService()->getParamValue('show_version_public');
-        if ($showVersionPublic == 1) {
+        if ($showVersionPublic) {
             return $this->getService()->getVersion();
         } else {
             // return empty array
@@ -48,7 +48,7 @@ class Guest extends \Api_Abstract
     {
         // check if the "show_company_public" parameter is set to true
         $showCompanyPublic = $this->getService()->getParamValue('show_company_public');
-        if ($showCompanyPublic == 1) {
+        if ($showCompanyPublic) {
             return $this->getService()->getCompany();
         } else {
             // return empty array
