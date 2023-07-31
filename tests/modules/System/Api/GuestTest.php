@@ -24,15 +24,20 @@ class GuestTest extends \BBTestCase {
     }
     public function testVersionAdmin()
     {
-        $authMock = $this->getMockBuilder('\Box\Authorization')->getMock();
-        $authMock->method('isAdminLoggedIn')->willReturn(true);
+        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authorizationMock->expects($this->atLeastOnce())
+            ->method("isAdminLoggedIn")
+            ->willReturn(true);
+
+        $di = new \Pimple\Container();
+        $di['auth'] = $authorizationMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
 
-        $this->api->setDi(['auth' => $authMock]);
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->version();
 
@@ -42,19 +47,24 @@ class GuestTest extends \BBTestCase {
 
     public function testVersionShowPublicOn()
     {
-        $authMock = $this->getMockBuilder('\Box\Authorization')->getMock();
-        $authMock->method('isAdminLoggedIn')->willReturn(false);
+        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authorizationMock->expects($this->atLeastOnce())
+            ->method("isAdminLoggedIn")
+            ->willReturn(false);
 
+        $di = new \Pimple\Container();
+        $di['auth'] = $authorizationMock;
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
+
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->with('show_version_public')
             ->willReturn(1);
 
-        $this->api->setDi(['auth' => $authMock]);
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->version();
 
@@ -64,8 +74,13 @@ class GuestTest extends \BBTestCase {
 
     public function testVersionShowPublicOff()
     {
-        $authMock = $this->getMockBuilder('\Box\Authorization')->getMock();
-        $authMock->method('isAdminLoggedIn')->willReturn(false);
+        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authorizationMock->expects($this->atLeastOnce())
+            ->method("isAdminLoggedIn")
+            ->willReturn(false);
+
+        $di = new \Pimple\Container();
+        $di['auth'] = $authorizationMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -73,7 +88,7 @@ class GuestTest extends \BBTestCase {
             ->with('show_version_public')
             ->willReturn(0);
 
-        $this->api->setDi(['auth' => $authMock]);
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->version();
 
