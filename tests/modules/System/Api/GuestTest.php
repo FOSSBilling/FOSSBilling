@@ -24,7 +24,7 @@ class GuestTest extends \BBTestCase {
     }
     public function testVersionAdmin()
     {
-        $authMock = $this->getMockBuilder('\Box\Auth')->getMock();
+        $authMock = $this->getMockBuilder('\Box\Authorization')->getMock();
         $authMock->method('isAdminLoggedIn')->willReturn(true);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
@@ -42,7 +42,7 @@ class GuestTest extends \BBTestCase {
 
     public function testVersionShowPublicOn()
     {
-        $authMock = $this->getMockBuilder('\Box\Auth')->getMock();
+        $authMock = $this->getMockBuilder('\Box\Authorization')->getMock();
         $authMock->method('isAdminLoggedIn')->willReturn(false);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
@@ -64,7 +64,7 @@ class GuestTest extends \BBTestCase {
 
     public function testVersionShowPublicOff()
     {
-        $authMock = $this->getMockBuilder('\Box\Auth')->getMock();
+        $authMock = $this->getMockBuilder('\Box\Authorization')->getMock();
         $authMock->method('isAdminLoggedIn')->willReturn(false);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
