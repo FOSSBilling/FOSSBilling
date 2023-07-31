@@ -999,7 +999,6 @@ CREATE TABLE `service_downloadable` (
   `client_id` bigint(20) DEFAULT NULL,
   `filename` varchar(100) DEFAULT NULL,
   `downloads` int(11) DEFAULT NULL,
-  `update_orders` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
