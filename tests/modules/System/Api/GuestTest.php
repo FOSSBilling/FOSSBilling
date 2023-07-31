@@ -100,6 +100,10 @@ class GuestTest extends \BBTestCase {
     {
         $companyData = array('companyName' => 'TestCo');
 
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->method('isAdminLoggedIn')->willReturn(false);
+        $authMock->method('isClientLoggedIn')->willReturn(false);
+
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCompany')
@@ -108,28 +112,60 @@ class GuestTest extends \BBTestCase {
             ->method('getParamValue')
             ->with('show_company_public')
             ->willReturn(1);
-
+        $di = new \Pimple\Container();
+        $di['auth'] = $authMock;
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->company();
 
         $this->assertIsArray($result);
         $this->assertNotEmpty($result);
     }
-
     public function testCompanyShowPublicOff()
     {
+        $companyData = array(
+            'companyName' => 'TestCo',
+            'vat_number' => 'Test VAT',
+            'email' => 'test@email.com',
+            'tel' => '123456789',
+            'account_number' => '987654321',
+            'number' => '123456',
+            'address_1' => 'Test Address 1',
+            'address_2' => 'Test Address 2',
+            'address_3' => 'Test Address 3',
+        );
+
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->method('isAdminLoggedIn')->willReturn(false);
+        $authMock->method('isClientLoggedIn')->willReturn(false);
+
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getCompany')
+            ->willReturn($companyData);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->with('show_company_public')
             ->willReturn(0);
 
+        $di = new \Pimple\Container();
+        $di['auth'] = $authMock;
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->company();
 
         $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->assertArrayNotHasKey('vat_number', $result);
+        $this->assertArrayNotHasKey('email', $result);
+        $this->assertArrayNotHasKey('tel', $result);
+        $this->assertArrayNotHasKey('account_number', $result);
+        $this->assertArrayNotHasKey('number', $result);
+        $this->assertArrayNotHasKey('address_1', $result);
+        $this->assertArrayNotHasKey('address_2', $result);
+        $this->assertArrayNotHasKey('address_3', $result);
     }
+
+
 
 
     public function testphone_codes()

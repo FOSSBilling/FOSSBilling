@@ -46,14 +46,23 @@ class Guest extends \Api_Abstract
      */
     public function company()
     {
-        // check if the "show_company_public" parameter is set to true
+        $companyInfo = $this->getService()->getCompany();
+        $auth = $this->di['auth'];
         $showCompanyPublic = $this->getService()->getParamValue('show_company_public');
-        if ($showCompanyPublic) {
-            return $this->getService()->getCompany();
-        } else {
-            // return empty array
-            return [];
+
+        if(!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && !$showCompanyPublic){
+            unset($companyInfo['vat_number']);
+            unset($companyInfo['email']);
+            unset($companyInfo['tel']);
+            unset($companyInfo['account_number']);
+            unset($companyInfo['number']);
+
+            unset($companyInfo['address_1']);
+            unset($companyInfo['address_2']);
+            unset($companyInfo['address_3']);
         }
+
+        return $companyInfo;
     }
 
     /**
