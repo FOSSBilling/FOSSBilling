@@ -59,13 +59,13 @@
         <header>
             <nav class="navbar navbar-expand-md navbar-light bg-light">
                 {% if settings.show_company_logo and company.logo_url %}
-                    <a class="navbar-brand d-none d-md-block" href="{{'/'|link }}">
+                    <a class="navbar-brand" href="{{'/'|link }}">
                         <img src="{{company.logo_url}}" alt="{{company.name}}" height="55" title="{{company.name}}">
                     </a>
                 {% endif %}
                 
                 <button
-                    class="mt-2 navbar-toggler"
+                    class="mt-2 navbar-toggler ml-auto"
                     type="button"
                     data-toggle="collapse"
                     data-target="#navbar"
@@ -74,8 +74,8 @@
                     aria-label="Toggle navigation">
                     <span class="awe-reorder"></span>
                   </button>
-                  <div class="collapse navbar-collapse" id="navbar">
-                    <ul class="navbar-nav ml-auto pr-5 mb-2 mb-lg-0">  
+                  <div class="collapse navbar-collapse ml-auto" id="navbar">
+                    <ul class="navbar-nav ml-auto mb-2 mb-lg-0">  
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
                             {# Necessary variable setup #}
@@ -87,7 +87,8 @@
         
                             <li class="nav-item f16 mr-1">
                                 <div class="dropdown">
-                                    <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="langDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="flag {{ currentCountryCode | lower }}"></span> {{ currentLocaleName }}</button>
+                                    <button class="btn btn-info dropdown-toggle d-none d-md-block" type="button" id="langDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="flag {{ currentCountryCode | lower }} mt-1"></span><span class="d-none d-lg-inline-flex">{{ currentLocaleName }}</span></button>
+                                    <button class="btn btn-info dropdown-toggle d-md-none w-100 mt-1" type="button" id="langDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="flag {{ currentCountryCode | lower }} mt-1"></span> {{ currentLocaleName }}</button>
                                     <div class="dropdown-menu" aria-labelledby="langDropdown">
                                         {% for lang in languages %}
                                             {% set countryCode = lang.locale | slice(3, 2) %}
@@ -100,22 +101,26 @@
 
                         {% if settings.top_menu_dashboard %}
                             <li class="nav-item mr-1">
-                                <a href="{{ ''|link }}" class="btn btn-secondary btn-sm" title="{{ 'Dashboard'|trans }}">{{ 'Dashboard'|trans }}</a>
+                                <a href="{{ ''|link }}" role="button" class="btn btn-info d-none d-md-block" title="{{ 'Dashboard'|trans }}">{{ 'Dashboard'|trans }}</a>
+                                <a href="{{ ''|link }}" role="button" class="btn btn-info d-md-none w-100 mt-1" title="{{ 'Dashboard'|trans }}">{{ 'Dashboard'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_order %}
                             <li class="nav-item mr-1">
-                                <a href="{{ '/order'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Order'|trans }}">{{ 'Order'|trans }}</a>
+                                <a href="{{ '/order'|link }}" class="btn btn-info d-none d-md-block" title="{{ 'Order'|trans }}">{{ 'Order'|trans }}</a>
+                                <a href="{{ '/order'|link }}" class="btn btn-info d-md-none w-100 mt-1" title="{{ 'Order'|trans }}">{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_profile %}
                             <li class="nav-item mr-1">
                                 {% if client %}
-                                    <a href="{{ 'client/profile'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Profile'|trans }}">{{ 'Profile'|trans }}</a>
+                                    <a href="{{ 'client/profile'|link }}" class="btn btn-info d-none d-md-block" title="{{ 'Profile'|trans }}">{{ 'Profile'|trans }}</a>
+                                    <a href="{{ 'client/profile'|link }}" class="btn btn-info d-md-none w-100 mt-1" title="{{ 'Profile'|trans }}">{{ 'Profile'|trans }}</a>
                                 {% else %}
-                                    <a href="{{ 'login'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Login'|trans }}">{{ 'Login'|trans }}</a>
+                                    <a href="{{ 'login'|link }}" class="btn btn-info d-none d-md-block" title="{{ 'Login'|trans }}">{{ 'Login'|trans }}</a>
+                                    <a href="{{ 'login'|link }}" class="btn btn-info d-md-none w-100 mt-1" title="{{ 'Login'|trans }}">{{ 'Login'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
@@ -123,9 +128,11 @@
                         {% if settings.top_menu_signout %}
                             <li class="nav-item mr-1">
                                 {% if client %}
-                                    <a href="{{ 'client/logout'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Sign out'|trans }}">{{ 'Sign out'|trans }}</a>
+                                    <a href="{{ 'client/logout'|link }}" class="btn btn-info d-none d-md-block" title="{{ 'Sign out'|trans }}">{{ 'Sign out'|trans }}</a>
+                                    <a href="{{ 'client/logout'|link }}" class="btn btn-info d-md-none w-100 mt-1" title="{{ 'Sign out'|trans }}">{{ 'Sign out'|trans }}</a>
                                 {% else %}
-                                    <a href="{{ 'signup'|link }}" class="btn btn-secondary btn-sm" title="{{ 'Register'|trans }}">{{ 'Register'|trans }}</a>
+                                    <a href="{{ 'signup'|link }}" class="btn btn-info d-none d-md-block" title="{{ 'Register'|trans }}">{{ 'Register'|trans }}</a>
+                                    <a href="{{ 'client/logout'|link }}" class="btn btn-info d-md-none w-100 mt-1" title="{{ 'Sign out'|trans }}">{{ 'Sign out'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
@@ -138,10 +145,10 @@
 
         <div class="container">
             <div class="row">
-            <div class="col-3 d-none d-lg-block">
+            <div class="col-3 d-none d-md-block">
                 {% include 'partial_menu.html.twig' %}
             </div>
-            <div class="col-12 col-lg-9">
+            <div class="col-12 col-md-9">
                 <div id="wrapper">
                     <section class="container" role="main">
                         <div class="navigation-block">
@@ -184,7 +191,7 @@
                             {% if settings.show_breadcrumb %}
                                 {% block breadcrumbs %}
                                 <nav aria-label="breadcrumb">
-                                    <ol class="breadcrumb">
+                                    <ol class="breadcrumb d-none d-md-flex">
                                         <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a></li>
                                         {% block breadcrumb %}
                                             <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
@@ -279,9 +286,7 @@
         {% endif %}
 
         <div class="wait" style="display:none" onclick="$(this).hide();">
-            <div class="popup_block" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; opacity: 0.5; -webkit-opacity: 0.5; -moz-opacity: 0.5; filter :  alpha(opacity=50); z-index: 2000">
-                <img alt="loading gif" src="{{ 'img/loader.gif'|asset_url}}" style="position: absolute; display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%; opacity: 1; filter: alpha(opacity=100); z-index: 1003">
-            </div>
+            <div class="spinner-border" style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
         </div>
         <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 

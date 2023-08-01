@@ -3,41 +3,27 @@
 {% block meta_title %}{{ 'Email'|trans }}{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item active" aria-current="page">{{ 'Emails'|trans }}</li>
-{{ email.subject }}
+<li class="breadcrumb-item" aria-current="page"><a href="{{ 'email'|link }}">{{ 'Emails'|trans }}</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ email.subject }}</li>
 {% endblock %}
 {% block body_class %}email-email{% endblock %}
 {% block content %}
 <div class="row">
-    <article class="span12 data-block">
-        <div class="data-container">
-            <header>
-                <h1>{{ email.subject }}</h1>
-                <div class="data-header-actions">
-                    <ul>
-                        <li>
-                            <a class="btn btn-small" href="{{ '/email'|link }}">{{ 'Back to emails list'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
-            </header>
-            <section>
-                <div class="tab-pane {% if loop.first%}active{% endif %}" id="tab{{email.id}}">
-                    <div class="well well-small">
-                        <p><strong>{{ 'From:'|trans }}</strong> {{email.sender}}</p>
-                        <p><strong>{{ 'To:'|trans }}</strong> {{email.recipients}}</p>
-                        <p><strong>{{ 'Created at:'|trans }}</strong> {{ email.created_at|format_datetime }}</p>
-                    </div>
-                    <div class="well">
-                        <h3>{{ email.subject }}</h3>
-                        <p> {{email.content_html | raw}}</p>
-                    </div>
-                    <a class="btn btn-dark email-resend" href="#" mail-id="{{email.id}}">{{ 'Resend'|trans }}</a>
-                    <a class="btn btn-danger email-delete" href="#"  mail-id="{{email.id}}">{{ 'Delete'|trans }}</a>
-                </div>
-            </section>
+    <div class="card ml-0 ml-md-3 w-100">
+        <div class="card-header">
+            <p><strong>{{ 'From:'|trans }}</strong> {{ email.sender }}</p>
+            <p><strong>{{ 'To:'|trans }}</strong> {{ email.recipients }}</p>
+            <p><strong>{{ 'Created at:'|trans }}</strong> {{ email.created_at|format_date }}</p>
         </div>
-    </article>
+        <div class="card-body">
+            <h3>{{ email.subject }}</h3>
+            <p>{{ email.content_html | raw }}</p>
+        </div>
+        <div class="card-footer">
+            <a class="btn btn-primary email-resend" href="#" mail-id="{{ email.id }}">{{ 'Resend'|trans }}</a>
+            <a class="btn btn-danger email-delete" href="#" mail-id="{{ email.id }}">{{ 'Delete'|trans }}</a>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

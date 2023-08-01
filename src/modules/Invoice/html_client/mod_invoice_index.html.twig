@@ -14,7 +14,7 @@
 {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
 
 <div class="row">
-    <div class="card ml-3 w-100">
+    <div class="card ml-0 ml-md-3 w-100">
         <div class="card-header">
             <h1>{{ 'List of invoices'|trans }}</h1><br/>
             {{ 'All of your invoices can be found here. You can choose to see either paid or unpaid invoices by clicking corresponding button.'|trans }}

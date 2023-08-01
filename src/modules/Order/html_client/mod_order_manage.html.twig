@@ -18,7 +18,7 @@
 {% block content %}
 <div class="row">
     {# Order info #}
-    <div class="card ml-3 w-100">
+    <div class="card ml-0 ml-md-3 w-100">
         <div class="card-header">
             <h1>{{ 'Service details'|trans }}</h1>
             <p>{{ 'All information about your service'|trans }}</p>
@@ -125,7 +125,7 @@
 
     {# Order addons #}
     {% if order.group_master == 1 and addons|length > 0 %}
-        <div class="card ml-3 w-100 mt-2">
+        <div class="card ml-0 ml-md-3 w-100 mt-2">
             <div class="card-header">
                 <h1>{{ 'Addons'|trans }}</h1>
                 <p>{{ 'Addons you have ordered with this service'|trans }}</p>

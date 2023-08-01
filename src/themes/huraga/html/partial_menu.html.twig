@@ -1,37 +1,37 @@
 <div class="list-group mt-2 pt-2">
     {% if settings.side_menu_dashboard %}
-        <a class="list-group-item list-group-item-action" href="{{ '/'|link }}"><span class="awe-home"></span> {{ 'Dashboard'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/'|link }}"><span class="d-none d-lg-inline-flex awe-home"></span> {{ 'Dashboard'|trans }}</a>
     {% endif %}
 
     {% if settings.side_menu_order %}
-        <a class="list-group-item list-group-item-action" href="{{ '/order'|link }}"><span class="awe-shopping-cart"></span> {{ 'Order'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/order'|link }}"><span class="d-none d-lg-inline-flex awe-shopping-cart"></span> {{ 'Order'|trans }}</a>
     {% endif %}
 
     {% if settings.side_menu_support %}
-        <a class="list-group-item list-group-item-action" href="{{ '/support'|link }}"><span class="awe-wrench"></span> {{ 'Support'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/support'|link }}"><span class="d-none d-lg-inline-flex awe-wrench"></span> {{ 'Support'|trans }}</a>
     {% endif %}
 
     {% if settings.side_menu_services %}
-        <a class="list-group-item list-group-item-action" href="{{ '/order/service'|link }}"><span class="awe-cogs"></span> {{ 'Services'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/order/service'|link }}"><span class="d-none d-lg-inline-flex awe-cogs"></span> {{ 'Services'|trans }}</a>
     {% endif %}
 
     {% if settings.side_menu_invoices %}
-        <a class="list-group-item list-group-item-action" href="{{ '/invoice'|link }}"><span class="awe-file-alt"></span> {{ 'Invoices'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/invoice'|link }}"><span class="d-none d-lg-inline-flex awe-file-alt"></span> {{ 'Invoices'|trans }}</a>
     {% endif %}
 
     {% if settings.side_menu_emails %}
-        <a class="list-group-item list-group-item-action" href="{{ '/email'|link }}"><span class="awe-envelope-alt"></span> {{ 'Emails'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/email'|link }}"><span class="d-none d-lg-inline-flex awe-envelope-alt"></span> {{ 'Emails'|trans }}</a>
     {% endif %}
 
     {% if settings.side_menu_payments %}
-        <a class="list-group-item list-group-item-action" href="{{ '/client/balance'|link }}"><span class="awe-credit-card"></span> {{ 'Payment history'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/client/balance'|link }}"><span class="d-none d-lg-inline-flex awe-credit-card"></span> {{ 'Payment history'|trans }}</a>
     {% endif %}
 
     {% if (guest.extension_is_on({"mod":"news"}) and settings.side_menu_news) %}
-        <a class="list-group-item list-group-item-action" href="{{ '/news'|link }}"><span class="awe-edit"></span> {{ 'News'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/news'|link }}"><span class="d-none d-lg-inline-flex awe-edit"></span> {{ 'News'|trans }}</a>
     {% endif %}
 
     {% if (guest.extension_is_on({"mod":"kb"}) and settings.side_menu_kb) %}
-        <a class="list-group-item list-group-item-action" href="{{ '/kb'|link }}"><span class="awe-book"></span> {{ 'Knowledge base'|trans }}</a>
+        <a class="list-group-item list-group-item-action" href="{{ '/kb'|link }}"><span class="d-none d-lg-inline-flex awe-book"></span> {{ 'Knowledge base'|trans }}</a>
     {% endif %}
 </div>
