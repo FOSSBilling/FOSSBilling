@@ -23,20 +23,15 @@ class Guest extends \Api_Abstract
      */
     public function version()
     {
-        // check if the user is logged in as admin and if so, return the version
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            return $this->getService()->getVersion();
-        }
+        $hideVersionGuest = $this->getService()->getParamValue('hide_version_public');
 
-        // check if the "show_version_public" parameter is set to true
-        $showVersionPublic = $this->getService()->getParamValue('show_version_public');
-        if ($showVersionPublic) {
+        // Only provide the FOSSBilling version if configured to do so or if the request is being made by an admistrator.
+        if ($this->di['auth']->isAdminLoggedIn() || !$hideVersionGuest) {
             return $this->getService()->getVersion();
         } else {
-            // return empty array
-            return [];
+            // return an empty string
+            return "";
         }
-        return $this->getService()->getVersion();
     }
 
     /**
@@ -48,9 +43,9 @@ class Guest extends \Api_Abstract
     {
         $companyInfo = $this->getService()->getCompany();
         $auth = $this->di['auth'];
-        $showCompanyPublic = $this->getService()->getParamValue('show_company_public');
+        $hideExtraCompanyInfoFromGuest = $this->getService()->getParamValue('hide_company_public');
 
-        if(!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && !$showCompanyPublic){
+        if(!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && $hideExtraCompanyInfoFromGuest){
             unset($companyInfo['vat_number']);
             unset($companyInfo['email']);
             unset($companyInfo['tel']);

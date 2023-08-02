@@ -291,7 +291,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $str .= 'Email template is just like FOSSBilling theme file.   ' . PHP_EOL;
         $str .= 'Use **admin** and **guest** API calls to get additional information using variables passed to template.' . PHP_EOL . PHP_EOL;
         $str .= 'Example API usage in email template:' . PHP_EOL . PHP_EOL;
-        $str .= '{{ guest.system_version }}' . PHP_EOL . PHP_EOL;
+        $str .= '{{ FOSSBillingVersion }}' . PHP_EOL . PHP_EOL;
         $str .= "{{ now|date('Y-m-d') }}" . PHP_EOL . PHP_EOL;
         $str .= '{% endapply %}';
 

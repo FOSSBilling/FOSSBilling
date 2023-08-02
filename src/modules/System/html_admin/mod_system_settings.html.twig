@@ -114,19 +114,19 @@
                             </div>
                             <div class="mb-3 row">
                                 <label class="form-label col-3 col-form-label">
-                                    {{ 'Show Version information Publicly ' | trans }}:
-                                    <br & >
-                                    {{'(Disabling Might break older Modules)' | trans }}
+                                    {{ 'Disallow guest API to fetch FOSSBilling version' | trans }}
+                                    <br/>
+                                    <small class="text-muted">{{'Enabling this functionality may effect modules that depend on it.' | trans }}</small>
                                 </label>
                                 <div class="col">
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radio_showPublicYes" type="radio" name="show_version_public" value="1" {% if params.show_version_public == "1" %}checked{% endif %}>
+                                        <input class="form-check-input" id="radio_showPublicYes" type="radio" name="hide_version_public" value="1" {% if params.hide_version_public == "1" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showPublicYes">
                                             {{ 'Yes' | trans }}
                                         </label>
                                     </div>
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radio_showPublicNo" type="radio" name="show_version_public" value="0" {% if params.show_version_public == "0" %}checked{% endif %}>
+                                        <input class="form-check-input" id="radio_showPublicNo" type="radio" name="hide_version_public" value="0" {% if params.hide_version_public == "0" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showPublicNo">
                                             {{ 'No' | trans }}
                                         </label>
@@ -135,17 +135,19 @@
                             </div>
                             <div class="mb-3 row">
                                 <label class="form-label col-3 col-form-label">
-                                    {{ 'Show Company Information Publicly' | trans }}:
+                                    {{ 'Hide some company information in the guest API' | trans }}
+                                    <br/>
+                                    <small class="text-muted">{{'Enabling this will hide some information from the "company" guest API endpoint such as the address, phone number, email, VAT number, and more.' | trans }}</small>
                                 </label>
                                 <div class="col">
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radio_showCompanyPublicYes" type="radio" name="show_company_public" value="1" {% if params.show_company_public == "1" %}checked{% endif %}>
+                                        <input class="form-check-input" id="radio_showCompanyPublicYes" type="radio" name="hide_company_public" value="1" {% if params.hide_company_public == "1" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showCompanyublicYes">
                                             {{ 'Yes' | trans }}
                                         </label>
                                     </div>
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radio_showCompanyPublicNo" type="radio" name="show_company_public" value="0" {% if params.show_company_public == "0" %}checked{% endif %}>
+                                        <input class="form-check-input" id="radio_showCompanyPublicNo" type="radio" name="hide_company_public" value="0" {% if params.hide_company_public == "0" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showCompanyPublicNo">
                                             {{ 'No' | trans }}
                                         </label>
@@ -473,7 +475,7 @@ ZW=Zimbabwe
                         <div class="datagrid">
                             <div class="datagrid-item">
                                 <div class="datagrid-title">FOSSBilling version</div>
-                                <div class="datagrid-content">{{ FOSSBilling |fb_version }}</div>
+                                <div class="datagrid-content">{{ FOSSBillingVersion }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">PHP version</div>

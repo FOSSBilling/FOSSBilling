@@ -61,8 +61,8 @@ class GuestTest extends \BBTestCase {
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->with('show_version_public')
-            ->willReturn(1);
+            ->with('hide_version_public')
+            ->willReturn(0);
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -85,8 +85,8 @@ class GuestTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->with('show_version_public')
-            ->willReturn(0);
+            ->with('hide_version_public')
+            ->willReturn(1);
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -110,8 +110,9 @@ class GuestTest extends \BBTestCase {
             ->willReturn($companyData);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->with('show_company_public')
-            ->willReturn(1);
+            ->with('hide_company_public')
+            ->willReturn(0);
+
         $di = new \Pimple\Container();
         $di['auth'] = $authMock;
         $this->api->setDi($di);
@@ -145,8 +146,8 @@ class GuestTest extends \BBTestCase {
             ->willReturn($companyData);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->with('show_company_public')
-            ->willReturn(0);
+            ->with('hide_company_public')
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['auth'] = $authMock;
