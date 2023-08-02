@@ -70,5 +70,11 @@
             "phpstan/extension-installer": true
         },
         "vendor-dir": "src/vendor"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "npm install",
+            "npm run build"
+        ]
     }
 }
