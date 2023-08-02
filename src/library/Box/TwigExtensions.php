@@ -204,7 +204,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         if(empty($email)){
             return '';
         }
-    
+
         $url = 'https://www.gravatar.com/avatar/';
         $url .= md5(strtolower(trim($email)));
         $url .= "?s=$size&d=mp&r=g";

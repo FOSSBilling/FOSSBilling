@@ -23,7 +23,15 @@ class Guest extends \Api_Abstract
      */
     public function version()
     {
-        return $this->getService()->getVersion();
+        $hideVersionGuest = $this->getService()->getParamValue('hide_version_public');
+
+        // Only provide the FOSSBilling version if configured to do so or if the request is being made by an administrator.
+        if ($this->di['auth']->isAdminLoggedIn() || !$hideVersionGuest) {
+            return $this->getService()->getVersion();
+        } else {
+            // return an empty string
+            return "";
+        }
     }
 
     /**
@@ -33,7 +41,23 @@ class Guest extends \Api_Abstract
      */
     public function company()
     {
-        return $this->getService()->getCompany();
+        $companyInfo = $this->getService()->getCompany();
+        $auth = $this->di['auth'];
+        $hideExtraCompanyInfoFromGuest = $this->getService()->getParamValue('hide_company_public');
+
+        if(!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && $hideExtraCompanyInfoFromGuest){
+            unset($companyInfo['vat_number']);
+            unset($companyInfo['email']);
+            unset($companyInfo['tel']);
+            unset($companyInfo['account_number']);
+            unset($companyInfo['number']);
+
+            unset($companyInfo['address_1']);
+            unset($companyInfo['address_2']);
+            unset($companyInfo['address_3']);
+        }
+
+        return $companyInfo;
     }
 
     /**
