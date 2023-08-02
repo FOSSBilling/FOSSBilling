@@ -92,7 +92,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $result = $this->api->version();
 
-        $this->assertIsArray($result);
+        $this->assertIsString($result);
         $this->assertEmpty($result);
     }
 
