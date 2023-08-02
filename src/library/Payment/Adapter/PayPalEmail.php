@@ -12,9 +12,7 @@ use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FOSSBilling\InjectionAwareInterface
 {
-    private $config = array();
-
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -26,10 +24,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         return $this->di;
     }
 
-    public function __construct($config)
+    public function __construct(private $config)
     {
-        $this->config = $config;
-
         if(!isset($this->config['email'])) {
             throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'PayPal', ':missing' => 'PayPal Email address']);
         }
@@ -74,7 +70,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
-            throw new Payment_Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is invalid');
         }
 
         $ipn = $data['post'];
@@ -288,7 +284,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         );
 
         $rows = $this->di['db']->getAll($sql, $bindings);
-        if (count($rows) > 1){
+        if ((is_countable($rows) ? count($rows) : 0) > 1){
             return true;
         }
 

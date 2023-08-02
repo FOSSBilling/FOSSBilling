@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -38,8 +38,6 @@ class Admin extends \Api_Abstract
     /**
      * Get invoice details.
      *
-     * @param int $id - invoice id
-     *
      * @return array
      */
     public function get($data)
@@ -54,8 +52,6 @@ class Admin extends \Api_Abstract
      * in a way that it sends notification to Events system, so emails are sent.
      * Also this will try to automatically apply payment if clients balance is
      * available.
-     *
-     * @param int $id - invoice id
      *
      * @optional bool $execute - execute related tasks on invoice items. Default false.
      *
@@ -76,8 +72,6 @@ class Admin extends \Api_Abstract
      * Prepare invoice for editing and updating.
      * Uses clients details, such as currency assigned to client.
      * If client currency is not defined, sets default currency for client.
-     *
-     * @param int $client_id - Client id. Client must have defined currency on profile.
      *
      * @optional bool $approve - set true to approve invoice after preparation. Defaults to false
      * @optional int $gateway_id - Selected payment gateway id
@@ -104,9 +98,6 @@ class Admin extends \Api_Abstract
     /**
      * Approve invoice.
      *
-     * @param int  $id          - invoice id
-     * @param bool $use_credits - default = false
-     *
      * @return bool
      */
     public function approve($data)
@@ -118,8 +109,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Add refunds.
-     *
-     * @param int $id - invoice id
      *
      * @optional string $note - note for refund
      *
@@ -136,8 +125,6 @@ class Admin extends \Api_Abstract
     /**
      * Update invoice details.
      *
-     * @param int $id - invoice id
-     *
      * @optional string $paid_at - Invoice payment date (Y-m-d) or empty to remove
      * @optional string $due_at - Invoice due date (Y-m-d)or empty to remove
      * @optional string $created_at - Invoice issue date (Y-m-d) or empty to remove
@@ -149,7 +136,6 @@ class Admin extends \Api_Abstract
      * @optional bool $approved - flag to set invoice as approved. Approved invoices are visible to clients
      * @optional string $notes - notes
      * @optional int $gateway_id - selected payment method - gateway id
-
      * @optional array $new_item - [title] [price]
      * @optional string $text_1 - Custom invoice text 1
      * @optional string $text_2 - Custom invoice text 1
@@ -184,8 +170,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove one line from invoice.
      *
-     * @param int $id - invoice line id
-     *
      * @return bool
      */
     public function item_delete($data)
@@ -204,8 +188,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete invoice.
      *
-     * @param int $id - Invoice id
-     *
      * @return bool
      */
     public function delete($data)
@@ -219,8 +201,6 @@ class Admin extends \Api_Abstract
      * Generates new invoice for order. If unpaid invoice for selected order
      * already exists, new invoice will not be generated, and existing invoice id
      * is returned.
-     *
-     * @param int $id - ID of order to generate new invoice for
      *
      * @optional int $due_days - Days number until invoice is due
      *
@@ -260,8 +240,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Cover one invoice with credits.
-     *
-     * @param int $id - Invoice id
      *
      * @return bool
      */
@@ -322,8 +300,6 @@ class Admin extends \Api_Abstract
      * Send payment reminder notification for client.
      * Calls event hook, so you can attach your custom notification code.
      *
-     * @param int $id - invoice id
-     *
      * @return bool
      */
     public function send_reminder($data)
@@ -358,8 +334,6 @@ class Admin extends \Api_Abstract
     /**
      * Process selected transaction.
      *
-     * @param int $id - Transaction id
-     *
      * @return transaction output or true;
      */
     public function transaction_process($data)
@@ -382,8 +356,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update transaction details.
-     *
-     * @param int $id - transaction id
      *
      * @optional int $invoice_id - new invoice id
      * @optional string $txn_id - transaction id on payment gateway
@@ -414,9 +386,6 @@ class Admin extends \Api_Abstract
     /**
      * Create custom transaction.
      *
-     * @param int $bb_invoice_id - FOSSBilling invoice id
-     * @param int $bb_gateway_id - FOSSBilling gateway id
-     *
      * @optional array $get - $_GET data
      * @optional array $post - $_POST data
      * @optional array $server - $_SERVER data
@@ -436,8 +405,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove transaction.
      *
-     * @param int $id - Transaction id
-     *
      * @return bool
      */
     public function transaction_delete($data)
@@ -455,8 +422,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get transaction details.
-     *
-     * @param int $id - Transaction id
      *
      * @return array
      */
@@ -622,8 +587,6 @@ class Admin extends \Api_Abstract
     /**
      * Get gateway details.
      *
-     * @param int $id - gateway id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -645,8 +608,6 @@ class Admin extends \Api_Abstract
     /**
      * Copy gateway from existing one.
      *
-     * @param int $id - id of gateway to be copied
-     *
      * @return int - new id of gateway
      *
      * @throws \Box_Exception
@@ -665,8 +626,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change gateway settings.
-     *
-     * @param int $id - gateway id
      *
      * @optional string $title - gateway title
      * @optional array $config - gateway config array
@@ -695,8 +654,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove payment gateway from system.
-     *
-     * @param int $id - gateway id
      *
      * @return bool
      *
@@ -737,10 +694,6 @@ class Admin extends \Api_Abstract
     /**
      * Add new subscription.
      *
-     * @param int    $client_id  - client id
-     * @param int    $gateway_id - payment gateway id
-     * @param string $currency   - currency
-     *
      * @optional string $sid - subscription id on payment gateway
      * @optional string $status - status: active|canceled
      * @optional string $period - example: 1W - every week, 2M - every 2 months
@@ -775,8 +728,6 @@ class Admin extends \Api_Abstract
     /**
      * Update subscription options.
      *
-     * @param int $id - subscription id
-     *
      * @optional int $status - subscription status
      * @optional string $sid - subscription id on payment gateway
      * @optional string $period - subscription period code
@@ -802,9 +753,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get subscription details.
-     *
-     * @param int    $id  - subscription id
-     * @param string $sid - subscription id on payment gateway - required if id is not passed
      *
      * @return array
      *
@@ -840,8 +788,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove subscription.
      *
-     * @param int $id - subscription id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -861,8 +807,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove tax rule.
-     *
-     * @param int $id - tax id
      *
      * @return bool
      *
@@ -884,16 +828,13 @@ class Admin extends \Api_Abstract
     /**
      * Create new tax rule.
      *
-     * @param string $name    - tax name
-     * @param float  $taxrate - tax rate
-     *
      * @return int - new tax id
      */
     public function tax_create($data)
     {
         $required = [
             'name' => 'Tax name is missing',
-            'taxrate' => 'Tax rate is missing or is not valid',
+            'taxrate' => 'Tax rate is missing or is invalid',
         ];
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -904,8 +845,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update tax rule.
-     *
-     * @param string $id - tax ID
      *
      * @return array
      */
@@ -926,10 +865,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update tax rule.
-     *
-     * @param int    $id      - tax ID
-     * @param string $name    - tax name
-     * @param float  $taxrate - tax rate
      *
      * @return bool
      */
@@ -968,9 +903,6 @@ class Admin extends \Api_Abstract
      * This action will delete any existing tax rules and configure the VAT rates
      * for all EU countries.
      *
-     * @param string $name    - VAT label
-     * @param string $taxrate - VAT rate
-     *
      * @return type
      */
     public function tax_setup_eu($data)
@@ -995,8 +927,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes invoices with given IDs.
      *
-     * @param array $ids - IDs for deletion
-     *
      * @return bool
      */
     public function batch_delete($data)
@@ -1015,8 +945,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes subscriptions with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */
@@ -1037,8 +965,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes transactions with given IDs.
      *
-     * @param array $ids - IDs for deletion
-     *
      * @return bool
      */
     public function batch_delete_transaction($data)
@@ -1057,8 +983,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes taxes with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */
@@ -1079,6 +1003,7 @@ class Admin extends \Api_Abstract
     public function export_csv($data)
     {
         $data['headers'] ??= [];
+
         return $this->getService()->exportCSV($data['headers']);
     }
 }

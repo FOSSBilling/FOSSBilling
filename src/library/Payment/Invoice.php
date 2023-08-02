@@ -12,11 +12,11 @@ class Payment_Invoice
 {
     private $id             = NULL; // FOSSBilling Invoice Id
     private $number         = NULL; // Invoice number for accounting
-    private $currency       = 'USD';
-    private $items          = array();
-    private $subscription   = NULL;
-    private $buyer          = NULL;
-    private $title          = 'Payment for invoice';
+    private string $currency       = 'USD';
+    private array $items          = array();
+    private ?\Payment_Invoice_Subscription $subscription   = NULL;
+    private ?\Payment_Invoice_Buyer $buyer          = NULL;
+    private string $title          = 'Payment for invoice';
 
     /**
      * Set the invoice ID.
@@ -25,7 +25,7 @@ class Payment_Invoice
      *
      * @return $this The current object, for method chaining.
      */
-    public function setId($param)
+    public function setId(mixed $param)
     {
         $this->id = $param;
         return $this;
@@ -48,7 +48,7 @@ class Payment_Invoice
      *
      * @return $this The current object, for method chaining.
      */
-    public function setNumber($param)
+    public function setNumber(mixed $param)
     {
         $this->number = $param;
         return $this;

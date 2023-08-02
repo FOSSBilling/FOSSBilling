@@ -59,24 +59,18 @@ return [
          * Enable or disable the system maintenance mode.
          * Enabling this will block public access to your website, and API endpoints except the allowed ones won't work
          * However, this will not block access to the administrator area.
-         *
-         * @since 4.22.0
          */
         'enabled' => false,
 
         /*
          * Don't block these URLs when the maintenance is going on.
          * Supports wildcard (e.g. '/api/guest/staff/*').
-         *
-         * @since 4.22.0
          */
         'allowed_urls' => [],
 
         /*
          * Don't block these IP/Subnet addresses when the maintenance is going on.
          * Supported formats: 127.0.0.1、127.0.0.1/32.
-         *
-         * @since 4.22.0
          */
         'allowed_ips' => [],
     ],
@@ -163,17 +157,13 @@ return [
         // How many requests allowed per time span
         'rate_limit' => 1000,
 
-        /*
-         * Note about rate-limiting login attempts:
-         * When the limit is reached, a default delay of 2 seconds is added to the request.
-         * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
-         * When calculating, ensure the rate-limited traffic can still make enough requests to stay rate limited
-         * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled.
-         *
-         * @since 4.22.0
-         */
-
-        // Throttling delay
+        /**
+          * Note about rate-limiting login attempts:
+          * When the limit is reached, a default delay of 2 seconds is added to the request.
+          * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
+          * When calculating, ensure the rate-limited traffic can still make enough requests to stay rate limited
+          * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled.
+          */
         'throttle_delay' => 2,
 
         // Time span login for limit in seconds
@@ -188,5 +178,11 @@ return [
         * This option is only here for backwards compatibility.
         */
         'CSRFPrevention' => true,
+
+        /**
+         * Any IP address within this list will not be put through the rate-limiter system.
+         * This is useful if you have an application with a static IP address that needs to make frequent API requests to FOSSBilling.
+         */
+        'rate_limit_whitelist' => [],
     ],
 ];

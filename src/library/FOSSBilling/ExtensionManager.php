@@ -10,20 +10,19 @@
 
 namespace FOSSBilling;
 
-use \FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
 class ExtensionManager implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
-    const TYPE_MOD = 'mod';
-    const TYPE_THEME = 'theme';
-    const TYPE_PG = 'payment-gateway';
-    const TYPE_SM = 'server-manager';
-    const TYPE_DR = 'domain-registrar';
-    const TYPE_HOOK = 'hook';
-    const TYPE_TRANSLATION = 'translation';
+    public const TYPE_MOD = 'mod';
+    public const TYPE_THEME = 'theme';
+    public const TYPE_PG = 'payment-gateway';
+    public const TYPE_SM = 'server-manager';
+    public const TYPE_DR = 'domain-registrar';
+    public const TYPE_HOOK = 'hook';
+    public const TYPE_TRANSLATION = 'translation';
 
     private string $_url = 'https://extensions.fossbilling.org/api/';
 

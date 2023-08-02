@@ -10,12 +10,12 @@
 
 class Model_Admin extends \RedBeanPHP\SimpleModel
 {
-    const ROLE_ADMIN = 'admin';
-    const ROLE_STAFF = 'staff';
-    const ROLE_CRON = 'cron';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_STAFF = 'staff';
+    public const ROLE_CRON = 'cron';
 
-    const STATUS_ACTIVE = 'active';
-    const STATUS_INACTIVE = 'inactive';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_INACTIVE = 'inactive';
 
     public function getFullName()
     {

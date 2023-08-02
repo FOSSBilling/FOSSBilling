@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -39,9 +39,6 @@ class Guest extends \Api_Abstract
     /**
      * Get news item by ID or SLUG.
      *
-     * @param int    $id   - news item ID. Required only if SLUG is not passed.
-     * @param string $slug - news item slug. Required only if ID is not passed.
-     *
      * @return array
      */
     public function get($data)
@@ -59,7 +56,7 @@ class Guest extends \Api_Abstract
             $model = $this->getService()->findOneActiveBySlug($slug);
         }
 
-        if (!$model || 'active' !== $model->status) {
+        if (!$model || $model->status !== 'active') {
             throw new \Box_Exception('News item not found');
         }
 

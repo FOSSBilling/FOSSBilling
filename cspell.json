@@ -30,7 +30,10 @@
         "admdly",
         "Pictogrammers",
         "Symfony",
-        "EMERG"
+        "EMERG",
+        "exploitability",
+        "birthdate",
+        "Birthdate"
     ],
 
     "ignoreWords": [
@@ -90,6 +93,7 @@
         "UNCANCEL",
         "uncancel",
         "accesshash",
+        "userprefix",
         "qtys",
         "qnty",
         "rtable",
@@ -225,7 +229,6 @@
         "gugl",
         "cclogin",
         "CURDATE",
-        "BOXCLR",
         "vatnum",
         "caid",
         "ECB's",
@@ -336,7 +339,19 @@
         "Autoloader",
         "autoloader",
         "qwertyuiopasdfghjklzxccvbnm",
-        "QWERTYUIOPASDFGHJKLZXCVBNM"
+        "QWERTYUIOPASDFGHJKLZXCVBNM",
+        "subkeys",
+        "httponly",
+        "samesite",
+        "IPCOUNTRY",
+        "Serviceapikey",
+        "homoglyph",
+        "oldconfig",
+        "ordermodel",
+        "TINYINT",
+        "hostings",
+        "rulesets"
+
     ],
     "ignorePaths": [
         "tests/**",
@@ -373,6 +388,7 @@
         "phpstan.neon",
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",
-        ".github/**"
+        ".github/**",
+        ".gitignore"
     ]
 }

@@ -10,14 +10,12 @@
 
 namespace FOSSBilling;
 
-use \FOSSBilling\InjectionAwareInterface;
 use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 
 class Monolog implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
     protected $logger = null;
     public string $dateFormat = "d-M-Y H:i:s e";
     public string $outputFormat = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
@@ -41,9 +39,8 @@ class Monolog implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(\Pimple\Container $di)
+    public function __construct(protected ?\Pimple\Container $di)
     {
-        $this->di = $di;
         $channels = $this->channels;
 
         foreach ($channels as $channel) {
@@ -59,7 +56,6 @@ class Monolog implements InjectionAwareInterface
     }
 
     /**
-     * @param string $channel
      * @return \Monolog\Logger The logger for the specified channel. If the channel does not exist, the default logger (the 'application' channel) is returned.
      */
     public function getChannel(string $channel = 'application'): Logger
@@ -70,7 +66,6 @@ class Monolog implements InjectionAwareInterface
     /**
      * Convert numeric FOSSBilling priority to Monolog priority
      *
-     * @param int $priority
      * @return int
      */
     public function parsePriority(int $priority): int
@@ -90,10 +85,6 @@ class Monolog implements InjectionAwareInterface
         return $map[$priority] ?? Logger::DEBUG;
     }
 
-    /**
-     * @param array $event
-     * @param string $channel
-     */
     public function write(array $event, string $channel = 'application'): void
     {
         $priority = $this->parsePriority($event['priority']);

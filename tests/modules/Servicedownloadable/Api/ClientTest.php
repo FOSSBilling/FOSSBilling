@@ -105,10 +105,14 @@ class ClientTest extends \BBTestCase {
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDownloadable()));
 
+        $mockOrder = new \Model_ClientOrder();
+        $mockOrder->loadBean(New \DummyBean());
+        $mockOrder->status = "active";
+
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->will($this->returnValue($mockOrder));
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;

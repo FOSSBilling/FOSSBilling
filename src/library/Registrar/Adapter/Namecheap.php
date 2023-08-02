@@ -14,7 +14,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     public function isKeyValueNotEmpty($array, $key)
     {
-        $value = isset($array[$key]) ? $array[$key] : '';
+        $value = $array[$key] ?? '';
         if (strlen(trim($value)) == 0) {
             return false;
         }
@@ -23,23 +23,25 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     public function __construct($options)
     {
-        if (isset($options['api-key']) && !empty($options['api-key'])) {
+        if (!empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'API Key']);
         }
 
-        if (isset($options['username']) && !empty($options['username'])) {
+        if (!empty($options['username'])) {
             $this->config['username'] = $options['username'];
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'Username']);
         }
 
-        if (!isset($options['api-user-id']) || empty(trim($options['api-user-id']))) {
+        if (empty($options['api-user-id'])) {
             $this->config['api-user-id'] = $options['username'];
+        } else {
+            $this->config['api-user-id'] = $options['api-user-id'];
         }
 
-        if (isset($options['ip']) && !empty($options['ip'])) {
+        if (!empty($options['ip'])) {
             $this->config['ip'] = $options['ip'];
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'server IP address']);
@@ -148,8 +150,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 ]);
                 $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             } else {
-                $response = $client->request('GET', $callUrl.'?'.$this->_formatParams($params));
-                $this->getLog()->debug('API REQUEST: ' . $callUrl.'?'.$this->_formatParams($params));
+                $response = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
+                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             }
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
@@ -163,12 +165,16 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = simplexml_load_string($data);
 
-        if (isset($result['status']) && $result['status'] == 'error') {
-            throw new Registrar_Exception($result['error'], null, 102);
+        if (isset($result['status']) && strtolower($result['status']) == 'error') {
+            error_log("Namecheap error: " . PHP_EOL . $result['error']);
+            $placeholders = ['action' => $params['Command'], 'type' => 'Namecheap'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
-        if (isset($result['status']) && $result['status'] == 'Failed') {
-            throw new Registrar_Exception($result['actionstatusdesc'], null, 103);
+        if (isset($result['status']) && strtolower($result['status']) == 'failed') {
+            error_log("Namecheap error: " . PHP_EOL . $result['actionstatusdesc']);
+            $placeholders = ['action' => $params['Command'], 'type' => 'Namecheap'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         return $result;
@@ -210,7 +216,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @param array $params
      * @return array
      */
     public function includeAuthorizationParams(array $params)
@@ -244,7 +249,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         // problem here: FOSSBilling doesn't display our error and will display 'nameservers updates' evern when this fails
 
         if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
-            throw new Registrar_Exception($message = 'Could not update name servers');
+            $placeholders = ['action' => __trans('update nameservers'), 'type' => 'Namecheap'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         return True;
     }
@@ -340,7 +346,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = $this->_makeRequest($params);
 
         if (!isset($result->CommandResponse->DomainContactsResult)) {
-            throw new Registrar_Exception($message = "API ERROR: could not retrieve domain details");
+            $placeholders = ['action' => __trans('retrieve domain details'), 'type' => 'Namecheap'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         $contacts = $result->CommandResponse->DomainContactsResult;
@@ -424,7 +431,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      */
     public function getEpp(Registrar_Domain $domain)
     {
-        throw new Registrar_Exception($message = 'This feature is unavailable through the Namecheap API. Please contact your administrator.');
+        throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Namecheap', ':action:' => __trans('retrieving the transfer code')]);
     }
 
     /**
@@ -563,7 +570,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      */
     public function deleteDomain(Registrar_Domain $domain)
     {
-        throw new Registrar_Exception('Domain deletion is not implemented in the NameCheap adapter. Please contact your system administrator.');
+        throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Namecheap', ':action:' => __trans('deleting domains')]);
     }
 
     /**
@@ -585,7 +592,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 'id' => (string)$result->CommandResponse->DomainGetInfoResult->Whoisguard->ID
             );
         }
-        throw new Registrar_Exception($message = 'Could not retrieve privacy info on this domain.');
+        $placeholders = ['action' => __trans('retrieve privacy information'), 'type' => 'Namecheap'];
+        throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
     }
 
     /**
@@ -647,7 +655,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         );
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainGetRegistrarLockResult['RegistrarLockStatus'])) {
-            throw new Registrar_Exception($message = 'API ERROR: could not get lock status on domain');
+            $placeholders = ['action' => __trans('get the domain lock status'), 'type' => 'Namecheap'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         return $result->CommandResponse->DomainGetRegistrarLockResult['RegistrarLockStatus'] == 'true';
     }
@@ -670,7 +679,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainSetRegistrarLockResult['IsSuccess'])) {
-            throw new Registrar_Exception($message = 'API ERROR: could not set lock status on domain');
+            $placeholders = ['action' => __trans('set the domain lock status'), 'type' => 'Namecheap'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
             $domain->setLocked('true');
@@ -697,7 +707,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainSetRegistrarLockResult['IsSuccess'])) {
-            throw new Registrar_Exception($message = 'API ERROR: could not set lock status on domain');
+            $placeholders = ['action' => __trans('set the domain lock status'), 'type' => 'Namecheap'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
             $domain->setLocked('false');

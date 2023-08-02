@@ -25,11 +25,12 @@
         <div class="card-body">
             <h3 class="card-title">{{ 'Client area themes'|trans }}</h3>
         </div>
-        <table class="table card-table table-vcenter table-striped text-nowrap">
+        <table class="table card-table table-vcenter table-striped text-nowrap table-hover">
             <thead>
             <tr>
                 <th>{{ 'Name'|trans }}</th>
-                <th class="w-1"></th>
+                <th class="w-1">{{ 'Settings'|trans }}</th>
+                <th class="w-1">{{ 'Default'|trans }}</th>
             </tr>
             </thead>
             <tbody>
@@ -37,9 +38,7 @@
             {% for i, theme in themes.list %}
             <tr>
                 <td>
-                    {% if guest.extension_theme(true).code == theme.code %}
-                        {{ theme.code }}{% else %}{{ theme.code }}
-                    {% endif %}
+                    {{ theme.code|capitalize }}
                 </td>
                 <td>
                     {% if theme.hasSettings %}
@@ -50,8 +49,15 @@
                             {{ 'Settings'|trans }}
                         </a>
                     {% else %}
-                        <small class="form-hint p-2">Theme does not have settings</small>
+                        <a class="btn btn-outline-primary disabled" href="#" aria-disabled="true">
+                            <svg class="icon">
+                                <use xlink:href="#cog"/>
+                            </svg>
+                            {{ 'Settings'|trans }}
+                        </a>
                     {% endif %}
+                </td>
+                <td>
                     {% if guest.extension_theme(true).code != theme.code %}
                         <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
                            href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
@@ -59,6 +65,14 @@
                                 <use xlink:href="#check"/>
                             </svg>
                             {{ 'Set as default'|trans }}
+                        </a>
+                    {% else %}
+                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
+                            href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}" aria-disabled="true">
+                            <svg class="icon">
+                            <use xlink:href="#check"/>
+                        </svg>
+                        {{ 'Set as default'|trans }}
                         </a>
                     {% endif %}
                 </td>
@@ -73,15 +87,17 @@
             {% endfor %}
         </table>
     </div>
+
     <div class="card mt-3">
         <div class="card-body">
             <h3 class="card-title">{{ 'Admin area themes'|trans }}</h3>
         </div>
-        <table class="table card-table table-vcenter table-striped text-nowrap">
+        <table class="table card-table table-vcenter table-striped text-nowrap table-hover">
             <thead>
             <tr>
                 <th>{{ 'Name'|trans }}</th>
-                <th class="w-1"></th>
+                <th class="w-1">{{ 'Settings'|trans }}</th>
+                <th class="w-1">{{ 'Default'|trans }}</th>
             </tr>
             </thead>
             <tbody>
@@ -89,11 +105,7 @@
             {% for i, theme in themes.list %}
             <tr>
                 <td>
-                    {% if guest.extension_theme(false).code == theme.code %}
-                        {{ theme.code|replace({ 'admin_': '' }) }}
-                    {% else %}
-                        {{ theme.code|replace({ 'admin_': '' }) }}
-                    {% endif %}
+                    {{ theme.code|replace({ 'admin_': '' })|capitalize }}
                 </td>
                 <td>
                     {% if theme.hasSettings %}
@@ -104,11 +116,26 @@
                             {{ 'Settings'|trans }}
                         </a>
                     {% else %}
-                        <small class="form-hint p-2">Theme does not have settings</small>
+                        <a class="btn btn-outline-primary disabled" href="#" aria-disabled="true">
+                            <svg class="icon">
+                                <use xlink:href="#cog"/>
+                            </svg>
+                            {{ 'Settings'|trans }}
+                        </a>
                     {% endif %}
+                </td>
+                <td>
                     {% if guest.extension_theme(false).code != theme.code %}
                         <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                           href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
+                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
+                            <svg class="icon">
+                                <use xlink:href="#check"/>
+                            </svg>
+                            {{ 'Set as default'|trans }}
+                        </a>
+                    {% else %}
+                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
+                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}" aria-disabled="true">
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
@@ -119,11 +146,11 @@
             </tr>
             </tbody>
             {% else %}
-                <tbody>
-                <tr>
-                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-                </tr>
-                </tbody>
+            <tbody>
+            <tr>
+                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+            </tr>
+            </tbody>
             {% endfor %}
         </table>
     </div>

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,7 +12,7 @@ namespace Box\Mod\Cron;
 
 class Service
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -70,6 +70,9 @@ class Service
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
+        $count = $this->clearOldSessions() ?? 0;
+        $this->di['logger']->setChannel('cron')->info("Cleared $count outdated sessions from the database");
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
 
         $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs');
@@ -87,7 +90,7 @@ class Service
         } catch (\Exception $e) {
             throw new \Exception($e);
         } finally {
-            if ('cli' == php_sapi_name()) {
+            if (php_sapi_name() == 'cli') {
                 echo "\e[32mSuccessfully ran " . $method . '(' . $params . ')' . ".\e[0m\n";
             }
         }
@@ -110,5 +113,13 @@ class Service
         $t2 = new \DateTime('-6min');
 
         return $t1 < $t2;
+    }
+
+    private function clearOldSessions(): ?int
+    {
+        $maxAge = time() - $this->di['config']['security']['cookie_lifespan'];
+        $sql = 'DELETE FROM session WHERE modified_at <= :age';
+
+        return $this->di['db']->exec($sql, [':age' => $maxAge]);
     }
 }

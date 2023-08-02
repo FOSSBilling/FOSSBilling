@@ -15,7 +15,7 @@ use League\CommonMark\GithubFlavoredMarkdownConverter;
 
 class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -35,17 +35,11 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getFilters()
     {
         return [
-            /**
-             * 'trans' filter rewrite same filter from Symfony\Bridge\Twig\Extension\TranslationExtension
-             * for compatible with outdated php-gettext library.
-             *
-             * TODO: Use Symfony\Component\Translation\Loader\MoFileLoader and remove php-gettext hardcoded library.
-             */
             'trans' => new TwigFilter('trans', '__trans'),
 
             'alink' => new TwigFilter('alink', [$this, 'twig_bb_admin_link_filter'], ['is_safe' => ['html']]),
-
             'link' => new TwigFilter('link', [$this, 'twig_bb_client_link_filter'], ['is_safe' => ['html']]),
+            'autolink' => new TwigFilter('autolink', [$this, 'twig_autolink_filter']),
 
             'gravatar' => new TwigFilter('gravatar', [$this, 'twig_gravatar_filter']),
 
@@ -54,7 +48,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'truncate' => new TwigFilter('truncate', [$this, 'twig_truncate_filter'], ['needs_environment' => true]),
 
             'timeago' => new TwigFilter('timeago', [$this, 'twig_timeago_filter']),
-
             'daysleft' => new TwigFilter('daysleft', [$this, 'twig_daysleft_filter']),
 
             'size' => new TwigFilter('size', [$this, 'twig_size_filter']),
@@ -65,27 +58,23 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
             'period_title' => new TwigFilter('period_title', [$this, 'twig_period_title'], ['needs_environment' => true, 'is_safe' => ['html']]),
 
-            'autolink' => new TwigFilter('autolink', [$this, 'twig_autolink_filter']),
-
             'img_tag' => new TwigFilter('img_tag', [$this, 'twig_img_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
-
             'script_tag' => new TwigFilter('script_tag', [$this, 'twig_script_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
-
             'stylesheet_tag' => new TwigFilter('stylesheet_tag', [$this, 'twig_stylesheet_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
-
             'mod_asset_url' => new TwigFilter('mod_asset_url', [$this, 'twig_mod_asset_url']),
-
             'asset_url' => new TwigFilter('asset_url', [$this, 'twig_asset_url'], ['needs_environment' => true, 'is_safe' => ['html']]),
-
             'library_url' => new TwigFilter('library_url', [$this, 'twig_library_url'], ['is_safe' => ['html']]),
 
             'money' => new TwigFilter('money', [$this, 'twig_money'], ['needs_environment' => true, 'is_safe' => ['html']]),
-
             'money_without_currency' => new TwigFilter('money_without_currency', [$this, 'twig_money_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
-
             'money_convert' => new TwigFilter('money_convert', [$this, 'twig_money_convert'], ['needs_environment' => true, 'is_safe' => ['html']]),
-
             'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', [$this, 'money_convert_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
+            'filter' => new TwigFilter('filter', [$this, 'filteredFilter']),
+            'map' => new TwigFilter('map', [$this, 'filteredMap']),
+            'reduce' => new TwigFilter('reduce', [$this, 'filteredReduce']),
+            'sort' => new TwigFilter('sort', [$this, 'filteredSort']),
         ];
     }
 
@@ -109,7 +98,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             $record = $this->di['geoip']->country($value);
 
             return $record->country->name;
-        } catch (Exception $e) {
+        } catch (Exception) {
             return '';
         }
     }
@@ -212,6 +201,10 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_gravatar_filter($email, $size = 20)
     {
+        if(empty($email)){
+            return '';
+        }
+    
         $url = 'https://www.gravatar.com/avatar/';
         $url .= md5(strtolower(trim($email)));
         $url .= "?s=$size&d=mp&r=g";
@@ -256,7 +249,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $cur_tm = time();
         $dif = $cur_tm - strtotime($iso8601);
         $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
-        $lngh = [1, 60, 3600, 86400, 604800, 2630880, 31570560, 315705600];
+        $lngh = [1, 60, 3600, 86400, 604800, 2_630_880, 31_570_560, 315_705_600];
         $no = 0;
 
         for ($v = sizeof($lngh) - 1; ($v >= 0) && (($no = $dif / $lngh[$v]) <= 1); --$v) {
@@ -287,7 +280,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
 
-        $bytes /= pow(1024, $pow);
+        $bytes /= 1024 ** $pow;
 
         return round($bytes, $precision) . ' ' . $units[$pow];
     }
@@ -317,5 +310,63 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $value;
+    }
+
+    public function filteredFilter($array, $arrow)
+    {
+        if (!$arrow instanceof Closure) {
+            return;
+        }
+
+        return array_filter($array, $arrow, \ARRAY_FILTER_USE_BOTH);
+    }
+
+    public function filteredMap($array, $arrow)
+    {
+        if (!$arrow instanceof Closure) {
+            return;
+        }
+
+        $r = [];
+        foreach ($array as $k => $v) {
+            $r[$k] = $arrow($v, $k);
+        }
+
+        return $r;
+    }
+
+    public function filteredReduce($array, $arrow, $initial = null)
+    {
+        if (!$arrow instanceof Closure) {
+            return;
+        }
+
+        $accumulator = $initial;
+        foreach ($array as $key => $value) {
+            $accumulator = $arrow($accumulator, $value, $key);
+        }
+
+        return $accumulator;
+    }
+
+    public function filteredSort($array, $arrow)
+    {
+        if (!$arrow instanceof Closure) {
+            return;
+        }
+
+        if ($array instanceof \Traversable) {
+            $array = iterator_to_array($array);
+        } elseif (!\is_array($array)) {
+            return $array;
+        }
+
+        if (null !== $arrow) {
+            uasort($array, $arrow);
+        } else {
+            asort($array);
+        }
+
+        return $array;
     }
 }

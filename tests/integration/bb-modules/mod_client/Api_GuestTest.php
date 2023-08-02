@@ -90,7 +90,6 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         $data = array(
             'email'     =>  'client@fossbilling.org',
             'password'  =>  'demo',
-            'remember'  => true
         );
         $array = $this->api_guest->client_login($data);
         $this->assertIsArray($array);

@@ -66,14 +66,13 @@ class i18n
             }
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with($locale, substr($detectedLocale, 0, 2))) {
-                    setcookie("BBLANG", $locale, strtotime("+1 month"), "/");
+                    setcookie("BBLANG", $locale, ['expires' => strtotime("+1 month"), 'path' => "/"]);
                     return $locale;
                 }
             }
-        } else {
-            setcookie("BBLANG", $matchingLocale, strtotime("+1 month"), "/");
         }
 
+        setcookie("BBLANG", $matchingLocale, ['expires' => strtotime("+1 month"), 'path' => "/"]);
         return $matchingLocale;
     }
 

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -39,8 +39,6 @@ class Admin extends \Api_Abstract
     /**
      * Get queue details.
      *
-     * @param string $queue - queue name, ie: massmailer
-     *
      * @return array
      */
     public function get($data)
@@ -53,8 +51,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove message from queue.
-     *
-     * @param type $int - message id
      *
      * @return bool
      */
@@ -74,9 +70,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Add message to queue to be executed later.
-     *
-     * @param string $queue - unique queue name, ie: massmailer
-     * @param string $mod   - module name, ie: massmailer
      *
      * @optional string $execute_at - Message execution time. Schedule message to be executed later, ie: 2022-12-29 14:53:51
      * @optional mixed $params      - queue message params. Any serializable param
@@ -140,8 +133,6 @@ class Admin extends \Api_Abstract
      * For example: Send 25 emails every 30 seconds until complete
      * Executing queue is locked until finished.
      *
-     * @param string $queue - queue name to be executed
-     *
      * @optional int $max - Maximum amount of messages to be executed per interval. Default is queue max amount
      * @optional int $interval - interval in seconds for message to be executed. Default is queue timeout
      * @optional bool $until_complete - Execute until all messages in queue are executed. Default true
@@ -165,6 +156,7 @@ class Admin extends \Api_Abstract
         $file_handle = fopen($lock_file, 'r+');
         if (!flock($file_handle, LOCK_EX | LOCK_NB)) {
             $this->di['logger']->info(sprintf('Queue %s is being executed by other process.', $q->id));
+
             throw new \Exception('This queue is being executed by other process.');
         }
         $this->di['logger']->info('Locked queue: ' . $q->id);
@@ -248,9 +240,8 @@ class Admin extends \Api_Abstract
     /**
      * Select unselected messages from queue.
      *
-     * @param Queue $queue
-     * @param int   $max
-     * @param int   $timeout
+     * @param int $max
+     * @param int $timeout
      *
      * @return array
      */

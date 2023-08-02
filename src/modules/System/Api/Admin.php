@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -31,8 +31,6 @@ class Admin extends \Api_Abstract
      * not defined earlier. You can create new parameters using this method.
      * This method accepts any number of parameters you pass.
      *
-     * @param string $key - name of the parameter to be changed/created
-     *
      * @return bool
      */
     public function update_params($data)
@@ -42,8 +40,6 @@ class Admin extends \Api_Abstract
 
     /**
      * System messages about working environment.
-     *
-     * @param string $type - messages type to be returned: info
      *
      * @return array
      */
@@ -67,8 +63,6 @@ class Admin extends \Api_Abstract
     /**
      * Check if passed file name template exists for admin area.
      *
-     * @param string $file - template file name, example: mod_index_dashboard.html.twig
-     *
      * @return bool
      */
     public function template_exists($data)
@@ -83,9 +77,7 @@ class Admin extends \Api_Abstract
     /**
      * Parse string like FOSSBilling template.
      *
-     * @param string $_tpl - Template text to be parsed
-     *
-     * @optional bool $_try - if true, will not throw error if template is not valid, returns _tpl string
+     * @optional bool $_try - if true, will not throw error if template is invalid, returns _tpl string
      * @optional int $_client_id - if passed client id, then client API will also be available
      *
      * @return string
@@ -120,8 +112,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Method to check if staff member has permission to access module.
-     *
-     * @param string $mod - module name
      *
      * @optional string $f - module method name
      *
@@ -164,7 +154,6 @@ class Admin extends \Api_Abstract
         return $updater->getLatestReleaseNotes();
     }
 
-
     /**
      * Update FOSSBilling core.
      *
@@ -175,12 +164,11 @@ class Admin extends \Api_Abstract
     public function update_core($data)
     {
         $updater = $this->di['updater'];
-        if ('preview' !== $updater->getUpdateBranch() && !$updater->getCanUpdate()) {
-            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.', null, 930);
+        if ($updater->getUpdateBranch() !== 'preview' && !$updater->isUpdateAvailable()) {
+            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         $new_version = $updater->getLatestVersion();
-
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
@@ -197,13 +185,13 @@ class Admin extends \Api_Abstract
      *
      * @throws \Box_Exception
      */
-    public function update_config()
+    public function manual_update()
     {
         $updater = $this->di['updater'];
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateConfig']);
-        $updater->performConfigUpdate();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateConfig']);
-        $this->di['logger']->info('Updated FOSSBilling config');
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);
+        $updater->performManualUpdate();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminManualUpdate']);
+        $this->di['logger']->info('Updated FOSSBilling - applied patches and updated configuration file.');
 
         return true;
     }

@@ -23,9 +23,7 @@
                     <label class="control-label" for="password">{{ 'Password'|trans }}</label>
                     <div class="controls">
                         <input id="password" type="password" class="span6" placeholder="{{ 'Password'|trans }}" name="password" required="required" value="{{ request.password }}" data-validation-required-message="{{ 'You must fill in your password.'|trans }}">
-                        <label class="checkbox">
-                            <input id="optionsCheckbox" type="checkbox" name="remember" value="1"> {{ 'Remember me'|trans }}
-                        </label>
+    
                         <div class="help-block"></div>
                     </div>
                 </div>
@@ -85,7 +83,7 @@
                 <div class="control-group">
                     <label class="control-label" for="birthday">{{ 'Birthday'|trans }}</label>
                     <div class="controls">
-                        <input type="text"  class="span6" name="birthday" id="birthday" value="">
+                        <input type="date"  class="span6" name="birthday" id="birthday" value="">
                         <p class="help-block"></p>
                     </div>
                 </div>
@@ -195,7 +193,7 @@
                     <label class="control-label" for="phone_cc">{{ 'Phone Number'|trans }}</label>
                     <div class="controls controls-row">
                         <input type="text" name="phone_cc" value="{{ request.phone_cc }}" style="width:20%">
-                        <input type="text" name="phone" value="{{ request.phone }}" style="width: 70%">
+                        <input type="phone" name="phone" value="{{ request.phone }}" style="width: 70%">
                         <p class="help-block"></p>
                     </div>
                 </div>

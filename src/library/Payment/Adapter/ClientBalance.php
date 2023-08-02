@@ -10,7 +10,7 @@
 
 class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -80,12 +80,12 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(!$this->isIpnValid($data)) {
-            throw new Payment_Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is invalid');
         }
 
         $tx = $this->di['db']->load('Transaction', $id);
 
-        $invoice_id = isset($data['get']['bb_invoice_id']) ? $data['get']['bb_invoice_id'] : 0;
+        $invoice_id = $data['get']['bb_invoice_id'] ?? 0;
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
         $invoiceService = $this->di['mod_service']('Invoice');

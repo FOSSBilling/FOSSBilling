@@ -10,9 +10,9 @@
 
 namespace FOSSBilling;
 
-class Requirements implements \FOSSBilling\InjectionAwareInterface
+class Requirements implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -189,8 +189,6 @@ class Requirements implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Check permissions
-     * @param string $path
-     * @param string $perm
      * @return bool
      */
     public function checkPerms(string $path, string $perm = '0777'): bool

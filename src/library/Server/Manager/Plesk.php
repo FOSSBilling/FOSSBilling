@@ -12,7 +12,7 @@ use PleskX\Api\Client;
 
 class Server_Manager_Plesk extends Server_Manager
 {
-    private $_client;
+    private ?\PleskX\Api\Client $_client = null;
 
     public function init() {
         $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
@@ -44,7 +44,7 @@ class Server_Manager_Plesk extends Server_Manager
         $stats = $this->_client->server()->getStatistics();
 
         if ($stats->other->uptime < 0) {
-            throw new Server_Exception('Connection to server failed');
+            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'Plesk']);
         }
 
         return true;
@@ -52,7 +52,7 @@ class Server_Manager_Plesk extends Server_Manager
     
     public function synchronizeAccount(Server_Account $a)
     {
-        throw new Server_Exception('The server adapter does not support account synchronization');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
     }
 
     public function createAccount(Server_Account $a)
@@ -73,7 +73,7 @@ class Server_Manager_Plesk extends Server_Manager
                 // throw new Server_Exception('Out of free IP adresses');
             }
             */
-            if (count($ips['exclusive']) > 0) {
+            if ((is_countable($ips['exclusive']) ? count($ips['exclusive']) : 0) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
     		    $rand = array_rand($ips['exclusive']);
     		    $a->setIp($ips['exclusive'][$rand]['ip']);
@@ -83,7 +83,8 @@ class Server_Manager_Plesk extends Server_Manager
     	$id = $this->_createClient($a);
         $client = $a->getClient();
     	if (!$id) {
-    		throw new Server_Exception('Failed to create new account');
+    		$placeholders = ['action' => __trans('create account'), 'type' => 'Plesk'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	} else {
             $client->setId((string)$id);
     	}
@@ -164,7 +165,8 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
-    	$id = $this->_modifyClient($a);
+    	$domainId = null;
+     $id = $this->_modifyClient($a);
         $client = $a->getClient();
     	if (!$id) {
     		throw new Server_Exception('Can\'t modify client');
@@ -197,7 +199,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support username changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
     }
     
     public function changeAccountDomain(Server_Account $a, $new)
@@ -224,7 +226,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server manager does not support changing IP addresses');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('changing the account IP')]);
     }
 
     private function _getIps() {
@@ -371,19 +373,19 @@ class Server_Manager_Plesk extends Server_Manager
                         'limit'	=> array(
                             array(
                                 'name'	=>	'max_db',
-                                'value'	=>	$p->getMaxSql() ? $p->getMaxSql() : 0,
+                                'value'	=>	$p->getMaxSql() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_maillists',
-                                'value'	=>	$p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
+                                'value'	=>	$p->getMaxEmailLists() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_maillists',
-                                'value'	=>	$p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
+                                'value'	=>	$p->getMaxEmailLists() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_box',
-                                'value'	=>	$p->getMaxPop() ? $p->getMaxPop() : 0,
+                                'value'	=>	$p->getMaxPop() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_traffic',
@@ -395,11 +397,11 @@ class Server_Manager_Plesk extends Server_Manager
                             ),
                             array(
                                 'name'	=>	'max_subdom',
-                                'value'	=>	$p->getMaxSubdomains() ? $p->getMaxSubdomains() : 0,
+                                'value'	=>	$p->getMaxSubdomains() ?: 0,
                             ),
                             array(
                                 'name'	=>	'max_subftp_users',
-                                'value'	=>	$p->getMaxFtp() ? $p->getMaxFtp() : 0,
+                                'value'	=>	$p->getMaxFtp() ?: 0,
                             ),
                         ), 
                     ),
@@ -467,7 +469,6 @@ class Server_Manager_Plesk extends Server_Manager
 
     /**
      * Creates a new client account
-     * @param Server_Account $a
      * @throws Server_Exception
      * @return integer client's Plesk id
      */

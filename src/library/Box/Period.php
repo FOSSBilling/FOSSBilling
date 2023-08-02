@@ -10,18 +10,18 @@
 
 class Box_Period
 {
-    const UNIT_DAY          = 'D';
-    const UNIT_WEEK         = 'W';
-    const UNIT_MONTH        = 'M';
-    const UNIT_YEAR         = 'Y';
+    public const UNIT_DAY          = 'D';
+    public const UNIT_WEEK         = 'W';
+    public const UNIT_MONTH        = 'M';
+    public const UNIT_YEAR         = 'Y';
 
-    const PERIOD_WEEK       = '1W';
-    const PERIOD_MONTH      = '1M';
-    const PERIOD_QUARTER    = '3M';
-    const PERIOD_BIANNUAL   = '6M';
-    const PERIOD_ANNUAL     = '1Y';
-    const PERIOD_BIENNIAL    = '2Y';
-    const PERIOD_TRIENNIAL    = '3Y';
+    public const PERIOD_WEEK       = '1W';
+    public const PERIOD_MONTH      = '1M';
+    public const PERIOD_QUARTER    = '3M';
+    public const PERIOD_BIANNUAL   = '6M';
+    public const PERIOD_ANNUAL     = '1Y';
+    public const PERIOD_BIENNIAL    = '2Y';
+    public const PERIOD_TRIENNIAL    = '3Y';
 
     /**
      * Predefined periods
@@ -35,8 +35,8 @@ class Box_Period
         self::PERIOD_TRIENNIAL    =>    36,
     );
 
-    private $unit;
-    private $qty;
+    private string $unit;
+    private int $qty;
 
     public function __construct($code)
     {
@@ -44,7 +44,7 @@ class Box_Period
             throw new \Box_Exception("Invalid period code. Period definition must be 2 chars length");
         }
 
-        list($qty, $unit) = str_split($code);
+        [$qty, $unit] = str_split($code);
 
         $units = $this->getUnits();
         $qty = (int)$qty;
@@ -119,22 +119,13 @@ class Box_Period
         $qty = $this->qty;
         $placeholders = [':number' => $qty];
 
-        switch ($this->unit) {
-            case self::UNIT_DAY:
-                $shift = __pluralTrans('Every :number day', 'Every :number days', $qty, $placeholders);
-                break;
-            case self::UNIT_WEEK:
-                $shift = __pluralTrans('Every :number week', 'Every :number weeks', $qty, $placeholders);
-                break;
-            case self::UNIT_MONTH:
-                $shift = __pluralTrans('Every :number month', 'Every :number months', $qty, $placeholders);
-                break;
-            case self::UNIT_YEAR:
-                $shift = __pluralTrans('Every :number year', 'Every :number years', $qty, $placeholders);
-                break;
-            default:
-                throw new \Box_Exception('Unit not defined');
-        }
+        $shift = match ($this->unit) {
+            self::UNIT_DAY => __pluralTrans('Every :number day', 'Every :number days', $qty, $placeholders),
+            self::UNIT_WEEK => __pluralTrans('Every :number week', 'Every :number weeks', $qty, $placeholders),
+            self::UNIT_MONTH => __pluralTrans('Every :number month', 'Every :number months', $qty, $placeholders),
+            self::UNIT_YEAR => __pluralTrans('Every :number year', 'Every :number years', $qty, $placeholders),
+            default => throw new \Box_Exception('Unit not defined'),
+        };
 
         return $shift;
     }
@@ -153,22 +144,13 @@ class Box_Period
     {
         $qty = 0;
 
-        switch ($this->unit) {
-            case self::UNIT_DAY:
-                $qty = $this->qty / 30;
-                break;
-            case self::UNIT_WEEK:
-                $qty = $this->qty / 4;
-                break;
-            case self::UNIT_MONTH:
-                $qty = $this->qty;
-                break;
-            case self::UNIT_YEAR:
-                $qty = $this->qty * 12;
-                break;
-            default:
-                throw new \Box_Exception('Unable to get the number of months for :unit',[':unit' => $this->unit]);
-        }
+        $qty = match ($this->unit) {
+            self::UNIT_DAY => $this->qty / 30,
+            self::UNIT_WEEK => $this->qty / 4,
+            self::UNIT_MONTH => $this->qty,
+            self::UNIT_YEAR => $this->qty * 12,
+            default => throw new \Box_Exception('Unable to get the number of months for :unit',[':unit' => $this->unit]),
+        };
 
         return $qty;
     }
@@ -179,22 +161,13 @@ class Box_Period
             $now = time();
         }
 
-        switch ($this->unit) {
-            case self::UNIT_DAY:
-                $shift = 'days';
-                break;
-            case self::UNIT_WEEK:
-                $shift = 'weeks';
-                break;
-            case self::UNIT_MONTH:
-                $shift = 'months';
-                break;
-            case self::UNIT_YEAR:
-                $shift = 'years';
-                break;
-            default:
-                throw new \Box_Exception('Unit not defined');
-        }
+        $shift = match ($this->unit) {
+            self::UNIT_DAY => 'days',
+            self::UNIT_WEEK => 'weeks',
+            self::UNIT_MONTH => 'months',
+            self::UNIT_YEAR => 'years',
+            default => throw new \Box_Exception('Unit not defined'),
+        };
         return strtotime("+$this->qty $shift", $now);
     }
 }

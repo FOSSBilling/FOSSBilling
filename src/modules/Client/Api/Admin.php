@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,14 +18,10 @@ class Admin extends \Api_Abstract
 {
     /**
      * Get a list of clients.
-     * 
-     * @param array $data Filtering options.
-     * 
-     * @param string $data['status'] [optional] Filter clients by status. Available options: 'active', 'suspended', 'canceled'.
-     * 
-     * @param int $data['per_page'] [optional] Number of clients to display per page.
-     * 
-     * @return array List of clients in a paginated manner.
+     *
+     * @param array $data filtering options
+     *
+     * @return array list of clients in a paginated manner
      */
     public function get_list($data)
     {
@@ -43,11 +39,9 @@ class Admin extends \Api_Abstract
 
     /**
      * Get a list of clients.
-     * 
+     *
      * @param array $data Filtering options
-     * 
-     * @param int $data['per_page'] [optional] Number of clients to display per page.
-     * 
+     *
      * @return array List of clients in a paginated manner
      */
     public function get_pairs($data)
@@ -59,8 +53,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get client by id or email. Email is also unique in database.
-     *
-     * @param int $id - client ID
      *
      * @optional string $email - client email
      *
@@ -76,8 +68,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Login to clients area with client id.
-     *
-     * @param int $id - client ID
      *
      * @return array - client details
      */
@@ -102,9 +92,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Creates new client.
-     *
-     * @param string $email      - client email, must not be registered on system
-     * @param string $first_name - client first name
      *
      * @optional string $password - client password
      * @optional string $auth_type - client authorization type. Default null
@@ -174,8 +161,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes client from system.
      *
-     * @param string $id - client ID
-     *
      * @return bool
      */
     public function delete($data)
@@ -200,8 +185,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update client profile.
-     *
-     * @param string $id - client ID
      *
      * @optional string $email - client email
      * @optional string $first_name - client first_name
@@ -256,9 +239,12 @@ class Admin extends \Api_Abstract
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
         }
-        $this->di['validator']->isBirthdayValid($data['birthday'] ?? null);
 
-        if (($data['currency'] ?? null) && $service->canChangeCurrency($client, ($data['currency'] ?? null))) {
+        if (!empty($data['birthday'])) {
+            $this->di['validator']->isBirthdayValid($data['birthday']);
+        }
+
+        if (($data['currency'] ?? null) && $service->canChangeCurrency($client, $data['currency'] ?? null)) {
             $client->currency = $data['currency'] ?? $client->currency;
         }
 
@@ -269,45 +255,45 @@ class Admin extends \Api_Abstract
             $client->phone_cc = intval($phoneCC);
         }
 
-        $client->email = $data['email'] ?? (empty($client->email) ? null : $client->email);
-        $client->first_name = $data['first_name'] ?? (empty($client->first_name) ? null : $client->first_name);
-        $client->last_name = $data['last_name'] ?? (empty($client->last_name) ? null : $client->last_name);
-        $client->aid = $data['aid'] ?? (empty($client->aid) ? null : $client->aid);
-        $client->gender = $data['gender'] ?? (empty($client->gender) ? null : $client->gender);
-        $client->birthday = $data['birthday'] ?? (empty($client->birthday) ? null : $client->birthday);
-        $client->company = $data['company'] ?? (empty($client->company) ? null : $client->company);
-        $client->company_vat = $data['company_vat'] ?? (empty($client->company_vat) ? null : $client->company_vat);
-        $client->address_1 = $data['address_1'] ?? (empty($client->address_1) ? null : $client->address_1);
-        $client->address_2 = $data['address_2'] ?? (empty($client->address_1) ? null : $client->address_1);
-        $client->phone = $data['phone'] ?? (empty($client->phone) ? null : $client->phone);
-        $client->document_type = $data['document_type'] ?? (empty($client->document_type) ? null : $client->document_type);
-        $client->document_nr = $data['document_nr'] ?? (empty($client->document_nr) ? null : $client->document_nr);
-        $client->notes = $data['notes'] ?? (empty($client->notes) ? null : $client->notes);
-        $client->country = $data['country'] ?? (empty($client->country) ? null : $client->country);
-        $client->postcode = $data['postcode'] ?? (empty($client->postcode) ? null : $client->postcode);
-        $client->state = $data['phonestate_cc'] ?? (empty($client->phonestate_cc) ? null : $client->phonestate_cc);
-        $client->city = $data['city'] ?? (empty($client->city) ? null : $client->city);
+        $client->email = (!empty($data['email']) ? $data['email'] : $client->email);
+        $client->first_name = (!empty($data['first_name']) ? $data['first_name'] : $client->first_name);
+        $client->last_name = (!empty($data['last_name']) ? $data['last_name'] : $client->last_name);
+        $client->aid = (!empty($data['aid']) ? $data['aid'] : $client->aid);
+        $client->gender = (!empty($data['gender']) ? $data['gender'] : $client->gender);
+        $client->birthday = (!empty($data['birthday']) ? $data['birthday'] : $client->birthday);
+        $client->company = (!empty($data['company']) ? $data['company'] : $client->company);
+        $client->company_vat = (!empty($data['company_vat']) ? $data['company_vat'] : $client->company_vat);
+        $client->address_1 = (!empty($data['address_1']) ? $data['address_1'] : $client->address_1);
+        $client->address_2 = (!empty($data['address_2']) ? $data['address_2'] : $client->address_2);
+        $client->phone = (!empty($data['phone']) ? $data['phone'] : $client->phone);
+        $client->document_type = (!empty($data['document_type']) ? $data['document_type'] : $client->document_type);
+        $client->document_nr = (!empty($data['document_nr']) ? $data['document_nr'] : $client->document_nr);
+        $client->notes = (!empty($data['notes']) ? $data['notes'] : $client->notes);
+        $client->country = (!empty($data['country']) ? $data['country'] : $client->country);
+        $client->postcode = (!empty($data['postcode']) ? $data['postcode'] : $client->postcode);
+        $client->state = (!empty($data['state']) ? $data['state'] : $client->state);
+        $client->city = (!empty($data['city']) ? $data['city'] : $client->city);
 
-        $client->status = $data['status'] ?? (empty($client->status) ? null : $client->status);
-        $client->email_approved = $data['email_approved'] ?? (empty($client->email_approved) ? null : $client->email_approved);
-        $client->tax_exempt = $data['tax_exempt'] ?? (empty($client->tax_exempt) ? null : $client->tax_exempt);
-        $client->created_at = $data['created_at'] ?? (empty($client->created_at) ? null : $client->created_at);
+        $client->status = (!empty($data['status']) ? $data['status'] : $client->status);
+        $client->email_approved = (!empty($data['email_approved']) ? $data['email_approved'] : $client->email_approved);
+        $client->tax_exempt = (!empty($data['tax_exempt']) ? $data['tax_exempt'] : $client->tax_exempt);
+        $client->created_at = (!empty($data['created_at']) ? $data['created_at'] : $client->created_at);
 
-        $client->custom_1 = $data['custom_1'] ?? (empty($client->custom_1) ? null : $client->custom_1);
-        $client->custom_2 = $data['custom_2'] ?? (empty($client->custom_2) ? null : $client->custom_2);
-        $client->custom_3 = $data['custom_3'] ?? (empty($client->custom_3) ? null : $client->custom_3);
-        $client->custom_4 = $data['custom_4'] ?? (empty($client->custom_4) ? null : $client->custom_4);
-        $client->custom_5 = $data['custom_5'] ?? (empty($client->custom_5) ? null : $client->custom_5);
-        $client->custom_6 = $data['custom_6'] ?? (empty($client->custom_6) ? null : $client->custom_6);
-        $client->custom_7 = $data['custom_7'] ?? (empty($client->custom_7) ? null : $client->custom_7);
-        $client->custom_8 = $data['custom_8'] ?? (empty($client->custom_8) ? null : $client->custom_8);
-        $client->custom_9 = $data['custom_9'] ?? (empty($client->custom_9) ? null : $client->custom_9);
-        $client->custom_10 = $data['custom_10'] ?? (empty($client->custom_10) ? null : $client->custom_10);
+        $client->custom_1 = (!empty($data['custom_1']) ? $data['custom_1'] : $client->custom_1);
+        $client->custom_2 = (!empty($data['custom_2']) ? $data['custom_2'] : $client->custom_2);
+        $client->custom_3 = (!empty($data['custom_3']) ? $data['custom_3'] : $client->custom_3);
+        $client->custom_4 = (!empty($data['custom_4']) ? $data['custom_4'] : $client->custom_4);
+        $client->custom_5 = (!empty($data['custom_5']) ? $data['custom_5'] : $client->custom_5);
+        $client->custom_6 = (!empty($data['custom_6']) ? $data['custom_6'] : $client->custom_6);
+        $client->custom_7 = (!empty($data['custom_7']) ? $data['custom_7'] : $client->custom_7);
+        $client->custom_8 = (!empty($data['custom_8']) ? $data['custom_8'] : $client->custom_8);
+        $client->custom_9 = (!empty($data['custom_9']) ? $data['custom_9'] : $client->custom_9);
+        $client->custom_10 = (!empty($data['custom_10']) ? $data['custom_10'] : $client->custom_10);
 
-        $client->client_group_id = $data['group_id'] ?? (empty($client->group_id) ? null : $client->group_id);
-        $client->company_number = $data['company_number'] ?? (empty($client->company_number) ? null : $client->company_number);
-        $client->type = $data['type'] ?? (empty($client->type) ? null : $client->type);
-        $client->lang = $data['lang'] ?? (empty($client->lang) ? null : $client->lang);
+        $client->client_group_id = (!empty($data['group_id']) ? $data['group_id'] : $client->client_group_id);
+        $client->company_number = (!empty($data['company_number']) ? $data['company_number'] : $client->company_number);
+        $client->type = (!empty($data['type']) ? $data['type'] : $client->type);
+        $client->lang = (!empty($data['lang']) ? $data['lang'] : $client->lang);
 
         $client->updated_at = date('Y-m-d H:i:s');
 
@@ -321,10 +307,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change client password.
-     *
-     * @param int    $id               - Client ID
-     * @param string $password         - new client password
-     * @param string $password_confirm - repeat same new client password
      *
      * @return bool
      */
@@ -350,6 +332,9 @@ class Admin extends \Api_Abstract
         $client->pass = $this->di['password']->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
+
+        $profileService = $this->di['mod_service']('profile');
+        $profileService->invalidateSessions('client', $data['id']);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
 
@@ -386,8 +371,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove row from clients balance.
      *
-     * @param int $id - Balance line id
-     *
      * @return bool
      */
     public function balance_delete($data)
@@ -412,10 +395,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Adds funds to clients balance.
-     *
-     * @param int $id          - Client ID
-     * @param int $amount      - Amount of clients currency to added to balance
-     * @param int $description - Description of this transaction
      *
      * @optional string $type - Related item type
      * @optional string $rel_id - Related item id
@@ -490,8 +469,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove log entry form clients logins history.
      *
-     * @param int $id - Log entry ID
-     *
      * @return bool
      */
     public function login_history_delete($data)
@@ -537,8 +514,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new clients group.
      *
-     * @param string $title - New group title
-     *
      * @return int $id - newly created group id
      */
     public function group_create($data)
@@ -553,8 +528,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update client group.
-     *
-     * @param int $id - client group ID
      *
      * @optional string $title - new group title
      *
@@ -581,8 +554,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete client group.
      *
-     * @param int $id - client group ID
-     *
      * @return bool
      *
      * @throws ErrorException
@@ -596,13 +567,17 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
+        $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
+
+        if ((is_countable($clients) ? count($clients) : 0) > 0) {
+            throw new \Box_Exception('Group has clients assigned. Please reassign them first.');
+        }
+
         return $this->getService()->deleteGroup($model);
     }
 
     /**
      * Get client group details.
-     *
-     * @param int $id - client group ID
      *
      * @return array
      *
@@ -623,8 +598,6 @@ class Admin extends \Api_Abstract
     /**
      * Deletes clients with given IDs.
      *
-     * @param array $ids - IDs for deletion
-     *
      * @return bool
      */
     public function batch_delete($data)
@@ -643,8 +616,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes client login logs with given IDs.
-     *
-     * @param array $ids - IDs for deletion
      *
      * @return bool
      */
@@ -665,6 +636,7 @@ class Admin extends \Api_Abstract
     public function export_csv($data)
     {
         $data['headers'] ??= [];
+
         return $this->getService()->exportCSV($data['headers']);
     }
 }

@@ -10,11 +10,11 @@
 
 class Box_Mod
 {
-    private $mod = null;
+    private ?string $mod = null;
 
-    private $di = null;
+    private ?\Pimple\Container $di = null;
 
-    private $core = array(
+    private array $core = array(
         'api',
         'activity',
         'cart',
@@ -74,7 +74,7 @@ class Box_Mod
         $file = $this->_getModPath() . 'manifest.json';
         $json = json_decode(file_get_contents($file), true);
         if(empty ($json)) {
-            throw new \Box_Exception('Module :mod manifest file is not valid. Check file syntax and permissions.', array(':mod'=>$this->mod));
+            throw new \Box_Exception('Module :mod manifest file is invalid. Check file syntax and permissions.', array(':mod'=>$this->mod));
         }
 
         //default module info if some fields are missing

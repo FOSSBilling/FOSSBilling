@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -17,9 +17,6 @@ class Admin extends \Api_Abstract
 {
     /**
      * Change hosting account plan.
-     *
-     * @param int $order_id - Hosting account order id
-     * @param int $plan_id  - New hosting plan id
      *
      * @return bool
      */
@@ -40,9 +37,6 @@ class Admin extends \Api_Abstract
     /**
      * Change hosting account username.
      *
-     * @param int    $order_id - Hosting account order id
-     * @param string $username - New username
-     *
      * @return bool
      */
     public function change_username($data)
@@ -55,9 +49,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change hosting account ip.
-     *
-     * @param int    $order_id - Hosting account order id
-     * @param string $username - New username
      *
      * @return bool
      */
@@ -72,10 +63,6 @@ class Admin extends \Api_Abstract
     /**
      * Change hosting account domain.
      *
-     * @param int    $order_id - Hosting account order id
-     * @param string $tld      - Top level domain value, ie: .com
-     * @param string $sld      - Second level domain value, ie: domain name
-     *
      * @return bool
      */
     public function change_domain($data)
@@ -88,10 +75,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Change hosting account password.
-     *
-     * @param int    $order_id         - Hosting account order id
-     * @param string $password         - New account password
-     * @param string $password_confirm - Must be same value as password field
      *
      * @return bool
      */
@@ -106,8 +89,6 @@ class Admin extends \Api_Abstract
     /**
      * Synchronize account with server values.
      *
-     * @param int $order_id - Hosting account order id
-     *
      * @return bool
      */
     public function sync($data)
@@ -121,8 +102,6 @@ class Admin extends \Api_Abstract
     /**
      * Update account information on FOSSBilling database.
      * This does not send actions to real account on hosting server.
-     *
-     * @param int $order_id - Hosting account order id
      *
      * @optional string $username - Hosting account username
      * @optional string $ip - Hosting account ip
@@ -182,10 +161,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new hosting server.
      *
-     * @param string $name    - server name
-     * @param string $ip      - server ip
-     * @param string $manager - server manager code
-     *
      * @optional string $hostname - server hostname
      * @optional string $ns1 - default nameserver 1
      * @optional string $ns2 - default nameserver 2
@@ -219,8 +194,6 @@ class Admin extends \Api_Abstract
     /**
      * Get server details.
      *
-     * @param int $id - server id
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -241,8 +214,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete server.
      *
-     * @param int $id - server id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -256,13 +227,19 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
+        // check if server is not used by any service_hostings
+        $hosting_services = $this->di['db']->find('ServiceHosting', 'service_hosting_server_id = :cart_id', [':cart_id' => $data['id']]);
+        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+
+        if ($count > 0) {
+            throw new \Box_Exception('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
+        }
+
         return (bool) $this->getService()->deleteServer($model);
     }
 
     /**
      * Update server configuration.
-     *
-     * @param int $id - server id
      *
      * @optional string $hostname - server hostname
      * @optional string $ns1 - default nameserver 1
@@ -272,6 +249,7 @@ class Admin extends \Api_Abstract
      * @optional string $username - server API login username
      * @optional string $password - server API login password
      * @optional string $accesshash - server API login access hash
+     * @optional string $userprefix - prefix for created user
      * @optional string $port - server API port
      * @optional bool $secure - flag to define whether to use secure connection (https) to server or not (http)
      * @optional bool $active - flag to enable/disable server
@@ -290,13 +268,15 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
 
+        $data['config'] = [
+            'userprefix' => $data['userprefix'] ?? null,
+        ];
+
         return (bool) $service->updateServer($model, $data);
     }
 
     /**
      * Test connection to server.
-     *
-     * @param int $id - server id
      *
      * @return bool
      *
@@ -345,8 +325,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete hosting plan.
      *
-     * @param int $id - hosting plan id
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -360,13 +338,20 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
+        // check if hosting plan is not used by any service_hostings
+        $hosting_services = $this->di['db']->find('ServiceHosting', 'service_hosting_hp_id = :cart_id', [':cart_id' => $data['id']]);
+
+        // Ensure $hosting_services is an array before counting its elements
+        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+        if ($count > 0) {
+            throw new \Box_Exception('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
+        }
+
         return (bool) $this->getService()->deleteHp($model);
     }
 
     /**
      * Get hosting plan details.
-     *
-     * @param int $id - hosting plan id
      *
      * @return array
      *
@@ -386,8 +371,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update hosting plan details.
-     *
-     * @param int $id - hosting plan id
      *
      * @optional string $name - hosting plan name. Used as identifier on server
      *
@@ -411,8 +394,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update hosting plan details.
-     *
-     * @param string $name - hosting plan name. Used as identifier on server
      *
      * @return int - new hosting plan id
      *

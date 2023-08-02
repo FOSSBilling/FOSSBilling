@@ -12,30 +12,25 @@ if (!file_exists(__DIR__ . '/src')) {
     exit(0);
 }
 
-$fileHeaderComment = <<<'EOF'
-    FOSSBilling.
-
-    @copyright FOSSBilling (https://www.fossbilling.org)
-    @license   Apache-2.0
-
-    Copyright FOSSBilling 2022
-    This software may contain code previously used in the BoxBilling project.
-    Copyright BoxBilling, Inc 2011-2021
-    
-    This source file is subject to the Apache-2.0 License that is bundled
-    with this source code in the file LICENSE
-    EOF;
-
 return (new PhpCsFixer\Config())
     ->setRules([
-        '@PHP74Migration' => true,
+        '@PHP80Migration' => true,
         '@Symfony' => true,
-        'header_comment' => ['header' => $fileHeaderComment, 'comment_type' => 'PHPDoc'],
         'concat_space' => ['spacing' => 'one'],
         'protected_to_private' => false,
         'nullable_type_declaration_for_default_null_value' => ['use_nullable_type_declaration' => false],
+        'yoda_style' => ['equal' => false, 'identical' => false, 'less_and_greater' => false], // Enforce non-Yoda style.
+        'blank_line_before_statement' => ['statements' => ['break', 'continue', 'return', 'throw', 'try']], // Removed 'declare' from the default list.
+        /* Risky */
+        'get_class_to_class_keyword' => true, // Risky if the get_class function is overridden. In our case, it's not.
+        'dir_constant' => true, // Risky when the function dirname is overridden. In our case, it's not.
+        'array_push' => true, // Risky when the function array_push is overridden. In our case, it's not.
+        'no_useless_sprintf' => true, // Risky when the function sprintf is overridden. In our case, it's not.
+        'php_unit_construct' => true, // https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/doc/rules/php_unit/php_unit_construct.rst
+        'php_unit_mock_short_will_return' => true, // https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/doc/rules/php_unit/php_unit_mock_short_will_return.rst
+        'no_homoglyph_names' => true, // https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/doc/rules/naming/no_homoglyph_names.rst
     ])
-    ->setRiskyAllowed(false)
+    ->setRiskyAllowed(true)
     ->setFinder(
         (new PhpCsFixer\Finder())
             ->in(__DIR__ . '/src')

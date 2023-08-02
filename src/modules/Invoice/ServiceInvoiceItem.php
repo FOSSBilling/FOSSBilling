@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Invoice;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class ServiceInvoiceItem implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -39,7 +39,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['db']->store($item);
 
         $oid = $this->getOrderId($item);
-        if (null !== $oid) {
+        if ($oid !== null) {
             $orderService = $this->di['mod_service']('Order');
             $order = $this->di['db']->load('ClientOrder', $oid);
             if ($order instanceof \Model_ClientOrder) {
@@ -50,11 +50,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function executeTask(\Model_InvoiceItem $item)
     {
-        if (\Model_InvoiceItem::STATUS_EXECUTED == $item->status) {
+        if ($item->status == \Model_InvoiceItem::STATUS_EXECUTED) {
             return true;
         }
 
-        if (\Model_InvoiceItem::TYPE_ORDER == $item->type) {
+        if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
             $order_id = $this->getOrderId($item);
             $order = $this->di['db']->load('ClientOrder', $order_id);
             if (!$order instanceof \Model_ClientOrder) {
@@ -64,7 +64,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             switch ($item->task) {
                 case \Model_InvoiceItem::TASK_ACTIVATE:
                     $product = $this->di['db']->getExistingModelById('Product', $order->product_id);
-                    if (\Model_Product::SETUP_AFTER_PAYMENT == $product->setup) {
+                    if ($product->setup == \Model_Product::SETUP_AFTER_PAYMENT) {
                         try {
                             $orderService->activateOrder($order);
                         } catch (\Exception $e) {
@@ -72,12 +72,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             $orderService->saveStatusChange($order, 'Order could not be activated due to error: ' . $e->getMessage());
                         }
                     }
+
                     break;
 
                 case \Model_InvoiceItem::TASK_RENEW:
                     try {
                         // Unsuspend order if suspended before renew
-                        if (\Model_ClientOrder::STATUS_SUSPENDED == $order->status) {
+                        if ($order->status == \Model_ClientOrder::STATUS_SUSPENDED) {
                             $orderService->unsuspendFromOrder($order);
                         }
 
@@ -87,6 +88,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         error_log($e->getMessage());
                         $orderService->saveStatusChange($order, 'Order could not renew due to error: ' . $e->getMessage());
                     }
+
                     break;
 
                 default:
@@ -97,7 +99,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $this->markAsExecuted($item);
         }
 
-        if (\Model_InvoiceItem::TYPE_HOOK_CALL == $item->type) {
+        if ($item->type == \Model_InvoiceItem::TYPE_HOOK_CALL) {
             try {
                 $params = json_decode($item->rel_id);
                 $this->di['events_manager']->fire(['event' => $item->task, 'params' => $params]);
@@ -107,13 +109,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $this->markAsExecuted($item);
         }
 
-        if (\Model_InvoiceItem::TYPE_DEPOSIT == $item->type) {
+        if ($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
             // do not request to add funds to client balance
             // associated invoice will have already been marked with a valid transaction and funds added
             $this->markAsExecuted($item);
         }
 
-        if (\Model_InvoiceItem::TYPE_CUSTOM == $item->type) {
+        if ($item->type == \Model_InvoiceItem::TYPE_CUSTOM) {
             // @todo ?
             $this->markAsExecuted($item);
         }
@@ -228,9 +230,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function creditInvoiceItem(\Model_InvoiceItem $item)
     {
         $total = $this->getTotalWithTax($item);
-        if ($total <= 0) {
-            return true;
-        }
 
         $invoice = $this->di['db']->getExistingModelById('Invoice', $item->invoice_id, 'Invoice not found');
         $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
@@ -256,7 +255,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getOrderId(\Model_InvoiceItem $item)
     {
-        if (\Model_InvoiceItem::TYPE_ORDER == $item->type) {
+        if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
             return (int) $item->rel_id;
         }
 

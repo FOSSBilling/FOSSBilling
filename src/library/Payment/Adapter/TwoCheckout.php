@@ -10,9 +10,9 @@
 
 class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterface
 {
-    private $config = array();
+    private array $config = array();
 
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -119,7 +119,7 @@ class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterfac
         $ipn = array_merge($data['get'], $data['post']);
 
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($ipn)) {
-            throw new Payment_Exception('2Checkout IPN is not valid');
+            throw new Payment_Exception('IPN is invalid');
         }
 
         $api_admin->invoice_transaction_update(array('id' => $id, 'type' => 'ORDER CREATED'));
@@ -133,7 +133,7 @@ class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterfac
         }
 
         if(!$invoice_id) {
-            throw new Payment_Exception('Invoice id could not be determined for this transaction');
+            throw new Payment_Exception('Invoice ID could not be determined for this transaction');
         }
 
         $invoice = $api_admin->invoice_get(array('id'=>$invoice_id));
@@ -184,48 +184,18 @@ class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterfac
 
             $recurrence = '1M';
             if(isset($ipn['li_0_recurrence'])) {
-                switch ($ipn['li_0_recurrence']) {
-                    case '3 Year':
-                        $recurrence = '3Y';
-                        break;
-
-                    case '2 Year':
-                        $recurrence = '2Y';
-                        break;
-
-                    case '1 Year':
-                        $recurrence = '1Y';
-                        break;
-
-                    case '6 Month':
-                        $recurrence = '6M';
-                        break;
-
-                    case '3 Month':
-                        $recurrence = '3M';
-                        break;
-
-                    case '2 Month':
-                        $recurrence = '2M';
-                        break;
-
-                    case '3 Week':
-                        $recurrence = '3W';
-                        break;
-
-                    case '2 Week':
-                        $recurrence = '2W';
-                        break;
-
-                    case '1 Week':
-                        $recurrence = '1W';
-                        break;
-
-                    case '1 Month':
-                    default:
-                        $recurrence = '1M';
-                        break;
-                }
+                $recurrence = match ($ipn['li_0_recurrence']) {
+                    '3 Year' => '3Y',
+                    '2 Year' => '2Y',
+                    '1 Year' => '1Y',
+                    '6 Month' => '6M',
+                    '3 Month' => '3M',
+                    '2 Month' => '2M',
+                    '3 Week' => '3W',
+                    '2 Week' => '2W',
+                    '1 Week' => '1W',
+                    default => '1M',
+                };
             }
 
             $sd = array(
@@ -306,20 +276,11 @@ class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterfac
         $data['sid']                = $this->config['vendor_nr'];
         $data['mode']               = '2CO';
 
-        switch ($subs['unit']) {
-            case 'W':
-                $unit = 'Week';
-                break;
-
-            case 'Y':
-                $unit = 'Year';
-                break;
-
-            case 'M':
-            default:
-                $unit = 'Month';
-                break;
-        }
+        $unit = match ($subs['unit']) {
+            'W' => 'Week',
+            'Y' => 'Year',
+            default => 'Month',
+        };
 
         foreach($invoice['lines'] as $i => $item) {
         	$data['li_' . $i . '_type']			= 'product';
@@ -384,7 +345,7 @@ class Payment_Adapter_TwoCheckout implements \FOSSBilling\InjectionAwareInterfac
         );
 
         $rows = $this->di['db']->getAll($sql, $bindings);
-        if (count($rows) > 1){
+        if ((is_countable($rows) ? count($rows) : 0) > 1){
             return true;
         }
 

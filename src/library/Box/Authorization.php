@@ -10,12 +10,10 @@
 
 class Box_Authorization
 {
-    private $di = null;
     private $session = null;
 
-    public function __construct(\Pimple\Container $di)
+    public function __construct(private \Pimple\Container $di)
     {
-        $this->di = $di;
         $this->session = $di['session'];
     }
 

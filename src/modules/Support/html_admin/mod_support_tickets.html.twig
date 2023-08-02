@@ -182,10 +182,10 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
             {% include 'partial_search.html.twig' %}
-            <table class="table card-table table-vcenter table-striped text-nowrap">
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
-                        <th class="w-1">
+                        <th class="w-1 no-sort">
                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                         </th>
                         <th>{{ 'Client'|trans }}</th>

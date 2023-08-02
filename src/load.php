@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -30,15 +30,15 @@ function checkConfig()
 {
     $filesystem = new Filesystem();
 
-    $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ('on' === $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS'])) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO']) ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+    $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] == 1)) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
     $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 
     // Check if configuration is available, and redirect to installer if not.
     if (!$filesystem->exists(PATH_CONFIG)) {
         if ($filesystem->exists('install/index.php')) {
-            header("Location: " . $base_url . '/install/index.php', true, 307);
+            header('Location: ' . $base_url . '/install/index.php', true, 307);
         } else {
-            throw new Exception("The FOSSBilling configuration file is empty or invalid.", 3);
+            throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
         }
     }
 }
@@ -69,6 +69,7 @@ function checkLegacyFiles()
     foreach ($toCheck as $path) {
         if ($filesystem->exists($path)) {
             $legacyFound = true;
+
             break;
         }
     }
@@ -86,7 +87,7 @@ function checkRequirements()
 {
     // Check for Composer packages / vendor folder.
     if (!file_exists(PATH_VENDOR)) {
-        throw new Exception("The composer packages are missing.", 1);
+        throw new Exception('The composer packages are missing.', 1);
     }
 }
 
@@ -127,7 +128,7 @@ function checkWebServer()
     // Check for missing required .htaccess on Apache and Apache-compatible web servers.
     $isApache = function_exists('apache_get_version') ? true : false;
     $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
-    if ($isApache or (stripos($serverSoftware, 'apache') !== false) or (stripos($serverSoftware, 'litespeed')) !== false) {
+    if ($isApache or (stripos($serverSoftware, 'apache') !== false) or stripos($serverSoftware, 'litespeed') !== false) {
         if (!$filesystem->exists('.htaccess')) {
             throw new Exception('Missing .htaccess file', 5);
         }
@@ -139,11 +140,12 @@ function checkWebServer()
  */
 function errorHandler(int $number, string $message, string $file, int $line)
 {
-    if (E_RECOVERABLE_ERROR === $number) {
+    if ($number === E_RECOVERABLE_ERROR) {
         exceptionHandler(new ErrorException($message, $number, 0, $file, $line));
     } else {
         error_log($number . ' ' . $message . ' ' . $file . ' ' . $line);
     }
+
     return false;
 }
 
@@ -152,16 +154,17 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
+    $message = htmlspecialchars($e->getMessage());
     if (APPLICATION_ENV === 'testing') {
-        echo $e->getMessage() . PHP_EOL;
+        echo $message . PHP_EOL;
 
         return;
     }
-    error_log($e->getMessage());
+    error_log($message);
 
     if (defined('BB_MODE_API')) {
         $code = $e->getCode() ?: 9998;
-        $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
+        $result = ['result' => null, 'error' => ['message' => $message, 'code' => $code]];
         echo json_encode($result);
 
         return false;
@@ -187,7 +190,7 @@ function exceptionHandler($e)
     } else {
         include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
         $errorPage = new \FOSSBilling\ErrorPage();
-        $errorPage->generatePage($e->getCode(), $e->getMessage());
+        $errorPage->generatePage($e->getCode(), $message);
     }
 }
 
@@ -201,7 +204,7 @@ function exceptionHandler($e)
 set_exception_handler('exceptionHandler');
 set_error_handler('errorHandler');
 
-//Enabled during setup, is then overridden once we have loaded the config.
+// Enabled during setup, is then overridden once we have loaded the config.
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
@@ -220,7 +223,7 @@ checkLegacyFiles();
 // Check config exists.
 checkConfig();
 
-//All seems good, so load the config file.
+// All seems good, so load the config file.
 $config = require PATH_CONFIG;
 
 // Verify the installer was removed.
@@ -236,10 +239,13 @@ define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
 
-//Initial setup and checks passed, now we setup our custom autoloader.
-$loader = new AntCMS\AntLoader(PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php');
-$loader->addPrefix('', PATH_LIBRARY, 'psr0');
-$loader->addPrefix('Box\\Mod\\', PATH_MODS);
+// Initial setup and checks passed, now we setup our custom autoloader.
+$loader = new AntCMS\AntLoader([
+    'mode' => 'filesystem',
+    'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
+]);
+$loader->addNamespace('', PATH_LIBRARY, 'psr0');
+$loader->addNamespace('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
 

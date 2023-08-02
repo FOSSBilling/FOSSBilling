@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -53,5 +53,15 @@ class Client extends \Api_Abstract
     public function is_taxable()
     {
         return $this->getService()->isClientTaxable($this->identity);
+    }
+
+    public function resend_email_verification()
+    {
+        if ($this->identity->email_approved) {
+            // Email is already validated, so we don't need to do so again
+            return true;
+        }
+
+        return $this->getService()->sendEmailConfirmationForClient($this->identity);
     }
 }

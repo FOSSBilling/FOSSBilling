@@ -18,7 +18,7 @@ class GuestTest extends \BBTestCase {
     public function testcreate()
     {
         $configArr = array(
-            'allow_signup' => true,
+            'disable_signup' => false,
             'required' => array(),
         );
         $data = array(
@@ -72,7 +72,7 @@ class GuestTest extends \BBTestCase {
     public function testcreateExceptionClientExists()
     {
         $configArr = array(
-            'allow_signup' => true,
+            'disable_signup' => false,
         );
         $data = array(
             'email' => 'test@email.com',
@@ -118,7 +118,7 @@ class GuestTest extends \BBTestCase {
     public function testCreateSignupDoNotAllowed()
     {
         $configArr = array(
-            'allow_signup' => false,
+            'disable_signup' => true,
         );
         $data = array(
             'email' => 'test@email.com',
@@ -141,7 +141,7 @@ class GuestTest extends \BBTestCase {
     public function testCreatePasswordsDoNotMatchException()
     {
         $configArr = array(
-            'allow_signup' => true,
+            'disable_signup' => false,
         );
         $data = array(
             'email' => 'test@email.com',
@@ -169,7 +169,6 @@ class GuestTest extends \BBTestCase {
         $data = array(
             'email' => 'test@example.com',
             'password' => 'sezam',
-            'remember' => true,
         );
 
         $model = new \Model_Client();
@@ -188,7 +187,7 @@ class GuestTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -296,9 +295,9 @@ class GuestTest extends \BBTestCase {
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Email not found in our database');
-        $client->reset_password($data);
+        // expects true because we don't want to give away if the email exists or not
+        $result = $client->reset_password($data);
+        $this->assertTrue($result);
     }
 
     public function testconfirm_reset()

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -19,8 +19,6 @@ class Admin extends \Api_Abstract
     /**
      * Create custom order form for product.
      *
-     * @param string $name - Name of new form
-     *
      * @optional string $style - Style/Type of the form. Default value is "horizontal". Other possible types are "inline", "search", "actions"
      *
      * @return int - ID of the created form
@@ -34,7 +32,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if (isset($data['type']) && ('horizontal' != strtolower($data['type']) || 'default' != strtolower($data['type']))) {
+        if (isset($data['type']) && (strtolower($data['type']) != 'horizontal' || strtolower($data['type']) != 'default')) {
             throw new \Box_Exception('Form style was not found in predefined list', null, 3657);
         }
 
@@ -46,9 +44,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Add new field to form.
-     *
-     * @param string $type    - Field type
-     * @param int    $form_id - ID of the field form
      *
      * @optional
      * @optional string $label - Label of the field which will be shown. Default value "Type X" where X is number of fields in form. For example "Checkbox 2"
@@ -76,7 +71,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         if (!isset($data['type']) || !$service->typeValidation($data['type'])) {
-            throw new \Box_Exception('Form field type is not valid', null, 2684);
+            throw new \Box_Exception('Form field type is invalid', null, 2684);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
             throw new \Box_Exception('This input type must have unique values', null, 3658);
@@ -92,8 +87,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get form data by it's id.
-     *
-     * @param int $id - ID of the form
      *
      * @return array
      *
@@ -114,8 +107,6 @@ class Admin extends \Api_Abstract
     /**
      * Get fields data by form's id.
      *
-     * @param int $form_id - ID of form
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -135,8 +126,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get field data by field id.
-     *
-     * @param int $id - ID of the fields
      *
      * @return array
      *
@@ -173,8 +162,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete form and it's form fields.
      *
-     * @param int $id - ID of the form
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -194,8 +181,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete field by id.
-     *
-     * @param int $id - ID of the field
      *
      * @return bool
      *
@@ -218,8 +203,6 @@ class Admin extends \Api_Abstract
      * Update form.
      *
      * @param array
-     * @param string $type    - Field type
-     * @param int    $form_id - ID of the field form
      *
      * @optional
      * @optional string $label - Label of the field which will be shown. Default value "Type X" where X is number of fields in form. For example "Checkbox 2"
@@ -262,8 +245,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get form pairs.
-     *
-     * @return mixed
      */
     public function get_pairs($data)
     {
@@ -274,9 +255,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Duplicate form with its fields in database.
-     *
-     * @param int    $form_id - ID of the origin form
-     * @param string $name    - Name of copied form
      *
      * @return int - ID of the new form
      *
@@ -300,14 +278,11 @@ class Admin extends \Api_Abstract
     /**
      * Update form name and style.
      *
-     * @param int    $form_id   - ID of the form
-     * @param string $form_name - New name of the form
-     *
      * @return bool
      */
     public function update_form_settings($data)
     {
-        if (!isset($data['form_id']) || ('' == trim($data['form_id']))) {
+        if (!isset($data['form_id']) || (trim($data['form_id']) == '')) {
             throw new \Box_Exception('Form id was not passed', null, 1654);
         }
         if (!isset($data['form_name'])) {
@@ -318,7 +293,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Form type was not passed', null, 3794);
         }
 
-        if ('horizontal' != $data['type'] && 'default' != $data['type']) {
+        if ($data['type'] != 'horizontal' && $data['type'] != 'default') {
             throw new \Box_Exception('Field type not supported', null, 3207);
         }
 

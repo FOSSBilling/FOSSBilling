@@ -15,6 +15,16 @@
 
 <div class="tab-pane active" id="two">
 
+{% if (guest.client_is_email_validation_required) and (not profile.email_approved) %}
+<div class="alert alert-block alert-danger">
+    <div class="row">
+        <span>You must verify your email address before you may access our services.</span>
+    </div>
+    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+    <a href="{{ 'api/client/client/resend_email_verification'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-alt btn-primary api-link" data-api-msg="{{ 'Verification email has been resent'|trans }}">{{ 'Resend verification email'|trans }}</a>
+</div>
+{% endif %}
+
 <!-- Second level tabs -->
 <div class="tabbable tabs-left">
     <ul class="nav nav-tabs">
@@ -65,7 +75,7 @@
                        </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="birthday">{{ 'Birth date'|trans }}</label>
+                        <label class="control-label" for="birthday">{{ 'Birthdate'|trans }}</label>
                         <div class="controls">
                             <input type="date" id="birthday" name="birthday" value="{{ profile.birthday }}" {% if birthday in required|keys %} required="required" {% endif %}>
                         </div>
@@ -120,7 +130,7 @@
                        <div class="control-group">
                            <label class="control-label" for="input">{{ 'Phone Number'|trans }}</label>
                            <div class="controls">
-                                <input type="text" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required="required" {% endif %}>
+                                <input type="phone" name="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required="required" {% endif %}>
                                <p class="help-block"></p>
                            </div>
                        </div>

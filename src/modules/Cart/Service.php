@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Cart;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -81,14 +81,14 @@ class Service implements InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$this->isPeriodEnabledForProduct($product, $data['period'])) {
-                throw new \Box_Exception('Selected billing period is not valid');
+                throw new \Box_Exception('Selected billing period is invalid');
             }
         }
 
         $qty = $data['quantity'] ?? 1;
         // check stock
         if (!$this->isStockAvailable($product, $qty)) {
-            throw new \Box_Exception("This item is currently out of stock");
+            throw new \Box_Exception('This item is currently out of stock');
         }
 
         $addons = $data['addons'] ?? [];
@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
                         $this->di['validator']->checkRequiredParamsForArray($required, $ac);
 
                         if (!$this->isPeriodEnabledForProduct($addon, $ac['period'])) {
-                            throw new \Box_Exception('Selected billing period is not valid for the selected addon');
+                            throw new \Box_Exception('Selected billing period is invalid for the selected addon');
                         }
                     }
                     $ac['parent_id'] = $product->id;
@@ -181,14 +181,14 @@ class Service implements InjectionAwareInterface
         $productTable = $model->getTable();
         $pricing = $productTable->getPricingArray($model);
 
-        return isset($pricing['type']) && \Model_ProductPayment::RECURRENT == $pricing['type'];
+        return isset($pricing['type']) && $pricing['type'] == \Model_ProductPayment::RECURRENT;
     }
 
     public function isPeriodEnabledForProduct(\Model_Product $model, $period)
     {
         $productTable = $model->getTable();
         $pricing = $productTable->getPricingArray($model);
-        if (\Model_ProductPayment::RECURRENT == $pricing['type']) {
+        if ($pricing['type'] == \Model_ProductPayment::RECURRENT) {
             return (bool) $pricing['recurrent'][$period]['enabled'];
         }
 
@@ -292,7 +292,7 @@ class Service implements InjectionAwareInterface
     {
         $cartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
 
-        return 0 == count($cartProducts);
+        return (is_countable($cartProducts) ? count($cartProducts) : 0) == 0;
     }
 
     public function rm(\Model_Cart $cart)
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT id FROM client_order WHERE promo_id = :promo AND client_id = :cid LIMIT 1';
         $promoId = $this->di['db']->getCell($sql, [':promo' => $promo->id, ':cid' => $client->id]);
 
-        return null !== $promoId;
+        return $promoId !== null;
     }
 
     public function getCartProducts(\Model_Cart $model)
@@ -423,6 +423,14 @@ class Service implements InjectionAwareInterface
             $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');
             if (!$this->isClientAbleToUsePromo($client, $promo)) {
                 throw new \Box_Exception('You have already used this promo code. Please remove promo code and checkout again.', null, 9874);
+            }
+
+            if (!$promo instanceof \Model_Promo) {
+                throw new \Box_Exception('Promo code is expired or does not exist');
+            }
+
+            if (!$this->isPromoAvailableForClientGroup($promo)) {
+                throw new \Box_Exception('Promo can not be applied to your account');
             }
         }
 
@@ -462,7 +470,7 @@ class Service implements InjectionAwareInterface
         ];
 
         // invoice may not be created if total is 0
-        if ($invoice instanceof \Model_Invoice && \Model_Invoice::STATUS_UNPAID == $invoice->status) {
+        if ($invoice instanceof \Model_Invoice && $invoice->status == \Model_Invoice::STATUS_UNPAID) {
             $result['invoice_hash'] = $invoice->hash;
         }
 
@@ -473,8 +481,8 @@ class Service implements InjectionAwareInterface
     {
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
-        if (0 == count($ca['items'])) {
-            throw new \Box_Exception('Can not checkout empty cart.');
+        if ((is_countable($ca['items']) ? count($ca['items']) : 0) == 0) {
+            throw new \Box_Exception('Can not checkout an empty cart');
         }
 
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
@@ -500,6 +508,11 @@ class Service implements InjectionAwareInterface
         foreach ($this->getCartProducts($cart) as $p) {
             $item = $this->cartProductToApiArray($p);
 
+            $product = $this->di['db']->getExistingModelById('Product', $item['product_id']);
+            if (is_null($product) || $product->status !== 'enabled') {
+                throw new \Box_Exception('Unable to complete order. One or more of the selected products are invalid.');
+            }
+
             /*
              * Convert the domain name to lowercase letters.
              * Using a capital letter in a domain name still points to the same name, so this isn't going to break anything
@@ -514,7 +527,7 @@ class Service implements InjectionAwareInterface
             $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
 
             // Domain TLD must begin with a period - add if not present for owndomain.
-            $item['domain']['owndomain_tld'] = (isset( $item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
+            $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
 
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;
@@ -523,7 +536,7 @@ class Service implements InjectionAwareInterface
             $order->form_id = $item['form_id'];
 
             $order->group_id = $cart->id;
-            $order->group_master = (0 == $i);
+            $order->group_master = ($i == 0);
             $order->invoice_option = 'issue-invoice';
             $order->title = $item['title'];
             $order->currency = $currency->code;
@@ -591,7 +604,7 @@ class Service implements InjectionAwareInterface
             }
 
             // define master order to be returned
-            if (null === $master_order) {
+            if ($master_order === null) {
                 $master_order = $order;
             }
 
@@ -608,7 +621,7 @@ class Service implements InjectionAwareInterface
 
             $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => $useCredits]);
 
-            if (\Model_Invoice::STATUS_UNPAID == $invoiceModel->status) {
+            if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
                 foreach ($orders as $order) {
                     $order->unpaid_invoice_id = $invoiceModel->id;
                     $this->di['db']->store($order);
@@ -623,16 +636,17 @@ class Service implements InjectionAwareInterface
             $ids[] = $order->id;
             $oa = $orderService->toApiArray($order, false, $client);
             $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
+
             try {
-                if (\Model_ProductTable::SETUP_AFTER_ORDER == $product->setup) {
+                if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER) {
                     $orderService->activateOrder($order);
                 }
 
-                if ($ca['total'] <= 0 && \Model_ProductTable::SETUP_AFTER_PAYMENT == $product->setup && $oa['total'] - $oa['discount'] <= 0) {
+                if ($ca['total'] <= 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0) {
                     $orderService->activateOrder($order);
                 }
 
-                if ($ca['total'] > 0 && \Model_ProductTable::SETUP_AFTER_PAYMENT == $product->setup && \Model_Invoice::STATUS_PAID == $invoiceModel->status) {
+                if ($ca['total'] > 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $invoiceModel->status == \Model_Invoice::STATUS_PAID) {
                     $orderService->activateOrder($order);
                 }
             } catch (\Exception $e) {
@@ -715,7 +729,7 @@ class Service implements InjectionAwareInterface
         if (method_exists($service, 'getCartProductTitle')) {
             return $service->getCartProductTitle($product, $config);
         } else {
-            return __trans(':product_title', [':product_title' => $product->title]);
+            return $product->title;
         }
     }
 

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -19,8 +19,6 @@ class Client extends \Api_Abstract
      * Use GET to call this method. Sends file attached to order.
      * Sends file as attachment.
      *
-     * @param int $order_id - downloadable service order id
-     *
      * @return bool
      */
     public function send_file($data)
@@ -36,7 +34,7 @@ class Client extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDownloadable) {
+        if (!$s instanceof \Model_ServiceDownloadable || $order->status !== 'active') {
             throw new \Box_Exception('Order is not activated');
         }
 

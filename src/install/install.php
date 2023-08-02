@@ -30,25 +30,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/logs/php_error.log');
-
-// If not connected via SSL, try and detect a valid SSL certificate on the server and then redirect to HTTPs.
-if(!isSSL()){
-    $context = stream_context_create(array(
-        'ssl' => array(
-            'verify_peer' => true,
-            'verify_peer_name' => true,
-            'timeout' => 1,
-        ),
-    ));
-    $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-    $result = file_get_contents($url, false, $context);
-
-    if ($result !== false) {
-        header("Location: $url");
-        exit();
-    }
-}
+ini_set('error_log', 'php_error.log');
 
 $protocol = isSSL() ? 'https' : 'http';
 $url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
@@ -93,9 +75,13 @@ set_include_path(implode(PATH_SEPARATOR, [
 ]));
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
-$loader = new AntCMS\AntLoader(PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php');
-$loader->addPrefix('', PATH_LIBRARY, 'psr0');
-$loader->addPrefix('Box\\Mod\\', PATH_MODS);
+
+$loader = new AntCMS\AntLoader([
+    'mode' => 'filesystem',
+    'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
+]);
+$loader->addNamespace('', PATH_LIBRARY, 'psr0');
+$loader->addNamespace('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
 
@@ -155,7 +141,7 @@ final class Box_Installer
                     $admin_pass = $_POST['admin_pass'];
                     $admin_name = $_POST['admin_name'];
                     if (!$this->isValidAdmin($admin_email, $admin_pass, $admin_name)) {
-                        throw new Exception('Administrator\'s account is not valid');
+                        throw new Exception('Administrator\'s account is invalid');
                     }
 
                     $this->session->set('admin_email', $admin_email);
@@ -499,6 +485,7 @@ final class Box_Installer
                 'rate_span_login' => 60,
                 'rate_limit_login' => 20,
                 'CSRFPrevention' => true,
+                'rate_limit_whitelist' => [],
             ],
         ];
         $output = '<?php ' . PHP_EOL;
@@ -514,7 +501,7 @@ final class Box_Installer
         }
 
         if (!$this->isValidAdmin($ns->get('admin_email'), $ns->get('admin_pass'), $ns->get('admin_name'))) {
-            throw new Exception('Administrators account is not valid');
+            throw new Exception('Administrator\'s account is invalid');
         }
     }
 

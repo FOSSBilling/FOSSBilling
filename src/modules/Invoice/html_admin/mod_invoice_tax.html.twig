@@ -32,7 +32,7 @@
 <div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
                         <th class="w-1">
@@ -150,7 +150,7 @@
                                 <label class="form-check-label" for="radioTexEnabledYes">{{ 'Yes'|trans }}</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTexEnabledNo" type="radio" name="tax_enabled" value="0"{% if params.tax_enabled %} checked{% endif %}>
+                                <input class="form-check-input" id="radioTexEnabledNo" type="radio" name="tax_enabled" value="0"{% if not params.tax_enabled %} checked{% endif %}>
                                 <label class="form-check-label" for="radioTexEnabledNo">{{ 'No'|trans }}</label>
                             </div>
                         </div>

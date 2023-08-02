@@ -51,7 +51,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $sessionMock = $this->getMockBuilder("\Box_Session")
+        $sessionMock = $this->getMockBuilder("\FOSSBilling\Session")
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -111,7 +111,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $sessionMock = $this->getMockBuilder("\Box_Session")
+        $sessionMock = $this->getMockBuilder("\FOSSBilling\Session")
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -654,12 +654,14 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('createFromCart', 'isClientAbleToUsePromo', 'rm'))->getMock();
+            ->setMethods(array('createFromCart', 'isClientAbleToUsePromo', 'rm', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('createFromCart')
             ->will($this->returnValue(array($order, rand(1, 100), array(rand(1, 100)))));
         $serviceMock->expects($this->atLeastOnce())->method('isClientAbleToUsePromo')
             ->will($this->returnValue(true));
         $serviceMock->expects($this->atLeastOnce())->method('rm')
+            ->will($this->returnValue(true));
+        $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->will($this->returnValue(true));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
@@ -670,7 +672,6 @@ class ServiceTest extends \BBTestCase
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
             ->will($this->returnValue('1.1.1.1'));
-
 
         $invoice = new \Model_Invoice();
         $invoice->loadBean(new \DummyBean());
@@ -860,7 +861,7 @@ class ServiceTest extends \BBTestCase
         $productModel->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Selected billing period is not valid');
+        $this->expectExceptionMessage('Selected billing period is invalid');
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 

@@ -180,31 +180,31 @@ class ServiceSubscriptionTest extends \BBTestCase
                 array(), 'FROM subscription', array(),
             ),
             array(
-                array('status' => 'active'), 'AND status = :status', array('status' => 'active'),
+                array('status' => 'active'), 'AND status = :status', array(':status' => 'active'),
             ),
             array(
                 array('invoice_id' => '1'), 'AND invoice_id = :invoice_id', array('invoice_id' => '1'),
             ),
             array(
-                array('gateway_id' => '2'), 'AND gateway_id = :gateway_id', array('gateway_id' => '2'),
+                array('gateway_id' => '2'), 'AND gateway_id = :gateway_id', array(':gateway_id' => '2'),
             ),
             array(
-                array('client_id' => '3'), 'AMD client_id  = :client_id', array('client_id' => '3'),
+                array('client_id' => '3'), 'AND client_id  = :client_id', array(':client_id' => '3'),
             ),
             array(
-                array('currency' => 'EUR'), 'AND currency =  :currency', array('currency' => 'EUR'),
+                array('currency' => 'EUR'), 'AND currency =  :currency', array(':currency' => 'EUR'),
             ),
             array(
-                array('date_from' => '1234567'), 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from', array('date_from' => '1234567'),
+                array('date_from' => '1234567'), 'AND UNIX_TIMESTAMP(created_at) >= :date_from', array(':date_from' => '1234567'),
             ),
             array(
-                array('date_to' => '1234567'), 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to', array('date_to' => '1234567'),
+                array('date_to' => '1234567'), 'AND UNIX_TIMESTAMP(created_at) <= :date_to', array(':date_to' => '1234567'),
             ),
             array(
-                array('id' => '10'), 'AND id = :id', array('id' => '10'),
+                array('id' => '10'), 'AND id = :id', array(':id' => '10'),
             ),
             array(
-                array('sid' => '10'), 'AND sid = :sid', array('sid' => '10'),
+                array('sid' => '10'), 'AND sid = :sid', array(':sid' => '10'),
             ),
         );
     }

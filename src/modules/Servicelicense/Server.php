@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,14 +12,14 @@ namespace Box\Mod\Servicelicense;
 
 class Server implements \FOSSBilling\InjectionAwareInterface
 {
-    private $_result = [
+    private array $_result = [
         'licensed_to' => null,
         'created_at' => null,
         'expires_at' => null,
         'valid' => false,
     ];
 
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -40,7 +40,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
      */
     private function getServer($key = null, $default = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $_SERVER;
         }
 
@@ -50,10 +50,10 @@ class Server implements \FOSSBilling\InjectionAwareInterface
     private function getIp($checkProxy = true)
     {
         $ip = null;
-        if ($checkProxy && null != $this->getServer('HTTP_CLIENT_IP')) {
+        if ($checkProxy && $this->getServer('HTTP_CLIENT_IP') != null) {
             $ip = $this->getServer('HTTP_CLIENT_IP');
         } else {
-            if ($checkProxy && null != $this->getServer('HTTP_X_FORWARDED_FOR')) {
+            if ($checkProxy && $this->getServer('HTTP_X_FORWARDED_FOR') != null) {
                 $ip = $this->getServer('HTTP_X_FORWARDED_FOR');
             } else {
                 $ip = $this->getServer('REMOTE_ADDR');
@@ -69,7 +69,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
     public function process($data)
     {
         if (!is_array($data)) {
-            $data = (json_decode($data, true)) ? json_decode($data, true) : [];
+            $data = json_decode($data, true) ?: [];
         }
 
         if (empty($data)) {
@@ -84,7 +84,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         $model = $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
 
         if (!$model instanceof \Model_ServiceLicense) {
-            throw new \LogicException('Your license key is not valid.', 1005);
+            throw new \LogicException('Your license key is invalid.', 1005);
         }
 
         $model->pinged_at = date('Y-m-d H:i:s');
@@ -120,11 +120,11 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!$service->isValidVersion($model, $version)) {
-            throw new \LogicException(sprintf('Version "%s" is not valid for this license', $version), 1009);
+            throw new \LogicException(sprintf('Version "%s" is invalid for this license', $version), 1009);
         }
 
         if (!$service->isValidPath($model, $path)) {
-            throw new \LogicException(sprintf('Software install path "%s" is not valid for this license', $path), 1010);
+            throw new \LogicException(sprintf('Software install path "%s" is invalid for this license', $path), 1010);
         }
 
         $this->_result['licensed_to'] = $service->getOwnerName($model);

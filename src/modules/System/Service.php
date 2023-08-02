@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,13 +10,14 @@
 
 namespace Box\Mod\System;
 
+use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service
 {
-    protected ?\Pimple\Container $di;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
@@ -39,7 +40,7 @@ class Service
         $stmt = $pdo->prepare($query);
         $stmt->execute(['param' => $param]);
         $results = $stmt->fetchColumn();
-        if (false === $results) {
+        if ($results === false) {
             return $default;
         }
 
@@ -61,7 +62,7 @@ class Service
                 $stmt->execute(['param' => $param, 'value' => $value, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
             } catch (\Exception $e) {
                 // ignore duplicate key error
-                if (23000 != $e->getCode()) {
+                if ($e->getCode() != 23000) {
                     throw $e;
                 }
             }
@@ -135,46 +136,46 @@ class Service
 
         $baseUrl = $this->di['config']['url'];
         $logoUrl = $results['company_logo'] ?? null;
-        if (null !== $logoUrl && !str_contains($logoUrl, 'http')) {
+        if ($logoUrl !== null && !str_contains($logoUrl, 'http')) {
             $logoUrl = $baseUrl . $logoUrl;
         }
 
         $logoUrlDark = $results['company_logo_dark'] ?? null;
-        if (null !== $logoUrlDark && !str_contains($logoUrlDark, 'http')) {
+        if ($logoUrlDark !== null && !str_contains($logoUrlDark, 'http')) {
             $logoUrlDark = $baseUrl . $logoUrlDark;
         }
-        $logoUrlDark = (null === $logoUrlDark) ? $logoUrl : $logoUrlDark;
+        $logoUrlDark ??= $logoUrl;
 
         $faviconUrl = $results['company_favicon'] ?? null;
-        if (null !== $faviconUrl && !str_contains($faviconUrl, 'http')) {
+        if ($faviconUrl !== null && !str_contains($faviconUrl, 'http')) {
             $faviconUrl = $baseUrl . $faviconUrl;
         }
 
         return [
             'www' => $baseUrl,
-            'name' => $results['company_name'] ?? null,
-            'email' => $results['company_email'] ?? null,
-            'tel' => $results['company_tel'] ?? null,
+            'name' => isset($results['company_name']) ? htmlspecialchars($results['company_name'], ENT_QUOTES, 'UTF-8') : null,
+            'email' => isset($results['company_email']) ? htmlspecialchars($results['company_email'], ENT_QUOTES, 'UTF-8') : null,
+            'tel' => isset($results['company_tel']) ? htmlspecialchars($results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
             'signature' => $results['company_signature'] ?? null,
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
             'favicon_url' => $faviconUrl,
-            'address_1' => $results['company_address_1'] ?? null,
-            'address_2' => $results['company_address_2'] ?? null,
-            'address_3' => $results['company_address_3'] ?? null,
+            'address_1' => isset($results['company_address_1']) ? htmlspecialchars($results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
+            'address_2' => isset($results['company_address_2']) ? htmlspecialchars($results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
+            'address_3' => isset($results['company_address_3']) ? htmlspecialchars($results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
             'account_number' => $results['company_account_number'] ?? null,
-            'number' => $results['company_number'] ?? null,
+            'number' => isset($results['company_number']) ? htmlspecialchars($results['company_number'], ENT_QUOTES, 'UTF-8') : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
             'tos' => $results['company_tos'] ?? null,
-            'vat_number' => $results['company_vat_number'] ?? null,
+            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars($results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
         ];
     }
 
     /**
      * @depricated Please use the \FOSSBilling\i18n::getLocales function, which provides the same functionality.
+     *
      * @param bool $deep
-     * @return array
      */
     public function getLanguages($deep = false): array
     {
@@ -215,12 +216,12 @@ class Service
 
         try {
             $updater = $this->di['updater'];
-            if ($updater->getCanUpdate()) {
+            if ($updater->isUpdateAvailable()) {
                 $version = $updater->getLatestVersion();
                 $updateUrl = $this->di['url']->adminLink('system/update');
                 $msgs['info'][] = [
-                    'text'  => "FOSSBilling {$version} is available for download.",
-                    'url'   => $updateUrl
+                    'text' => "FOSSBilling {$version} is available for download.",
+                    'url' => $updateUrl,
                 ];
             }
         } catch (\Exception $e) {
@@ -228,10 +229,10 @@ class Service
         }
         $last_exec = $this->getParamValue('last_cron_exec');
         $disableAutoCron = $this->di['config']['disable_auto_cron'] ?? false;
-        if (false === $runFromTest && false === $disableAutoCron) {
+        if ($runFromTest === false && $disableAutoCron === false) {
             if (!$last_exec) {
                 $msgs['info'][] = [
-                    'text' => 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.'
+                    'text' => 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.',
                 ];
                 $cronService = $this->di['mod_service']('cron');
                 $cronService->runCrons();
@@ -240,7 +241,7 @@ class Service
                 if ($minSinceLastExec >= 15) {
                     $minSinceLastExec = round($minSinceLastExec, 2);
                     $msgs['info'][] = [
-                        'text' => 'Cron hasn\'t been executed in ' . $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.'
+                        'text' => 'Cron hasn\'t been executed in ' . $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.',
                     ];
                     $cronService = $this->di['mod_service']('cron');
                     $cronService->runCrons();
@@ -252,19 +253,19 @@ class Service
         $install = PATH_ROOT . '/install';
         if (file_exists(PATH_ROOT . '/install')) {
             $msgs['danger'][] = [
-                'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install)
+                'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install),
             ];
         }
 
-        if ('0.0.1' == $this->getVersion()) {
+        if ($this->getVersion() == '0.0.1') {
             $msgs['warning'][] = [
-                'text' => 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.'
+                'text' => 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.',
             ];
         }
 
         if (!extension_loaded('openssl')) {
             $msgs['warning'][] = [
-                'text' => sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl')
+                'text' => sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl'),
             ];
         }
 
@@ -278,7 +279,16 @@ class Service
      */
     public function getCasMessages(): array
     {
-        return $this->di['central_alerts']->filterAlerts();
+        try {
+            return $this->di['central_alerts']->filterAlerts();
+        } catch (\Box_Exception $e) {
+            return [
+                [
+                    'type' => 'warning',
+                    'message' => 'Warning: ' . $e->getMessage(),
+                ],
+            ];
+        }
     }
 
     public function templateExists($file, $identity = null)
@@ -321,9 +331,11 @@ class Service
             }
         }
         if (is_null($tpl)) {
-            $parsed = $this->createTemplateFromString("No template was provided, please contact the site administrator", $try_render, $vars);
+            $parsed = $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
+
             return $parsed;
         }
+
         try {
             $template = $twig->load($tpl);
             $parsed = $template->render($vars);
@@ -364,8 +376,9 @@ class Service
             try {
                 $client = HttpClient::create();
                 $response = $client->request('GET', 'https://api.ipify.org', [
-                    'timeout'   => 2,
+                    'timeout' => 2,
                 ]);
+
                 return $response->getContent();
             } catch (\Exception) {
                 return '';
@@ -385,10 +398,10 @@ class Service
         $pageURL = $pageScheme . '://';
 
         $serverPort = $_SERVER['SERVER_PORT'] ?? null;
-        if (isset($serverPort) && '80' != $serverPort && '443' != $serverPort) {
+        if (isset($serverPort) && $serverPort != '80' && $serverPort != '443') {
             $pageURL .= $_SERVER['SERVER_NAME'] ?? null . ':' . $serverPort;
         } else {
-            $pageURL .= $_SERVER['SERVER_NAME'] ?? null;;
+            $pageURL .= $_SERVER['SERVER_NAME'] ?? null;
         }
 
         $this_page = $_SERVER['REQUEST_URI'] ?? '';
@@ -424,7 +437,7 @@ class Service
         $stmt = $pdo->prepare($query);
         $stmt->execute(['param' => $param]);
         $results = $stmt->fetchColumn();
-        if (false === $results) {
+        if ($results === false) {
             throw new \Box_Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
@@ -952,7 +965,7 @@ class Service
         if (isset($config['countries'])) {
             preg_match_all('#([A-Z]{2})=(.+)#', $config['countries'], $matches);
             if (isset($matches[1]) && !empty($matches[1]) && isset($matches[2]) && !empty($matches[2])) {
-                if (count($matches[1]) == count($matches[2])) {
+                if ((is_countable($matches[1]) ? count($matches[1]) : 0) == (is_countable($matches[2]) ? count($matches[2]) : 0)) {
                     $countries = array_combine($matches[1], $matches[2]);
                 }
             }
@@ -1609,7 +1622,7 @@ class Service
     public function setPendingMessage($msg)
     {
         $messages = $this->getPendingMessages();
-        array_push($messages, $msg);
+        $messages[] = $msg;
         $this->di['session']->set('pending_messages', $messages);
 
         return true;

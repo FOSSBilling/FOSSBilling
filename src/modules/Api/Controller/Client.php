@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -14,13 +14,13 @@
 
 namespace Box\Mod\Api\Controller;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Client implements InjectionAwareInterface
 {
-    private $_requests_left = null;
-    private $_api_config = null;
-    protected ?\Pimple\Container $di;
+    private int|float|null $_requests_left = null;
+    private $_api_config;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -92,8 +92,12 @@ class Client implements InjectionAwareInterface
 
     private function checkRateLimit($method = null)
     {
+        if (in_array($this->_getIp(), $this->_api_config['rate_limit_whitelist'])) {
+            return true;
+        }
+
         $isLoginMethod = false;
-        if ('staff_login' == $method || 'client_login' == $method) {
+        if ($method == 'staff_login' || $method == 'client_login') {
             $rate_span = $this->_api_config['rate_span_login'];
             $rate_limit = $this->_api_config['rate_limit_login'];
             $isLoginMethod = true;
@@ -104,9 +108,8 @@ class Client implements InjectionAwareInterface
 
         $service = $this->di['mod_service']('api');
         $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp(), $isLoginMethod);
-        $requests_left = $rate_limit - $requests;
-        $this->_requests_left = $requests_left;
-        if ($requests_left < 0) {
+        $this->_requests_left = $rate_limit - $requests;
+        if ($this->_requests_left <= 0) {
             sleep($this->_api_config['throttle_delay']);
         }
 
@@ -140,10 +143,10 @@ class Client implements InjectionAwareInterface
 
     private function isRoleLoggedIn($role)
     {
-        if ('client' == $role) {
+        if ($role == 'client') {
             $this->di['is_client_logged'];
         }
-        if ('admin' == $role) {
+        if ($role == 'admin') {
             $this->di['is_admin_logged'];
         }
 
@@ -211,6 +214,7 @@ class Client implements InjectionAwareInterface
                     throw new \Box_Exception('Authentication Failed', null, 204);
                 }
                 $this->di['session']->set('client_id', $model->id);
+
                 break;
 
             case 'admin':
@@ -225,6 +229,7 @@ class Client implements InjectionAwareInterface
                     'role' => $model->role,
                 ];
                 $this->di['session']->set('admin', $sessionAdminArray);
+
                 break;
 
             case 'guest': // do not allow at the moment
@@ -242,7 +247,7 @@ class Client implements InjectionAwareInterface
     {
         $allowed = ['guest', 'client', 'admin'];
         if (!in_array($role, $allowed)) {
-            throw new \Box_Exception('Unknown API call', null, 701);
+            new \Box_Exception('Unknown API call :call', [':call' => ''], 701);
         }
 
         return true;
@@ -264,11 +269,11 @@ class Client implements InjectionAwareInterface
         header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
-        if (null !== $e) {
+        if ($e !== null) {
             error_log($e->getMessage() . ' ' . $e->getCode());
-            $code = $e->getCode() ? $e->getCode() : 9999;
+            $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
-            $authFailed = array(201, 202, 206, 204, 205, 203, 403, 1004, 1002);
+            $authFailed = [201, 202, 206, 204, 205, 203, 403, 1004, 1002];
 
             if (in_array($code, $authFailed)) {
                 header('HTTP/1.1 401 Unauthorized');
@@ -288,7 +293,7 @@ class Client implements InjectionAwareInterface
     }
 
     /**
-     * Checks if the CSRF token provided is valid
+     * Checks if the CSRF token provided is valid.
      *
      * @throws \Box_Exception
      */
@@ -306,7 +311,7 @@ class Client implements InjectionAwareInterface
             $data = new \stdClass();
         }
 
-        $token = $data->CSRFToken ?? $_POST["CSRFToken"] ?? $_GET["CSRFToken"] ?? null;
+        $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? null;
         if (session_status() !== PHP_SESSION_ACTIVE) {
             $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', $_COOKIE['PHPSESSID']) : null;
         } else {
@@ -316,12 +321,12 @@ class Client implements InjectionAwareInterface
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
          * Due to this, we whitelist the checkout URL.
          */
-        if (str_contains($_SERVER['REQUEST_URI'], "/api/client/cart/checkout")) {
+        if (str_contains($_SERVER['REQUEST_URI'], '/api/client/cart/checkout')) {
             return true;
         }
 
         if (!is_null($expectedToken) && $expectedToken !== $token) {
-            throw new \Box_Exception('CSRF token invalid.', null, 403);
+            throw new \Box_Exception('CSRF token invalid', null, 403);
         }
     }
 }

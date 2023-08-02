@@ -1,8 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -32,6 +34,7 @@ $di = new \Pimple\Container();
  */
 $di['config'] = function () {
     $array = include PATH_ROOT . '/config.php';
+
     return $array;
 };
 
@@ -107,7 +110,7 @@ $di['pdo'] = function () use ($di) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ('mysql' === $c['type']) {
+    if ($c['type'] === 'mysql') {
         $pdo->exec('SET NAMES "utf8"');
         $pdo->exec('SET CHARACTER SET utf8');
         $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
@@ -115,6 +118,11 @@ $di['pdo'] = function () use ($di) {
         $pdo->exec('SET character_set_server = utf8');
         $pdo->exec('SET SESSION interactive_timeout = 28800');
         $pdo->exec('SET SESSION wait_timeout = 28800');
+
+        // Get the timezone offset in the PDO format
+        $datetime = new DateTime('now');
+        $offset = $datetime->format('P');
+        $pdo->exec("SET time_zone = '{$offset}'");
     }
 
     return $pdo;
@@ -192,9 +200,7 @@ $di['mod'] = $di->protect(function ($name) use ($di) {
  *
  * @return mixed the service of the associated module
  */
-$di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
-    return $di['mod']($mod)->getService($sub);
-});
+$di['mod_service'] = $di->protect(fn ($mod, $sub = '') => $di['mod']($mod)->getService($sub));
 
 /*
  *
@@ -202,9 +208,7 @@ $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
  *
  * @return mixed the configuration of the associated module
  */
-$di['mod_config'] = $di->protect(function ($name) use ($di) {
-    return $di['mod']($name)->getConfig();
-});
+$di['mod_config'] = $di->protect(fn ($name) => $di['mod']($name)->getConfig());
 
 /*
  *
@@ -224,15 +228,20 @@ $di['events_manager'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Session
+ * @return \FOSSBilling\Session
  */
 $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
-    $mode = (isset($di['config']['security']['mode'])) ? $di['config']['security']['mode'] : 'strict';
-    $lifespan = (isset($di['config']['security']['cookie_lifespan'])) ? $di['config']['security']['cookie_lifespan'] : 7200;
-    $secure = (isset($di['config']['security']['force_https'])) ? $di['config']['security']['force_https'] : true;
 
-    return new Box_Session($handler, $mode, $lifespan, $secure);
+    $mode = $di['config']['security']['mode'] ?? 'strict';
+    $lifespan = $di['config']['security']['cookie_lifespan'] ?? 7200;
+    $secure = $di['config']['security']['force_https'] ?? true;
+
+    $session = new \FOSSBilling\Session($handler, $mode, $lifespan, $secure);
+    $session->setDi($di);
+    $session->setupSession();
+
+    return $session;
 };
 
 /*
@@ -253,10 +262,9 @@ $di['request'] = function () use ($di) {
  *
  * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
-$di['cache'] = function () {
+$di['cache'] = fn () =>
     // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
-    return new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
-};
+    new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
 /*
  *
@@ -264,9 +272,7 @@ $di['cache'] = function () {
  *
  * @return \Box_Authorization
  */
-$di['auth'] = function () use ($di) {
-    return new Box_Authorization($di);
-};
+$di['auth'] = fn () => new Box_Authorization($di);
 
 /*
  * Creates a new Twig environment that's configured for FOSSBilling.
@@ -318,19 +324,19 @@ $di['twig'] = $di->factory(function () use ($di) {
         if (($config['i18n']['locale'] ?? 'en_US') == 'en_US') {
             $dateFormatter = new \IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
-            throw new \Box_Exception("It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.", [':locale' => $config['i18n']['locale']]);
+            throw new \Box_Exception('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);
         }
     }
 
     $twig->addExtension(new IntlExtension($dateFormatter));
 
     // add globals
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 'XMLHttpRequest' === $_SERVER['HTTP_X_REQUESTED_WITH']) {
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
         $_GET['ajax'] = true;
     }
 
     // CSRF token
-    if (PHP_SESSION_ACTIVE !== session_status()) {
+    if (session_status() !== PHP_SESSION_ACTIVE) {
         $token = hash('md5', $_COOKIE['PHPSESSID'] ?? '');
     } else {
         $token = hash('md5', session_id());
@@ -339,6 +345,7 @@ $di['twig'] = $di->factory(function () use ($di) {
     $twig->addGlobal('CSRFToken', $token);
     $twig->addGlobal('request', $_GET);
     $twig->addGlobal('guest', $di['api_guest']);
+
     return $twig;
 });
 
@@ -358,7 +365,7 @@ $di['is_client_logged'] = function () use ($di) {
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 
-        if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
+        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
         } else {
@@ -370,6 +377,21 @@ $di['is_client_logged'] = function () use ($di) {
 
     return true;
 };
+
+/*
+ * @param mixed $model The client DB model to check
+ * @return bool Returns true if the client's email address is valid or if email confirmation is disabled.
+ */
+$di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
+    $config = $di['mod_config']('client');
+    if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
+        return (bool) $model->email_approved;
+    } else {
+        return true;
+    }
+
+    return true;
+});
 
 /*
  * Checks whether an admin is logged in and throws an exception or redirects to the login page if not.
@@ -386,7 +408,7 @@ $di['is_admin_logged'] = function () use ($di) {
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 
-        if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
+        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
         } else {
@@ -410,7 +432,25 @@ $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
     $client_id = $di['session']->get('client_id');
 
-    return $di['db']->getExistingModelById('Client', $client_id);
+    try {
+        return $di['db']->getExistingModelById('Client', $client_id);
+    } catch (Exception) {
+        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
+        $di['session']->destroy('client');
+
+        // Then either give an appropriate API response or redirect to the login page.
+        $api_str = '/api/';
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+            // Throw Exception if api request
+            throw new Exception('Client is not logged in');
+        } else {
+            // Redirect to login page if browser request
+            $login_url = $di['url']->link('login');
+            header("Location: $login_url");
+            exit;
+        }
+    }
 };
 
 /*
@@ -423,14 +463,32 @@ $di['loggedin_client'] = function () use ($di) {
  * @throws \Box_Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
-    if ('cli' === php_sapi_name() || !http_response_code()) {
+    if (php_sapi_name() === 'cli' || !http_response_code()) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
     $di['is_admin_logged'];
     $admin = $di['session']->get('admin');
 
-    return $di['db']->getExistingModelById('Admin', $admin['id']);
+    try {
+        return $di['db']->getExistingModelById('Admin', $admin['id']);
+    } catch (Exception) {
+        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
+        $di['session']->destroy('admin');
+
+        // Then either give an appropriate API response or redirect to the login page.
+        $api_str = '/api/';
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+            // Throw Exception if api request
+            throw new Exception('Admin is not logged in');
+        } else {
+            // Redirect to login page if browser request
+            $login_url = $di['url']->adminLink('staff/login');
+            header("Location: $login_url");
+            exit;
+        }
+    }
 };
 
 /*
@@ -440,7 +498,7 @@ $di['loggedin_admin'] = function () use ($di) {
  *
  * @return \Api_Handler The new API object that was just created.
  *
- * @throws \Exception If the specified role is not recognized.
+ * @throws \Exception If the specified role is not recognized or if a client is trying to use the API while their email is not valid.
  */
 $di['api'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
@@ -450,6 +508,23 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         'system' => $di['mod_service']('staff')->getCronAdmin(),
         default => throw new Exception('Unrecognized Handler type: ' . $role),
     };
+
+    // Checks to enforce email validation for clients
+    if ($role === 'client' && !$di['is_client_email_validated']($identity)) {
+        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+
+        // If it's an API request, only allow requests to the "client" and "profile" modules so they can change their email address or resend the confirmation email.
+        if (strncasecmp($url, '/api/', strlen('/api/')) === 0) {
+            if (strncasecmp($url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp($url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
+                throw new Exception('Please check your mailbox and confirm email address.');
+            }
+        } elseif (strncasecmp($url, '/client/profile', strlen('/client/profile')) !== 0) {
+            // If they aren't attempting to access their profile, redirect them to it.
+            $login_url = $di['url']->link('client/profile');
+            header("Location: $login_url");
+            exit;
+        }
+    }
 
     $api = new Api_Handler($identity);
     $api->setDi($di);
@@ -463,9 +538,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_guest'] = function () use ($di) {
-    return $di['api']('guest');
-};
+$di['api_guest'] = fn () => $di['api']('guest');
 
 /*
  *
@@ -473,9 +546,7 @@ $di['api_guest'] = function () use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_client'] = function () use ($di) {
-    return $di['api']('client');
-};
+$di['api_client'] = fn () => $di['api']('client');
 
 /*
  *
@@ -483,9 +554,7 @@ $di['api_client'] = function () use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_admin'] = function () use ($di) {
-    return $di['api']('admin');
-};
+$di['api_admin'] = fn () => $di['api']('admin');
 
 /*
  *
@@ -493,9 +562,7 @@ $di['api_admin'] = function () use ($di) {
  *
  * @return \Api_Handler
  */
-$di['api_system'] = function () use ($di) {
-    return $di['api']('system');
-};
+$di['api_system'] = fn () => $di['api']('system');
 
 $di['tools'] = function () use ($di) {
     $service = new \FOSSBilling\Tools();
@@ -560,10 +627,10 @@ $di['extension_manager'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Update
+ * @return \FOSSBilling\Update
  */
 $di['updater'] = function () use ($di) {
-    $updater = new \Box_Update();
+    $updater = new \FOSSBilling\Update();
     $updater->setDi($di);
 
     return $updater;
@@ -574,27 +641,21 @@ $di['updater'] = function () use ($di) {
  *
  * @return Server_Package
  */
-$di['server_package'] = function () {
-    return new Server_Package();
-};
+$di['server_package'] = fn () => new Server_Package();
 
 /*
  * @param void
  *
  * @return Server_Client
  */
-$di['server_client'] = function () {
-    return new Server_Client();
-};
+$di['server_client'] = fn () => new Server_Client();
 
 /*
  * @param void
  *
  * @return Server_Account
  */
-$di['server_account'] = function () {
-    return new Server_Account();
-};
+$di['server_account'] = fn () => new Server_Account();
 
 /*
  * Creates a new server manager object and returns it.
@@ -604,7 +665,7 @@ $di['server_account'] = function () {
  *
  * @return \Server_Manager The new server manager object that was just created.
  */
-$di['server_manager'] = $di->protect(function($manager, $config) use ($di) {
+$di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
     $class = sprintf('Server_Manager_%s', ucfirst($manager));
 
     $s = new $class($config);
@@ -632,9 +693,7 @@ $di['requirements'] = function () use ($di) {
  *
  * @return \Box_Period The new period object that was just created.
  */
-$di['period'] = $di->protect(function ($code) {
-    return new \Box_Period($code);
-});
+$di['period'] = $di->protect(fn ($code) => new \Box_Period($code));
 
 /*
  * Gets the current client area theme.
@@ -705,18 +764,14 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \GeoIp2\Database\Reader
  */
-$di['geoip'] = function () {
-    return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
-};
+$di['geoip'] = fn () => new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
 
 /*
  * @param void
  *
  * @return \Box_Password
  */
-$di['password'] = function () {
-    return new Box_Password();
-};
+$di['password'] = fn () => new Box_Password();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
@@ -752,33 +807,29 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
  */
 $di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di) {
     if ($limit > 0) {
-        $beans = $di['db']->findAll($table, "LIMIT :limit", array(':limit' => $limit));
+        $beans = $di['db']->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
     } else {
         $beans = $di['db']->findAll($table);
     }
 
-    $rows = array_map(function ($bean) {
-        return $bean->export();
-    }, $beans);
+    $rows = array_map(fn ($bean) => $bean->export(), $beans);
 
     // If we've been provided a list of headers, use that. Otherwise, pull the keys from the rows and use that for the CSV header
     if ($headers) {
-        $rows = array_map(function ($row) use ($headers) {
-            return array_intersect_key($row, array_flip($headers));
-        }, $rows);
+        $rows = array_map(fn ($row) => array_intersect_key($row, array_flip($headers)), $rows);
     } else {
         $headers = array_keys(reset($rows));
     }
 
     $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject());
-
+    $csv->addFormatter(new League\Csv\EscapeFormula());
     $csv->insertOne($headers);
     $csv->insertAll($rows);
 
     $csv->output($outputName);
 
     // Prevent further output from being added to the end of the CSV
-    die();
+    exit;
 });
 
 return $di;

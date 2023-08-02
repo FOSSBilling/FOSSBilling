@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -49,8 +49,6 @@ class Admin extends \Api_Abstract
     /**
      * Return currency details by cde.
      *
-     * @param string $code - currency code USD
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -88,9 +86,6 @@ class Admin extends \Api_Abstract
     /**
      * Add new currency to system.
      *
-     * @param string $code   - currency ISO 4217 code
-     * @param string $format - must have {{price}} tag
-     *
      * @optional string $title - custom currency title
      *
      * @return string - currency code
@@ -112,7 +107,7 @@ class Admin extends \Api_Abstract
         }
 
         if (!array_key_exists($data['code'] ?? null, $service->getAvailableCurrencies())) {
-            throw new \Box_Exception('Currency code is not valid');
+            throw new \Box_Exception('Currency code is invalid');
         }
 
         $title = $data['title'] ?? null;
@@ -123,8 +118,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Updates system currency settings.
-     *
-     * @param string $code - currency ISO 4217 code
      *
      * @optional string $title - new currency title
      * @optional string $format - new currency format
@@ -210,8 +203,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove currency. Default currency can not be removed.
      *
-     * @param string $code - currency ISO 4217 code
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -229,8 +220,6 @@ class Admin extends \Api_Abstract
     /**
      * Set default currency. If you have active orders or invoices
      * not recalculation on profits and refunds are made.
-     *
-     * @param string $code - currency ISO 4217 code
      *
      * @return bool
      *

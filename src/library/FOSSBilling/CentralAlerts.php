@@ -10,22 +10,24 @@
 
 namespace FOSSBilling;
 
-use \FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class CentralAlerts implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?Container $di = null;
 
     private string $_url = 'https://fossbilling.org/api/central-alerts/';
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -62,21 +64,17 @@ class CentralAlerts implements InjectionAwareInterface
      * @return array The filtered alerts
      * @throws \Box_Exception
      */
-    public function filterAlerts(array $type = [], string $version = \FOSSBilling\Version::VERSION): array
+    public function filterAlerts(array $type = [], string $version = Version::VERSION): array
     {
         $alerts = $this->getAlerts();
 
         if (is_array($type) && !empty($type)) {
-            $alerts = array_filter($alerts, function($alert) use ($type) {
-                return in_array($alert['type'], $type);
-            });
+            $alerts = array_filter($alerts, fn($alert) => in_array($alert['type'], $type));
         }
 
         if ($version) {
             if ($this->di['config']['update_branch'] === 'preview') {
-                $alerts = array_filter($alerts, function($alert) {
-                    return $alert['include_preview_branch'];
-                });
+                $alerts = array_filter($alerts, fn($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function($alert) use ($version) {
                     $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');
@@ -102,16 +100,19 @@ class CentralAlerts implements InjectionAwareInterface
     public function makeRequest(string $endpoint, array $params = []): array
     {
         $url = $this->_url . $endpoint;
-        $client = HttpClient::create();
-
-        $response = $client->request('GET', $url, [
-            'timeout' => 5,
-            'query' => array_merge($params, [
-                'fossbilling_version' => \FOSSBilling\Version::VERSION,
-            ]),
-        ]);
-
-        $json = $response->toArray();
+        try {
+            $httpClient = HttpClient::create();
+            $response = $httpClient->request('GET', $url, [
+                'timeout' => 5,
+                'query' => array_merge($params, [
+                    'fossbilling_version' => Version::VERSION,
+                ]),
+            ]);
+            $json = $response->toArray();
+        } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
+            error_log($e->getMessage());
+            throw new \Box_Exception('Unable to fetch alerts from Central Alerts System. See error log for more information.', null);
+        }
 
         if (isset($json['error']) && is_array($json['error'])) {
             throw new \Box_Exception($json['error']['message'], null);

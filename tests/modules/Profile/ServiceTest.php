@@ -144,7 +144,7 @@ class ServiceTest extends \BBTestCase
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array(
-                                          'allow_change_email' => 1
+                                          'disable_change_email' => 0
                                       )));
 
         $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
@@ -228,7 +228,7 @@ class ServiceTest extends \BBTestCase
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array(
-                                          'allow_change_email' => 0
+                                          'disable_change_email' => 1
                                       )));
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
@@ -279,7 +279,7 @@ class ServiceTest extends \BBTestCase
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array(
-                                          'allow_change_email' => 1
+                                          'disable_change_email' => 0
                                       )));
 
         $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
@@ -378,12 +378,12 @@ class ServiceTest extends \BBTestCase
 
     public function testLogoutClient()
     {
-        $sessionMock = $this->getMockBuilder("\Box_Session")
+        $sessionMock = $this->getMockBuilder("\FOSSBilling\Session")
             ->disableOriginalConstructor()
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
-            ->method("delete");
+            ->method("destroy");
 
         $di            = new \Pimple\Container();
         $di['logger']  = new \Box_Log();

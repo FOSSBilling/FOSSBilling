@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,7 +12,7 @@ namespace Box\Mod\Servicelicense\Plugin;
 
 class Simple
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -37,11 +37,11 @@ class Simple
         $length = $config['length'] ?? 25;
         $prefix = $config['prefix'] ?? null;
 
-        $character_array = array_merge(range('A', 'Z'), range(1, 9));
+        $character_array = [...range('A', 'Z'), ...range(1, 9)];
         $size = count($character_array) - 1;
         $string = '';
         for ($i = 1; $i < $length; ++$i) {
-            $string .= (0 == $i % 5) ? '-' : $character_array[random_int(0, $size)];
+            $string .= ($i % 5 == 0) ? '-' : $character_array[random_int(0, $size)];
         }
 
         return $prefix . $string;

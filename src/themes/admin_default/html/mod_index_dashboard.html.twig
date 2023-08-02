@@ -603,9 +603,12 @@
                     labels: {
                         show: false,
                     },
-                    colors: ["#206bc4"],
-                    tooltip: {
-                        theme: (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light'
+                    colors:  (localStorage.getItem('theme') === 'dark') ? ["#91bbed"] : ["#206bc4"] ,
+                    theme : {
+                        mode: (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light',
+                        monochrome: {
+                            enabled: false,
+                        }
                     }
                 }).render();
             }

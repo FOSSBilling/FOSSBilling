@@ -10,14 +10,9 @@
 
 class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
     protected $value = null;
     protected $processed = false;
-    protected $subject = null;
-    protected $name = '';
-    protected $parameters = null;
-    protected $api_guest = null;
-    protected $api_admin = null;
 
     /**
      * Constructs a new sfEvent.
@@ -26,15 +21,8 @@ class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
      * @param string $name       The event name
      * @param array  $parameters An array of parameters
      */
-    public function __construct($subject, $name, $parameters = [], $api_admin = null, $api_guest = null)
+    public function __construct(protected mixed $subject, protected $name, protected $parameters = [], protected $api_admin = null, protected $api_guest = null)
     {
-        $this->subject = $subject;
-        $this->name = $name;
-
-        $this->parameters = $parameters;
-
-        $this->api_admin = $api_admin;
-        $this->api_guest = $api_guest;
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -82,7 +70,7 @@ class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
      *
      * @param mixed $value The return value
      */
-    public function setReturnValue($value)
+    public function setReturnValue(mixed $value)
     {
         $this->value = $value;
     }
@@ -161,7 +149,7 @@ class Box_Event implements ArrayAccess, \FOSSBilling\InjectionAwareInterface
      * @param string $name  The parameter name
      * @param mixed  $value The parameter value
      */
-    public function offsetSet(mixed $name, $value): void
+    public function offsetSet(mixed $name, mixed $value): void
     {
         $this->parameters[$name] = $value;
     }

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,7 +12,7 @@ namespace Box\Mod\Support;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -473,7 +473,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function canBeReopened(\Model_SupportTicket $model)
     {
-        if (\Model_SupportTicket::CLOSED != $model->status) {
+        if ($model->status != \Model_SupportTicket::CLOSED) {
             return true;
         }
 
@@ -498,7 +498,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $client = $this->di['db']->load('Client', $model->client_id);
 
-        if (\Model_SupportTicket::REL_TYPE_ORDER == $model->rel_type) {
+        if ($model->rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
             $orderService = $this->di['mod_service']('order');
             $o = $orderService->findForClientById($client, $model->rel_id);
             if ($o instanceof \Model_ClientOrder) {
@@ -647,7 +647,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $id = $model->id;
 
         $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
-        if (count($tickets) > 0) {
+        if ((is_countable($tickets) ? count($tickets) : 0) > 0) {
             throw new \Box_Exception('Can not remove helpdesk which has tickets');
         }
         $this->di['db']->trash($model);
@@ -815,7 +815,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = hash('sha256', random_bytes(13));
+        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $subject;
@@ -863,7 +863,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $rel_id = $data['rel_id'] ?? null;
         $rel_type = $data['rel_type'] ?? null;
 
-        if (!is_null($rel_id) && \Model_SupportTicket::REL_TYPE_ORDER == $rel_type) {
+        if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
             $orderService = $this->di['mod_service']('order');
             $o = $orderService->findForClientById($client, $rel_id);
             if (!$o instanceof \Model_ClientOrder) {
@@ -874,6 +874,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $rel_task = $data['rel_task'] ?? null;
         $rel_new_value = $data['rel_new_value'] ?? null;
         $rel_status = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
+
+        if ($rel_task == 'upgrade') {
+            if (empty($o) || empty($rel_new_value)) {
+                throw new \Box_Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
+            }
+
+            $product = $this->di['db']->getExistingModelById('Product', $o->product_id);
+            $allowedUpgrades = json_decode($product->upgrades ?? '');
+            if (!in_array($rel_new_value, $allowedUpgrades)) {
+                $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
+
+                throw new \Box_Exception('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
+            }
+        }
 
         // check if support ticket with same uncompleted task already exists
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {
@@ -952,7 +966,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         } elseif ($identity instanceof \Model_Client) {
             $msg->client_id = $identity->id;
         } else {
-            throw new \Box_Exception('Identity is not valid');
+            throw new \Box_Exception('Identity is invalid');
         }
         $msg->content = $content;
         $msg->ip = $this->di['request']->getClientAddress();
@@ -1198,11 +1212,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function publicTicketCreate($data, \Model_Admin $identity)
     {
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-        
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = hash('sha256', random_bytes(13));
+        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $data['subject'];

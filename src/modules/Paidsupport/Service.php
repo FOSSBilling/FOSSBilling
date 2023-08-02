@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -17,11 +17,11 @@
 
 namespace Box\Mod\Paidsupport;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -133,7 +133,7 @@ class Service implements InjectionAwareInterface
     {
         $helpdeskConfig = $this->getPaidHelpdeskConfig();
 
-        if (isset($helpdeskConfig[$id]) && 1 == $helpdeskConfig[$id]) {
+        if (isset($helpdeskConfig[$id]) && $helpdeskConfig[$id] == 1) {
             return true;
         }
 

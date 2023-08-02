@@ -10,7 +10,7 @@
 
 class Box_Url implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
     protected $baseUri;
 
     public function setDi(\Pimple\Container $di): void

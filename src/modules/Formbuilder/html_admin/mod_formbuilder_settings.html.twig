@@ -6,8 +6,33 @@
 
 {% set active_menu = 'system' %}
 
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home"/>
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        {% if not request.id %}
+            <li class="breadcrumb-item active" aria-current="page">{{ 'Custom form builder'|trans }}</li>
+        {% else %}
+            {% set form = admin.formbuilder_get_form({ "id": request.id }) %}
+            <li class="breadcrumb-item">
+                <a href="{{ 'extension/settings/formbuilder'|alink }}">{{ 'Custom form builder'|trans }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ form.name }}</li>
+        {% endif %}
+    </ul>
+{% endblock %}
+
 {% block content %}
 <div class="card">
+{% if not request.id %}
     <!--<ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Custom forms'|trans }}</a>
@@ -84,10 +109,9 @@
 {#            </form>#}
 {#        </div>#}
 
-{% if request.id %}
+{% else %}
 {% set form = admin.formbuilder_get_form({ "id": request.id }) %}
-
-    <div class="mt-3 card widget" id="form-options-{{ form.id }}">
+    <div class="tab-pane fade show active" id="form-options-{{ form.id }}" role="tabpanel">
         <div class="card-header">
             <h3 class="card-title">{{ 'Form options'|trans }}</h3>
         </div>
@@ -190,7 +214,7 @@
                 </fieldset>
             </div>
         </div>
-    </div>
+</div>
 {% endif %}
 {% endblock %}
 

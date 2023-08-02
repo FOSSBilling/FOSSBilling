@@ -43,12 +43,12 @@ class ServicePayGatewayTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $data = array('search' => 'keyword');
-        $expectedParams = array('search' => "%$data[search]%");
+        $expectedParams = array(':search' => "%$data[search]%");
 
         $result = $this->service->getSearchQuery($data);
         $this->assertIsArray($result);
         $this->assertIsString($result[0]);
-        $this->assertTrue(strpos($result[0], 'AND m.name LIKE :search') > 0);
+        $this->assertTrue(strpos($result[0], 'AND name LIKE :search') > 0);
         $this->assertIsArray($result[1]);
         $this->assertEquals($expectedParams, $result[1]);
     }

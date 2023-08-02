@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -19,9 +19,6 @@ class Admin extends \Api_Abstract
      * Upload file to product. Uses $_FILES array so make sure your form is
      * enctype="multipart/form-data".
      *
-     * @param int  $id        - product id
-     * @param file $file_data - <input type="file" name="file_data" /> field content
-     *
      * @return bool
      */
     public function upload($data)
@@ -29,6 +26,7 @@ class Admin extends \Api_Abstract
         $required = [
             'id' => 'Product ID is missing',
         ];
+
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
@@ -48,9 +46,6 @@ class Admin extends \Api_Abstract
      *
      * Uses $_FILES array so make sure your form is
      * enctype="multipart/form-data"
-     *
-     * @param int  $order_id  - order id
-     * @param file $file_data - <input type="file" name="file_data" /> field content
      *
      * @return bool
      */

@@ -42,7 +42,7 @@ class Box_AppClient extends Box_App
     public function get_custom_page($page)
     {
         $ext = $this->ext;
-        if (false !== strpos($page, '.')) {
+        if (str_contains($page, '.')) {
             $ext = substr($page, strpos($page, '.') + 1);
             $page = substr($page, 0, strpos($page, '.'));
         }
@@ -55,7 +55,6 @@ class Box_AppClient extends Box_App
                 error_log($e);
             }
         }
-        // throw new \Box_Exception('Page :url not found', array(':url'=>$page), 404);
         $e = new \Box_Exception('Page :url not found', [':url' => $this->url], 404);
 
         error_log($e->getMessage());

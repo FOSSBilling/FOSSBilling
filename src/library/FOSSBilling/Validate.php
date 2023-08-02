@@ -12,7 +12,7 @@ namespace FOSSBilling;
 
 class Validate
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -30,7 +30,7 @@ class Validate
     public function isSldValid(string $sld) : bool
     {
         // allow punnycode
-        if(substr($sld, 0, 4) == 'xn--') {
+        if(str_starts_with($sld, 'xn--')) {
             return true;
         }
 
@@ -103,7 +103,8 @@ class Validate
     public function isBirthdayValid($birthday = '')
     {
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
-            throw new \Box_Exception('Birth date is invalid');
+            $friendlyName = ucfirst(__trans('Birthdate'));
+            throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
         return true;
     }

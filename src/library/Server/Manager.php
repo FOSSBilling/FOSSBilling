@@ -10,7 +10,7 @@
 
 abstract class Server_Manager
 {
-    private $_log = null;
+    private ?\Box_Log $_log = null;
 
     protected $_config = array(
         'ip'         =>  NULL,
@@ -19,6 +19,7 @@ abstract class Server_Manager
         'username'   =>  NULL,
         'password'   =>  NULL,
         'accesshash' =>  NULL,
+        'config'     =>  NULL,
         'port'       =>  NULL,
     );
 
@@ -33,6 +34,7 @@ abstract class Server_Manager
      *                       - 'username': Username for authenticating the connection.
      *                       - 'password': Password for authenticating the connection.
      *                       - 'accesshash': Access hash for authenticating the connection. (API Key)
+     *                       - 'config': Optional configuration for the server manager.
      *                       - 'port': Custom port number for the connection.
      */
     public function __construct($options)
@@ -66,6 +68,13 @@ abstract class Server_Manager
         }
 
         /**
+         * Custom configuration.
+         */
+        if (isset($options['config'])) {
+            $this->_config['config'] = $options['config'];
+        }
+
+        /**
          * Custom connection port to API.
          * If not provided, using default server manager port
          */
@@ -83,12 +92,13 @@ abstract class Server_Manager
      * @param mixed $domain_name The domain name used to generate the username.
      * @return string The generated username.
      */
-    public function generateUsername($domain_name)
+    public function generateUsername(mixed $domain_name)
     {
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
         $username = substr($username, 0, 7);
         $randnum = random_int(0, 9);
-        return $username . $randnum;
+        $prefix = $this->_config['config']['userprefix'] ?? '';
+        return  $prefix . $username . $randnum;
     }
 
     /**

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Profile;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -111,8 +111,8 @@ class Service implements InjectionAwareInterface
         $email = $data['email'] ?? '';
         if (
             $client->email != $email
-            && isset($config['allow_change_email'])
-            && !$config['allow_change_email']
+            && isset($config['disable_change_email'])
+            && $config['disable_change_email']
         ) {
             throw new \Box_Exception('Email can not be changed');
         }
@@ -133,8 +133,8 @@ class Service implements InjectionAwareInterface
         $client->gender = $data['gender'] ?? $client->gender;
 
         $birthday = $data['birthday'] ?? null;
-        if (strlen(trim($birthday)) > 0 && false === strtotime($birthday)) {
-            throw new \Box_Exception('Invalid birth date value');
+        if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
+            throw new \Box_Exception('Invalid birthdate value');
         }
         $client->birthday = $birthday;
 
@@ -217,13 +217,88 @@ class Service implements InjectionAwareInterface
 
     public function logoutClient()
     {
-        if ($_COOKIE) { // testing env fix
-            setcookie('BOXCLR', '', time() - 3600, '/');
-        }
-        $this->di['session']->delete('client');
-        $this->di['session']->delete('client_id');
+        $this->di['session']->destroy('client');
         $this->di['logger']->info('Logged out');
 
         return true;
+    }
+
+    public function invalidateSessions(string $type = null, int $id = null): bool
+    {
+        if (empty($type)) {
+            $auth = new \Box_Authorization($this->di);
+            if ($auth->isAdminLoggedIn()) {
+                $type = 'admin';
+            } elseif ($auth->isClientLoggedIn()) {
+                $type = 'client';
+            } else {
+                throw new \Box_Exception('Unable to invalidate sessions, nobody is logged in');
+            }
+        }
+
+        if (empty($id)) {
+            switch ($type) {
+                case 'admin':
+                    $admin = $this->di['session']->get('admin');
+                    $id = $admin['id'];
+
+                    break;
+                case 'client':
+                    $id = $this->di['session']->get('client_id');
+
+                    break;
+            }
+        }
+
+        if ($type !== 'admin' && $type !== 'client') {
+            throw new \Box_Exception('Unable to invalidate sessions, an invalid type was used');
+        }
+
+        $sessions = $this->getSessions();
+        foreach ($sessions as $session) {
+            $this->deleteSessionIfMatching($session, $type, $id);
+        }
+
+        return true;
+    }
+
+    private function getSessions(): array
+    {
+        $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
+        $sessions = $this->di['db']->getAll($query);
+
+        return $sessions;
+    }
+
+    private function deleteSessionIfMatching(array $session, string $type, int $id): void
+    {
+        // Decode the data for the current session and then verify it is for the selected type
+        $data = base64_decode($session['content']);
+        $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
+        if (!str_starts_with($data, $stringStart)) {
+            return;
+        }
+
+        // Now we strip off the starting portion so we can unserialize the data
+        $data = str_replace($stringStart, '', $data);
+
+        // Finally, perform the check depending on what type of session we are looking for and trash it if it's a match
+        if ($type === 'admin') {
+            $dataArray = unserialize($data);
+            if ($dataArray['id'] === $id) {
+                $this->trashSessionByArray($session);
+            }
+        } else {
+            if (unserialize($data) === $id) {
+                $this->trashSessionByArray($session);
+            }
+        }
+    }
+
+    private function trashSessionByArray(array $session): void
+    {
+        $bean = $this->di['db']->dispense('session');
+        $bean->import($session);
+        $this->di['db']->trash($bean);
     }
 }

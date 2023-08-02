@@ -41,7 +41,7 @@ class AdminTest extends \BBTestCase
 
     public function testLogout()
     {
-        $sessionMock = $this->getMockBuilder('\Box_Session')
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')
             ->disableOriginalConstructor()
             ->getMock();
 

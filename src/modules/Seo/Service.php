@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Seo;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -88,7 +88,7 @@ class Service implements InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_seo');
 
-        return isset($config['sitemap_' . $engine]) && $config['sitemap_' . $engine] == "on";
+        return isset($config['sitemap_' . $engine]) && $config['sitemap_' . $engine] == 'on';
     }
 
     /**
@@ -103,7 +103,7 @@ class Service implements InjectionAwareInterface
         $files = scandir($dir);
 
         foreach ($files as $file) {
-            if (substr($file, -4) == '.php') {
+            if (str_ends_with($file, '.php')) {
                 $engine = substr($file, 0, -4);
                 $class = 'Box\\Mod\\Seo\\Engines\\' . $engine;
                 $engines[$engine] = new $class();

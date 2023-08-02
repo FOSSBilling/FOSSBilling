@@ -12,6 +12,7 @@ import './js/datepicker'
 import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
 import './js/fossbilling';
+import 'sortable-tablesort/sortable.min.js';
 
 globalThis.ApexCharts = ApexCharts;
 globalThis.$ = globalThis.jQuery = $;
@@ -25,15 +26,11 @@ coloris({
 
 
 document.addEventListener('DOMContentLoaded', () => {
-
-  if (localStorage.getItem('theme') === 'dark') {
-    document.body.classList.add('theme-dark');
-  }
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();
-      document.body.classList.toggle('theme-dark');
       localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
+      document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'))
     });
   });
 

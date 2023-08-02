@@ -109,7 +109,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('toSessionArray')->will($this->returnValue($sessionArray));
 
-        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())->
         method('set');
 
@@ -449,6 +449,8 @@ class AdminTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
+        $profileService = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
+
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventMock;
@@ -459,7 +461,9 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
-
+        $di['mod_service'] = $di->protect(function () use ($profileService) {
+            return $profileService;
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -753,6 +757,9 @@ class AdminTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->will($this->returnValue($model));
+        $dbMock->expects($this->once())
+            ->method('find')->with('Client', 'client_group_id = :group_id',[':group_id' => $data['id']])
+            ->will($this->returnValue([])); // Return an empty array to simulate no clients assigned to the group
 
         $serviceMock = $this->getMockBuilder('\Box\Client\Service')
             ->setMethods(array('deleteGroup'))

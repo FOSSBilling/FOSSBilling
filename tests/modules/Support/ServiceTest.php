@@ -1,4 +1,5 @@
 <?php
+
 namespace Box\Tests\Mod\Support;
 
 use \RedBeanPHP\OODBBean;
@@ -446,19 +447,20 @@ class ServiceTest extends \BBTestCase
     {
         return array(
             array(
-                array('search'              => 'query',
-                      'id'                  => rand(1, 100),
-                      'status'              => 'open',
-                      'client_id'           => rand(1, 100),
-                      'client'              => 'Client name',
-                      'order_id'            => rand(1, 100),
-                      'subject'             => 'subject',
-                      'content'             => 'Content',
-                      'support_helpdesk_id' => rand(1, 100),
-                      'created_at'          => date('Y-m-d H:i:s'),
-                      'date_from'           => date('Y-m-d H:i:s'),
-                      'date_to'             => date('Y-m-d H:i:s'),
-                      'priority'            => rand(1, 100),
+                array(
+                    'search'              => 'query',
+                    'id'                  => rand(1, 100),
+                    'status'              => 'open',
+                    'client_id'           => rand(1, 100),
+                    'client'              => 'Client name',
+                    'order_id'            => rand(1, 100),
+                    'subject'             => 'subject',
+                    'content'             => 'Content',
+                    'support_helpdesk_id' => rand(1, 100),
+                    'created_at'          => date('Y-m-d H:i:s'),
+                    'date_from'           => date('Y-m-d H:i:s'),
+                    'date_to'             => date('Y-m-d H:i:s'),
+                    'priority'            => rand(1, 100),
                 )
             ),
             array(
@@ -643,8 +645,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
@@ -680,7 +681,7 @@ class ServiceTest extends \BBTestCase
 
     public function testCanBeReopenedNotClosed()
     {
-        $helpdesk = New \Model_SupportHelpdesk();
+        $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -701,7 +702,7 @@ class ServiceTest extends \BBTestCase
 
     public function testCanBeReopened()
     {
-        $helpdesk = New \Model_SupportHelpdesk();
+        $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
         $helpdesk->support_helpdesk_id = rand(1, 100);
         $helpdesk->can_reopen          = true;
@@ -758,8 +759,8 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->withConsecutive(['SupportTicketNote'], ['SupportTicketMessage'])
             ->willReturnOnConsecutiveCalls(
-                    [new \Model_SupportTicketNote(), new \Model_SupportTicketNote()],
-                    [new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage()]
+                [new \Model_SupportTicketNote(), new \Model_SupportTicketNote()],
+                [new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage()]
             );
 
         $dbMock->expects($this->atLeastOnce())
@@ -782,7 +783,7 @@ class ServiceTest extends \BBTestCase
     {
         $supportTicketMessageModel = new \Model_SupportTicketMessage();
         $supportTicketMessageModel->loadBean(new \DummyBean());
-        $helpdesk = New \Model_SupportHelpdesk();
+        $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1312,8 +1313,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($randId));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
@@ -1346,8 +1346,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($randId));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
@@ -1421,7 +1420,8 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->ticketCreateForGuest($data);
         $this->assertIsString($result);
-        $this->assertEquals(strlen($result), 64);
+        $this->assertGreaterThanOrEqual(200, strlen($result));
+        $this->assertLessThanOrEqual(255, strlen($result));
     }
 
     public function testTicketCreateForClient()
@@ -1802,8 +1802,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
@@ -2006,8 +2005,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($randId));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
@@ -2079,8 +2077,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($randId));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
@@ -2237,9 +2234,9 @@ class ServiceTest extends \BBTestCase
 
         $expected = array(
             'General' =>
-                array(
-                    1 => 'R  Title',
-                ),
+            array(
+                1 => 'R  Title',
+            ),
         );
 
         $result = $this->service->cannedGetGroupedPairs();
@@ -2602,6 +2599,5 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->canClientSubmitNewTicket($client, $config);
         $this->assertTrue($result);
-
     }
 }

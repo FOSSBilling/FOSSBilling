@@ -3,6 +3,7 @@
 @import "flags";
 @import "~tom-select/dist/css/tom-select.bootstrap5.css";
 @import "theme_settings";
+@import 'sortable-tablesort/sortable-base.css';
 
 .page {
     min-height: calc(100vh - 2px);
@@ -81,3 +82,18 @@
 #script-code {
     resize: none;
 }
+
+[data-bs-theme=dark]
+{
+  .toast {
+    background: var(--tblr-bg-surface);
+    border: var(--tblr-border-width) var(--tblr-border-style) var(--tblr-secondary);
+    }
+  .toast-header {
+    color: var(--tblr-secondary);
+   }
+}
+
+.toast {
+    position: relative;
+  }

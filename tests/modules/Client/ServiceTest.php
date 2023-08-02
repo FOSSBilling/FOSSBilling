@@ -560,7 +560,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Funds amount is not valid');
+        $this->expectExceptionMessage('Funds amount is invalid');
         $clientService->addFunds($modelClient, $amount, $description);
     }
 
@@ -578,7 +578,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Funds description is not valid');
+        $this->expectExceptionMessage('Funds description is invalid');
         $result = $clientService->addFunds($modelClient, $amount, $description);
         $this->assertTrue($result);
     }
@@ -1052,44 +1052,6 @@ class ServiceTest extends \BBTestCase {
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    public function testauthorizeClientEmailRequiredNotConfirmed()
-    {
-        $email    = 'example@fossbilling.vm';
-        $password = '123456';
-
-        $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \DummyBean());
-
-        $extensionMetaModel = new \Model_ExtensionMeta();
-        $extensionMetaModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->exactly(2))
-            ->method('findOne')
-            ->withConsecutive(['Client'],['ExtensionMeta'])
-            ->will($this->onConsecutiveCalls($clientModel, $extensionMetaModel));
-
-        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
-        $authMock->expects($this->never())
-            ->method('authorizeUser')
-            ->with($clientModel, $password)
-            ->willReturn($clientModel);
-
-        $di               = new \Pimple\Container();
-        $di['db']         = $dbMock;
-        $di['auth']       = $authMock;
-        $di['mod_config'] = $di->protect(function ($name) use ($di) {
-            return array('require_email_confirmation' => true);
-        });
-        $service          = new \Box\Mod\Client\Service();
-        $service->setDi($di);
-
-        $this->expectException(\Box_Exception::class);
-        $result = $service->authorizeClient($email, $password);
-        $this->assertInstanceOf('\Model_Client', $result);
-    }
-
-
     public function testauthorizeClientEmailRequiredConfirmed()
     {
         $email    = 'example@fossbilling.vm';
@@ -1131,7 +1093,7 @@ class ServiceTest extends \BBTestCase {
         $email = 'client@fossbilling.org';
 
         $config = array(
-            'allow_change_email' => true,
+            'disable_change_email' => false,
         );
 
         $di = new \Pimple\Container();
@@ -1154,7 +1116,7 @@ class ServiceTest extends \BBTestCase {
         $clientModel->email = $email;
 
         $config = array(
-            'allow_change_email' => true,
+            'disable_change_email' => false,
         );
 
         $di = new \Pimple\Container();
@@ -1194,7 +1156,7 @@ class ServiceTest extends \BBTestCase {
         $email = 'client@fossbilling.org';
 
         $config = array(
-            'allow_change_email' => false,
+            'disable_change_email' => true,
         );
 
         $di = new \Pimple\Container();

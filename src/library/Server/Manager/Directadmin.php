@@ -69,7 +69,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
 
         // Username must start with a-z.
-        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(rand(97,122)), 0, 1) : $username;
+        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97,122)), 0, 1) : $username;
 
         // Username must be at most 10 characters long, and sufficiently random to avoid collisons.
         $username = substr($username, 0, 7);
@@ -192,11 +192,11 @@ class Server_Manager_Directadmin extends Server_Manager
             }
         }
         
-        if(strpos(implode('', $results), 'Unable to assign the Reseller ANY ips') !== false) {
+        if(str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
             throw new Server_Exception('Unable to assign the Reseller ANY ips. Make sure to have free, un-assigned ips.');
         }
         
-        if(strpos(implode('', $results), 'Error Creating User') !== false) {
+        if(str_contains(implode('', $results), 'Error Creating User')) {
             throw new Server_Exception('Error creating user');
         }
         
@@ -326,17 +326,17 @@ class Server_Manager_Directadmin extends Server_Manager
     
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin does not support username changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('username changes')]);
     }
     
     public function changeAccountDomain(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin does not support domain changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account domain')]);
     }
     
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('DirectAdmin does not support IP changes');
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account IP')]);
     }
     
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
@@ -384,7 +384,7 @@ class Server_Manager_Directadmin extends Server_Manager
     private function getIps()
     {
         $results = $this->_request('CMD_API_SHOW_RESELLER_IPS');
-        return isset($results['list']) ? $results['list'] : array();
+        return $results['list'] ?? array();
     }
     
     /**
@@ -425,7 +425,7 @@ class Server_Manager_Directadmin extends Server_Manager
         }
         
         if(strlen(strstr($data, 'DirectAdmin Login')) > 0) {
-            throw new Server_Exception('Server Manager DirectAdmin Error: "Login failed"');
+            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
         }
         
         if(strlen(strstr($data, "The request you've made cannot be executed because it does not exist in your authority level")) > 0) {
@@ -435,7 +435,8 @@ class Server_Manager_Directadmin extends Server_Manager
         $r = $this->_parseResponse($data);
         
         if(isset($r['error']) && $r['error'] == 1) {
-            throw new Server_Exception('Server Manager DirectAdmin Error: :error', [':error' => $r['details']]);
+            $placeholders = ['action' => $command, 'type' => 'DirectAdmin'];
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         
         $response = empty($r) ? array() : $r;

@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -19,8 +19,6 @@ class Admin extends \Api_Abstract
      * Update domain service.
      * Does not send actions to domain registrar. Used to sync domain details
      * on FOSSBilling.
-     *
-     * @param int $order_id - domain order id
      *
      * @optional string $ns1 - 1 Nameserver hostname, ie: ns1.mydomain.com
      * @optional string $ns2 - 2 Nameserver hostname, ie: ns2.mydomain.com
@@ -43,10 +41,6 @@ class Admin extends \Api_Abstract
     /**
      * Update domain nameservers.
      *
-     * @param int    $order_id - domain order id
-     * @param string $ns1      - 1 Nameserver hostname, ie: ns1.mydomain.com
-     * @param string $ns2      - 2 Nameserver hostname, ie: ns2.mydomain.com
-     *
      * @optional string $ns3 - 3 Nameserver hostname, ie: ns3.mydomain.com
      * @optional string $ns4 - 4 Nameserver hostname, ie: ns4.mydomain.com
      *
@@ -62,9 +56,6 @@ class Admin extends \Api_Abstract
     /**
      * Update domain contact details.
      *
-     * @param int   $order_id - domain order id
-     * @param array $contact  - Contact array must contain these fields: first_name, last_name, email, company, address1, address2, country, city, state, postcode, phone_cc, phone
-     *
      * @return bool
      */
     public function update_contacts($data)
@@ -76,8 +67,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Enable domain privacy protection.
-     *
-     * @param int $order_id - domain order id
      *
      * @return bool
      */
@@ -91,8 +80,6 @@ class Admin extends \Api_Abstract
     /**
      * Disable domain privacy protection.
      *
-     * @param int $order_id - domain order id
-     *
      * @return bool
      */
     public function disable_privacy_protection($data)
@@ -104,8 +91,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get domain transfer code.
-     *
-     * @param int $order_id - domain order id
      *
      * @return bool
      */
@@ -119,8 +104,6 @@ class Admin extends \Api_Abstract
     /**
      * Lock domain.
      *
-     * @param int $order_id - domain order id
-     *
      * @return bool
      */
     public function lock($data)
@@ -132,8 +115,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Unlock domain.
-     *
-     * @param int $order_id - domain order id
      *
      * @return bool
      */
@@ -165,8 +146,6 @@ class Admin extends \Api_Abstract
     /**
      * Get top level domain details.
      *
-     * @param string $tld - top level domain, ie: .com
-     *
      * @return array
      *
      * @throws \Box_Exception
@@ -179,7 +158,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $tld = $data['tld'];
-        if ('.' != $tld[0]) {
+        if ($tld[0] != '.') {
             $tld = '.' . $tld;
         }
 
@@ -190,17 +169,14 @@ class Admin extends \Api_Abstract
 
         return $this->getService()->tldToApiArray($model);
     }
-    
+
     /**
      * Get top level domain details by id.
-     *
-     * @param string $id - top level id, ie: 1
      *
      * @return array
      *
      * @throws \Box_Exception
      */
-     
     public function tld_get_id($data)
     {
         $required = [
@@ -219,8 +195,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete top level domain.
      *
-     * @param string $tld - top level domain, ie: .com
-     *
      * @return bool
      *
      * @throws \Box_Exception
@@ -237,18 +211,18 @@ class Admin extends \Api_Abstract
         if (!$model instanceof \Model_Tld) {
             throw new \Box_Exception('TLD not found');
         }
+        // check if tld is used by any domain
+        $service_domains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
+        $count = is_countable($service_domains) ? count($service_domains) : 0;
+        if ($count > 0) {
+            throw new \Box_Exception('TLD is used by :count: domains', [':count:' => $count], 707);
+        }
 
         return $this->getService()->tldRm($model);
     }
 
     /**
      * Add new top level domain.
-     *
-     * @param string $tld                - top level domain, ie: .com
-     * @param int    $tld_registrar_id   - domain registrar id
-     * @param float  $price_registration - registration price
-     * @param float  $price_renew        - renewal price
-     * @param float  $price_transfer     - transfer price
      *
      * @return bool
      *
@@ -274,8 +248,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update top level domain.
-     *
-     * @param string $tld - top level domain, ie: .com
      *
      * @optional int $tld_registrar_id - domain registrar id
      * @optional float $price_registration - registration price
@@ -347,8 +319,6 @@ class Admin extends \Api_Abstract
     /**
      * Install domain registrar.
      *
-     * @param string $code - registrar code
-     *
      * @return bool
      */
     public function registrar_install($data)
@@ -369,8 +339,6 @@ class Admin extends \Api_Abstract
     /**
      * Uninstall domain registrar.
      *
-     * @param int $id - registrar id
-     *
      * @return bool
      */
     public function registrar_delete($data)
@@ -382,13 +350,21 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
+        // check if registrar is used by any domain
+        $service_domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = ?', ['tld_registrar_id' => $model->id]);
+
+        // Ensure $service_domains is an array before counting its elements
+        $count = is_array($service_domains) ? count($service_domains) : 0; // Handle the case where $service_domains might be null
+
+        if ($count > 0) {
+            throw new \Box_Exception('Registrar is used by :count: domains', [':count:' => $count], 707);
+        }
+
         return $this->getService()->registrarRm($model);
     }
 
     /**
      * Copy domain registrar.
-     *
-     * @param int $id - registrar id
      *
      * @return bool
      */
@@ -406,8 +382,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get domain registrar details.
-     *
-     * @param int $id - registrar id
      *
      * @return array
      */
@@ -436,8 +410,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update domain registrar.
-     *
-     * @param int $id - registrar id
      *
      * @optional string $title - registrar title
      * @optional array $config - registrar configuration array
@@ -475,5 +447,10 @@ class Admin extends \Api_Abstract
         }
 
         return $s;
+    }
+
+    public function findServiceDomain($tld)
+    {
+        return $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $tld]);
     }
 }

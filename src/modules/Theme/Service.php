@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,11 @@
 
 namespace Box\Mod\Theme;
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -161,24 +161,6 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function uploadAssets(Model\Theme $theme, array $files)
-    {
-        $dest = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
-
-        foreach ($files as $filename => $f) {
-            if (UPLOAD_ERR_NO_FILE == $f['error']) {
-                continue;
-            }
-
-            $filename = str_replace('_', '.', $filename);
-            if (UPLOAD_ERR_OK != $f['error']) {
-                throw new \Box_Exception('Error uploading file :file Error code: :error', [':file' => $filename, ':error' => $f['error']]);
-            }
-
-            move_uploaded_file($f['tmp_name'], $dest . $filename);
-        }
-    }
-
     public function updateSettings(Model\Theme $theme, $preset, array $params)
     {
         $meta = $this->di['db']->findOne(
@@ -252,7 +234,7 @@ class Service implements InjectionAwareInterface
         $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
         $path = PATH_THEMES . DIRECTORY_SEPARATOR;
-        if (null == $theme || !file_exists($path . $theme)) {
+        if ($theme == null || !file_exists($path . $theme)) {
             $theme = $default;
         }
         $url = $this->di['config']['url'] . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
@@ -284,7 +266,7 @@ class Service implements InjectionAwareInterface
         $path = $this->getThemesPath();
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
-                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && '.' != $file[0]) {
+                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file[0] != '.') {
                     try {
                         if (!$client && str_contains($file, 'admin')) {
                             $list[] = $this->_loadTheme($file);
@@ -364,7 +346,7 @@ class Service implements InjectionAwareInterface
             $ext = str_replace('.', '', $ext);
 
             $config['url'] = BB_URL . 'themes/' . $ext . '/';
-            array_push($paths, $this->getThemesPath() . $ext . '/html');
+            $paths[] = $this->getThemesPath() . $ext . '/html';
         } else {
             $config['url'] = BB_URL . 'themes/' . $theme . '/';
         }
@@ -381,7 +363,7 @@ class Service implements InjectionAwareInterface
             $p = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
             $p .= $client ? 'html_client' : 'html_admin';
             if (file_exists($p)) {
-                array_push($paths, $p);
+                $paths[] = $p;
             }
         }
 
@@ -407,6 +389,7 @@ class Service implements InjectionAwareInterface
 
     public function getEncoreInfo(): array
     {
+        $encoreInfo = [];
         $entrypoint = 'entrypoints';
         $manifest = 'manifest';
         $encoreInfo['is_encore_theme'] = true;
@@ -420,8 +403,8 @@ class Service implements InjectionAwareInterface
 
         if ($this->useAdminDefaultEncore()) {
             $encoreInfo['is_encore_theme'] = true;
-            $encoreInfo[$entrypoint] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . "build" . DIRECTORY_SEPARATOR . "{$entrypoint}.json";
-            $encoreInfo[$manifest] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . "build" . DIRECTORY_SEPARATOR . "{$manifest}.json";
+            $encoreInfo[$entrypoint] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$entrypoint}.json";
+            $encoreInfo[$manifest] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$manifest}.json";
         }
 
         return $encoreInfo;
@@ -429,12 +412,13 @@ class Service implements InjectionAwareInterface
 
     protected function getEncoreJsonPath($filename): string
     {
-        return $this->getThemesPath() . $this->getCurrentRouteTheme() . DIRECTORY_SEPARATOR . "build" . DIRECTORY_SEPARATOR . "{$filename}.json";
+        return $this->getThemesPath() . $this->getCurrentRouteTheme() . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$filename}.json";
     }
 
     protected function useAdminDefaultEncore()
     {
         $config = $this->getThemeConfig();
+
         return $config['use_admin_default_encore'] ?? false;
     }
 
