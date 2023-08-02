@@ -30,7 +30,7 @@ class Guest extends \Api_Abstract
             return $this->getService()->getVersion();
         } else {
             // return an empty string
-            return "";
+            return '';
         }
     }
 
@@ -45,7 +45,7 @@ class Guest extends \Api_Abstract
         $auth = $this->di['auth'];
         $hideExtraCompanyInfoFromGuest = $this->getService()->getParamValue('hide_company_public');
 
-        if(!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && $hideExtraCompanyInfoFromGuest){
+        if (!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && $hideExtraCompanyInfoFromGuest) {
             unset($companyInfo['vat_number']);
             unset($companyInfo['email']);
             unset($companyInfo['tel']);
