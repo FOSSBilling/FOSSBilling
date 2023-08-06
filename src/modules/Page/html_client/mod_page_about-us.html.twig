@@ -1,30 +1,24 @@
-{% extends "layout_public.html.twig" %}
+{% extends "layout_default.html.twig" %}
 
 {% block meta_title %}{{ 'About us'|trans }}{% endblock %}
 
 {% set company = guest.system_company %}
 
 {% block body_class %}about-us{% endblock %}
-{% block body %}
-<br/>
-<section class="container" role="main">
-    <div class="content-block">
-        <div class="row">
-            <article class="span12 data-block">
-                <div class="data-container">
-                    <header>
-                        <h1>{{ 'About us'|trans }}</h1>
-                        <p>{{ company.signature }}</p>
-                    </header>
-                    <section>
-                        {{ company.note|markdown }}
-                    </section>
-                </div>
-            </article>
+
+{% block content %}
+<div class="row">
+    <div class="card ml-0 ml-md-3 w-100">
+        <div class="card-header">
+            <h1>{{ 'About us'|trans }}</h1>
+            <p>{{ company.signature }}</p>
+        </div>
+        <div class="card-body">
+            {{ company.note|markdown }}
+        </div>
+        <div class="card-footer">
+            <a href="{{ '/'|link}}" class="btn btn-primary" title="Back to Homepage">{{ 'Back to Homepage'|trans }}</a>
         </div>
     </div>
-    <div class="offset5">
-        <a href="{{ '/'|link}}" class="btn btn-primary btn-large" title="Back to Homepage">{{ 'Back to Homepage'|trans }}</a>
-    </div>
-</section>
+</div>
 {% endblock %}
