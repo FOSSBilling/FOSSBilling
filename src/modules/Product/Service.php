@@ -1066,5 +1066,4 @@ class Service implements InjectionAwareInterface
 
         return $orders;
     }
-
 }

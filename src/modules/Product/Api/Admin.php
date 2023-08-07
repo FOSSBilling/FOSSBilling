@@ -97,7 +97,6 @@ class Admin extends \Api_Abstract
             }
         }
 
-
         $types = $service->getTypes();
         if (!array_key_exists($data['type'], $types)) {
             throw new \Box_Exception('Product type :type is not registered', [':type' => $data['type']], 413);
