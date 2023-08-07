@@ -196,10 +196,8 @@ class Service implements InjectionAwareInterface
                 $ordermodel->config = json_encode($oldconfig);
                 $ordermodel->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($ordermodel);
-
             }
         }
-
 
         $config['filename'] = $file->getName();
         $productModel->config = json_encode($config);
@@ -285,6 +283,7 @@ class Service implements InjectionAwareInterface
 
     public function saveProductConfig(\Model_Product $productModel, $data)
     {
+        $config = [];
         $config['update_orders'] = isset($data['update_orders']) ? (bool) $data['update_orders'] : false;
         $productModel->config = json_encode($config);
         $productModel->updated_at = date('Y-m-d H:i:s');
