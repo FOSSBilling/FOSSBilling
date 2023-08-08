@@ -1,8 +1,8 @@
 name: Rector and Code Styling
 
 on:
-  push:
-    branches: main
+  schedule:
+    - cron: '0 12 * * 2,4' # Runs once every Tuesday and Thursday
 
 jobs:
   php-cs-fixer:
@@ -54,3 +54,4 @@ jobs:
         token: ${{ secrets.BOT_TOKEN }}
         committer: FOSSBilling Bot <fossbilling-bot>
         author: FOSSBilling Bot <fossbilling-bot>
+        labels: skip-changelog
