@@ -177,6 +177,28 @@ class Service implements InjectionAwareInterface
         $config = json_decode($productModel->config, 1);
         $productService->removeOldFile($config);
 
+        // Check if update_orders is true and update all orders
+        if (isset($config['update_orders']) && $config['update_orders']) {
+            $orderService = $this->di['mod_service']('order');
+            // get all orders with this product
+            $orders = $productService->getOrdersForProduct($productModel);
+
+            foreach ($orders as $order) {
+                $ordermodel = $this->di['db']->getExistingModelById('ClientOrder', $order['id']);
+                $serviceDownloadable = $orderService->getOrderService($ordermodel);
+                $this->updateProductFile($serviceDownloadable, $ordermodel);
+
+                // Update the filename
+                $oldconfig = json_decode($order['config'], 1);
+                $oldconfig['filename'] = $file->getName();
+
+                // Save the change to the DB
+                $ordermodel->config = json_encode($oldconfig);
+                $ordermodel->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($ordermodel);
+            }
+        }
+
         $config['filename'] = $file->getName();
         $productModel->config = json_encode($config);
         $productModel->updated_at = date('Y-m-d H:i:s');
@@ -255,6 +277,17 @@ class Service implements InjectionAwareInterface
         $this->sendDownload($filename, $path);
 
         $this->di['logger']->info('Downloaded service %s file', $serviceDownloadable->id);
+
+        return true;
+    }
+
+    public function saveProductConfig(\Model_Product $productModel, $data)
+    {
+        $config = [];
+        $config['update_orders'] = isset($data['update_orders']) ? (bool) $data['update_orders'] : false;
+        $productModel->config = json_encode($config);
+        $productModel->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($productModel);
 
         return true;
     }

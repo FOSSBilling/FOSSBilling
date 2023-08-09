@@ -291,6 +291,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "ALTER TABLE session ADD fingerprint TEXT;";
                 $this->executeSql($q);
             },
+
         ];
         ksort($patches, SORT_NATURAL);
 

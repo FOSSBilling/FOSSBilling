@@ -11,7 +11,7 @@
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="robots" content="{{ settings.meta_robots }}">
     <meta name="author" content="{{ settings.meta_author }}">
-    <meta name="generator" content="FOSSBilling {{ guest.system_version }}">
+    <meta name="generator" content="FOSSBilling {{ FOSSBillingVersion }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     {% block opengraph %}{% endblock %}
@@ -22,7 +22,7 @@
 
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
-    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
+    {{ "Api/API.js" | library_url | script_tag }}
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url}}"></script>

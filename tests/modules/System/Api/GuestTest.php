@@ -22,35 +22,152 @@ class GuestTest extends \BBTestCase {
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
     }
-
-    public function testversion()
+    public function testVersionAdmin()
     {
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
-            ->method('getVersion')
-            ->will($this->returnValue(\FOSSBilling\Version::VERSION));
+        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authorizationMock->expects($this->atLeastOnce())
+            ->method("isAdminLoggedIn")
+            ->willReturn(true);
 
-        $this->api->setService($servuceMock);
+        $di = new \Pimple\Container();
+        $di['auth'] = $authorizationMock;
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getVersion')
+            ->willReturn(\FOSSBilling\Version::VERSION);
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
         $result = $this->api->version();
+
         $this->assertIsString($result);
         $this->assertNotEmpty($result);
     }
 
-    public function testcompany()
+    public function testVersionShowPublicOn()
     {
-        $data = array(
+        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authorizationMock->expects($this->atLeastOnce())
+            ->method("isAdminLoggedIn")
+            ->willReturn(false);
 
-        );
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
-            ->method('getCompany')
-            ->will($this->returnValue(array()));
+        $di = new \Pimple\Container();
+        $di['auth'] = $authorizationMock;
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getVersion')
+            ->willReturn(\FOSSBilling\Version::VERSION);
 
-        $this->api->setService($servuceMock);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('hide_version_public')
+            ->willReturn(0);
 
-        $result = $this->api->company($data);
-        $this->assertIsArray($result);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+        $result = $this->api->version();
+
+        $this->assertIsString($result);
+        $this->assertNotEmpty($result);
     }
+
+    public function testVersionShowPublicOff()
+    {
+        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authorizationMock->expects($this->atLeastOnce())
+            ->method("isAdminLoggedIn")
+            ->willReturn(false);
+
+        $di = new \Pimple\Container();
+        $di['auth'] = $authorizationMock;
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('hide_version_public')
+            ->willReturn(1);
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+        $result = $this->api->version();
+
+        $this->assertIsString($result);
+        $this->assertEmpty($result);
+    }
+
+    public function testCompanyShowPublicOn()
+    {
+        $companyData = array('companyName' => 'TestCo');
+
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->method('isAdminLoggedIn')->willReturn(false);
+        $authMock->method('isClientLoggedIn')->willReturn(false);
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getCompany')
+            ->willReturn($companyData);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('hide_company_public')
+            ->willReturn(0);
+
+        $di = new \Pimple\Container();
+        $di['auth'] = $authMock;
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+        $result = $this->api->company();
+
+        $this->assertIsArray($result);
+        $this->assertNotEmpty($result);
+    }
+    public function testCompanyShowPublicOff()
+    {
+        $companyData = array(
+            'companyName' => 'TestCo',
+            'vat_number' => 'Test VAT',
+            'email' => 'test@email.com',
+            'tel' => '123456789',
+            'account_number' => '987654321',
+            'number' => '123456',
+            'address_1' => 'Test Address 1',
+            'address_2' => 'Test Address 2',
+            'address_3' => 'Test Address 3',
+        );
+
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->method('isAdminLoggedIn')->willReturn(false);
+        $authMock->method('isClientLoggedIn')->willReturn(false);
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getCompany')
+            ->willReturn($companyData);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('hide_company_public')
+            ->willReturn(1);
+
+        $di = new \Pimple\Container();
+        $di['auth'] = $authMock;
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+        $result = $this->api->company();
+
+        $this->assertIsArray($result);
+        $this->assertArrayNotHasKey('vat_number', $result);
+        $this->assertArrayNotHasKey('email', $result);
+        $this->assertArrayNotHasKey('tel', $result);
+        $this->assertArrayNotHasKey('account_number', $result);
+        $this->assertArrayNotHasKey('number', $result);
+        $this->assertArrayNotHasKey('address_1', $result);
+        $this->assertArrayNotHasKey('address_2', $result);
+        $this->assertArrayNotHasKey('address_3', $result);
+    }
+
+
+
 
     public function testphone_codes()
     {

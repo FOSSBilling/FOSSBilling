@@ -2,7 +2,7 @@ name: Check for CKEditor updates
 
 on:
   schedule:
-    - cron: '0 12 * * *'  # Runs once per day
+    - cron: '0 12 * * 2' # Runs once every Tuesday
 
 jobs:
   update-dependencies:
@@ -35,3 +35,4 @@ jobs:
           token: ${{ secrets.BOT_TOKEN }}
           committer: FOSSBilling Bot <fossbilling-bot>
           author: FOSSBilling Bot <fossbilling-bot>
+          labels: skip-changelog, dependencies

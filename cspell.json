@@ -346,6 +346,10 @@
         "IPCOUNTRY",
         "Serviceapikey",
         "haspopup",
+        "oldconfig",
+        "ordermodel",
+        "homoglyph",
+        "TINYINT",
         "homoglyph",
         "oldconfig",
         "ordermodel",
@@ -389,6 +393,7 @@
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",
         ".github/**",
-        ".gitignore"
+        ".gitignore",
+        "src/.htaccess"
     ]
 }

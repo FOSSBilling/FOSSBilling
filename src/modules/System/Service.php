@@ -50,7 +50,6 @@ class Service
     public function setParamValue($param, $value, $createIfNotExists = true)
     {
         $pdo = $this->di['pdo'];
-
         if ($this->paramExists($param)) {
             $query = 'UPDATE setting SET value = :value WHERE param = :param';
             $stmt = $pdo->prepare($query);
