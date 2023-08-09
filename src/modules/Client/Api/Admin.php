@@ -567,6 +567,12 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
+        $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
+
+        if ((is_countable($clients) ? count($clients) : 0) > 0) {
+            throw new \Box_Exception('Group has clients assigned. Please reassign them first.');
+        }
+
         return $this->getService()->deleteGroup($model);
     }
 

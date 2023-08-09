@@ -97,7 +97,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_qty = $addon_sys_period->getQty();
 
         $free_domain_periods    = $addon['config']['free_domain_periods'];
-        if (count($free_domain_periods) > 0) {
+        if ((is_countable($free_domain_periods) ? count($free_domain_periods) : 0) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
 
@@ -106,7 +106,7 @@ class Model_ProductDomainTable extends Model_ProductTable
                 }
             }
 
-            if (strpos($addon_period, 'Y') !== false) {
+            if (str_contains($addon_period, 'Y')) {
 
                 if (min($ref_item_qty, $addon_qty) == 1) {
                     return 1;

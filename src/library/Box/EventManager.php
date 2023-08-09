@@ -10,7 +10,7 @@
 
 class Box_EventManager implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -73,7 +73,7 @@ class Box_EventManager implements \FOSSBilling\InjectionAwareInterface
                 $s = $this->di['mod_service']($mod);
 
                 if (method_exists($s, $event)) {
-                    $disp->connect($event, [get_class($s), $event]);
+                    $disp->connect($event, [$s::class, $event]);
                 }
             } catch (Exception $e) {
                 error_log($e->getMessage());

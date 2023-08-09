@@ -9,22 +9,17 @@
  */
 
 class Box_UrlHelper {
-    private $method;
-    private $conditions;
-
     public $params = array();
     public $match = false;
 
     /**
      * @param string $requestUri
      */
-    public function __construct($httpMethod, $url, $conditions, $requestUri) {
+    public function __construct(private $method, $url, private $conditions, $requestUri) {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];
-        $this->method = $httpMethod;
-        $this->conditions = $conditions;
 
-        if (strtoupper($httpMethod) == $requestMethod) {
+        if (strtoupper($method) == $requestMethod) {
 
             $paramNames = array();
             $paramValues = array();

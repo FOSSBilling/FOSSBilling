@@ -18,7 +18,7 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class Google implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {

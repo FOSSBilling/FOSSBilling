@@ -37,8 +37,8 @@ class Session
 
 class Box_SessionFile
 {
-    const SESSION_STARTED       = TRUE;
-    const SESSION_NOT_STARTED   = FALSE;
+    public const SESSION_STARTED       = TRUE;
+    public const SESSION_NOT_STARTED   = FALSE;
 
     protected $sessionState = self::SESSION_NOT_STARTED;
 
@@ -104,7 +104,7 @@ class Box_SessionFile
 
     public function __get($key)
     {
-        return isset($_SESSION[$key]) ? $_SESSION[$key] : NULL;
+        return $_SESSION[$key] ?? NULL;
     }
 
     public function __set($key, $value)

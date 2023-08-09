@@ -267,11 +267,11 @@ class Server_Manager_Whm extends Server_Manager
 
     /**
      * Check if Package exists
-     * @param Server_Package $package
      * @return bool
      */
     private function _checkPackageExists(Server_Package $package, $create = false)
     {
+        $var_hash = [];
         $name = $this->_getPackageName($package);
 
         $json = $this->_request('listpkgs');

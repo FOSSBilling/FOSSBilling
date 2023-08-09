@@ -227,6 +227,14 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
+        // check if server is not used by any service_hostings
+        $hosting_services = $this->di['db']->find('ServiceHosting', 'service_hosting_server_id = :cart_id', [':cart_id' => $data['id']]);
+        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+
+        if ($count > 0) {
+            throw new \Box_Exception('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
+        }
+
         return (bool) $this->getService()->deleteServer($model);
     }
 
@@ -329,6 +337,15 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
+
+        // check if hosting plan is not used by any service_hostings
+        $hosting_services = $this->di['db']->find('ServiceHosting', 'service_hosting_hp_id = :cart_id', [':cart_id' => $data['id']]);
+
+        // Ensure $hosting_services is an array before counting its elements
+        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+        if ($count > 0) {
+            throw new \Box_Exception('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
+        }
 
         return (bool) $this->getService()->deleteHp($model);
     }

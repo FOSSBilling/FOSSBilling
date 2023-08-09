@@ -13,11 +13,7 @@ namespace FOSSBilling;
 
 class Session implements \FOSSBilling\InjectionAwareInterface
 {
-    private ?\Pimple\Container $di;
-    private \PdoSessionHandler $handler;
-    private string $securityMode;
-    private int $cookieLifespan;
-    private bool $secure;
+    private ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container|null $di): void
     {
@@ -29,12 +25,8 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(\PdoSessionHandler $handler, string $securityMode = 'regular', int $cookieLifespan = 7200, bool $secure = true)
+    public function __construct(private \PdoSessionHandler $handler, private string $securityMode = 'regular', private int $cookieLifespan = 7200, private bool $secure = true)
     {
-        $this->handler = $handler;
-        $this->securityMode = $securityMode;
-        $this->cookieLifespan = $cookieLifespan;
-        $this->secure = $secure;
     }
 
     public function setupSession()

@@ -18,7 +18,7 @@ class Box_EventDispatcher
      * @param string $name     An event name
      * @param mixed  $listener A PHP callable
      */
-    public function connect($name, $listener)
+    public function connect($name, mixed $listener)
     {
         if (!isset($this->listeners[$name])) {
             $this->listeners[$name] = [];
@@ -35,7 +35,7 @@ class Box_EventDispatcher
      *
      * @return false|null false if listener does not exist, null otherwise
      */
-    public function disconnect($name, $listener)
+    public function disconnect($name, mixed $listener)
     {
         if (!isset($this->listeners[$name])) {
             return false;
@@ -109,7 +109,7 @@ class Box_EventDispatcher
      *
      * @return Box_Event The Box_Event instance
      */
-    public function filter(Box_Event $event, $value)
+    public function filter(Box_Event $event, mixed $value)
     {
         foreach ($this->getListeners($event->getName()) as $listener) {
             $value = call_user_func_array($listener, [$event, $value]);
@@ -133,7 +133,7 @@ class Box_EventDispatcher
             $this->listeners[$name] = [];
         }
 
-        return (bool) count($this->listeners[$name]);
+        return (bool) (is_countable($this->listeners[$name]) ? count($this->listeners[$name]) : 0);
     }
 
     /**

@@ -12,7 +12,7 @@ namespace Box\Mod\Servicedomain;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -1023,7 +1023,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function registrarRm(\Model_TldRegistrar $model)
     {
         $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
-        if (count($domains) > 0) {
+        if ((is_countable($domains) ? count($domains) : 0) > 0) {
             throw new \Box_Exception('Can not remove registrar which has domains');
         }
 

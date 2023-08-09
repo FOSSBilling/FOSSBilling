@@ -14,7 +14,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -379,9 +379,17 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    private function _performOnService(\Model_ClientOrder $order)
+    private function _performOnService(\Model_ClientOrder $order): bool
     {
-        return $order->status != \Model_ClientOrder::STATUS_FAILED_SETUP;
+        // If the order matches any of the following status, we should prevent actions such as PW resets or username changes from being performed
+        $badStatus = [
+            \Model_ClientOrder::STATUS_FAILED_SETUP,
+            \Model_ClientOrder::STATUS_PENDING_SETUP,
+            \Model_ClientOrder::STATUS_SUSPENDED,
+            \Model_ClientOrder::STATUS_CANCELED,
+        ];
+
+        return !in_array($order->status, $badStatus);
     }
 
     private function _getServerMangerForOrder($model)

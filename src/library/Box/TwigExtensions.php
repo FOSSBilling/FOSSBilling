@@ -15,7 +15,7 @@ use League\CommonMark\GithubFlavoredMarkdownConverter;
 
 class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -98,7 +98,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             $record = $this->di['geoip']->country($value);
 
             return $record->country->name;
-        } catch (Exception $e) {
+        } catch (Exception) {
             return '';
         }
     }
@@ -204,7 +204,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         if(empty($email)){
             return '';
         }
-    
+
         $url = 'https://www.gravatar.com/avatar/';
         $url .= md5(strtolower(trim($email)));
         $url .= "?s=$size&d=mp&r=g";
@@ -249,7 +249,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $cur_tm = time();
         $dif = $cur_tm - strtotime($iso8601);
         $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
-        $lngh = [1, 60, 3600, 86400, 604800, 2630880, 31570560, 315705600];
+        $lngh = [1, 60, 3600, 86400, 604800, 2_630_880, 31_570_560, 315_705_600];
         $no = 0;
 
         for ($v = sizeof($lngh) - 1; ($v >= 0) && (($no = $dif / $lngh[$v]) <= 1); --$v) {
@@ -280,7 +280,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
 
-        $bytes /= pow(1024, $pow);
+        $bytes /= 1024 ** $pow;
 
         return round($bytes, $precision) . ' ' . $units[$pow];
     }

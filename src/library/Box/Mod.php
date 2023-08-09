@@ -10,11 +10,11 @@
 
 class Box_Mod
 {
-    private $mod = null;
+    private ?string $mod = null;
 
-    private $di = null;
+    private ?\Pimple\Container $di = null;
 
-    private $core = array(
+    private array $core = array(
         'api',
         'activity',
         'cart',

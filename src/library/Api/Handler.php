@@ -13,18 +13,16 @@ use \FOSSBilling\InjectionAwareInterface;
 final class Api_Handler implements InjectionAwareInterface
 {
     protected $type     = NULL;
-    protected $identity = NULL;
     protected $ip       = NULL;
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
-    private   $_enable_cache    = FALSE;
-    private   $_cache           = array();
-    private   $_acl_exception    = FALSE;
+    private   bool $_enable_cache    = FALSE;
+    private   array $_cache           = array();
+    private   bool $_acl_exception    = FALSE;
 
-    public function __construct($identity)
+    public function __construct(protected $identity)
     {
-        $this->identity = $identity;
-        $role = str_replace('model_', '', strtolower(get_class($identity)));
+        $role = str_replace('model_', '', strtolower($identity::class));
         $this->type = $role;
     }
 
@@ -40,7 +38,7 @@ final class Api_Handler implements InjectionAwareInterface
 
     public function __call($method, $arguments)
     {
-        if(strpos($method, '_') === FALSE) {
+        if(!str_contains($method, '_')) {
             throw new \Box_Exception("Method :method must contain underscore", array(':method'=>$method), 710);
         }
 

@@ -27,7 +27,7 @@ class Service implements InjectionAwareInterface
     public const SETUP_AFTER_PAYMENT = 'after_payment';
     public const SETUP_MANUAL = 'manual';
 
-    protected ?\Pimple\Container $di;
+    protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -384,11 +384,11 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->dispense('Product');
         $model->product_payment_id = $paymentId;
         $model->product_category_id = null;
-        $model->status = (isset($status)) ? $status : \Model_Product::STATUS_DISABLED;
+        $model->status = $status ?? \Model_Product::STATUS_DISABLED;
         $model->title = $title;
         $model->slug = $this->di['tools']->slug($title);
         $model->type = self::CUSTOM;
-        $model->setup = (isset($setup)) ? $setup : self::SETUP_AFTER_PAYMENT;
+        $model->setup = $setup ?? self::SETUP_AFTER_PAYMENT;
         $model->is_addon = 1;
 
         $model->icon_url = $iconUrl;
@@ -642,7 +642,7 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
-        $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; // same as RedBean genSlots() method
+        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM product WHERE id in (' . $slots . ')', $ids);
 
@@ -795,7 +795,7 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
-        $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; // same as RedBean genSlots() method
+        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
         array_unshift($ids, (int) $model->id); // adding product ID as first param in array
 
         return $this->di['db']->find('Product', 'type = "custom" and is_addon= 1 and id != ? and id IN (' . $slots . ')', $ids);
@@ -1055,5 +1055,15 @@ class Service implements InjectionAwareInterface
         }
 
         return false;
+    }
+
+    // Function to get all orders for a product
+    public function getOrdersForProduct(\Model_Product $product)
+    {
+        // return type Model_ClientOrder that have product_id = $product->id
+        $sql = 'SELECT * FROM client_order WHERE product_id = :product_id';
+        $orders = $this->di['db']->getAll($sql, [':product_id' => $product->id], '\Model_ClientOrder');
+
+        return $orders;
     }
 }

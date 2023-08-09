@@ -347,8 +347,13 @@
         "Serviceapikey",
         "oldconfig",
         "ordermodel",
+        "homoglyph",
         "TINYINT",
         "homoglyph",
+        "oldconfig",
+        "ordermodel",
+        "TINYINT",
+        "hostings",
         "rulesets"
 
     ],
@@ -387,6 +392,8 @@
         "phpstan.neon",
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",
-        ".github/**"
+        ".github/**",
+        ".gitignore",
+        "src/.htaccess"
     ]
 }
