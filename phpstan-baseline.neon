@@ -11,11 +11,6 @@ parameters:
 			path: src/library/Registrar/Adapter/Internetbs.php
 
 		-
-			message: "#^Undefined variable\\: \\$client_id$#"
-			count: 1
-			path: src/library/Server/Manager/Ispconfig3.php
-
-		-
 			message: "#^Method Server_Manager_Plesk\\:\\:changeAccountDomain\\(\\) should return bool but return statement is missing\\.$#"
 			count: 1
 			path: src/library/Server/Manager/Plesk.php
