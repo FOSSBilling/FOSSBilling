@@ -444,13 +444,11 @@ class ServiceTest extends \BBTestCase
     public function testmarkAsPaid()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('countIncome', 'getNextInvoiceNumber'))
+            ->setMethods(array('countIncome'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('countIncome');
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -504,39 +502,6 @@ class ServiceTest extends \BBTestCase
         $result = $serviceMock->markAsPaid($invoiceModel, true, true);
         $this->assertIsBool($result);
         $this->assertTrue($result);
-    }
-
-    public function testgetNextInvoiceNumber()
-    {
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \DummyBean());
-        $invoiceModel->id = 2;
-        $invoiceModel->nr = 2;
-
-        $expected = $invoiceModel->id + 1;
-
-        $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemService->expects($this->atLeastOnce())
-            ->method('getParamValue');
-        $systemService->expects($this->atLeastOnce())
-            ->method('setParamValue');
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->will($this->returnValue($invoiceModel));
-
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($systemService) {
-            return $systemService;
-        });
-
-        $this->service->setDi($di);
-
-        $result = $this->service->getNextInvoiceNumber($invoiceModel);
-        $this->assertIsInt($result);
-        $this->assertEquals($expected, $result);
     }
 
     public function testcountIncome()
@@ -677,7 +642,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($seller));
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->will($this->returnValue(0));
+            ->will($this->returnValue(1));
 
         $serviceTaxMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTax')->getMock();
         $serviceTaxMock->expects($this->atLeastOnce())
@@ -802,7 +767,7 @@ class ServiceTest extends \BBTestCase
         $total       = 10;
         $tax         = 2.2;
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal', 'getTax', 'countIncome', 'addNote', 'getNextInvoiceNumber'))
+            ->setMethods(array('getTotal', 'getTax', 'countIncome', 'addNote'))
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -815,8 +780,6 @@ class ServiceTest extends \BBTestCase
             ->method('countIncome');
         $serviceMock->expects($this->exactly(3))
             ->method('addNote');
-        $serviceMock->expects($this->once())
-            ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
