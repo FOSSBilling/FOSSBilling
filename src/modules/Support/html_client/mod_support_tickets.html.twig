@@ -71,7 +71,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">
-                    <span class="awe-wrench"></span> Submit new support ticket
+                    <span class="awe-wrench">{{ 'Submit new support ticket'|trans }}</span>
                 </h4>
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
             </div>
@@ -79,15 +79,15 @@
                 <div class="modal-body">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group">
-                        <label for="support-helpdesk-id">Help desk:</label>
+                        <label for="support-helpdesk-id">{{ 'Help desk'|trans }}:</label>
                         {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                     </div>
                     <div class="form-group">
-                        <label for="subject">Subject:</label>
+                        <label for="subject">{{ 'Subject'|trans }}:</label>
                         <input type="text" name="subject" value="{{ request.subject|e }}" required class="form-control"/>
                     </div>
                     <div class="form-group">
-                        <label for="content">Message:</label>
+                        <label for="content">{{ 'Message'|trans }}:</label>
                         <textarea name="content" rows="5" required class="form-control">{{ request.content|e }}</textarea>
                     </div>
                 </div>

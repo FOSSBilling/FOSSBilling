@@ -163,130 +163,120 @@
         </div>
     {% endif %}
 
-    {#<div id="submit-ticket" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3>{{ 'Submit new support ticket'|trans }}</h3>
-    </div>
-    <div class="modal-body">
-        <form action="" method="post" style="background: none" class="open-ticket">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            <fieldset>
-                <div class="control-group">
-                    <label>{{ 'Help desk'|trans }}: </label>
-                    <div class="controls">
-                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
-                    </div>
-                </div>
 
-                <div class="control-group">
-                    <label>{{ 'Subject'|trans }}: </label>
-                    <div class="controls">
-                        <input type="text" name="subject" value="{{ request.subject|e }}" required="required" class="span5"/>
-                    </div>
+    <div class="modal fade" id="submit-ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <span class="awe-wrench">{{ 'Submit new support ticket'|trans }}</span>
+                    </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                 </div>
+                <form action="" method="post" id="ticket-submit" class="open-ticket" style="background: none">
+                    <div class="modal-body">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                        <input type="hidden" name="rel_type" value="order">
+                        <input type="hidden" name="rel_id" value="{{ order.id }}">
 
-                <div class="control-group">
-                    <label>{{ 'Message'|trans }}: </label>
-                    <div class="controls">
-                        <textarea name="content" cols="5" rows="5" required="required"  class="span5">{{ request.content|e }}</textarea>
+                        <div class="form-group">
+                            <label for="support-helpdesk-id">{{ 'Help desk'|trans }}:</label>
+                            {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">{{ 'Subject'|trans }}:</label>
+                            <input type="text" name="subject" value="{{ request.subject|e }}" required class="form-control"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="content">{{ 'Message'|trans }}:</label>
+                            <textarea name="content" rows="5" required class="form-control">{{ request.content|e }}</textarea>
+                        </div>
                     </div>
-                </div>
-
-                <input type="hidden" name="rel_type" value="order">
-                <input type="hidden" name="rel_id" value="{{ order.id }}">
-            </fieldset>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary btn-lg">{{ 'Submit'|trans }}</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <input class="btn btn-primary btn-large" type="submit" value="{{ 'Submit'|trans }}">
-            </div>
-        </form>
-    </div>
-
-    <div id="submit-cancellation-ticket" class="modal hide fade open-ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h3>{{ 'Submit cancellation request'|trans }}</h3>
         </div>
-        <div class="modal-body">
-            <form action="" method="post" style="background:none" class="request-cancellation">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                <div class="control-group">
-                    <label>{{ 'Help desk'|trans }}: </label>
-                    <div class="controls">
-                        {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
-                    </div>
-                </div>
+    </div>
 
-                <div class="control-group">
-                    <label>{{ 'Subject'|trans }}: </label>
-                    <div class="controls">
-                        <input type="text" name="subject" value="{{ 'I would like to cancel'|trans }} {{ order.title }}" required="required" class="span5"/>
-                    </div>
+    <div class="modal fade" id="submit-cancellation-ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <span class="awe-wrench">{{ 'Submit cancellation request'|trans }}</span>
+                    </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                 </div>
+                <form action="" method="post" id="ticket-submit" class="request-cancellation" style="background: none">
+                    <div class="modal-body">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                        <input type="hidden" name="rel_type" value="order">
+                        <input type="hidden" name="rel_id" value="{{ order.id }}">
+                        <input type="hidden" name="rel_task" value="cancel">
 
-                <div class="control-group">
-                    <label>{{ 'Reason'|trans }}: </label>
-                    <div class="controls">
-                        <textarea name="content" cols="5" rows="5" required="required" class="span5">{{ request.content|e }}</textarea>
+                        <div class="form-group">
+                            <label for="support-helpdesk-id">{{ 'Help desk'|trans }}:</label>
+                            {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">{{ 'Subject'|trans }}:</label>
+                            <input type="text" name="subject" value="{{ request.subject|e }}" required class="form-control"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="content">{{ 'Reason'|trans }}:</label>
+                            <textarea name="content" rows="5" required class="form-control">{{ request.content|e }}</textarea>
+                        </div>
                     </div>
-                </div>
-                    <input type="hidden" name="rel_type" value="order">
-                    <input type="hidden" name="rel_id" value="{{ order.id }}">
-                    <input type="hidden" name="rel_task" value="cancel">
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary btn-lg">{{ 'Submit'|trans }}</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <input class="btn btn-primary btn-large" type="submit" value="{{ 'Submit'|trans }}">
+        </div>
+    </div>
+
+    <div class="modal fade" id="submit-upgrade-ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <span class="awe-wrench">{{ 'Submit upgrade request'|trans }}</span>
+                    </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                </div>
+                <form action="" method="post" id="ticket-submit" class="request-upgrade" style="background: none">
+                    <div class="modal-body">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                        <input type="hidden" name="rel_type" value="order">
+                        <input type="hidden" name="rel_id" value="{{ order.id }}">
+                        <input type="hidden" name="rel_task" value="upgrade">
+
+                        <div class="form-group">
+                            <label for="support-helpdesk-id">{{ 'Help desk'|trans }}:</label>
+                            {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">{{ 'Subject'|trans }}:</label>
+                            <input type="text" name="subject" value="{{ request.subject|e }}" required class="form-control"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="rel_new_value">{{ 'Upgrade to'|trans }}:</label>
+                            {{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
+                        </div>
+                        <div class="form-group">
+                            <label for="content">{{ 'Notes'|trans }}:</label>
+                            <textarea name="content" rows="5" required class="form-control" placeholder="Your comment">{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary btn-lg">{{ 'Submit'|trans }}</button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
-
-    <div id="submit-upgrade-ticket" class="modal hide fade open-ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3>{{ 'Submit upgrade request'|trans }}</h3>
-    </div>
-    <div class="modal-body">
-        <form action="" method="post" class="request-upgrade" data-api-url="client/support/ticket_create" data-api-msg="Upgrade request received" style="background: none">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            <fieldset>
-                <div class="control-group">
-                    <label>{{ 'Subject'|trans }}: </label>
-                    <div class="controls">
-                        <input type="text" name="subject" value="{{ 'I would like to upgrade'|trans }} {{ order.title }}" required="required" class="span5"/>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>{{ 'Help desk'|trans }}: </label>
-                    <div class="controls">
-                        {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>{{ 'Upgrade to'|trans }}: </label>
-                    <div class="controls">
-                        {{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>{{ 'Notes'|trans }}: </label>
-                    <div class="controls">
-                        <textarea name="content" cols="5" rows="5" placeholder="Your comment" class="span5">{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
-                    </div>
-                </div>
-
-                <input type="hidden" name="rel_type" value="order">
-                <input type="hidden" name="rel_id" value="{{ order.id }}">
-                <input type="hidden" name="rel_task" value="upgrade">
-            </fieldset>
-    </div>
-    <div class="modal-footer">
-        <input class="btn btn-primary btn-large" type="submit" value="{{ 'Request'|trans }}">
-    </div>
-    </form>#}
 </div>
 
 {% endblock %}
