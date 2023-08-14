@@ -535,8 +535,6 @@ class ServiceTransactionTest extends \BBTestCase
     {
         return array(
             array('\Payment_Adapter_PayPalEmail'),
-            array('\Payment_Adapter_TwoCheckout'),
-            array('\Payment_Adapter_WebMoney'),
         );
     }
 
