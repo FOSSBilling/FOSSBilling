@@ -409,11 +409,12 @@ class Service implements InjectionAwareInterface
             if ($r instanceof \Model_Invoice && is_numeric($r->nr)) {
                 $next_nr = intval($r->nr) + 1;
             } else {
-                throw new \Box_Exception("Unable to determine the next invoice number");
+                throw new \Box_Exception('Unable to determine the next invoice number');
             }
         }
 
         $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
+
         return $next_nr;
     }
 
