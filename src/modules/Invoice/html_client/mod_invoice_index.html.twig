@@ -30,7 +30,7 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane container active" id="unpaid">
-                    <table class="table table-striped table-bordered table-hover">
+                    <table class="table table-striped table-bordered table-hover table-responsive">
                         <thead>
                             <tr>
                                 <th>{{ 'Title'|trans }}</th>
@@ -43,7 +43,7 @@
                         <tbody>
                             {% if unpaid_invoices.total > 0 %}
                             {% for i, invoice in unpaid_invoices.list %}
-                            <tr class="{{ cycle(['odd', 'even'], i) }}">
+                            <tr>
                                 <td>{{ "Proforma invoice #%05s"|format(invoice.id) }}</td>
                                 <td>{{ invoice.created_at|format_date }}</td>
                                 <td>{{ invoice.due_at|format_date }}</td>
@@ -61,7 +61,7 @@
                     </table>
                 </div>
                 <div class="tab-pane container fade" id="paid">
-                    <table class="table table-striped table-bordered table-hover">
+                    <table class="table table-striped table-bordered table-hover table-responsive">
                         <thead>
                         <tr>
                             <th>{{ 'Title'|trans }}</th>
@@ -74,7 +74,7 @@
                         <tbody>
                         {% if paid_invoices.total > 0 %}
                         {% for i, invoice in paid_invoices.list %}
-                        <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <tr>
                             <td>{{ "Proforma invoice #%05s"|format(invoice.id) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
                             <td>{{ invoice.paid_at|format_date }}</td>

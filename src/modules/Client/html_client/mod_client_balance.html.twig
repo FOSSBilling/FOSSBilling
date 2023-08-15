@@ -16,7 +16,7 @@
             <p>{{ 'Here you can track what you have been charged for and add more funds to your account'|trans }}</p>
         </div>
         <div class="card-body">
-            <table class="table table-striped table-bordered table-hover">
+            <table class="table table-striped table-bordered table-hover table-responsive">
                 <thead>
                     <tr>
                         <th>{{ 'Description'|trans }}</th>
@@ -61,7 +61,6 @@
 <script>
     function onAfterInvoiceCreated(hash) {
         var link = '{{ "invoice"|link }}/' + hash;
-
         bb.redirect(link);
     }
 </script>

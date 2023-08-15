@@ -60,7 +60,12 @@
             <nav class="navbar navbar-expand-md navbar-light bg-light">
                 {% if settings.show_company_logo and company.logo_url %}
                     <a class="navbar-brand" href="{{'/'|link }}">
-                        <img src="{{company.logo_url}}" alt="{{company.name}}" height="55" title="{{company.name}}">
+                        <img class="d-none d-sm-block" src="{{company.logo_url}}" alt="{{company.name}}" height="55" title="{{company.name}}">
+                        <span class="d-sm-none">{{company.name}}</span>
+                    </a>
+                {% else %}
+                    <a class="navbar-brand" href="{{'/'|link }}">
+                        <span>{{company.name}}</span>
                     </a>
                 {% endif %}
                 
