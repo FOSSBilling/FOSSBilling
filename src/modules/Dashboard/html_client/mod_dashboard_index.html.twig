@@ -49,7 +49,7 @@
         </thead>
         <tbody>
         {% for i, ticket in tickets.list %}
-        <tr class="{{ cycle(['odd', 'even'], i) }}">
+        <tr>
             <td>{{ ticket.id }}</td>
             <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}">{{ ticket.subject }}</a></td>
             <td>{{ ticket.helpdesk.name }}</td>
@@ -179,7 +179,7 @@
                 <table class="table table-striped table-bordered table-sm table-hover">
                     <tbody>
                     {% for i, order in client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
-                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <tr>
                         <td>
                             <a href="{{ 'order/service/manage'|link }}/{{ order.id }}">{{ order.title|truncate(30) }}</a>
                         </td>
@@ -207,7 +207,7 @@
                 <table class="table table-striped table-bordered table-sm table-hover">
                     <tbody>
                     {% for i, email in client.email_get_list({ "per_page": 5 }).list %}
-                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <tr>
                         <td><a href="{{ 'email'|link }}/{{ email.id }}">{{ email.subject|truncate(30) }}</a></td>
                         <td title="{{ email.created_at|format_datetime }}">{{ email.created_at|timeago }} {{ 'ago'|trans }}</td>
                     </tr>
