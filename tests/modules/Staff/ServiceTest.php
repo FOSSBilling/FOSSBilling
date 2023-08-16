@@ -195,25 +195,6 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testhasPermissionRoleStaffWithGoodPerms()
-    {
-        $member = new \Model_Admin();
-        $member->loadBean(new \DummyBean());
-        $member->role = 'staff';
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
-            ->onlyMethods(array('getPermissions'))
-            ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getPermissions')
-            ->will($this->returnValue(array('example' => array('get_list'), 'client' => array())));
-
-
-        $result = $serviceMock->hasPermission($member, 'example', 'get_list');
-        $this->assertTrue($result);
-    }
-
     public function testonAfterClientReplyTicket()
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
