@@ -109,28 +109,24 @@
             <form method="post" action="admin/staff/permissions_update" class="api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <input type="hidden" name="permissions[default]" value="">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th class="w-1">
-                                <input class="form-check-input m-0 align-middle js-permission-check-master" type="checkbox">
-                            </th>
-                            <th>{{ 'Module'|trans }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for mod in mods %}
-                        <tr>
-                            <td>
-                                <input class="form-check-input m-0 align-middle js-permission-check" id="input-{{ mod }}" type="checkbox" name="permissions[{{ mod }}]" value="1"{% if prms[mod] %} checked{% endif %}>
-                            </td>
-                            <td>
-                                <label for="input-{{ mod }}">{{ mod|title }}</label>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+                {% for modName, mod in mods %}
+                    <h2 class="text-capitalize">{{ modName }}</h2>
+                    <input class="form-check-input" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1"{% if prms[modName] %} checked {% endif %}>
+                    <label for="input-{{ modName }}">{{ 'Module access'|trans }}</label>
+                    <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Can be disabled to prevent the staff member from using any part of this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
+
+                    {% for permissionName, permission in mod.permissions %}
+                        <div class="form-group">
+                            {% if permission.type == 'bool' %}
+                                <input class="form-check-input" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName][permissionName] %} checked {% endif %}>
+                                <label for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}</label>
+                                <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <hr/>
+                {% endfor %}
 
                 <input type="hidden" name="id" value="{{ staff.id }}">
 

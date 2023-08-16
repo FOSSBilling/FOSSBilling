@@ -70,7 +70,7 @@ final class Api_Handler implements InjectionAwareInterface
         // permissions check
         if($this->type == 'admin') {
             $staff_service = $this->di['mod_service']('Staff');
-            if(!$staff_service->hasPermission($this->identity, $mod, $method_name)) {
+            if(!$staff_service->hasPermission($this->identity, $mod)) {
                 if($this->_acl_exception) {
                     throw new \FOSSBilling\Exception('You do not have access to :mod module', array(':mod'=>$mod), 725);
                 } else {

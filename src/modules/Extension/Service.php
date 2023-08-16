@@ -26,6 +26,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_extensions' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage extensions'),
+                'description' => __trans('Allows the staff member to install, update, or remove extensions.'),
+            ],
+        ];
+    }
+
     public function isCoreModule($mod)
     {
         $core = $this->di['mod']('extension')->getCoreModules();
@@ -634,9 +645,35 @@ class Service implements InjectionAwareInterface
         $extensionMod = $this->di['mod']('extension');
         $mods = $extensionMod->getCoreModules();
 
-        $result = array_merge($mods, $list);
-        sort($result);
+        $modules = array_merge($mods, $list);
+        sort($modules);
 
-        return $result;
+        return $modules;
+    }
+
+    public function getCoreAndActiveModulesAndPermissions()
+    {
+        $enabledModules = $this->getCoreAndActiveModules();
+        $modules = [];
+
+        foreach ($enabledModules as $module) {
+            $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
+            if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
+                $moduleService = new $class;
+                $moduleService->setDi($this->di);
+                $permissions = $moduleService->getModulePermissions();
+
+                if(isset($permissions['hide_permissions']) && $permissions['hide_permissions']){
+                    continue;
+                } else {
+                    unset($permissions['hide_permissions']);
+                    $modules[$module]['permissions'] = $permissions;
+                }
+            } elseif ($module !== 'index' && $module !== 'dashboard') {
+                $modules[$module]['permissions'] = [];
+            }
+        }
+
+        return $modules;
     }
 }

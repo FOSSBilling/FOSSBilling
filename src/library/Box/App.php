@@ -67,6 +67,10 @@ class Box_App
     {
     }
 
+    protected function checkPermission(){
+
+    }
+
     public function show404(Exception $e)
     {
         error_log($e->getMessage());
@@ -149,6 +153,7 @@ class Box_App
     {
         $this->registerModule();
         $this->init();
+        $this->checkPermission();
 
         return $this->processRequest();
     }

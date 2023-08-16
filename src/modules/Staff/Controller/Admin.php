@@ -83,7 +83,7 @@ class Admin implements InjectionAwareInterface
         $staff = $api->staff_get(['id' => $id]);
 
         $extensionService = $this->di['mod_service']('Extension');
-        $mods = $extensionService->getCoreAndActiveModules();
+        $mods = $extensionService->getCoreAndActiveModulesAndPermissions();
 
         return $app->render('mod_staff_manage', ['staff' => $staff, 'mods' => $mods]);
     }

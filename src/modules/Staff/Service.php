@@ -26,6 +26,32 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_admin' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage administrators'),
+                'description' => __trans('Allows the staff member to create, edit, delete, and perform password resets on :type: accounts.', [':type:' => __trans('administrator')]),
+            ],
+            'manage_staff' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage staff members'),
+                'description' => __trans('Allows the staff member to create, edit, delete, and perform password resets on :type: accounts.', [':type:' => __trans('staff')]),
+            ],
+            'manage_groups' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage groups'),
+                'description' => __trans('Allows the staff member to manage staff member groups.'),
+            ],
+            'edit_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Edit settings'),
+                'description' => __trans('Allows the staff member to edit setttings for this module.'),
+            ],
+        ];
+    }
+
     public function login($email, $password, $ip)
     {
         $event_params = [];
@@ -93,27 +119,42 @@ class Service implements InjectionAwareInterface
         return $permissions;
     }
 
-    public function hasPermission($member, $mod, $method = null)
+    /**
+     * Determines  if a staff member has the required permissions
+     * @param \Model_Admin|null $member The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
+     * @param string $module What module to check permission for.
+     * @param string|null $key The permission key for the assocaited module.
+     * @param mixed $constraint If the permission key allows for multiple options, specify the one you want to use as a constraint here.
+     * @return bool 
+     */
+    public function hasPermission(\Model_Admin|null $member, string $module, string $key = null, mixed $constraint = null): bool
     {
-        if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN) {
+        $alwaysAllowed = ['index', 'dashboard'];
+
+        if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN || in_array($module, $alwaysAllowed)) {
             return true;
         }
 
-        $permissions = null;
-        if (is_null($permissions)) {
-            $permissions = $this->getPermissions($member->id);
+        if(is_null($member)){
+            $member = $this->di['loggedin_admin'];
         }
 
-        if (empty($permissions)) {
+        $permissions = $this->getPermissions($member->id);
+
+        // They have no permissions or don't have any access to that module
+        if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? false)) {
             return false;
         }
 
-        if (!array_key_exists($mod, $permissions)) {
+        // If this passes, the permission key isn't assigned to them and they therefore don't have permission
+        if((!is_null($key) && !is_array($permissions[$module])) || (!is_null($key) && !in_array($key, $permissions[$module]))){
             return false;
         }
 
-        if (!is_null($method) && is_array($permissions[$mod]) && !in_array($method, $permissions[$mod])) {
-            return false;
+        if (!is_null($key) && !is_null($constraint)) {
+            return $permissions[$module][$key] === $constraint;
+        } elseif (!is_null($key)) {
+            return (bool) $permissions[$module][$key];
         }
 
         return true;

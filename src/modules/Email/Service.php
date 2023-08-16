@@ -26,6 +26,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'edit_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Edit settings'),
+                'description' => __trans('Allows the staff member to edit setttings for this module.'),
+            ],
+        ];
+    }
+
     public function getSearchQuery($data)
     {
         $query = 'SELECT * FROM activity_client_email';

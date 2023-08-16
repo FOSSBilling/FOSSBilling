@@ -26,6 +26,37 @@ class Service
         $this->di = $di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_company_details' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage company details'),
+                'description' => __trans('Allows the staff member to update company details as set under the system module.'),
+            ],
+            'manage_company_legal' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage company legal'),
+                'description' => __trans('Allows the staff member to update company legal as set under the system module.'),
+            ],
+            'manage_countries' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage countries'),
+                'description' => __trans('Allows the staff member to edit the countries list.'),
+            ],
+            'invalidate_cache' => [
+                'type' => 'bool',
+                'display_name' => __trans('Invalidate cache'),
+                'description' => __trans('Allows the staff member to invalidate the FOSSBilling cache from within the system settings.'),
+            ],
+            'system_update' => [
+                'type' => 'bool',
+                'display_name' => __trans('Update FOSSBilling'),
+                'description' => __trans('Allows the staff member to update FOSSBilling.'),
+            ],
+        ];
+    }
+
     /**
      * @param string $param
      * @param bool   $default
