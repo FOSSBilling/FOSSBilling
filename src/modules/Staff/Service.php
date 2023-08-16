@@ -47,7 +47,7 @@ class Service implements InjectionAwareInterface
             'edit_settings' => [
                 'type' => 'bool',
                 'display_name' => __trans('Edit settings'),
-                'description' => __trans('Allows the staff member to edit setttings for this module.'),
+                'description' => __trans('Allows the staff member to edit settings for this module.'),
             ],
         ];
     }
@@ -123,7 +123,7 @@ class Service implements InjectionAwareInterface
      * Determines  if a staff member has the required permissions
      * @param \Model_Admin|null $member The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
      * @param string $module What module to check permission for.
-     * @param string|null $key The permission key for the assocaited module.
+     * @param string|null $key The permission key for the associated module.
      * @param mixed $constraint If the permission key allows for multiple options, specify the one you want to use as a constraint here.
      * @return bool 
      */

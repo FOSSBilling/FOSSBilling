@@ -32,7 +32,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'edit_settings' => [
                 'type' => 'bool',
                 'display_name' => __trans('Edit settings'),
-                'description' => __trans('Allows the staff member to edit setttings for this module.'),
+                'description' => __trans('Allows the staff member to edit settings for this module.'),
             ],
         ];
     }

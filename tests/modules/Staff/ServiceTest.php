@@ -130,7 +130,7 @@ class ServiceTest extends \BBTestCase
 
     public function testhasPermissionRoleAdmin()
     {
-        $member = new \Model_Client();
+        $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
         $member->role = 'admin';
 
@@ -142,7 +142,7 @@ class ServiceTest extends \BBTestCase
 
     public function testhasPermissionRoleStaffWithEmptyPerms()
     {
-        $member = new \Model_Client();
+        $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
@@ -159,7 +159,7 @@ class ServiceTest extends \BBTestCase
 
     public function testhasPermissionRoleStaffWithNoPerm()
     {
-        $member = new \Model_Client();
+        $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
@@ -178,7 +178,7 @@ class ServiceTest extends \BBTestCase
 
     public function testhasPermissionRoleStaffWithNoMethodPerm()
     {
-        $member = new \Model_Client();
+        $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
@@ -197,7 +197,7 @@ class ServiceTest extends \BBTestCase
 
     public function testhasPermissionRoleStaffWithGoodPerms()
     {
-        $member = new \Model_Client();
+        $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
