@@ -22,7 +22,7 @@
     "@symfony/webpack-encore": "^4.4.0",
     "autoprefixer": "^10.4.15",
     "core-js": "^3.32.0",
-    "cypress": "^12.17.3",
+    "cypress": "^12.17.4",
     "postcss": "^8.4.27",
     "postcss-loader": "^7.3.3",
     "sass": "^1.65.1",
