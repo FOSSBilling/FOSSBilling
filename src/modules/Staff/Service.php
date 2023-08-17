@@ -131,12 +131,12 @@ class Service implements InjectionAwareInterface
     {
         $alwaysAllowed = ['index', 'dashboard'];
 
-        if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN || in_array($module, $alwaysAllowed)) {
-            return true;
-        }
-
         if(is_null($member)){
             $member = $this->di['loggedin_admin'];
+        }
+
+        if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN || in_array($module, $alwaysAllowed)) {
+            return true;
         }
 
         $permissions = $this->getPermissions($member->id);
