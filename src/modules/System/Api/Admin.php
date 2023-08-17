@@ -141,6 +141,11 @@ class Admin extends \Api_Abstract
      */
     public function clear_cache()
     {
+        $staff_service = $this->di['mod_service']('Staff');
+        if (!$staff_service->hasPermission(null, 'system', 'invalidate_cache')) {
+            throw new \Box_Exception("You do not have permission to perform this action", [], 403);
+        }
+
         return $this->getService()->clearCache();
     }
 
@@ -182,6 +187,11 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\InformationException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
+        $staff_service = $this->di['mod_service']('Staff');
+        if (!$staff_service->hasPermission(null, 'system', 'system_update')) {
+            throw new \Box_Exception("You do not have permission to perform this action", [], 403);
+        }
+
         $new_version = $updater->getLatestVersion();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
@@ -201,6 +211,12 @@ class Admin extends \Api_Abstract
      */
     public function manual_update()
     {
+
+        $staff_service = $this->di['mod_service']('Staff');
+        if (!$staff_service->hasPermission(null, 'system', 'system_update')) {
+            throw new \Box_Exception("You do not have permission to perform this action", [], 403);
+        }
+
         $updater = $this->di['updater'];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);
         $updater->performManualUpdate();

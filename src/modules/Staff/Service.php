@@ -147,7 +147,7 @@ class Service implements InjectionAwareInterface
         }
 
         // If this passes, the permission key isn't assigned to them and they therefore don't have permission
-        if((!is_null($key) && !is_array($permissions[$module])) || (!is_null($key) && !in_array($key, $permissions[$module]))){
+        if((!is_null($key) && !is_array($permissions[$module])) || (!is_null($key) && !array_key_exists($key, $permissions[$module]))){
             return false;
         }
 
