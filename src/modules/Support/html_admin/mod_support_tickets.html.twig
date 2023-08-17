@@ -275,7 +275,6 @@
                 <h5>{{ 'Open ticket for existing client'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                    {% if not request.client_id %}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                         <div class="col">
@@ -294,7 +293,6 @@
                             {% endif %}
                         </div>
                     </div>
-                    {% endif %}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}</label>
                         <div class="col">
@@ -363,11 +361,11 @@
 
             API.admin.post('support/ticket_get', { id: e.currentTarget.getAttribute('rel') }, function(result){
                 var html = document.createElement('div');
-                    
+
                 result.notes.forEach(function(entry) {
                     var div = document.createElement('div');
                     div.innerHTML = entry.note;
-                        
+
                     html.appendChild(div);
                     html.appendChild(document.createElement('hr'));
                 });
