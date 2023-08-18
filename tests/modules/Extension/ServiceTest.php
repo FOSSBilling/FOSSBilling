@@ -711,8 +711,8 @@ class ServiceTest extends \BBTestCase {
 
         $staffMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
         $staffMock->expects($this->atLeastOnce())
-            ->method('getCoreAndActiveModulesAndPermissions')
-            ->will($this->returnValue([]));
+            ->method('hasPermission')
+            ->will($this->returnValue(true));
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
