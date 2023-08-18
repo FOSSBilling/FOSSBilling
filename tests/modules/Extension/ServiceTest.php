@@ -709,6 +709,11 @@ class ServiceTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
+        $staffMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffMock->expects($this->atLeastOnce())
+            ->method('getCoreAndActiveModulesAndPermissions')
+            ->will($this->returnValue([]));
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['tools'] = $toolsMock;
@@ -716,6 +721,9 @@ class ServiceTest extends \BBTestCase {
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['config'] = array('salt' => '');
+        $di['mod_service'] = $di->protect(function () use ($staffMock) {
+            return $staffMock;
+        });
 
         $serviceMock->setDi($di);
         $result = $serviceMock->setConfig($data);
