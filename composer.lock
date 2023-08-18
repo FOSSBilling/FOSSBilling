@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "86808267dcd266b57e2826229f39de9d",
+    "content-hash": "010b1f74c2c43c43cfc1530cc3943d24",
     "packages": [
         {
             "name": "antcms/antloader",
@@ -2240,16 +2240,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v10.21.0",
+            "version": "v11.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "b4ab319731958077227fad1874a3671458c5d593"
+                "reference": "19db5a38172c970353bcc25f51cd9df1b1097ccf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/b4ab319731958077227fad1874a3671458c5d593",
-                "reference": "b4ab319731958077227fad1874a3671458c5d593",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/19db5a38172c970353bcc25f51cd9df1b1097ccf",
+                "reference": "19db5a38172c970353bcc25f51cd9df1b1097ccf",
                 "shasum": ""
             },
             "require": {
@@ -2295,9 +2295,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v10.21.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v11.0.0"
             },
-            "time": "2023-08-11T00:23:24+00:00"
+            "time": "2023-08-16T23:02:29+00:00"
         },
         {
             "name": "symfony/asset",
