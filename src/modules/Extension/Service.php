@@ -595,6 +595,7 @@ class Service implements InjectionAwareInterface
 
     public function setConfig($data)
     {
+        $this->checkPermission($data['ext']);
         $this->getConfig($data['ext']); // Creates new config if it does not exist in DB
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
@@ -663,7 +664,7 @@ class Service implements InjectionAwareInterface
                 $moduleService->setDi($this->di);
                 $permissions = $moduleService->getModulePermissions();
 
-                if(isset($permissions['hide_permissions']) && $permissions['hide_permissions']){
+                if (isset($permissions['hide_permissions']) && $permissions['hide_permissions']) {
                     continue;
                 } else {
                     unset($permissions['hide_permissions']);
@@ -675,5 +676,41 @@ class Service implements InjectionAwareInterface
         }
 
         return $modules;
+    }
+
+    // Checks if the current user has permission to edit a module's settings
+    public function checkPermission(string $module, \Box_App|null $app = null): void
+    {
+        $staff_service = $this->di['mod_service']('Staff');
+        $modules = $this->getCoreAndActiveModulesAndPermissions();
+
+        // The module isn't active or has no permissions if this is the case, so continue as normal 
+        if (!array_key_exists($module, $modules)) {
+            return;
+        }
+
+        // First check if any access is allowed to the module for this person
+        if (!$staff_service->hasPermission(null, $module)) {
+            http_response_code(403);
+            $e = new \Box_Exception('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
+            if (!is_null($app)) {
+                echo $app->render('error', ['exception' => $e]);
+                exit;
+            } else {
+                throw $e;
+            }
+        }
+
+        // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
+        if (array_key_exists('manage_settings', $modules[$module]['permissions']) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
+            http_response_code(403);
+            $e = new \Box_Exception('You do not have permission to perform this action', [], 403);
+            if (!is_null($app)) {
+                echo $app->render('error', ['exception' => $e]);
+                exit;
+            } else {
+                throw $e;
+            }
+        }
     }
 }

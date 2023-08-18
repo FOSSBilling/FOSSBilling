@@ -44,9 +44,9 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Manage groups'),
                 'description' => __trans('Allows the staff member to manage staff member groups.'),
             ],
-            'edit_settings' => [
+            'manage_settings' => [
                 'type' => 'bool',
-                'display_name' => __trans('Edit settings'),
+                'display_name' => __trans('Manage settings'),
                 'description' => __trans('Allows the staff member to edit settings for this module.'),
             ],
         ];

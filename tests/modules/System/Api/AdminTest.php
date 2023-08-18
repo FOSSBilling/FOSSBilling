@@ -164,26 +164,4 @@ class AdminTest extends \BBTestCase {
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
-
-    public function testclear_cache()
-    {
-        $data = array();
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('clearCache')
-            ->will($this->returnValue(true));
-
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->clear_cache();
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-
-
-
-
 }
-

@@ -77,6 +77,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     public function get_settings(\Box_App $app, $mod)
     {
         $this->di['is_admin_logged'];
+        $extensionService = $this->di['mod_service']('Extension');
+        $extensionService->checkPermission($mod, $app);
+
         $file = 'mod_' . $mod . '_settings';
 
         return $app->render($file);

@@ -143,7 +143,7 @@ class Admin extends \Api_Abstract
     {
         $staff_service = $this->di['mod_service']('Staff');
         if (!$staff_service->hasPermission(null, 'system', 'invalidate_cache')) {
-            throw new \Box_Exception("You do not have permission to perform this action", [], 403);
+            throw new \Box_Exception('You do not have permission to perform this action', [], 403);
         }
 
         return $this->getService()->clearCache();
@@ -189,7 +189,7 @@ class Admin extends \Api_Abstract
 
         $staff_service = $this->di['mod_service']('Staff');
         if (!$staff_service->hasPermission(null, 'system', 'system_update')) {
-            throw new \Box_Exception("You do not have permission to perform this action", [], 403);
+            throw new \Box_Exception('You do not have permission to perform this action', [], 403);
         }
 
         $new_version = $updater->getLatestVersion();
@@ -214,7 +214,7 @@ class Admin extends \Api_Abstract
 
         $staff_service = $this->di['mod_service']('Staff');
         if (!$staff_service->hasPermission(null, 'system', 'system_update')) {
-            throw new \Box_Exception("You do not have permission to perform this action", [], 403);
+            throw new \Box_Exception('You do not have permission to perform this action', [], 403);
         }
 
         $updater = $this->di['updater'];
