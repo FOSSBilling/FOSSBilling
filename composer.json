@@ -36,7 +36,7 @@
         "pimple/pimple": "^3.3",
         "plesk/api-php-lib": "^2.0.0",
         "psr/log": "^3.0.0",
-        "stripe/stripe-php": "^10.3.0",
+        "stripe/stripe-php": "^11.0.0",
         "symfony/cache": "^6.0",
         "symfony/filesystem": "^6.0",
         "symfony/http-client": "^6.0",
