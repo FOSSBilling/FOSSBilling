@@ -686,9 +686,12 @@ class ServiceTest extends \BBTestCase {
             'ext' => 'extensionName',
         );
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getConfig'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getConfig', 'getCoreAndActiveModulesAndPermissions'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
+            ->will($this->returnValue(array()));
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getCoreAndActiveModulesAndPermissions')
             ->will($this->returnValue(array()));
 
         $toolsMock = $this->getMockBuilder(\FOSSBilling\Tools::class)->getMock();
@@ -710,9 +713,6 @@ class ServiceTest extends \BBTestCase {
             method('fire');
 
         $staffMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffMock->expects($this->atLeastOnce())
-            ->method('hasPermission')
-            ->will($this->returnValue(true));
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
