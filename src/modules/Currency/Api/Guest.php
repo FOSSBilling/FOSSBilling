@@ -74,7 +74,7 @@ class Guest extends \Api_Abstract
 
         $p ??= 0;
 
-        $p = match ($c['price_format']) {
+        $p = match (intval($c['price_format'])) {
             2 => number_format($p, 2, '.', ','),
             3 => number_format($p, 2, ',', '.'),
             4 => number_format($p, 0, '', ','),
