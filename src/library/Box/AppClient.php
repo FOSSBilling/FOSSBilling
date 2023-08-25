@@ -15,7 +15,7 @@ class Box_AppClient extends Box_App
         $m = $this->di['mod']($this->mod);
         $m->registerClientRoutes($this);
 
-        if ('api' === $this->mod) {
+        if ('api' == $this->mod) {
             define('BB_MODE_API', true);
         } else {
             $extensionService = $this->di['mod_service']('extension');
