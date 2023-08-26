@@ -18,7 +18,7 @@ class Box_Exception extends Exception
 	 * @param   int 	 The exception code.
 	 * @param 	bool 	 If the variables in this should be considered protect, if so, hide them from the stack trace. 
 	 */
-	public function __construct(string $message, array|null $variables = null, int $code = 0, bool $protected = false)
+	public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
 	{
 		$config = include PATH_ROOT . '/config.php';
 		$debug = $config['debug'] ?? false;
