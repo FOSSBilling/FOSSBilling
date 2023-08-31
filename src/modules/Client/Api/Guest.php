@@ -218,7 +218,7 @@ class Guest extends \Api_Abstract
         $email['code'] = 'mod_client_password_reset_approve';
         $email['password'] = $new_pass;
         $emailService = $this->di['mod_service']('email');
-        $emailService->sendTemplate($email);
+        $emailService->sendTemplate($email, true);
 
         $this->di['db']->trash($reset);
         $this->di['logger']->info('Client password reset request was approved');
