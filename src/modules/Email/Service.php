@@ -122,7 +122,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['tools']->decodeJ($json);
     }
 
-    public function sendTemplate($data)
+    public function sendTemplate($data, $noadmin = false)
     {
         $required = [
             'code' => 'Template code not passed',
@@ -181,7 +181,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
         $systemService = $this->di['mod_service']('system');
 
-        [$subject, $content] = $this->_parse($t, $vars);
+        [$subject, $content] = $this->_parse($t, $vars, $noadmin);
         $from = $data['from'] ?? $systemService->getParamValue('company_email');
         $from_name = $data['from_name'] ?? $systemService->getParamValue('company_name');
         $sent = false;
