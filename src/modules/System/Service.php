@@ -308,7 +308,7 @@ class Service
         return false;
     }
 
-    public function renderString($tpl, $try_render, $vars)
+    public function renderString($tpl, $try_render, $vars, $noadmin = false)
     {
         $twig = $this->di['twig'];
         // add client api if _client_id is set
@@ -321,7 +321,7 @@ class Service
                     error_log('api_client could not be added to template: ' . $e->getMessage());
                 }
             }
-        } else {
+        } else if(!$noadmin) {
             // attempt adding admin api to twig
             try {
                 $twig->addGlobal('admin', $this->di['api_admin']);
