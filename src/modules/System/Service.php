@@ -321,7 +321,7 @@ class Service
                     error_log('api_client could not be added to template: ' . $e->getMessage());
                 }
             }
-        } else if(!$noadmin) {
+        } else if(!$no_admin) {
             // attempt adding admin api to twig
             try {
                 $twig->addGlobal('admin', $this->di['api_admin']);
