@@ -122,7 +122,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['tools']->decodeJ($json);
     }
 
-    public function sendTemplate($data, $noadmin = false)
+    public function sendTemplate($data, $no_admin = false)
     {
         $required = [
             'code' => 'Template code not passed',
