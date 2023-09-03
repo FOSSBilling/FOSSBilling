@@ -308,7 +308,7 @@ class Service
         return false;
     }
 
-    public function renderString($tpl, $try_render, $vars, $noadmin = false)
+    public function renderString($tpl, $try_render, $vars, $no_admin = false)
     {
         $twig = $this->di['twig'];
         // add client api if _client_id is set
