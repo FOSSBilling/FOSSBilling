@@ -15,7 +15,7 @@ jobs:
 
     name: PHP ${{ matrix.php }} - Build and Archive
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Validate composer.json and composer.lock
         uses: php-actions/composer@v6
