@@ -5,6 +5,7 @@
 {% block meta_title %}{{ 'Update'|trans }}{% endblock %}
 
 {% block content %}
+    {% set update_type = admin.system_update_type %}
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Update</h3>
@@ -12,6 +13,19 @@
         <div class="card-body">
             <h3 class="card-title">{{ 'Automatic Update'|trans }}</h3>
             <p class="card-subtitle">{{ 'The automatic updater is a one-click tool for updating FOSSBilling. PHP must be able to write to the directory where FOSSBilling is installed.'|trans }}</p>
+
+            {% if update_type == 2 %}
+                <div class="alert alert-danger" role="alert">
+                    <span>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}</span>
+                </div>
+            {% endif %}
+
+            {% if update_type == 1 %}
+                <div class="alert alert-warning" role="alert">
+                    <span>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}</span>
+                </div>
+            {% endif %}
+
             {{ admin.system_release_notes|markdown }}
             <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
             class="btn btn-primary api-link"
