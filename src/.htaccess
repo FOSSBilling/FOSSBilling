@@ -20,7 +20,7 @@ Options -Indexes +SymLinksIfOwnerMatch
     RewriteRule ^bb-ipn\.php$ /ipn.php [L]
 
     # Allow access to the index.php and ipn.php files.
-    RewriteCond %{REQUEST_URI} ^/(index|ipn)\.php [NC]
+    RewriteCond %{REQUEST_URI} ^/(install\.php|ipn\.php|install/index\.php|install/install\.php) [NC]
     RewriteRule ^ - [L]
 
     # Block direct access to sensitive files and file types.
