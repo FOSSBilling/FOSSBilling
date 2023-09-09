@@ -66,6 +66,17 @@ class Update implements InjectionAwareInterface
     }
 
     /**
+     * Gets what type of update is available (Major, minor, or patch)
+     *
+     * @return int And int from 0-2 representing the patch type
+     */
+    public function getUpdateType(): int
+    {
+        $updateBranch = $this->getUpdateBranch();
+        return $this->getLatestVersionInfo($updateBranch)['update_type'];
+    }
+
+    /**
      * Returns information about the latest version of the specified branch.
      *
      * @param string $branch The branch to return the latest information for;
@@ -89,6 +100,7 @@ class Update implements InjectionAwareInterface
                 'version' => Version::VERSION,
                 'download_url' => $downloadUrl,
                 'release_notes' => "Release notes are not available for the preview branch. You can check the latest changes on our [GitHub]($compareLink) repository.",
+                'update_type' => 0,
             ];
         } else {
             return $this->di['cache']->get("Update.latest_{$branch}_version_info", function (ItemInterface $item) {
@@ -109,6 +121,7 @@ class Update implements InjectionAwareInterface
                     'download_url' => $releaseInfo['assets'][0]['browser_download_url'],
                     'release_date' => $releaseInfo['published_at'],
                     'release_notes' => $releaseInfo['body'] ?: '**Error: Release notes unavailable.**',
+                    'update_type' => Version::getUpdateType($releaseInfo['tag_name'] ?: Version::VERSION),
                 ];
             });
         }
