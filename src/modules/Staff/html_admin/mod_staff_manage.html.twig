@@ -99,6 +99,8 @@
         <div class="tab-pane fade" id="tab-permissions" role="tabpanel">
             <div class="card-body">
                 <h3>{{ staff.name }} {{ 'permissions'|trans }}</h3>
+                <button class="btn btn-primary" onclick="toggleAll(true);">{{ 'Give all permissions'|trans }}</button>
+                <button class="btn btn-primary" onclick="toggleAll(false);">{{ 'Revoke all permissions'|trans }}</button>
 
                 {% if staff.role == 'admin' %}
                 <p>{{ 'This administrator is allowed to do everything'|trans }}</p>
@@ -112,14 +114,14 @@
 
                 {% for modName, mod in mods %}
                     <h2 class="text-capitalize">{{ modName }}</h2>
-                    <input class="form-check-input" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1"{% if prms[modName] %} checked {% endif %}>
+                    <input class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1"{% if prms[modName] %} checked {% endif %}>
                     <label for="input-{{ modName }}">{{ 'Module access'|trans }}</label>
                     <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Can be disabled to prevent the staff member from using any part of this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
 
                     {% for permissionName, permission in mod.permissions %}
                         <div class="form-group">
                             {% if permission.type == 'bool' %}
-                                <input class="form-check-input" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName][permissionName] %} checked {% endif %}>
+                                <input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName][permissionName] %} checked {% endif %}>
                                 <label for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}</label>
                                 <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
                             {% endif %}
@@ -168,10 +170,11 @@
 
 {% block js%}
 <script>
-    $(function() {
-        $('.js-permission-check-master').on('click', function() {
-            $('.js-permission-check').prop('checked', this.checked);
+    function toggleAll(check){
+        const  elements = document.getElementsByClassName('permission-box');
+        Array.from(elements).forEach( (element) => {
+            element.checked = check;
         });
-    });
+    }
 </script>
 {% endblock %}
