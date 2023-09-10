@@ -131,7 +131,7 @@ class Service implements InjectionAwareInterface
     {
         $alwaysAllowed = ['index', 'dashboard'];
 
-        if(is_null($member)){
+        if (is_null($member)) {
             $member = $this->di['loggedin_admin'];
         }
 
@@ -139,15 +139,17 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
+        $extensionService = $this->di['mod_service']('Extension');
+        $modulePermissions = $extensionService->getSpecificModulePermissions($module);
         $permissions = $this->getPermissions($member->id);
 
         // They have no permissions or don't have any access to that module
-        if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? false)) {
+        if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? $modulePermissions['can_always_access'] ?? false)) {
             return false;
         }
 
         // If this passes, the permission key isn't assigned to them and they therefore don't have permission
-        if((!is_null($key) && !is_array($permissions[$module])) || (!is_null($key) && !array_key_exists($key, $permissions[$module]))){
+        if ((!is_null($key) && !is_array($permissions[$module])) || (!is_null($key) && !array_key_exists($key, $permissions[$module]))) {
             return false;
         }
 

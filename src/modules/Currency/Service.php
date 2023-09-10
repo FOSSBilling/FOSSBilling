@@ -27,6 +27,18 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'can_always_access' => true,
+            'manage_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage settings'),
+                'description' => __trans('Allows the staff member to edit settings for this module.'),
+            ],
+        ];
+    }
+
     public function getSearchQuery()
     {
         $sql = 'SELECT * FROM currency WHERE 1';

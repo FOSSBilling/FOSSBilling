@@ -26,6 +26,13 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'hide_permissions' => true,
+        ];
+    }
+
     public function getSearchQuery($filter)
     {
         $q = "SELECT id, rel_type, rel_id, meta_value as event, created_at, updated_at

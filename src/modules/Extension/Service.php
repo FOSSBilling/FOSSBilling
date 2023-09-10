@@ -29,6 +29,7 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'can_always_access' => true,
             'manage_extensions' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage extensions'),
@@ -652,7 +653,7 @@ class Service implements InjectionAwareInterface
         return $modules;
     }
 
-    public function getCoreAndActiveModulesAndPermissions()
+    public function getCoreAndActiveModulesAndPermissions(): array
     {
         $enabledModules = $this->getCoreAndActiveModules();
         $modules = [];
@@ -676,6 +677,24 @@ class Service implements InjectionAwareInterface
         }
 
         return $modules;
+    }
+
+    public function getSpecificModulePermissions(string $module): array
+    {
+        $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
+        if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
+            $moduleService = new $class;
+            $moduleService->setDi($this->di);
+            $permissions = $moduleService->getModulePermissions();
+
+            if (isset($permissions['hide_permissions']) && $permissions['hide_permissions']) {
+                return [];
+            } else {
+                unset($permissions['hide_permissions']);
+                return $permissions;
+            }
+        }
+        return [];
     }
 
     // Checks if the current user has permission to edit a module's settings
