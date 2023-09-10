@@ -82,24 +82,18 @@
                             <div class="row mb-3">
                                 <label class="col-sm-4 col-md-3 col-form-label">Sizing</label>
                                 <div class="col-sm-7 col-md-6">
-                                    <div class="row">
-                                        <div class="col row">
+                                    <div class="row mb-2">
+                                        <div class="col">
                                             <label class="col-form-label" for="popup_width">{{ 'Width'|trans }}</label>
-                                        </div>
-                                        <div class="col row">
-                                            <label class="col-form-label" for="popup_width">{{ 'Border radius'|trans }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col row">
                                             <div class="input-group mb-2">
-                                                <input type="text" class="form-control" name="popup_width" id="popup_width" value="{{ params.popup_width | default(600) }}" placeholder="600">
+                                                <input class="form-control" type="text" name="popup_width" id="popup_width" value="{{ params.popup_width | default(600) }}" placeholder="600">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
-                                        <div class="col row">
+                                        <div class="col">
+                                            <label class="col-form-label" for="border-radius">{{ 'Border radius'|trans }}</label>
                                             <div class="input-group mb-2">
-                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius | default('0') }}" size="3" id="border-radius">
+                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius | default('0') }}" id="border-radius">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
@@ -110,22 +104,16 @@
                             <div class="row mb-3">
                                 <label class="col-sm-4 col-md-3 col-form-label">Background</label>
                                 <div class="col-sm-7 col-md-6">
-                                    <div class="row">
-                                        <div class="col row">
+                                    <div class="row mb-2">
+                                        <div class="col">
                                             <label class="col-form-label" for="coloris-picker">{{ 'Color'|trans }}</label>
-                                        </div>
-                                        <div class="col row">
-                                            <label class="col-form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col row">
-                                            <div class="input-group mb-2">
+                                            <div>
                                                 <input type="text" class="form-control" name="background_color"
                                                        id="coloris-picker" value="{{ params.background_color | default('#000000') }}">
                                             </div>
                                         </div>
-                                        <div class="col row">
+                                        <div class="col">
+                                            <label class="col-form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
                                             <div class="input-group mb-2">
                                                 <input type="text" class="form-control" name="background_opacity"
                                                        id="background_opacity" value="{{ params.background_opacity | default(50) }}">
