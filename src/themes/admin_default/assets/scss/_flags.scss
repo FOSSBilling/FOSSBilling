@@ -2,17 +2,21 @@ $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
 
 @import "~flag-icons/sass/variables";
 
+
 .flag {
     position: relative;
     display: inline-block;
-    width: 1em * 1.33333;
     height: 1em;
-    vertical-align: -3px;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-    border: $flag-border-size var(--#{$prefix}border-style) $flag-border-color;
+    aspect-ratio: 1.33333;
+    background: no-repeat center/cover;
+    box-shadow: $flag-box-shadow;
     border-radius: $flag-border-radius;
+    vertical-align: bottom;
+
+    &.flag-country-np {
+        box-shadow: none;
+        border-radius: 0;
+    }
 }
 
 @mixin flag-icon($country) {
@@ -26,7 +30,6 @@ $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
 
 @each $flag-size, $size in $avatar-sizes {
     .flag-#{$flag-size} {
-        width: $size;
-        height: $size * .75;
+        height: map-get($size, size);
     }
 }
