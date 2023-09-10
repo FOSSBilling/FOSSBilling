@@ -1,5 +1,6 @@
 @import "~@tabler/core/src/scss/tabler";
 @import "~@tabler/core/src/scss/vendor/_litepicker.scss";
+@import "~@tabler/core/src/scss/vendor/_coloris.scss";
 @import "flags";
 @import "~tom-select/dist/css/tom-select.bootstrap5.css";
 @import "theme_settings";
@@ -68,14 +69,6 @@
 @media (max-width: 320px) {
     .js-theme-toggler {
         display: none;
-    }
-}
-
-.clr-field {
-    display: flex;
-    width: 100%;
-    button {
-        border-radius: 0 4px 4px 0;
     }
 }
 
