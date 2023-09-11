@@ -51,6 +51,7 @@ const PATH_SQL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install/sql/structure.sql';
 const PATH_SQL_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'install/sql/content.sql';
 const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
 const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
+const PATH_CONFIG_SAMPLE = PATH_ROOT . DIRECTORY_SEPARATOR . 'config-sample.php';
 const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
@@ -420,77 +421,46 @@ final class Box_Installer
         }
     }
 
+    /**
+     * Generate the `config.php` file using the `config-sample.php` as a template.
+     * 
+     * @since #1583 Updated to support retaining default values from sample config file.
+     * 
+     * @todo Further improve this logic by retaining comments in the original `config-sample.php` file. For the purpose of this initial overhaul, it was not necessary.
+     *
+     * @param object $ns
+     * @return string
+     */
     private function _getConfigOutput($ns): string
     {
+        // Version data
         $version = new \FOSSBilling\Requirements();
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
         $updateBranch = (preg_match($reg, \FOSSBilling\Version::VERSION, $matches) !== 0) ? "release" : "preview";
 
-        // TODO: Why not just take the defaults from the config-sample.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
-        $data = [
-            'security' => [
-                'mode' => 'strict',
-                'force_https' => isSSL() ? true : false,
-                'cookie_lifespan' => 7200,
-            ],
-            'debug' => false,
-            'update_branch' => $updateBranch,
-            'log_stacktrace' => true,
-            'stacktrace_length' => 25,
-
-            'maintenance_mode' => [
-                'enabled' => false,
-                'allowed_urls' => [],
-                'allowed_ips' => [],
-            ],
-
-            'salt' => md5(random_bytes(13)),
-            'url' => BB_URL,
-            'admin_area_prefix' => '/admin',
-            'disable_auto_cron' => false,
-
-            'i18n' => [
-                'locale' => 'en_US',
-                'timezone' => 'UTC',
-                'date_format' => 'medium',
-                'time_format' => 'short',
-            ],
-
-            'path_data' => PATH_ROOT . '/data',
-            'path_logs' => PATH_ROOT . '/data/log/application.log',
-
-            'log_to_db' => true,
-
-            'db' => [
-                'type' => 'mysql',
-                'host' => $ns->get('db_host'),
-                'port' => $ns->get('db_port'),
-                'name' => $ns->get('db_name'),
-                'user' => $ns->get('db_user'),
-                'password' => $ns->get('db_pass'),
-            ],
-
-            'twig' => [
-                'debug' => false,
-                'auto_reload' => true,
-                'cache' => PATH_ROOT . '/data/cache',
-            ],
-
-            'api' => [
-                'require_referrer_header' => false,
-                'allowed_ips' => [],
-                'rate_span' => 60 * 60,
-                'rate_limit' => 1000,
-                'throttle_delay' => 2,
-                'rate_span_login' => 60,
-                'rate_limit_login' => 20,
-                'CSRFPrevention' => true,
-                'rate_limit_whitelist' => [],
-            ],
+        // Load default sample config
+        $data = require PATH_CONFIG_SAMPLE;
+        
+        // Handle dynamic configs
+        $data['security']['force_https'] = isSSL() ? true : false;
+        $data['update_branch'] = $updateBranch;
+        $data['salt'] = md5(random_bytes(13));
+        $data['url'] = BB_URL;
+        $data['path_data'] = PATH_ROOT . '/data';
+        $data['path_logs'] = PATH_ROOT . '/data/log/application.log';
+        $data['db'] = [
+            'type' => 'mysql',
+            'host' => $ns->get('db_host'),
+            'port' => $ns->get('db_port'),
+            'name' => $ns->get('db_name'),
+            'user' => $ns->get('db_user'),
+            'password' => $ns->get('db_pass'),
         ];
+        $data['twig']['cache'] = PATH_ROOT . '/data/cache';
+
+        // Build and return data
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($data, true) . ';';
-
         return $output;
     }
 
