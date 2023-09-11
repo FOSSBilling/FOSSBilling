@@ -180,7 +180,9 @@ final class Box_Installer
                         }
                     }
                     try {
-                        rmAllDir('..'.DIRECTORY_SEPARATOR.'install');
+                        // Delete install directory only if debug mode is NOT enabled.
+                        $config = require PATH_CONFIG;
+                        if (! $config['debug']) rmAllDir('..'.DIRECTORY_SEPARATOR.'install');
                     } catch (Exception) {
                         // do nothing
                     }
@@ -393,7 +395,7 @@ final class Box_Installer
           Copy config templates when applicable
         */
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
-            rename(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG);
+            copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows original settings to be referenced.
         }
 
         /*
