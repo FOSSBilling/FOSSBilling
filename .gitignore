@@ -26,3 +26,6 @@ npm-debug.log
 ### friendsofphp/php-cs-fixer ###
 src/.php-cs-fixer.cache
 .php-cs-fixer.cache
+
+# Developer Workflow
+src/themes/*/config/settings_data.json
