@@ -215,10 +215,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
     {
-        // Store message into the queue. Return `false` if we get no output.
-        if (! $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id)) return false;
-
-        // Email queued successfully.
+        // Add the email to the queue
+        $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
         return true;
     }
 
