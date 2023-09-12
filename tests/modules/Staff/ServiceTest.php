@@ -153,6 +153,18 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPermissions');
 
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->setMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock->expects($this->atLeastOnce())
+                ->method('getSpecificModulePermissions')
+                ->willReturn([]);
+    
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
+            return $extensionServiceMock;
+        });
+    
+        $serviceMock->setDi($di);
+    
         $result = $serviceMock->hasPermission($member, 'example');
         $this->assertFalse($result);
     }
@@ -171,6 +183,17 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->will($this->returnValue(array('cart' => array(), 'client' => array())));
 
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->setMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getSpecificModulePermissions')
+            ->willReturn([]);
+        
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
+            return $extensionServiceMock;
+        });
+        
+        $serviceMock->setDi($di);
 
         $result = $serviceMock->hasPermission($member, 'example');
         $this->assertFalse($result);
@@ -190,6 +213,17 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->will($this->returnValue(array('example' => array(), 'client' => array())));
 
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->setMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getSpecificModulePermissions')
+            ->willReturn([]);
+            
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
+            return $extensionServiceMock;
+        });
+
+        $serviceMock->setDi($di);
 
         $result = $serviceMock->hasPermission($member, 'example', 'get_list');
         $this->assertFalse($result);
