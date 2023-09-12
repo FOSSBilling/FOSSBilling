@@ -29,11 +29,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'manage_settings' => [
-                'type' => 'bool',
-                'display_name' => __trans('Manage settings'),
-                'description' => __trans('Allows the staff member to edit settings for this module.'),
-            ],
+            'manage_settings',
         ];
     }
 

@@ -659,27 +659,23 @@ class Service implements InjectionAwareInterface
         $modules = [];
 
         foreach ($enabledModules as $module) {
-            $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
-            if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
-                $moduleService = new $class;
-                $moduleService->setDi($this->di);
-                $permissions = $moduleService->getModulePermissions();
+            if ($module == 'index' || $module == 'dashboard') {
+                continue;
+            }
 
-                if (isset($permissions['hide_permissions']) && $permissions['hide_permissions']) {
-                    continue;
-                } else {
-                    unset($permissions['hide_permissions']);
-                    $modules[$module]['permissions'] = $permissions;
-                }
-            } elseif ($module !== 'index' && $module !== 'dashboard') {
-                $modules[$module]['permissions'] = [];
+            // If getSpecificModulePermissions returns false, we need to skip that module and not include it in the permissions list
+            $permissions = $this->getSpecificModulePermissions($module, true);
+            if ($permissions === false) {
+                continue;
+            } else {
+                $modules[$module]['permissions'] = $permissions;
             }
         }
 
         return $modules;
     }
 
-    public function getSpecificModulePermissions(string $module): array
+    public function getSpecificModulePermissions(string $module, bool $buildingCompleteList = false): array
     {
         $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
@@ -688,9 +684,18 @@ class Service implements InjectionAwareInterface
             $permissions = $moduleService->getModulePermissions();
 
             if (isset($permissions['hide_permissions']) && $permissions['hide_permissions']) {
-                return [];
+                return ($buildingCompleteList ? false : []);
             } else {
                 unset($permissions['hide_permissions']);
+
+                // Fill in the manage_settings permission as it will always be the same
+                if (isset($permissions['manage_settings'])) {
+                    $permissions['manage_settings'] = [
+                        'type' => 'bool',
+                        'display_name' => __trans('Manage settings'),
+                        'description' => __trans('Allows the staff member to edit settings for this module.'),
+                    ];
+                }
                 return $permissions;
             }
         }
