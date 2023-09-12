@@ -701,10 +701,9 @@ class Service implements InjectionAwareInterface
     public function hasManagePermission(string $module, \Box_App|null $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
-        $modules = $this->getCoreAndActiveModulesAndPermissions();
 
         // The module isn't active or has no permissions if this is the case, so continue as normal 
-        if (!array_key_exists($module, $modules)) {
+        if (!$this->isExtensionActive('mod', $module)) {
             return;
         }
 
@@ -720,8 +719,10 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $module_permissions = $this->getSpecificModulePermissions($module);
+
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $modules[$module]['permissions']) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
+        if (array_key_exists('manage_settings', $module_permissions['permissions']) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
             http_response_code(403);
             $e = new \Box_Exception('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
