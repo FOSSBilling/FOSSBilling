@@ -690,9 +690,6 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array()));
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getCoreAndActiveModulesAndPermissions')
-            ->will($this->returnValue(array()));
 
         $toolsMock = $this->getMockBuilder(\FOSSBilling\Tools::class)->getMock();
 
@@ -714,6 +711,9 @@ class ServiceTest extends \BBTestCase {
 
         $staffMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
 
+        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())->method('getCoreModules')->willReturn([]);
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['tools'] = $toolsMock;
@@ -721,6 +721,9 @@ class ServiceTest extends \BBTestCase {
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['config'] = array('salt' => '');
+        $di['mod'] = $di->protect(function () use ($modMock) {
+            return $modMock;
+         });
         $di['mod_service'] = $di->protect(function () use ($staffMock) {
             return $staffMock;
         });
