@@ -423,10 +423,6 @@ final class Box_Installer
 
     /**
      * Generate the `config.php` file using the `config-sample.php` as a template.
-     * 
-     * @since #1583 Updated to support retaining default values from sample config file.
-     * 
-     * @todo Further improve this logic by retaining comments in the original `config-sample.php` file. For the purpose of this initial overhaul, it was not necessary.
      *
      * @param object $ns
      * @return string
