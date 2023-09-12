@@ -596,7 +596,7 @@ class Service implements InjectionAwareInterface
 
     public function setConfig($data)
     {
-        $this->checkPermission($data['ext']);
+        $this->hasManagePermission($data['ext']);
         $this->getConfig($data['ext']); // Creates new config if it does not exist in DB
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
@@ -698,7 +698,7 @@ class Service implements InjectionAwareInterface
     }
 
     // Checks if the current user has permission to edit a module's settings
-    public function checkPermission(string $module, \Box_App|null $app = null): void
+    public function hasManagePermission(string $module, \Box_App|null $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
         $modules = $this->getCoreAndActiveModulesAndPermissions();
