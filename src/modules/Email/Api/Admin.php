@@ -339,7 +339,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Sends test email to admins.
+     * Sends the test email to the currently authenticated admin / staff member.
      *
      * @param type $data
      *
@@ -347,9 +347,15 @@ class Admin extends \Api_Abstract
      */
     public function send_test($data)
     {
-        $email = [];
-        $email['to_staff'] = true;
-        $email['code'] = 'mod_email_test';
+        $currentUser = $this->di['loggedin_admin'];
+
+        $email = [
+            'code' => 'mod_email_test',
+            'to' => $currentUser->email,
+            'to_name' => $currentUser->name,
+            'send_now' => true,
+            'throw_exceptions' => true,
+        ];
 
         return $this->getService()->sendTemplate($email);
     }

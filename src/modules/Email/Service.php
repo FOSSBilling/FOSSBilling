@@ -136,6 +136,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
         unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code']);
 
+        $send_now = $data['send_now'] ?? false;
+        $throw_exceptions = $data['throw_exceptions'] ?? false;
+
         // add additional variables to template
         if (isset($data['to_staff']) && $data['to_staff']) {
             $staffService = $this->di['mod_service']('staff');
@@ -194,29 +197,32 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             foreach ($staff['list'] as $staff) {
                 $to = $staff['email'];
                 $to_name = $staff['name'];
-                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id']);
+                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions);
             }
         } elseif (isset($oneStaff)) {
             $to = $oneStaff->email;
             $to_name = $oneStaff->name;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff->id);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff->id, null, $send_now, $throw_exceptions);
         } elseif (isset($customer)) {
             $to = $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id']);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions);
         } else {
             $to = $data['to'];
             $to_name = $data['to_name'] ?? null;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions);
         }
 
         return $sent;
     }
 
-    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
+    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false)
     {
         // Add the email to the queue
-        $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
+        $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
+        if($send_now){
+            $this->_sendFromQueue($email, $throw_exceptions);
+        }
         return true;
     }
 
@@ -548,7 +554,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    private function _sendFromQueue(\Model_ModEmailQueue $queue)
+    private function _sendFromQueue(\Model_ModEmailQueue $queue, bool $throw_exceptions = false)
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -621,6 +627,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $maxTries = $settings['cancel_after'] ?? 5;
             if ($queue->tries > $maxTries) {
                 $this->di['db']->trash($queue);
+            }
+
+            if($throw_exceptions){
+                // We truncate a long error messag here to ensure it won't fill the entire side of the screen.
+                $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message,0,350).'...' : $message;
+                throw new \Box_Exception($truncated);
             }
         }
 
