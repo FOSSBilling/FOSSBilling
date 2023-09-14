@@ -630,7 +630,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             if($throw_exceptions){
-                // We truncate a long error messag here to ensure it won't fill the entire side of the screen.
+                // If the error message is long, truncate it and inform the user the rest is in the error log.
                 $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message,0,350).'...' : $message;
                 throw new \Box_Exception($truncated);
             }
