@@ -355,6 +355,7 @@ class Admin extends \Api_Abstract
             'to_name' => $currentUser->name,
             'send_now' => true,
             'throw_exceptions' => true,
+            'staff_member_name' => $currentUser->name,
         ];
 
         return $this->getService()->sendTemplate($email);

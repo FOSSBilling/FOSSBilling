@@ -134,7 +134,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
         $vars = $data;
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
-        unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code']);
+        unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code'], $vars['send_now'], $vars['throw_exceptions']);
 
         $send_now = $data['send_now'] ?? false;
         $throw_exceptions = $data['throw_exceptions'] ?? false;
