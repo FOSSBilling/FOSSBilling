@@ -215,9 +215,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
     {
-        $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
-        $this->_sendFromQueue($email);
-
+        // Add the email to the queue
+        $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
         return true;
     }
 
