@@ -66,7 +66,7 @@
             </td>
             <td>
                 <input type="hidden" name="pricing[recurrent][1W][enabled]" value="0">
-                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1W][enabled]" value="1"{% if product.pricing.recurrent['1W'].enabled %} checked{% endif %}>
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1W][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1W'].enabled) %} checked{% endif %}>
             </td>
         </tr>
         <tr>
@@ -82,7 +82,7 @@
             </td>
             <td>
                 <input type="hidden" name="pricing[recurrent][1M][enabled]" value="0">
-                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1M][enabled]" value="1"{% if product.pricing.recurrent['1M'].enabled %} checked{% endif %}>
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1M'].enabled) %} checked{% endif %}>
             </td>
         </tr>
         <tr>
@@ -100,7 +100,7 @@
             </td>
             <td>
                 <input type="hidden" name="pricing[recurrent][3M][enabled]" value="0">
-                <input class="form-check-input" type="checkbox" name="pricing[recurrent][3M][enabled]" value="1"{% if product.pricing.recurrent['3M'].enabled %} checked{% endif %}>
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][3M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['3M'].enabled) %} checked{% endif %}>
             </td>
         </tr>
         <tr>
@@ -118,7 +118,7 @@
             </td>
             <td>
                 <input type="hidden" name="pricing[recurrent][6M][enabled]" value="0">
-                <input class="form-check-input" type="checkbox" name="pricing[recurrent][6M][enabled]" value="1"{% if product.pricing.recurrent['6M'].enabled %} checked{% endif %}>
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][6M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['6M'].enabled) %} checked{% endif %}>
             </td>
         </tr>
         <tr>
@@ -134,7 +134,7 @@
             </td>
             <td>
                 <input type="hidden" name="pricing[recurrent][1Y][enabled]" value="0">
-                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1Y][enabled]" value="1"{% if product.pricing.recurrent['1Y'].enabled %} checked{% endif %}>
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1Y][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1Y'].enabled) %} checked{% endif %}>
             </td>
         </tr>
         <tr>
@@ -152,7 +152,7 @@
             </td>
             <td>
                 <input type="hidden" name="pricing[recurrent][2Y][enabled]" value="0">
-                <input class="form-check-input" type="checkbox" name="pricing[recurrent][2Y][enabled]" value="1"{% if product.pricing.recurrent['2Y'].enabled %} checked{% endif %}>
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][2Y][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['2Y'].enabled) %} checked{% endif %}>
             </td>
         </tr>
         <tr>
@@ -170,7 +170,7 @@
             </td>
             <td>
                 <input type="hidden" name="pricing[recurrent][3Y][enabled]" value="0">
-                <input class="form-check-input"type="checkbox" name="pricing[recurrent][3Y][enabled]" value="1"{% if product.pricing.recurrent['3Y'].enabled %} checked{% endif %}>
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][3Y][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['3Y'].enabled) %} checked{% endif %}>
             </td>
         </tr>
     </tbody>
@@ -178,15 +178,29 @@
 
 <script>
     $(function() {
+        // Self-triggers to loop each input box and sets the default total values.
         $('input.price:not(:disabled)').keyup(function() {
             var row = $(this).parents('tr:first');
             var s = row.find('input.setup_price').val();
             var p = row.find('input.bill_price').val();
             var total = countTotal(p, s);
             var elem = row.find('input.total');
-
             elem.val(total);
         }).trigger('keyup');
+
+        // Triggers on input change to toggle checkbox if total is above zero.
+        $('input.price:not(:disabled)').change(function() {
+            var row = $(this).parents('tr:first');
+            var s = row.find('input.setup_price').val();
+            var p = row.find('input.bill_price').val();
+            var total = countTotal(p, s);
+            var checkbox = row.find('input.form-check-input');
+            if (total > 0) {
+                checkbox.prop('checked', true);
+            } else {
+                checkbox.prop('checked', false);
+            }
+        });
 
         $('.pp_type input').on('click', function() {
             $('table.pp tbody').hide();
