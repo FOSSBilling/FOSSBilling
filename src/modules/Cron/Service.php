@@ -74,12 +74,6 @@ class Service
         $count = $this->clearOldSessions() ?? 0;
         $this->di['logger']->setChannel('cron')->info("Cleared $count outdated sessions from the database");
 
-        // Prune the FS cache
-        $cache = $this->di['cache'];
-        if($cache->prune()){
-            $this->di['logger']->setChannel('cron')->info("Pruned the filesystem cache");
-        }
-
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
         $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs');
 
