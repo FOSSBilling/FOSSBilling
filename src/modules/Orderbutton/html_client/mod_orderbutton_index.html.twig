@@ -11,15 +11,15 @@
     {{ 'css/font-awesome.css' | asset_url | stylesheet_tag }}
 
     {{ 'css/plugins/jquery.jgrowl.css' | asset_url | stylesheet_tag }}
+    {{ 'css/bootstrap.min.css' | asset_url | stylesheet_tag }}
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
-    <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url }}"></script>
+    <script src="{{ 'js/bootstrap/bootstrap.bundle.min.js' | asset_url }}"></script>
     <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
 
     <style type="text/css">
         body{
-            background:none transparent;
-            background-color:transparent;
+            background: transparent none;
             padding-left: 0px;
             padding-right: 0px;
             height: auto;
