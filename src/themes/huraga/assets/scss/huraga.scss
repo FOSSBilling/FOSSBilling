@@ -1,0 +1,47 @@
+$primary: #005fc5;
+$font-family-sans-serif: 'Inter', sans-serif;
+@import "~bootstrap/scss/bootstrap";
+
+body {
+    background: #f5f5f5;
+}
+
+.lang-selector {
+    max-height: 400px;
+    overflow-y: scroll;
+}
+
+.offcanvas-item {
+    border-bottom: 1px rgba(#000, .1) solid;
+    &:first-child {
+        border-top: 1px rgba(#000, .1) solid;
+    }
+    &:hover {
+        background: #fafafa;
+    }
+    >a {
+        color: $secondary;
+    }
+}
+
+.card-body {
+    >table {
+        >thead {
+            > tr {
+                > th {
+                    font-size: $font-size-sm * .875;
+                    color: $secondary;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                }
+            }
+        }
+        >tbody {
+            >tr {
+                >td {
+                    vertical-align: middle;
+                }
+            }
+        }
+    }
+}
