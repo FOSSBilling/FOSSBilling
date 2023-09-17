@@ -215,10 +215,10 @@
                 </div>
 
                 {% if settings.footer_enabled %}
-                    <footer id="footer" class="small mt-2 mb-3">
+                    <footer id="footer" class="small text-muted mt-2 mb-3">
                         <div class="d-flex flex-column">
                             <div class="d-flex justify-content-center">
-                                <span class="text-muted">&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}</span>
+                                <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}</span>
                             </div>
                             <div class="d-flex justify-content-center">
                                 {% if settings.footer_link_1_enabled %}
