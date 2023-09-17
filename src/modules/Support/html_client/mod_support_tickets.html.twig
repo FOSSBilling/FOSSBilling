@@ -25,7 +25,7 @@
             </div>
             <div class="card-body p-0">
                 {% set tickets = client.support_ticket_get_list({"per_page":10, "page":request.page}) %}
-                {% if tickets %}
+                {% if tickets.list %}
                 <table class="table table-bordered table-hover table-responsive">
                     <thead>
                     <tr class="border-top-0">
@@ -44,7 +44,7 @@
                             <td><a href="{{ 'support/ticket'|link }}/{{ ticket.id }}">{{ ticket.subject|truncate(40) }}</a></td>
                             <td>{{ ticket.helpdesk.name }}</td>
                             <td>
-                                <span class="badge {% if ticket.status == 'open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% endif %}">{{ mf.status_name(ticket.status) }}</span>
+                                <span class="badge {% if ticket.status == 'open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% elseif ticket.status == 'closed' %}bg-secondary{% endif %}">{{ mf.status_name(ticket.status) }}</span>
                             </td>
                             <td>{{ ticket.created_at|timeago }} {{ 'ago'|trans }}</td>
                             <td class="actions">
@@ -59,8 +59,8 @@
                     </tbody>
                 </table>
                 {% else %}
-                    <div class="d-flex justify-content-center my-2">
-                        <span class="blockquote m-0">{{ 'The list is empty'|trans }}</span>
+                    <div class="d-flex justify-content-center my-2 py-4">
+                        <span class="blockquote m-0">{{ 'No support tickets'|trans }}</span>
                     </div>
                 {% endif %}
             </div>
@@ -89,11 +89,11 @@
                     </div>
                     <div class="mb-3">
                         <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                        <input type="email" class="form-control" id="subject" required aria-describedby="subject" value="{{ request.subject|e }}">
+                        <input type="text" name="subject" class="form-control" id="subject" required aria-describedby="subject" value="{{ request.subject|e }}">
                     </div>
                     <div class="mb-3">
                         <label for="message" class="form-label">{{ 'Message'|trans }}</label>
-                        <textarea type="email" class="form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
+                        <textarea name="content" class="form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

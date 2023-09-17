@@ -69,7 +69,9 @@
                         <span>{{ company.name }}</span>
                     </a>
                 {% endif %}
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -82,18 +84,21 @@
                             {% for lang in languages|filter(lang => lang.locale == guest.system_locale) %}
                                 {% set currentLocaleName = lang.title %}
                             {% endfor %}
-                            <li class="nav-item dropdown f16">
-                                <a class="nav-link dropdown-toggle" role="button" id="langDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" role="button" id="langDropdown"
+                                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <span>
-                                        <span class="flag {{ currentCountryCode | lower }} mt-1"></span>
+                                        <span class="fi fi-{{ currentCountryCode | lower }} mt-1"></span>
                                         <span class="d-none d-lg-inline-flex"> {{ currentLocaleName }}</span>
                                     </span>
                                 </a>
                                 <ul class="dropdown-menu lang-selector" aria-labelledby="langDropdown">
                                     {% for lang in languages %}
                                         {% set countryCode = lang.locale | slice(3, 2) %}
-                                        <li><a class="dropdown-item" data-language-code="{{ lang.locale }}" href="javascript:">
-                                                <span class="flag {{ countryCode | lower }}"></span> {{ lang.title }}</a></li>
+                                        <li><a class="dropdown-item" data-language-code="{{ lang.locale }}"
+                                               href="javascript:">
+                                                <span class="fi fi-{{ countryCode | lower }}"></span> {{ lang.title }}
+                                            </a></li>
                                     {% endfor %}
                                 </ul>
                             </li>
@@ -123,25 +128,31 @@
                             <li class="nav-item">
                                 {% if client %}
                                     <div class="dropdown">
-                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar"
+                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                            <img class="img-fluid rounded-circle"
+                                                 alt="{{ profile.first_name }} {{ profile.last_name }} gravatar"
                                                  src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
                                         </button>
                                         <ul class="dropdown-menu">
                                             {% if settings.show_client_details and client %}
-                                            <li class=" px-3 pt-1 pb-2 border-bottom mb-2">
-                                                <div class="d-flex col">
-                                                    <span class="font-weight-bold">{{ profile.first_name }} {{ profile.last_name }}</span>
-                                                    <span class="font-italic">{{ profile.company }}</span>
-                                                </div>
-                                            </li>
+                                                <li class=" px-3 pt-1 pb-2 border-bottom mb-2">
+                                                    <div class="d-flex col">
+                                                        <span
+                                                            class="font-weight-bold">{{ profile.first_name }} {{ profile.last_name }}</span>
+                                                        <span class="font-italic">{{ profile.company }}</span>
+                                                    </div>
+                                                </li>
                                             {% endif %}
-                                            <li><a class="dropdown-item" href="{{ 'client/profile'|link }}">{{ 'Profile'|trans }}</a></li>
-                                            <li><a class="dropdown-item" href="{{ 'client/logout'|link }}">{{ 'Sign out'|trans }}</a></li>
+                                            <li><a class="dropdown-item"
+                                                   href="{{ 'client/profile'|link }}">{{ 'Profile'|trans }}</a></li>
+                                            <li><a class="dropdown-item"
+                                                   href="{{ 'client/logout'|link }}">{{ 'Sign out'|trans }}</a></li>
                                         </ul>
                                     </div>
                                 {% else %}
-                                    <a class="ms-2 btn btn-outline-primary" href="{{ 'signup'|link }}">{{ 'Sign up'|trans }}</a>
+                                    <a class="ms-2 btn btn-outline-primary"
+                                       href="{{ 'signup'|link }}">{{ 'Sign up'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
@@ -205,77 +216,60 @@
                 </div>
 
                 {% if settings.footer_enabled %}
-                    <footer id="footer" class="text-center text-lg-start text-muted small">
-                        <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}</span>
-                        <div class="d-flex justify-content-between">
-                            <ul class="list-unstyled">
+                    <footer id="footer" class="small mt-2 mb-3">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex justify-content-center">
+                                <span class="text-muted">&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-center">
                                 {% if settings.footer_link_1_enabled %}
-                                    <li>
-                                        {% if 'http://' in settings.footer_link_1_page or  'https://' in settings.footer_link_1_page %}
-                                            <a href="{{ settings.footer_link_1_page }}">{{ settings.footer_link_1_title }}</a>
-                                        {% else %}
-                                            <a href="{{ settings.footer_link_1_page | link }}">{{ settings.footer_link_1_title }}</a>
-                                        {% endif %}
-                                    </li>
+                                    {% if 'http://' in settings.footer_link_1_page or  'https://' in settings.footer_link_1_page %}
+                                        <a href="{{ settings.footer_link_1_page }}">{{ settings.footer_link_1_title }}</a>
+                                    {% else %}
+                                        <a href="{{ settings.footer_link_1_page | link }}">{{ settings.footer_link_1_title }}</a>
+                                    {% endif %}
                                 {% endif %}
                                 {% if settings.footer_link_2_enabled %}
-                                    <li>
-                                        {% if 'http://' in settings.footer_link_2_page or  'https://' in settings.footer_link_2_page %}
-                                            <a href="{{ settings.footer_link_2_page }}">{{ settings.footer_link_2_title }}</a>
-                                        {% else %}
-                                            <a href="{{ settings.footer_link_2_page | link }}">{{ settings.footer_link_2_title }}</a>
-                                        {% endif %}
-                                    </li>
+                                    &nbsp;&#x2022;&nbsp;
+                                    {% if 'http://' in settings.footer_link_2_page or  'https://' in settings.footer_link_2_page %}
+                                        <a href="{{ settings.footer_link_2_page }}">{{ settings.footer_link_2_title }}</a>
+                                    {% else %}
+                                        <a href="{{ settings.footer_link_2_page | link }}">{{ settings.footer_link_2_title }}</a>
+                                    {% endif %}
                                 {% endif %}
                                 {% if settings.footer_link_3_enabled %}
-                                    <li>
-                                        {% if 'http://' in settings.footer_link_3_page or  'https://' in settings.footer_link_3_page %}
-                                            <a href="{{ settings.footer_link_3_page }}">{{ settings.footer_link_3_title }}</a>
-                                        {% else %}
-                                            <a href="{{ settings.footer_link_3_page | link }}">{{ settings.footer_link_3_title }}</a>
-
-                                        {% endif %}
-                                    </li>
+                                    &nbsp;&#x2022;&nbsp;
+                                    {% if 'http://' in settings.footer_link_3_page or  'https://' in settings.footer_link_3_page %}
+                                        <a href="{{ settings.footer_link_3_page }}">{{ settings.footer_link_3_title }}</a>
+                                    {% else %}
+                                        <a href="{{ settings.footer_link_3_page | link }}">{{ settings.footer_link_3_title }}</a>
+                                    {% endif %}
                                 {% endif %}
                                 {% if settings.footer_link_4_enabled %}
-                                    <li>
-                                        {% if 'http://' in settings.footer_link_4_page or  'https://' in settings.footer_link_4_page %}
-                                            <a href="{{ settings.footer_link_4_page }}">{{ settings.footer_link_4_title }}</a>
-                                        {% else %}
-                                            <a href="{{ settings.footer_link_4_page | link }}">{{ settings.footer_link_4_title }}</a>
-                                        {% endif %}
-                                    </li>
-                                {% endif %}
-                                {% if settings.footer_link_5_enabled %}
-                                    <li>
-                                        {% if 'http://' in settings.footer_link_5_page or  'https://' in settings.footer_link_5_page %}
-                                            <a href="{{ settings.footer_link_5_page }}">{{ settings.footer_link_5_title }}</a>
-                                        {% else %}
-                                            <a href="{{ settings.footer_link_5_page | link }}">{{ settings.footer_link_5_title }}</a>
-                                        {% endif %}
-                                    </li>
-                                {% endif %}
-
-                                {% if guest.extension_is_on({"mod":'branding'}) %}
-                                    <li>
-                                        <a href="https://fossbilling.org" title="Billing Software"
-                                           target="_blank">{{ 'Powered by the FOSSBilling Community'|trans }}</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                            <div>
-                                {% if settings.footer_to_top_enabled %}
-                                    <a href="#top" class="btn btn-sm btn-primary btn-flat pull-right">
-                                        <span class="awe-arrow-up"></span> {{ 'Top'|trans }}</a>
+                                    &nbsp;&#x2022;&nbsp;
+                                    {% if 'http://' in settings.footer_link_4_page or  'https://' in settings.footer_link_4_page %}
+                                        <a href="{{ settings.footer_link_4_page }}">{{ settings.footer_link_4_title }}</a>
+                                    {% else %}
+                                        <a href="{{ settings.footer_link_4_page | link }}">{{ settings.footer_link_4_title }}</a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
+                            {% if guest.extension_is_on({"mod":'branding'}) %}
+                                <div class="d-flex justify-content-center">
+                                    <a href="https://fossbilling.org" title="Billing Software"
+                                       target="_blank">{{ 'Powered by the FOSSBilling Community'|trans }}</a>
+                                </div>
+                            {% endif %}
                         </div>
                     </footer>
                 {% endif %}
             </div>
         </div>
     </div>
-
+    {% if settings.footer_to_top_enabled %}
+        <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
+            <span class="awe-arrow-up"></span> {{ 'Top'|trans }}</a>
+    {% endif %}
     <div class="wait" style="display:none" onclick="$(this).hide();">
         <div class="spinner-border"
              style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>

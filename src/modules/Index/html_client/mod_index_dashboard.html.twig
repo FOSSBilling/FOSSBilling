@@ -30,48 +30,17 @@
     {% if client %}
         {% set tickets = client.support_ticket_get_list({ "status": 'on_hold' }) %}
         {% if tickets.total > 0 %}
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card mb-4 bg-white">
-            <div class="card-header bg-white py-3">
-                <span class="h6 m-0 pt-1">{{ 'Tickets waiting your reply'|trans }}</span>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped table-bordered table-sm table-hover">
-                    <thead>
-                    <tr>
-                        <th>{{ 'Id'|trans }}</th>
-                        <th>{{ 'Subject'|trans }}</th>
-                        <th>{{ 'Help desk'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
-                        <th>{{ 'Last Updated'|trans }}</th>
-                        <th>{{ 'Actions'|trans }}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
+            <div class="row">
+                <div class="col-md-12">
                     {% for i, ticket in tickets.list %}
-                        <tr>
-                            <td>{{ ticket.id }}</td>
-                            <td>
-                                <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}">{{ ticket.subject }}</a>
-                            </td>
-                            <td>{{ ticket.helpdesk.name }}</td>
-                            <td><span class="badge {% if ticket.status == 'open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% endif %}">{{ mf.status_name(ticket.status) }}</span></td>
-                            <td title="{{ ticket.updated_at|format_datetime }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
-                            <td><a href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
-                                   class="btn btn-sm btn-dark">{{ 'Reply'|trans }}</a></td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="5">{{ 'The list is empty'|trans }}</td>
-                        </tr>
+                        <div class="alert alert-info d-flex justify-content-between" role="alert">
+                            <span>Ticket <strong>#{{ ticket.id }}</strong> was responded {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span><a
+                                href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
+                                class="alert-link">{{ 'Reply'|trans }}</a>
+                        </div>
                     {% endfor %}
-                    </tbody>
-                </table>
+                </div>
             </div>
-        </div>
-    </div>
         {% endif %}
 
         <div>
@@ -86,14 +55,14 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <dl class="row">
-                                <dt class="col-sm-4">{{ 'ID'|trans }}</dt>
-                                <dd class="col-sm-8">#{{ profile.id }}</dd>
-                                <dt class="col-sm-4">{{ 'Email'|trans }}</dt>
-                                <dd class="col-sm-8">{{ profile.email }}</dd>
-                                <dt class="col-sm-4">{{ 'Balance'|trans }}</dt>
-                                <dd class="col-sm-8">{{ profile.balance | money(profile.currency) }}</dd>
-                            </dl>
+                            <div class="row">
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'ID'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">#{{ profile.id }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Email'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ profile.email }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Balance'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ profile.balance | money(profile.currency) }}</dd>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -108,14 +77,14 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <dl class="row">
-                                <dt class="col-sm-4">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.invoice_get_list().total }}</dd>
-                                <dt class="col-sm-4">{{ 'Paid'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.invoice_get_list({ "status": "paid" }).total }}</dd>
-                                <dt class="col-sm-4">{{ 'Unpaid'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.invoice_get_list({ "status": "unpaid" }).total }}</dd>
-                            </dl>
+                            <div class="row">
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Total'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.invoice_get_list().total }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Paid'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.invoice_get_list({ "status": "paid" }).total }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Unpaid'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.invoice_get_list({ "status": "unpaid" }).total }}</dd>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -134,14 +103,14 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <dl class="row">
-                                <dt class="col-sm-4">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
-                                <dt class="col-sm-4">{{ 'Active'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.order_get_list({ "hide_addons": 1, "status": "active" }).total }}</dd>
-                                <dt class="col-sm-4">{{ 'Expiring'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.order_get_list({ "expiring": 1 }).total }}</dd>
-                            </dl>
+                            <div class="row">
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Total'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Active'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "hide_addons": 1, "status": "active" }).total }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Expiring'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "expiring": 1 }).total }}</dd>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -157,14 +126,14 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <dl class="row">
-                                <dt class="col-sm-4">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.support_ticket_get_list().total }}</dd>
-                                <dt class="col-sm-4">{{ 'Open'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.support_ticket_get_list({ "status": 'open' }).total }}</dd>
-                                <dt class="col-sm-4">{{ 'On Hold'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.support_ticket_get_list({ "status": 'on_hold' }).total }}</dd>
-                            </dl>
+                            <div class="row">
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Total'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list().total }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Open'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list({ "status": 'open' }).total }}</dd>
+                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'On Hold'|trans }}</dt>
+                                <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list({ "status": 'on_hold' }).total }}</dd>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -174,26 +143,27 @@
                         <div class="card-header bg-white py-3">
                             <span class="h6 m-0 pt-1">{{ 'Recent orders'|trans }}</span>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-1">
                             {% if client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
-                                <table class="table table-striped table-bordered table-sm table-hover">
-                                    <tbody>
+                                <div class="list-group list-group-flush">
                                     {% for i, order in client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
-                                        <tr>
-                                            <td>
-                                                <a href="{{ 'order/service/manage'|link }}/{{ order.id }}">{{ order.title|truncate(30) }}</a>
-                                            </td>
-                                            <td>
-                                                <span
-                                                    class="badge {% if order.status == 'active' %}badge-success{% elseif order.status == 'pending_setup' %}badge-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
-                                            </td>
-                                        </tr>
+                                        <a href="{{ 'order/service/manage'|link }}/{{ order.id }}"
+                                           class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
+                                            <div>
+                                                <div>
+                                                    <span><strong>#{{ order.id }}</strong></span>&nbsp;<span>{{ order.title|truncate(45) }}</span>
+                                                </div>
+                                                <span class="text-secondary small" title="{{ order.updated_at|format_date }}">{{ order.updated_at|timeago }} {{ 'ago'|trans }}</span>
+                                            </div>
+                                            <div>
+                                                <span class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
+                                            </div>
+                                        </a>
                                     {% endfor %}
-                                    </tbody>
-                                </table>
+                                </div>
                             {% else %}
-                                <div class="d-flex justify-content-center my-2">
-                                    <span class="m-0">{{ 'There isn\'t any recent orders'|trans }}</span>
+                                <div class="d-flex justify-content-center my-2 p-2">
+                                    <span class="m-0">{{ 'No recent orders'|trans }}</span>
                                 </div>
                             {% endif %}
                         </div>
@@ -213,18 +183,18 @@
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
                                                 <div>
-                                                    <span><strong>#{{ ticket.id }}</strong></span><span> {{ ticket.subject|truncate(40) }}</span>
+                                                    <span><strong>#{{ ticket.id }}</strong></span>&nbsp;<span>{{ ticket.subject|truncate(45) }}</span>
                                                 </div>
                                                 <span class="text-secondary small" title="{{ ticket.updated_at|format_date }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
                                             </div>
                                             <div>
-                                                <span class="badge {% if ticket.status == 'open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% endif %}">{{ mf.status_name(ticket.status) }}</span>
+                                                <span class="badge {% if ticket.status == 'open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% elseif ticket.status == 'closed' %}bg-secondary{% endif %}">{{ mf.status_name(ticket.status) }}</span>
                                             </div>
                                         </a>
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <div class="d-flex justify-content-center my-2">
+                                <div class="d-flex justify-content-center my-2 p-2">
                                     <span class="m-0">{{ 'No recent support tickets'|trans }}</span>
                                 </div>
                             {% endif %}
