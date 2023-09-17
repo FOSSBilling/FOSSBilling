@@ -403,6 +403,10 @@ class Server_Manager_Plesk extends Server_Manager
                                 'name'	=>	'max_subftp_users',
                                 'value'	=>	$p->getMaxFtp() ?: 0,
                             ),
+                            array(
+                                'name'	=>	'max_site',
+                                'value'	=>	$p->getMaxDomains() ?: 0,
+                            ),
                         ), 
                     ),
                     'permissions'	=>	array(
