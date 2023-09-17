@@ -94,7 +94,7 @@
                                             <td>{{ invoice.paid_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
                                             <td><a href="{{ 'invoice'|link }}/{{ invoice.hash }}"
-                                                   class="btn btn-primary btn-sm">{{ 'View'|trans }}</a></td>
+                                                   class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
                                         </tr>
                                     {% endfor %}
                                 {% else %}
