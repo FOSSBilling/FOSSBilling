@@ -156,7 +156,7 @@
                                                 <span class="text-secondary small" title="{{ order.updated_at|format_date }}">{{ order.updated_at|timeago }} {{ 'ago'|trans }}</span>
                                             </div>
                                             <div>
-                                                <span class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' %}bg-danger{% endif %}">{{ mf.status_name(order.status) }}</span>
+                                                <span class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}bg-danger{% endif %}">{{ mf.status_name(order.status) }}</span>
                                             </div>
                                         </a>
                                     {% endfor %}
