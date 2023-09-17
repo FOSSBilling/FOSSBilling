@@ -5,20 +5,28 @@
 {% set company = guest.system_company %}
 
 {% block body_class %}tos{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Terms'|trans }}</li>
+{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="card ml-0 ml-md-3 w-100">
-        <div class="card-header">
-            <h1>{{ company.name }} {{ 'Terms and Conditions'|trans }}</h1>
-            <p>{{ company.signature }}</p>
-        </div>
-        <div class="card-body">
-            {{ company.tos|markdown }}
-        </div>
-        <div class="card-footer">
-            <a href="{{ '/'|link}}" class="btn btn-primary" title="Back to Homepage">{{ 'Back to Homepage'|trans }}</a>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4 bg-white">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5>{{ company.name }} {{ 'Terms and Conditions'|trans }}</h5>
+                            <span class="ml-2 mt-1 small text-muted">
+                                {{ company.signature }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>{{ company.tos|markdown }}</p>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
