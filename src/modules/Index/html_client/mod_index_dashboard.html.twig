@@ -56,11 +56,11 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'ID'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'ID'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">#{{ profile.id }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Email'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Email'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ profile.email }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Balance'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Balance'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ profile.balance | money(profile.currency) }}</dd>
                             </div>
                         </div>
@@ -78,11 +78,11 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Total'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.invoice_get_list().total }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Paid'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Paid'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.invoice_get_list({ "status": "paid" }).total }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Unpaid'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Unpaid'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.invoice_get_list({ "status": "unpaid" }).total }}</dd>
                             </div>
                         </div>
@@ -104,11 +104,11 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Total'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Active'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Active'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "hide_addons": 1, "status": "active" }).total }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Expiring'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Expiring'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "expiring": 1 }).total }}</dd>
                             </div>
                         </div>
@@ -127,11 +127,11 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Total'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list().total }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'Open'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Open'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list({ "status": 'open' }).total }}</dd>
-                                <dt class="col-sm-4 text-secondary small fw-normal">{{ 'On Hold'|trans }}</dt>
+                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'On Hold'|trans }}</dt>
                                 <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list({ "status": 'on_hold' }).total }}</dd>
                             </div>
                         </div>
