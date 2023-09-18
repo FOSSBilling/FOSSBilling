@@ -4,6 +4,10 @@ $success: #16a34a;
 $info: #06b6d4;
 $warning: #f59e0b;
 $danger: #ef4444;
+
+$accordion-button-active-bg: rgba($primary, .05);
+$accordion-button-focus-border-color: rgba($primary, .08);
+
 @import "~bootstrap/scss/bootstrap";
 @import "flags";
 
@@ -30,7 +34,7 @@ body {
 }
 
 .card-body {
-    >table {
+    @at-root table {
         >thead {
             > tr {
                 > th {
@@ -49,4 +53,10 @@ body {
             }
         }
     }
+}
+
+.svg-icon {
+    height: 20px;
+    width: 20px;
+    fill: currentColor;
 }

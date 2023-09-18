@@ -75,7 +75,7 @@
     };
 
     orderbutton.prototype.createIframe = function (){
-        this.iframeElem  = $('<iframe frameborder="0" allowtransparency="true" onload="" id="popup-iframe"  src="'+this.srclink()+'" />').appendTo('body');
+        this.iframeElem  = $('<iframe class="border-0" allowtransparency="true" onload="" id="popup-iframe"  src="'+this.srclink()+'"></iframe>').appendTo('body');
         this.iframeElem .css({
             {% if request.popup_center == "1" %}
             'top': {{request.popup_top}},

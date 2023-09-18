@@ -8,23 +8,33 @@
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 
 {% block body_class %}order-index{% endblock %}
+{% block breadcrumb %}
+    <li class="active breadcrumb-item" aria-current="page">{{ 'Order'|trans }}</li>
+{% endblock %}
 {% block content_before %}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <article class="span12 data-block">
-        <div class="data-container">
-            <header>
-                <h2>{{ 'Select Product'|trans }}</h2>
-                <p>{{ 'Choose products we offer for selling'|trans }}</p>
-            </header>
-            <section>
-                <img id="loader-image" src="{{ loader_url | mod_asset_url('orderbutton')}}" style="display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%" />
-                <iframe style="width: 100%;" frameborder="0" allowtransparency="true" onload='javascript:resizeIframe(this);' id="popup-iframe"  src="{{ "orderbutton" | link }}&theme_color={{settings.color_scheme | default('green')}}{% if request.product_id %}&order={{ request.product_id}}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3" id="popup-iframe"/>
-            </section>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4 bg-white">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5>{{ 'Order Product'|trans }}</h5>
+                            <span
+                                class="ml-2 mt-1 small text-muted">{{ 'Choose products we offer for selling'|trans }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body overflow-hidden">
+                    <img id="loader-image" src="{{ loader_url | mod_asset_url('orderbutton') }}"
+                         style="display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%"/>
+                    <iframe class="w-100 border-0" allowtransparency="true" onload='resizeIframe(this);' id="popup-iframe"
+                            src="{{ "orderbutton" | link }}&theme_color={{ settings.color_scheme | default('green') }}{% if request.product_id %}&order={{ request.product_id }}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3"></iframe>
+                </div>
+            </div>
         </div>
-    </article>
-</div>
+    </div>
 {% endblock %}
 
 {% block sidebar2 %}
@@ -33,9 +43,9 @@
 
 {% block js %}
 {% autoescape "js" %}
-<script language="javascript" type="text/javascript">
+<script type="text/javascript">
     function resizeIframe(obj) {
-        obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+        obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
         $('#loader-image').hide();
     }
 </script>
