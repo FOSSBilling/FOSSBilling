@@ -4,3 +4,4 @@ import * as bootstrap from "bootstrap"
 import $ from 'jquery';
 
 globalThis.$ = globalThis.jQuery = $;
+globalThis.bootstrap = bootstrap;

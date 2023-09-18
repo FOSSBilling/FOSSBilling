@@ -27,10 +27,11 @@
                     </div>
                 </div>
                 <div class="card-body overflow-hidden">
-                    <img id="loader-image" src="{{ loader_url | mod_asset_url('orderbutton') }}"
-                         style="display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%"/>
-                    <iframe class="w-100 border-0" allowtransparency="true" onload='resizeIframe(this);' id="popup-iframe"
-                            src="{{ "orderbutton" | link }}&theme_color={{ settings.color_scheme | default('green') }}{% if request.product_id %}&order={{ request.product_id }}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3"></iframe>
+                    {% include 'mod_orderbutton_index.html.twig' %}
+{#                    <img id="loader-image" src="{{ loader_url | mod_asset_url('orderbutton') }}"#}
+{#                         style="display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%"/>#}
+{#                    <iframe class="w-100 border-0" allowtransparency="true" onload='resizeIframe(this);' id="popup-iframe"#}
+{#                            src="{{ "orderbutton" | link }}&theme_color={{ settings.color_scheme | default('green') }}{% if request.product_id %}&order={{ request.product_id }}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3"></iframe>#}
                 </div>
             </div>
         </div>

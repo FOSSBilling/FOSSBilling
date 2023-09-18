@@ -85,10 +85,12 @@
                 $(this).serialize(),
                 function (result) {
                     bb.msg("{{ 'You logged in successfully'|trans }}");
-                    $('#register-or-login').hide(1000, function () {
-                        $('#register-or-login').remove();
-                        bb.reload();
-                    });
+                    let registerEl = document.getElementById('register');
+                    new bootstrap.Collapse('#register').hide();
+                    setTimeout(() => {
+                        registerEl.parentElement.remove();
+                        new bootstrap.Collapse('#checkout').show();
+                    }, 500);
 
                 }
             );
@@ -109,10 +111,12 @@
                         login_details,
                         function (result) {
                             bb.msg("{{ 'You logged in successfully'|trans }}");
-                            $('#register-or-login').hide(1000, function () {
-                                $('#register-or-login').remove();
-                                bb.reload();
-                            });
+                            let registerEl = document.getElementById('register');
+                            new bootstrap.Collapse('#register').hide();
+                            setTimeout(() => {
+                                registerEl.parentElement.remove();
+                                new bootstrap.Collapse('#checkout').show();
+                            }, 500);
                         }
                     );
                 }
@@ -125,7 +129,7 @@
                 $(this).serialize(),
                 function (result) {
                     bb.msg("{{ 'Product was added to shopping cart'|trans }}");
-                    bb.redirect("{{ 'orderbutton'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}");
+                    bb.redirect("{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}");
                 }
             );
 
