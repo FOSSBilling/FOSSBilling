@@ -144,6 +144,15 @@ class Requirements implements InjectionAwareInterface
                 $result[$file] = true;
             } else if (is_writable($file)) {
             	$result[$file] = true;
+            } else if (!file_exists($file)){
+                $written = @file_put_contents($file, 'Test?');
+                if($written){
+                    $result[$file] = true;
+                } else {
+                    $result[$file] = false;
+                    $this->_all_ok = false;   
+                }
+                @unlink($file);
             } else {
                 $result[$file] = false;
                 $this->_all_ok = false;
