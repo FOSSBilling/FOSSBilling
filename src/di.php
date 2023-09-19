@@ -22,6 +22,7 @@ use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
+use FOSSBilling\Environment;
 
 $di = new \Pimple\Container();
 
@@ -465,7 +466,7 @@ $di['loggedin_client'] = function () use ($di) {
  * @throws \Box_Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
-    if (php_sapi_name() === 'cli' || !http_response_code()) {
+    if (Environment::isCLI()) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 

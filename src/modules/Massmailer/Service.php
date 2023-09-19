@@ -10,6 +10,8 @@
 
 namespace Box\Mod\Massmailer;
 
+use FOSSBilling\Environment;
+
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -165,9 +167,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $mail->setFrom($data['from'], $data['from_name']);
         $mail->addTo($data['to'], $data['to_name']);
 
-        if (APPLICATION_ENV != 'production') {
+        if (!Environment::isProduction()) {
             if ($this->di['config']['debug']) {
-                error_log('Skip email sending. Application ENV: ' . APPLICATION_ENV);
+                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
 
             return true;

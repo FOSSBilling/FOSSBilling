@@ -10,6 +10,8 @@
 
 namespace Box\Mod\Cron;
 
+use FOSSBilling\Environment;
+
 class Service
 {
     protected ?\Pimple\Container $di = null;
@@ -65,7 +67,7 @@ class Service
         $this->_exec($api, 'cart_batch_expire');
         $this->_exec($api, 'email_batch_sendmail');
 
-        $create = (APPLICATION_ENV == 'production');
+        $create = (Environment::isProduction());
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
@@ -89,7 +91,7 @@ class Service
         } catch (\Exception $e) {
             throw new \Exception($e);
         } finally {
-            if (php_sapi_name() == 'cli') {
+            if (Environment::isCLI()) {
                 echo "\e[32mSuccessfully ran " . $method . '(' . $params . ')' . ".\e[0m\n";
             }
         }

@@ -11,6 +11,7 @@
 namespace Box\Mod\Invoice;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Environment;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
@@ -418,7 +419,7 @@ class ServiceTransaction implements InjectionAwareInterface
             if (BB_DEBUG) {
                 error_log($e->getMessage());
             }
-            if (APPLICATION_ENV == 'testing') {
+            if (Environment::isTesting()) {
                 throw $e;
             }
         }
@@ -506,7 +507,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice);
         $mpi = $invoiceService->getPaymentInvoice($invoice);
 
-        if (APPLICATION_ENV != 'testing' && $tx->validate_ipn) {
+        if (!Environment::isTesting() && $tx->validate_ipn) {
             if (!$adapter->isIpnValid($ipn, $mpi)) {
                 $tx->output = $adapter->getOutput();
 

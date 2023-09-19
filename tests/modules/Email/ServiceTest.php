@@ -1007,7 +1007,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($isExtensionActiveReturn));
 
 
-       /* Will not work be called because APPLICATION_ENV != 'production'
+       /* Will not work be called because APP_ENV != 'prod'
         * $mailMock->expects($this->atLeastOnce())
             ->method('send')
             ->will($this->returnValue(true));

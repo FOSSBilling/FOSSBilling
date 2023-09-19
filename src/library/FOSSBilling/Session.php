@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Environment;
+
 class Session implements \FOSSBilling\InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
@@ -31,7 +33,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
 
     public function setupSession()
     {
-        if (php_sapi_name() === 'cli') {
+        if (!Environment::isCLI()) {
             return;
         }
 
