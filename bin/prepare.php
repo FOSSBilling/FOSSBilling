@@ -53,12 +53,9 @@ if (!$filesystem->exists(PATH_CONFIG_SAMPLE)) {
 }
 
 // Determine which SQL dump to use
-$sqlStructure = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'structure.sql';
-if (Environment::isTesting()) {
-    $sqlContent = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'content_test.sql';
-} else {
-    $sqlContent = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'content.sql';
-}
+$sqlBase = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql';
+$sqlStructure = $sqlBase . DIRECTORY_SEPARATOR . 'structure.sql';
+$sqlContent = $sqlBase . DIRECTORY_SEPARATOR . 'content' . (Environment::isTesting() ? '_test' : '') . '.sql';
 
 $type = 'mysql';
 $host = getenv('DB_HOST') ?? null;
