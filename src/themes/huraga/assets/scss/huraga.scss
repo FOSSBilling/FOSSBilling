@@ -60,3 +60,8 @@ body {
     width: 20px;
     fill: currentColor;
 }
+
+#orderManager {
+    --#{$prefix}accordion-btn-icon: none;
+    --#{$prefix}accordion-btn-active-icon: none;
+}
