@@ -220,9 +220,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // Add the email to the queue
         $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
-        if($send_now){
+        if ($send_now) {
             $this->_sendFromQueue($email, $throw_exceptions);
         }
+
         return true;
     }
 
@@ -629,9 +630,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->di['db']->trash($queue);
             }
 
-            if($throw_exceptions){
+            if ($throw_exceptions) {
                 // If the error message is long, truncate it and inform the user the rest is in the error log.
-                $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message,0,350).'...' : $message;
+                $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message, 0, 350) . '...' : $message;
+
                 throw new \Box_Exception($truncated);
             }
         }
