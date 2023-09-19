@@ -208,7 +208,7 @@ class Service
             $sql = $sql . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $sql = $sql . ' GROUP BY kac.id ORDER BY kac.id DESC';
+        $sql .= ' GROUP BY kac.id ORDER BY kac.id DESC';
 
         return [$sql, $bindings];
     }

@@ -825,7 +825,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query = $query . ' ORDER BY id ASC';
+        $query .= ' ORDER BY id ASC';
 
         return [$query, $bindings];
     }
