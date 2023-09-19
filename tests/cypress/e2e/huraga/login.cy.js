@@ -14,7 +14,9 @@ describe('Huraga:Login', () => {
     cy.get('#password').type('fossbilling.org');
 
     cy.get('.btn').click();
-    cy.get('.jGrowl-message').should('have.text', 'Unauthorized');
+    /* ==== Generated with Cypress Studio ==== */
+    cy.get('.jGrowl-message').should('have.text', 'Please check your login details.');
+    /* ==== End Cypress Studio ==== */
   });
 
   it('successfully logs in', function () {
