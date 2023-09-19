@@ -65,15 +65,16 @@ class Service
         $this->_exec($api, 'cart_batch_expire');
         $this->_exec($api, 'email_batch_sendmail');
 
+        // Update the last time cron was executed
         $create = (APPLICATION_ENV == 'production');
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
+        // Purge old sessions from the DB
         $count = $this->clearOldSessions() ?? 0;
         $this->di['logger']->setChannel('cron')->info("Cleared $count outdated sessions from the database");
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
-
         $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs');
 
         return true;
