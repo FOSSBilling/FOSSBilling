@@ -54,19 +54,21 @@ $sqlBase = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql';
 $sqlStructure = $sqlBase . DIRECTORY_SEPARATOR . 'structure.sql';
 $sqlContent = $sqlBase . DIRECTORY_SEPARATOR . 'content' . (Environment::isTesting() ? '_test' : '') . '.sql';
 
-$type = 'mysql';
-$host = getenv('DB_HOST') ?? null;
-$dbname = getenv('DB_NAME') ?? null;
-$user = getenv('DB_USER') ?? null;
-$password = getenv('DB_PASS') ?? null;
-$port = getenv('DB_PORT') ?? 3306;
+$db = [
+    'type' => 'mysql',
+    'host' => getenv('DB_HOST') ?? null,
+    'dbname' => getenv('DB_NAME') ?? null,
+    'user' => getenv('DB_USER') ?? null,
+    'password' => getenv('DB_PASS') ?? null,
+    'port' => getenv('DB_PORT') ?? 3306,
+];
 
-if (!$host || !$dbname || !$user || !$password) {
+if (in_array(null, $databaseConfig, true)) {
     throw new Exception('Missing database credentials. Please set the DB_HOST, DB_NAME, DB_USER and DB_PASS environment variables. You can also set the DB_PORT variable if you are not using the default port.');
 }
 
 echo sprintf("Setting up a new FOSSBilling instance for the %s environment", Environment::getCurrentEnvironment()) . PHP_EOL;
-echo sprintf("Attempting to connect to the database: %s@%s/%s", $user, $host, $dbname) . PHP_EOL;
+echo sprintf("Attempting to connect to the database: %s@%s/%s", $db['user'], $db['host'], $db['dbname']) . PHP_EOL;
 
 $iter = 30;
 $waitIntervalInSeconds = 2;
@@ -74,13 +76,13 @@ $connected = false;
 
 while (!$connected && $iter > 0) {
     try {
-        $db = new PDO($type . ':host=' . $host . ';port=' . $port, $user, $password, [
+        $pdo = new PDO($db['type'] . ':host=' . $db['host'] . ';port=' . $db['port'], $db['user'], $db['password'], [
             PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
 
-        $version = $db->query('SELECT version()');
+        $version = $pdo->query('SELECT version()');
         echo sprintf("Connected to the database server, version: %s", $version->fetchColumn()) . PHP_EOL;
 
         $connected = true;
@@ -98,32 +100,32 @@ while (!$connected && $iter > 0) {
     }
 }
 
-function execSQL(PDO $db, string $sql)
+function execSQL(PDO $pdo, string $sql)
 {
-    $db->exec($sql);
-    $error = $db->errorInfo();
+    $pdo->exec($sql);
+    $error = $pdo->errorInfo();
     if ($error[2]) {
-        var_dump($db->errorInfo());
+        var_dump($pdo->errorInfo());
         exit;
     }
 }
 
-echo sprintf("Dropping database: %s", $dbname) . PHP_EOL;
-execSQL($db, sprintf("DROP DATABASE IF EXISTS %s;", $dbname));
+echo sprintf("Dropping database: %s", $db['dbname']) . PHP_EOL;
+execSQL($pdo, sprintf("DROP DATABASE IF EXISTS %s;", $db['dbname']));
 
-echo sprintf("Creating database: %s", $dbname) . PHP_EOL;
-execSQL($db, sprintf("CREATE DATABASE %s;", $dbname));
+echo sprintf("Creating database: %s", $db['dbname']) . PHP_EOL;
+execSQL($pdo, sprintf("CREATE DATABASE %s;", $db['dbname']));
 
-echo sprintf("Connecting to the %s database with the user: %s", $dbname, $user) . PHP_EOL;
-execSQL($db, sprintf("USE %s;", $dbname));
+echo sprintf("Connecting to the %s database with the user: %s", $db['dbname'], $db['user']) . PHP_EOL;
+execSQL($pdo, sprintf("USE %s;", $db['dbname']));
 
 echo sprintf("Setting up the database structure from the dump: %s", $sqlStructure) . PHP_EOL;
 $sql = file_get_contents($sqlStructure);
-execSQL($db, $sql);
+execSQL($pdo, $sql);
 
 echo sprintf("Importing the database content from the dump: %s", $sqlContent) . PHP_EOL;
 $sql = file_get_contents($sqlContent);
-execSQL($db, $sql);
+execSQL($pdo, $sql);
 
 echo ("Creating the configuration file: config.php") . PHP_EOL;
 $filesystem->copy(PATH_CONFIG_SAMPLE, PATH_CONFIG, true);
