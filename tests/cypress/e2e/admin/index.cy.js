@@ -11,8 +11,8 @@ describe('Admin:Index', () => {
 
     cy.visit('/admin/index');
 
-    cy.location('pathname').should('eq', '/admin/index')
-    cy.get('.ml-2').should('have.text', 'Visit client area');
+    cy.location('pathname').should('eq', '/admin/index');
+    cy.get('.breadcrumb > .active').should('have.text', 'Dashboard');
   })
 
 })
