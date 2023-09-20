@@ -25,10 +25,10 @@
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
     {{ "Api/API.js" | library_url | script_tag }}
+    {{ encore_entry_script_tags('huraga') }}
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}" defer="defer"></script>
-    {{ encore_entry_script_tags('huraga') }}
 
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
@@ -75,31 +75,16 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <div class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end">
+
+
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
-                            {# Necessary variable setup #}
-                            {% set currentCountryCode = guest.system_locale | slice(3, 2) %}
-                            {% set currentLocaleName = guest.system_locale %}
-                            {% for lang in languages|filter(lang => lang.locale == guest.system_locale) %}
-                                {% set currentLocaleName = lang.title %}
-                            {% endfor %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" role="button" id="langDropdown"
-                                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <span>
-                                        <span class="fi fi-{{ currentCountryCode | lower }} mt-1"></span>
-                                        <span class="d-none d-lg-inline-flex"> {{ currentLocaleName }}</span>
-                                    </span>
-                                </a>
-                                <ul class="dropdown-menu lang-selector" aria-labelledby="langDropdown">
+                            <li class="nav-item">
+                                <select name="lang" class="form-select js-language-selector">
                                     {% for lang in languages %}
-                                        {% set countryCode = lang.locale | slice(3, 2) %}
-                                        <li><a class="dropdown-item" data-language-code="{{ lang.locale }}"
-                                               href="javascript:">
-                                                <span class="fi fi-{{ countryCode | lower }}"></span> {{ lang.title }}
-                                            </a></li>
+                                        <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;">&nbsp;{{ lang.title }}</option>
                                     {% endfor %}
-                                </ul>
+                                </select>
                             </li>
                         {% endif %}
 

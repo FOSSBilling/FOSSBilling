@@ -19,7 +19,6 @@
     "jquery": "^3.7.0",
     "litepicker": "^2.0.12",
     "select2": "^4.0.13",
-    "sortable-tablesort": "^2.2.0",
-    "tom-select": "^2.2.2"
+    "sortable-tablesort": "^2.2.0"
   }
 }
