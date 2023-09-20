@@ -418,7 +418,7 @@ final class Box_Installer
         $data = [
             'security' => [
                 'mode' => 'strict',
-                'force_https' => isSSL() ? true : false,
+                'force_https' => FOSSBilling\Tools::isHTTPS() ? true : false,
                 'cookie_lifespan' => 7200,
             ],
             'debug' => false,
