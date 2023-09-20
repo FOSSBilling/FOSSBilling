@@ -675,7 +675,7 @@ class Service implements InjectionAwareInterface
         return $modules;
     }
 
-    public function getSpecificModulePermissions(string $module, bool $buildingCompleteList = false): array
+    public function getSpecificModulePermissions(string $module, bool $buildingCompleteList = false): array|false
     {
         $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
@@ -727,7 +727,7 @@ class Service implements InjectionAwareInterface
         $module_permissions = $this->getSpecificModulePermissions($module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $module_permissions['permissions']) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
+        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
             http_response_code(403);
             $e = new \Box_Exception('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
