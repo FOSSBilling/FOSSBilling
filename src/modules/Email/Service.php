@@ -29,7 +29,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'manage_settings',
+            'manage_settings' => []
         ];
     }
 
