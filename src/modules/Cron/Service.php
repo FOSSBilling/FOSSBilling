@@ -117,8 +117,8 @@ class Service
 
     private function clearOldSessions(): ?int
     {
-        $maxAge = time() - $this->di['config']['security']['cookie_lifespan'];
-        $sql = 'DELETE FROM session WHERE modified_at <= :age';
+        $maxAge = time() - $this->di['config']['security']['session_lifespan'];
+        $sql = 'DELETE FROM session WHERE created_at <= :age';
 
         return $this->di['db']->exec($sql, [':age' => $maxAge]);
     }

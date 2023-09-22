@@ -419,7 +419,7 @@ final class Box_Installer
             'security' => [
                 'mode' => 'strict',
                 'force_https' => FOSSBilling\Tools::isHTTPS() ? true : false,
-                'cookie_lifespan' => 7200,
+                'session_lifespan' => 7200,
             ],
             'debug' => false,
             'update_branch' => $updateBranch,

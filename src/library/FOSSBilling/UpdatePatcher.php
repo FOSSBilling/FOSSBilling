@@ -62,7 +62,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig = $currentConfig;
         $newConfig['security']['mode'] ??= 'strict';
         $newConfig['security']['force_https'] ??= true;
-        $newConfig['security']['cookie_lifespan'] ??= 7200;
+        $newConfig['security']['session_lifespan'] ??= $newConfig['security']['cookie_lifespan'] ?? 7200;
         $newConfig['update_branch'] ??= 'release';
         $newConfig['log_stacktrace'] ??= true;
         $newConfig['stacktrace_length'] ??= 25;
@@ -83,7 +83,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
         // Remove depreciated config keys/subkeys.
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
-        $depreciatedConfigSubkeys = [];
+        $depreciatedConfigSubkeys = [
+            'security' => 'cookie_lifespan'
+        ];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {
             unset($newConfig[$key][$subkey]);
@@ -289,6 +291,11 @@ class UpdatePatcher implements InjectionAwareInterface
             34 => function () {
                 // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
                 $q = "ALTER TABLE session ADD fingerprint TEXT;";
+                $this->executeSql($q);
+            },
+            35 => function () {
+                // Adds the new "created_at" to the session table, to ensure sessions are destroyed after they reach their maximum age.
+                $q = "ALTER TABLE session ADD created_at int(11);";
                 $this->executeSql($q);
             },
 

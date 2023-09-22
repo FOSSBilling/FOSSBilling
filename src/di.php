@@ -234,13 +234,12 @@ $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
 
     $mode = $di['config']['security']['mode'] ?? 'strict';
-    $lifespan = $di['config']['security']['cookie_lifespan'] ?? 7200;
 
     // Mark the cookie as secure either if force HTTPS is enabled or if we can detect that HTTPS is being used.
     $forceSSL = $di['config']['security']['force_https'] ?? true;
     $secure = ($forceSSL || FOSSBilling\Tools::isHTTPS());
 
-    $session = new \FOSSBilling\Session($handler, $mode, $lifespan, $secure);
+    $session = new \FOSSBilling\Session($handler, $mode, $secure);
     $session->setDi($di);
     $session->setupSession();
 
