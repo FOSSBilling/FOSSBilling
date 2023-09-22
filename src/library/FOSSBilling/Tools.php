@@ -198,14 +198,14 @@ class Tools
         if ($capitalize_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = fn($c) => strtoupper($c[1]);
+        $func = fn ($c) => strtoupper($c[1]);
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
 
     public function from_camel_case($str)
     {
         $str[0] = strtolower($str[0]);
-        $func = fn($c) => "-" . strtolower($c[1]);
+        $func = fn ($c) => "-" . strtolower($c[1]);
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
@@ -284,5 +284,13 @@ class Tools
         }
 
         return $email;
+    }
+
+    public static function isHTTPS(): bool
+    {
+        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
+
+        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the other to will be set to `https`, so either one means we are connected via HTTPS.
+        return (strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0);
     }
 }

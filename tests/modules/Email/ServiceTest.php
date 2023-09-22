@@ -1109,18 +1109,6 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->will($this->returnValue(array(
-                'cancel_after' => 1
-            )));
-
-        $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
-        $extension->expects($this->atLeastOnce())
-            ->method('isExtensionActive')
-            ->will($this->returnValue($isExtensionActiveReturn));
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
@@ -1139,11 +1127,15 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
         $service->setDi($di);
 
+        // Queue the email
         $to = 'receiver@example.com';
         $from = 'sender@example.com';
         $subject = 'Important message';
         $content = 'content';
         $result = $service->sendMail($to, $from, $subject, $content);
         $this->assertTrue($result);
+
+        // Send the email from queue
+        // todo: solve this
     }
 }

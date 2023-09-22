@@ -100,19 +100,7 @@ function checkSSL()
 {
     $config = include PATH_CONFIG;
     if (isset($config['security']['force_https']) && $config['security']['force_https'] && 'cli' !== PHP_SAPI) {
-        $isHTTPS = false;
-
-        if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
-            $isHTTPS = true;
-        }
-        if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https') {
-            $isHTTPS = true;
-        }
-        if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) == 'on') {
-            $isHTTPS = true;
-        }
-
-        if (!$isHTTPS) {
+        if (!FOSSBilling\Tools::isHTTPS()) {
             $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
             header('Location: ' . $url);
             exit;

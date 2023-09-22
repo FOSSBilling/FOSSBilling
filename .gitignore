@@ -14,6 +14,11 @@ report/*
 *.log
 DOCKER_ENV
 docker_tag
+src/themes/*/config/settings_data.json
+
+### Cypress ###
+tests/cypress/videos/*
+tests/cypress/screenshots/*
 
 ### phpunit/phpunit ###
 .phpunit.result.cache

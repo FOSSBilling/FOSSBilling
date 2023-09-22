@@ -73,6 +73,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use($systemServiceMock) {return $systemServiceMock;});
         $serviceMock->setDi($di);
         $di['db'] = $dbMock;
+        $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
         $di['config'] = [
             'security' => [
                 'mode' => 'strict',

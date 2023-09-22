@@ -289,7 +289,7 @@
                                 <svg class="icon">
                                     <use xlink:href="#wifi" />
                                 </svg>
-                                {{ 'Send test email to staff members'|trans }}
+                                {{ 'Send a test email to yourself'|trans }}
                             </button>
                             <input type="submit" value="{{ 'Update email settings'|trans }}" class="btn btn-primary">
                         </div>
@@ -306,6 +306,9 @@ $(function() {
     $('#emailTest').on('click', function() {
         API.admin.post('email/send_test', {}, function(result) {
             FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
+        },
+        function(result){
+            FOSSBilling.message(result.message, 'error');
         });
 
         return false;

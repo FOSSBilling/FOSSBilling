@@ -4,9 +4,10 @@ describe('Huraga:Index', () => {
     cy.visit('/');
     cy.location('pathname').should('eq', '/');
 
+
     /* ==== Generated with Cypress Studio ==== */
-    cy.get(':nth-child(4) > .show-tip').should('have.text', 'Login');
-    cy.get(':nth-child(5) > .show-tip').should('have.text', 'Register');
+    cy.get(':nth-child(3) > .show-tip').should('have.text', 'Login');
+    cy.get(':nth-child(4) > .show-tip').should('have.text', 'Register');
     /* ==== End Cypress Studio ==== */
   });
 
@@ -15,10 +16,11 @@ describe('Huraga:Index', () => {
 
     cy.visit('/');
     cy.location('pathname').should('eq', '/');
-    
+
+
     /* ==== Generated with Cypress Studio ==== */
-    cy.get(':nth-child(4) > .show-tip').should('have.text', 'Profile');
-    cy.get(':nth-child(5) > .show-tip').should('have.text', 'Sign out');
+    cy.get(':nth-child(3) > .show-tip').should('have.text', 'Profile');
+    cy.get(':nth-child(4) > .show-tip').should('have.text', 'Sign out');
     /* ==== End Cypress Studio ==== */
   })
 
