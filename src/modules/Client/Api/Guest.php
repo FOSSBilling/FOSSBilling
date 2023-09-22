@@ -243,7 +243,7 @@ class Guest extends \Api_Abstract
         $emailService->sendTemplate($email);
 
         $this->di['db']->trash($reset);
-        $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordChange', 'params' => ['id' => $c->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordReset', 'params' => ['id' => $c->id]]);
 
         return true;
     }
