@@ -9,14 +9,14 @@ services:
     ports:
       - 80:80
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/fossbilling
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: fossroot
-      MYSQL_DATABASE: fossdb
-      MYSQL_USER: fossdb
-      MYSQL_PASSWORD: fossdb
+      MYSQL_ROOT_PASSWORD: fossbilling
+      MYSQL_DATABASE: fossbilling
+      MYSQL_USER: fossbilling
+      MYSQL_PASSWORD: fossbilling
     volumes:
       - mysql:/var/lib/mysql
 volumes:
