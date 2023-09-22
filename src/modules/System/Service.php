@@ -1637,11 +1637,12 @@ class Service
     public static function onBeforeAdminCronRun(\Box_Event $event)
     {
         $di = $event->getDi();
+
         // Prune the FS cache
         try {
             $cache = $di['cache'];
             if ($cache->prune()) {
-                $di['logger']->setChannel('cron')->info("Pruned the filesystem cache");
+                $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
