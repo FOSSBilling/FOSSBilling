@@ -680,4 +680,34 @@ class Service implements InjectionAwareInterface
 
         return $this->di['table_export_csv']('client', 'clients.csv', $headers);
     }
+        /**
+     * Confirm password reset action.
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
+     */
+    public function pwreset_valid($data)
+    {
+        $required = [
+            'hash' => 'Hash required',
+        ];
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
+        if (!$reset instanceof \Model_ClientPasswordReset) {
+            throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
+        }
+
+        $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
+        // Return the Client ID if the reset request is valid, otherwise return false
+        if (strtotime($reset->created_at) - time() + 9000 < 0) {
+            return false;
+        } else {
+            return $c->id;
+        }
+
+
+    }
 }
