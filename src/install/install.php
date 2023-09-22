@@ -428,7 +428,7 @@ final class Box_Installer
         $data = require PATH_CONFIG_SAMPLE;
         
         // Handle dynamic configs
-        $data['security']['force_https'] = isSSL() ? true : false;
+        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS() ? true : false;
         $data['update_branch'] = $updateBranch;
         $data['salt'] = md5(random_bytes(13));
         $data['url'] = BB_URL;
