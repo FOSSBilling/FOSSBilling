@@ -194,7 +194,7 @@ class Guest extends \Api_Abstract
         } elseif (strtotime($reset->updated_at) - time() + 60 < 0) {
             $emailService->sendTemplate($email);
         }
-        // update the client password reset time 
+        // update the client password reset time
         $reset->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($reset);
 
@@ -211,7 +211,7 @@ class Guest extends \Api_Abstract
             'password' => 'Password required',
             'password_confirm' => 'Password confirmation required',
         ];
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordSet', 'params' => $data['hash']]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
