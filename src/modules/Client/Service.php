@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -680,7 +681,7 @@ class Service implements InjectionAwareInterface
 
         return $this->di['table_export_csv']('client', 'clients.csv', $headers);
     }
-        /**
+    /**
      * Confirm password reset action.
      *
      * @return bool
@@ -701,13 +702,30 @@ class Service implements InjectionAwareInterface
         }
 
         $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
-        // Return the Client ID if the reset request is valid, otherwise return false
-        if (strtotime($reset->created_at) - time() + 9000 < 0) {
+        // Return the Client ID if the reset request is valid (Younger than 15 Minutes), otherwise return false
+        // This shouldn't happen because we clear out expired requests every 15 minutes but just in case
+        if (strtotime($reset->created_at) - time() + 900 < 0) {
             return false;
         } else {
             return $c->id;
         }
+    }
 
+    /*
+     * Function that cleans out expired password reset requests ( 15 minutes )
+     * 
+     * @return bool
+     */
 
+    public static function onBeforeAdminCronRun(\Box_Event $event)
+    {
+        $di = $event->getDi();
+        $db = $di['db'];
+        $resets = $db->find('ClientPasswordReset');
+        foreach ($resets as $reset) {
+            if (strtotime($reset->created_at) - time() + 900 < 0) {
+                $db->trash($reset);
+            }
+        }
     }
 }
