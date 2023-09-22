@@ -1,4 +1,5 @@
 <?php
+
 namespace Box\Tests\Mod\Email;
 
 class ServiceTest extends \BBTestCase
@@ -81,7 +82,6 @@ class ServiceTest extends \BBTestCase
 
         $this->assertEquals($result[0], $query);
         $this->assertEquals($result[1], $bindings);
-
     }
 
     public function testEmailFindOneForClientById()
@@ -222,9 +222,12 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
+        $configMock = ['salt' => md5(random_bytes(13))];
+
 
         $di['db'] = $db;
         $di['crypt'] = $cryptMock;
+        $di['config'] = $configMock;
         $service->setDi($di);
 
         $t    = new \stdClass();
@@ -246,7 +249,7 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
-
+        $configMock = ['salt' => md5(random_bytes(13))];
         $expected = array('param1' => 'value1');
         $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -256,6 +259,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $di['tools'] = $toolsMock;
         $di['crypt'] = $cryptMock;
+        $di['config'] = $configMock;
         $service->setDi($di);
 
         $t       = new \stdClass();
@@ -292,9 +296,11 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
+        $configMock = ['salt' => md5(random_bytes(13))];
 
         $di['db']        = $db;
         $di['crypt'] = $cryptMock;
+        $di['config'] = $configMock;
         $di['api_admin'] = function () use ($di) {
             $api = new \Api_Handler(new \Model_Admin());
             $api->setDi($di);
@@ -368,9 +374,10 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
-
+        $configMock = ['salt' => md5(random_bytes(13))];
         $di['db']          = $db;
         $di['crypt']       = $cryptMock;
+        $di['config'] = $configMock;
         $di['twig']        = $twig;
         $di['mod_service'] = $di->protect(function () use ($systemService) {
             return $systemService;
@@ -447,8 +454,8 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue('value'));
 
         $system->expects($this->atLeastOnce())
-        ->method('renderString')
-        ->will($this->returnValue('value'));
+            ->method('renderString')
+            ->will($this->returnValue('value'));
 
 
         $staffServiceMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
@@ -484,7 +491,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($clientApiArray));
 
         $loader = new \Twig\Loader\ArrayLoader();
-        $twig = $this->getMockBuilder('Twig\Environment')->setConstructorArgs([$loader,['debug' => false]])->getMock();
+        $twig = $this->getMockBuilder('Twig\Environment')->setConstructorArgs([$loader, ['debug' => false]])->getMock();
 
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
@@ -493,6 +500,7 @@ class ServiceTest extends \BBTestCase
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
 
+        $configMock = ['salt' => md5(random_bytes(13))];
 
         $di['api_admin'] = function () use ($di) {
             $api = new \Api_Handler(new \Model_Admin());
@@ -510,6 +518,7 @@ class ServiceTest extends \BBTestCase
         $di['db']          = $db;
         $di['twig']        = $twig;
         $di['crypt']       = $cryptMock;
+        $di['config']      = $configMock;
         $di['mod_service'] = $di->protect(function ($name) use ($system, $staffServiceMock, $clientServiceMock) {
             if ($name == 'staff') {
                 return $staffServiceMock;
@@ -552,7 +561,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($isExtensionActiveReturn));
 
         $config = array();
-        $di['mod_config']  = $di->protect(function ($modName) use($config){
+        $di['mod_config']  = $di->protect(function ($modName) use ($config) {
             return $config;
         });
         $di['mod_service'] = $di->protect(function () use ($extension) {
@@ -637,7 +646,6 @@ class ServiceTest extends \BBTestCase
 
         $this->assertEquals($result[0], $query);
         $this->assertEquals($result[1], $bindings);
-
     }
 
     public function testTemplateToApiArray()
@@ -774,6 +782,7 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
+        $configMock = ['salt' => md5(random_bytes(13))];
         $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
@@ -786,13 +795,14 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $loggerMock;
         $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
+        $di['config'] = $configMock;
         $di['twig']   = $twigMock;
 
         $systemServiceMock = $this->getMockBuilder('Box\Mod\System\Service')->getMock();
 
         $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
-                return $systemServiceMock;
-            });
+            return $systemServiceMock;
+        });
 
         $emailServiceMock->setDi($di);
 
@@ -803,7 +813,8 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function testGetEmailById(){
+    public function testGetEmailById()
+    {
         $service = new \Box\Mod\Email\Service();
 
         $id = rand(1, 100);
@@ -964,7 +975,8 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result, true);
     }
 
-    public function testbatchSend(){
+    public function testbatchSend()
+    {
         $service = new \Box\Mod\Email\Service();
 
         $queueModel = new \Model_ModEmailQueue();
@@ -983,7 +995,7 @@ class ServiceTest extends \BBTestCase
         $db->expects($this->exactly(2))
             ->method('findOne')
             ->will($this->onConsecutiveCalls($queueModel, false));
-         $db->expects($this->atLeastOnce())
+        $db->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(true));
 
@@ -1007,7 +1019,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($isExtensionActiveReturn));
 
 
-       /* Will not work be called because APPLICATION_ENV != 'production'
+        /* Will not work be called because APPLICATION_ENV != 'production'
         * $mailMock->expects($this->atLeastOnce())
             ->method('send')
             ->will($this->returnValue(true));
@@ -1016,7 +1028,7 @@ class ServiceTest extends \BBTestCase
         $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(function ($name) use ($extension,$activityMock) {
+        $di['mod_service'] = $di->protect(function ($name) use ($extension, $activityMock) {
             if ($name == 'activity') {
                 return $activityMock;
             } elseif ($name == 'extension') {
@@ -1024,7 +1036,7 @@ class ServiceTest extends \BBTestCase
             }
         });
         $di['mod'] = $di->protect(function () use ($modMock) {
-           return $modMock;
+            return $modMock;
         });
 
         $service->setDi($di);
@@ -1040,7 +1052,7 @@ class ServiceTest extends \BBTestCase
 
         $templateModel = new \Model_EmailTemplate();
         $templateModel->loadBean(new \DummyBean());
-        $templateModel->id = rand(1,100);
+        $templateModel->id = rand(1, 100);
         $templateModel->action_code = 'mod_email_test';
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -1051,6 +1063,7 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
+        $configMock = ['salt' => md5(random_bytes(13))];
         $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
@@ -1063,6 +1076,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
+        $di['config'] = $configMock;
         $di['twig']   = $twigMock;
 
         $systemService = $this->getMockBuilder('Box\Mod\System\Service')->getMock();
@@ -1119,7 +1133,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($name) use ($systemService, $extension) {
             if ($name == 'system') {
                 $systemService;
-            }else if($name == "extension"){
+            } else if ($name == "extension") {
                 return $extension;
             }
         });

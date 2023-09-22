@@ -106,7 +106,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function setVars($t, $vars)
     {
-        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), 'v8JoWZph12DYSY4aq8zpvWdzC');
+        $config = $this->di['config'];
+        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), $config['salt']);
         $this->di['db']->store($t);
 
         return true;
@@ -117,7 +118,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getVars($t)
     {
-        $json = $this->di['crypt']->decrypt($t->vars, 'v8JoWZph12DYSY4aq8zpvWdzC');
+        $config = $this->di['config'];
+        $json = $this->di['crypt']->decrypt($t->vars, $config['salt']);
 
         return $this->di['tools']->decodeJ($json);
     }
@@ -175,7 +177,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $db->store($t);
         }
 
-        // update template vars with latest variables
         $this->setVars($t, $vars);
 
         // do not send inactive template
