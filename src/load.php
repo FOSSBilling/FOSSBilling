@@ -97,7 +97,7 @@ function checkRequirements()
 function checkSSL()
 {
     $config = include PATH_CONFIG;
-    if (isset($config['security']['force_https']) && $config['security']['force_https'] && 'cli' !== PHP_SAPI) {
+    if (isset($config['security']['force_https']) && $config['security']['force_https'] && !FOSSBilling\Environment::isCLI()) {
         if (!FOSSBilling\Tools::isHTTPS()) {
             $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
             header('Location: ' . $url);

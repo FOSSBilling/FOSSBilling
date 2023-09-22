@@ -33,7 +33,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
 
     public function setupSession()
     {
-        if (!Environment::isCLI()) {
+        if (Environment::isCLI()) {
             return;
         }
 
