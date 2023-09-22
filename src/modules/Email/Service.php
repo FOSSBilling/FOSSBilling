@@ -106,8 +106,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function setVars($t, $vars)
     {
-        $bb_config = $this->di['config'];
-        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), $bb_config['salt']);
+        $config = $this->di['config'];
+        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), $config['salt']);
         $this->di['db']->store($t);
 
         return true;
@@ -118,8 +118,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getVars($t)
     {
-        $bb_config = $this->di['config'];
-        $json = $this->di['crypt']->decrypt($t->vars, $bb_config['salt']);
+        $config = $this->di['config'];
+        $json = $this->di['crypt']->decrypt($t->vars, $config['salt']);
 
         return $this->di['tools']->decodeJ($json);
     }
