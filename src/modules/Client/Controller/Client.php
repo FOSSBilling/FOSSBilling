@@ -71,10 +71,10 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             'hash' => $hash,
         ];
         $template = 'mod_client_set_new_password';
-        
-        // Call pwreset_valid API and if true, then render the template, otherwise redirect to the index page
-        $result = $service->pwreset_valid($data);
-        if ($result) {
+
+        // Call password_reset_valid function and if true, then render the template, otherwise redirect to the index page
+        $result = $service->password_reset_valid($data);
+        if ($result !== false) {
             return $app->render($template);
         } else {
             $app->redirect('/');

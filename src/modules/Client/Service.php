@@ -684,11 +684,11 @@ class Service implements InjectionAwareInterface
     /**
      * Confirm password reset action.
      *
-     * @return bool
+     * @return bool|int
      *
      * @throws \Box_Exception
      */
-    public function pwreset_valid($data)
+    public function password_reset_valid($data)
     {
         $required = [
             'hash' => 'Hash required',
@@ -698,12 +698,12 @@ class Service implements InjectionAwareInterface
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {
-            throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
+            throw new \Box_Exception('The link has expired or you have already reset your password.');
         }
 
         $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
-        // Return the Client ID if the reset request is valid (Younger than 15 Minutes), otherwise return false
-        // This shouldn't happen because we clear out expired requests every 15 minutes but just in case
+        // Return the Client ID if the reset request is valid (younger than 15 Minutes), otherwise return false
+        // This shouldn't happen because we clear out expired requests every 15 minutes, but just in case
         if (strtotime($reset->created_at) - time() + 900 < 0) {
             return false;
         } else {
@@ -713,19 +713,18 @@ class Service implements InjectionAwareInterface
 
     /*
      * Function that cleans out expired password reset requests ( 15 minutes )
-     * 
-     * @return bool
+     *
+     * @return void
      */
-
     public static function onBeforeAdminCronRun(\Box_Event $event)
     {
         $di = $event->getDi();
-        $db = $di['db'];
-        $resets = $db->find('ClientPasswordReset');
-        foreach ($resets as $reset) {
-            if (strtotime($reset->created_at) - time() + 900 < 0) {
-                $db->trash($reset);
-            }
+        $sql = 'DELETE FROM client_password_reset WHERE UNIX_TIMESTAMP() - 900 > UNIX_TIMESTAMP(created_at);';
+        try {
+            $db = $di['db'];
+            $db->exec($sql);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
         }
     }
 }
