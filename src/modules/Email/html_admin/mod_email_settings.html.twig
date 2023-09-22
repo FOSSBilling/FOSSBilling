@@ -291,6 +291,11 @@
                                 </svg>
                                 {{ 'Send a test email to yourself'|trans }}
                             </button>
+                            <a href="{{ 'api/admin/email/batch_template_generate'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
+                                <svg class="icon icon-tabler" width="24" height="24">
+                                    <use xlink:href="#mail" />
+                                </svg>
+                                <span>Regenerate templates</span>
                             <input type="submit" value="{{ 'Update email settings'|trans }}" class="btn btn-primary">
                         </div>
                     </form>
