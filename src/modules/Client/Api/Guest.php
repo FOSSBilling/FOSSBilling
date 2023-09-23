@@ -186,14 +186,18 @@ class Guest extends \Api_Abstract
             'to_client' => $c->id,
             'code' => 'mod_client_password_reset_request',
             'hash' => $reset->hash,
+            'send_now' => true,
         ];
-        // Send the email if the reset request has the same created_at and updated_at
+
         $emailService = $this->di['mod_service']('email');
+
+        // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
         if ($reset->created_at == $reset->updated_at) {
             $emailService->sendTemplate($email);
         } elseif (strtotime($reset->updated_at) - time() + 60 < 0) {
             $emailService->sendTemplate($email);
         }
+
         // update the client password reset time
         $reset->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($reset);

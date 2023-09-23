@@ -702,8 +702,7 @@ class Service implements InjectionAwareInterface
         }
 
         $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
-        // Return the Client ID if the reset request is valid (younger than 15 Minutes), otherwise return false
-        // This shouldn't happen because we clear out expired requests every 15 minutes, but just in case
+        // Return the client ID if the reset request is valid (from within the last 15 minutes), otherwise return false
         if (strtotime($reset->created_at) - time() + 900 < 0) {
             return false;
         } else {
@@ -712,7 +711,7 @@ class Service implements InjectionAwareInterface
     }
 
     /*
-     * Function that cleans out expired password reset requests ( 15 minutes )
+     * Prunes the `client_password_reset` table of reset requests older than 15 minutes
      *
      * @return void
      */
