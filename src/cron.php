@@ -10,13 +10,15 @@
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
+use FOSSBilling\Environment;
+
 $di['translate']();
 
 try {
     $interval = $argv[1] ?? null;
     $service = $di['mod_service']('cron');
 
-    if ('cli' === PHP_SAPI) {
+    if (Environment::isCLI()) {
         echo "\e[33m- Welcome to FOSSBilling.\n";
         echo "\e[34mLast executed: " . $service->getLastExecutionTime() . ".\e[0m";
     }
@@ -25,7 +27,7 @@ try {
 } catch (Exception $exception) {
     throw new Exception($exception);
 } finally {
-    if ('cli' === PHP_SAPI) {
+    if (Environment::isCLI()) {
         echo "\e[32mSuccessfully ran the cron jobs.\e[0m";
     }
 }

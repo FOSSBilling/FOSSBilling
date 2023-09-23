@@ -10,6 +10,8 @@
 
 namespace Box\Mod\Email;
 
+use FOSSBilling\Environment;
+
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -325,7 +327,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $mail = new \FOSSBilling\Mail($email->sender, $email->recipients, $email->sender, $email->content_html, $settings['mailer'] ?? 'sendmail', $settings['custom_dsn'] ?? null);
 
-        if (APPLICATION_ENV == 'testing') {
+        if (Environment::isTesting()) {
             if (BB_DEBUG) {
                 error_log('Skipping email sending in test environment');
             }
@@ -590,8 +592,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->subject, $queue->content, $transport, $settings['custom_dsn'] ?? null);
 
-            if (APPLICATION_ENV != 'production') {
-                error_log('Skip email sending. Application ENV: ' . APPLICATION_ENV);
+            if (!Environment::isProduction()) {
+                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
 
                 return true;
             }

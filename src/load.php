@@ -11,8 +11,8 @@
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
+use FOSSBilling\Environment;
 
-defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'production');
 const PATH_ROOT = __DIR__;
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
 const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR . 'library';
@@ -97,7 +97,7 @@ function checkRequirements()
 function checkSSL()
 {
     $config = include PATH_CONFIG;
-    if (isset($config['security']['force_https']) && $config['security']['force_https'] && 'cli' !== PHP_SAPI) {
+    if (isset($config['security']['force_https']) && $config['security']['force_https'] && !FOSSBilling\Environment::isCLI()) {
         if (!FOSSBilling\Tools::isHTTPS()) {
             $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
             header('Location: ' . $url);
@@ -143,7 +143,7 @@ function errorHandler(int $number, string $message, string $file, int $line)
 function exceptionHandler($e)
 {
     $message = htmlspecialchars($e->getMessage());
-    if (APPLICATION_ENV === 'testing') {
+    if (getenv('APP_ENV') === 'test') {
         echo $message . PHP_EOL;
 
         return;

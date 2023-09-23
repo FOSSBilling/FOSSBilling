@@ -103,3 +103,5 @@ jobs:
           version: 9
           php_version: ${{ matrix.php }}
           configuration: phpunit.xml.dist
+        env:
+          APP_ENV: test

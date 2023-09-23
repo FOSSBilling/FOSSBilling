@@ -9,6 +9,7 @@
  */
 
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use FOSSBilling\Environment;
 
 class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FOSSBilling\InjectionAwareInterface
 {
@@ -69,7 +70,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
-        if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
+        if(!Environment::isTesting() && !$this->_isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
         }
 
