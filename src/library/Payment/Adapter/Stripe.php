@@ -124,7 +124,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
 
-        $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['bb_invoice_id']);
+        $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['invoice_id']);
         $tx      = $this->di['db']->getExistingModelById('Transaction', $id);
 
         $tx->invoice_id = $invoice->id;
