@@ -16,7 +16,7 @@
     <meta property="og:url" content="{{ guest.system_current_url }}" />
     <meta property="og:image" content="{{ post.image }}" />
     <meta property="article:author" content="{{ post.author.name }}" />
-    
+
     {% if post.published_at %}<meta property="article:published_time" content="{{ post.published_at }}" />{% endif %}
     {% if post.updated_at %}<meta property="article:modified_time" content="{{ post.updated_at }}" />{% endif %}
     {% if post.expires_at %}<meta property="article:expiration_time" content="{{ post.expires_at }}" />{% endif %}
@@ -26,22 +26,19 @@
 
 {% block content %}
 <div class="row">
-    <div class="card ml-0 ml-md-3 w-100">
-        <div class="card-header">
-            <h1>{{post.title}}</h1>
-            <div class="float-right"><h5>{{ post.created_at|format_datetime }}</h5></div>
-            <p>{{ 'by '|trans }} {{ post.author.name }}</p>
-        </div>
-        <div class="card-body">
-            <section>
-                {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
-                {{ post.content|markdown }}
-                {# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
-    
-                {% if guest.extension_is_on({ "mod": "comment" }) %}{% include "mod_comment_block.html.twig" %}{% endif %}
-                <hr/>
-                <p><a class="btn btn-primary" href="{{ 'news'|link }}">{{ 'Back to list'|trans }}</a></p>
-            </section>
+    <div class="col-md-12">
+        <div class="card ml-0 ml-md-3 w-100">
+            <div class="card-body">
+                <h3 class="link-body-emphasis mb-1">{{ post.title }}</h3>
+                <span class="text-muted">{{ post.updated_at|format_datetime }} {{ 'by '|trans }} {{ post.author.name }}</span>
+                <div class="pt-3 px-2">
+                    {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
+                    {{ post.content|markdown }}
+                    {# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
+
+                    {% if guest.extension_is_on({ "mod": "comment" }) %}{% include "mod_comment_block.html.twig" %}{% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
