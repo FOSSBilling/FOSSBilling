@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -675,6 +676,51 @@ class Service implements InjectionAwareInterface
             $headers = ['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency'];
         }
         return $this->di['table_export_csv']('client', 'clients.csv', $headers);
+    }
+    /**
+     * Confirm password reset action.
+     *
+     * @return bool|int
+     *
+     * @throws \Box_Exception
+     */
+    public function password_reset_valid($data)
+    {
+        $required = [
+            'hash' => 'Hash required',
+        ];
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
+        if (!$reset instanceof \Model_ClientPasswordReset) {
+            throw new \Box_Exception('The link has expired or you have already reset your password.');
+        }
+
+        $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
+        // Return the client ID if the reset request is valid (from within the last 15 minutes), otherwise return false
+        if (strtotime($reset->created_at) - time() + 900 < 0) {
+            return false;
+        } else {
+            return $c->id;
+        }
+    }
+
+    /*
+     * Prunes the `client_password_reset` table of reset requests older than 15 minutes
+     *
+     * @return void
+     */
+    public static function onBeforeAdminCronRun(\Box_Event $event)
+    {
+        $di = $event->getDi();
+        $sql = 'DELETE FROM client_password_reset WHERE UNIX_TIMESTAMP() - 900 > UNIX_TIMESTAMP(created_at);';
+        try {
+            $db = $di['db'];
+            $db->exec($sql);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
     }
 }
 

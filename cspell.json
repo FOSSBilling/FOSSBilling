@@ -344,7 +344,18 @@
         "httponly",
         "samesite",
         "IPCOUNTRY",
-        "Serviceapikey"
+        "Serviceapikey",
+        "oldconfig",
+        "ordermodel",
+        "homoglyph",
+        "TINYINT",
+        "homoglyph",
+        "oldconfig",
+        "ordermodel",
+        "TINYINT",
+        "hostings",
+        "rulesets",
+        "pwreset"
     ],
     "ignorePaths": [
         "tests/**",
