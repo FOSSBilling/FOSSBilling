@@ -1,12 +1,12 @@
 {% set periods = guest.system_periods %}
 {% set pricing = product.pricing %}
 {% set transfer_tlds = guest.serviceDomain_tlds({ "allow_transfer": 1 }) %}
-<div class="d-flex">
-    <nav class="nav flex-column border-end me-3">
-        <a class="nav-link active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
+<div class="d-flex mb-3">
+    <nav class="nav nav-pills flex-column border-end me-3 gap-2">
+        <a class="nav-link me-3 py-1 px-2 fs-7 active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
            role="tab" aria-controls="register-tab-pane">Register</a>
         {% if transfer_tlds is not empty %}
-            <a class="nav-link" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
+            <a class="nav-link me-3 py-1 px-2 fs-7" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
                role="tab" aria-controls="transfer-tab-pane">Transfer</a>
         {% endif %}
     </nav>
@@ -33,19 +33,18 @@
                 </div>
                 <div class="c">
                     <div class="onAfterDomainCheck" style="display:none;">
-                        <label>
-                            <select class="form-select form-select-sm" name="register_years"
-                                    id="registration-years"></select>
+                        <label class="mt-2">
+                            <select class="form-select form-select-sm" name="register_years" id="registration-years"></select>
                         </label>
                         <br/>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" onclick="$('#nameservers').slideToggle();"
+                        <div class="form-check form-switch my-3">
+                            <input class="form-check-input" type="checkbox" role="switch"
                                    id="nameserversCb">
-                            <label class="form-check-label" for="nameserversCb">
+                            <label class="form-check-label text-sm" for="nameserversCb">
                                 {{ 'I want to use my nameservers'|trans }}
                             </label>
                         </div>
-                        <div id="nameservers" class="d-flex flex-column row" style="display:none; margin: 10px 0;">
+                        <div id="nameservers" class="flex-column row" style="display:none;">
                             <div class="mb-2 col-md-6">
                                 <input class="form-control form-control-sm" type="text" name="ns1" value=""
                                        placeholder="{{ 'Nameserver 1'|trans }}"/>
@@ -86,14 +85,10 @@
                             <button class="btn btn-sm btn-dark" type="button" id="transfer-check">{{ 'Check'|trans }}</button>
                         </div>
                     </div>
-                    <div class="control-group">
-                        <div>
-                            <div id="domain-transfer-config" style="display:none;">
-                                <p>{{ 'Transfer price'|trans }}: <span id="transfer-price"></span></p>
-                                <input class="form-control form-control-sm" type="text" name="transfer_code" value="{{ request.transfer_code }}"
-                                       style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">
-                            </div>
-                        </div>
+                    <div id="domain-transfer-config" style="display:none;">
+                        <p class="fs-7 mt-2">{{ 'Transfer price is'|trans }}&nbsp;<span class="fw-bold" id="transfer-price"></span></p>
+                        <input class="form-control form-control-sm" type="text" name="transfer_code" value="{{ request.transfer_code }}"
+                               style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">
                     </div>
                 </div>
             </div>
@@ -106,6 +101,17 @@
 
 {% set currency = guest.cart_get_currency %}
 <script type="text/javascript">
+    let nameserversCbEl = document.getElementById('nameserversCb');
+    let nameserversEl = document.getElementById('nameservers');
+    nameserversCbEl.addEventListener('change', () => {
+        if (nameserversCbEl.checked) {
+            nameserversEl.style.display = "flex";
+        } else {
+            nameserversEl.style.display = "none";
+        }
+
+    })
+
     $(function () {
         $('ul.nav.nav-tabs > li.domain-tab a').on('click', function () {
             $('#domain-action').val($(this).attr('rel'));

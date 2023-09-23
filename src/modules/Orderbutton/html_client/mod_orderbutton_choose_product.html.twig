@@ -10,7 +10,7 @@
     <div id="products" class="accordion-collapse collapse" data-bs-parent="#orderManager">
         <div class="accordion-body">
             {% for i, category in guest.product_category_get_list.list %}
-                <h2 style="margin-bottom: -5px;">{{ category.title }}</h2>
+                <h5>{{ category.title }}</h5>
                 <span>{{ category.description|markdown }}</span>
                 <ul class="nav nav-list">
                     {% for i, product in category.products|sort((a, b) => a.priority <=> b.priority) %}
