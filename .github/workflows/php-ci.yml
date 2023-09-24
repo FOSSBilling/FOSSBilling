@@ -45,7 +45,6 @@ jobs:
           echo > ./src/data/log/license.log
           echo > ./src/data/log/application.log
           echo > ./src/data/log/php_error.log
-          rm -rf ./src/install
           mkdir /tmp/builds/ && tar -cvf /tmp/builds/build.tar ./
 
       - name: Upload Build Archive for Tests

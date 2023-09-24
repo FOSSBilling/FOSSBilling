@@ -51,7 +51,7 @@ function checkInstaller()
     $filesystem = new Filesystem();
 
     // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/index.php')) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php') && Environment::isProduction()) {
         throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
     }
 }
@@ -214,9 +214,6 @@ checkConfig();
 // All seems good, so load the config file.
 $config = require PATH_CONFIG;
 
-// Verify the installer was removed.
-checkInstaller();
-
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 define('BB_DEBUG', $config['debug']);
@@ -236,6 +233,9 @@ $loader->addNamespace('', PATH_LIBRARY, 'psr0');
 $loader->addNamespace('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
+
+// Verify the installer was removed.
+checkInstaller();
 
 // Check if SSL required, and enforce if so.
 checkSSL();

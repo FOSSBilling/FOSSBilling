@@ -151,25 +151,8 @@ final class Box_Installer
                     $this->generateEmailTemplates();
                     session_destroy();
                     // Try to remove install folder
-                    function rmAllDir($dir)
-                    {
-                        if (is_dir($dir)) {
-                            $contents = scandir($dir);
-                            foreach ($contents as $content) {
-                                if ('.' !== $content && '..' !== $content) {
-                                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
-                                        rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
-                                    } else {
-                                        unlink($dir . DIRECTORY_SEPARATOR . $content);
-                                    }
-                                }
-                            }
-                            reset($contents);
-                            rmdir($dir);
-                        }
-                    }
                     try {
-                        rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
+                        $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
                     } catch (Exception) {
                         // do nothing
                     }
@@ -502,6 +485,24 @@ final class Box_Installer
         $emailService->setDi($di);
 
         return $emailService->templateBatchGenerate();
+    }
+
+    public function rmAllDir($dir)
+    {
+        if (is_dir($dir)) {
+            $contents = scandir($dir);
+            foreach ($contents as $content) {
+                if ('.' !== $content && '..' !== $content) {
+                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
+                        $this->rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
+                    } else {
+                        unlink($dir . DIRECTORY_SEPARATOR . $content);
+                    }
+                }
+            }
+            reset($contents);
+            rmdir($dir);
+        }
     }
 }
 
