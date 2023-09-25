@@ -13,8 +13,7 @@
                     {% set company = guest.system_company %}
                     <div class="d-flex justify-content-center">
                         <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank">
-                            <img class="my-4" height="50px" src="{{ guest.system_company.logo_url }}"
-                                 alt="{{ guest.system_company.name }}"/>
+                            <img class="my-4" height="50px" src="{{ guest.system_company.logo_url }}" alt="{{ guest.system_company.name }}"/>
                         </a>
                     </div>
                 {% endif %}
@@ -183,23 +182,15 @@
 
 {% block js %}
     <script type="text/javascript">
-        $(function () {
-            $('#client-signup').on('submit', function (event) {
-                $.ajax({
-                    type: "POST",
-                    url: bb.restUrl('guest/client/create'),
-                    data: $(this).serialize(),
-                    dataType: 'json',
-                    success: function (data) {
-                        if (data.error) {
-                            $('.wait').hide();
-                            bb.msg(data.error.message, 'error');
-                        } else {
-                            bb.redirect("{{ constant('BB_URL') }}");
-                        }
-                    }
-                });
-
+        document.addEventListener("DOMContentLoaded", () => {
+            let signupForm = document.getElementById('client-signup');
+            signupForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                API.guest.post('client/create',
+                    (new FormData(signupForm)).serializeObject(),
+                    () => bb.redirect('{{ constant('BB_URL') }}'),
+                    (res) => FOSSBilling.message(res.message, 'error')
+                )
                 return false;
             });
         });
