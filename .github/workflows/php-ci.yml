@@ -61,7 +61,7 @@ jobs:
       matrix:
         php: [ 8.0 ]
 
-    name: PHPStan
+    name: PHP ${{ matrix.php }} - PHPStan
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -71,14 +71,13 @@ jobs:
       - name: Extract build archive
         run: tar -xvf /tmp/builds/build.tar ./
 
-      - name: Run PHPStan
-        uses: php-actions/phpstan@v3
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
         with:
-          php_version: ${{ matrix.php }}
-          configuration: phpstan.neon
-          memory_limit: 512M
-          version: composer
-          path: src/
+          php-version: ${{ matrix.php }}
+
+      - name: Run PHPStan
+        run: php src/vendor/bin/phpstan --memory-limit=512M
 
   phpunit:
     runs-on: ubuntu-latest
