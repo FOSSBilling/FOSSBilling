@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class ExtensionManager implements InjectionAwareInterface
