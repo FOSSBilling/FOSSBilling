@@ -77,7 +77,8 @@ jobs:
           php_version: ${{ matrix.php }}
           configuration: phpstan.neon
           memory_limit: 512M
-          version: latest
+          version: composer
+          path: src/
 
   phpunit:
     runs-on: ubuntu-latest
