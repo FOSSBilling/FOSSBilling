@@ -8,53 +8,59 @@
 {% block body_class %}email-index{% endblock %}
 {% block content %}
 <div class="row">
-    <div class="card ml-0 ml-md-3 w-100 mt-2">
-        <div class="card-header">
-            <h1>{{ 'Emails'|trans }}</h1>
-            <p>{{ "Here you can find all the emails we've sent you. Please click on the email topic in the left column, and it will be displayed on the right side."|trans }}</p>
-        </div>
-        <div class="card-body">
-            {% if emails.list is empty  %}
-                <div class="alert alert-info" id="information-block">{{ 'There are no emails to display'|trans }}</div>
-            {% else %}
-                <div class="ml-0 pl-1 col-md-12">
-                    <div class="d-flex">
-                        <ul class="nav nav-tabs flex-column">
-                            {% for i, email in emails.list %}
-                                <li class="nav-item">
-                                    <a class="nav-link {% if loop.first %}active{% endif %}" href="#tab{{ email.id }}" data-toggle="tab">
-                                        <p><strong>{{ email.subject | slice(0, 50) }}{% if email.subject | length > 50 %}...{% endif %}</strong></p>
-                                        <p><small>{{ email.created_at|format_datetime }}</small></p>
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-
-                        <div class="tab-content border rounded p-3 w-100">
-                            {% for i, email in emails.list %}
-                                <div class="tab-pane container {% if loop.first %}show active{% else %}fade{% endif %}" id="tab{{ email.id }}">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <p><strong>{{ 'From:'|trans }}</strong> {{ email.sender }}</p>
-                                            <p><strong>{{ 'To:'|trans }}</strong> {{ email.recipients }}</p>
-                                            <p><strong>{{ 'Created at:'|trans }}</strong> {{ email.created_at|format_date }}</p>
-                                        </div>
-                                        <div class="card-body">
-                                            <h3>{{ email.subject }}</h3>
-                                            <p>{{ email.content_html | raw }}</p>
-                                        </div>
-                                        <div class="card-footer">
-                                            <a class="btn btn-primary email-resend" href="#" mail-id="{{ email.id }}">{{ 'Resend'|trans }}</a>
-                                            <a class="btn btn-danger email-delete" href="#" mail-id="{{ email.id }}">{{ 'Delete'|trans }}</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
+    <div class="col-md-12">
+        <div class="card mb-4 bg-white">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ 'Emails'|trans }}</h5>
+                        <span class="small text-muted">{{ "Here you can find all the emails we've sent you. Please click on the email topic in the left column, and it will be displayed on the right side."|trans }}</span>
                     </div>
                 </div>
-                {% include "partial_pagination.html.twig" with {'list': emails} %}
-            {% endif %}
+            </div>
+            <div class="card-body pb-0">
+                {% if emails.list is empty  %}
+                    <div class="alert alert-info" id="information-block">{{ 'There are no emails to display'|trans }}</div>
+                {% else %}
+                    <div class="ml-0 pl-1 col-md-12">
+                        <div class="d-flex">
+                            <ul class="nav nav-tabs flex-column">
+                                {% for i, email in emails.list %}
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if loop.first %}active{% endif %}" href="#tab{{ email.id }}" data-toggle="tab">
+                                            <p><strong>{{ email.subject | slice(0, 50) }}{% if email.subject | length > 50 %}...{% endif %}</strong></p>
+                                            <p><small>{{ email.created_at|format_datetime }}</small></p>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                            <div class="tab-content border rounded p-3 w-100">
+                                {% for i, email in emails.list %}
+                                    <div class="tab-pane container {% if loop.first %}show active{% else %}fade{% endif %}" id="tab{{ email.id }}">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <p><strong>{{ 'From:'|trans }}</strong> {{ email.sender }}</p>
+                                                <p><strong>{{ 'To:'|trans }}</strong> {{ email.recipients }}</p>
+                                                <p><strong>{{ 'Created at:'|trans }}</strong> {{ email.created_at|format_date }}</p>
+                                            </div>
+                                            <div class="card-body">
+                                                <h3>{{ email.subject }}</h3>
+                                                <p>{{ email.content_html | raw }}</p>
+                                            </div>
+                                            <div class="card-footer">
+                                                <a class="btn btn-primary email-resend" href="#" mail-id="{{ email.id }}">{{ 'Resend'|trans }}</a>
+                                                <a class="btn btn-danger email-delete" href="#" mail-id="{{ email.id }}">{{ 'Delete'|trans }}</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% include "partial_pagination.html.twig" with {'list': emails} %}
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
