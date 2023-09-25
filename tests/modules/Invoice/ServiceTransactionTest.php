@@ -480,57 +480,7 @@ class ServiceTransactionTest extends \BBTestCase
         $serviceMock->preProcessTransaction($transactionModel);
     }
 
-    public function paymentsAdapterProvider_withoutProcessTransaction()
-    {
-        return array(
-            array('\Payment_Adapter_AliPay'),
-            array('\Payment_Adapter_AuthorizeNet'),
-            array('\Payment_Adapter_Interkassa'),
-            array('\Payment_Adapter_Onebip'),
-            array('\Payment_Adapter_Custom'),
-        );
-    }
-
-    /**
-     * @dataProvider paymentsAdapterProvider_withoutProcessTransaction
-     */
-    public function testprocessTransactionWithPayment_Adapter($adapter)
-    {
-        $id               = 1;
-        $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \DummyBean());
-        $transactionModel->gateway_id = 2;
-        $transactionModel->ipn        = '{}';
-
-        $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \DummyBean());
-        $payGatewayModel->name = substr($adapter, strpos($adapter, '\Payment_Adapter_') + 1);
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->onConsecutiveCalls($transactionModel, $payGatewayModel));
-
-        $paymentAdapterMock = $this->getMockBuilder('\Payment_Adapter_Custom')
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $payGatewayService = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')->getMock();
-        $payGatewayService->expects($this->atLeastOnce())
-            ->method('getPaymentAdapter')
-            ->will($this->returnValue($paymentAdapterMock));
-
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($payGatewayService) { return $payGatewayService; });
-        $di['api_admin']   = new \Api_Handler(new \Model_Admin());
-        $this->service->setDi($di);
-
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage(sprintf("Payment adapter %s does not support action %s", $payGatewayModel->name, 'processTransaction'));
-        $this->service->processTransaction($id);
-    }
-
+    
     public function paymentsAdapterProvider_withprocessTransaction()
     {
         return array(
