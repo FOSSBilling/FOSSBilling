@@ -354,7 +354,8 @@
         "ordermodel",
         "TINYINT",
         "hostings",
-        "rulesets"
+        "rulesets",
+        "newtx"
 
     ],
     "ignorePaths": [
