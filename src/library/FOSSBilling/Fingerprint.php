@@ -73,7 +73,7 @@ class Fingerprint
             ],
             'mobile' => [
                 'source' => $_SERVER['HTTP_SEC_CH_UA_MOBILE'] ?? '',
-                'weight' => 3,
+                'weight' => 2,
             ],
             'cloudFlareCountry' => [
                 'source' => $_SERVER['HTTP_CF_IPCOUNTRY'] ?? '', // "IP Geolocation" must be enabled under Cloudflare's "network" settings
@@ -104,6 +104,8 @@ class Fingerprint
      *      - Each property can define a weight. For example, if the IP address doesn't match and the weight is set to 3, 3 will be selected from the total.
      *          - This means with a total of 9 properties, the IP address being wrong would effectively be weighted as 3 properties and only two more differing properties will make it fail the check.
      *      - If any property is found in one of the fingerprints and not the other, the baseline is incremented and the final score is decreased by it's weight.
+     * 
+     * @return bool `true` if the fingerprint passes, `false` if it's considered invalid. 
      */
     public function checkFingerprint(array $fingerprint): bool
     {
@@ -130,9 +132,32 @@ class Fingerprint
             }
         }
 
-        // Remove the total score from the total number of items. The final score must be at least half the number of properties in order for the fingerprint to be considered valid.
-        $finalScore = $itemCount - $scoreSubtract;
-        return $finalScore >= ($itemCount / 2);
+        /**
+         * Here we calculate how confident we are in our ability to fingerprint a device without causing issues for legitimate sessions.
+         * The less confident we are, the more wrong the current fingerprint needs to be when compared against the session's before it is invalidated.
+         * 
+         * In the event that less that 70% of the possible values are in the fingerprint, we use the percentage off we are to calculate a higher percentage before failure.
+         * For example:
+         *  If, if we have 13 possible fingerprint properties and only 9 are available, that's only 69% of the possible properties and the failure threshold will be calculated as follows.
+         *  Negative weight: (1 - 0.69) / 1.25 = `0.24`
+         *  Failure threshold: 0.5 + 0.24 = `0.74`
+         *  
+         *  So in this example, the percentage wrong needs to be at or above 74% (nearly 75%) before the session is declared invalid.
+         *  If there's only 6 of 13 available that moves to 93% and at 5 of 13 it's 99%.
+         *  By doing this, we can effectively give additional headroom in situations where we are less-confident than we'd like to be and effectively completely disable the check in a worst-case situation.
+         *  
+         */
+        $percentOfOverallIntems = $itemCount / count($this->fingerprintProperties);
+        if ($percentOfOverallIntems >= 0.70) {
+            $failureThreshold = 0.50;
+        } else {
+            $negativeWeight = (1 - $percentOfOverallIntems) / 1.25;
+            $failureThreshold = 0.5 + $negativeWeight;
+        }
+
+        // Here we calculate the "percentage wrong" (weighted, not a true percent) and return true (indicating no issues) if it's less then the failure threshold.
+        $percentageWrong = $scoreSubtract / $itemCount;
+        return $percentageWrong < $failureThreshold;
     }
 
     private function extractAgentInfo(): array
