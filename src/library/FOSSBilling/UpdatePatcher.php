@@ -183,7 +183,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function setPatchLevel(int $patchLevel): void
     {
         if (is_null($this->getPatchLevel())) {
-            $sql = 'INSERT INTO setting (last_patch, value, public, updated_at, created_at) VALUES (:value, 1, :u, :c)';
+            $sql = 'INSERT INTO setting (param, value, public, updated_at, created_at) VALUES ("last_patch", :value, 1, :u, :c)';
             $sqlStatement = $this->di['pdo']->prepare($sql);
             $sqlStatement->execute(['value' => $patchLevel, 'c' => date('Y-m-d H:i:s'), 'u' => date('Y-m-d H:i:s')]);
         } else {
@@ -213,7 +213,7 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             26 => function () {
                 // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-                $q = "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
+                $q = "INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES ('company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
                 $this->executeSql($q);
             },
             27 => function () {

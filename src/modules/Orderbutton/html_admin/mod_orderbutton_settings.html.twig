@@ -82,24 +82,18 @@
                             <div class="row mb-3">
                                 <label class="col-sm-4 col-md-3 col-form-label">Sizing</label>
                                 <div class="col-sm-7 col-md-6">
-                                    <div class="row">
-                                        <div class="col row">
+                                    <div class="row mb-2">
+                                        <div class="col">
                                             <label class="col-form-label" for="popup_width">{{ 'Width'|trans }}</label>
-                                        </div>
-                                        <div class="col row">
-                                            <label class="col-form-label" for="popup_width">{{ 'Border radius'|trans }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col row">
                                             <div class="input-group mb-2">
-                                                <input type="text" class="form-control" name="popup_width" id="popup_width" value="{{ params.popup_width | default(600) }}" placeholder="600">
+                                                <input class="form-control" type="text" name="popup_width" id="popup_width" value="{{ params.popup_width | default(600) }}" placeholder="600">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
-                                        <div class="col row">
+                                        <div class="col">
+                                            <label class="col-form-label" for="border-radius">{{ 'Border radius'|trans }}</label>
                                             <div class="input-group mb-2">
-                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius | default('0') }}" size="3" id="border-radius">
+                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius | default('0') }}" id="border-radius">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
@@ -110,22 +104,16 @@
                             <div class="row mb-3">
                                 <label class="col-sm-4 col-md-3 col-form-label">Background</label>
                                 <div class="col-sm-7 col-md-6">
-                                    <div class="row">
-                                        <div class="col row">
+                                    <div class="row mb-2">
+                                        <div class="col">
                                             <label class="col-form-label" for="coloris-picker">{{ 'Color'|trans }}</label>
-                                        </div>
-                                        <div class="col row">
-                                            <label class="col-form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col row">
-                                            <div class="input-group mb-2">
+                                            <div>
                                                 <input type="text" class="form-control" name="background_color"
                                                        id="coloris-picker" value="{{ params.background_color | default('#000000') }}">
                                             </div>
                                         </div>
-                                        <div class="col row">
+                                        <div class="col">
+                                            <label class="col-form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
                                             <div class="input-group mb-2">
                                                 <input type="text" class="form-control" name="background_opacity"
                                                        id="background_opacity" value="{{ params.background_opacity | default(50) }}">
@@ -226,11 +214,35 @@
                                 <span class="d-block mb-2">{{ 'You need to add ID (if you want to use it for one html element) or class (if you want to use it for multiple elements) in order for it to work'|trans }}</span>
                                 <div id="button-code-info">
                                     <span class="d-block mb-2">{{ 'Add order-button class to your elements which must call popup. For example:'|trans }}</span>
-                                    <pre>&lt;button type=&quot;button&quot;<span class="text-orange">&nbsp;class=&quot;order-button</span>&quot;&gt;Order Now&lt;/button&gt;</pre>
+                                    <div class="col">
+                                        <div class="input-group input-group-flat">
+                                            <textarea id="html-code" rows="1" class="form-control" onclick="$(this).trigger('select')">&lt;button type=&quot;button&quot;&nbsp;class=&quot;order-button&quot;&gt;Order Now&lt;/button&gt;</textarea>
+                                            <span class="input-group-text align-items-start pt-3">
+                                                <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#html-code"
+                                                    data-bs-toggle="tooltip" aria-label="Copy" data-bs-original-title="Copy">
+                                                    <svg class="icon">
+                                                        <use xlink:href="#copy">
+                                                    </svg>
+                                                </span>
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <span class="d-block mb-2">{{ 'Add data-product attribute to your element to open specific product. For example:'|trans }}</span>
-                                <pre>&lt;button type=&quot;button&quot; class=&quot;order-button" <span class="text-orange">data-product="2"</span>&gt;Order Product#2 Now&lt;/button&gt;</pre>
-                                <span class="d-block">{{ 'data-product attribute value will be overridden if popup\'s product is selected from select-box above'|trans }}</span>
+                                <span class="d-block mt-3 mb-2">{{ 'Add data-product attribute to your element to open specific product. For example:'|trans }}</span>
+                                <div class="col">
+                                    <div class="input-group input-group-flat">
+                                        <textarea id="html-code2" rows="1" class="form-control" onclick="$(this).trigger('select')">&lt;button type=&quot;button&quot; class=&quot;order-button" data-product="2"&gt;Order Product#2 Now&lt;/button&gt;</textarea>
+                                        <span class="input-group-text align-items-start pt-3">
+                                            <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#html-code2"
+                                                data-bs-toggle="tooltip" aria-label="Copy" data-bs-original-title="Copy">
+                                                <svg class="icon">
+                                                    <use xlink:href="#copy">
+                                                </svg>
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="d-block mt-3">{{ 'data-product attribute value will be overridden if popup\'s product is selected from select-box above'|trans }}</span>
                             </div>
                         </div>
                     </div>

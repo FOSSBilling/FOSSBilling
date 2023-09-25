@@ -374,7 +374,6 @@ class Service implements InjectionAwareInterface
 
 
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
-        $invoice->nr = $this->getNextInvoiceNumber($invoice);
         $invoice->approved = true;
         $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
         $invoice->status = \Model_Invoice::STATUS_PAID;
@@ -403,22 +402,22 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getNextInvoiceNumber(\Model_Invoice $model)
+    public function getNextInvoiceNumber()
     {
-        $p = 'invoice_starting_number';
         $systemService = $this->di['mod_service']('system');
-        $next_nr = $systemService->getParamValue($p);
+        $next_nr = $systemService->getParamValue('invoice_starting_number');
+
         if (empty($next_nr)) {
-            $next_nr = $model->id;
-
-            // get last invoice number
-
+            // In theory this code should never need to be called, but is provided as a fallback
             $r = $this->di['db']->findOne('Invoice', 'nr is not null order by id desc');
             if ($r instanceof \Model_Invoice && is_numeric($r->nr)) {
                 $next_nr = intval($r->nr) + 1;
+            } else {
+                throw new \Box_Exception('Unable to determine the next invoice number');
             }
         }
-        $systemService->setParamValue($p, intval($next_nr) + 1);
+
+        $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
 
         return $next_nr;
     }
@@ -515,7 +514,7 @@ class Service implements InjectionAwareInterface
         $model->due_at = date('Y-m-d H:i:s', $due_time);
 
         $model->serie = $systemService->getParamValue('invoice_series');
-        $model->nr = $model->id;
+        $model->nr = $this->getNextInvoiceNumber();
         $model->hash = bin2hex(random_bytes(random_int(100, 127)));
 
         $taxtitle = '';
@@ -691,7 +690,6 @@ class Service implements InjectionAwareInterface
 
                 if ($logic == 'negative_invoice') {
                     $new->serie = $systemService->getParamValue('invoice_series_paid');
-                    $new->nr = $this->getNextInvoiceNumber($new);
                     $this->di['db']->store($new);
                 }
 

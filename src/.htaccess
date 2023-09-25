@@ -19,8 +19,8 @@ Options -Indexes +SymLinksIfOwnerMatch
     # Alias from bb-ipn.php to ipn.php for those who have upgraded from BoxBilling.
     RewriteRule ^bb-ipn\.php$ /ipn.php [L]
 
-    # Allow access to the index.php and ipn.php files.
-    RewriteCond %{REQUEST_URI} ^/(index|ipn)\.php [NC]
+    # Allow access to the index.php, ipn.php, /install/index.php, and /install/install.php files.
+    RewriteCond %{REQUEST_URI} ^/(index\.php|ipn\.php|install/index\.php|install/install\.php) [NC]
     RewriteRule ^ - [L]
 
     # Block direct access to sensitive files and file types.
@@ -32,8 +32,9 @@ Options -Indexes +SymLinksIfOwnerMatch
     RewriteRule ^page/(.*)$ index.php?_url=/custompages/$1
 
     # Rewrite non-existent file/directory names to index.php.
-    RewriteCond %{REQUEST_FILENAME} !-f [OR]
+    RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
+
 </IfModule>
 # END FOSSBilling

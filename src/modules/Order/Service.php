@@ -798,7 +798,7 @@ class Service implements InjectionAwareInterface
     public function stockSale(\Model_Product $product, $qty)
     {
         if ($product->stock_control) {
-            $product->quantity_in_stock = $product->quantity_in_stock - $qty;
+            $product->quantity_in_stock -= $qty;
             $product->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($product);
         }

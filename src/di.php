@@ -235,7 +235,10 @@ $di['session'] = function () use ($di) {
 
     $mode = $di['config']['security']['mode'] ?? 'strict';
     $lifespan = $di['config']['security']['cookie_lifespan'] ?? 7200;
-    $secure = $di['config']['security']['force_https'] ?? true;
+
+    // Mark the cookie as secure either if force HTTPS is enabled or if we can detect that HTTPS is being used.
+    $forceSSL = $di['config']['security']['force_https'] ?? true;
+    $secure = ($forceSSL || FOSSBilling\Tools::isHTTPS());
 
     $session = new \FOSSBilling\Session($handler, $mode, $lifespan, $secure);
     $session->setDi($di);
@@ -387,8 +390,6 @@ $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
     $config = $di['mod_config']('client');
     if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
         return (bool) $model->email_approved;
-    } else {
-        return true;
     }
 
     return true;
@@ -519,7 +520,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
             if (strncasecmp($url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp($url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
                 throw new Exception('Please check your mailbox and confirm email address.');
             }
-        } elseif (strncasecmp($url, '/client/profile', strlen('/client/profile')) !== 0) {
+        } elseif (strncasecmp($url, '/client', strlen('/client')) !== 0) {
             // If they aren't attempting to access their profile, redirect them to it.
             $login_url = $di['url']->link('client/profile');
             header("Location: $login_url");

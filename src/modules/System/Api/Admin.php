@@ -155,6 +155,18 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Gets the update type.
+     *
+     * @return int
+     */
+    public function update_type()
+    {
+        $updater = $this->di['updater'];
+
+        return $updater->getUpdateType();
+    }
+
+    /**
      * Update FOSSBilling core.
      *
      * @return bool

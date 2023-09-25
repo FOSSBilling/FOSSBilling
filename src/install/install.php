@@ -12,18 +12,6 @@ use Box\Mod\Email\Service;
 use Twig\Loader\FilesystemLoader;
 use Symfony\Component\HttpClient\HttpClient;
 
-/**
- * @return bool
- *
- * @see http://stackoverflow.com/a/2886224/2728507
- */
-function isSSL(): bool
-{
-    return
-        (!empty($_SERVER['HTTPS']) && 'off' !== $_SERVER['HTTPS'])
-        || 443 === $_SERVER['SERVER_PORT'];
-}
-
 date_default_timezone_set('UTC');
 
 error_reporting(E_ALL);
@@ -31,15 +19,6 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
 ini_set('error_log', 'php_error.log');
-
-$protocol = isSSL() ? 'https' : 'http';
-$url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-$current_url = pathinfo($url, PATHINFO_DIRNAME);
-$root_url = str_replace('/install', '', $current_url) . '/';
-
-define('BB_URL', $root_url);
-const BB_URL_INSTALL = BB_URL . 'install/';
-const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
 define('PATH_ROOT', dirname(__DIR__));
 const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR . 'library';
@@ -85,6 +64,15 @@ $loader->addNamespace('Box\\Mod\\', PATH_MODS);
 $loader->checkClassMap();
 $loader->register();
 
+$protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
+$url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+$current_url = pathinfo($url, PATHINFO_DIRNAME);
+$root_url = str_replace('/install', '', $current_url) . '/';
+
+define('BB_URL', $root_url);
+const BB_URL_INSTALL = BB_URL . 'install/';
+const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
+
 final class Box_Installer
 {
     private Session $session;
@@ -105,7 +93,7 @@ final class Box_Installer
                 $pass = $_POST['db_pass'];
                 $name = $_POST['db_name'];
 
-                if (!$this->canConnectToDatabase($host.';'.$port, $name, $user, $pass)) {
+                if (!$this->canConnectToDatabase($host . ';' . $port, $name, $user, $pass)) {
                     echo 'Could not connect to database. Please check database details. You might need to create database first.';
                 } else {
                     $this->session->set('db_host', $host);
@@ -126,7 +114,7 @@ final class Box_Installer
                     $port = $_POST['db_port'];
                     $pass = $_POST['db_pass'];
                     $name = $_POST['db_name'];
-                    if (!$this->canConnectToDatabase($host.';'.$port, $name, $user, $pass)) {
+                    if (!$this->canConnectToDatabase($host . ';' . $port, $name, $user, $pass)) {
                         throw new Exception('Could not connect to the database, or the database does not exist');
                     }
 
@@ -180,7 +168,7 @@ final class Box_Installer
                         }
                     }
                     try {
-                        rmAllDir('..'.DIRECTORY_SEPARATOR.'install');
+                        rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
                     } catch (Exception) {
                         // do nothing
                     }
@@ -322,19 +310,19 @@ final class Box_Installer
             return false;
         }
 
-        if( strlen($pass) < 8 ) {
+        if (strlen($pass) < 8) {
             throw new Exception('Minimum password length is 8 characters.');
         }
 
-        if( !preg_match("#[0-9]+#", $pass) ) {
+        if (!preg_match("#[0-9]+#", $pass)) {
             throw new Exception('Password must include at least one number.');
         }
 
-        if( !preg_match("#[a-z]+#", $pass) ) {
+        if (!preg_match("#[a-z]+#", $pass)) {
             throw new Exception('Password must include at least one lowercase letter.');
         }
 
-        if( !preg_match("#[A-Z]+#", $pass) ) {
+        if (!preg_match("#[A-Z]+#", $pass)) {
             throw new Exception('Password must include at least one uppercase letter.');
         }
 
@@ -350,7 +338,7 @@ final class Box_Installer
         $this->_isValidInstallData($ns);
         $this->_createConfigurationFile($ns);
 
-        $pdo = $this->getPdo($ns->get('db_host').';'.$ns->get('db_port'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
+        $pdo = $this->getPdo($ns->get('db_host') . ';' . $ns->get('db_port'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
 
         $sql = file_get_contents(PATH_SQL);
         $sql_content = file_get_contents(PATH_SQL_DATA);
@@ -430,7 +418,7 @@ final class Box_Installer
         $data = [
             'security' => [
                 'mode' => 'strict',
-                'force_https' => isSSL() ? true : false,
+                'force_https' => FOSSBilling\Tools::isHTTPS() ? true : false,
                 'cookie_lifespan' => 7200,
             ],
             'debug' => false,

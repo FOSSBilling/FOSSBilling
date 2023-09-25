@@ -403,6 +403,10 @@ class Server_Manager_Plesk extends Server_Manager
                                 'name'	=>	'max_subftp_users',
                                 'value'	=>	$p->getMaxFtp() ?: 0,
                             ),
+                            array(
+                                'name'	=>	'max_site',
+                                'value'	=>	$p->getMaxDomains() ?: 0,
+                            ),
                         ), 
                     ),
                     'permissions'	=>	array(
@@ -489,9 +493,6 @@ class Server_Manager_Plesk extends Server_Manager
             'description'       =>  "Created using FOSSBilling.",
         ];
 
-        // We don't want to send these data if they are empty. Plesk will throw an error.
-        $client->getCountry() ? $props['country'] = $client->getCountry() : null;
-
     	if ($a->getReseller()) {
     		$result = $this->_client->reseller()->create($props);
     	} else {
@@ -516,9 +517,6 @@ class Server_Manager_Plesk extends Server_Manager
     		'city'				=>	$client->getCity(),
     		'state'				=>	$client->getState(),
         ];
-
-        // Sending the country name blank causes an error. So we won't assign it to our request if it's blank.
-        $client->getCountry() ? $props['country'] = $client->getCountry() : null;
 
         return $props;
     }

@@ -170,7 +170,7 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
-        $sql = $sql . ' ORDER BY c.created_at desc';
+        $sql .= ' ORDER BY c.created_at desc';
 
         return [$sql, $params];
     }
