@@ -71,13 +71,13 @@ jobs:
       - name: Extract build archive
         run: tar -xvf /tmp/builds/build.tar ./
 
-      - name: Setup PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-
       - name: Run PHPStan
-        run: php src/vendor/bin/phpstan --memory-limit=512M
+        uses: php-actions/phpstan@v3
+        with:
+          php_version: ${{ matrix.php }}
+          configuration: phpstan.neon
+          memory_limit: 512M
+          version: latest
 
   phpunit:
     runs-on: ubuntu-latest
