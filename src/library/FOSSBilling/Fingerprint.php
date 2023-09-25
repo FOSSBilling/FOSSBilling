@@ -147,11 +147,11 @@ class Fingerprint
          *  By doing this, we can effectively give additional headroom in situations where we are less-confident than we'd like to be and effectively completely disable the check in a worst-case situation.
          *  
          */
-        $percentOfOverallIntems = $itemCount / count($this->fingerprintProperties);
-        if ($percentOfOverallIntems >= 0.70) {
+        $percentOfOverallItems = $itemCount / count($this->fingerprintProperties);
+        if ($percentOfOverallItems >= 0.70) {
             $failureThreshold = 0.50;
         } else {
-            $negativeWeight = (1 - $percentOfOverallIntems) / 1.25;
+            $negativeWeight = (1 - $percentOfOverallItems) / 1.25;
             $failureThreshold = 0.5 + $negativeWeight;
         }
 
