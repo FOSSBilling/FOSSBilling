@@ -15,13 +15,13 @@
                 <div class="card-header bg-white py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5>{{ 'Wallet'|trans }}</h5>
-                            <span class="ml-2 mt-1 small text-secondary">{{ 'Here you can manage and track your account balance'|trans }}</span>
+                            <h5 class="mb-1">{{ 'Wallet'|trans }}</h5>
+                            <span class="small text-muted">{{ 'Here you can manage and track your account balance'|trans }}</span>
                         </div>
-                        <form method="post" class="form-inline api-form d-flex gap-2" data-api-url="{{ 'api/client/invoice/funds_invoice'|link }}" data-api-jsonp="onAfterInvoiceCreated">
+                        <form method="post" class="form-inline api-form d-flex gap-2 justify-content-end" data-api-url="{{ 'api/client/invoice/funds_invoice'|link }}" data-api-jsonp="onAfterInvoiceCreated">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                            <input id="appendedPrependedInput" class="form-control mr-2" type="text" name="amount" placeholder="0" required="required">
-                            <button class="btn btn-primary" type="submit">{{ 'Add funds'|trans }}</button>
+                            <input id="appendedPrependedInput" class="form-control w-50" type="text" name="amount" placeholder="0" required="required">
+                            <button class="btn btn-primary" type="submit">{{ 'Add fund'|trans }}</button>
                         </form>
                     </div>
                 </div>
@@ -50,7 +50,7 @@
                         </tbody>
                         <tfoot>
                         <tr>
-                            <td colspan="2">{{ 'Total:'|trans }}</td>
+                            <td colspan="2">{{ 'Total'|trans }}</td>
                             <td><strong>{{ profile.balance | money(profile.currency) }}</strong></td>
                         </tr>
                         </tfoot>
