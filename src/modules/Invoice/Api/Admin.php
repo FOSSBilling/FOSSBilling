@@ -82,6 +82,20 @@ class Admin extends \Api_Abstract
 
             $clientService->addFunds($client, $chargeInfo['amount'], $chargeInfo['description'], $chargeInfo);
             $charge = true;
+
+            // create transaction
+            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+            $transactionService->create([
+                'invoice_id'    =>  $invoice->id,
+                'gateway_id'    =>  $invoice->gateway_id,
+                'amount'        =>  $invoiceTotal,
+                'ipn'           =>  '{}',
+                'currency'      =>  $invoice->currency,
+                'status'        =>  'received',
+                'note'        =>  $data['transactionId'],
+            ]);
+            
+
             return $this->getService()->markAsPaid($invoice, $charge, $execute);
             }
         return $this->getService()->markAsPaid($invoice, $charge, $execute);
