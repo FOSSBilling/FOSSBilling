@@ -47,21 +47,21 @@
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript">
-$(function() {
-    $('#client-login').on('submit', function(event) {
-        bb.post('guest/client/login',
-            $(this).serialize(),
-            function(result) {
-                bb.redirect();
-            }
-        );
-
-        return false;
-    });
-    {% if request.al %}
-        $('#client-login').submit();
-    {% endif %}
-});
-</script>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", () => {
+            let loginForm = document.getElementById('client-login');
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                API.guest.post('client/login',
+                    (new FormData(loginForm)).serializeObject(),
+                    () => bb.redirect('/'),
+                    (res) => FOSSBilling.message(res.message, 'error')
+                )
+                return false;
+            });
+            {% if request.al %}
+            loginForm.submit();
+            {% endif %}
+        });
+    </script>
 {% endblock %}
