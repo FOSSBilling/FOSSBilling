@@ -76,4 +76,53 @@ class Payment_Adapter_Custom
     {
         return true;
     }
+
+    /**
+     * Processes a transaction using a custom payment adapter.
+     *
+     * @param mixed $api_admin The API admin object.
+     * @param int $id The ID of the transaction to process.
+     * @param array $data The data associated with the transaction.
+     * @param int $gateway_id The ID of the payment gateway to use.
+     *
+     * @return bool Returns true if the transaction was processed successfully, false otherwise.
+     */
+    public function processTransaction($api_admin, $id, $data, $gateway_id)
+    {
+        try {
+
+            // Get the transaction and invoice associated with the transaction
+            $tx = $this->di['db']->getExistingModelById('Transaction', $id);
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
+
+            // Load the payment gateway and client associated with the transaction
+            $gateway = $this->di['db']->load('PayGateway', $tx->gateway_id);
+            $clientService = $this->di['mod_service']('Client');
+            $client = $clientService->get(['id' => $invoice->client_id]);
+
+            // Calculate the total amount of the invoice
+            $invoiceService = $this->di['mod_service']('Invoice');
+            $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
+
+            // Add funds to the client's account and mark the invoice as paid
+            $tx_desc = $gateway->title . ' transaction No: ' . $tx->txn_id;
+            $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
+            $invoiceService->markAsPaid($invoice, true, true);
+
+            // Update the transaction status and details
+            $tx->status = 'succeeded';
+            $tx->amount = $invoiceTotal;
+            $tx->note = $gateway->title . ' transaction No: ' . $tx->txn_id;
+            $tx->currency = $invoice->currency;
+            $tx->updated_at = date('Y-m-d H:i:s');
+
+            // Store the updated transaction and return true
+            $this->di['db']->store($tx);
+            return true;
+
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
 }

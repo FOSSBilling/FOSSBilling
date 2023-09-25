@@ -67,37 +67,30 @@ class Admin extends \Api_Abstract
         $gateway_id = [ 'id' => $invoice->gateway_id ];
         $payGateway = $this->gateway_get($gateway_id);
         $charge = false;
-        // Check if the payment type is "Custom Payment", Add funds, then set the "Charge" flag to true
+        // Check if the payment type is "Custom Payment", Add transaction and process it.
         if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
-
-            $clientService = $this->di['mod_service']('client');
-            $client = $clientService->get(['id' => $invoice->client_id]);
-            $invoiceService = $this->di['mod_service']('Invoice');
-            $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
-            $chargeInfo = [
-                'amount'        =>  $invoiceTotal,
-                'description'   =>  $payGateway['title'] . ' transaction No.' . $data['transactionId'],
-                'type'          =>  'custom',
-            ];
-
-            $clientService->addFunds($client, $chargeInfo['amount'], $chargeInfo['description'], $chargeInfo);
-            $charge = true;
 
             // create transaction
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-            $transactionService->create([
+            $newtx = $transactionService->create([
                 'invoice_id'    =>  $invoice->id,
+                'bb_invoice_id'    =>  $invoice->id,
                 'gateway_id'    =>  $invoice->gateway_id,
-                'amount'        =>  $invoiceTotal,
-                'ipn'           =>  '{}',
+                'bb_gateway_id'    =>  $invoice->gateway_id,
                 'currency'      =>  $invoice->currency,
                 'status'        =>  'received',
-                'note'        =>  $data['transactionId'],
+                'txn_id'        =>  $data['transactionId'],
             ]);
             
-
-            return $this->getService()->markAsPaid($invoice, $charge, $execute);
+            try {
+            $transactionService->processTransaction($newtx);
+            return true;
+            } catch (\Exception $e)
+            {
+                $this->di['logger']->info('Error processing transaction: '.$e->getMessage());
             }
+
+        }
         return $this->getService()->markAsPaid($invoice, $charge, $execute);
     }
 
