@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -85,11 +87,9 @@ class i18n
      *               subarrays with the following keys: `locale` (string), `title` (string), `name` (string).
      *               If `$includeLocaleDetails` is false, the array will only contain the locale codes (strings).
      */
-    public static function getLocales($includeLocaleDetails  = false): array
+    public static function getLocales(bool $includeLocaleDetails  = false): array
     {
-        $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), 'is_dir');
-        $locales = array_map('basename', $locales); // get only the directory name
-        sort($locales);
+        $locales = self::getLocaleList();
         if (!$includeLocaleDetails) {
             return $locales;
         }
@@ -104,5 +104,43 @@ class i18n
             ];
         }
         return $details;
+    }
+
+    public static function ToggleLocale(string $locale): bool
+    {
+        $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
+        if (!is_dir($basePath)) {
+            throw new \Box_Exception('Unable to enable / disable locale, it does not exist on the disk.');
+        }
+
+        $disablePath = $basePath . DIRECTORY_SEPARATOR . '.disabled';
+
+        // Reverse the status of the locale
+        if (file_exists($disablePath)) {
+            return unlink($disablePath);
+        } else {
+            file_put_contents($disablePath, '');
+            return file_exists($disablePath);
+        }
+    }
+
+    private static function getLocaleList(bool $hidden = false)
+    {
+        if ($hidden) {
+            // Only get a list of the disabled locales
+            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), function ($dir) {
+                return is_dir($dir) && file_exists($dir . DIRECTORY_SEPARATOR . '.disabled');
+            });
+        } else {
+            // Only get a list of the enabled locales
+            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), function ($dir) {
+                return is_dir($dir) && !file_exists($dir . DIRECTORY_SEPARATOR . '.disabled');
+            });
+        }
+
+        $locales = array_map('basename', $locales); // get only the directory name
+        sort($locales);
+
+        return $locales;
     }
 }
