@@ -34,12 +34,14 @@ class Payment_Adapter_Custom
                 'width' => '50px',
             ),
             'form'  => array(
-                'single' => array('textarea', array(
-                            'label' => 'Enter your text for single payment information',
+                'single' => array(
+                    'textarea', array(
+                        'label' => 'Enter your text for single payment information',
                     ),
                 ),
-                'recurrent' => array('textarea', array(
-                            'label' => 'Enter your text for subscription information',
+                'recurrent' => array(
+                    'textarea', array(
+                        'label' => 'Enter your text for subscription information',
                     ),
                 ),
             ),
@@ -90,7 +92,6 @@ class Payment_Adapter_Custom
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         try {
-
             // Get the transaction and invoice associated with the transaction
             $tx = $this->di['db']->getExistingModelById('Transaction', $id);
             $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
@@ -116,13 +117,10 @@ class Payment_Adapter_Custom
             $tx->currency = $invoice->currency;
             $tx->updated_at = date('Y-m-d H:i:s');
 
-            // Store the updated transaction and return true
-            $this->di['db']->store($tx);
-            return true;
-
+            // Store the updated transaction and use it's return to indicate a sucsess or failure. 
+            return $this->di['db']->store($tx);
         } catch (\Exception $e) {
             return false;
         }
     }
-
 }

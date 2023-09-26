@@ -67,9 +67,9 @@ class Admin extends \Api_Abstract
         $gateway_id = [ 'id' => $invoice->gateway_id ];
         $payGateway = $this->gateway_get($gateway_id);
         $charge = false;
-        // Check if the payment type is "Custom Payment", Add transaction and process it.
-        if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
 
+        // Check if the payment type is "Custom Payment", Add the transaction and process it.
+        if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
             // create transaction
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $newtx = $transactionService->create([
@@ -83,14 +83,14 @@ class Admin extends \Api_Abstract
             ]);
             
             try {
-            $transactionService->processTransaction($newtx);
-            return true;
+                return $transactionService->processTransaction($newtx);
             } catch (\Exception $e)
             {
                 $this->di['logger']->info('Error processing transaction: '.$e->getMessage());
             }
 
         }
+
         return $this->getService()->markAsPaid($invoice, $charge, $execute);
     }
 
