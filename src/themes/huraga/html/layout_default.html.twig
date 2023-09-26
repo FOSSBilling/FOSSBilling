@@ -35,9 +35,6 @@
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
-{% if guest.extension_is_on({ "mod": "cookieconsent" }) %}
-    {% include 'mod_cookieconsent_index.html.twig' ignore missing %}
-{% endif %}
 
 {% block body %}
 {% if not client and settings.require_login %}
@@ -278,7 +275,9 @@
         {{ settings.inject_javascript | raw }}
     {% endif %}
     {% include 'partial_pending_messages.html.twig' ignore missing %}
+    {% if guest.extension_is_on({ "mod": "cookieconsent" }) %}
+        {% include 'mod_cookieconsent_index.html.twig' ignore missing %}
+    {% endif %}
 </div>
-<div class="col"></div>
 </body>
 </html>
