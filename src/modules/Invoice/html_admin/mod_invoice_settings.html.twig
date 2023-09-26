@@ -87,6 +87,22 @@
                 </div>
             </div>
             <div class="card-body">
+                <h3 class="card-title">{{ 'Document settings'|trans }}</h3>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Document format'|trans }}</label>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" id="radioLetter" type="radio" name="invoice_document_format" value="Letter"{% if params.invoice_document_format == "letter" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioLetter">{{ 'Letter'|trans }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" id="radioA4" type="radio" name="invoice_document_format" value="A4"{% if params.invoice_document_format == "a4" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioA4">{{ 'A4'|trans }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
                 <h3 class="card-title">{{ 'Refunds settings'|trans }}</h3>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Refunds logic'|trans }}</label>

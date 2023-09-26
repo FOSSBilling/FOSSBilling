@@ -55,6 +55,8 @@ class Guest extends \Api_Abstract
             unset($companyInfo['address_1']);
             unset($companyInfo['address_2']);
             unset($companyInfo['address_3']);
+            unset($companyInfo['bank_name']);
+            unset($companyInfo['bank_clearing_code']);
         }
 
         return $companyInfo;

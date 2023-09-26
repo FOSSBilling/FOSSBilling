@@ -107,9 +107,34 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Bank Name'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="text" name="company_bank_name" value="{{ params.company_bank_name }}">
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Bank Code / Clearing Code'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="text" name="company_bank_clearing_code" value="{{ params.company_bank_clearing_code }}">
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Bank Account number'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="company_account_number" value="{{ params.company_account_number }}">
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Display Bank Account information on Documents?'|trans }}</label>
+                                <div class="col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_yes" value="1" {% if params.company_display_bank_info == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="display_bank_info_yes">{{ 'Yes'|trans }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_no" value="0" {% if params.company_display_bank_info == "0" %}checked{% endif %}>
+                                        <label class="form-check-label" for="display_bank_info_no">{{ 'No'|trans }}</label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">

@@ -212,10 +212,15 @@ class Service implements InjectionAwareInterface
             'company' => !empty($row['seller_company']) ? $row['seller_company'] : $c['name'],
             'company_vat' => $row['seller_company_vat'],
             'company_number' => $row['seller_company_number'],
-            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'] . ' ' . $c['address_2'] . ' ' . $c['address_2']),
+            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'] . ' ' . $c['address_2'] . ' ' . $c['address_3']),
+            'address_1' => !empty($row['seller_address_1']) ? $row['seller_address_1'] : $c['address_1'],
+            'address_2' => !empty($row['seller_address_2']) ? $row['seller_address_2'] : $c['address_2'],
+            'address_3' => !empty($row['seller_address_3']) ? $row['seller_address_3'] : $c['address_3'],
             'phone' => !empty($row['seller_phone']) ? $row['seller_phone'] : $c['tel'],
             'email' => !empty($row['seller_email']) ? $row['seller_email'] : $c['email'],
             'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
+            'bank_name' => !empty($c['bank_name']) ? $c['bank_name'] : null,
+            'bank_clearing_code' => !empty($c['bank_clearing_code']) ? $c['bank_clearing_code'] : null,
         ];
 
         /**
@@ -1174,6 +1179,10 @@ class Service implements InjectionAwareInterface
 
     public function generatePDF($hash, $identity)
     {
+        $systemService = $this->di['mod_service']('system');
+        $c = $systemService->getCompany();
+        $document_format = $systemService->getParamValue('invoice_document_format', 'Letter');
+        
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
         if (!$invoice instanceof \Model_Invoice) {
             throw new \Box_Exception('Invoice not found');
@@ -1189,9 +1198,12 @@ class Service implements InjectionAwareInterface
         $invoice = $this->toApiArray($invoice, false, $identity);
         $company = $this->di['mod_service']('System')->getCompany();
 
+        
+
         $CSS = $this->getPdfCss();
 
         $pdf = new Dompdf();
+        $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
 
@@ -1210,6 +1222,7 @@ class Service implements InjectionAwareInterface
             'logo_source' => $logoSource,
             'seller' => $this->getSellerData($invoice, $sellerLines),
             'seller_lines' => $sellerLines,
+            'footer' => $this->getFooterInfo($c),
             'buyer' => $this->getBuyerData($invoice, $buyerLines),
             'buyer_lines' => $buyerLines,
             'invoice' => $invoice,
@@ -1483,9 +1496,9 @@ class Service implements InjectionAwareInterface
     {
         $sourceData = [
             'Name' => $invoice['seller']['company'],
-            'Address' => $invoice['seller']['address'],
-            'Company Vat' => $invoice['seller']['company_vat'],
-            'Company Number' => $invoice['seller']['company_number'],
+            'Address 1' => $invoice['seller']['address_1'],
+            'Address 2' => $invoice['seller']['address_2'],
+            'Address 3' => $invoice['seller']['address_3'],
             'Phone' => $invoice['seller']['phone'],
             'Email' => $invoice['seller']['email'],
         ];
@@ -1504,8 +1517,8 @@ class Service implements InjectionAwareInterface
     private function getBuyerData(array $invoice, int &$lines)
     {
         $sourceData = [
-            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
             'Company' => $invoice['buyer']['company'],
+            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
             'Address' => $invoice['buyer']['address'],
             'Phone' => $invoice['buyer']['phone'],
         ];
@@ -1520,5 +1533,36 @@ class Service implements InjectionAwareInterface
 
         return $sourceData;
     }
+
+    private function getFooterInfo(array $company)
+    {
+        
+        $sourceData = [
+            'company_name' => $company['name'],
+            'bank_name' => $company['bank_name'],
+            'account_number' => $company['account_number'],
+            'bank_clearing_code' => $company['bank_clearing_code'],
+            'display_bank_info' => $company['display_bank_info'],
+            'company_vat' => $company['vat_number'],
+            'company_number' => $company['number'],
+            'www' => $company['www'],
+            'email' => $company['email'],
+            'phone' => $company['tel'],
+            'signature' => $company['signature'],
+            'address_1' => $company['address_1'],
+            'address_2' => $company['address_2'],
+            'address_3' => $company['address_3'],
+
+        ];
+
+        foreach ($sourceData as $label => $data) {
+            if (empty(trim($data))) {
+                unset($sourceData[$label]);
+            }
+        }
+
+        return $sourceData;
+    }
+
     // End of PDF related functions
 }
