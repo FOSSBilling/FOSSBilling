@@ -24,11 +24,11 @@
     {{ encore_entry_link_tags('huraga') }}
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
+    <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
+    <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
+    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
     {{ "Api/API.js" | library_url | script_tag }}
     {{ encore_entry_script_tags('huraga') }}
-    <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
-    <script src="{{ 'js/bb-jquery.js' | asset_url }}" defer="defer"></script>
-    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}" defer="defer"></script>
 
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
@@ -257,6 +257,7 @@
             </div>
         </div>
     </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
     {% if settings.footer_to_top_enabled %}
         <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
             <span class="awe-arrow-up"></span> {{ 'Top'|trans }}</a>
