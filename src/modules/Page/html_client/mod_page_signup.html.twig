@@ -187,9 +187,9 @@
             signupForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 API.guest.post('client/create',
-                    (new FormData(signupForm)).serializeObject(),
+                    new FormData(signupForm).serializeObject(),
                     () => bb.redirect('{{ constant('BB_URL') }}'),
-                    (res) => FOSSBilling.message(res.message, 'error')
+                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'),
                 )
                 return false;
             });
