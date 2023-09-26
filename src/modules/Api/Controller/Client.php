@@ -14,8 +14,8 @@
 
 namespace Box\Mod\Api\Controller;
 
-use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Environment;
+use FOSSBilling\InjectionAwareInterface;
 
 class Client implements InjectionAwareInterface
 {

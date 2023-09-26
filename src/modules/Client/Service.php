@@ -681,6 +681,7 @@ class Service implements InjectionAwareInterface
 
         return $this->di['table_export_csv']('client', 'clients.csv', $headers);
     }
+
     /**
      * Confirm password reset action.
      *
@@ -719,6 +720,7 @@ class Service implements InjectionAwareInterface
     {
         $di = $event->getDi();
         $sql = 'DELETE FROM client_password_reset WHERE UNIX_TIMESTAMP() - 900 > UNIX_TIMESTAMP(created_at);';
+
         try {
             $db = $di['db'];
             $db->exec($sql);

@@ -63,6 +63,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
         return $app->render($template);
     }
+
     public function get_reset_password_confirm(\Box_App $app, $hash)
     {
         $service = $this->di['mod_service']('client');

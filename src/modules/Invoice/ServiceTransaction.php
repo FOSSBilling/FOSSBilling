@@ -10,8 +10,8 @@
 
 namespace Box\Mod\Invoice;
 
-use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Environment;
+use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
