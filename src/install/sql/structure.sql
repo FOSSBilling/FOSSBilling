@@ -1144,6 +1144,7 @@ CREATE TABLE `service_membership` (
 CREATE TABLE `session` (
   `id` varchar(32) NOT NULL DEFAULT '',
   `modified_at` int(11) DEFAULT NULL,
+  `created_at` int(11) DEFAULT NULL,
   `content` text,
   `fingerprint` text,
   UNIQUE KEY `unique_id` (`id`)

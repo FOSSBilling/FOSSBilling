@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Environment;
+
 class Session implements \FOSSBilling\InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
@@ -25,13 +27,13 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private \PdoSessionHandler $handler, private string $securityMode = 'regular', private int $cookieLifespan = 7200, private bool $secure = true)
+    public function __construct(private \PdoSessionHandler $handler, private string $securityMode = 'regular', private bool $secure = true)
     {
     }
 
     public function setupSession()
     {
-        if (php_sapi_name() === 'cli') {
+        if (Environment::isCLI()) {
             return;
         }
 
@@ -50,7 +52,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
 
         $currentCookieParams = session_get_cookie_params();
         $currentCookieParams["httponly"] = true;
-        $currentCookieParams["lifetime"] = $this->cookieLifespan;
+        $currentCookieParams["lifetime"] = 0;
         $currentCookieParams["secure"] = $this->secure;
 
         $cookieParams = [
@@ -117,7 +119,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         }
 
         $sessionID = $_COOKIE['PHPSESSID'];
-        $maxAge = time() - $this->di['config']['security']['cookie_lifespan'];
+        $maxAge = time() - $this->di['config']['security']['session_lifespan'];
 
         $fingerprint = new \FOSSBilling\Fingerprint;
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
@@ -126,7 +128,12 @@ class Session implements \FOSSBilling\InjectionAwareInterface
             return;
         }
 
-        if (!$fingerprint->checkFingerprint(json_decode($session->fingerprint, true)) || $session->modified_at <= $maxAge) {
+        if(empty($session->created_at)){
+            $session->created_at = time();
+            $this->di['db']->store($session);
+        }
+
+        if (!$fingerprint->checkFingerprint(json_decode($session->fingerprint, true)) || $session->created_at <= $maxAge) {
             $this->di['db']->trash($session);
             unset($_COOKIE['PHPSESSID']);
         }

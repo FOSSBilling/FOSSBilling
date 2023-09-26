@@ -355,8 +355,8 @@
         "TINYINT",
         "hostings",
         "rulesets",
-        "newtx"
-
+        "newtx",
+        "pwreset"
     ],
     "ignorePaths": [
         "tests/**",

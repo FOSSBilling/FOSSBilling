@@ -9,8 +9,9 @@
  */
 
 use Box\Mod\Email\Service;
-use Twig\Loader\FilesystemLoader;
+use FOSSBilling\Environment;
 use Symfony\Component\HttpClient\HttpClient;
+use Twig\Loader\FilesystemLoader;
 
 date_default_timezone_set('UTC');
 
@@ -145,30 +146,13 @@ final class Box_Installer
                     $this->session->set('currency_title', $currency_title);
                     $this->session->set('currency_format', $currency_format);
 
-                    $this->session->set('license', 'FOSSBilling CE');
+                    $this->session->set('license', 'FOSSBilling');
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
                     // Try to remove install folder
-                    function rmAllDir($dir)
-                    {
-                        if (is_dir($dir)) {
-                            $contents = scandir($dir);
-                            foreach ($contents as $content) {
-                                if ('.' !== $content && '..' !== $content) {
-                                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
-                                        rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
-                                    } else {
-                                        unlink($dir . DIRECTORY_SEPARATOR . $content);
-                                    }
-                                }
-                            }
-                            reset($contents);
-                            rmdir($dir);
-                        }
-                    }
                     try {
-                        rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
+                        $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
                     } catch (Exception) {
                         // do nothing
                     }
@@ -419,7 +403,7 @@ final class Box_Installer
             'security' => [
                 'mode' => 'strict',
                 'force_https' => FOSSBilling\Tools::isHTTPS() ? true : false,
-                'cookie_lifespan' => 7200,
+                'session_lifespan' => 7200,
             ],
             'debug' => false,
             'update_branch' => $updateBranch,
@@ -502,8 +486,30 @@ final class Box_Installer
 
         return $emailService->templateBatchGenerate();
     }
+
+    public function rmAllDir($dir)
+    {
+        if (is_dir($dir)) {
+            $contents = scandir($dir);
+            foreach ($contents as $content) {
+                if ('.' !== $content && '..' !== $content) {
+                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
+                        $this->rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
+                    } else {
+                        unlink($dir . DIRECTORY_SEPARATOR . $content);
+                    }
+                }
+            }
+            reset($contents);
+            rmdir($dir);
+        }
+    }
 }
 
 $action = $_GET['a'] ?? 'index';
 $installer = new Box_Installer();
-$installer->run($action);
+
+// Don't attempt to run the installer if we're not in a web environment. This is to prevent the installer from running when using prepare.php to prepare the environment for testing.
+if (!Environment::isCLI()) {
+    $installer->run($action);
+}

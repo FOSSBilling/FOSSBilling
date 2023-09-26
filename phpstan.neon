@@ -5,10 +5,11 @@ parameters:
 	level: 1
 	paths:
 		- src
+	bootstrapFiles:
+		- src/load.php
 	excludePaths:
 		analyse:
 		- src/vendor
-		- src/library/Registrar/Adapter/srsx.php
 		- src/library/Box/Request.php
 		- src/library/Box/Response.php
 		- src/library/Model/Admin.php
@@ -17,7 +18,6 @@ parameters:
 		- src/library/Model/Product.php
 		- src/library/Server/Manager/Custom.php
 		- src/library/Server/Manager/Whm.php
-		- src/rector.php
 	ignoreErrors:
 		- '#^Function __trans not found\.$#'
 		- '#^Function __pluralTrans not found\.$#'

@@ -45,7 +45,6 @@ jobs:
           echo > ./src/data/log/license.log
           echo > ./src/data/log/application.log
           echo > ./src/data/log/php_error.log
-          rm -rf ./src/install
           mkdir /tmp/builds/ && tar -cvf /tmp/builds/build.tar ./
 
       - name: Upload Build Archive for Tests
@@ -62,7 +61,7 @@ jobs:
       matrix:
         php: [ 8.0 ]
 
-    name: PHPStan
+    name: PHP ${{ matrix.php }} - PHPStan
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -103,3 +102,5 @@ jobs:
           version: 9
           php_version: ${{ matrix.php }}
           configuration: phpunit.xml.dist
+        env:
+          APP_ENV: test

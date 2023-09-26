@@ -1,5 +1,4 @@
 <?php
-define('APPLICATION_ENV', 'testing');
 define('PATH_TESTS', dirname(__FILE__));
 require_once dirname(__FILE__) . '/../src/load.php';
 $config = include dirname(__FILE__) . '/../src/config.php';
