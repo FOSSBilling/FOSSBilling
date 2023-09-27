@@ -129,7 +129,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
     public function getEpp(Registrar_Domain $domain)
     {
         $this->getLog()->debug('Retrieving domain transfer code: ' . $domain->getName());
-        return true;
+        return '';
     }
 
     public function lock(Registrar_Domain $domain)

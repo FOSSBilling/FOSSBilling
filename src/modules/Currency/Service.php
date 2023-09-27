@@ -150,7 +150,7 @@ class Service implements InjectionAwareInterface
     /**
      * Returns a list of available currencies.
      *
-     * @return string List of currencies in the "[short code] - [name]" format
+     * @return array List of currencies in the "[short code] - [name]" format
      */
     public function getAvailableCurrencies()
     {

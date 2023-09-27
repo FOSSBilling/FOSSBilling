@@ -18,24 +18,18 @@ abstract class Payment_AdapterAbstract
     /**
      * Response text for notify_url
      * This value is set after IPN is received and validated
-     *
-     * @var string
      */
-    protected $output = NULL;
+    protected ?string $output = NULL;
 
     /**
      * Are we in test mode?
-     *
-     * @var boolean
      */
-    public $testMode = false;
+    public bool $testMode = false;
 
     /**
      * Log object
-     *
-     * @var Box_Log
      */
-    private $_log = false;
+    private ?Box_Log $_log = null;
 
     // Stub function that can be overridden by a registrar
     public function init()
@@ -152,11 +146,9 @@ abstract class Payment_AdapterAbstract
     }
 
     /**
-     * Gets a new HttpClient object.
-     *
-     * @return Symfony\Component\HttpClient\HttpClient The HttpClient object.
+     * Creates and returns an interface for the Symfony HTTP client.
      */
-    public function getHttpClient()
+    public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
         return \Symfony\Component\HttpClient\HttpClient::create();
     }

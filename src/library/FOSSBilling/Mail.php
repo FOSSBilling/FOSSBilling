@@ -144,11 +144,10 @@ class Mail implements InjectionAwareInterface
      * Sends the email that was created and configured when the class was constructed
      *
      * @param array|null $options An optional array of options specific to the chosen transport method.
+     * 
      * @throws \Box_Exception If the transport method is unknown or if required options for the selected transport aren't defined
-     *
-     * @return void
      */
-    public function send(array|null $options = null)
+    public function send(array|null $options = null): void
     {
         switch ($this->transport) {
             case 'sendmail':
@@ -183,7 +182,6 @@ class Mail implements InjectionAwareInterface
         } catch (TransportExceptionInterface $e) {
             throw new \Box_Exception("Failed to send email via :transport with the exception :e", [':transport' => $this->transport, ':e' => $e]);
         }
-        return true;
     }
 
     /**

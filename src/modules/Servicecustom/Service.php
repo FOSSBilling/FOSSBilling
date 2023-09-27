@@ -50,7 +50,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @return void
+     * @return \Model_ServiceCustom
      */
     public function action_create(\Model_ClientOrder $order)
     {

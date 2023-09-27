@@ -2,7 +2,7 @@ includes:
 	- phpstan-baseline.neon
 
 parameters:
-	level: 2
+	level: 3
 	paths:
 		- src
 	bootstrapFiles:
@@ -30,7 +30,6 @@ parameters:
 		  path: src/modules/Custompages/Controller/Client.php
 		- message: '#^Variable \$ext_id on left side of \?\?\= is never defined\.$#'
 		  path: src/modules/Extension/Service.php
-		- '#^Call to an undefined method Symfony\\Component\\HttpClient\\HttpClient\:\:withOptions\(\)\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$updated_at\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$pass\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$username\.$#'

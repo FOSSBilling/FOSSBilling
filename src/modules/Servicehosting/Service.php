@@ -59,7 +59,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      *
-     * @return void
+     * @return \Model_ServiceHosting
      */
     public function action_create(\Model_ClientOrder $order)
     {

@@ -329,8 +329,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account username on server.
-     *
-     * @param Server_Account $new - new account username
      */
     public function changeAccountUsername(Server_Account $a, $new)
     {
@@ -339,8 +337,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account domain on server.
-     *
-     * @param Server_Account $new - new domain name
      */
     public function changeAccountDomain(Server_Account $a, $new)
     {
@@ -349,8 +345,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account password on server.
-     *
-     * @param Server_Account $new - new password
      */
     public function changeAccountPassword(Server_Account $a, $new)
     {
@@ -378,8 +372,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account IP on server.
-     *
-     * @param Server_Account $new - account IP
      */
     public function changeAccountIp(Server_Account $a, $new)
     {
