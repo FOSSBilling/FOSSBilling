@@ -8,10 +8,10 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
-use FOSSBilling\Environment;
 
 const PATH_ROOT = __DIR__;
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';

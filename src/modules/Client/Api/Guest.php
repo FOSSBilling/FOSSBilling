@@ -207,7 +207,6 @@ class Guest extends \Api_Abstract
         return true;
     }
 
-
     public function update_password($data)
     {
         $required = [
