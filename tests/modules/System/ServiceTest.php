@@ -35,16 +35,19 @@ class ServiceTest extends \BBTestCase {
             'signature'         =>   NULL,
             'logo_url'          =>   NULL,
             'logo_url_dark'     =>   NULL,
+            'favicon_url'       =>   NULL,
             'address_1'         =>   NULL,
             'address_2'         =>   NULL,
             'address_3'         =>   NULL,
             'account_number'    =>   NULL,
+            'bank_name'         =>   NULL,
+            'bank_clearing_code'         =>   NULL,
+            'display_bank_info'        =>   NULL,
             'number'            =>   NULL,
             'note'              =>   NULL,
             'privacy_policy'    =>   NULL,
             'tos'               =>   NULL,
             'vat_number'        =>   NULL,
-            'favicon_url'       =>   NULL,
         );
 
         $multParamsResults = array(
