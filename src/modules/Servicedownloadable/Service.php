@@ -10,8 +10,8 @@
 
 namespace Box\Mod\Servicedownloadable;
 
-use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Environment;
+use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
