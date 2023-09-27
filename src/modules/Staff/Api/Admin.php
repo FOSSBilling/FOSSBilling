@@ -199,7 +199,7 @@ class Admin extends \Api_Abstract
     /**
      * Return pairs of staff member groups.
      *
-     * @return type
+     * @return array
      */
     public function group_get_pairs($data)
     {
@@ -324,8 +324,6 @@ class Admin extends \Api_Abstract
      * Get details of login history event.
      *
      * @return array
-     *
-     * @throws ErrorException
      */
     public function login_history_get($data)
     {
@@ -343,8 +341,6 @@ class Admin extends \Api_Abstract
      * Delete login history event.
      *
      * @return bool
-     *
-     * @throws ErrorException
      */
     public function login_history_delete($data)
     {

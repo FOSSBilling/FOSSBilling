@@ -264,10 +264,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         return $form;
     }
 
-    /**
-     * @param string $txn_id
-     */
-    public function isIpnDuplicate(array $ipn)
+    public function isIpnDuplicate(array $ipn): bool
     {
         $sql = 'SELECT id
                 FROM transaction

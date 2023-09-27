@@ -155,7 +155,7 @@ Order our services at {{ "order"|link }}
 
         $this->getService()->sendMessage($model, $client_id);
 
-        $this->di['logger']->info('Sent test mail message #%s to client ', $model->id);
+        $this->di['logger']->info('Sent test mail message #%s to client ', $model->id); // @phpstan-ignore-line
 
         return true;
     }
@@ -186,13 +186,13 @@ Order our services at {{ "order"|link }}
                 'handler' => 'sendMail',
                 'max' => $max,
                 'interval' => $interval,
-                'params' => ['msg_id' => $model->id, 'client_id' => $c['id']],
+                'params' => ['msg_id' => $model->id, 'client_id' => $c['id']], // @phpstan-ignore-line
             ];
             $this->di['api_admin']->queue_message_add($d);
         }
 
-        $model->status = 'sent';
-        $model->sent_at = date('Y-m-d H:i:s');
+        $model->status = 'sent'; // @phpstan-ignore-line
+        $model->sent_at = date('Y-m-d H:i:s'); // @phpstan-ignore-line
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Added mass mail messages #%s to queue', $id);

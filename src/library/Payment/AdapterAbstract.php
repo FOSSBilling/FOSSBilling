@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,9 +11,9 @@
 
 abstract class Payment_AdapterAbstract
 {
-    public const TYPE_HTML         	= 'html';
-    public const TYPE_FORM         	= 'form';
-    public const TYPE_API          	= 'api';
+    public const TYPE_HTML             = 'html';
+    public const TYPE_FORM             = 'form';
+    public const TYPE_API              = 'api';
 
     /**
      * Response text for notify_url
@@ -36,6 +37,11 @@ abstract class Payment_AdapterAbstract
      */
     private $_log = false;
 
+    // Stub function that can be overridden by a registrar
+    public function init()
+    {
+    }
+
     /**
      * Constructs a new Payment_Adapter object
      *
@@ -48,14 +54,14 @@ abstract class Payment_AdapterAbstract
         /**
          * Redirect client after successful payment, usually to invoice
          */
-        if(!$this->getParam('return_url')) {
+        if (!$this->getParam('return_url')) {
             throw new Payment_Exception('Return URL for payment gateway was not set', array(), 6001);
         }
 
         /**
          * URL to redirect client if payment process was canceled
          */
-        if(!$this->getParam('cancel_url')) {
+        if (!$this->getParam('cancel_url')) {
             throw new Payment_Exception('Cancel URL for payment gateway was not set', array(), 6002);
         }
 
@@ -63,7 +69,7 @@ abstract class Payment_AdapterAbstract
          * IPN notification url. Payment gateway posts data to this URL
          * to inform FOSSBilling about payment
          */
-        if(!$this->getParam('notify_url')) {
+        if (!$this->getParam('notify_url')) {
             throw new Payment_Exception('IPN Notification URL for payment gateway was not set', array(), 6003);
         }
 
@@ -73,18 +79,18 @@ abstract class Payment_AdapterAbstract
          * Client gets redirected to redirect_url, POST, GET data are considered
          * as IPN data, and client gets redirected to invoice page.
          */
-        if(!$this->getParam('redirect_url')) {
+        if (!$this->getParam('redirect_url')) {
             throw new Payment_Exception('IPN redirect URL for payment gateway was not set', array(), 6004);
         }
 
         $this->init();
     }
 
-	/**
-	 * Return gateway configuration options
-	 *
-	 * @return array
-	*/
+    /**
+     * Return gateway configuration options
+     *
+     * @return array
+     */
     public static function getConfig()
     {
         throw new Payment_Exception('Payment adapter class did not implement configuration options method', array(), 749);
@@ -107,7 +113,7 @@ abstract class Payment_AdapterAbstract
      */
     public function getServiceUrl()
     {
-		return '';
+        return '';
     }
 
     /**
@@ -139,7 +145,7 @@ abstract class Payment_AdapterAbstract
     public function getLog()
     {
         $log = $this->_log;
-        if(!$log instanceof Box_Log) {
+        if (!$log instanceof Box_Log) {
             $log = new Box_Log();
         }
         return $log;
@@ -170,9 +176,9 @@ abstract class Payment_AdapterAbstract
     /**
      * Convert money amount to Gateway money format
      *
-     * @param float The amount
+     * @param float $amount The amount
      *
-     * @param string The currency (unused currently)
+     * @param string $currency The currency (unused currently)
      *
      * @return string The formatted money string
      */
@@ -182,19 +188,17 @@ abstract class Payment_AdapterAbstract
     }
 
     /**
-     * Set test mode
-     *
-     * @param none
+     * Toggles test mode
      *
      * @return Payment_AdapterAbstract
      */
-    public function setTestMode($bool)
+    public function setTestMode(bool $bool)
     {
         $this->testMode = (bool)$bool;
         return $this;
     }
 
-    public function getTestMode()
+    public function getTestMode(): bool
     {
         return $this->testMode;
     }
@@ -202,19 +206,14 @@ abstract class Payment_AdapterAbstract
     /**
      * Set custom response text to be printed when IPN is received
      * Used only by payment gateways who care about notify_url response
-     *
-     * @param string
-     *
-     * @param string $response
      */
-    public function setOutput($response)
+    public function setOutput(string $response): void
     {
         $this->output = $response;
     }
 
-    public function getOutput()
+    public function getOutput(): string
     {
         return $this->output;
     }
-
 }

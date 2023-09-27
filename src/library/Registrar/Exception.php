@@ -13,10 +13,9 @@ class Registrar_Exception extends Box_Exception
     /**
      * Creates a new translated exception, using the Box_Exception class.
      *
-     * @param   string   error message
-     * @param   array|null    translation variables
-     * @param   int 	 The exception code.
-     * @param 	bool 	 If the variables in this should be considered protect, if so, disable stacktracing abilities.
+	 * @param string $message error message
+	 * @param array|null $variables translation variables
+	 * @param int $code The exception code.
      */
     public function __construct(string $message, array $variables = NULL, int $code = 0)
     {

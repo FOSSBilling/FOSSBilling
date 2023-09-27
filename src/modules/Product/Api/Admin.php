@@ -51,7 +51,7 @@ class Admin extends \Api_Abstract
     /**
      * Get product details.
      *
-     * @return type
+     * @return array
      */
     public function get($data)
     {

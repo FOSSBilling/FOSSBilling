@@ -255,7 +255,7 @@ class Guest extends \Api_Abstract
      * Check if given vat number is valid EU country VAT number
      * This method uses http://isvat.appspot.com/ method to validate VAT.
      *
-     * @return bool- true if VAT is valid, false if not
+     * @return bool true if VAT is valid, false if not
      */
     public function is_vat($data)
     {

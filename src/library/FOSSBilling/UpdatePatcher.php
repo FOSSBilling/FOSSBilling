@@ -178,7 +178,7 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Set the current patch level of FOSSBilling.
      *
-     * @param int
+     * @param int $patchLevel The last executed patch level
      *
      * @return void
      */

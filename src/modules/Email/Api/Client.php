@@ -52,7 +52,6 @@ class Client extends \Api_Abstract
      * @return array
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function get($data)
     {
@@ -73,10 +72,9 @@ class Client extends \Api_Abstract
     /**
      * Resend email to client once again.
      *
-     * @return type
+     * @return bool
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function resend($data)
     {
@@ -96,10 +94,9 @@ class Client extends \Api_Abstract
     /**
      * Remove email from system.
      *
-     * @return type
+     * @return bool
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function delete($data)
     {

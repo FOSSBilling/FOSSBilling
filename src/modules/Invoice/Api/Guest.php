@@ -95,7 +95,6 @@ class Guest extends \Api_Abstract
      * @return array
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function payment($data)
     {
