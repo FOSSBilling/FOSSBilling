@@ -168,6 +168,7 @@ class Service
             'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars($results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
             'bank_clearing_code' => isset($results['company_bank_clearing_code']) ? htmlspecialchars($results['company_bank_clearing_code'], ENT_QUOTES, 'UTF-8') : null,
             'display_bank_info' => $results['company_display_bank_info'] ?? null,
+            'bank_info_pagebottom' => $results['company_bank_info_pagebottom'] ?? null,
             'number' => isset($results['company_number']) ? htmlspecialchars($results['company_number'], ENT_QUOTES, 'UTF-8') : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,

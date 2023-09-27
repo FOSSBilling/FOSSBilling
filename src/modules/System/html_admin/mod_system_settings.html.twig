@@ -125,7 +125,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Display Bank Account information on Documents?'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Display bank account information on documents?'|trans }}</label>
                                 <div class="col-md-6">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_yes" value="1" {% if params.company_display_bank_info == "1" %}checked{% endif %}>
@@ -134,6 +134,19 @@
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_no" value="0" {% if params.company_display_bank_info == "0" %}checked{% endif %}>
                                         <label class="form-check-label" for="display_bank_info_no">{{ 'No'|trans }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Display bank account information on the bottom of every page?'|trans }}</label>
+                                <div class="col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_bank_info_pagebottom" id="company_bank_info_pagebottom_yes" value="1" {% if params.company_bank_info_pagebottom == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="company_bank_info_pagebottom_yes">{{ 'Yes'|trans }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_bank_info_pagebottom" id="company_bank_info_pagebottom_no" value="0" {% if params.company_bank_info_pagebottom == "0" %}checked{% endif %}>
+                                        <label class="form-check-label" for="company_bank_info_pagebottom_no">{{ 'No'|trans }}</label>
                                     </div>
                                 </div>
                             </div>
