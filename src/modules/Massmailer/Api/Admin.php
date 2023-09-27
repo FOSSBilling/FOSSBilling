@@ -146,6 +146,7 @@ Order our services at {{ "order"|link }}
      */
     public function send_test($data)
     {
+        /** @var \Model_MassmailerMessage $model */
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
 
@@ -155,7 +156,7 @@ Order our services at {{ "order"|link }}
 
         $this->getService()->sendMessage($model, $client_id);
 
-        $this->di['logger']->info('Sent test mail message #%s to client ', $model->id); // @phpstan-ignore-line
+        $this->di['logger']->info('Sent test mail message #%s to client ', $model->id);
 
         return true;
     }
@@ -167,6 +168,7 @@ Order our services at {{ "order"|link }}
      */
     public function send($data)
     {
+        /** @var \Model_MassmailerMessage $model */
         $model = $this->_getMessage($data);
 
         if (empty($model->content)) {
@@ -186,13 +188,13 @@ Order our services at {{ "order"|link }}
                 'handler' => 'sendMail',
                 'max' => $max,
                 'interval' => $interval,
-                'params' => ['msg_id' => $model->id, 'client_id' => $c['id']], // @phpstan-ignore-line
+                'params' => ['msg_id' => $model->id, 'client_id' => $c['id']],
             ];
             $this->di['api_admin']->queue_message_add($d);
         }
 
-        $model->status = 'sent'; // @phpstan-ignore-line
-        $model->sent_at = date('Y-m-d H:i:s'); // @phpstan-ignore-line
+        $model->status = 'sent';
+        $model->sent_at = date('Y-m-d H:i:s');
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Added mass mail messages #%s to queue', $id);

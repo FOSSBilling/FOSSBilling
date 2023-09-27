@@ -341,6 +341,7 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processTransaction($id)
     {
+        /** @var \Model_Transaction $tx */
         $tx = $this->di['db']->load('Transaction', $id);
         if (!$tx) {
             throw new \Box_Exception('Transaction :id not found.', ['id' => $id], 404);
@@ -361,7 +362,7 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \Box_Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'processTransaction'], 705);
         }
 
-        $ipn = json_decode($tx->ipn, 1); // @phpstan-ignore-line
+        $ipn = json_decode($tx->ipn, 1);
 
         return $adapter->processTransaction($this->di['api_system'], $id, $ipn, $tx->gateway_id);
     }
