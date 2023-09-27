@@ -138,13 +138,15 @@ class Fingerprint
          * 
          * In the event that less that 70% of the possible values are in the fingerprint, we use the percentage off we are to calculate a higher percentage before failure.
          * For example:
-         *  If, if we have 13 possible fingerprint properties and only 9 are available, that's only 69% of the possible properties and the failure threshold will be calculated as follows.
+         *  If we have 13 possible fingerprint properties and only 9 are available, that's only 69% of the possible properties and the failure threshold will be calculated as follows.
          *  Negative weight: (1 - 0.69) / 1.25 = `0.24`
          *  Failure threshold: 0.5 + 0.24 = `0.74`
          *  
          *  So in this example, the percentage wrong needs to be at or above 74% (nearly 75%) before the session is declared invalid.
          *  If there's only 6 of 13 available that moves to 93% and at 5 of 13 it's 99%.
          *  By doing this, we can effectively give additional headroom in situations where we are less-confident than we'd like to be and effectively completely disable the check in a worst-case situation.
+         *  
+         *  Keep in mind, this method does not prevent changes such as the OS or browser from invalidating a session as those are weighted so heavily to always be considered more than 100% wrong.
          *  
          */
         $percentOfOverallItems = $itemCount / count($this->fingerprintProperties);
