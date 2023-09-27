@@ -292,8 +292,13 @@
 </div>
 
 {% if settings.footer_enabled %}
-<footer id="footer" class="container">
-    <p>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}</p>
+<footer id="footer" class="container" >
+    <p>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}
+    {% if company.bank_info_pagebottom == 1 %}
+    <br >
+            <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}
+    {% endif %}
+    </p>
     <ul>
         {% if settings.footer_link_1_enabled %}
         <li>

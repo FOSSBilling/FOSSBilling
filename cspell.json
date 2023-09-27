@@ -355,7 +355,9 @@
         "TINYINT",
         "hostings",
         "rulesets",
-        "pwreset"
+        "pwreset",
+        "pagebottom",
+        "forceable",
 
     ],
     "ignorePaths": [
