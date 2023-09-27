@@ -102,7 +102,7 @@
                     </div>
                 </div>
                 <div class="mb-3 row">
-                    <label class="col-md-3 col-form-label">{{ 'Access Invoices without authentication'|trans }}</label>
+                    <label class="col-md-3 col-form-label">{{ 'Allow access to invoices without authentication'|trans }}</label>
                     <div class="col-md-6">
                         <div class="form-check">
                             <input class="form-check-input" id="radioYes" type="radio" name="invoice_accessible_from_hash" value="1"{% if params.invoice_accessible_from_hash == "1" %} checked{% endif %}>
@@ -113,6 +113,7 @@
                             <label class="form-check-label" for="radioNo">{{ 'No'|trans }}</label>
                         </div>
                     </div>
+                    <p> If enabled, invoices can be accessed by anyone who knows the invoice hash, although it's quite a long hash and would not be brute-forceable.</p>
                 </div>
             </div>
             <div class="card-body">
