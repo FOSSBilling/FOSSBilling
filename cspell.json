@@ -357,6 +357,7 @@
         "rulesets",
         "pwreset",
         "pagebottom",
+        "forceable",
 
     ],
     "ignorePaths": [
