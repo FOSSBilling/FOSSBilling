@@ -133,7 +133,6 @@ class Server_Manager_Plesk extends Server_Manager
     public function suspendAccount(Server_Account $a, $suspend = true)
     {
     	if ($a->getReseller()) {
-            // @phpstan-ignore-next-line (This error is valid, however I don't have access to a plesk Instance to valudate if this request should just be made under `customer`)
             $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['status' => 16]);
     	} else {
             $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['status' => 16]);
@@ -145,7 +144,6 @@ class Server_Manager_Plesk extends Server_Manager
     public function unsuspendAccount(Server_Account $a)
     {
     	if ($a->getReseller()) {
-            // @phpstan-ignore-next-line (This error is valid, however I don't have access to a plesk Instance to valudate if this request should just be made under `customer`)
             $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['status' => 0]);
     	} else {
             $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['status' => 0]);
@@ -191,7 +189,6 @@ class Server_Manager_Plesk extends Server_Manager
     	$this->getLog()->info('Changing password for account ' . $a->getUsername());
 
     	if ($a->getReseller()) {
-            // @phpstan-ignore-next-line (This error is valid, however I don't have access to a plesk Instance to valudate if this request should just be made under `customer`)
             $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['passwd' => $a->getPassword()]);
     	} else {
             $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['passwd' => $a->getPassword()]);
@@ -275,7 +272,6 @@ class Server_Manager_Plesk extends Server_Manager
 
    		$ns = array();
 
-        // @phpstan-ignore-next-line
    		foreach ($response->dns->get_rec->result as $dns) {
    			if ($dns->data->type == 'NS') {
    				$ns[] = (string)$dns->id;
@@ -302,7 +298,6 @@ class Server_Manager_Plesk extends Server_Manager
         $client = $a->getClient();
 
         if ($a->getReseller()) {
-            // @phpstan-ignore-next-line (This error is valid, however I don't have access to a plesk Instance to valudate if this request should just be made under `customer`)
     		$result = $this->_client->reseller()->setProperties('login', $a->getUsername(), $this->_createClientProps($a));
     	} else {
     		$result = $this->_client->customer()->setProperties('login', $a->getUsername(), $this->_createClientProps($a));

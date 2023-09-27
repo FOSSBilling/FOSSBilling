@@ -1,6 +1,16 @@
 parameters:
 	ignoreErrors:
 		-
+			message: "#^Call to an undefined method Monolog\\\\Handler\\\\HandlerInterface\\:\\:setFormatter\\(\\)\\.$#"
+			count: 1
+			path: src/library/FOSSBilling/Monolog.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$DomainGetRegistrarLockResult\\.$#"
+			count: 2
+			path: src/library/Registrar/Adapter/Namecheap.php
+
+		-
 			message: "#^Method Registrar_Adapter_Resellerclub\\:\\:_makeRequest\\(\\) should return string but returns array\\.$#"
 			count: 1
 			path: src/library/Registrar/Adapter/Resellerclub.php
@@ -129,6 +139,16 @@ parameters:
 			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailLists\\(\\)\\.$#"
 			count: 2
 			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Access to an undefined property PleskX\\\\Api\\\\Struct\\\\Dns\\\\Info\\:\\:\\$dns\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Call to an undefined method PleskX\\\\Api\\\\Operator\\\\Reseller\\:\\:setProperties\\(\\)\\.$#"
+			count: 4
+			path: src/library/Server/Manager/Plesk.php
 
 		-
 			message: "#^Call to an undefined method Server_Package\\:\\:getHasAnonymousFtp\\(\\)\\.$#"

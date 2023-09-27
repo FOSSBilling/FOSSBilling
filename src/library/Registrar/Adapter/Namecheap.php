@@ -682,7 +682,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             $placeholders = ['action' => __trans('set the domain lock status'), 'type' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
-        if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') { // @phpstan-ignore-line
+        if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
             $domain->setLocked('true');
             return True;
         }
@@ -710,7 +710,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             $placeholders = ['action' => __trans('set the domain lock status'), 'type' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
-        if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') { // @phpstan-ignore-line
+        if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
             $domain->setLocked('false');
             return True;
         }

@@ -22,7 +22,7 @@ class Box_BeanHelper extends \RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper imple
         return $this->di;
     }
 
-    /** @phpstan-ignore-next-line */
+    /** @phpstan-ignore-next-line (No matter what I put for the return type of this function, PHPStan is unhappy) */
     public function getModelForBean(\RedBeanPHP\OODBBean $bean): ?object 
     {
         $prefix    = '\\Model_';

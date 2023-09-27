@@ -51,7 +51,7 @@ class Monolog implements InjectionAwareInterface
             $this->logger[$channel]->pushHandler($stream);
 
             $formatter = new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true);
-            $this->logger[$channel]->getHandlers()[0]->setFormatter($formatter); // @phpstan-ignore-line
+            $this->logger[$channel]->getHandlers()[0]->setFormatter($formatter);
         }
     }
 
