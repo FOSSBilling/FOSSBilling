@@ -75,10 +75,10 @@ class ServiceTransactionTest extends \BBTestCase
         $this->service->setDi($di);
 
         $data   = array(
-            'invoice_id'   => '',
-            'txn_id'       => '',
+            'invoice_id'   => 1,
+            'txn_id'       => 2,
             'txn_status'   => '',
-            'gateway_id'   => '',
+            'gateway_id'   => 1,
             'amount'       => '',
             'currency'     => '',
             'type'         => '',
@@ -232,13 +232,12 @@ class ServiceTransactionTest extends \BBTestCase
             'note'         => null,
             'created_at'   => null,
             'updated_at'   => null,
-            'ipn'          => null,
         );
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
         $transactionModel->gateway_id = 1;
 
-        $result = $this->service->toApiArray($transactionModel, true);
+        $result = $this->service->toApiArray($transactionModel, false);
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
