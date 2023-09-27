@@ -15,44 +15,46 @@
 
 {% block content %}
 <div class="row">
-    <div class="card ml-0 ml-md-3 w-100">
-        <div class="card-header">
-            <h1>{{ article.title }}</h1>
-            <p>{{ 'Article views'|trans }}: {{ article.views }}</p>
-        </div>
-        <div class="card-body">
-            <div class="list-group ml-2">
-                {{ article.content|markdown }}
-            </div>
-        </div>
-
-        <div class="card-footer">
-            <a class="btn btn-primary" href="{{ 'kb'|link }}">{{ 'Back to list'|trans }}</a>
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#similar" aria-expanded="false" aria-controls="collapseExample">
-                {{ 'Similar articles'|trans }}
-            </button>
-
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#categories" aria-expanded="false" aria-controls="collapseExample">
-                {{ 'Knowledge base categories'|trans }}
-            </button>
-              
-            <div class="collapse" id="similar">
-                <div class="card card-body">
-                    {% for i, kbarticle in guest.kb_article_get_list({ "kb_article_category_id": article.kb_article_category_id, "per_page": 5 }).list %}
-                        <li>
-                            <a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ kbarticle.slug }}">{{ kbarticle.title|truncate(45) }}</a>
-                        </li>
-                    {% endfor %}
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header py-3 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-1">{{ article.title }}</h5>
+                        <span class="small text-muted">{{ article.views }} {{ 'views'|trans }}</span>
                 </div>
             </div>
+            <div class="card-body">
+                <div class="list-group ml-2">
+                    {{ article.content|markdown }}
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#similar" aria-expanded="false" aria-controls="collapseExample">
+                    {{ 'Similar articles'|trans }}
+                </button>
 
-            <div class="collapse" id="categories">
-                <div class="card card-body">
-                    {% for i, category in guest.kb_category_get_list({ "per_page": 5 }).list %}
-                        <li>
-                            <a href="{{ '/kb'|link }}#category-{{ category.id }}">{{ category.title }}</a>
-                        </li>
-                    {% endfor %}
+                <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#categories" aria-expanded="false" aria-controls="collapseExample">
+                    {{ 'Knowledge base categories'|trans }}
+                </button>
+
+                <div class="collapse" id="similar">
+                    <div class="card card-body">
+                        {% for i, kbarticle in guest.kb_article_get_list({ "kb_article_category_id": article.kb_article_category_id, "per_page": 5 }).list %}
+                            <li>
+                                <a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ kbarticle.slug }}">{{ kbarticle.title|truncate(45) }}</a>
+                            </li>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="collapse" id="categories">
+                    <div class="card card-body">
+                        {% for i, category in guest.kb_category_get_list({ "per_page": 5 }).list %}
+                            <li>
+                                <a href="{{ '/kb'|link }}#category-{{ category.id }}">{{ category.title }}</a>
+                            </li>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
