@@ -141,9 +141,9 @@
                                     <dd>{{seller.bank_name}}</dd>
                                     {% endif %}
 
-                                    {% if seller.bank_clearing_code %}
-                                    <dt>{{ 'Clearing Code'|trans }}:</dt>
-                                    <dd>{{seller.bank_clearing_code}}</dd>
+                                    {% if seller.bic %}
+                                    <dt>{{ 'BIC / SWIFT Code'|trans }}:</dt>
+                                    <dd>{{seller.bic}}</dd>
                                     {% endif %}
 
                                     {% if seller.account_number %}

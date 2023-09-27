@@ -92,7 +92,7 @@
 		<div class='InvoiceFooter'>
 		{% if footer.display_bank_info == 1 %}
 			<b>Payment details:</b><br >
-			<b>{{"Account Owner"|trans}}:</b> {{ footer.company_name }} | <b>{{"Bank"|trans}}:</b> {{ footer.bank_name }} | <b>{{"Clearing code"|trans}}:</b> {{ footer.bank_clearing_code }} | <b>{{"Account number"|trans}}:</b> {{ footer.account_number }}<br><br>
+			<b>{{"Account Owner"|trans}}:</b> {{ footer.company_name }} | <b>{{"Bank"|trans}}:</b> {{ footer.bank_name }} | <b>{{"BIC / SWIFT Code"|trans}}:</b> {{ footer.bic }} | <b>{{"Account number"|trans}}:</b> {{ footer.account_number }}<br><br>
 		{% endif %}
 		<b>{{ footer.company_name }}</b> {{ footer.address_1 }}, {{ footer.address_2 }}, {{ footer.address_3 }} <br ><b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>{{ 'Phone'|trans }}:</b> {{ footer.phone }}<br>
 		<b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | <b>{{ 'Company Reg. No'|trans }}:</b> {{ footer.company_number }} | <b>{{ 'Web'|trans }}: </b>{{ footer.www }}

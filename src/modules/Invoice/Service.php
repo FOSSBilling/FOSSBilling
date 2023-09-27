@@ -220,7 +220,7 @@ class Service implements InjectionAwareInterface
             'email' => !empty($row['seller_email']) ? $row['seller_email'] : $c['email'],
             'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
             'bank_name' => !empty($c['bank_name']) ? $c['bank_name'] : null,
-            'bank_clearing_code' => !empty($c['bank_clearing_code']) ? $c['bank_clearing_code'] : null,
+            'bic' => !empty($c['bic']) ? $c['bic'] : null,
         ];
 
         /**
@@ -1541,7 +1541,7 @@ class Service implements InjectionAwareInterface
             'company_name' => $company['name'],
             'bank_name' => $company['bank_name'],
             'account_number' => $company['account_number'],
-            'bank_clearing_code' => $company['bank_clearing_code'],
+            'bic' => $company['bic'],
             'display_bank_info' => $company['display_bank_info'],
             'company_vat' => $company['vat_number'],
             'company_number' => $company['number'],

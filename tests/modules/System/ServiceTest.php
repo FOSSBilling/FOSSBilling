@@ -42,7 +42,7 @@ class ServiceTest extends \BBTestCase
             'address_3'             =>   NULL,
             'account_number'        =>   NULL,
             'bank_name'             =>   NULL,
-            'bank_clearing_code'    =>   NULL,
+            'bic'    =>   NULL,
             'display_bank_info'     =>   NULL,
             'bank_info_pagebottom'  =>   NULL,
             'number'                =>   NULL,
