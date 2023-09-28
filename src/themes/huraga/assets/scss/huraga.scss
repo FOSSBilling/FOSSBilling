@@ -87,7 +87,7 @@ label:has(+ textarea[required])::after{
 }
 
 
-// Tomselect dropdown
+// TomSelect dropdown
 .ts-input {
     color: inherit;
 }
@@ -129,5 +129,13 @@ label:has(+ textarea[required])::after{
 @media (max-width: 768px) {
     .ts-wrapper.js-language-selector {
         width: 180px
+    }
+}
+
+.invoice-gateway {
+    border: 1px $border-color solid;
+
+    &:hover {
+        border: 1px $primary solid;
     }
 }
