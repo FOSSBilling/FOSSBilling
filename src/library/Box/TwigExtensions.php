@@ -17,7 +17,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 {
     protected ?\Pimple\Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(?\Pimple\Container $di): void
     {
         $this->di = $di;
     }

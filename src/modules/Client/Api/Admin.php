@@ -531,9 +531,6 @@ class Admin extends \Api_Abstract
      *
      * @optional string $title - new group title
      *
-     * @return bool
-     *
-     * @throws ErrorException
      */
     public function group_update($data)
     {
@@ -556,7 +553,6 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws ErrorException
      */
     public function group_delete($data)
     {
@@ -581,7 +577,6 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws ErrorException
      */
     public function group_get($data)
     {

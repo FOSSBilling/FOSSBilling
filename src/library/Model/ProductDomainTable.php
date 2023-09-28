@@ -33,12 +33,12 @@ class Model_ProductDomainTable extends Model_ProductTable
     /**
      * Determine discount for items in cart (Hosting and related domain discount)
      * @param array $items Array of cart products
-     * @param CartProduct $product current product in iteration
+     * @param Model_Product $product current product in iteration
      * @param array $config configurations specified in product config
      * @return number discount
      * 
      */
-    public function getRelatedDiscount(array $items, $product, array $config)
+    public function getRelatedDiscount(array $items, Model_Product $product, array $config)
     {
         /**For each cart product, 
          * Compare it with other items in the cart

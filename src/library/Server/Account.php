@@ -96,10 +96,7 @@ class Server_Account
         return $this;
     }
 
-    /**
-     * @return Server_package
-     */
-    public function getPackage()
+    public function getPackage(): Server_Package
     {
         return $this->package;
     }

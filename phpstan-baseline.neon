@@ -1,14 +1,184 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Call to an undefined method Payment_AdapterAbstract\\:\\:init\\(\\)\\.$#"
+			message: "#^Call to an undefined method Monolog\\\\Handler\\\\HandlerInterface\\:\\:setFormatter\\(\\)\\.$#"
 			count: 1
-			path: src/library/Payment/AdapterAbstract.php
+			path: src/library/FOSSBilling/Monolog.php
 
 		-
-			message: "#^Method Registrar_Adapter_Internetbs\\:\\:getDomainDetails\\(\\) should return Registrar_Domain but return statement is missing\\.$#"
+			message: "#^Access to an undefined property object\\:\\:\\$DomainGetRegistrarLockResult\\.$#"
+			count: 2
+			path: src/library/Registrar/Adapter/Namecheap.php
+
+		-
+			message: "#^Method Registrar_Adapter_Resellerclub\\:\\:_makeRequest\\(\\) should return string but returns array\\.$#"
 			count: 1
-			path: src/library/Registrar/Adapter/Internetbs.php
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Method Registrar_Adapter_Resellerclub\\:\\:addSubReseller\\(\\) should return stdClass but returns string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Method Registrar_Adapter_Resellerclub\\:\\:transferDomain\\(\\) should return bool but returns string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'actionstatus' does not exist on string\\.$#"
+			count: 3
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'admincontact' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'creationtime' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'currentstatus' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'domsecret' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'endtime' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'isprivacyprotected' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'recsonpage' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'result' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'status' does not exist on non\\-falsy\\-string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'status' does not exist on string\\.$#"
+			count: 6
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Offset 'version' does not exist on string\\.$#"
+			count: 1
+			path: src/library/Registrar/Adapter/Resellerclub.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasAnonymousFtp\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasCatchAll\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasCgi\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasCron\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasPhp\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasShell\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasSll\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasSpamFilter\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailAutoresponders\\(\\)\\.$#"
+			count: 2
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailForwarders\\(\\)\\.$#"
+			count: 2
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailLists\\(\\)\\.$#"
+			count: 2
+			path: src/library/Server/Manager/Directadmin.php
+
+		-
+			message: "#^Access to an undefined property PleskX\\\\Api\\\\Struct\\\\Dns\\\\Info\\:\\:\\$dns\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Call to an undefined method PleskX\\\\Api\\\\Operator\\\\Reseller\\:\\:setProperties\\(\\)\\.$#"
+			count: 4
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasAnonymousFtp\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasCron\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasShell\\(\\)\\.$#"
+			count: 2
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getHasSpamFilter\\(\\)\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailLists\\(\\)\\.$#"
+			count: 3
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Method Server_Manager_Plesk\\:\\:_createClient\\(\\) should return int but returns true\\.$#"
+			count: 1
+			path: src/library/Server/Manager/Plesk.php
 
 		-
 			message: "#^Method Server_Manager_Plesk\\:\\:changeAccountDomain\\(\\) should return bool but return statement is missing\\.$#"

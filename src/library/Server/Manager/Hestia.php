@@ -25,10 +25,8 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Return server manager parameters.
-     *
-     * @return type
      */
-    public static function getForm()
+    public static function getForm(): array
     {
         return [
             'label' => 'Hestia Control Panel',
@@ -207,7 +205,7 @@ class Server_Manager_Hestia extends Server_Manager
                 'arg1' => $a->getUsername(),
             ];
             $result3 = $this->_makeRequest($postvars3);
-            if(0 !== intval($result3)) {
+            if (0 !== intval($result3)) {
                 $placeholders = ['action1' => __trans('delete domain'), 'action2' => __trans('create domain'), 'type' => 'HestiaCP'];
                 throw new Server_Exception('Failed to :action1: on the :type: server after failed to :action2:, check the error logs for further details', $placeholders);
             }
@@ -331,8 +329,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account username on server.
-     *
-     * @param type $new - new account username
      */
     public function changeAccountUsername(Server_Account $a, $new)
     {
@@ -341,8 +337,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account domain on server.
-     *
-     * @param type $new - new domain name
      */
     public function changeAccountDomain(Server_Account $a, $new)
     {
@@ -351,8 +345,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account password on server.
-     *
-     * @param type $new - new password
      */
     public function changeAccountPassword(Server_Account $a, $new)
     {
@@ -380,8 +372,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account IP on server.
-     *
-     * @param type $new - account IP
      */
     public function changeAccountIp(Server_Account $a, $new)
     {

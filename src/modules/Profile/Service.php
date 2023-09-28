@@ -171,12 +171,6 @@ class Service implements InjectionAwareInterface
 
         $client->updated_at = date('Y-m-d H:i:s');
 
-        foreach ($client as $key => $value) {
-            if (empty($value)) {
-                $client->$key = null;
-            }
-        }
-
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientProfileUpdate', 'params' => ['id' => $client->id]]);

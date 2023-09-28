@@ -161,8 +161,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 }
                 $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
             }
-
-        } catch (\Stripe\Exception\CardException|\Stripe\Exception\InvalidRequestException|\Stripe\Exception\AuthenticationException|\Stripe\Exception\ApiConnectionException|\Stripe\Exception\ApiErrorException $e) {
+        } catch (\Stripe\Exception\CardException | \Stripe\Exception\InvalidRequestException | \Stripe\Exception\AuthenticationException | \Stripe\Exception\ApiConnectionException | \Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
             throw new \Box_Exception("There was an error when processing the transaction");
         }
@@ -178,10 +177,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($tx);
     }
 
-    /**
-     * @param string $url
-     */
-    protected function _generateForm(Model_Invoice $invoice)
+    protected function _generateForm(Model_Invoice $invoice): string
     {
         $intent = $this->stripe->paymentIntents->create([
             'amount' => $this->getAmountInCents($invoice),

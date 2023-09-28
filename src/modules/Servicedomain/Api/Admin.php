@@ -309,7 +309,7 @@ class Admin extends \Api_Abstract
     /**
      * Get available registrars for install.
      *
-     * @return type
+     * @return array
      */
     public function registrar_get_available($data)
     {

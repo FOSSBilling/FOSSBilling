@@ -39,7 +39,7 @@ class Client extends \Api_Abstract
     /**
      * Get invoice details.
      *
-     * @return type
+     * @return array
      *
      * @throws \Box_Exception
      */
@@ -96,7 +96,6 @@ class Client extends \Api_Abstract
      * @return string - invoice hash
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function renewal_invoice($data)
     {
@@ -179,7 +178,7 @@ class Client extends \Api_Abstract
      * @optional string $date_from - filter transactions by date
      * @optional string $date_to - filter transactions by date
      *
-     * @return type
+     * @return array
      */
     public function transaction_get_list($data)
     {
