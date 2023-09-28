@@ -102,13 +102,11 @@
                         <button class="btn btn-primary btn-sm" type="button" id="renewal-button">{{ 'Renew now'|trans }}</button>
                     {% endif %}
                     {% if upgradables %}
-                        <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#submit-upgrade-ticket">{{ 'Request Upgrade'|trans }}</button>
+                        <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
                     {% endif %}
-                    <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#submit-upgrade-ticket">{{ 'Request Upgrade'|trans }}</button>
-
-                    <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#submit-ticket">{{ 'Open ticket'|trans }}</button>
+                    <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open ticket'|trans }}</button>
                     {% if order.status == 'active' %}
-                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#submit-cancellation-ticket">{{ 'Request cancellation'|trans }}</button>
+                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request cancellation'|trans }}</button>
                     {% endif %}
                 </div>
             </div>
@@ -163,14 +161,14 @@
                 </div>
             {% endif %}
 
-            <div class="modal fade" id="submit-cancellation-ticket" tabindex="-1" role="dialog" aria-labelledby="cancel-modal" aria-hidden="true">
+            <div class="modal fade" id="cancel-request-modal" tabindex="-1" role="dialog" aria-labelledby="cancel-modal" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h1 class="modal-title fs-5">{{ 'Submit cancellation request'|trans }}</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form action="" method="post" id="ticket-submit" class="request-cancellation">
+                        <form action="" method="post" id="cancel-request-form" class="request-cancellation">
                             <div class="modal-body">
                                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                 <input type="hidden" name="rel_type" value="order">
@@ -197,14 +195,14 @@
                 </div>
             </div>
 
-            <div class="modal fade" id="submit-ticket" tabindex="-1" role="dialog" aria-labelledby="ticket-modal" aria-hidden="true">
+            <div class="modal fade" id="open-ticket-modal" tabindex="-1" role="dialog" aria-labelledby="ticket-modal" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h1 class="modal-title fs-5">{{ 'Submit new support ticket'|trans }}</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form action="" method="post" id="ticket-submit" class="open-ticket">
+                        <form action="" method="post" id="open-ticket-form" class="open-ticket">
                             <div class="modal-body">
                                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                 <input type="hidden" name="rel_type" value="order">
@@ -230,14 +228,14 @@
                 </div>
             </div>
 
-            <div class="modal fade" id="submit-upgrade-ticket" tabindex="-1" role="dialog" aria-labelledby="upgrade-modal" aria-hidden="true">
+            <div class="modal fade" id="upgrade-request-modal" tabindex="-1" role="dialog" aria-labelledby="upgrade-modal" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h1 class="modal-title fs-5">{{ 'Submit upgrade request'|trans }}</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form action="" method="post" id="ticket-submit" class="request-upgrade">
+                        <form action="" method="post" id="upgrade-request-form" class="request-upgrade">
                             <div class="modal-body">
                                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                 <input type="hidden" name="rel_type" value="order">
@@ -261,7 +259,7 @@
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">{{ 'Request'|trans }}</button>
+                                <button type="submit" class="btn btn-primary" id="open-ticket-submit">{{ 'Request'|trans }}</button>
                             </div>
                         </form>
                     </div>
@@ -274,68 +272,69 @@
 
 {% block js %}
 {% autoescape "js" %}
-<script>
-$(function() {
-    $('#renewal-button').on('click', function(e) {
-        e.preventDefault();
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", () => {
 
-        if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
-            bb.post(
-                'client/invoice/renewal_invoice',
-                { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
-                function(result) {
-                    bb.redirect("{{ 'invoice'|link }}" + '/' + result);
+            const cancelRequestForm = document.getElementById('cancel-request-form');
+            const upgradeRequestForm = document.getElementById('upgrade-request-form');
+            const openTicketForm = document.getElementById('open-ticket-form');
+
+            cancelRequestForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                API.client.post('support/ticket_create',
+                    new FormData(cancelRequestForm).serializeObject(),
+                    () => {
+                        FOSSBilling.message('Service cancellation request received');
+                        const cancelRequestModal = bootstrap.Modal.getInstance(document.getElementById('cancel-request-modal'))
+                        cancelRequestModal.hide();
+                    },
+                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error')
+                )
+            });
+
+            upgradeRequestForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                API.client.post('support/ticket_create',
+                    new FormData(upgradeRequestForm).serializeObject(),
+                    () => {
+                        FOSSBilling.message('Service upgrade request received');
+                        const upgradeRequestModal = bootstrap.Modal.getInstance(document.getElementById('upgrade-request-modal'))
+                        upgradeRequestModal.hide();
+                    },
+                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error')
+                )
+            });
+
+            openTicketForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                API.client.post('support/ticket_create',
+                    new FormData(openTicketForm).serializeObject(),
+                    () => {
+                        FOSSBilling.message('Ticket was submitted. If you want to track conversation please go to support section');
+                        let openTicketModal = bootstrap.Modal.getInstance(document.getElementById('open-ticket-modal'));
+                        openTicketModal.hide();
+                    },
+                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error')
+                )
+            });
+
+        });
+
+        $(function () {
+            $('#renewal-button').on('click', function (e) {
+                e.preventDefault();
+
+                if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
+                    bb.post(
+                        'client/invoice/renewal_invoice',
+                        {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
+                        function (result) {
+                            bb.redirect("{{ 'invoice'|link }}" + '/' + result);
+                        }
+                    );
                 }
-            );
-        }
-    });
-
-    $('.open-ticket').on('submit', function() {
-        $('.wait').show();
-
-        bb.post(
-            'client/support/ticket_create',
-            $(this).serialize(),
-            function(result) {
-                $('#submit-ticket').modal('hide')
-                bb.msg('Ticket was submitted. If you want to track conversation please go to support section');
-                $('.wait').hide();
-            }
-        );
-
-        return false;
-    });
-
-    $('.request-cancellation').on('submit', function() {
-        $('.wait').show();
-        bb.post(
-            'client/support/ticket_create',
-            $(this).serialize(),
-            function(result) {
-                $('#submit-cancellation-ticket').modal('hide')
-                bb.msg('Service cancellation request received');
-                $('.wait').hide();
-            }
-        );
-
-        return false;
-    });
-
-    $('.request-upgrade').on('submit', function() {
-        $('.wait').show();
-        bb.post(
-            'client/support/ticket_create',
-            $(this).serialize(),
-            function(result) {
-                $('#submit-upgrade-ticket').modal('hide')
-                bb.msg('Service upgrade request received');
-                $('.wait').hide();
-            }
-        );
-
-        return false;
-    });
-});
-</script>
+            });
+        });
+    </script>
 {% endautoescape %}
 {% endblock %}
