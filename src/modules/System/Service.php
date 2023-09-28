@@ -325,7 +325,9 @@ class Service
         } else {
             // attempt adding admin api to twig
             try {
-                $twig->addGlobal('admin', $this->di['api_admin']);
+                if($this->di['auth']->isAdminLoggedIn()){
+                    $twig->addGlobal('admin', $this->di['api_admin']);
+                }
             } catch (\Exception) {
                 // skip if admin is not logged in
             }
