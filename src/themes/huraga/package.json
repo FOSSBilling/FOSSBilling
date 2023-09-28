@@ -5,5 +5,8 @@
     "dev": "encore dev",
     "watch": "encore dev --watch",
     "build": "encore production --progress"
+  },
+  "dependencies": {
+    "inter-ui": "^3.19.3"
   }
 }

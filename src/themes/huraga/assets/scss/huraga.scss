@@ -1,5 +1,11 @@
+@use "~inter-ui/default" with (
+  $inter-font-display: swap,
+  $inter-font-path: 'Inter (web)',
+  $inter-font-path-suffix: ''
+);
+
 $primary: #005fc5;
-$font-family-sans-serif: 'Inter', sans-serif;
+$font-family-sans-serif: 'Inter', 'system-ui';
 $warning: #f59e0b;
 $danger: #dc2626;
 $light: #fff;
@@ -7,6 +13,7 @@ $light: #fff;
 $accordion-button-active-bg: rgba($primary, .05);
 $accordion-button-focus-border-color: rgba($primary, .08);
 
+@include default.all;
 @import "~bootstrap/scss/bootstrap";
 @import "~tom-select/dist/css/tom-select.bootstrap5.css";
 @import "flags";
