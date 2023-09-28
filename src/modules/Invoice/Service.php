@@ -376,8 +376,6 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $ctable = $this->di['mod_service']('Currency');
 
-
-
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->approved = true;
         $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
@@ -389,8 +387,6 @@ class Service implements InjectionAwareInterface
         $this->countIncome($invoice);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
-
-
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
@@ -1186,7 +1182,7 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
         $document_format = $systemService->getParamValue('invoice_document_format', 'Letter');
-        
+
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
         if (!$invoice instanceof \Model_Invoice) {
             throw new \Box_Exception('Invoice not found');
@@ -1201,8 +1197,6 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->toApiArray($invoice, false, $identity);
         $company = $this->di['mod_service']('System')->getCompany();
-
-        
 
         $CSS = $this->getPdfCss();
 
@@ -1540,7 +1534,6 @@ class Service implements InjectionAwareInterface
 
     private function getFooterInfo(array $company)
     {
-        
         $sourceData = [
             'company_name' => $company['name'],
             'bank_name' => $company['bank_name'],
@@ -1556,7 +1549,6 @@ class Service implements InjectionAwareInterface
             'address_1' => $company['address_1'],
             'address_2' => $company['address_2'],
             'address_3' => $company['address_3'],
-
         ];
 
         foreach ($sourceData as $label => $data) {

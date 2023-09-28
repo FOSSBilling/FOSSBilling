@@ -58,6 +58,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
             $this->redirectIfNotInvoiceBuyer($app, $invoice);
         }
+
         return $app->render('mod_invoice_invoice', ['invoice' => $invoice]);
     }
 
@@ -75,6 +76,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
             $this->redirectIfNotInvoiceBuyer($app, $invoice);
         }
+
         return $app->render('mod_invoice_print', ['invoice' => $invoice]);
     }
 
@@ -119,15 +121,16 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
             $this->redirectIfNotInvoiceBuyer($app, $invoice);
         }
-        return $app->render('mod_invoice_pdf', ['invoice' => $invoice]);
-     }
 
-    public function redirectIfNotInvoiceBuyer($app, $invoice) {
+        return $app->render('mod_invoice_pdf', ['invoice' => $invoice]);
+    }
+
+    public function redirectIfNotInvoiceBuyer($app, $invoice)
+    {
         $client = $this->di['loggedin_client'];
         if ($invoice['client']['id'] != $client->id) {
             // redirect to client invoices/invoice'));
             return $app->redirect('/invoice');
         }
     }
-    
 }
