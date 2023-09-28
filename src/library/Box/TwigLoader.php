@@ -15,7 +15,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
     /**
      * Constructor.
      *
-     * @param string|array $options A path or an array of options and paths
+     * @param array $options A path or an array of options and paths
      */
     public function __construct(array $options)
     {

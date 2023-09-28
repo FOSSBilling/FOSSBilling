@@ -233,7 +233,6 @@ class Admin extends \Api_Abstract
      * @return string - invoice id
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function renewal_invoice($data)
     {
@@ -359,10 +358,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Process selected transaction.
-     *
-     * @return transaction output or true;
      */
-    public function transaction_process($data)
+    public function transaction_process($data): bool
     {
         $required = [
             'id' => 'Transaction id is missing',
@@ -579,12 +576,10 @@ class Admin extends \Api_Abstract
 
     /**
      * Return existing module but not activated.
-     *
-     * @param none
-     *
+     * 
      * @return array
      */
-    public function gateway_get_available($data)
+    public function gateway_get_available(array $data)
     {
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
@@ -594,11 +589,9 @@ class Admin extends \Api_Abstract
     /**
      * Install available payment gateway.
      *
-     * @param code - available payment gateway code
-     *
      * @return true
      */
-    public function gateway_install($data)
+    public function gateway_install(array $data)
     {
         $required = [
             'code' => 'Payment gateway code is missing',
@@ -633,8 +626,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Copy gateway from existing one.
-     *
-     * @return int - new id of gateway
      *
      * @throws \Box_Exception
      */
@@ -929,7 +920,7 @@ class Admin extends \Api_Abstract
      * This action will delete any existing tax rules and configure the VAT rates
      * for all EU countries.
      *
-     * @return type
+     * @return bool
      */
     public function tax_setup_eu($data)
     {

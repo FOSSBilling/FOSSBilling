@@ -155,7 +155,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param Box_LogDb|FOSSBilling_Monolog $writer
+     * @param Box_LogDb|FOSSBilling\Monolog $writer
      * @return $this The Box_Log instance
      */
     public function addWriter($writer): static

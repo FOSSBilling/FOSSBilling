@@ -122,6 +122,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         $maxAge = time() - $this->di['config']['security']['session_lifespan'];
 
         $fingerprint = new \FOSSBilling\Fingerprint;
+        /** @var \RedBeanPHP\OODBBean $session */
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
 
         if (empty($session->fingerprint)) {

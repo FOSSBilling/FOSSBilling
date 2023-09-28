@@ -45,21 +45,15 @@ class Payment_Adapter_Custom
                     ),
                 ),
             ),
-        );
+        ); 
     }
 
     /**
      * Generate payment text
-     *
-     * @param Api_Admin $api_admin
-     * @param int $invoice_id
-     * @param bool $subscription
-     *
-     * @since FOSSBilling v2.9.15
-     *
+     * 
      * @return string - html form with auto submit javascript
      */
-    public function getHtml($api_admin, $invoice_id, $subscription)
+    public function getHtml(Api_Handler $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
         $invoiceService = $this->di['mod_service']("Invoice");
@@ -74,7 +68,7 @@ class Payment_Adapter_Custom
         return $systemService->renderString($vars['_tpl'], true, $vars);
     }
 
-    public function process($tx)
+    public function processTransaction(Api_Handler $api_admin, int $id, array $data, int $gateway_id)
     {
         return true;
     }

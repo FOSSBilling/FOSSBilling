@@ -147,7 +147,7 @@ class Admin extends \Api_Abstract
     /**
      * Get array of forms.
      *
-     * @return multidimensional array
+     * @return array
      *
      * @throws \Box_Exception
      */
@@ -200,29 +200,27 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update form.
+     * Update form field.
      *
-     * @param array
+     * @param array $data - An array containing the field data.
+     * @optional string $data['label'] - The label of the field to be displayed. Default is "Type X," where X is the number of fields in the form (e.g., "Checkbox 2").
+     * @optional string $data['name'] - The name of the field. Default is "new_type_X," where X is the number of fields in the form (e.g., "new_checkbox_2").
+     * @optional bool $data['hide_label'] - Specifies whether to hide the field label.
+     * @optional string $data['description'] - The description of the field.
+     * @optional mixed $data['default_value'] - The default value of the field. If the field is a checkbox or radio button, this should be an array; otherwise, it should be a string.
+     * @optional bool $data['required'] - Specifies whether the field is required (not applicable for checkboxes).
+     * @optional bool $data['hidden'] - Specifies whether the field should be hidden.
+     * @optional bool $data['readonly'] - Specifies whether the field should be read-only.
+     * @optional string $data['prefix'] - The prefix for "text" type fields.
+     * @optional string $data['suffix'] - The suffix for "text" type fields.
+     * @optional array $data['options'] - An array of options for "select," "checkbox," and "radio" type fields. Keys represent labels, and values represent field values. The array must contain unique values.
+     * @optional bool $data['show_initial'] - Specifies whether to show the initial value.
+     * @optional bool $data['show_middle'] - Specifies whether to show the middle value.
+     * @optional bool $data['show_prefix'] - Specifies whether to show the prefix.
+     * @optional bool $data['show_suffix'] - Specifies whether to show the suffix.
+     * @optional int $data['text_size'] - The preferred text size.
      *
-     * @optional
-     * @optional string $label - Label of the field which will be shown. Default value "Type X" where X is number of fields in form. For example "Checkbox 2"
-     * @optional string $name - Name of the field. Default value "new_type_X" where X is number of fields in the form. For example "new_checkbox_2"
-     * @optional bool $hide_label - Option either hide label of field or not
-     * @optional string $description - Description of a field
-     * @optional mixed $default_value - Default value of field. If field is checkbox or radio this variable must be array, otherwise it is string
-     * @optional bool $required - Option wither field need to have "required" attribute (Not applicable for checkboxes)
-     * @optional bool $hidden - Option either field should be hidden
-     * @optional bool $readonly - Option either field needs to be readonly
-     * @optional string $prefix - Prefix for "text" type fields
-     * @optional string $suffix - Suffix for "text" type fields
-     * @optional array $options - Array of options for "select", "checkbox" and "radio" type fields. Key represents label and value will be field's value. Array must be unique.
-     * @optional bool $show_initial - Either show initial or not
-     * @optional bool $show_middle - Either show middle or not
-     * @optional bool $show_prefix - Either to show prefix or not
-     * @optional bool $show_suffix - Either to show suffix or not
-     * @optional int $text_size - Preferred text size
-     *
-     * @return int - ID of the field
+     * @return int - The ID of the updated field.
      *
      * @throws \Box_Exception
      */

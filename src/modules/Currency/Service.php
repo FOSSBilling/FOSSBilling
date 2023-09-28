@@ -11,6 +11,7 @@
 namespace Box\Mod\Currency;
 
 use FOSSBilling\InjectionAwareInterface;
+use PhpCsFixer\Fixer\FunctionNotation\VoidReturnFixer;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
@@ -149,7 +150,7 @@ class Service implements InjectionAwareInterface
     /**
      * Returns a list of available currencies.
      *
-     * @return string List of currencies in the "[short code] - [name]" format
+     * @return array List of currencies in the "[short code] - [name]" format
      */
     public function getAvailableCurrencies()
     {
@@ -391,12 +392,8 @@ class Service implements InjectionAwareInterface
 
     /**
      * Enable or disable updating exchange rates whenever the CRON jobs are run.
-     *
-     * @since 4.22.0
-     *
-     * @var int
      */
-    public function setCron($data)
+    public function setCron($data): void
     {
         $sql = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
 
@@ -457,7 +454,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
 
         $model = $this->getByCode($code);
-        if (!$model instanceof \Model_currency) {
+        if (!$model instanceof \Model_Currency) {
             throw new \Box_Exception('Currency not found');
         }
 
@@ -523,8 +520,8 @@ class Service implements InjectionAwareInterface
      *
      * @todo use HTTPClient instead of simplexml_load_file()
      *
-     * @var string Short code for the base currency
-     * @var string Short code for the target currency
+     * @param string $from Short code for the base currency
+     * @param string $to Short code for the target currency
      *
      * @return float Exchange rate
      */
@@ -568,7 +565,7 @@ class Service implements InjectionAwareInterface
     {
         $model = $this->getByCode($code);
 
-        if (!$model instanceof \Model_currency) {
+        if (!$model instanceof \Model_Currency) {
             throw new \Box_Exception('Currency not found');
         }
         $code = $model->code;

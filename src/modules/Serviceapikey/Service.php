@@ -8,13 +8,6 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-/**
- * This file is a delegate for module. Class does not extend any other class.
- *
- * All methods provided in this example are optional, but function names are
- * still reserved.
- */
-
 namespace Box\Mod\Serviceapikey;
 
 use FOSSBilling\InjectionAwareInterface;

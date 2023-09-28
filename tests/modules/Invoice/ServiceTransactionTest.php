@@ -75,10 +75,10 @@ class ServiceTransactionTest extends \BBTestCase
         $this->service->setDi($di);
 
         $data   = array(
-            'invoice_id'   => '',
-            'txn_id'       => '',
+            'invoice_id'   => 1,
+            'txn_id'       => 2,
             'txn_status'   => '',
-            'gateway_id'   => '',
+            'gateway_id'   => 1,
             'amount'       => '',
             'currency'     => '',
             'type'         => '',
@@ -232,13 +232,12 @@ class ServiceTransactionTest extends \BBTestCase
             'note'         => null,
             'created_at'   => null,
             'updated_at'   => null,
-            'ipn'          => null,
         );
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
         $transactionModel->gateway_id = 1;
 
-        $result = $this->service->toApiArray($transactionModel, true);
+        $result = $this->service->toApiArray($transactionModel, false);
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
@@ -381,23 +380,6 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testoldProcessLogic()
-    {
-        $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \DummyBean());
-        $transactionModel->output = 'output String';
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
-            ->setMethods(array('process'))
-            ->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('process')
-            ->will($this->returnValue($transactionModel));
-
-        $result = $serviceMock->oldProcessLogic($transactionModel);
-        $this->assertIsString($result);
-    }
-
     public function testpreProcessTransaction()
     {
         $transactionModel = new \Model_Transaction();
@@ -408,35 +390,6 @@ class ServiceTransactionTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processTransaction')
-            ->will($this->returnValue('processedOutputString'));
-
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-
-        $di                   = new \Pimple\Container();
-        $di['events_manager'] = $eventMock;
-        $di['logger']         = new \Box_Log();
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->preProcessTransaction($transactionModel);
-        $this->assertIsString($result);
-    }
-
-    public function testpreProcessTransaction_supportOldLogic()
-    {
-        $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \DummyBean());
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
-            ->setMethods(array('processTransaction', 'oldProcessLogic'))
-            ->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('processTransaction')
-            ->will($this->throwException(new \Box_Exception('Exception created with PHPUnit Test', null, 705)));
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('oldProcessLogic')
             ->will($this->returnValue('processedOutputString'));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
@@ -480,7 +433,6 @@ class ServiceTransactionTest extends \BBTestCase
         $serviceMock->preProcessTransaction($transactionModel);
     }
 
-    
     public function paymentsAdapterProvider_withprocessTransaction()
     {
         return array(

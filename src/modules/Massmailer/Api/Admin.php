@@ -146,6 +146,7 @@ Order our services at {{ "order"|link }}
      */
     public function send_test($data)
     {
+        /** @var \Model_MassmailerMessage $model */
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
 
@@ -167,6 +168,7 @@ Order our services at {{ "order"|link }}
      */
     public function send($data)
     {
+        /** @var \Model_MassmailerMessage $model */
         $model = $this->_getMessage($data);
 
         if (empty($model->content)) {

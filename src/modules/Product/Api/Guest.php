@@ -21,7 +21,7 @@ class Guest extends \Api_Abstract
      *
      * @optional bool $show_hidden - also get hidden products. Default false
      *
-     * @return type
+     * @return array
      */
     public function get_list($data)
     {

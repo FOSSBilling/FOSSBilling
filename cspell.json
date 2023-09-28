@@ -359,6 +359,7 @@
         "pwreset",
         "pagebottom",
         "forceable",
+        "phpstan"
     ],
     "ignorePaths": [
         "tests/**",
@@ -397,6 +398,7 @@
         "src/modules/Wysiwyg/src/ckeditor.js",
         ".github/**",
         ".gitignore",
-        "src/.htaccess"
+        "src/.htaccess",
+        "phpstan-baseline.neon"
     ]
 }

@@ -223,14 +223,12 @@ abstract class Registrar_AdapterAbstract
     }
 
     /**
-     * Gets a new HttpClient object.
-     *
-     * @return Symfony\Component\HttpClient\HttpClient The HttpClient object.
+     * Creates and returns an interface for the Symfony HTTP client.
      */
-    public function getHttpClient()
+    public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
         return \Symfony\Component\HttpClient\HttpClient::create();
-    }  
+    }
 
     /**
      * Enables test mode for the adapter.
