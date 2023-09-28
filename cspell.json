@@ -355,11 +355,11 @@
         "TINYINT",
         "hostings",
         "rulesets",
+        "newtx",
         "pwreset",
         "pagebottom",
         "forceable",
         "phpstan"
-
     ],
     "ignorePaths": [
         "tests/**",

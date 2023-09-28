@@ -376,6 +376,8 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $ctable = $this->di['mod_service']('Currency');
 
+
+
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->approved = true;
         $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
@@ -387,6 +389,8 @@ class Service implements InjectionAwareInterface
         $this->countIncome($invoice);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
+
+
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
