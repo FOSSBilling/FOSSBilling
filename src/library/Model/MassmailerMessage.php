@@ -10,7 +10,7 @@
 
 class Model_MassmailerMessage extends \RedBeanPHP\SimpleModel
 {
-    public int $id;
-    public string $status;
-    public string $sent_at;
+    public int $id = 0;
+    public string $status = '';
+    public string $sent_at = '';
 }
