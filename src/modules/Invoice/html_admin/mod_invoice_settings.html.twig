@@ -87,6 +87,36 @@
                 </div>
             </div>
             <div class="card-body">
+                <h3 class="card-title">{{ 'Document settings'|trans }}</h3>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Document format'|trans }}</label>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" id="radioLetter" type="radio" name="invoice_document_format" value="Letter"{% if params.invoice_document_format == "letter" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioLetter">{{ 'Letter'|trans }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" id="radioA4" type="radio" name="invoice_document_format" value="A4"{% if params.invoice_document_format == "A4" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioA4">{{ 'A4'|trans }}</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Allow access to invoices without authentication'|trans }}</label>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" id="radioYes" type="radio" name="invoice_accessible_from_hash" value="1"{% if params.invoice_accessible_from_hash == "1" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioYes">{{ 'Yes'|trans }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" id="radioNo" type="radio" name="invoice_accessible_from_hash" value="0"{% if params.invoice_accessible_from_hash == "0" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioNo">{{ 'No'|trans }}</label>
+                        </div>
+                    </div>
+                    <p> If enabled, invoices can be accessed by anyone who knows the invoice hash, although it's quite a long hash and would not be brute-forceable.</p>
+                </div>
+            </div>
+            <div class="card-body">
                 <h3 class="card-title">{{ 'Refunds settings'|trans }}</h3>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Refunds logic'|trans }}</label>

@@ -9,7 +9,7 @@
     border-top: 8px solid #bbb;
     border-radius: 5px;
     position: relative;
-    top: 35px;
+    top: 45px;
 }
 
 div.InvoiceInfo {
@@ -43,13 +43,13 @@ div.CompanyInfo{
 h3.ClientInfo{
     position: absolute;
     top: 110px;
-    left: 375px;
+    left: 410px;
 }
 
 div.ClientInfo{
     position: absolute;
     top: 145px;
-    left: 375px;
+    left: 410px;
     white-space: normal;
     line-height: 15px;
     max-width: 45%;
@@ -82,4 +82,15 @@ tr:nth-of-type(odd) {
  */
 body {
     font-family: DejaVu Sans;
+}
+
+/**
+ * The following CSS is used to style the invoice footer.
+ */
+div.InvoiceFooter {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
 }
