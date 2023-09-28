@@ -11,7 +11,6 @@
 namespace Box\Mod\Currency;
 
 use FOSSBilling\InjectionAwareInterface;
-use PhpCsFixer\Fixer\FunctionNotation\VoidReturnFixer;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
@@ -521,7 +520,7 @@ class Service implements InjectionAwareInterface
      * @todo use HTTPClient instead of simplexml_load_file()
      *
      * @param string $from Short code for the base currency
-     * @param string $to Short code for the target currency
+     * @param string $to   Short code for the target currency
      *
      * @return float Exchange rate
      */

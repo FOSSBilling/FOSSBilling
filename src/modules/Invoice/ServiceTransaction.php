@@ -363,6 +363,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $ipn = json_decode($tx->ipn, 1);
+
         return $adapter->processTransaction($this->di['api_system'], $id, $ipn, $tx->gateway_id);
     }
 

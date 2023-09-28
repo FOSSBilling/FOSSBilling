@@ -248,7 +248,7 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \Box_Exception
-=     */
+     * =     */
     public function template_update($data)
     {
         $required = [

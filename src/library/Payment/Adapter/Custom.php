@@ -108,7 +108,7 @@ class Payment_Adapter_Custom
 
             // Store the updated transaction and use it's return to indicate a sucsess or failure. 
             return $this->di['db']->store($tx);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }

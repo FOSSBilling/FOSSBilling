@@ -202,7 +202,8 @@ class Admin extends \Api_Abstract
     /**
      * Update form field.
      *
-     * @param array $data - An array containing the field data.
+     * @param array $data - An array containing the field data
+     *
      * @optional string $data['label'] - The label of the field to be displayed. Default is "Type X," where X is the number of fields in the form (e.g., "Checkbox 2").
      * @optional string $data['name'] - The name of the field. Default is "new_type_X," where X is the number of fields in the form (e.g., "new_checkbox_2").
      * @optional bool $data['hide_label'] - Specifies whether to hide the field label.
@@ -220,7 +221,7 @@ class Admin extends \Api_Abstract
      * @optional bool $data['show_suffix'] - Specifies whether to show the suffix.
      * @optional int $data['text_size'] - The preferred text size.
      *
-     * @return int - The ID of the updated field.
+     * @return int - The ID of the updated field
      *
      * @throws \Box_Exception
      */

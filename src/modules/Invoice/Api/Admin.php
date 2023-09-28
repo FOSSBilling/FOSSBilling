@@ -64,7 +64,7 @@ class Admin extends \Api_Abstract
             $execute = true;
         }
         $invoice = $this->_getInvoice($data);
-        $gateway_id = [ 'id' => $invoice->gateway_id ];
+        $gateway_id = ['id' => $invoice->gateway_id];
         $payGateway = $this->gateway_get($gateway_id);
         $charge = false;
 
@@ -73,22 +73,20 @@ class Admin extends \Api_Abstract
             // create transaction
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $newtx = $transactionService->create([
-                'invoice_id'    =>  $invoice->id,
-                'bb_invoice_id'    =>  $invoice->id,
-                'gateway_id'    =>  $invoice->gateway_id,
-                'bb_gateway_id'    =>  $invoice->gateway_id,
-                'currency'      =>  $invoice->currency,
-                'status'        =>  'received',
-                'txn_id'        =>  $data['transactionId'],
+                'invoice_id' => $invoice->id,
+                'bb_invoice_id' => $invoice->id,
+                'gateway_id' => $invoice->gateway_id,
+                'bb_gateway_id' => $invoice->gateway_id,
+                'currency' => $invoice->currency,
+                'status' => 'received',
+                'txn_id' => $data['transactionId'],
             ]);
-            
+
             try {
                 return $transactionService->processTransaction($newtx);
-            } catch (\Exception $e)
-            {
-                $this->di['logger']->info('Error processing transaction: '.$e->getMessage());
+            } catch (\Exception $e) {
+                $this->di['logger']->info('Error processing transaction: ' . $e->getMessage());
             }
-
         }
 
         return $this->getService()->markAsPaid($invoice, $charge, $execute);
@@ -576,7 +574,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Return existing module but not activated.
-     * 
+     *
      * @return array
      */
     public function gateway_get_available(array $data)
