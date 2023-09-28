@@ -15,6 +15,6 @@ class Model_Transaction extends \RedBeanPHP\SimpleModel
     public const STATUS_PROCESSED       = 'processed';
     public const STATUS_ERROR           = 'error';
 
-    public int $gateway_id;
-    public string $ipn;
+    public int $gateway_id = 0 ;
+    public string $ipn = '';
 }
