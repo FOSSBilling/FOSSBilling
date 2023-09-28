@@ -68,22 +68,17 @@ class Payment_Adapter_Custom
         return $systemService->renderString($vars['_tpl'], true, $vars);
     }
 
-    public function processTransaction(Api_Handler $api_admin, int $id, array $data, int $gateway_id)
-    {
-        return true;
-    }
-
     /**
      * Processes a transaction using a custom payment adapter.
      *
-     * @param mixed $api_admin The API admin object.
+     * @param \Api_Handler $api_admin The API admin object.
      * @param int $id The ID of the transaction to process.
      * @param array $data The data associated with the transaction.
      * @param int $gateway_id The ID of the payment gateway to use.
      *
      * @return bool Returns true if the transaction was processed successfully, false otherwise.
      */
-    public function processTransaction($api_admin, $id, $data, $gateway_id)
+    public function processTransaction(\Api_Handler $api_admin, int $id, array $data, int $gateway_id)
     {
         try {
             // Get the transaction and invoice associated with the transaction
