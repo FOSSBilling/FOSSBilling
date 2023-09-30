@@ -46,6 +46,7 @@ jobs:
           repository: "FOSSBilling/locale"
           fileName: "translations.zip"
           out-file-path: "./src/locale"
+          latest: true
 
       - name: Extract the translations
         run: |
