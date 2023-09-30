@@ -680,7 +680,9 @@ class Service implements InjectionAwareInterface
         $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
             $moduleService = new $class;
-            $moduleService->setDi($this->di);
+            if (method_exists($moduleService, 'setDi')) {
+                $moduleService->setDi($this->di);
+            }
             $permissions = $moduleService->getModulePermissions();
 
             if (isset($permissions['hide_permissions']) && $permissions['hide_permissions']) {
