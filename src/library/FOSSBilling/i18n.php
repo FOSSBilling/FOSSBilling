@@ -132,7 +132,7 @@ class i18n
     {
         $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
         if (!is_dir($basePath)) {
-            throw new \Box_Exception('Unable to enable / disable locale, it does not exist on the disk.');
+            throw new \Box_Exception('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
         $disablePath = $basePath . DIRECTORY_SEPARATOR . '.disabled';
@@ -150,13 +150,13 @@ class i18n
      * Returns how complete a locale is.
      * Will return 0 if the `completion.php` doesn't exist or if it doesn't include the specified locale.
      * 
-     * @param string $local The locale ID (Example: `en_US`)
+     * @param string $locale The locale ID (Example: `en_US`)
      * 
      * @return int The percentage complete for the specified locale. 
      */
-    public static function getLocaleCompletionPercent(string $local): int
+    public static function getLocaleCompletionPercent(string $locale): int
     {
-        if ($local === 'en_US') {
+        if ($locale === 'en_US') {
             return 100;
         }
 
@@ -166,7 +166,7 @@ class i18n
         }
 
         $completion = include $completionFile;
-        return intval($completion[$local] ?? 0);
+        return intval($completion[$locale] ?? 0);
     }
 
     /**

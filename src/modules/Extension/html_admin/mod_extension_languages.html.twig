@@ -144,15 +144,13 @@
                         <p class="card-subtitle">{{ 'Although FOSSBilling displays in U.S. English by default, it has the capability to be used in any language. Follow instructions bellow to install new language.'|trans }}</p>
                         <div>
                             <ul>
-                                <li>{{ 'Check if your language translation files are available at the '|trans }} <a href="https://github.com/FOSSBilling/locale" target="_blank">{{ 'FOSSBilling translations repository'|trans }}</a></li>
-                                <li>{{ 'Download the language files and place them under'|trans }} <code>{{ constant('PATH_LANGS') }}</code></li>
-                                <li>{{ 'The language will automatically be detected and made available for use.'|trans }}</li>
-                                <li>{{ 'Read'|trans }} <a href="https://fossbilling.org/docs/customizing-fossbilling/localization" data-bs-toggle="tooltip" data-bs-title="Using FOSSBilling in your language" target="_blank">{{ 'Using FOSSBilling in your language'|trans }}</a> {{ 'to learn how to install a new language.'|trans }}</li>
+                                <li>{{ 'Check the FOSSBilling locale repository to see if the language you are looking for is available.'}} <a target="_blank" href="https://github.com/FOSSBilling/locale">({{ 'Locale repository'|trans }})<a></li>
+                                <li>{{ 'Follow the instructions on the FOSSBilling documentation to install the new language\'s translation files.'|trans }} <a target="_blank" href="https://fossbilling.org/docs/customizing-fossbilling/localization#installing-a-new-language">({{ 'Installing a new language'|trans }})<a></li>
                             </ul>
                         </div>
 
                         <h5>{{ 'Changing default language'|trans }}</h5>
-                        <p>{{ 'Default language can be set in'|trans }} <em>config.php</em> parameter <code>'locale' => 'en_US'</code></p>
+                        <p>{{ 'Instructions for changing the default language can be found on the FOSSBilling documentation.'|trans }} <a target="_blank" href="https://fossbilling.org/docs/customizing-fossbilling/localization#changing-the-default-language">({{ 'Changinge the default language'|trans }})<a></p>
                     </div>
                 </div>
             </div>
