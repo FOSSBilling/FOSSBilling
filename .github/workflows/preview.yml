@@ -36,15 +36,21 @@ jobs:
       - name: Check PHP Version
         run: php -v
 
-      - name: Clone and update the locale submodule.
-        run: git submodule update --init --remote --recursive
+      - name: Remove placeholder locale files
+        run: rm -r ./*
         working-directory: ./src/locale
 
-      - name: Remove unneeded files from the locale folder
+      - name: Download the latest translations
+        uses: robinraju/release-downloader@v1.8
+        with:
+          repository: "FOSSBilling/locale"
+          fileName: "translations.zip"
+          out-file-path: "./src/locale"
+
+      - name: Extract the translations
         run: |
-          find -name '*.po' -delete
-          rm -rf .github
-          rm -f crowdin.yml messages.pot .git
+          unzip translations.zip
+          rm -f translations.zip
         working-directory: ./src/locale
 
       - name: Validate composer.json and composer.lock
