@@ -125,7 +125,7 @@ class Service implements InjectionAwareInterface
      */
     public function hasPermission(\Model_Admin|null $member, string $module, string $key = null, mixed $constraint = null): bool
     {
-        $alwaysAllowed = ['index', 'dashboard'];
+        $alwaysAllowed = ['index', 'dashboard', 'profile'];
 
         if (is_null($member)) {
             $member = $this->di['loggedin_admin'];
