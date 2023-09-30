@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
@@ -17,19 +16,31 @@ class i18n
     /**
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
      *
+     * @param bool $autoDetect Indicates if the user's Accept-Language header should be used to select the correct locale for them.
+     * 
      * @return string The locale code to use for the system.
      */
-    public static function getActiveLocale(): string
+    public static function getActiveLocale(bool $autoDetect = true): string
     {
         $config = include PATH_ROOT . '/config.php';
+        $locale = null;
 
-        /* We check in a few different spots for the active locale:
-         * First: The BBLANG locale which will be defined after the end-user changes their locale
-         * Then: If they haven't manually chosen one, we try to detect the browser locale
-         * Next: if that didn't work, try to use the locale in the config file
-         * Finally: As a last resort, default to en_US for the locale
+        /**
+         * If the locale cookie is set and it's one of the enabled locales, use that.
+         * Otherwise, fallback to auto-detection when enable.
          */
-        return $_COOKIE['BBLANG'] ?? self::getBrowserLocale() ?: $config['i18n']['locale'] ?? 'en_US';
+        if (!empty($_COOKIE['BBLANG'] && in_array($_COOKIE['BBLANG'], self::getLocales()))) {
+            $locale = $_COOKIE['BBLANG'];
+        } elseif ($autoDetect) {
+            $locale = self::getBrowserLocale();
+        }
+
+        // If we somehow still don't have a locale, use the default / fallback.
+        if (!$locale) {
+            return $config['i18n']['locale'] ?? 'en_US';
+        }
+
+        return $locale;
     }
 
     /**
@@ -82,14 +93,16 @@ class i18n
      * Retrieve a list of available locales, optionally including their details.
      *
      * @param bool $includeLocaleDetails (optional) Whether to include locale details or not. Defaults to false.
+     * 
+     * @param bool $disabled Set to true if you want it to return a list of the disabled locales, defaults to false which will return the enabled locales.
      *
      * @return array An array of locales, sorted alphabetically. If `$includeLocaleDetails` is true, the array will contain
      *               subarrays with the following keys: `locale` (string), `title` (string), `name` (string).
      *               If `$includeLocaleDetails` is false, the array will only contain the locale codes (strings).
      */
-    public static function getLocales(bool $includeLocaleDetails  = false): array
+    public static function getLocales(bool $includeLocaleDetails  = false, bool $disabled = false): array
     {
-        $locales = self::getLocaleList();
+        $locales = self::getLocaleList($disabled);
         if (!$includeLocaleDetails) {
             return $locales;
         }
@@ -106,6 +119,15 @@ class i18n
         return $details;
     }
 
+    /**
+     * Enables / disables a locale depending on it's current status.
+     * 
+     * @param string $locale The locale code to toggle. (Example: `en_US`)
+     * 
+     * @return bool To indicate if it was sucsessful,
+     *  
+     * @throws \Box_Exception 
+     */
     public static function ToggleLocale(string $locale): bool
     {
         $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
@@ -124,9 +146,16 @@ class i18n
         }
     }
 
-    private static function getLocaleList(bool $hidden = false)
+    /**
+     * Internal helper function that gets the list of locales off of the disk.
+     * 
+     * @param bool $disabled Set to true to get the list of disabled locales. True returns the list of enabled locales.
+     * 
+     * @return array The list of locale codes, sorted alphabetically.
+     */
+    private static function getLocaleList(bool $disabled = false): array
     {
-        if ($hidden) {
+        if ($disabled) {
             // Only get a list of the disabled locales
             $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), function ($dir) {
                 return is_dir($dir) && file_exists($dir . DIRECTORY_SEPARATOR . '.disabled');

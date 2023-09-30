@@ -67,12 +67,28 @@ class Admin extends \Api_Abstract
 
     /**
      * Get list of available languages on the system.
-     *
-     * @return array
      */
-    public function languages()
+    public function languages(array $data): array
     {
-        return \FOSSBilling\i18n::getLocales(true);
+        $data['disabled'] ??= false; 
+        return \FOSSBilling\i18n::getLocales(true, $data['disabled']);
+    }
+
+    /**
+     * Toggles a given locale to either enable or disable it depending on it's current status.
+     * 
+     * @param array $data The post data sent to the API. Should contain a key named `locale_id` which is set to the locale ID to change. (`en_US` for example)
+     * 
+     * @throws \Box_Exception 
+     */
+    public function toggle_language(array $data): bool
+    {
+        $required = [
+            'locale_id' => 'Extension ID was not passed',
+        ];
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        return \FOSSBilling\i18n::ToggleLocale($data['locale_id']);
     }
 
     /**

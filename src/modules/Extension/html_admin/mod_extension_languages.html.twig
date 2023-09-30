@@ -8,45 +8,99 @@
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Client area languages'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Installed translations'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
                     <svg class="icon me-2">
                         <use xlink:href="#plus" />
                     </svg>
-                    {{ 'New language'|trans }}
+                    {{ 'New translations'|trans }}
                 </a>
             </li>
         </ul>
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
-                        <thead>
-                        <tr>
-                            <th>{{ 'Country'|trans }}</th>
-                            <th>{{ 'Language'|trans }}</th>
-                            <th>{{ 'Code'|trans }}</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for lang in admin.extension_languages %}
-                        <tr>
-                            <td><span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span></td>
-                            <td>{{ lang.title }}</td>
-                            <td class="w-1">{{ lang.locale }}</td>
-                        </tr>
-                        </tbody>
-                        {% else %}
-                            <tbody>
+                    <div class="container">
+                        <h2 class="mb-1 mt-1">{{ 'Enabled translations'|trans}}</h2>
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
                             <tr>
-                                <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}
+                                <th>{{ 'Country'|trans }}</th>
+                                <th>{{ 'Language'|trans }}</th>
+                                <th>{{ 'Code'|trans }}</th>
+                                <th>{{ 'Disable'|trans }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for lang in admin.extension_languages %}
+                            <tr>
+                                <td><span class="w-3 flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span></td>
+                                <td>{{ lang.name }}</td>
+                                <td class="w-1">{{ lang.locale }}</td>
+                                <td class="w-1">
+                                    <a class="btn btn-icon api-link"
+                                        href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
+                                        data-api-reload="1">
+                                        <svg class="icon">
+                                            <use xlink:href="#close" />
+                                        </svg>
+                                    </a>
                                 </td>
                             </tr>
                             </tbody>
-                        {% endfor %}
-                    </table>
+                            {% else %}
+                                <tbody>
+                                <tr>
+                                    <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}
+                                    </td>
+                                </tr>
+                                </tbody>
+                            {% endfor %}
+                        </table>
+                    </div>
+
+                    <hr>
+
+                    <div class="container">
+                        <h2 class="mb-1 mt-1">{{ 'Disabled translations'|trans}}</h2>
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                            <tr>
+                                <th>{{ 'Country'|trans }}</th>
+                                <th>{{ 'Language'|trans }}</th>
+                                <th>{{ 'Code'|trans }}</th>
+                                <th>{{ 'Enable'|trans }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for lang in admin.extension_languages({'disabled': true}) %}
+                            <tr>
+                                <td><span class="w-3 flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span></td>
+                                <td>{{ lang.name }}</td>
+                                <td class="w-1">{{ lang.locale }}</td>
+                                <td class="w-1">
+                                    <a class="btn btn-icon api-link"
+                                        href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
+                                        data-api-reload="1">
+                                        <svg class="icon">
+                                            <use xlink:href="#check" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                            {% else %}
+                                <tbody>
+                                <tr>
+                                    <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}
+                                    </td>
+                                </tr>
+                                </tbody>
+                            {% endfor %}
+                        </table>
+                    </div>
                 </div>
 
                 <div class="tab-pane fade" id="tab-new" role="tabpanel">
