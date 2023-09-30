@@ -139,9 +139,12 @@ class Service implements InjectionAwareInterface
         $modulePermissions = $extensionService->getSpecificModulePermissions($module);
         $permissions = $this->getPermissions($member->id);
 
-        // They have no permissions or don't have any access to that module
-        if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? $modulePermissions['can_always_access'] ?? false)) {
-            return false;
+        $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
+        if (!$canAlwaysAccess) {
+            // They have no permissions or don't have any access to that module
+            if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? false)) {
+                return false;
+            }
         }
 
         // If this passes, the permission key isn't assigned to them and they therefore don't have permission

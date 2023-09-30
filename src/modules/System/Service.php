@@ -30,6 +30,8 @@ class Service
     public function getModulePermissions(): array
     {
         return [
+            'can_always_access' => true,
+            'manage_settings' => [],
             'manage_company_details' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage company details'),
