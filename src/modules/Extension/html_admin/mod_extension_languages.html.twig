@@ -1,6 +1,6 @@
 {% extends 'layout_default.html.twig' %}
 
-{% block meta_title %}{{ 'Client area languages'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Manage translations'|trans }}{% endblock %}
 
 {% set active_menu = 'extensions' %}
 
@@ -8,7 +8,7 @@
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Installed translations'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Manage translations'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
@@ -29,6 +29,7 @@
                             <tr>
                                 <th>{{ 'Country'|trans }}</th>
                                 <th>{{ 'Language'|trans }}</th>
+                                <th>{{ 'Completion'|trans}}</th>
                                 <th>{{ 'Code'|trans }}</th>
                                 <th>{{ 'Disable'|trans }}</th>
                             </tr>
@@ -36,8 +37,23 @@
                             <tbody>
                             {% for lang in admin.extension_languages %}
                             <tr>
-                                <td><span class="w-3 flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span></td>
-                                <td>{{ lang.name }}</td>
+                                <td class="w-2">
+                                    <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
+                                </td>
+                                <td class="w-6">{{ lang.name }}</td>
+                                <td>
+                                    {% set progress = admin.extension_locale_completion({'locale_id': lang.locale})%}
+                                    {% if progress > 75 %}
+                                        {% set background = 'success' %}
+                                    {% elseif progress > 50 %}
+                                        {% set background = 'warning' %}
+                                    {% else %}
+                                        {% set background = 'danger' %}
+                                    {% endif %}
+                                    <div class="progress" style="height: 15px;">
+                                        <div class="progress-bar bg-{{ background }}" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
+                                    </div>
+                                </td>
                                 <td class="w-1">{{ lang.locale }}</td>
                                 <td class="w-1">
                                     <a class="btn btn-icon api-link"
@@ -61,7 +77,7 @@
                         </table>
                     </div>
 
-                    <hr>
+                    <hr/>
 
                     <div class="container">
                         <h2 class="mb-1 mt-1">{{ 'Disabled translations'|trans}}</h2>
@@ -70,26 +86,44 @@
                             <tr>
                                 <th>{{ 'Country'|trans }}</th>
                                 <th>{{ 'Language'|trans }}</th>
+                                <th>{{ 'Completion'|trans}}</th>
                                 <th>{{ 'Code'|trans }}</th>
                                 <th>{{ 'Enable'|trans }}</th>
                             </tr>
                             </thead>
                             <tbody>
                             {% for lang in admin.extension_languages({'disabled': true}) %}
-                            <tr>
-                                <td><span class="w-3 flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span></td>
-                                <td>{{ lang.name }}</td>
-                                <td class="w-1">{{ lang.locale }}</td>
-                                <td class="w-1">
-                                    <a class="btn btn-icon api-link"
-                                        href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
-                                        data-api-reload="1">
-                                        <svg class="icon">
-                                            <use xlink:href="#check" />
-                                        </svg>
-                                    </a>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td class="w-2">
+                                        <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
+                                    </td>
+                                    <td class="w-6">{{ lang.name }}</td>
+                                    <td>
+                                        {% set progress = admin.extension_locale_completion({'locale_id': lang.locale})%}
+                                        {% if progress > 75 %}
+                                            {% set background = 'success' %}
+                                        {% elseif progress > 50 %}
+                                            {% set background = 'warning' %}
+                                        {% else %}
+                                            {% set background = 'danger' %}
+                                        {% endif %}
+                                        <div class="progress" style="height: 15px;">
+                                            <div class="progress" style="height: 15px;">
+                                                <div class="progress-bar bg-{{ background }}" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="w-1">{{ lang.locale }}</td>
+                                    <td class="w-1">
+                                        <a class="btn btn-icon api-link"
+                                            href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
+                                            data-api-reload="1">
+                                            <svg class="icon">
+                                                <use xlink:href="#check" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
                             </tbody>
                             {% else %}
                                 <tbody>

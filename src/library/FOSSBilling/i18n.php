@@ -128,7 +128,7 @@ class i18n
      *  
      * @throws \Box_Exception 
      */
-    public static function ToggleLocale(string $locale): bool
+    public static function toggleLocale(string $locale): bool
     {
         $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
         if (!is_dir($basePath)) {
@@ -144,6 +144,29 @@ class i18n
             file_put_contents($disablePath, '');
             return file_exists($disablePath);
         }
+    }
+
+    /**
+     * Returns how complete a locale is.
+     * Will return 0 if the `completion.php` doesn't exist or if it doesn't include the specified locale.
+     * 
+     * @param string $local The locale ID (Example: `en_US`)
+     * 
+     * @return int The percetnage complete for the specified locale. 
+     */
+    public static function getLocaleCompletionPercent(string $local): int
+    {
+        if ($local === 'en_US') {
+            return 100;
+        }
+
+        $completionFile = PATH_LANGS . DIRECTORY_SEPARATOR . 'completion.php';
+        if (!file_exists($completionFile)) {
+            return 0;
+        }
+
+        $completion = include $completionFile;
+        return intval($completion[$local] ?? 0);
     }
 
     /**

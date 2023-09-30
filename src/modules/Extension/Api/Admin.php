@@ -70,7 +70,7 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        $data['disabled'] ??= false; 
+        $data['disabled'] ??= false;
         return \FOSSBilling\i18n::getLocales(true, $data['disabled']);
     }
 
@@ -84,11 +84,25 @@ class Admin extends \Api_Abstract
     public function toggle_language(array $data): bool
     {
         $required = [
-            'locale_id' => 'Extension ID was not passed',
+            'locale_id' => 'Locale ID was not passed',
         ];
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        return \FOSSBilling\i18n::ToggleLocale($data['locale_id']);
+        return \FOSSBilling\i18n::toggleLocale($data['locale_id']);
+    }
+
+    /**
+     * Returns how complete a given locale is.
+     * @param array $data $data The post data sent to the API. Should contain a key named `locale_id` which is set to the locale ID to get the completion percentage for. (`en_US` for example)
+     */
+    public function locale_completion(array $data): int
+    {
+        $required = [
+            'locale_id' => 'Locale ID was not passed',
+        ];
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        return \FOSSBilling\i18n::getLocaleCompletionPercent($data['locale_id']);
     }
 
     /**
