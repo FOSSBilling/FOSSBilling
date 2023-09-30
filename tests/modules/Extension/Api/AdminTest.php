@@ -102,7 +102,7 @@ class AdminTest extends \BBTestCase {
 
     public function testlanguages()
     {
-        $result = $this->api->languages();
+        $result = $this->api->languages([]);
         $this->assertIsArray($result);
     }
 

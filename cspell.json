@@ -359,7 +359,11 @@
         "pwreset",
         "pagebottom",
         "forceable",
-        "phpstan"
+        "phpstan",
+        "progressbar",
+        "valuenow",
+        "valuemin",
+        "valuemax"
     ],
     "ignorePaths": [
         "tests/**",
