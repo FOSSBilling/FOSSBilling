@@ -37,7 +37,7 @@ jobs:
         run: php -v
 
       - name: Remove placeholder locale files
-        run: rm -r ./*
+        run: rm -rf *
         working-directory: ./src/locale
 
       - name: Download the latest translations

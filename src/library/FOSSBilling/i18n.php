@@ -124,7 +124,7 @@ class i18n
      * 
      * @param string $locale The locale code to toggle. (Example: `en_US`)
      * 
-     * @return bool To indicate if it was sucsessful,
+     * @return bool To indicate if it was successful,
      *  
      * @throws \Box_Exception 
      */
@@ -152,7 +152,7 @@ class i18n
      * 
      * @param string $local The locale ID (Example: `en_US`)
      * 
-     * @return int The percetnage complete for the specified locale. 
+     * @return int The percentage complete for the specified locale. 
      */
     public static function getLocaleCompletionPercent(string $local): int
     {
