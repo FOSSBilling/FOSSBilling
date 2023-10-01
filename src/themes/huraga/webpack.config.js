@@ -16,6 +16,7 @@ Encore
   })
 
   .addEntry('huraga', './assets/huraga.js')
+  .addStyleEntry('markdown', './assets/scss/markdown.scss')
 
   .autoProvidejQuery()
   .enableIntegrityHashes()
