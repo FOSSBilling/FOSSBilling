@@ -27,9 +27,9 @@
                                     {% endfor %}
                                 </select>
                             {% elseif product.pricing.type == 'free' %}
-                                <span class="label label-info">{{ 'FREE'|trans }}</span>
+                                <span class="badge bg-success">{{ 'FREE'|trans }}</span>
                             {% else %}
-                                <span class="label label-info">{{ product.pricing.once.price | money_convert }}</span>
+                                <span class="badge bg-success">{{ product.pricing.once.price | money_convert }}</span>
                             {% endif %}
                         </div>
                     {% endset %}
@@ -49,7 +49,9 @@
 
                     <input type="hidden" name="multiple" value="1" />
                     <input type="hidden" name="id" value="{{ product.id }}" />
-                    <button type="submit" class="btn btn-primary" id="config-next">{{ 'Next'|trans }}</button>
+                    <div class="mb-0">
+                        <button type="submit" class="btn btn-primary" id="config-next">{{ 'Next'|trans }}</button>
+                    </div>
                 </form>
             </div>
         </div>
