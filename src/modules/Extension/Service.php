@@ -329,11 +329,14 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_Extension $model): never
     {
+        $this->canManageModules();
         throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
     public function activate(\Model_Extension $ext)
     {
+        $this->canManageModules();
+
         $result = [
             'id' => $ext->name,
             'type' => $ext->type,
@@ -365,6 +368,8 @@ class Service implements InjectionAwareInterface
 
     public function deactivate(\Model_Extension $ext)
     {
+        $this->canManageModules();
+
         switch ($ext->type) {
             case \FOSSBilling\ExtensionManager::TYPE_HOOK:
                 $file = ucfirst($ext->name) . '.php';
@@ -403,6 +408,8 @@ class Service implements InjectionAwareInterface
 
     public function uninstall(\Model_Extension $ext)
     {
+        $this->canManageModules();
+
         $this->deactivate($ext);
 
         switch ($ext->type) {
@@ -420,6 +427,8 @@ class Service implements InjectionAwareInterface
 
     public function downloadAndExtract($type, $id)
     {
+        $this->canManageModules();
+
         $latest = $this->di['extension_manager']->getLatestExtensionRelease($id);
 
         if (!isset($latest['download_url'])) {
@@ -518,6 +527,8 @@ class Service implements InjectionAwareInterface
 
     private function installModule(\Model_Extension $ext)
     {
+        $this->canManageModules();
+
         $mod = $this->di['mod']($ext->name);
 
         if ($mod->isCore()) {
@@ -738,6 +749,20 @@ class Service implements InjectionAwareInterface
             } else {
                 throw $e;
             }
+        }
+    }
+
+    /**
+     * Used to check if a staff member has permission to manage extensions.
+     * 
+     * @throws \Box_Exception If they do not have permission
+     */
+    private function canManageModules(): void
+    {
+        $staff_service = $this->di['mod_service']('Staff');
+
+        if (!$staff_service->hasPermission(null, 'extension', 'manage_extensions')) {
+            throw new \Box_Exception('You do not have permission to perform this action', [], 403);
         }
     }
 }

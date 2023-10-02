@@ -29,15 +29,35 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'manage_admin' => [
+            'create_and_edit_admin' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage administrators'),
-                'description' => __trans('Allows the staff member to create, edit, delete, and perform password resets on :type: accounts.', [':type:' => __trans('administrator')]),
+                'display_name' => __trans('Create and edit administrators'),
+                'description' => __trans('Allows the staff member to create and edit :type: accounts.', [':type:' => __trans('administrator')]),
             ],
-            'manage_staff' => [
+            'delete_admin' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage staff members'),
-                'description' => __trans('Allows the staff member to create, edit, delete, and perform password resets on :type: accounts.', [':type:' => __trans('staff')]),
+                'display_name' => __trans('Delete administrators'),
+                'description' => __trans('Allows the staff member to delete :type: accounts.', [':type:' => __trans('administrator')]),
+            ],
+            'reset_admin_password' => [
+                'type' => 'bool',
+                'display_name' => __trans('Reset administrator passwords'),
+                'description' => __trans('Allows the staff member to perform password resets on :type: accounts.', [':type:' => __trans('administrator')]),
+            ],
+            'create_and_edit_staff' => [
+                'type' => 'bool',
+                'display_name' => __trans('Create and edit staff members'),
+                'description' => __trans('Allows the staff member to create and edit :type: accounts.', [':type:' => __trans('staff')]),
+            ],
+            'delete_staff' => [
+                'type' => 'bool',
+                'display_name' => __trans('Delete staff members'),
+                'description' => __trans('Allows the staff member to delete :type: accounts.', [':type:' => __trans('staff')]),
+            ],
+            'reset_staff_password' => [
+                'type' => 'bool',
+                'display_name' => __trans('Reset staff passwords'),
+                'description' => __trans('Allows the staff member to perform password resets on :type: accounts.', [':type:' => __trans('staff')]),
             ],
             'manage_groups' => [
                 'type' => 'bool',
@@ -89,6 +109,8 @@ class Service implements InjectionAwareInterface
 
     public function setPermissions($member_id, $array)
     {
+        $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+
         $array = array_filter($array);
         $sql = 'UPDATE admin SET permissions = :p WHERE id = :id';
         $pdo = $this->di['pdo'];
@@ -159,6 +181,22 @@ class Service implements InjectionAwareInterface
         }
 
         return true;
+    }
+
+    /**
+     * Acts as an alias to `hasPermission`, but it'll also throw an exception stating the staff member doesn't have permission if they don't
+     * 
+     * @param string $module What module to check permission for.
+     * @param string|null $key The permission key for the associated module.
+     * @param mixed $constraint If the permission key allows for multiple options, specify the one you want to use as a constraint here.
+     * 
+     * @return void 
+     */
+    public function checkPermissionsAndThrowException(string $module, string $key = null, mixed $constraint = null): void
+    {
+        if (!$this->hasPermission(null, $module, $key, $constraint)) {
+            throw new \Box_Exception('You do not have permission to perform this action', [], 403);
+        }
     }
 
     public static function onAfterClientOrderCreate(\Box_Event $event)
@@ -445,6 +483,12 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
+        if($model->role === 'admin'){
+            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
+        } else {
+            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+        }
+
         $model->email = $data['email'] ?? $model->email;
         $model->admin_group_id = $data['admin_group_id'] ?? $model->admin_group_id;
         $model->name = $data['name'] ?? $model->name;
@@ -465,6 +509,13 @@ class Service implements InjectionAwareInterface
         if ($model->protected) {
             throw new \FOSSBilling\InformationException('This administrator account is protected and can not be removed');
         }
+
+        if($model->role === 'admin'){
+            $this->checkPermissionsAndThrowException('staff', 'delete_admin');
+        } else {
+            $this->checkPermissionsAndThrowException('staff', 'delete_staff');
+        }
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
 
         $id = $model->id;
@@ -479,6 +530,12 @@ class Service implements InjectionAwareInterface
 
     public function changePassword(\Model_Admin $model, $password)
     {
+        if($model->role === 'admin'){
+            $this->checkPermissionsAndThrowException('staff', 'reset_admin_password');
+        } else {
+            $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
+        }
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
         $model->pass = $this->di['password']->hashIt($password);
@@ -497,6 +554,9 @@ class Service implements InjectionAwareInterface
 
     public function create(array $data)
     {
+        // TODO: When it becomes possible to create other super admins, add a check for that here,
+        $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Admin', 3);
 
@@ -528,6 +588,9 @@ class Service implements InjectionAwareInterface
         return (int) $newId;
     }
 
+    /**
+     * Used to create the initial admin account and then goes unused.
+     */
     public function createAdmin(array $data)
     {
         $admin = $this->di['db']->dispense('Admin');
@@ -573,6 +636,8 @@ class Service implements InjectionAwareInterface
 
     public function createGroup($name)
     {
+        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_AdminGroup', 2);
 
@@ -601,6 +666,8 @@ class Service implements InjectionAwareInterface
 
     public function deleteGroup(\Model_AdminGroup $model)
     {
+        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         $id = $model->id;
         if ($model->id == 1) {
             throw new \FOSSBilling\InformationException('Administrators group can not be removed');
@@ -623,6 +690,8 @@ class Service implements InjectionAwareInterface
 
     public function updateGroup(\Model_AdminGroup $model, $data)
     {
+        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         if (isset($data['name'])) {
             $model->name = $data['name'];
         }
