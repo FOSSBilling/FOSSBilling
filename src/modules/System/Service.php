@@ -260,12 +260,12 @@ class Service
                 // And now return the correctly message for the given situation
                 if (!$last_exec) {
                     return [
-                        'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.',
+                        'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly. (Message is cached for 15 minutes)',
                         'url' => $cronUrl,
                     ];
                 } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
                     return [
-                        'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes.',
+                        'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes. (Message is cached for 15 minutes)',
                         'url' => $cronUrl,
                     ];
                 } else {
