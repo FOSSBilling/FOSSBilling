@@ -29,7 +29,7 @@ class i18n
          * If the locale cookie is set and it's one of the enabled locales, use that.
          * Otherwise, fallback to auto-detection when enable.
          */
-        if (!empty($_COOKIE['BBLANG'] && in_array($_COOKIE['BBLANG'], self::getLocales()))) {
+        if (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
             $locale = $_COOKIE['BBLANG'];
         } elseif ($autoDetect) {
             $locale = self::getBrowserLocale();
