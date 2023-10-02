@@ -4,12 +4,16 @@ namespace Box\Mod\Staff;
 
 class PdoMock extends \PDO
 {
-    public function __construct() { }
+    public function __construct()
+    {
+    }
 }
 
 class PdoStatementMock extends \PDOStatement
 {
-    public function __construct() { }
+    public function __construct()
+    {
+    }
 }
 
 class ServiceTest extends \BBTestCase
@@ -155,16 +159,16 @@ class ServiceTest extends \BBTestCase
 
         $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->setMethods(array('getSpecificModulePermissions'))->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
-                ->method('getSpecificModulePermissions')
-                ->willReturn([]);
-    
+            ->method('getSpecificModulePermissions')
+            ->willReturn([]);
+
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
             return $extensionServiceMock;
         });
-    
+
         $serviceMock->setDi($di);
-    
+
         $result = $serviceMock->hasPermission($member, 'example');
         $this->assertFalse($result);
     }
@@ -187,12 +191,12 @@ class ServiceTest extends \BBTestCase
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
-        
+
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
             return $extensionServiceMock;
         });
-        
+
         $serviceMock->setDi($di);
 
         $result = $serviceMock->hasPermission($member, 'example');
@@ -217,7 +221,7 @@ class ServiceTest extends \BBTestCase
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
-            
+
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
             return $extensionServiceMock;
@@ -819,19 +823,23 @@ class ServiceTest extends \BBTestCase
             array(
                 array(),
                 'SELECT * FROM admin',
-                array()),
+                array()
+            ),
             array(
                 array('search' => 'keyword'),
                 '(name LIKE :name OR email LIKE :email )',
-                array(':name' => '%keyword%', ':email' => '%keyword%')),
+                array(':name' => '%keyword%', ':email' => '%keyword%')
+            ),
             array(
                 array('status' => 'active'),
                 'status = :status',
-                array(':status' => 'active')),
+                array(':status' => 'active')
+            ),
             array(
                 array('no_cron' => 'true'),
                 'role != :role',
-                array(':role' => \Model_Admin::ROLE_CRON)),
+                array(':role' => \Model_Admin::ROLE_CRON)
+            ),
         );
     }
 
@@ -968,15 +976,20 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->update($adminModel, $data);
+        $result = $serviceMock->update($adminModel, $data);
         $this->assertTrue($result);
     }
 
@@ -995,15 +1008,20 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->delete($adminModel);
+        $result = $serviceMock->delete($adminModel);
         $this->assertTrue($result);
     }
 
@@ -1043,6 +1061,12 @@ class ServiceTest extends \BBTestCase
 
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
@@ -1050,10 +1074,9 @@ class ServiceTest extends \BBTestCase
         $di['password']       = $passwordMock;
         $di['mod_service'] = $di->protect(fn() => $profileService);
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->changePassword($adminModel, $plainTextPassword);
+        $result = $serviceMock->changePassword($adminModel, $plainTextPassword);
         $this->assertTrue($result);
     }
 
@@ -1095,17 +1118,23 @@ class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
         $di['mod_service']    = $di->protect(fn() => $systemServiceMock);
+
         $di['password']       = $passwordMock;
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->create($data);
+        $result = $serviceMock->create($data);
         $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
@@ -1148,20 +1177,26 @@ class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
         $di['mod_service']    = $di->protect(fn() => $systemServiceMock);
+
         $di['password']       = $passwordMock;
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(788954);
         $this->expectExceptionMessage(sprintf('Staff member with email %s is already registered', $data['email']));
-        $service->create($data);
+        $serviceMock->create($data);
     }
 
     public function testcreateAdmin()
@@ -1277,15 +1312,20 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($newGroupId));
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['logger']      = new \Box_Log();
         $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->createGroup('new_group_name');
+        $result = $serviceMock->createGroup('new_group_name');
         $this->assertIsInt($result);
         $this->assertEquals($newGroupId, $result);
     }
@@ -1323,14 +1363,19 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(0));
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->deleteGroup($adminGroupModel);
+        $result = $serviceMock->deleteGroup($adminGroupModel);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -1341,11 +1386,15 @@ class ServiceTest extends \BBTestCase
         $adminGroupModel->loadBean(new \DummyBean());
         $adminGroupModel->id = 1;
 
-        $service = new \Box\Mod\Staff\Service();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Administrators group can not be removed');
-        $service->deleteGroup($adminGroupModel);
+        $serviceMock->deleteGroup($adminGroupModel);
     }
 
     public function testdeleteGroupGroupHasMembers()
@@ -1358,15 +1407,20 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->will($this->returnValue(2));
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di       = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove group which has staff members');
-        $service->deleteGroup($adminGroupModel);
+        $serviceMock->deleteGroup($adminGroupModel);
     }
 
     public function testupdateGroup()
@@ -1378,15 +1432,20 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
         $di           = new \Pimple\Container();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
-        $service = new \Box\Mod\Staff\Service();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
         $data   = array('name' => 'OhExampleName');
-        $result = $service->updateGroup($adminGroupModel, $data);
+        $result = $serviceMock->updateGroup($adminGroupModel, $data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -1397,15 +1456,18 @@ class ServiceTest extends \BBTestCase
             array(
                 array(),
                 'SELECT m.*, a.email, a.name',
-                array()),
+                array()
+            ),
             array(
                 array('search' => 'keyword'),
                 'a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email',
-                array('name' => '%keyword%', 'id' => '%keyword%', 'email' => '%keyword%')),
+                array('name' => '%keyword%', 'id' => '%keyword%', 'email' => '%keyword%')
+            ),
             array(
                 array('admin_id' => '2'),
                 'm.admin_id = :admin_id',
-                array('admin_id' => '2')),
+                array('admin_id' => '2')
+            ),
         );
     }
 
@@ -1494,14 +1556,18 @@ class ServiceTest extends \BBTestCase
             ->method('prepare')
             ->will($this->returnValue($pdoStatementMock));
 
-        $service = new \Box\Mod\Staff\Service();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+            ->setMethods(array('hasPermission'))->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
 
         $di        = new \Pimple\Container();
         $di['pdo'] = $pdoMock;
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
         $member_id = 1;
-        $result    = $service->setPermissions($member_id, array());
+        $result    = $serviceMock->setPermissions($member_id, array());
         $this->assertTrue($result);
     }
 
