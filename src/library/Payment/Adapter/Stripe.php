@@ -229,9 +229,6 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                             name: \'never\',
                             email: \'never\',
                         },
-                        business: {
-                            name: \':business_name\',
-                        }
                     });
 
                     paymentElement.mount(\'#payment-element\');
@@ -276,7 +273,6 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
             ':invoice_hash' => $invoice->hash,
-            ':business_name' => $invoice->seller_company
         ];
         return strtr($form, $bindings);
     }
