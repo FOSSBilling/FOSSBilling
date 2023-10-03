@@ -180,14 +180,10 @@ class i18n
     {
         if ($disabled) {
             // Only get a list of the disabled locales
-            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), function ($dir) {
-                return is_dir($dir) && file_exists($dir . DIRECTORY_SEPARATOR . '.disabled');
-            });
+            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn($dir) => is_dir($dir) && file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
         } else {
             // Only get a list of the enabled locales
-            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), function ($dir) {
-                return is_dir($dir) && !file_exists($dir . DIRECTORY_SEPARATOR . '.disabled');
-            });
+            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn($dir) => is_dir($dir) && !file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
         }
 
         $locales = array_map('basename', $locales); // get only the directory name
