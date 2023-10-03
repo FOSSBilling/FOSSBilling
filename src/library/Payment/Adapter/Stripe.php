@@ -133,11 +133,15 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
+        $tx = $this->di['db']->getExistingModelById('Transaction', $id);
 
-        $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['bb_invoice_id']);
-        $tx      = $this->di['db']->getExistingModelById('Transaction', $id);
-
-        $tx->invoice_id = $invoice->id;
+        // Use the invoice ID associated with the transaction or else fallback to the ID passed via GET.
+        if ($tx->invoice_id) {
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
+        } else {
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['bb_invoice_id']);
+            $tx->invoice_id = $invoice->id;
+        }
 
         try {
             $charge = $this->stripe->paymentIntents->retrieve(
@@ -157,18 +161,22 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 'rel_id'        =>  $tx->id,
             ];
 
-            $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
-            $clientService = $this->di['mod_service']('client');
-
-            //Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
+            // Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
             if ($charge->status == 'succeeded' && $tx->status !== 'processed') {
-                $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+                // Instance the services we need
+                $clientService = $this->di['mod_service']('client');
                 $invoiceService = $this->di['mod_service']('Invoice');
 
+                // Update the account funds
+                $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
+                $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+
+                // Now pay the invoice / batch pay if there's no invoice associated with the transaction
                 if ($tx->invoice_id) {
                     $invoiceService->payInvoiceWithCredits($invoice);
+                } else {
+                    $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
                 }
-                $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
             }
         } catch (\Stripe\Exception\CardException | \Stripe\Exception\InvalidRequestException | \Stripe\Exception\AuthenticationException | \Stripe\Exception\ApiConnectionException | \Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
