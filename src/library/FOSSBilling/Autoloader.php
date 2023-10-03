@@ -26,7 +26,7 @@ class AutoLoader
      * Creates a new instance of AntLoader and then loads the classmap.
      * The instance is configured for filesystem caching within the FOSSBilling cache directory.
      * 
-     * @param bool (optional) $registerFOSSBillingDefaults Set to true if you want the autoloader to be shipped with the default paths and namespaces for FOSSBilling. Defaults to true.
+     * @param bool $registerFOSSBillingDefaults (optional) Set to true if you want the autoloader to be shipped with the default paths and namespaces for FOSSBilling. Defaults to true.
      */
     public function __construct(bool $registerFOSSBillingDefaults = true)
     {
