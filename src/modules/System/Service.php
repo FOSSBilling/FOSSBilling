@@ -10,10 +10,10 @@
 
 namespace Box\Mod\System;
 
+use FOSSBilling\Environment;
 use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
-use FOSSBilling\Environment;
 
 class Service
 {
@@ -221,7 +221,7 @@ class Service
     {
         $msgs = [];
 
-        // Check if there's an update available 
+        // Check if there's an update available
         try {
             $updater = $this->di['updater'];
             if ($updater->isUpdateAvailable()) {
@@ -236,16 +236,15 @@ class Service
             error_log($e->getMessage());
         }
 
-
         $last_exec = $this->getParamValue('last_cron_exec');
         $disableAutoCron = $this->di['config']['disable_auto_cron'] ?? false;
 
-        /**
+        /*
          * Here we check if cron has been run at all or within a recent timeframe.
          * No matter what, a message will be displayed within the dashboard and by default cron will also be performed to ensure functionality, however this can be disabled.
          * Results are cached so even if `getMessages` is called multiple times it will still display correctly & so it won't go away before it's noticed.
          */
-        if ((Environment::isProduction())) {
+        if (Environment::isProduction()) {
             $cronService = $this->di['mod_service']('cron');
 
             $result = $this->di['cache']->get('cron_issue', function (ItemInterface $item) use ($cronService, $last_exec, $disableAutoCron) {
