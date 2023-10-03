@@ -115,10 +115,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ActivitySystem', $data['id'], 'Event not found');
 
-        $staff_service = $this->di['mod_service']('Staff');
-        if (!$staff_service->hasPermission(null, 'activity', 'delete_activity')) {
-            throw new \Box_Exception('You do not have permission to perform this action', [], 403);
-        }
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'delete_activity');
 
         $this->di['db']->trash($model);
 
