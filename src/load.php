@@ -225,13 +225,8 @@ define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
 
 // Initial setup and checks passed, now we setup our custom autoloader.
-$loader = new AntCMS\AntLoader([
-    'mode' => 'filesystem',
-    'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
-]);
-$loader->addNamespace('', PATH_LIBRARY, 'psr0');
-$loader->addNamespace('Box\\Mod\\', PATH_MODS);
-$loader->checkClassMap();
+include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+$loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
 // Verify the installer was removed.

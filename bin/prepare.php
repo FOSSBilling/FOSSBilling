@@ -27,13 +27,8 @@ const HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DI
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
 // Set up the autoloader
-$loader = new AntCMS\AntLoader([
-    'mode' => 'filesystem',
-    'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
-]);
-$loader->addNamespace('', PATH_LIBRARY, 'psr0');
-$loader->addNamespace('Box\\Mod\\', PATH_MODS);
-$loader->checkClassMap();
+include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+$loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
 use FOSSBilling\Environment;
