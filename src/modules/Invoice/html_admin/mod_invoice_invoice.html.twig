@@ -141,12 +141,44 @@
                     </svg>
                     <span>{{ 'Send reminder'|trans }}</span>
                 </a>
-                <a href="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="Invoice marked as paid">
+                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#check" />
                     </svg>
                     <span>{{ 'Mark as paid'|trans }}</span>
                 </a>
+                <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <form class="modal-content api-form" method="post" action="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1, 'CSRFToken': CSRFToken }) }}" name="transactionForm" data-api-reload="1">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="transactionModalLabel">{{ 'Enter Custom Transaction ID'|trans }}:</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <div class="mb-3 row">
+                            <label class="col-md-3 col-form-label" for="transaction-id">{{ 'Transaction ID'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="transactionId" id="transaction-id">
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <div class="col">
+                                {{ 'Add the transaction ID of the payment to mark the invoice as paid.' |trans }}<br />
+                                {{ 'This should be the transaction ID you use to reconcile your bank statement.' |trans }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                        <input type="submit" class="btn btn-primary" value="{{ 'Submit'|trans }}">
+                    </div>
+                    </form>
+                </div>
+                </div>
+
+
                 {% endif %}
 
                 {% if invoice.status == 'paid' %}
@@ -698,6 +730,7 @@
             return false;
         });
     });
+
 </script>
 {% endautoescape %}
 {% endblock %}

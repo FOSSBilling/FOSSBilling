@@ -304,7 +304,7 @@ class Box_App
             [$network, $netmask] = explode('/', $network, 2);
             $network_decimal = ip2long($network);
             $ip_decimal = ip2long($visitorIP);
-            $wildcard_decimal = 2 ** (32 - $netmask) - 1;
+            $wildcard_decimal = 2 ** (32 - (int)$netmask) - 1;
             $netmask_decimal = ~$wildcard_decimal;
             if (($ip_decimal & $netmask_decimal) == ($network_decimal & $netmask_decimal)) {
                 return false;

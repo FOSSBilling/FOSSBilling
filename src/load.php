@@ -8,11 +8,11 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
-defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'production');
 const PATH_ROOT = __DIR__;
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
 const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR . 'library';
@@ -51,7 +51,7 @@ function checkInstaller()
     $filesystem = new Filesystem();
 
     // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/index.php')) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php') && Environment::isProduction()) {
         // Throw exception only if debug mode is NOT enabled.
         $config = require PATH_CONFIG;
         if (! $config['debug']) throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);        
@@ -99,7 +99,7 @@ function checkRequirements()
 function checkSSL()
 {
     $config = include PATH_CONFIG;
-    if (isset($config['security']['force_https']) && $config['security']['force_https'] && 'cli' !== PHP_SAPI) {
+    if (isset($config['security']['force_https']) && $config['security']['force_https'] && !FOSSBilling\Environment::isCLI()) {
         if (!FOSSBilling\Tools::isHTTPS()) {
             $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
             header('Location: ' . $url);
@@ -145,7 +145,7 @@ function errorHandler(int $number, string $message, string $file, int $line)
 function exceptionHandler($e)
 {
     $message = htmlspecialchars($e->getMessage());
-    if (APPLICATION_ENV === 'testing') {
+    if (getenv('APP_ENV') === 'test') {
         echo $message . PHP_EOL;
 
         return;
@@ -216,9 +216,6 @@ checkConfig();
 // All seems good, so load the config file.
 $config = require PATH_CONFIG;
 
-// Verify the installer was removed.
-checkInstaller();
-
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 define('BB_DEBUG', $config['debug']);
@@ -230,14 +227,12 @@ define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
 
 // Initial setup and checks passed, now we setup our custom autoloader.
-$loader = new AntCMS\AntLoader([
-    'mode' => 'filesystem',
-    'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
-]);
-$loader->addNamespace('', PATH_LIBRARY, 'psr0');
-$loader->addNamespace('Box\\Mod\\', PATH_MODS);
-$loader->checkClassMap();
+include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+$loader = new FOSSBilling\AutoLoader();
 $loader->register();
+
+// Verify the installer was removed.
+checkInstaller();
 
 // Check if SSL required, and enforce if so.
 checkSSL();

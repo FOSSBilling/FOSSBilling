@@ -10,6 +10,8 @@
 
 namespace Box\Mod\Massmailer;
 
+use FOSSBilling\Environment;
+
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -159,32 +161,39 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \Box_Exception('Disabled for security reasons (Demo mode enabled)');
         }
 
-        $mail = $this->di['mail'];
-        $mail->setSubject($data['subject']);
-        $mail->setBodyHtml($data['content']);
-        $mail->setFrom($data['from'], $data['from_name']);
-        $mail->addTo($data['to'], $data['to_name']);
-
-        if (APPLICATION_ENV != 'production') {
+        if (!Environment::isProduction()) {
             if ($this->di['config']['debug']) {
-                error_log('Skip email sending. Application ENV: ' . APPLICATION_ENV);
+                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
-
             return true;
         }
 
-        $mod = $this->di['mod']('email');
-        $settings = $mod->getConfig();
+        // Setup the email settings & recipients
+        $settings = $this->di['mod']('email')->getConfig();
+        $transport = $settings['mailer'] ?? 'sendmail';
+        $customDSN = $settings['custom_dsn'] ?? null;
+        $sender = [
+            'email' => $data['from'],
+            'name' => $data['from_name'],
+        ];
+        $recipient = [
+            'email' => $data['to'],
+            'name' => $data['to_name'],
+        ];
 
+        try {
+            // Send the email
+            $mail = new \FOSSBilling\Mail($sender, $recipient, $data['subject'], $data['content'], $transport, $customDSN);
+            $mail->send($settings);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+
+        // Log the email activity to the database if enabled
         if (isset($settings['log_enabled']) && $settings['log_enabled']) {
             $activityService = $this->di['mod_service']('activity');
             $activityService->logEmail($data['subject'], $client_id, $data['from'], $data['to'], $data['content']);
         }
-
-        $emailSettings = $this->di['mod_config']('email');
-        $transport = $data['mailer'] ?? 'sendmail';
-
-        $mail->send($transport, $emailSettings);
 
         return true;
     }

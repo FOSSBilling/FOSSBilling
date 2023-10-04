@@ -2,13 +2,14 @@ includes:
 	- phpstan-baseline.neon
 
 parameters:
-	level: 1
+	level: 3
 	paths:
 		- src
+	bootstrapFiles:
+		- src/load.php
 	excludePaths:
 		analyse:
 		- src/vendor
-		- src/library/Registrar/Adapter/srsx.php
 		- src/library/Box/Request.php
 		- src/library/Box/Response.php
 		- src/library/Model/Admin.php
@@ -17,7 +18,10 @@ parameters:
 		- src/library/Model/Product.php
 		- src/library/Server/Manager/Custom.php
 		- src/library/Server/Manager/Whm.php
-		- src/rector.php
+		- src/Data/Cache
+	universalObjectCratesClasses:
+		- \RedBeanPHP\SimpleModel
+		- \RedBeanPHP\OODBBean
 	ignoreErrors:
 		- '#^Function __trans not found\.$#'
 		- '#^Function __pluralTrans not found\.$#'
@@ -26,3 +30,14 @@ parameters:
 		  path: src/modules/Custompages/Controller/Client.php
 		- message: '#^Variable \$ext_id on left side of \?\?\= is never defined\.$#'
 		  path: src/modules/Extension/Service.php
+		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$updated_at\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$pass\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$username\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$sld\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$tld\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$client_id\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$config\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$api_key\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$updated_at\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$created_at\.$#'
+		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$id\.$#'

@@ -234,7 +234,7 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
         $model = $service->getByCode($data['code']);
-        if (!$model instanceof \Model_currency) {
+        if (!$model instanceof \Model_Currency) {
             throw new \Box_Exception('Currency not found');
         }
 

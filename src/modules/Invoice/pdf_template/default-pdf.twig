@@ -19,66 +19,83 @@
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
 			<p>Invoice number: {{ invoice.serie_nr }}</p>
-			<p>Invoice date: {{ invoice.created_at|format_datetime }}</p>
-			<p>Due date: {{ invoice.due_at|format_datetime }}</p>
+			<p>Invoice date: {{ invoice.created_at|format_date }}</p>
+			<p>Due date: {{ invoice.due_at|format_date }}</p>
 			<p>Invoice status: {{ invoice.status|capitalize }}</p>
 		</div>
 
 		<h3 class='CompanyInfo'>Company</h3>
 		<div class='CompanyInfo'>
+		<p>
 		{% for key, value in seller %}
-			<p>{{ key }}:
-				{{ value }}</p>
+		{% if key == 'Name'%}<b>{% endif %}
+		{% if key == 'Phone'%} {{ "Tel"|trans}} :{% endif %}
+				{{ value }}<br>
+		{% if key == 'Name'%}</b>{% endif %}
 		{% endfor %}
+		</p>
 		</div>
 
 		<h3 class='ClientInfo'>Client</h3>
 		<div class='ClientInfo'>
+		<p>
 		{% for key, value in buyer %}
-			<p>{{ key }}:
-				{{ value }}</p>
+		{% if key == 'Company'%}<b>{% endif %}
+		{% if key == 'Phone'%} {{ "Tel"|trans}} :{% endif %}
+				{{ value }}<br>
+		{% if key == 'Company'%}</b>{% endif %}
 		{% endfor %}
+		</p>
 		</div>
 
 		<div class='Breakdown' style='top: {{top}}px'>
 			<table style='width:100%'>
 				<tr>
-					<th>#</th>
-					<th>Product</th>
-					<th>Quantity & Price</th>
-					<th>Total</th>
+					<th style='text-align: center; width:25px;'>#</th>
+					<th style='text-align: left'>Product</th>
+					<th style='text-align: right'>Quantity & Price</th>
+					<th style='text-align: right'>Total</th>
 				</tr>
 				{% set nr = 0 %}
 				{% for item in invoice.lines %}
 					{% set nr = nr + 1 %}
 					<tr>
-						<th>{{ nr }}</th>
-						<th>{{ item.title }}</th>
-						<th>{{ item.quantity }}x {{ item.price|money_convert }}</th>
-						<th>{{ item.total|money_convert }}</th>
+						<td style='text-align: center; width:25px;'>{{ nr }}</td>
+						<td style='text-align: left'>{{ item.title }}</td>
+						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|money_convert }}</td>
+						<td style='text-align: right'>{{ item.total|money_convert }}</td>
 					</tr>
 				{% endfor %}
 				<tr>
-					<th colspan='4'>___________________________________________________________________________________________</th>
+					<th colspan='4'>_________________________________________________________________________________________</th>
 				</tr>
 				{% if invoice.tax > 0 %}
 					<tr>
-						<th class='right' colspan='3'>{{ invoice.taxname }}
+						<th style='text-align: right' colspan='3'>{{ invoice.taxname }}
 							{{ invoice.taxrate }}% Tax:</th>
-						<th>{{ invoice.tax|money_convert }}</th>
+						<th style='text-align: right'>{{ invoice.tax|money_convert }}</th>
 					</tr>
 				{% endif %}
 				{% if invoice.discount|default and invoice.discount > 0 %}
 					<tr>
-						<th class='right' colspan='3'>Discount:</th>
-						<th>{{ invoice.discount|money_convert }}</th>
+						<th style='text-align: right' colspan='3'>Discount:</th>
+						<th style='text-align: right'>{{ invoice.discount|money_convert }}</th>
 					</tr>
 				{% endif %}
 				<tr>
-					<th class='right' colspan='3'>Total:</th>
-					<th>{{ invoice.total }}{{ currency_code }}</th>
+					<th style='text-align: right'  colspan='3'>Total:</th>
+					<th style='text-align: right'>{{ invoice.total|money_convert }}</th>
 				</tr>
 			</table>
+		<p>{{ footer.signature is defined ? footer.signature : "FOSSBilling.org - Client Management, Invoice and Support Software" }}</p>
+		</div>
+		<div class='InvoiceFooter'>
+		{% if footer.display_bank_info == 1 %}
+			<b>Payment details:</b><br >
+			<b>{{"Account Owner"|trans}}:</b> {{ footer.company_name }} | <b>{{"Bank"|trans}}:</b> {{ footer.bank_name }} | <b>{{"BIC / SWIFT Code"|trans}}:</b> {{ footer.bic }} | <b>{{"Account number"|trans}}:</b> {{ footer.account_number }}<br><br>
+		{% endif %}
+		<b>{{ footer.company_name }}</b> {{ footer.address_1 }}, {{ footer.address_2 }}, {{ footer.address_3 }} <br ><b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>{{ 'Phone'|trans }}:</b> {{ footer.phone }}<br>
+		<b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | <b>{{ 'Company Reg. No'|trans }}:</b> {{ footer.company_number }} | <b>{{ 'Web'|trans }}: </b>{{ footer.www }}
 		</div>
 	</body>
 </html>

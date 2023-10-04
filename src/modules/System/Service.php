@@ -10,8 +10,10 @@
 
 namespace Box\Mod\System;
 
+use FOSSBilling\Environment;
 use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
@@ -123,7 +125,9 @@ class Service
             'company_address_1',
             'company_address_2',
             'company_address_3',
-
+            'company_bank_name',
+            'company_bic',
+            'company_display_bank_info',
             'company_account_number',
             'company_number',
             'company_note',
@@ -163,6 +167,10 @@ class Service
             'address_2' => isset($results['company_address_2']) ? htmlspecialchars($results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
             'address_3' => isset($results['company_address_3']) ? htmlspecialchars($results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
             'account_number' => $results['company_account_number'] ?? null,
+            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars($results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
+            'bic' => isset($results['company_bic']) ? htmlspecialchars($results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
+            'display_bank_info' => $results['company_display_bank_info'] ?? null,
+            'bank_info_pagebottom' => $results['company_bank_info_pagebottom'] ?? null,
             'number' => isset($results['company_number']) ? htmlspecialchars($results['company_number'], ENT_QUOTES, 'UTF-8') : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
@@ -209,10 +217,11 @@ class Service
         return true;
     }
 
-    public function getMessages($type, $runFromTest = false)
+    public function getMessages($type)
     {
         $msgs = [];
 
+        // Check if there's an update available
         try {
             $updater = $this->di['updater'];
             if ($updater->isUpdateAvailable()) {
@@ -226,26 +235,45 @@ class Service
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
+
         $last_exec = $this->getParamValue('last_cron_exec');
         $disableAutoCron = $this->di['config']['disable_auto_cron'] ?? false;
-        if ($runFromTest === false && $disableAutoCron === false) {
-            if (!$last_exec) {
-                $msgs['info'][] = [
-                    'text' => 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.',
-                ];
-                $cronService = $this->di['mod_service']('cron');
-                $cronService->runCrons();
-            } else {
-                $minSinceLastExec = (time() - strtotime($last_exec)) / 60;
-                if ($minSinceLastExec >= 15) {
-                    $minSinceLastExec = round($minSinceLastExec, 2);
-                    $msgs['info'][] = [
-                        'text' => 'Cron hasn\'t been executed in ' . $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.',
-                    ];
-                    $cronService = $this->di['mod_service']('cron');
+
+        /*
+         * Here we check if cron has been run at all or within a recent timeframe.
+         * No matter what, a message will be displayed within the dashboard and by default cron will also be performed to ensure functionality, however this can be disabled.
+         * Results are cached so even if `getMessages` is called multiple times it will still display correctly & so it won't go away before it's noticed.
+         */
+        if (Environment::isProduction()) {
+            $cronService = $this->di['mod_service']('cron');
+
+            $result = $this->di['cache']->get('cron_issue', function (ItemInterface $item) use ($cronService, $last_exec, $disableAutoCron) {
+                $item->expiresAfter(15 * 60);
+                $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
+
+                // Perform the fallback behavior if enabled
+                if (!$disableAutoCron && (!$last_exec || (time() - strtotime($last_exec)) / 60 >= 15)) {
                     $cronService->runCrons();
-                    error_log("Cron hasn't been run in $minSinceLastExec minutes. Manually executing.");
                 }
+
+                // And now return the correctly message for the given situation
+                if (!$last_exec) {
+                    return [
+                        'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly. (Message is cached for 15 minutes)',
+                        'url' => $cronUrl,
+                    ];
+                } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
+                    return [
+                        'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes. (Message is cached for 15 minutes)',
+                        'url' => $cronUrl,
+                    ];
+                } else {
+                    return [];
+                }
+            });
+
+            if ($result) {
+                $msgs['danger'][] = $result;
             }
         }
 
@@ -258,7 +286,7 @@ class Service
 
         if ($this->getVersion() == '0.0.1') {
             $msgs['warning'][] = [
-                'text' => 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.',
+                'text' => 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the main branch, instead of a released version. But beware, the main branch may not be stable enough for production use.',
             ];
         }
 
@@ -324,7 +352,9 @@ class Service
         } else {
             // attempt adding admin api to twig
             try {
-                $twig->addGlobal('admin', $this->di['api_admin']);
+                if ($this->di['auth']->isAdminLoggedIn()) {
+                    $twig->addGlobal('admin', $this->di['api_admin']);
+                }
             } catch (\Exception) {
                 // skip if admin is not logged in
             }
@@ -1638,8 +1668,12 @@ class Service
     {
         $di = $event->getDi();
 
-        // Prune the FS cache
         try {
+            // Prune the classmap to remove classes which are no logner on the disk or that have moved.
+            $loader = new \FOSSBilling\AutoLoader();
+            $loader->getAntLoader()->pruneClassmap();
+
+            // Prune the FS cache
             $cache = $di['cache'];
             if ($cache->prune()) {
                 $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');

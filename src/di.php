@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Environment;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
@@ -234,13 +235,12 @@ $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
 
     $mode = $di['config']['security']['mode'] ?? 'strict';
-    $lifespan = $di['config']['security']['cookie_lifespan'] ?? 7200;
 
     // Mark the cookie as secure either if force HTTPS is enabled or if we can detect that HTTPS is being used.
     $forceSSL = $di['config']['security']['force_https'] ?? true;
     $secure = ($forceSSL || FOSSBilling\Tools::isHTTPS());
 
-    $session = new \FOSSBilling\Session($handler, $mode, $lifespan, $secure);
+    $session = new \FOSSBilling\Session($handler, $mode, $secure);
     $session->setDi($di);
     $session->setupSession();
 
@@ -465,7 +465,7 @@ $di['loggedin_client'] = function () use ($di) {
  * @throws \Box_Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
-    if (php_sapi_name() === 'cli' || !http_response_code()) {
+    if (Environment::isCLI()) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 

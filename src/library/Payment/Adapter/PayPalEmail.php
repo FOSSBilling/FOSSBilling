@@ -9,6 +9,7 @@
  */
 
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use FOSSBilling\Environment;
 
 class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FOSSBilling\InjectionAwareInterface
 {
@@ -26,7 +27,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
 
     public function __construct(private $config)
     {
-        if(!isset($this->config['email'])) {
+        if (!isset($this->config['email'])) {
             throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'PayPal', ':missing' => 'PayPal Email address']);
         }
     }
@@ -43,21 +44,22 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
                 'width' => '85px',
             ),
             'form'  => array(
-                'email' => array('text', array(
-                            'label' => 'PayPal email address for payments',
-                            'validators'=>array('EmailAddress'),
+                'email' => array(
+                    'text', array(
+                        'label' => 'PayPal email address for payments',
+                        'validators' => array('EmailAddress'),
                     ),
-                 ),
+                ),
             ),
         );
     }
 
     public function getHtml($api_admin, $invoice_id, $subscription)
     {
-        $invoice = $api_admin->invoice_get(array('id'=>$invoice_id));
+        $invoice = $api_admin->invoice_get(array('id' => $invoice_id));
 
         $data = array();
-        if($subscription) {
+        if ($subscription) {
             $data = $this->getSubscriptionFields($invoice);
         } else {
             $data = $this->getOneTimePaymentFields($invoice);
@@ -69,39 +71,39 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
-        if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
+        if (!Environment::isTesting() && !$this->_isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
         }
 
         $ipn = $data['post'];
 
-        $tx = $api_admin->invoice_transaction_get(array('id'=>$id));
+        $tx = $api_admin->invoice_transaction_get(array('id' => $id));
 
-        if(!$tx['invoice_id']) {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'invoice_id'=>$data['get']['bb_invoice_id']));
+        if (!$tx['invoice_id']) {
+            $api_admin->invoice_transaction_update(array('id' => $id, 'invoice_id' => $data['get']['bb_invoice_id']));
         }
 
-        if(!$tx['type'] && isset($ipn['txn_type'])) {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>$ipn['txn_type']));
+        if (!$tx['type'] && isset($ipn['txn_type'])) {
+            $api_admin->invoice_transaction_update(array('id' => $id, 'type' => $ipn['txn_type']));
         }
 
-        if(!$tx['txn_id'] && isset($ipn['txn_id'])) {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_id'=>$ipn['txn_id']));
+        if (!$tx['txn_id'] && isset($ipn['txn_id'])) {
+            $api_admin->invoice_transaction_update(array('id' => $id, 'txn_id' => $ipn['txn_id']));
         }
 
-        if(!$tx['txn_status'] && isset($ipn['payment_status'])) {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_status'=>$ipn['payment_status']));
+        if (!$tx['txn_status'] && isset($ipn['payment_status'])) {
+            $api_admin->invoice_transaction_update(array('id' => $id, 'txn_status' => $ipn['payment_status']));
         }
 
-        if(!$tx['amount'] && isset($ipn['mc_gross'])) {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'amount'=>$ipn['mc_gross']));
+        if (!$tx['amount'] && isset($ipn['mc_gross'])) {
+            $api_admin->invoice_transaction_update(array('id' => $id, 'amount' => $ipn['mc_gross']));
         }
 
-        if(!$tx['currency'] && isset($ipn['mc_currency'])) {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'currency'=>$ipn['mc_currency']));
+        if (!$tx['currency'] && isset($ipn['mc_currency'])) {
+            $api_admin->invoice_transaction_update(array('id' => $id, 'currency' => $ipn['mc_currency']));
         }
 
-        $invoice = $api_admin->invoice_get(array('id'=>$data['get']['bb_invoice_id']));
+        $invoice = $api_admin->invoice_get(array('id' => $data['get']['bb_invoice_id']));
         $client_id = $invoice['client']['id'];
 
         switch ($ipn['txn_type']) {
@@ -109,22 +111,23 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
             case 'web_accept':
             case 'subscr_payment':
 
-                if($ipn['payment_status'] == 'Completed') {
+                if ($ipn['payment_status'] == 'Completed') {
                     $bd = array(
                         'id'            =>  $client_id,
                         'amount'        =>  $ipn['mc_gross'],
-                        'description'   =>  'PayPal transaction '.$ipn['txn_id'],
+                        'description'   =>  'PayPal transaction ' . $ipn['txn_id'],
                         'type'          =>  'PayPal',
                         'rel_id'        =>  $ipn['txn_id'],
                     );
-                    if ($this->isIpnDuplicate($ipn)){
+                    if ($this->isIpnDuplicate($ipn)) {
                         throw new Payment_Exception('Cannot process duplicate IPN');
                     }
                     $api_admin->client_balance_add_funds($bd);
-                    if($tx['invoice_id']) {
-                        $api_admin->invoice_pay_with_credits(array('id'=>$tx['invoice_id']));
+                    if ($tx['invoice_id']) {
+                        $api_admin->invoice_pay_with_credits(array('id' => $tx['invoice_id']));
+                    } else {
+                        $api_admin->invoice_batch_pay_with_credits(array('client_id' => $client_id));
                     }
-                    $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
                 }
 
                 break;
@@ -155,36 +158,36 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
             case 'subscr_failed':
             case 'subscr_eot':
             case 'subscr_cancel':
-                $s = $api_admin->invoice_subscription_get(array('sid'=>$ipn['subscr_id']));
-                $api_admin->invoice_subscription_update(array('id'=>$s['id'], 'status'=>'canceled'));
+                $s = $api_admin->invoice_subscription_get(array('sid' => $ipn['subscr_id']));
+                $api_admin->invoice_subscription_update(array('id' => $s['id'], 'status' => 'canceled'));
                 break;
 
             default:
-                error_log('Unknown paypal transaction '.$id);
+                error_log('Unknown paypal transaction ' . $id);
                 break;
         }
 
-        if(isset($ipn['payment_status']) && $ipn['payment_status'] == 'Refunded') {
+        if (isset($ipn['payment_status']) && $ipn['payment_status'] == 'Refunded') {
             $refd = array(
                 'id'    => $invoice['id'],
-                'note'  => 'PayPal refund '.$ipn['parent_txn_id'],
+                'note'  => 'PayPal refund ' . $ipn['parent_txn_id'],
             );
             $api_admin->invoice_refund($refd);
         }
 
         $d = array(
-            'id'        => $id,
-            'error'     => '',
-            'error_code'=> '',
-            'status'    => 'processed',
-            'updated_at'=> date('Y-m-d H:i:s'),
+            'id'         => $id,
+            'error'      => '',
+            'error_code' => '',
+            'status'     => 'processed',
+            'updated_at' => date('Y-m-d H:i:s'),
         );
         $api_admin->invoice_transaction_update($d);
     }
 
     private function serviceUrl()
     {
-        if($this->config['test_mode']) {
+        if ($this->config['test_mode']) {
             return 'https://www.sandbox.paypal.com/cgi-bin/webscr';
         } else {
             return 'https://www.paypal.com/cgi-bin/webscr';
@@ -195,40 +198,40 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
     {
         // use http_raw_post_data instead of post due to encoding
         parse_str($data['http_raw_post_data'], $post);
-		$req = 'cmd=_notify-validate';
-		foreach ((array) $post as $key => $value) {
-			$value = urlencode(stripslashes($value));
-			$req .= "&$key=$value";
-		}
-		$url = $this->serviceUrl();
-		$ret = $this->download($url, $req);
-		return $ret == 'VERIFIED';
+        $req = 'cmd=_notify-validate';
+        foreach ((array) $post as $key => $value) {
+            $value = urlencode(stripslashes($value));
+            $req .= "&$key=$value";
+        }
+        $url = $this->serviceUrl();
+        $ret = $this->download($url, $req);
+        return $ret == 'VERIFIED';
     }
 
     public function moneyFormat($amount, $currency = null)
     {
         //HUF currency do not accept decimal values
-        if($currency == 'HUF') {
+        if ($currency == 'HUF') {
             return number_format($amount, 0);
         }
         return number_format($amount, 2, '.', '');
     }
 
-	/**
-	 * @param string $url
-	 */
-	private function download($url, $post_vars = false)
+    /**
+     * @param string $url
+     */
+    private function download($url, $post_vars = false)
     {
-		$post_contents = '';
-		if ($post_vars) {
-			if (is_array($post_vars)) {
-				foreach($post_vars as $key => $val) {
-					$post_contents .= ($post_contents ? '&' : '').urlencode($key).'='.urlencode($val);
-				}
-			} else {
-				$post_contents = $post_vars;
-			}
-		}
+        $post_contents = '';
+        if ($post_vars) {
+            if (is_array($post_vars)) {
+                foreach ($post_vars as $key => $val) {
+                    $post_contents .= ($post_contents ? '&' : '') . urlencode($key) . '=' . urlencode($val);
+                }
+            } else {
+                $post_contents = $post_vars;
+            }
+        }
 
         $client = $this->getHttpClient()->withOptions([
             'verify_peer'   => false,
@@ -238,9 +241,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         $response = $client->request('POST', $url, [
             'body'  => $post_contents,
         ]);
-		$data = $response->getContent();
-		return $data;
-	}
+        $data = $response->getContent();
+        return $data;
+    }
 
     /**
      * @param string $url
@@ -248,14 +251,14 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
     private function _generateForm($url, $data, $method = 'post')
     {
         $form  = '';
-        $form .= '<form name="payment_form" action="'.$url.'" method="'.$method.'">' . PHP_EOL;
-        foreach($data as $key => $value) {
+        $form .= '<form name="payment_form" action="' . $url . '" method="' . $method . '">' . PHP_EOL;
+        foreach ($data as $key => $value) {
             $form .= sprintf('<input type="hidden" name="%s" value="%s" />', $key, $value) . PHP_EOL;
         }
-        $form .=  '<input class="bb-button bb-button-submit" type="submit" value="Pay with PayPal" id="payment_button"/>'. PHP_EOL;
+        $form .=  '<input class="bb-button bb-button-submit" type="submit" value="Pay with PayPal" id="payment_button"/>' . PHP_EOL;
         $form .=  '</form>' . PHP_EOL . PHP_EOL;
 
-        if(isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {
+        if (isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {
             $form .= sprintf('<h2>%s</h2>', __trans('Redirecting to PayPal.com'));
             $form .= "<script type='text/javascript'>$(document).ready(function(){    document.getElementById('payment_button').style.display = 'none';    document.forms['payment_form'].submit();});</script>";
         }
@@ -263,10 +266,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         return $form;
     }
 
-    /**
-     * @param string $txn_id
-     */
-    public function isIpnDuplicate(array $ipn)
+    public function isIpnDuplicate(array $ipn): bool
     {
         $sql = 'SELECT id
                 FROM transaction
@@ -284,7 +284,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         );
 
         $rows = $this->di['db']->getAll($sql, $bindings);
-        if ((is_countable($rows) ? count($rows) : 0) > 1){
+        if ((is_countable($rows) ? count($rows) : 0) > 1) {
             return true;
         }
 
@@ -295,9 +295,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
     public function getInvoiceTitle(array $invoice)
     {
         $p = array(
-            ':id'=>sprintf('%05s', $invoice['nr']),
-            ':serie'=>$invoice['serie'],
-            ':title'=>$invoice['lines'][0]['title']
+            ':id' => sprintf('%05s', $invoice['nr']),
+            ':serie' => $invoice['serie'],
+            ':title' => $invoice['lines'][0]['title']
         );
         return __trans('Payment for invoice :serie:id [:title]', $p);
     }
@@ -320,7 +320,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         $data['cmd']                = '_xclick-subscriptions';
         $data['rm']                 = '2';
 
-        $data['invoice']         = $invoice['id'];
+        $data['invoice']            = $invoice['id'];
 
         // Recurrence info
         $data['a3']                 = $this->moneyFormat($invoice['total'], $invoice['currency']); // Regular subscription price.
@@ -337,18 +337,18 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
 
         $data['src']                = 1; //Recurring payments. Subscription payments recur unless subscribers cancel their subscriptions before the end of the current billing cycle or you limit the number of times that payments recur with the value that you specify for srt.
         $data['sra']                = 1; //Reattempt on failure. If a recurring payment fails, PayPal attempts to collect the payment two more times before canceling the subscription.
-        $data['charset']			= 'UTF-8'; //Sets the character encoding for the billing information/log-in page, for the information you send to PayPal in your HTML button code, and for the information that PayPal returns to you as a result of checkout processes initiated by the payment button. The default is based on the character encoding settings in your account profile.
+        $data['charset']            = 'UTF-8'; //Sets the character encoding for the billing information/log-in page, for the information you send to PayPal in your HTML button code, and for the information that PayPal returns to you as a result of checkout processes initiated by the payment button. The default is based on the character encoding settings in your account profile.
 
         //client data
         $buyer = $invoice['buyer'];
-        $data['address1']			= $buyer['address'];
-        $data['city']				= $buyer['city'];
-        $data['email']				= $buyer['email'];
-        $data['first_name']			= $buyer['first_name'];
-        $data['last_name']			= $buyer['last_name'];
-        $data['zip']				= $buyer['zip'];
-        $data['state']				= $buyer['state'];
-        $data['bn']                  = "FOSSBilling_SP";
+        $data['address1']           = $buyer['address'];
+        $data['city']               = $buyer['city'];
+        $data['email']              = $buyer['email'];
+        $data['first_name']         = $buyer['first_name'];
+        $data['last_name']          = $buyer['last_name'];
+        $data['zip']                = $buyer['zip'];
+        $data['state']              = $buyer['state'];
+        $data['bn']                 = "FOSSBilling_SP";
         return $data;
     }
 

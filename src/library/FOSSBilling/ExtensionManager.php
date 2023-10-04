@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,7 +11,7 @@
 
 namespace FOSSBilling;
 
-use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class ExtensionManager implements InjectionAwareInterface
 {
@@ -148,29 +149,34 @@ class ExtensionManager implements InjectionAwareInterface
     public function makeRequest(string $endpoint, array $params = []): array
     {
         $url = $this->_url . $endpoint;
+        $key = $endpoint . serialize($params);
 
-        $httpClient = \Symfony\Component\HttpClient\HttpClient::create();
-        $response = $httpClient->request('GET', $url, [
-            'timeout' => 5,
-            'query' => array_merge($params, [
-                'fossbilling_version' => \FOSSBilling\Version::VERSION,
-            ]),
-        ]);
+        return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
+            $item->expiresAfter(60 * 60);
 
-        $json = $response->toArray();
+            $httpClient = \Symfony\Component\HttpClient\HttpClient::create();
+            $response = $httpClient->request('GET', $url, [
+                'timeout' => 5,
+                'query' => array_merge($params, [
+                    'fossbilling_version' => \FOSSBilling\Version::VERSION,
+                ]),
+            ]);
 
-        if (is_null($json)) {
-            throw new \Box_Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
-        }
+            $json = $response->toArray();
 
-        if (isset($json['error']) && is_array($json['error'])) {
-            throw new \Box_Exception($json['error']['message'], null, 746);
-        }
+            if (is_null($json)) {
+                throw new \Box_Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
+            }
 
-        if (!isset($json['result']) || !is_array($json['result'])) {
-            throw new \Box_Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
-        }
+            if (isset($json['error']) && is_array($json['error'])) {
+                throw new \Box_Exception($json['error']['message'], null, 746);
+            }
 
-        return $json['result'];
+            if (!isset($json['result']) || !is_array($json['result'])) {
+                throw new \Box_Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+            }
+
+            return $json['result'];
+        });
     }
 }

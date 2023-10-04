@@ -10,6 +10,8 @@
 
 namespace Box\Mod\Servicecustom;
 
+use FOSSBilling\Environment;
+
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -48,7 +50,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @return void
+     * @return \Model_ServiceCustom
      */
     public function action_create(\Model_ClientOrder $order)
     {
@@ -259,7 +261,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = sprintf('Plugin/%s/%s.php', $plugin, $plugin);
-        if (APPLICATION_ENV != 'testing' && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
+        if (!Environment::isTesting() && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
             $e = new \Box_Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (BB_DEBUG) {
                 error_log($e->getMessage());

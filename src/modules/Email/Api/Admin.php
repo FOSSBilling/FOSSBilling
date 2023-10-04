@@ -48,9 +48,6 @@ class Admin extends \Api_Abstract
      * Get sent email details.
      *
      * @return array
-     *
-     * @throws \Box_Exception
-     * @throws LogicException
      */
     public function email_get($data)
     {
@@ -71,8 +68,6 @@ class Admin extends \Api_Abstract
      * @optional int $client_id - log this message to client history
      *
      * @return bool
-     *
-     * @throws \Box_Exception
      */
     public function send($data = [])
     {
@@ -105,7 +100,6 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function email_resend($data)
     {
@@ -129,7 +123,6 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function email_delete($data)
     {
@@ -183,7 +176,6 @@ class Admin extends \Api_Abstract
      * @return array
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function template_get($data)
     {
@@ -203,7 +195,6 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \Box_Exception
-     * @throws LogicException
      */
     public function template_delete($data)
     {
@@ -257,8 +248,7 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \Box_Exception
-     * @throws LogicException
-     */
+     * =     */
     public function template_update($data)
     {
         $required = [
@@ -340,12 +330,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Sends the test email to the currently authenticated admin / staff member.
-     *
-     * @param type $data
-     *
-     * @return bool
      */
-    public function send_test($data)
+    public function send_test(array $data): bool
     {
         $currentUser = $this->di['loggedin_admin'];
 

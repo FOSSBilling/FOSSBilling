@@ -8,6 +8,8 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use \Stripe\StripeClient;
+
 class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -26,17 +28,25 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
 
     public function __construct(private $config)
     {
-        if (!isset($this->config['api_key'])) {
-            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'API key']);
+        if ($this->config['test_mode']) {
+            if (!isset($this->config['test_api_key'])) {
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Test API Key']);
+            }
+            if (!isset($this->config['test_pub_key'])) {
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Test publishable key']);
+            }
+
+            $this->stripe = new StripeClient($this->config['test_api_key']);
+        } else {
+            if (!isset($this->config['api_key'])) {
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'API key']);
+            }
+            if (!isset($this->config['pub_key'])) {
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Publishable key']);
+            }
+
+            $this->stripe = new StripeClient($this->config['api_key']);
         }
-
-        if (!isset($this->config['pub_key'])) {
-            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Publishable key']);
-        }
-
-        $api_key = $this->config['test_mode'] ? $this->get_test_api_key() : $this->config['api_key'];
-
-        $this->stripe = new \Stripe\StripeClient($api_key);
     }
 
     public static function getConfig()
@@ -50,10 +60,14 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 'width' => '65px',
             ),
             'form'  => [
-                'test_api_key' => [
+                'pub_key' => [
                     'text', [
-                        'label' => 'Test Secret key:',
-                        'required' => false,
+                        'label' => 'Live publishable key:',
+                    ],
+                ],
+                'api_key' => [
+                    'text', [
+                        'label' => 'Live Secret key:',
                     ],
                 ],
                 'test_pub_key' => [
@@ -62,14 +76,10 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                         'required' => false,
                     ],
                 ],
-                'api_key' => [
+                'test_api_key' => [
                     'text', [
-                        'label' => 'Live Secret key:',
-                    ],
-                ],
-                'pub_key' => [
-                    'text', [
-                        'label' => 'Live publishable key:',
+                        'label' => 'Test Secret key:',
+                        'required' => false,
                     ],
                 ],
             ],
@@ -123,12 +133,15 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
+        $tx = $this->di['db']->getExistingModelById('Transaction', $id);
 
-        $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['bb_invoice_id']);
-        $tx      = $this->di['db']->getExistingModelById('Transaction', $id);
-
-        $tx->invoice_id = $invoice->id;
-        $tx->type = $data['post']['stripeTokenType'];
+        // Use the invoice ID associated with the transaction or else fallback to the ID passed via GET.
+        if ($tx->invoice_id) {
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
+        } else {
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['bb_invoice_id']);
+            $tx->invoice_id = $invoice->id;
+        }
 
         try {
             $charge = $this->stripe->paymentIntents->retrieve(
@@ -148,21 +161,24 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 'rel_id'        =>  $tx->id,
             ];
 
-            $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
-            $clientService = $this->di['mod_service']('client');
-
-            //Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
+            // Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
             if ($charge->status == 'succeeded' && $tx->status !== 'processed') {
-                $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+                // Instance the services we need
+                $clientService = $this->di['mod_service']('client');
                 $invoiceService = $this->di['mod_service']('Invoice');
 
+                // Update the account funds
+                $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
+                $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+
+                // Now pay the invoice / batch pay if there's no invoice associated with the transaction
                 if ($tx->invoice_id) {
                     $invoiceService->payInvoiceWithCredits($invoice);
+                } else {
+                    $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
                 }
-                $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
             }
-
-        } catch (\Stripe\Exception\CardException|\Stripe\Exception\InvalidRequestException|\Stripe\Exception\AuthenticationException|\Stripe\Exception\ApiConnectionException|\Stripe\Exception\ApiErrorException $e) {
+        } catch (\Stripe\Exception\CardException | \Stripe\Exception\InvalidRequestException | \Stripe\Exception\AuthenticationException | \Stripe\Exception\ApiConnectionException | \Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
             throw new \Box_Exception("There was an error when processing the transaction");
         }
@@ -178,10 +194,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($tx);
     }
 
-    /**
-     * @param string $url
-     */
-    protected function _generateForm(Model_Invoice $invoice)
+    protected function _generateForm(Model_Invoice $invoice): string
     {
         $intent = $this->stripe->paymentIntents->create([
             'amount' => $this->getAmountInCents($invoice),
@@ -191,12 +204,11 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             "receipt_email" => $invoice->buyer_email
         ]);
 
-        $pubKey = ($this->config['test_mode']) ? $this->get_test_pub_key() : $this->config['pub_key'];
+        $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
         $dataAmount = $this->getAmountInCents($invoice);
 
         $settingService = $this->di['mod_service']('System');
-        $company = $settingService->getCompany();
 
         $title = $this->getInvoiceTitle($invoice);
 
@@ -222,11 +234,9 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
 
                     var paymentElement = elements.create(\'payment\', {
                         billingDetails: {
-                            email: \':email\',
+                            name: \'never\',
+                            email: \'never\',
                         },
-                        business: {
-                            name: \':name\',
-                        }
                     });
 
                     paymentElement.mount(\'#payment-element\');
@@ -240,6 +250,12 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                         elements,
                         confirmParams: {
                             return_url: \':callbackUrl&bb_redirect=true&bb_invoice_hash=:invoice_hash\',
+                            payment_method_data: {
+                                billing_details: {
+                                    name: \':buyer_name\',
+                                    email: \':buyer_email\',
+                                },
+                            },
                         },
                     });
 
@@ -260,27 +276,12 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             ':amount' => $dataAmount,
             ':currency' => $invoice->currency,
             ':description' => $title,
-            ':email' => $invoice->buyer_email,
+            ':buyer_email' => $invoice->buyer_email,
+            ':buyer_name' => trim($invoice->buyer_first_name . ' ' . $invoice->buyer_last_name),
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
-            ':invoice_hash' => $invoice->hash
+            ':invoice_hash' => $invoice->hash,
         ];
         return strtr($form, $bindings);
-    }
-
-    public function get_test_pub_key()
-    {
-        if (!isset($this->config['test_pub_key'])) {
-            throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "test_pub_key" at "Configuration -> Payments".');
-        }
-        return $this->config['test_pub_key'];
-    }
-
-    public function get_test_api_key()
-    {
-        if (!isset($this->config['test_api_key'])) {
-            throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "test_api_key" at "Configuration -> Payments".');
-        }
-        return $this->config['test_api_key'];
     }
 }

@@ -18,7 +18,7 @@ return [
     'security' => [
         'mode' => 'strict',
         'force_https' => true,
-        'cookie_lifespan' => 7200,
+        'session_lifespan' => 7200,
     ],
 
     'salt' => '',

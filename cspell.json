@@ -354,8 +354,16 @@
         "ordermodel",
         "TINYINT",
         "hostings",
-        "rulesets"
-
+        "rulesets",
+        "newtx",
+        "pwreset",
+        "pagebottom",
+        "forceable",
+        "phpstan",
+        "progressbar",
+        "valuenow",
+        "valuemin",
+        "valuemax"
     ],
     "ignorePaths": [
         "tests/**",
@@ -394,6 +402,7 @@
         "src/modules/Wysiwyg/src/ckeditor.js",
         ".github/**",
         ".gitignore",
-        "src/.htaccess"
+        "src/.htaccess",
+        "phpstan-baseline.neon"
     ]
 }

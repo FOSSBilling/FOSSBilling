@@ -9,8 +9,9 @@
  */
 
 use Box\Mod\Email\Service;
-use Twig\Loader\FilesystemLoader;
+use FOSSBilling\Environment;
 use Symfony\Component\HttpClient\HttpClient;
+use Twig\Loader\FilesystemLoader;
 
 date_default_timezone_set('UTC');
 
@@ -56,13 +57,8 @@ set_include_path(implode(PATH_SEPARATOR, [
 
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
-$loader = new AntCMS\AntLoader([
-    'mode' => 'filesystem',
-    'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
-]);
-$loader->addNamespace('', PATH_LIBRARY, 'psr0');
-$loader->addNamespace('Box\\Mod\\', PATH_MODS);
-$loader->checkClassMap();
+include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+$loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
 $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
@@ -146,32 +142,15 @@ final class Box_Installer
                     $this->session->set('currency_title', $currency_title);
                     $this->session->set('currency_format', $currency_format);
 
-                    $this->session->set('license', 'FOSSBilling CE');
+                    $this->session->set('license', 'FOSSBilling');
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
                     // Try to remove install folder
-                    function rmAllDir($dir)
-                    {
-                        if (is_dir($dir)) {
-                            $contents = scandir($dir);
-                            foreach ($contents as $content) {
-                                if ('.' !== $content && '..' !== $content) {
-                                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
-                                        rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
-                                    } else {
-                                        unlink($dir . DIRECTORY_SEPARATOR . $content);
-                                    }
-                                }
-                            }
-                            reset($contents);
-                            rmdir($dir);
-                        }
-                    }
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
                         $config = require PATH_CONFIG;
-                        if (! $config['debug']) rmAllDir('..'.DIRECTORY_SEPARATOR.'install');
+                        if (! $config['debug']) $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
                     } catch (Exception) {
                         // do nothing
                     }
@@ -470,8 +449,30 @@ final class Box_Installer
 
         return $emailService->templateBatchGenerate();
     }
+
+    public function rmAllDir($dir)
+    {
+        if (is_dir($dir)) {
+            $contents = scandir($dir);
+            foreach ($contents as $content) {
+                if ('.' !== $content && '..' !== $content) {
+                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
+                        $this->rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
+                    } else {
+                        unlink($dir . DIRECTORY_SEPARATOR . $content);
+                    }
+                }
+            }
+            reset($contents);
+            rmdir($dir);
+        }
+    }
 }
 
 $action = $_GET['a'] ?? 'index';
 $installer = new Box_Installer();
-$installer->run($action);
+
+// Don't attempt to run the installer if we're not in a web environment. This is to prevent the installer from running when using prepare.php to prepare the environment for testing.
+if (!Environment::isCLI()) {
+    $installer->run($action);
+}

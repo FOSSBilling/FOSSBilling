@@ -66,12 +66,19 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_reset_password_confirm(\Box_App $app, $hash)
     {
-        $api = $this->di['api_guest'];
+        $service = $this->di['mod_service']('client');
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
         $data = [
             'hash' => $hash,
         ];
-        $api->client_confirm_reset($data);
-        $app->redirect('/login');
+        $template = 'mod_client_set_new_password';
+
+        // Call password_reset_valid function and if true, then render the template, otherwise redirect to the index page
+        $result = $service->password_reset_valid($data);
+        if ($result !== false) {
+            return $app->render($template);
+        } else {
+            $app->redirect('/');
+        }
     }
 }

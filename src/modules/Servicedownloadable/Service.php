@@ -10,6 +10,7 @@
 
 namespace Box\Mod\Servicedownloadable;
 
+use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -251,7 +252,7 @@ class Service implements InjectionAwareInterface
 
     public function sendDownload($filename, $path)
     {
-        if (APPLICATION_ENV == 'testing') {
+        if (Environment::isTesting()) {
             return;
         }
 

@@ -10,6 +10,7 @@
 
 namespace Box\Mod\Invoice;
 
+use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTransaction implements InjectionAwareInterface
@@ -309,33 +310,18 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    /**
-     * @param \Model_Transaction $model
-     */
-    public function oldProcessLogic($model)
-    {
-        $tx = $this->process($model);
-
-        return !empty($tx->output) ? $tx->output : null;
-    }
-
     public function preProcessTransaction(\Model_Transaction $model)
     {
         try {
             $output = $this->processTransaction($model->id);
         } catch (\Box_Exception $e) {
-            // if gateway does not support new logic use old logic
-            if ($e->getCode() == 705) {
-                $output = $this->oldProcessLogic($model);
-            } else {
-                $model->status = \Model_Transaction::STATUS_ERROR;
-                $model->error = $e->getMessage();
-                $model->error_code = $e->getCode();
-                $model->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($model);
+            $model->status = \Model_Transaction::STATUS_ERROR;
+            $model->error = $e->getMessage();
+            $model->error_code = $e->getCode();
+            $model->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($model);
 
-                throw $e;
-            }
+            throw $e;
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->id]]);
@@ -349,12 +335,13 @@ class ServiceTransaction implements InjectionAwareInterface
      *
      * @since 2.9.11
      *
-     * @param type $id
+     * @param int $id
      *
      * @throws \Box_Exception
      */
     public function processTransaction($id)
     {
+        /** @var \Model_Transaction $tx */
         $tx = $this->di['db']->load('Transaction', $id);
         if (!$tx) {
             throw new \Box_Exception('Transaction :id not found.', ['id' => $id], 404);
@@ -418,7 +405,7 @@ class ServiceTransaction implements InjectionAwareInterface
             if (BB_DEBUG) {
                 error_log($e->getMessage());
             }
-            if (APPLICATION_ENV == 'testing') {
+            if (Environment::isTesting()) {
                 throw $e;
             }
         }
@@ -506,7 +493,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice);
         $mpi = $invoiceService->getPaymentInvoice($invoice);
 
-        if (APPLICATION_ENV != 'testing' && $tx->validate_ipn) {
+        if (!Environment::isTesting() && $tx->validate_ipn) {
             if (!$adapter->isIpnValid($ipn, $mpi)) {
                 $tx->output = $adapter->getOutput();
 

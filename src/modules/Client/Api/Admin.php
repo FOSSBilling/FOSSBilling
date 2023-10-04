@@ -530,10 +530,6 @@ class Admin extends \Api_Abstract
      * Update client group.
      *
      * @optional string $title - new group title
-     *
-     * @return bool
-     *
-     * @throws ErrorException
      */
     public function group_update($data)
     {
@@ -555,8 +551,6 @@ class Admin extends \Api_Abstract
      * Delete client group.
      *
      * @return bool
-     *
-     * @throws ErrorException
      */
     public function group_delete($data)
     {
@@ -580,8 +574,6 @@ class Admin extends \Api_Abstract
      * Get client group details.
      *
      * @return array
-     *
-     * @throws ErrorException
      */
     public function group_get($data)
     {
