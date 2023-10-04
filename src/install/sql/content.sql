@@ -338,16 +338,16 @@ VALUES
 	(20,'invoice_refund_logic','credit_note',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(21,'invoice_cn_series','CN-',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(22,'invoice_cn_starting_number','1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(22,'invoice_starting_number','1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(23,'nameserver_1',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(24,'nameserver_2',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(25,'nameserver_3',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(26,'nameserver_4',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(27,'funds_min_amount','10',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(28,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00'),
-    (30,'hide_version_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00'),
-    (31,'hide_company_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00');
+	(23,'invoice_starting_number','1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(24,'nameserver_1',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(25,'nameserver_2',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(26,'nameserver_3',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(27,'nameserver_4',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(28,'funds_min_amount','10',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(29,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(30,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00'),
+    (31,'hide_version_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00'),
+    (32,'hide_company_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00');
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
 UNLOCK TABLES;
