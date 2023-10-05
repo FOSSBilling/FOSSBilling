@@ -52,7 +52,11 @@ function checkInstaller()
 
     // Check if /install directory still exists after installation has been completed.
     if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php') && Environment::isProduction()) {
-        throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
+        // Throw exception only if debug mode is NOT enabled.
+        $config = require PATH_CONFIG;
+        if (!$config['debug']) {
+            throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
+        }
     }
 }
 

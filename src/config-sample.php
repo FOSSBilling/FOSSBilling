@@ -140,7 +140,7 @@ return [
 
     'twig' => [
         'debug' => false,
-        'auto_reload' => false,
+        'auto_reload' => true,
         'cache' => __DIR__ . '/data/cache',
     ],
 
