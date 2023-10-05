@@ -165,6 +165,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if ($this->di['config']['debug']) {
                 error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
+
             return true;
         }
 
