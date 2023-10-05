@@ -5,12 +5,28 @@
 {% endif %}
 
 <div class="table-responsive">
+    <div class="modal" id="extensionReadMe">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="extension-name"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div id="extension-readme" class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
+                </div>
+            </div>
+        </div>
+    </div>    
     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
         <thead>
         <tr>
             <th class="no-sort"></th>
             <th>{{ 'Extension'|trans }}</th>
             <th>{{ 'Description'|trans }}</th>
+            <th class="w-1"></th>
             <th class="w-1"></th>
         </tr>
         </thead>
@@ -30,6 +46,13 @@
                     {{ extension.description|truncate(150) }}<br>
                     <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank">{{ 'View on the extension directory'|trans }}</a>
                 </td>
+                <td  data-bs-toggle="tooltip" data-bs-title="{{ 'View extension readme'|trans }}">
+                    <a class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#extensionReadMe" onclick="getExtensionReadme('{{ extension.id }}', '{{ extension.name }}');">
+                     <svg class="icon">
+                         <use xlink:href="#eye" />
+                     </svg>
+                    </a>
+                </td>
                 <td>
                     <a class="btn btn-icon api-link"
                        data-api-confirm="Are you sure?"
@@ -37,7 +60,7 @@
                        data-api-confirm-content='By installing "{{ extension.name }}", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'
                        data-api-reload="1"
                        href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id, 'CSRFToken': CSRFToken }) }}"
-                       data-bs-toggle="tooltip" data-bs-title="Install extension">
+                       data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}">
                         <svg class="icon">
                             <use xlink:href="#download" />
                         </svg>
@@ -47,10 +70,24 @@
         {% else %}
             <tr>
                 <td colspan="4" class="text-center">
-                    <a href="https://extensions.fossbilling.org/" target="_blank">Explore FOSSBilling extensions</a>
+                    <a href="https://extensions.fossbilling.org/" target="_blank">{{ 'Explore FOSSBilling extensions'|trans }}</a>
                 </td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        function getExtensionReadme(extensionID, extensionName){
+            header = document.getElementById("extension-name");
+            header.innerText = extensionName;
+
+            readme = document.getElementById("extension-readme");
+            readme.innerText = "{{ 'Fetching extension details.'|trans }}";
+
+            API.admin.post('extension/get_extension_readme', {extension_id: extensionID, CSRFToken: "{{ CSRFToken }}"}, function(result){
+                readme.innerHTML = result;
+            });
+        }
+    </script>
 </div>
