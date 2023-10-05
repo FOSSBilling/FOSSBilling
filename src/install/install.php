@@ -83,92 +83,60 @@ final class Box_Installer
     public function run($action): void
     {
         switch ($action) {
-            case 'check-db':
-                $user = $_POST['db_user'];
-                $host = $_POST['db_host'];
-                $port = $_POST['db_port'];
-                $pass = $_POST['db_pass'];
-                $name = $_POST['db_name'];
-
-                if (!$this->canConnectToDatabase($host . ';' . $port, $name, $user, $pass)) {
-                    echo 'Could not connect to database. Please check database details. You might need to create database first.';
-                } else {
-                    $this->session->set('db_host', $host);
-                    $this->session->set('db_port', $port);
-                    $this->session->set('db_name', $name);
-                    $this->session->set('db_user', $user);
-                    $this->session->set('db_pass', $pass);
-                    echo 'ok';
-                }
-
-                break;
-
             case 'install':
                 try {
-                    // Initializing database connection
-                    $user = $_POST['db_user'];
-                    $host = $_POST['db_host'];
-                    $port = $_POST['db_port'];
-                    $pass = $_POST['db_pass'];
-                    $name = $_POST['db_name'];
-                    if (!$this->canConnectToDatabase($host . ';' . $port, $name, $user, $pass)) {
-                        throw new Exception('Could not connect to the database, or the database does not exist');
+                    // Verify database connection
+                    if (! $this->canConnectToDatabase($_POST['databaseHostname'] . ';' . $_POST['databasePort'], $_POST['databaseName'], $_POST['databaseUsername'], $_POST['databasePassword'])) {
+                        $this->renderResultPage(false, 'Could not connect to the database, or the database does not exist');
+                        break;
                     }
+                    $this->session->set('databaseHostname', $_POST['databaseHostname']);
+                    $this->session->set('databasePort', $_POST['databasePort']);
+                    $this->session->set('databaseName', $_POST['databaseName']);
+                    $this->session->set('databaseUsername', $_POST['databaseUsername']);
+                    $this->session->set('databasePassword', $_POST['databasePassword']);
 
-                    $this->session->set('db_host', $host);
-                    $this->session->set('db_port', $port);
-                    $this->session->set('db_name', $name);
-                    $this->session->set('db_user', $user);
-                    $this->session->set('db_pass', $pass);
-
-                    // Configuring administrator's account
-                    $admin_email = $_POST['admin_email'];
-                    $admin_pass = $_POST['admin_pass'];
-                    $admin_name = $_POST['admin_name'];
-                    if (!$this->isValidAdmin($admin_email, $admin_pass, $admin_name)) {
-                        throw new Exception('Administrator\'s account is invalid');
+                    // Validate admin credentials
+                    if (! $this->isValidAdmin($_POST['adminEmail'], $_POST['adminPassword'], $_POST['adminName'])) {
+                        $this->renderResultPage(false, 'Administrator\'s account is invalid');
+                        break;
                     }
+                    $this->session->set('adminName', $_POST['adminName']);
+                    $this->session->set('adminEmail', $_POST['adminEmail']);
+                    $this->session->set('adminPassword', $_POST['adminPassword']);
 
-                    $this->session->set('admin_email', $admin_email);
-                    $this->session->set('admin_pass', $admin_pass);
-                    $this->session->set('admin_name', $admin_name);
+                    // Setup default currency
+                    $this->session->set('currencyCode', $_POST['currencyCode']);
+                    $this->session->set('currencyTitle', $_POST['currencyTitle']);
+                    $this->session->set('currencyFormat', $_POST['currencyFormat']);
 
-                    // Get the default currency
-                    $currency_code = $_POST['currency_code'];
-                    $currency_title = $_POST['currency_title'];
-                    $currency_format = $_POST['currency_format'];
-
-                    $this->session->set('currency_code', $currency_code);
-                    $this->session->set('currency_title', $currency_title);
-                    $this->session->set('currency_format', $currency_format);
-
-                    $this->session->set('license', 'FOSSBilling');
+                    // Attempt installation
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
-                    // Try to remove install folder
-                    try {
-                        // Delete install directory only if debug mode is NOT enabled.
-                        $config = require PATH_CONFIG;
-                        if (! $config['debug']) $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
-                    } catch (Exception) {
-                        // do nothing
+
+                    // Remove install folder if debug mode is not enabled.
+                    $config = require PATH_CONFIG;
+                    if (! $config['debug']) {
+                        try {
+                            $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
+                        } catch (Exception) {
+                            // Handle failure silently by doing nothing. Admin UI will warn the install folder is still present.
+                        }
                     }
-                    echo 'ok';
+
+                    // Installation is successful
+                    $this->renderResultPage(true, 'Installation completed successfully!');
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    // Route to result page with exception information
+                    $this->renderResultPage(false, $e->getMessage());
                 }
                 break;
-
             case 'index':
             default:
-                $this->session->set('agree', true);
-
                 $se = new \FOSSBilling\Requirements();
                 $options = $se->getOptions();
                 $vars = [
-                    'tos' => $this->getLicense(),
-
                     'folders' => $se->folders(),
                     'files' => $se->files(),
                     'os' => PHP_OS,
@@ -180,35 +148,36 @@ final class Box_Installer
                     'php_safe_mode' => $options['php']['safe_mode'],
                     'php_ver_ok' => $se->isPhpVersionOk(),
                     'extensions' => $se->extensions(),
-                    'all_ok' => $se->canInstall(),
-
-                    'db_host' => $this->session->get('db_host'),
-                    'db_name' => $this->session->get('db_name'),
-                    'db_user' => $this->session->get('db_user'),
-                    'db_pass' => $this->session->get('db_pass'),
-
-                    'admin_email' => $this->session->get('admin_email'),
-                    'admin_pass' => $this->session->get('admin_pass'),
-                    'admin_name' => $this->session->get('admin_name'),
-
-                    'currency_code' => $this->session->get('currency_code'),
-                    'currency_title' => $this->session->get('currency_title'),
-                    'currency_format' => $this->session->get('currency_format'),
-
-                    'license' => $this->session->get('license'),
-                    'agree' => $this->session->get('agree'),
-
+                    'canInstall' => $se->canInstall(),
+                    'databaseHostname' => $this->session->get('databaseHostname'),
+                    'databaseName' => $this->session->get('databaseName'),
+                    'databaseUsername' => $this->session->get('databaseUsername'),
+                    'databasePassword' => $this->session->get('databasePassword'),
+                    'adminName' => $this->session->get('adminName'),
+                    'adminEmail' => $this->session->get('adminEmail'),
+                    'adminPassword' => $this->session->get('adminPassword'),
+                    'currencyCode' => $this->session->get('currencyCode'),
+                    'currencyTitle' => $this->session->get('currencyTitle'),
+                    'currencyFormat' => $this->session->get('currencyFormat'),
                     'install_module_path' => PATH_INSTALL,
                     'cron_path' => PATH_CRON,
                     'config_file_path' => PATH_CONFIG,
                     'live_site' => BB_URL,
                     'admin_site' => BB_URL_ADMIN,
-
                     'domain' => pathinfo(BB_URL, PATHINFO_BASENAME),
                 ];
                 echo $this->render('./assets/install.html.twig', $vars);
                 break;
         }
+    }
+
+    private function renderResultPage(bool $success, string $message)
+    {
+        $vars = [
+            'success' => $success,
+            'message' => $message
+        ];
+        echo $this->render('./assets/installresult.html.twig', $vars);
     }
 
     private function render($name, $vars = []): string
@@ -293,19 +262,19 @@ final class Box_Installer
         }
 
         if (strlen($pass) < 8) {
-            throw new Exception('Minimum password length is 8 characters.');
+            throw new Exception('Minimum admin password length is 8 characters.');
         }
 
         if (!preg_match("#[0-9]+#", $pass)) {
-            throw new Exception('Password must include at least one number.');
+            throw new Exception('Admin password must include at least one number.');
         }
 
         if (!preg_match("#[a-z]+#", $pass)) {
-            throw new Exception('Password must include at least one lowercase letter.');
+            throw new Exception('Admin password must include at least one lowercase letter.');
         }
 
         if (!preg_match("#[A-Z]+#", $pass)) {
-            throw new Exception('Password must include at least one uppercase letter.');
+            throw new Exception('Admin password must include at least one uppercase letter.');
         }
 
         if (empty($name)) {
@@ -320,7 +289,7 @@ final class Box_Installer
         $this->_isValidInstallData($ns);
         $this->_createConfigurationFile($ns);
 
-        $pdo = $this->getPdo($ns->get('db_host') . ';' . $ns->get('db_port'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
+        $pdo = $this->getPdo($ns->get('databaseHostname') . ';' . $ns->get('databasePort'), $ns->get('databaseName'), $ns->get('databaseUsername'), $ns->get('databasePassword'));
 
         $sql = file_get_contents(PATH_SQL);
         $sql_content = file_get_contents(PATH_SQL_DATA);
@@ -342,21 +311,21 @@ final class Box_Installer
         }
 
         $passwordObject = new Box_Password();
-        $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_pass, 1, NOW(), NOW());");
+        $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :adminName, :adminEmail, :adminPassword, 1, NOW(), NOW());");
         $stmt->execute([
-            'admin_name' => $ns->get('admin_name'),
-            'admin_email' => $ns->get('admin_email'),
-            'admin_pass' => $passwordObject->hashIt($ns->get('admin_pass')),
+            'adminName' => $ns->get('adminName'),
+            'adminEmail' => $ns->get('adminEmail'),
+            'adminPassword' => $passwordObject->hashIt($ns->get('adminPassword')),
         ]);
 
         $stmt = $pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();
 
-        $stmt = $pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
+        $stmt = $pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currencyTitle, :currencyCode, 1, 1.000000, :currencyFormat, 1,  NOW(), NOW());");
         $stmt->execute([
-            'currency_title' => $ns->get('currency_title'),
-            'currency_code' => $ns->get('currency_code'),
-            'currency_format' => $ns->get('currency_format'),
+            'currencyTitle' => $ns->get('currencyTitle'),
+            'currencyCode' => $ns->get('currencyCode'),
+            'currencyFormat' => $ns->get('currencyFormat'),
         ]);
 
         /*
@@ -415,11 +384,11 @@ final class Box_Installer
         $data['path_logs'] = PATH_ROOT . '/data/log/application.log';
         $data['db'] = [
             'type' => 'mysql',
-            'host' => $ns->get('db_host'),
-            'port' => $ns->get('db_port'),
-            'name' => $ns->get('db_name'),
-            'user' => $ns->get('db_user'),
-            'password' => $ns->get('db_pass'),
+            'host' => $ns->get('databaseHostname'),
+            'port' => $ns->get('databasePort'),
+            'name' => $ns->get('databaseName'),
+            'user' => $ns->get('databaseUsername'),
+            'password' => $ns->get('databasePassword'),
         ];
         $data['twig']['cache'] = PATH_ROOT . '/data/cache';
 
@@ -431,11 +400,11 @@ final class Box_Installer
 
     private function _isValidInstallData($ns): void
     {
-        if (!$this->canConnectToDatabase($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'))) {
+        if (!$this->canConnectToDatabase($ns->get('databaseHostname'), $ns->get('databaseName'), $ns->get('databaseUsername'), $ns->get('databasePassword'))) {
             throw new Exception('Can not connect to database');
         }
 
-        if (!$this->isValidAdmin($ns->get('admin_email'), $ns->get('admin_pass'), $ns->get('admin_name'))) {
+        if (!$this->isValidAdmin($ns->get('adminEmail'), $ns->get('adminPassword'), $ns->get('adminName'))) {
             throw new Exception('Administrator\'s account is invalid');
         }
     }
