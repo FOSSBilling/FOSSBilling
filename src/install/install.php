@@ -105,15 +105,15 @@ final class Box_Installer
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
-
-                    // Remove install folder if debug mode is not enabled.
-                    $config = require PATH_CONFIG;
-                    if (! $config['debug']) {
-                        try {
+                    // Try to remove install folder
+                    try {
+                        // Delete install directory only if debug mode is NOT enabled.
+                        $config = require PATH_CONFIG;
+                        if (!$config['debug']) {
                             $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
-                        } catch (Exception) {
-                            // Handle failure silently by doing nothing. Admin UI will warn the install folder is still present.
                         }
+                    } catch (Exception) {
+                        // do nothing
                     }
 
                     // Installation is successful
@@ -313,7 +313,7 @@ final class Box_Installer
           Copy config templates when applicable
         */
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
-            copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows original settings to be referenced.
+            copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
         /*
@@ -355,7 +355,7 @@ final class Box_Installer
 
         // Load default sample config
         $data = require PATH_CONFIG_SAMPLE;
-        
+
         // Handle dynamic configs
         $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS() ? true : false;
         $data['update_branch'] = $updateBranch;
