@@ -1,0 +1,19 @@
+{% extends "./assets/layout.html.twig" %}
+
+{% block page %}
+    <h1>Installation Result</h1>
+
+    {% if success != true %}
+        <p>Status: <span class='red'>FAIL</p>
+
+        <p>Error Message:</p>
+
+        <p>{{ message }}</p>
+
+        <p><a role="button" href='javascript:history.back()'>Go Back</a></p>
+    {% else %}
+        <p>Status: <span class='green'>SUCCESS</p>
+
+        <p>FOSSBilling is now installed!</p>
+    {% endif %}
+{% endblock %}
