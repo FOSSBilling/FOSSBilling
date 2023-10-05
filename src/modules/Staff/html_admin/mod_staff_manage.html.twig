@@ -99,11 +99,11 @@
         <div class="tab-pane fade" id="tab-permissions" role="tabpanel">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h3>{{ staff.name }} {{ 'permissions'|trans }}</h3>
+                    <h1>{{ 'Permissions for: '|trans }} {{ staff.name }}</h1>
                     <div>
                         {% if staff.role != 'admin' %}
-                            <button class="btn btn-secondary btn-sm d-inline" onclick="toggleAll(true);">{{ 'Give all permissions'|trans }}</button>
-                            <button class="btn btn-danger btn-sm d-inline" onclick="toggleAll(false);">{{ 'Revoke all permissions'|trans }}</button>
+                            <button class="btn btn-secondary btn-md d-inline" onclick="toggleAll(true);">{{ 'Give all permissions'|trans }}</button>
+                            <button class="btn btn-danger btn-md d-inline" onclick="toggleAll(false);">{{ 'Revoke all permissions'|trans }}</button>
                         {% endif %}
                     </div>
                 </div>
@@ -116,62 +116,64 @@
                 <form method="post" action="admin/staff/permissions_update" class="api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                 <input type="hidden" name="permissions[default]" value="">
-            
+
                 {% for modName, mod in mods %}
-                <div class="card mb-3">
-                    <div class="card-header text-capitalize">
-                        {{ modName }}
-                    </div>
-                    <div class="card-body">
-                        {% if not mod.permissions.can_always_access %}
-                        <div class="mb-3 form-check">
-                            <input class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1"{% if prms[modName] %} checked {% endif %}>
-                            <label class="form-check-label" for="input-{{ modName }}">{{ 'Module access'|trans }}
-                                <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Can be disabled to prevent the staff member from using any part of this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
-                            </label>
+                    <div class="row">
+                        <div class="col-1"></div>
+                        <div class="col-2">
+                            <h3 class="float-right text-capitalize mt-1">{{ modName }}</h3>
                         </div>
-                        {% else %}
-                        <div class="mb-3 form-check">
-                            <input data-always-given="1" class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" value="1" checked disabled>
-                            <label class="form-check-label" for="input-{{ modName }}">{{ 'Module access'|trans }}
-                                <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Base-level access is permanently enabled for this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
-                            </label>
-                        </div>
-                        {% endif %}
-            
-                        {% for permissionName, permission in mod.permissions %}
-                        <div class="form-group">
-                            {% if permission.type == 'bool' %}
-                            <div class="mb-3 form-check">
-                                <input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName][permissionName] %} checked {% endif %}>
-                                <label class="form-check-label" for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}
-                                    <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
-                                </label>
-                            </div>
-                            {% endif %}
-            
-                            {% if permission.type == 'select' %}
-                                <div class="row">
-                                    <div class="col-3">
-                                        <div class="d-flex align-items-center">
-                                            <label for="input-{{ modName }}-{{ permissionName }}" class="mb-3 text-nowrap" style="margin-right: 10px; margin-left: 5px;">{{ permission.display_name }}</label>
-                                            <select class="form-control mb-3 permission-select" name="permissions[{{ modName }}][{{ permissionName }}]" style="margin-right: 5px;">
-                                                <option value="">{{ 'None'|trans }}</option>
-                                                {% for optionName, option in permission.options %}
-                                                    <option value="{{ optionName }}" {% if prms[modName][permissionName] == optionName %} selected {% endif %}>{{ option }}</option>
-                                                {% endfor %}
-                                            </select>
-                                            <svg class="icon mb-3" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right" style="width: 32px; height: 32px;"><use xlink:href="#info"/></svg>
-                                        </div>
-                                    </div>
+                        <div class="col-4">
+                            {% if not mod.permissions.can_always_access %}
+                                <div class="mt-2 form-check">
+                                    <input class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1"{% if prms[modName] %} checked {% endif %}>
+                                    <label class="form-check-label" for="input-{{ modName }}">{{ 'Module access'|trans }}
+                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Can be disabled to prevent the staff member from using any part of this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
+                                    </label>
                                 </div>
-                            {% endif %}
+                            {% else %}
+                                <div class="mt-2 form-check">
+                                    <input data-always-given="1" class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" value="1" checked disabled>
+                                    <label class="form-check-label" for="input-{{ modName }}">{{ 'Module access'|trans }}
+                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Base-level access is permanently enabled for this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
+                                </label>
+                                </div>
+                             {% endif %}
+                        
+                            {% for permissionName, permission in mod.permissions %}
+                                <div class="form-group">
+                                    {% if permission.type == 'bool' %}
+                                        <div class="mt-2 form-check">
+                                            <input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName][permissionName] %} checked {% endif %}>
+                                            <label class="form-check-label" for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}
+                                                <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                        
+                                    {% if permission.type == 'select' %}
+                                        <div class="row">
+                                            <div class="col-3">
+                                                <div class="d-flex align-items-center">
+                                                    <label for="input-{{ modName }}-{{ permissionName }}" class="mt-2 text-nowrap" style="margin-right: 10px; margin-left: 5px;">{{ permission.display_name }}</label>
+                                                    <select class="form-control mt-2 permission-select" name="permissions[{{ modName }}][{{ permissionName }}]" style="margin-right: 5px;">
+                                                    <option value="">{{ 'None'|trans }}</option>
+                                                        {% for optionName, option in permission.options %}
+                                                            <option value="{{ optionName }}" {% if prms[modName][permissionName] == optionName %} selected {% endif %}>{{ option }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <svg class="icon mt-2" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right" style="width: 32px; height: 32px;"><use xlink:href="#info"/></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <hr class="mt-4 mb-4"/>
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
                 {% endfor %}
-            
+
                 <input type="hidden" name="id" value="{{ staff.id }}">
             
                 <div class="card-footer">
