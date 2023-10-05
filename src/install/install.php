@@ -12,15 +12,12 @@ use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
 use Symfony\Component\HttpClient\HttpClient;
 use Twig\Loader\FilesystemLoader;
-
 date_default_timezone_set('UTC');
-
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
 ini_set('error_log', 'php_error.log');
-
 define('PATH_ROOT', dirname(__DIR__));
 const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR . 'library';
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
@@ -36,40 +33,34 @@ const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'cache';
-
-
-/*
-  Config paths & templates
-*/
+// Config paths and templates
 const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
 const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
-
-/*
-  htaccess path
-*/
+// .htaccess Path
 const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
 
-// Ensure library/ is on include_path
+// Set default include path
 set_include_path(implode(PATH_SEPARATOR, [
     PATH_LIBRARY,
     get_include_path(),
 ]));
 
+// Load autoloaders
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
-
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+
+// Build the environment
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
-
 $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
 $url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url) . '/';
-
 define('BB_URL', $root_url);
 const BB_URL_INSTALL = BB_URL . 'install/';
 const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
+// Inline installer class.
 final class Box_Installer
 {
     private Session $session;
@@ -198,16 +189,6 @@ final class Box_Installer
         $twig->addGlobal('version', \FOSSBilling\Version::VERSION);
 
         return $twig->render($name, $vars);
-    }
-
-    private function getLicense(): bool|string
-    {
-        $path = PATH_LICENSE;
-        if (!file_exists($path)) {
-            return 'FOSSBilling is licensed under the Apache License, Version 2.0.' . PHP_EOL . 'Please visit https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE for full license text.';
-        }
-
-        return file_get_contents($path);
     }
 
     private function getPdo($host, $db, $user, $pass): PDO
@@ -438,10 +419,11 @@ final class Box_Installer
     }
 }
 
+// Load action and initalize the installer
 $action = $_GET['a'] ?? 'index';
 $installer = new Box_Installer();
 
-// Don't attempt to run the installer if we're not in a web environment. This is to prevent the installer from running when using prepare.php to prepare the environment for testing.
-if (!Environment::isCLI()) {
+// Run the installer only in non-CLI mode
+if (! Environment::isCLI()) {
     $installer->run($action);
 }
