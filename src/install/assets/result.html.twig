@@ -1,19 +1,31 @@
 {% extends "./assets/layout.html.twig" %}
 
 {% block page %}
-    <h1>Installation Result</h1>
-
     {% if success != true %}
-        <p>Status: <span class='red'>FAIL</p>
-
-        <p>Error Message:</p>
+        <h1 class="red">Installation Failure</h1>
 
         <p>{{ message }}</p>
 
-        <p><a role="button" href='javascript:history.back()'>Go Back</a></p>
-    {% else %}
-        <p>Status: <span class='green'>SUCCESS</p>
+        <hr/>
 
-        <p>FOSSBilling is now installed!</p>
+        <a role="button" href='javascript:history.back()'>Go Back</a>
+    {% else %}
+        <h1 class="green">Installation Completed</h1>
+
+        <p>Congratulations! FOSSBilling was successfully installed.</p>
+
+        <p>There are a few more actions you need to take to configure your environment.</p>
+
+        <h3>Remove Installer</h3>
+        <p>The <b>./install/</b> folder is normally deleted automatically. Check to make sure it was fully deleted.</p>
+        <pre>rm -rfv {{ install_module_path }}</pre>
+
+        <h3>Configuration Permission</h3>
+        <p>Change the <b>config.php</b> file permissions to read-only.</p>
+        <pre>chmod 644 {{ config_file_path }}</pre>
+
+        <h3>Setup Cron Job</h3>
+        <p>Add the following command into your crontab. <a href='https://fossbilling.org/docs/getting-started/apache#setting-up-the-cron-jobs' data-tooltip="Opens in a new window." target='_blank'>Click here</a> for help.</p>
+        <pre>*/5 * * * * php {{ cron_path }}</pre>
     {% endif %}
 {% endblock %}
