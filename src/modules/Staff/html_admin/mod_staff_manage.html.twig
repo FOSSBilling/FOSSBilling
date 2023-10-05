@@ -131,14 +131,7 @@
                                         <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Can be disabled to prevent the staff member from using any part of this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
                                     </label>
                                 </div>
-                            {% else %}
-                                <div class="mt-2 form-check">
-                                    <input data-always-given="1" class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" value="1" checked disabled>
-                                    <label class="form-check-label" for="input-{{ modName }}">{{ 'Module access'|trans }}
-                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Base-level access is permanently enabled for this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
-                                </label>
-                                </div>
-                             {% endif %}
+                            {% endif %}
                         
                             {% for permissionName, permission in mod.permissions %}
                                 <div class="form-group">
