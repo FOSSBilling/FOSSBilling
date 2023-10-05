@@ -31,6 +31,14 @@
             </a>
         </li>
         <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'Install from the Extension Directory'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-nameservers" data-bs-toggle="tab">{{ 'Nameservers'|trans }}</a>
         </li>
     </ul>
@@ -225,7 +233,6 @@
         </div>
 
         <div class="tab-pane fade" id="tab-new-registrar" role="tabpanel">
-            {% include "partial_extensions.html.twig" with { 'type': 'domain-registrar', 'header': 'List of domain registrars on extensions site' } only %}
             <div class="card-body">
                 <h1>{{ 'Adding new domain registrar'|trans }}</h1>
                 <p>{{ 'Follow instructions below to install new domain registrar.'|trans }}</p>
@@ -271,6 +278,10 @@
                 {% endfor %}
             </table>
             {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
+            {% include "partial_extensions.html.twig" with { 'type': 'domain-registrar', 'header': 'List of domain registrars on the Extension Directory' } only %}
         </div>
 
         <div class="tab-pane fade" id="tab-nameservers" role="tabpanel">
