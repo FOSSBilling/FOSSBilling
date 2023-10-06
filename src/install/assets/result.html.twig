@@ -25,7 +25,7 @@
         <pre>chmod 644 {{ config_file_path }}</pre>
 
         <h3>3) Setup Cron Job</h3>
-        <p>Add the following command into your crontab. <a href='https://fossbilling.org/docs/getting-started/apache#setting-up-the-cron-jobs' data-tooltip="Opens in a new window." target='_blank'>Click here</a> for help.</p>
+        <p>Add the following command into your crontab. <a href='https://fossbilling.org/docs/getting-started/apache#setting-up-the-cron-jobs' data-tooltip="Opens in a new tab." target='_blank'>Click here</a> for help.</p>
         <pre>*/5 * * * * php {{ cron_path }}</pre>
 
         <hr/>
@@ -33,8 +33,8 @@
         <div style='text-align:center;'>
             <p style='margin-bottom:3em;'>All done? Welcome to FOSSBilling!</p>
             <div class="grid">
-                <div><a href='{{ url_customer }}' role="button" target='_blank' data-tooltip="Opens in a new window.">Customer Area</a></div>
-                <div><a href='{{ url_admin }}' role="button" target='_blank' data-tooltip="Opens in a new window.">Staff Dashboard</a></div>
+                <div><a href='{{ url_customer }}' role="button" target='_blank' data-tooltip="Opens in a new tab.">Customer Area</a></div>
+                <div><a href='{{ url_admin }}' role="button" target='_blank' data-tooltip="Opens in a new tab.">Staff Dashboard</a></div>
             </div>
         </div>
     {% endif %}
