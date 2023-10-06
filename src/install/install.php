@@ -33,11 +33,11 @@ const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'cache';
-// Config paths and templates
 const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
 const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
-// .htaccess Path
 const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
+const PAGE_INSTALL = './assets/install.html.twig';
+const PAGE_RESULT = './assets/result.html.twig';
 
 // Set default include path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -75,10 +75,20 @@ final class Box_Installer
     {
         switch ($action) {
             case 'install':
+                // Make sure this is a POST request
+                if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+                    header('Location: ' . BB_URL_INSTALL);
+                    die;
+                }
+
+                // Installer validation
                 try {
                     // Verify database connection
                     if (! $this->canConnectToDatabase($_POST['database_hostname'] . ';' . $_POST['database_port'], $_POST['database_name'], $_POST['database_username'], $_POST['database_password'])) {
-                        $this->renderResultPage(false, 'Could not connect to the database, or the database does not exist');
+                        echo $this->render(PAGE_RESULT, [
+                            'success' => false,
+                            'message' => 'Could not connect to the database, or the database does not exist',
+                        ]);
                         break;
                     }
                     $this->session->set('database_hostname', $_POST['database_hostname']);
@@ -87,11 +97,8 @@ final class Box_Installer
                     $this->session->set('database_username', $_POST['database_username']);
                     $this->session->set('database_password', $_POST['database_password']);
 
-                    // Validate admin credentials
-                    if (! $this->isValidAdmin($_POST['admin_email'], $_POST['admin_password'], $_POST['admin_name'])) {
-                        $this->renderResultPage(false, 'Administrator\'s account is invalid');
-                        break;
-                    }
+                    // Handle admin information
+                    $this->isValidAdmin($_POST['admin_email'], $_POST['admin_password'], $_POST['admin_name']);
                     $this->session->set('admin_name', $_POST['admin_name']);
                     $this->session->set('admin_email', $_POST['admin_email']);
                     $this->session->set('admin_password', $_POST['admin_password']);
@@ -102,9 +109,10 @@ final class Box_Installer
                     $this->session->set('currency_format', $_POST['currency_format']);
 
                     // Attempt installation
-                    $this->makeInstall($this->session);
+                    $this->install($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
+
                     // Try to remove install folder
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
@@ -117,10 +125,18 @@ final class Box_Installer
                     }
 
                     // Installation is successful
-                    $this->renderResultPage(true, 'Installation completed successfully!');
+                    echo $this->render(PAGE_RESULT, [
+                        'success' => true,
+                        'config_file_path' => PATH_CONFIG,
+                        'cron_path' => PATH_CRON,
+                        'install_module_path' => PATH_INSTALL,
+                    ]);
                 } catch (Exception $e) {
                     // Route to result page with exception information
-                    $this->renderResultPage(false, $e->getMessage());
+                    echo $this->render(PAGE_RESULT, [
+                        'success' => false,
+                        'message' => $e->getMessage(),
+                    ]);
                 }
                 break;
             case 'index':
@@ -157,18 +173,9 @@ final class Box_Installer
                     'admin_site' => BB_URL_ADMIN,
                     'domain' => pathinfo(BB_URL, PATHINFO_BASENAME),
                 ];
-                echo $this->render('./assets/install.html.twig', $vars);
+                echo $this->render(PAGE_INSTALL, $vars);
                 break;
         }
-    }
-
-    private function renderResultPage(bool $success, string $message)
-    {
-        $vars = [
-            'success' => $success,
-            'message' => $message
-        ];
-        echo $this->render('./assets/result.html.twig', $vars);
     }
 
     private function render($name, $vars = []): string
@@ -211,11 +218,11 @@ final class Box_Installer
         $pdo->exec('SET SESSION interactive_timeout = 28800');
         $pdo->exec('SET SESSION wait_timeout = 28800');
 
-        // try create database if permissions allows
+        // Attempt to create the database.
         try {
             $pdo->exec("CREATE DATABASE `$db` CHARACTER SET utf8 COLLATE utf8_general_ci;");
         } catch (PDOException $e) {
-            error_log($e->getMessage());
+            // Silently fail if the database already exists.
         }
 
         $pdo->query("USE `$db`;");
@@ -225,52 +232,45 @@ final class Box_Installer
 
     private function canConnectToDatabase($host, $db, $user, $pass): bool
     {
-        try {
-            $this->getPdo($host, $db, $user, $pass);
-        } catch (Exception $e) {
-            error_log($e->getMessage());
-
-            return false;
-        }
-
+        $this->getPdo($host, $db, $user, $pass);
         return true;
     }
 
-    private function isValidAdmin($email, $pass, $name): bool
+    private function isValidAdmin($email, $password, $name): bool
     {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return false;
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('The admin email is not a valid address.');
         }
 
-        if (strlen($pass) < 8) {
+        if (strlen($password) < 8) {
             throw new Exception('Minimum admin password length is 8 characters.');
         }
 
-        if (!preg_match("#[0-9]+#", $pass)) {
+        if (! preg_match("#[0-9]+#", $password)) {
             throw new Exception('Admin password must include at least one number.');
         }
 
-        if (!preg_match("#[a-z]+#", $pass)) {
+        if (! preg_match("#[a-z]+#", $password)) {
             throw new Exception('Admin password must include at least one lowercase letter.');
         }
 
-        if (!preg_match("#[A-Z]+#", $pass)) {
+        if (! preg_match("#[A-Z]+#", $password)) {
             throw new Exception('Admin password must include at least one uppercase letter.');
         }
 
         if (empty($name)) {
-            return false;
+            throw new Exception('You must enter an Admin Name.');
         }
 
         return true;
     }
 
-    private function makeInstall($ns): bool
+    private function install($session): bool
     {
-        $this->_isValidInstallData($ns);
-        $this->_createConfigurationFile($ns);
+        $this->_isValidInstallData($session);
+        $this->_createConfigurationFile($session);
 
-        $pdo = $this->getPdo($ns->get('database_hostname') . ';' . $ns->get('database_port'), $ns->get('database_name'), $ns->get('database_username'), $ns->get('database_password'));
+        $pdo = $this->getPdo($session->get('database_hostname') . ';' . $session->get('database_port'), $session->get('database_name'), $session->get('database_username'), $session->get('database_password'));
 
         $sql = file_get_contents(PATH_SQL);
         $sql_content = file_get_contents(PATH_SQL_DATA);
@@ -294,9 +294,9 @@ final class Box_Installer
         $passwordObject = new Box_Password();
         $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW());");
         $stmt->execute([
-            'admin_name' => $ns->get('admin_name'),
-            'admin_email' => $ns->get('admin_email'),
-            'admin_password' => $passwordObject->hashIt($ns->get('admin_password')),
+            'admin_name' => $session->get('admin_name'),
+            'admin_email' => $session->get('admin_email'),
+            'admin_password' => $passwordObject->hashIt($session->get('admin_password')),
         ]);
 
         $stmt = $pdo->prepare("DELETE FROM currency WHERE code='USD'");
@@ -304,22 +304,18 @@ final class Box_Installer
 
         $stmt = $pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
         $stmt->execute([
-            'currency_title' => $ns->get('currency_title'),
-            'currency_code' => $ns->get('currency_code'),
-            'currency_format' => $ns->get('currency_format'),
+            'currency_title' => $session->get('currency_title'),
+            'currency_code' => $session->get('currency_code'),
+            'currency_format' => $session->get('currency_format'),
         ]);
 
-        /*
-          Copy config templates when applicable
-        */
+        // Copy config templates when applicable
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
-        /*
-          If .htaccess doesn't exist, grab it from Github.
-        */
-        if (!file_exists(PATH_HTACCESS)) {
+        // If .htaccess doesn't exist, fetch the latest from GitHub.
+        if (! file_exists(PATH_HTACCESS)) {
             try {
                 $client = HttpClient::create();
                 $response = $client->request('GET', 'https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/main/src/.htaccess');
@@ -343,10 +339,10 @@ final class Box_Installer
     /**
      * Generate the `config.php` file using the `config-sample.php` as a template.
      *
-     * @param object $ns
+     * @param object $session
      * @return string
      */
-    private function _getConfigOutput($ns): string
+    private function _getConfigOutput($session): string
     {
         // Version data
         $version = new \FOSSBilling\Requirements();
@@ -365,11 +361,11 @@ final class Box_Installer
         $data['path_logs'] = PATH_ROOT . '/data/log/application.log';
         $data['db'] = [
             'type' => 'mysql',
-            'host' => $ns->get('database_hostname'),
-            'port' => $ns->get('database_port'),
-            'name' => $ns->get('database_name'),
-            'user' => $ns->get('database_username'),
-            'password' => $ns->get('database_password'),
+            'host' => $session->get('database_hostname'),
+            'port' => $session->get('database_port'),
+            'name' => $session->get('database_name'),
+            'user' => $session->get('database_username'),
+            'password' => $session->get('database_password'),
         ];
         $data['twig']['cache'] = PATH_ROOT . '/data/cache';
 
@@ -379,13 +375,13 @@ final class Box_Installer
         return $output;
     }
 
-    private function _isValidInstallData($ns): void
+    private function _isValidInstallData($session): void
     {
-        if (!$this->canConnectToDatabase($ns->get('database_hostname'), $ns->get('database_name'), $ns->get('database_username'), $ns->get('database_password'))) {
+        if (!$this->canConnectToDatabase($session->get('database_hostname'), $session->get('database_name'), $session->get('database_username'), $session->get('database_password'))) {
             throw new Exception('Can not connect to database');
         }
 
-        if (!$this->isValidAdmin($ns->get('admin_email'), $ns->get('admin_password'), $ns->get('admin_name'))) {
+        if (!$this->isValidAdmin($session->get('admin_email'), $session->get('admin_password'), $session->get('admin_name'))) {
             throw new Exception('Administrator\'s account is invalid');
         }
     }

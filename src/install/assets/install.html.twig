@@ -113,7 +113,7 @@
                 <input type="email" id="admin_email" name="admin_email" value="{{ request.admin_email|default(admin_email) }}" placeholder="you@yourdomain.com" required>
 
                 <label for="admin_password">Password <span class="red">*</span></label>
-                <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required>
+                <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required minlength="8">
             </fieldset>
 
             <h3>Currency Settings</h3>
