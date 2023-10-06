@@ -130,6 +130,16 @@ final class FOSSBilling_Installer
                     $this->generateEmailTemplates();
                     session_destroy();
 
+                    // Installation is successful
+                    echo $this->render(PAGE_RESULT, [
+                        'success' => true,
+                        'config_file_path' => PATH_CONFIG,
+                        'cron_path' => PATH_CRON,
+                        'install_module_path' => PATH_INSTALL,
+                        'url_customer' => BB_URL,
+                        'url_admin' => BB_URL_ADMIN,
+                    ]);
+
                     // Try to remove install folder
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
@@ -140,16 +150,6 @@ final class FOSSBilling_Installer
                     } catch (Exception) {
                         // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
                     }
-
-                    // Installation is successful
-                    echo $this->render(PAGE_RESULT, [
-                        'success' => true,
-                        'config_file_path' => PATH_CONFIG,
-                        'cron_path' => PATH_CRON,
-                        'install_module_path' => PATH_INSTALL,
-                        'url_customer' => BB_URL,
-                        'url_admin' => BB_URL_ADMIN,
-                    ]);
                 } catch (Exception $e) {
                     // Route to result page with exception information
                     echo $this->render(PAGE_RESULT, [
@@ -335,12 +335,6 @@ final class FOSSBilling_Installer
      */
     private function install(): bool
     {
-        // Create the configuration file
-        $output = $this->getConfigOutput();
-        if (!file_put_contents(PATH_CONFIG, $output)) {
-            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
-        }
-
         // Load database structure
         $sql = file_get_contents(PATH_SQL);
         $sql_content = file_get_contents(PATH_SQL_DATA);
@@ -392,6 +386,12 @@ final class FOSSBilling_Installer
             } catch (Exception $e) {
                 throw new Exception("Unable to write required .htaccess file to " . PATH_HTACCESS . ". Check file and folder permissions.", $e->getCode());
             }
+        }
+
+        // Create the configuration file
+        $output = $this->getConfigOutput();
+        if (!file_put_contents(PATH_CONFIG, $output)) {
+            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
 
         // Installation completed successfully

@@ -96,17 +96,12 @@
             </table>
         </details>
 
-        <!--<h1>Setup Form</h1>-->
-
         {% if canInstall == false %}
 
         <p>Meet all system requirements, then refresh the page to see the setup form.</p>
 
         {% else %}
             <form id='form' action="/install/install.php?a=install" method="post">
-
-                <!--<p>Fill out all fields, then click <strong>Install</strong> at the bottom of the page.</p>-->
-
                 <details id="step-2">
                     <summary>Step 2) Enter database details</summary>
 
@@ -182,7 +177,7 @@
 
 {% block javascript %}
     <script>
-            document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             var currentStep = 1;
             const button = document.getElementById('button');
             const timeNote = document.getElementById('time-note');
