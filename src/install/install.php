@@ -60,14 +60,24 @@ define('BB_URL', $root_url);
 const BB_URL_INSTALL = BB_URL . 'install/';
 const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
+// Load action and initalize the installer
+$action = $_GET['a'] ?? 'index';
+$installer = new Box_Installer();
+
+// Run the installer only in non-CLI mode
+if (! Environment::isCLI()) {
+    $installer->run($action);
+}
+
 // Inline installer class.
 final class Box_Installer
 {
     private Session $session;
+    private PDO $pdo;
 
     public function __construct()
     {
-        include 'session.php';
+        require_once 'session.php';
         $this->session = new Session();
     }
 
@@ -83,25 +93,19 @@ final class Box_Installer
 
                 // Installer validation
                 try {
-                    // Verify database connection
-                    if (! $this->canConnectToDatabase($_POST['database_hostname'] . ';' . $_POST['database_port'], $_POST['database_name'], $_POST['database_username'], $_POST['database_password'])) {
-                        echo $this->render(PAGE_RESULT, [
-                            'success' => false,
-                            'message' => 'Could not connect to the database, or the database does not exist',
-                        ]);
-                        break;
-                    }
+                    // Handle database information
                     $this->session->set('database_hostname', $_POST['database_hostname']);
                     $this->session->set('database_port', $_POST['database_port']);
                     $this->session->set('database_name', $_POST['database_name']);
                     $this->session->set('database_username', $_POST['database_username']);
                     $this->session->set('database_password', $_POST['database_password']);
+                    $this->connectDatabase();
 
                     // Handle admin information
-                    $this->isValidAdmin($_POST['admin_email'], $_POST['admin_password'], $_POST['admin_name']);
                     $this->session->set('admin_name', $_POST['admin_name']);
                     $this->session->set('admin_email', $_POST['admin_email']);
                     $this->session->set('admin_password', $_POST['admin_password']);
+                    $this->validateAdmin();
 
                     // Setup default currency
                     $this->session->set('currency_code', $_POST['currency_code']);
@@ -117,11 +121,11 @@ final class Box_Installer
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
                         $config = require PATH_CONFIG;
-                        if (!$config['debug']) {
-                            $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
+                        if (! $config['debug']) {
+                            $this->removeDirectory('..' . DIRECTORY_SEPARATOR . 'install');
                         }
                     } catch (Exception) {
-                        // do nothing
+                        // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
                     }
 
                     // Installation is successful
@@ -178,6 +182,13 @@ final class Box_Installer
         }
     }
 
+    /**
+     * Render a page with Twig.
+     *
+     * @param string $name
+     * @param array $vars
+     * @return string
+     */
     private function render($name, $vars = []): string
     {
         $options = [
@@ -191,18 +202,23 @@ final class Box_Installer
         ];
         $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
-        // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
         $twig->addGlobal('version', \FOSSBilling\Version::VERSION);
 
         return $twig->render($name, $vars);
     }
 
-    private function getPdo($host, $db, $user, $pass): PDO
+    /**
+     * Attempt to open the database connection.
+     *
+     * @return void
+     */
+    private function connectDatabase(): void
     {
-        $pdo = new PDO('mysql:host=' . $host,
-            $user,
-            $pass,
+        // Open the connection
+        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';' . $this->session->get('database_port'),
+            $this->session->get('database_username'),
+            $this->session->get('database_password'),
             [
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -210,99 +226,104 @@ final class Box_Installer
             ]
         );
 
-        $pdo->exec('SET NAMES "utf8"');
-        $pdo->exec('SET CHARACTER SET utf8');
-        $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
-        $pdo->exec('SET character_set_results = utf8');
-        $pdo->exec('SET character_set_server = utf8');
-        $pdo->exec('SET SESSION interactive_timeout = 28800');
-        $pdo->exec('SET SESSION wait_timeout = 28800');
+        // Set required MySQL environment settings
+        $this->pdo->exec('SET NAMES "utf8"');
+        $this->pdo->exec('SET CHARACTER SET utf8');
+        $this->pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
+        $this->pdo->exec('SET character_set_results = utf8');
+        $this->pdo->exec('SET character_set_server = utf8');
+        $this->pdo->exec('SET SESSION interactive_timeout = 28800');
+        $this->pdo->exec('SET SESSION wait_timeout = 28800');
 
         // Attempt to create the database.
         try {
-            $pdo->exec("CREATE DATABASE `$db` CHARACTER SET utf8 COLLATE utf8_general_ci;");
+            $this->pdo->exec("CREATE DATABASE `" .  $this->session->get('database_name') . "` CHARACTER SET utf8 COLLATE utf8_general_ci;");
         } catch (PDOException $e) {
             // Silently fail if the database already exists.
         }
 
-        $pdo->query("USE `$db`;");
-
-        return $pdo;
+        // Select the database as default for future queries
+        $this->pdo->query("USE `" .  $this->session->get('database_name') . "`;");
     }
 
-    private function canConnectToDatabase($host, $db, $user, $pass): bool
+    /**
+     * Validate admin information meets all required parameters.
+     *
+     * @return boolean
+     */
+    private function validateAdmin(): bool
     {
-        $this->getPdo($host, $db, $user, $pass);
-        return true;
-    }
-
-    private function isValidAdmin($email, $password, $name): bool
-    {
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($this->session->get('admin_email'), FILTER_VALIDATE_EMAIL)) {
             throw new Exception('The admin email is not a valid address.');
         }
 
-        if (strlen($password) < 8) {
+        if (strlen($this->session->get('admin_password')) < 8) {
             throw new Exception('Minimum admin password length is 8 characters.');
         }
 
-        if (! preg_match("#[0-9]+#", $password)) {
+        if (! preg_match("#[0-9]+#", $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one number.');
         }
 
-        if (! preg_match("#[a-z]+#", $password)) {
+        if (! preg_match("#[a-z]+#", $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one lowercase letter.');
         }
 
-        if (! preg_match("#[A-Z]+#", $password)) {
+        if (! preg_match("#[A-Z]+#", $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one uppercase letter.');
         }
 
-        if (empty($name)) {
+        if (empty($this->session->get('admin_name'))) {
             throw new Exception('You must enter an Admin Name.');
         }
 
         return true;
     }
 
+    /**
+     * Installation processor.
+     *
+     * @return boolean
+     */
     private function install(): bool
     {
-        $this->_isValidInstallData();
-        $this->_createConfigurationFile();
+        // Create the configuration file
+        $output = $this->getConfigOutput();
+        if (! file_put_contents(PATH_CONFIG, $output)) {
+            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
+        }
 
-        $pdo = $this->getPdo($this->session->get('database_hostname') . ';' . $this->session->get('database_port'), $this->session->get('database_name'), $this->session->get('database_username'), $this->session->get('database_password'));
-
+        // Load database structure
         $sql = file_get_contents(PATH_SQL);
         $sql_content = file_get_contents(PATH_SQL_DATA);
-
         if (!$sql || !$sql_content) {
             throw new Exception('Could not read structure.sql file');
         }
 
+        // Read content, parse queries into an array, then loop and execute each query
         $sql .= $sql_content;
-
         $sql = preg_split('/\;[\r]*\n/ism', $sql);
         $sql = array_map('trim', $sql);
         foreach ($sql as $query) {
             if (!trim($query)) {
                 continue;
             }
-
-            $pdo->query($query);
+            $this->pdo->query($query);
         }
 
+        // Create default administrator
         $passwordObject = new Box_Password();
-        $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW());");
+        $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW());");
         $stmt->execute([
             'admin_name' => $this->session->get('admin_name'),
             'admin_email' => $this->session->get('admin_email'),
             'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
         ]);
 
-        $stmt = $pdo->prepare("DELETE FROM currency WHERE code='USD'");
+        // Delete default currency fron ccontent file and use currency passed in the installer
+        $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();
-
-        $stmt = $pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
+        $stmt = $this->pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
         $stmt->execute([
             'currency_title' => $this->session->get('currency_title'),
             'currency_code' => $this->session->get('currency_code'),
@@ -310,7 +331,7 @@ final class Box_Installer
         ]);
 
         // Copy config templates when applicable
-        if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
+        if (! file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
@@ -325,15 +346,8 @@ final class Box_Installer
             }
         }
 
+        // Installation completed successfully
         return true;
-    }
-
-    private function _createConfigurationFile(): void
-    {
-        $output = $this->_getConfigOutput();
-        if (!file_put_contents(PATH_CONFIG, $output)) {
-            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
-        }
     }
 
     /**
@@ -341,7 +355,7 @@ final class Box_Installer
      *
      * @return string
      */
-    private function _getConfigOutput(): string
+    private function getConfigOutput(): string
     {
         // Version data
         $version = new \FOSSBilling\Requirements();
@@ -374,17 +388,11 @@ final class Box_Installer
         return $output;
     }
 
-    private function _isValidInstallData(): void
-    {
-        if (!$this->canConnectToDatabase($this->session->get('database_hostname'), $this->session->get('database_name'), $this->session->get('database_username'), $this->session->get('database_password'))) {
-            throw new Exception('Can not connect to database');
-        }
-
-        if (!$this->isValidAdmin($this->session->get('admin_email'), $this->session->get('admin_password'), $this->session->get('admin_name'))) {
-            throw new Exception('Administrator\'s account is invalid');
-        }
-    }
-
+    /**
+     * Generate the default email templates.
+     *
+     * @return boolean
+     */
     private function generateEmailTemplates(): bool
     {
         $emailService = new Service();
@@ -395,14 +403,20 @@ final class Box_Installer
         return $emailService->templateBatchGenerate();
     }
 
-    public function rmAllDir($dir)
+    /**
+     * Recursively remove a directory at a specific path.
+     *
+     * @param string $dir
+     * @return void
+     */
+    public function removeDirectory($dir)
     {
         if (is_dir($dir)) {
             $contents = scandir($dir);
             foreach ($contents as $content) {
                 if ('.' !== $content && '..' !== $content) {
                     if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
-                        $this->rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
+                        $this->removeDirectory($dir . DIRECTORY_SEPARATOR . $content);
                     } else {
                         unlink($dir . DIRECTORY_SEPARATOR . $content);
                     }
@@ -412,13 +426,4 @@ final class Box_Installer
             rmdir($dir);
         }
     }
-}
-
-// Load action and initalize the installer
-$action = $_GET['a'] ?? 'index';
-$installer = new Box_Installer();
-
-// Run the installer only in non-CLI mode
-if (! Environment::isCLI()) {
-    $installer->run($action);
 }
