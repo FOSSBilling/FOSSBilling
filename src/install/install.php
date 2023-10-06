@@ -45,7 +45,7 @@ set_include_path(implode(PATH_SEPARATOR, [
     get_include_path(),
 ]));
 
-// Load autoloaders
+// Load autoloader
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
 
@@ -60,7 +60,7 @@ define('BB_URL', $root_url);
 const BB_URL_INSTALL = BB_URL . 'install/';
 const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
-// Load action and initalize the installer
+// Load action and initialize the installer
 $action = $_GET['a'] ?? 'index';
 $installer = new FOSSBilling_Installer();
 
@@ -370,7 +370,7 @@ final class FOSSBilling_Installer
             'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
         ]);
 
-        // Delete default currency fron ccontent file and use currency passed in the installer
+        // Delete default currency from content file and use currency passed in the installer
         $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();
         $stmt = $this->pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
