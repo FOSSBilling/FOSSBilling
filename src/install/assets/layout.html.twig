@@ -23,7 +23,7 @@
     </head>
     <body>
         <main class="container">
-            <nav style='padding-bottom: 3em;'>
+            <nav style='padding-bottom: 1em;'>
                 <ul>
                     <li>
                         <a href="{{ constant('BB_URL_INSTALL') }}" title="FOSSBilling"><img src="../themes/huraga/assets/img/logo_white.svg" alt="FOSSBilling Logo" height="50px" width="238"/></a>
@@ -41,5 +41,6 @@
                 <span>&copy; Copyright {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="FOSSBilling" target="_blank" data-tooltip="Opens in a new window.">FOSSBilling {{version}}</a></span>
             </small>
         </footer>
+        {% block javascript %}{% endblock %}
     </body>
 </html>

@@ -75,7 +75,7 @@
     <p>Meet all system requirements, then refresh the page to see the setup form.</p>
 
     {% else %}
-        <form action="/install/install.php?a=install" method="post">
+        <form id='form' action="/install/install.php?a=install" method="post">
 
             <p>Fill out all fields, then click <strong>Install</strong> at the bottom of the page.</p>
 
@@ -133,9 +133,24 @@
 
             <hr/>
 
-            <p>Installation may take up to 30 seconds dpending on the speed of your system.</p>
+            <p>Installation may take up to 30 seconds depending on the speed of your system.</p>
 
-            <button type="submit">Install</button>
+            <button id='button' type="submit">Install</button>
+
+            <progress id='progress' style='display:none;'></progress>
         </form>
     {% endif %}
+{% endblock %}
+
+{% block javascript %}
+    <script>
+        const button = document.querySelector('#button');
+        const progress = document.querySelector('#progress');
+        const form = document.querySelector('#form');
+        form.addEventListener('submit', e => {
+            button.disabled = true;
+            button.style.display = 'none';
+            progress.style.display = 'block';
+        });
+    </script>
 {% endblock %}

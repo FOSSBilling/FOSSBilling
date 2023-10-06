@@ -81,6 +81,12 @@ final class FOSSBilling_Installer
         $this->session = new Session();
     }
 
+    /**
+     * Action router.
+     *
+     * @param string $action
+     * @return void
+     */
     public function run($action): void
     {
         switch ($action) {
