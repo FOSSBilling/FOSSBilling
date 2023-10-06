@@ -100,6 +100,11 @@ final class FOSSBilling_Installer
 
                 // Installer validation
                 try {
+                    // Make sure we are not already installed. Prevents tampered requests from being able to trigger the installer.
+                    if ($this->isAlreadyInstalled()) {
+                        throw new Exception('FOSSBilling is already installed.');
+                    }
+
                     // Handle database information
                     $this->session->set('database_hostname', $_POST['database_hostname']);
                     $this->session->set('database_port', $_POST['database_port']);
@@ -168,6 +173,7 @@ final class FOSSBilling_Installer
                     'php_ver_ok' => $this->requirements->isPhpVersionOk(),
                     'extensions' => $this->requirements->extensions(),
                     'canInstall' => $this->canInstall(),
+                    'alreadyInstalled' => $this->isAlreadyInstalled(),
                     'database_hostname' => $this->session->get('database_hostname'),
                     'database_name' => $this->session->get('database_name'),
                     'database_username' => $this->session->get('database_username'),
@@ -310,6 +316,16 @@ final class FOSSBilling_Installer
 
         // Trigger original requirements
         return $this->requirements->canInstall();
+    }
+
+    /**
+     * Check if we are already installed.
+     *
+     * @return boolean
+     */
+    public function isAlreadyInstalled(): bool
+    {
+        return file_exists(PATH_CONFIG) ? true : false;
     }
 
     /**
