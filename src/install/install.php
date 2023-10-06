@@ -146,6 +146,8 @@ final class FOSSBilling_Installer
                         'config_file_path' => PATH_CONFIG,
                         'cron_path' => PATH_CRON,
                         'install_module_path' => PATH_INSTALL,
+                        'url_customer' => BB_URL,
+                        'url_admin' => BB_URL_ADMIN,
                     ]);
                 } catch (Exception $e) {
                     // Route to result page with exception information
