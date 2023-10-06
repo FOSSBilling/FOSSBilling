@@ -165,19 +165,15 @@
                     </fieldset>
                 </details>
 
-                <details id="step-5">
-                    <summary>Step 5) Accept and install</summary>
-
-                    <p>Installation may take up to 30 seconds depending on the speed of your system.</p>
-
-                    <button id='button' type="submit">Install</button>
-
+                <div>
                     <progress id='progress' style='display:none;'></progress>
-                </details>
 
-                <div class="step-buttons">
-                    <button id="backButton" type="button" disabled>Back</button>
-                    <button id='nextButton' type="button">Next</button>
+                    <button class="button-inline float-left-margin secondary" id="backButton" type="button" disabled>Back</button>
+                    <button class="button-inline float-right-margin" id='nextButton' type="button">Next</button>
+
+                    <button class="button-inline float-right-margin" id='button' type="submit" hidden="true">Install</button>
+                    <br>
+                    <p id="time-note" class="float-right-margin" hidden="true">Installation may take up to 30 seconds depending on the speed of your system.</p>
                 </div>
             </form>
         {% endif %}
@@ -186,102 +182,114 @@
 
 {% block javascript %}
     <script>
-        var currentStep = 1;
-        const button = document.getElementById('button');
-        const progress = document.getElementById('progress');
-        const form = document.getElementById('form');
-        const backButton = document.getElementById('backButton');
-        const nextButton = document.getElementById('nextButton');
-        const step1 = document.getElementById("step-1");
-        const step2 = document.getElementById("step-2");
-        const step3 = document.getElementById("step-3");
-        const step4 = document.getElementById("step-4");
-        const step5 = document.getElementById("step-5");
+            document.addEventListener('DOMContentLoaded', function() {
+            var currentStep = 1;
+            const button = document.getElementById('button');
+            const timeNote = document.getElementById('time-note');
+            const progress = document.getElementById('progress');
+            const form = document.getElementById('form');
+            const backButton = document.getElementById('backButton');
+            const nextButton = document.getElementById('nextButton');
+            const step1 = document.getElementById("step-1");
+            const step2 = document.getElementById("step-2");
+            const step3 = document.getElementById("step-3");
+            const step4 = document.getElementById("step-4");
 
-        function isStepAllowed(step) {
-            for (let i = (step - 1); i >= 1; i--) {
-                if(!checkRequiredInputs(i)){
-                    return false;
+            function isStepAllowed(step) {
+                for (let i = (step - 1); i >= 1; i--) {
+                    if(!checkRequiredInputs(i)){
+                        return false;
+                    }
+                }
+                return step <= 5;
+            }
+
+            function updateStepVisibility(step) {
+                [step1, step2, step3, step4].forEach((stepElement, index) => {
+                    stepElement.open = index + 1 === step ? true : false;
+                });
+            }
+
+            function checkRequiredInputs(step) {
+                const stepForm = document.getElementById(`step-${step}`);
+                var requiredInputs = stepForm.querySelectorAll('input[required]');
+                var allowed = true;
+
+                requiredInputs.forEach(function (input) {
+                    if (!input.reportValidity()) {
+                        allowed = false;
+                    }
+                });
+
+                return allowed;
+            }
+
+            function updateButtons() {
+                backButton.disabled = currentStep === 1;
+                nextButton.disabled = currentStep === 5 || {{ canInstall ? 'false' : 'true' }};
+
+                if(currentStep === 5){
+                    nextButton.hidden = true;
+                    timeNote.hidden   = false;
+                    button.hidden     = false;
+                } else {
+                    nextButton.hidden = false;
+                    timeNote.hidden   = true;
+                    button.hidden     = true
                 }
             }
-            return step <= 5;
-        }
 
-        function updateStepVisibility(step) {
-            [step1, step2, step3, step4, step5].forEach((stepElement, index) => {
-                stepElement.open = index + 1 === step ? true : false;
-            });
-        }
-
-        function checkRequiredInputs(step) {
-            const stepForm = document.getElementById(`step-${step}`);
-            var requiredInputs = stepForm.querySelectorAll('input[required]');
-            var allowed = true;
-
-            requiredInputs.forEach(function (input) {
-                if (!input.reportValidity()) {
-                    allowed = false;
-                }
-            });
-
-            return allowed;
-        }
-
-        function updateButtons() {
-            backButton.disabled = currentStep === 1;
-            nextButton.disabled = currentStep === 5 || {{ canInstall ? 'false' : 'true' }};
-        }
-
-        function updateProgress() {
-            const overallProgress = document.getElementById('overall-progress');
-            overallProgress.value = (currentStep-1);
-        }
-
-        updateButtons();
-        updateStepVisibility(currentStep);
-        updateProgress();
-
-        form.addEventListener('submit', e => {
-            button.disabled = true;
-            button.style.display = 'none';
-            progress.style.display = 'block';
-        });
-
-        backButton.addEventListener('click', () => {
-            if (currentStep > 1) {
-                currentStep--;
-                updateStepVisibility(currentStep);
-                updateButtons();
-                updateProgress();
+            function updateProgress() {
+                const overallProgress = document.getElementById('overall-progress');
+                overallProgress.value = (currentStep-1);
             }
-        });
 
-        nextButton.addEventListener('click', () => {
-            if({{ canInstall ? 'true' : 'false' }} && isStepAllowed(currentStep + 1)){
-                currentStep++;
-                updateStepVisibility(currentStep);
-                updateButtons();
-                updateProgress();
+            updateButtons();
+            updateStepVisibility(currentStep);
+            updateProgress();
+
+            form.addEventListener('submit', e => {
+                button.disabled = true;
+                button.style.display = 'none';
+                progress.style.display = 'block';
+            });
+
+            backButton.addEventListener('click', () => {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateStepVisibility(currentStep);
+                    updateButtons();
+                    updateProgress();
+                }
+            });
+
+            nextButton.addEventListener('click', () => {
+                if({{ canInstall ? 'true' : 'false' }} && isStepAllowed(currentStep + 1)){
+                    currentStep++;
+                    updateStepVisibility(currentStep);
+                    updateButtons();
+                    updateProgress();
+                }
+            });
+
+            // Event delegation to handle step clicks.
+            function handleStepToggle(stepElement, step) {
+                stepElement.addEventListener("toggle", function(event) {
+                    if (!isStepAllowed(step)) {
+                        event.preventDefault();
+                    }
+                });
+                stepElement.addEventListener("click", function(event) {
+                    if (!isStepAllowed(step)) {
+                        event.preventDefault();
+                    }
+                });
             }
-        });
-
-        // Event delegation to handle step clicks.
-        function handleStepToggle(stepElement, step) {
-            stepElement.addEventListener("toggle", function(event) {
-                if (!isStepAllowed(step)) {
-                    event.preventDefault();
-                }
-            });
-            stepElement.addEventListener("click", function(event) {
-                if (!isStepAllowed(step)) {
-                    event.preventDefault();
-                }
-            });
-        }
     
-        // Use event delegation for every step
-        [step2, step3, step4, step5].forEach((stepElement, index) => {
-            handleStepToggle(stepElement, index + 2);
+            // Use event delegation for every step
+            [step2, step3, step4].forEach((stepElement, index) => {
+                handleStepToggle(stepElement, index + 2);
+            });
         });
     </script>
 {% endblock %}
