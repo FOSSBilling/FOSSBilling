@@ -62,7 +62,7 @@ const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
 // Load action and initalize the installer
 $action = $_GET['a'] ?? 'index';
-$installer = new Box_Installer();
+$installer = new FOSSBilling_Installer();
 
 // Run the installer only in non-CLI mode
 if (! Environment::isCLI()) {
@@ -70,7 +70,7 @@ if (! Environment::isCLI()) {
 }
 
 // Inline installer class.
-final class Box_Installer
+final class FOSSBilling_Installer
 {
     private Session $session;
     private PDO $pdo;
