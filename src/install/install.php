@@ -12,6 +12,7 @@ use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
 use Symfony\Component\HttpClient\HttpClient;
 use Twig\Loader\FilesystemLoader;
+
 date_default_timezone_set('UTC');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -65,7 +66,7 @@ $action = $_GET['a'] ?? 'index';
 $installer = new FOSSBilling_Installer();
 
 // Run the installer only in non-CLI mode
-if (! Environment::isCLI()) {
+if (!Environment::isCLI()) {
     $installer->run($action);
 }
 
@@ -133,7 +134,7 @@ final class FOSSBilling_Installer
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
                         $config = require PATH_CONFIG;
-                        if (! $config['debug']) {
+                        if (!$config['debug']) {
                             $this->removeDirectory('..' . DIRECTORY_SEPARATOR . 'install');
                         }
                     } catch (Exception) {
@@ -165,7 +166,7 @@ final class FOSSBilling_Installer
                     'folders' => $this->requirements->folders(),
                     'files' => $this->requirements->files(),
                     'os' => PHP_OS,
-                    'os_ok' => true, // @todo What is this even for?...
+                    'os_ok' => (str_starts_with(strtoupper(PHP_OS), 'WIN')) ? false : true,
                     'is_subfolder' => $this->isSubfolder(),
                     'fossbilling_ver' => \FOSSBilling\Version::VERSION,
                     'fossbilling_ver_ok' => $this->requirements->isFOSSBillingVersionOk(),
@@ -269,7 +270,7 @@ final class FOSSBilling_Installer
      */
     private function validateAdmin(): bool
     {
-        if (! filter_var($this->session->get('admin_email'), FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($this->session->get('admin_email'), FILTER_VALIDATE_EMAIL)) {
             throw new Exception('The admin email is not a valid address.');
         }
 
@@ -277,15 +278,15 @@ final class FOSSBilling_Installer
             throw new Exception('Minimum admin password length is 8 characters.');
         }
 
-        if (! preg_match("#[0-9]+#", $this->session->get('admin_password'))) {
+        if (!preg_match("#[0-9]+#", $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one number.');
         }
 
-        if (! preg_match("#[a-z]+#", $this->session->get('admin_password'))) {
+        if (!preg_match("#[a-z]+#", $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one lowercase letter.');
         }
 
-        if (! preg_match("#[A-Z]+#", $this->session->get('admin_password'))) {
+        if (!preg_match("#[A-Z]+#", $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one uppercase letter.');
         }
 
@@ -313,11 +314,8 @@ final class FOSSBilling_Installer
      */
     private function canInstall(): bool
     {
-        // Verify we are not a subfolder
-        if ($this->isSubfolder()) return false;
-
-        // Trigger original requirements
-        return $this->requirements->canInstall();
+        // Validate FOSSBilling isn't placed under a sub-folder and check the other requirements
+        return !$this->isSubfolder() && $this->requirements->canInstall();
     }
 
     /**
@@ -339,7 +337,7 @@ final class FOSSBilling_Installer
     {
         // Create the configuration file
         $output = $this->getConfigOutput();
-        if (! file_put_contents(PATH_CONFIG, $output)) {
+        if (!file_put_contents(PATH_CONFIG, $output)) {
             throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
 
@@ -381,12 +379,12 @@ final class FOSSBilling_Installer
         ]);
 
         // Copy config templates when applicable
-        if (! file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
+        if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
         // If .htaccess doesn't exist, fetch the latest from GitHub.
-        if (! file_exists(PATH_HTACCESS)) {
+        if (!file_exists(PATH_HTACCESS)) {
             try {
                 $client = HttpClient::create();
                 $response = $client->request('GET', 'https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/main/src/.htaccess');
