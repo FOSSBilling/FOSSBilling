@@ -28,9 +28,7 @@
         <main class="container">
             <nav style='padding-bottom: 1em;'>
                 <ul>
-                    <li>
-                        <a href="{{ constant('BB_URL_INSTALL') }}" title="FOSSBilling"><img src="../themes/huraga/assets/img/logo_white.svg" alt="FOSSBilling Logo" height="50px" width="238"/></a>
-                    </li>
+                    <li><a href="{{ constant('BB_URL_INSTALL') }}" title="FOSSBilling"><img src="../themes/huraga/assets/img/logo_white.svg" alt="FOSSBilling Logo" height="50px" width="238"/></a></li>
                 </ul>
                 <ul>
                     <li><a href="https://fossbilling.org/docs" target="_blank" data-tooltip="Opens in a new window.">Documentation</a></li>
@@ -38,7 +36,7 @@
                 </ul>
             </nav>
             {% block page %}{% endblock %}
-          </main>
+        </main>
         <footer class="container">
             <small>
                 <span>&copy; Copyright {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="FOSSBilling" target="_blank" data-tooltip="Opens in a new window.">FOSSBilling {{version}}</a></span>

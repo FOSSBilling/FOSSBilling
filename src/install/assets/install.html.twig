@@ -11,79 +11,84 @@
             <li>Delete <strong>config.php</strong>.</li>
             <li>Refresh this page and you will see the installer.</p>
     {% else %}
-        <h1>New Installation</h1>
-
         <p>Thank you for choosing FOSSBilling! Our installer will have you up and running in just a few more minutes.</p>
 
         <p>Meet all system requirements, then fill out and submit the setup form.</p>
 
         <p>FOSSBilling is licensed under the Apache License, Version 2.0. <a href='https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE' target='_blank' data-tooltip="Opens in a new window.">Click here</a> for full license text.</p>
 
-        <h1>System Requirements</h1>
 
         {% if canInstall == false %}
             <p class="red">Installation is blocked because you do not meet one or more system requirements.</p>
         {% endif %}
+    
+        <progress id="overall-progress" value="0" max="4"></progress>
 
-        <table role="grid">
-            <thead>
-                <tr>
-                    <th scope="col">Requirement</th>
-                    <th scope="col">Result</th>
-                    <th scope="col"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>FOSSBilling Version</td>
-                    <td class="{{ fossbilling_ver_ok ? 'green' : 'orange'}}">{{ fossbilling_ver }}</td>
-                    <td>{% if not fossbilling_ver_ok %}FOSSBilling couldn't find valid version information. This is OK if you downloaded FOSSBilling directly from the main branch instead of a released version. However, be aware that the main branch may not be stable enough for production use.{% endif %}</td>
-                </tr>
-                <tr>
-                    <td>Subfolder Detection</td>
-                    <td class="{{ is_subfolder ? 'red' : 'green'}}">{{ is_subfolder ? 'FAIL' : 'OK' }}</td>
-                    <td>{% if is_subfolder %}FOSSBilling does not support installing in a subfolder. Please move the application to your host document root. Refer to <a href='https://github.com/FOSSBilling/FOSSBilling/pull/1073' data-tooltip="Opens in a new window." target='_blank'>Issue #1073</a> for more information.{% endif %}</td>
-                </tr>
-                <tr>
-                    <td>Operating System</td>
-                    <td class="{{ os_ok ? 'green' : 'orange'}}">{{ os }}</td>
-                    <td>{% if not os_ok %}FOSSBilling might not work properly on your operating system{% endif %}</td>
-                </tr>
-                <tr>
-                    <td>PHP Version</td>
-                    <td class="{{ php_ver_ok ? 'green' : 'red'}}">{{ php_ver }}</td>
-                    <td>{% if not php_ver_ok %}Required PHP version >{{ php_ver_req }}{% endif %}</td>
-                </tr>
-                <tr>
-                    <td>PHP Safe Mode</td>
-                    <td class="{{ php_safe_mode ? 'red' : 'green'}}">{{ php_safe_mode ? 'ON' : 'OFF'}}</td>
-                    <td>{% if php_safe_mode %}PHP safe mode should be OFF{% endif %}</td>
-                </tr>
-                {% for ext, loaded in extensions %}
-                    <tr>
-                        <td>PHP Extension: <strong>{{ ext }}</strong></td>
-                        <td class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'OK' : 'FAIL'}}</td>
-                        <td>{% if not loaded %}Contact your server administrator to enable <strong>PHP {{ ext }} extension</strong>{% endif %}</td>
-                    </tr>
-                {% endfor %}
-                {% for file, writable in files %}
-                    <tr>
-                        <td>{{ file }}</td>
-                        <td class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Writable' : 'FAIL'}}</td>
-                        <td>{% if not writable %}Please make sure that file exists and is writable.{%endif%}</td>
-                    </tr>
-                {% endfor %}
-                {% for folder, writable in folders %}
-                    <tr>
-                        <td>{{ folder }}</td>
-                        <td class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Writable' : 'FAIL'}}</td>
-                        <td>{% if not writable %}Please make sure that directory exists and is writable.{%endif%}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <hr />
 
-        <h1>Setup Form</h1>
+        <details id="step-1">
+            <summary>Step 1) Check System Requirements</summary>
+            <h3>System Requirements</h3>
+            <table role="grid">
+                <thead>
+                    <tr>
+                        <th scope="col">Requirement</th>
+                        <th scope="col">Result</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>FOSSBilling Version</td>
+                        <td class="{{ fossbilling_ver_ok ? 'green' : 'orange'}}">{{ fossbilling_ver }}</td>
+                        <td>{% if not fossbilling_ver_ok %}FOSSBilling couldn't find valid version information. This is OK if you downloaded FOSSBilling directly from the main branch instead of a released version. However, be aware that the main branch may not be stable enough for production use.{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Subfolder Detection</td>
+                        <td class="{{ is_subfolder ? 'red' : 'green'}}">{{ is_subfolder ? 'FAIL' : 'OK' }}</td>
+                        <td>{% if is_subfolder %}FOSSBilling does not support installing in a subfolder. Please move the application to your host document root. Refer to <a href='https://github.com/FOSSBilling/FOSSBilling/pull/1073' data-tooltip="Opens in a new window." target='_blank'>Issue #1073</a> for more information.{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Operating System</td>
+                        <td class="{{ os_ok ? 'green' : 'orange'}}">{{ os }}</td>
+                        <td>{% if not os_ok %}FOSSBilling might not work properly on your operating system{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>PHP Version</td>
+                        <td class="{{ php_ver_ok ? 'green' : 'red'}}">{{ php_ver }}</td>
+                        <td>{% if not php_ver_ok %}Required PHP version >{{ php_ver_req }}{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>PHP Safe Mode</td>
+                        <td class="{{ php_safe_mode ? 'red' : 'green'}}">{{ php_safe_mode ? 'ON' : 'OFF'}}</td>
+                        <td>{% if php_safe_mode %}PHP safe mode should be OFF{% endif %}</td>
+                    </tr>
+                    {% for ext, loaded in extensions %}
+                        <tr>
+                            <td>PHP Extension: <strong>{{ ext }}</strong></td>
+                            <td class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'OK' : 'FAIL'}}</td>
+                            <td>{% if not loaded %}Contact your server administrator to enable <strong>PHP {{ ext }} extension</strong>{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                    {% for file, writable in files %}
+                        <tr>
+                            <td>{{ file }}</td>
+                            <td class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Writable' : 'FAIL'}}</td>
+                            <td>{% if not writable %}Please make sure that file exists and is writable.{%endif%}</td>
+                        </tr>
+                    {% endfor %}
+                    {% for folder, writable in folders %}
+                        <tr>
+                            <td>{{ folder }}</td>
+                            <td class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Writable' : 'FAIL'}}</td>
+                            <td>{% if not writable %}Please make sure that directory exists and is writable.{%endif%}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </details>
+
+        <!--<h1>Setup Form</h1>-->
 
         {% if canInstall == false %}
 
@@ -92,67 +97,84 @@
         {% else %}
             <form id='form' action="/install/install.php?a=install" method="post">
 
-                <p>Fill out all fields, then click <strong>Install</strong> at the bottom of the page.</p>
+                <!--<p>Fill out all fields, then click <strong>Install</strong> at the bottom of the page.</p>-->
 
-                <h3>Database</h3>
+                <details id="step-2">
+                    <summary>Step 2) Enter database details</summary>
+                    <h3>Database</h3>
 
-                <p>MySQL connection information.</p>
+                    <p>Enter your MySQL connection information.</p>
 
-                <fieldset>
-                    <label for="database_hostname">Hostname <span class="red">*</span></label>
-                    <input type="text" id="database_hostname" name="database_hostname" value="{{ database_hostname|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
-                    <small>Usually <strong>localhost</strong>. For Docker, use <strong>mysql</strong>.</small>
+                    <fieldset>
+                        <label for="database_hostname">Hostname <span class="red">*</span></label>
+                        <input type="text" id="database_hostname" name="database_hostname" value="{{ database_hostname|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
+                        <small>Usually <strong>localhost</strong>. For Docker, use <strong>mysql</strong>.</small>
+    
+                        <label for="database_port">Port <span class="red">*</span></label>
+                        <input type="number" id="database_port" name="database_port" value="{{ database_port|default('3306') }}" placeholder="Usually 3306." required>
+    
+                        <label for="database_name">Name <span class="red">*</span></label>
+                        <input type="text" id="database_name" name="database_name" value="{{ request.database_name|default(database_name) }}" placeholder="Enter the name of the database." required>
+    
+                        <label for="database_username">Username <span class="red">*</span></label>
+                        <input type="text" id="database_username" name="database_username" value="{{ request.database_username|default(database_username) }}" placeholder="Enter the MySQL username." required>
+    
+                        <label for="database_password">Password <span class="red">*</span></label>
+                        <input type="password" id="database_password" name="database_password" value="{{ request.database_password|default(database_password) }}" placeholder="Enter the MySQL password." required>
+                    </fieldset>
+                </details>
 
-                    <label for="database_port">Port <span class="red">*</span></label>
-                    <input type="number" id="database_port" name="database_port" value="{{ database_port|default('3306') }}" placeholder="Usually 3306." required>
+                <details id="step-3">
+                    <summary>Step 3) Configure your administrator account</summary>
+                    <h3>Administrator Account</h3>
 
-                    <label for="database_name">Name <span class="red">*</span></label>
-                    <input type="text" id="database_name" name="database_name" value="{{ request.database_name|default(database_name) }}" placeholder="Enter the name of the database." required>
+                    <p>Create your administrator login details below.</p>
+    
+                    <fieldset>
+                        <label for="admin_name">Name <span class="red">*</span></label>
+                        <input type="text" id="admin_name" name="admin_name" value="{{ request.admin_name|default(admin_name) }}" placeholder="Display name of your account." required>
+    
+                        <label for="admin_email">Email <span class="red">*</span></label>
+                        <input type="email" id="admin_email" name="admin_email" value="{{ request.admin_email|default(admin_email) }}" placeholder="you@yourdomain.com" required>
+    
+                        <label for="admin_password">Password <span class="red">*</span></label>
+                        <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required minlength="8">
+                    </fieldset>
+                </details>
 
-                    <label for="database_username">Username <span class="red">*</span></label>
-                    <input type="text" id="database_username" name="database_username" value="{{ request.database_username|default(database_username) }}" placeholder="Enter the MySQL username." required>
+                <details id="step-4">
+                    <summary>Step 4) Configure the default currency</summary>
+                    <h3>Default Currency</h3>
 
-                    <label for="database_password">Password <span class="red">*</span></label>
-                    <input type="password" id="database_password" name="database_password" value="{{ request.database_password|default(database_password) }}" placeholder="Enter the MySQL password." required>
-                </fieldset>
+                    <p>Configure your default currency and price format.</p>
+    
+                    <fieldset>
+                        <label for="currency_code">Code <span class="red">*</span></label>
+                        <input type="text" id="currency_code" name="currency_code" value="{{ request.currency_code|default(currency_code) }}" required>
+    
+                        <label for="currency_title">Title <span class="red">*</span></label>
+                        <input type="text" id="currency_title" name="currency_title" value="{{ request.currency_title|default(currency_title) }}" required>
+    
+                        <label for="currency_format">Price Format <span class="red">*</span></label>
+                        <input type="text" id="currency_format" name="currency_format" value="{{ request.currency_format|default(currency_format) }}" required>
+                    </fieldset>
+                </details>
 
-                <h3>Admin Account</h3>
+                <details id="step-5">
+                    <summary>Step 5) Accept and install</summary>
+                    <h3>Accept and install</h3>
 
-                <p>Your login information for accessing the FOSSBilling admin dashboard.</p>
+                    <p>Installation may take up to 30 seconds depending on the speed of your system.</p>
 
-                <fieldset>
-                    <label for="admin_name">Name <span class="red">*</span></label>
-                    <input type="text" id="admin_name" name="admin_name" value="{{ request.admin_name|default(admin_name) }}" placeholder="Display name of your account." required>
+                    <button id='button' type="submit">Install</button>
+    
+                    <progress id='progress' style='display:none;'></progress>
+                </details>
 
-                    <label for="admin_email">Email <span class="red">*</span></label>
-                    <input type="email" id="admin_email" name="admin_email" value="{{ request.admin_email|default(admin_email) }}" placeholder="you@yourdomain.com" required>
-
-                    <label for="admin_password">Password <span class="red">*</span></label>
-                    <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required minlength="8">
-                </fieldset>
-
-                <h3>Currency Settings</h3>
-
-                <p>Configure your default currency and price format.</p>
-
-                <fieldset>
-                    <label for="currency_code">Code <span class="red">*</span></label>
-                    <input type="text" id="currency_code" name="currency_code" value="{{ request.currency_code|default(currency_code) }}" required>
-
-                    <label for="currency_title">Title <span class="red">*</span></label>
-                    <input type="text" id="currency_title" name="currency_title" value="{{ request.currency_title|default(currency_title) }}" required>
-
-                    <label for="currency_format">Price Format <span class="red">*</span></label>
-                    <input type="text" id="currency_format" name="currency_format" value="{{ request.currency_format|default(currency_format) }}" required>
-                </fieldset>
-
-                <hr/>
-
-                <p>Installation may take up to 30 seconds depending on the speed of your system.</p>
-
-                <button id='button' type="submit">Install</button>
-
-                <progress id='progress' style='display:none;'></progress>
+                <div class="step-buttons">
+                    <button id="backButton" type="button" disabled>Back</button>
+                    <button id='nextButton' type="button">Next</button>
+                </div>
             </form>
         {% endif %}
     {% endif %}
@@ -160,13 +182,101 @@
 
 {% block javascript %}
     <script>
-        const button = document.querySelector('#button');
-        const progress = document.querySelector('#progress');
-        const form = document.querySelector('#form');
+        var currentStep = 1;
+        const button = document.getElementById('button');
+        const progress = document.getElementById('progress');
+        const form = document.getElementById('form');
+        const backButton = document.getElementById('backButton');
+        const nextButton = document.getElementById('nextButton');
+        const step1 = document.getElementById("step-1");
+        const step2 = document.getElementById("step-2");
+        const step3 = document.getElementById("step-3");
+        const step4 = document.getElementById("step-4");
+        const step5 = document.getElementById("step-5");
+
+        function isStepAllowed(step) {
+            for (let i = step; i >= 1; i--) {
+                if(!checkRequiredInputs(i)){
+                    return false;
+                }
+            }
+            return step <= 5;
+        }
+
+        function updateStepVisibility(step) {
+            [step1, step2, step3, step4, step5].forEach((stepElement, index) => {
+                stepElement.open = index + 1 === step ? true : false;
+            });
+        }
+
+        function checkRequiredInputs(step) {
+            var form = document.getElementById('step-' + step);
+            var requiredInputs = form.querySelectorAll('input[required]');
+            var allowed = true;
+
+            requiredInputs.forEach(function (input) {
+                if (!input.reportValidity()) {
+                    allowed = false;
+                }
+            });
+
+            return allowed;
+        }
+
+        function updateButtons() {
+            backButton.disabled = currentStep === 1;
+            nextButton.disabled = currentStep === 5 || {{ canInstall ? 'false' : 'true' }};
+        }
+
+        function updateProgress() {
+            const overallProgress = document.getElementById('overall-progress');
+            overallProgress.value = (currentStep-1);
+        }
+
+        updateButtons();
+        updateStepVisibility(currentStep);
+        updateProgress();
+
         form.addEventListener('submit', e => {
             button.disabled = true;
             button.style.display = 'none';
             progress.style.display = 'block';
         });
+
+        backButton.addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepVisibility(currentStep);
+                updateButtons();
+                updateProgress();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if({{ canInstall ? 'true' : 'false' }} && isStepAllowed(currentStep + 1)){
+                currentStep++;
+                updateStepVisibility(currentStep);
+                updateButtons();
+                updateProgress();
+            }
+        });
+
+        function handleStepToggle(stepElement, step) {
+            stepElement.addEventListener("toggle", function(event) {
+                if (!isStepAllowed(step)) {
+                    event.preventDefault();
+                }
+            });
+            stepElement.addEventListener("click", function(event) {
+                if (!isStepAllowed(step)) {
+                    event.preventDefault();
+                }
+            });
+        }
+    
+        handleStepToggle(step2, 2);
+        handleStepToggle(step3, 3);
+        handleStepToggle(step4, 4);
+        handleStepToggle(step5, 5);
     </script>
 {% endblock %}
