@@ -2,7 +2,7 @@
 
 {% block page %}
     {% if alreadyInstalled %}
-        <h1 class='red'>Already Installed</h1>
+        <h1 class='red'>Already installed</h1>
 
         <p>FOSSBilling is already installed. If you are trying to reinstall, take the following steps:</p>
 
@@ -20,7 +20,7 @@
         <hr />
 
         <details {% if not canInstall %} open {% endif %} id="step-1">
-            <summary>Step 1) Check System Requirements</summary>
+            <summary>Step 1) Check system requirements</summary>
             {% if canInstall %}
                 <p class="green">All basic requirements to install FOSSBilling are met.</p>
             {% else %}
@@ -38,38 +38,38 @@
                 <tbody>
                     {% if not fossbilling_ver_ok %}
                         <tr>
-                            <td>FOSSBilling Version</td>
+                            <td>FOSSBilling version</td>
                             <td class="orange">{{ fossbilling_ver }}</td>
                             <td>FOSSBilling couldn't find valid version information. This is OK if you downloaded FOSSBilling directly from the main branch instead of a released version. However, be aware that the main branch may not be stable enough for production use.</td>
                         </tr>
                     {% endif %}
                     {% if is_subfolder %}
                         <tr>
-                            <td>Subfolder Detection</td>
+                            <td>Subfolder detection</td>
                             <td class="red">FAIL</td>
                             <td>FOSSBilling does not support installing in a subfolder. Please move the application to your host document root. Refer to <a href='https://github.com/FOSSBilling/FOSSBilling/pull/1073' data-tooltip="Opens in a new window." target='_blank'>Issue #1073</a> for more information.</td>
                         </tr>
                     {% endif %}
                     <tr>
-                        <td>Operating System</td>
+                        <td>Operating system</td>
                         <td class="{{ os_ok ? 'green' : 'orange'}}">{{ os }}</td>
                         <td>{% if not os_ok %}FOSSBilling might not work properly on your operating system{% endif %}</td>
                     </tr>
                     <tr>
-                        <td>PHP Version</td>
+                        <td>PHP version</td>
                         <td class="{{ php_ver_ok ? 'green' : 'red'}}">{{ php_ver }}</td>
                         <td>{% if not php_ver_ok %}Required PHP version >{{ php_ver_req }}{% endif %}</td>
                     </tr>
                     {% if php_safe_mode %}
                         <tr>
-                            <td>PHP Safe Mode</td>
+                            <td>PHP safe mode</td>
                             <td class="red">ON</td>
                             <td>PHP safe mode should be OFF</td>
                         </tr>
                     {% endif %}
                     {% for ext, loaded in extensions %}
                         <tr>
-                            <td>PHP Extension: <strong>{{ ext }}</strong></td>
+                            <td>PHP extension: <strong>{{ ext }}</strong></td>
                             <td class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'OK' : 'FAIL'}}</td>
                             <td>{% if not loaded %}Contact your server administrator to enable <strong>PHP {{ ext }} extension</strong>{% endif %}</td>
                         </tr>
@@ -214,8 +214,8 @@
         }
 
         function checkRequiredInputs(step) {
-            var form = document.getElementById('step-' + step);
-            var requiredInputs = form.querySelectorAll('input[required]');
+            const stepForm = document.getElementById(`step-${step}`);
+            var requiredInputs = stepForm.querySelectorAll('input[required]');
             var allowed = true;
 
             requiredInputs.forEach(function (input) {
@@ -265,6 +265,7 @@
             }
         });
 
+        // Event delegation to handle step clicks.
         function handleStepToggle(stepElement, step) {
             stepElement.addEventListener("toggle", function(event) {
                 if (!isStepAllowed(step)) {
@@ -278,9 +279,9 @@
             });
         }
     
-        handleStepToggle(step2, 2);
-        handleStepToggle(step3, 3);
-        handleStepToggle(step4, 4);
-        handleStepToggle(step5, 5);
+        // Use event delegation for every step
+        [step2, step3, step4, step5].forEach((stepElement, index) => {
+            handleStepToggle(stepElement, index + 2);
+        });
     </script>
 {% endblock %}
