@@ -109,7 +109,7 @@ final class Box_Installer
                     $this->session->set('currency_format', $_POST['currency_format']);
 
                     // Attempt installation
-                    $this->install($this->session);
+                    $this->install();
                     $this->generateEmailTemplates();
                     session_destroy();
 
@@ -265,12 +265,12 @@ final class Box_Installer
         return true;
     }
 
-    private function install($session): bool
+    private function install(): bool
     {
-        $this->_isValidInstallData($session);
-        $this->_createConfigurationFile($session);
+        $this->_isValidInstallData();
+        $this->_createConfigurationFile();
 
-        $pdo = $this->getPdo($session->get('database_hostname') . ';' . $session->get('database_port'), $session->get('database_name'), $session->get('database_username'), $session->get('database_password'));
+        $pdo = $this->getPdo($this->session->get('database_hostname') . ';' . $this->session->get('database_port'), $this->session->get('database_name'), $this->session->get('database_username'), $this->session->get('database_password'));
 
         $sql = file_get_contents(PATH_SQL);
         $sql_content = file_get_contents(PATH_SQL_DATA);
@@ -294,9 +294,9 @@ final class Box_Installer
         $passwordObject = new Box_Password();
         $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW());");
         $stmt->execute([
-            'admin_name' => $session->get('admin_name'),
-            'admin_email' => $session->get('admin_email'),
-            'admin_password' => $passwordObject->hashIt($session->get('admin_password')),
+            'admin_name' => $this->session->get('admin_name'),
+            'admin_email' => $this->session->get('admin_email'),
+            'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
         ]);
 
         $stmt = $pdo->prepare("DELETE FROM currency WHERE code='USD'");
@@ -304,9 +304,9 @@ final class Box_Installer
 
         $stmt = $pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
         $stmt->execute([
-            'currency_title' => $session->get('currency_title'),
-            'currency_code' => $session->get('currency_code'),
-            'currency_format' => $session->get('currency_format'),
+            'currency_title' => $this->session->get('currency_title'),
+            'currency_code' => $this->session->get('currency_code'),
+            'currency_format' => $this->session->get('currency_format'),
         ]);
 
         // Copy config templates when applicable
@@ -328,9 +328,9 @@ final class Box_Installer
         return true;
     }
 
-    private function _createConfigurationFile($data): void
+    private function _createConfigurationFile(): void
     {
-        $output = $this->_getConfigOutput($data);
+        $output = $this->_getConfigOutput();
         if (!file_put_contents(PATH_CONFIG, $output)) {
             throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
@@ -339,10 +339,9 @@ final class Box_Installer
     /**
      * Generate the `config.php` file using the `config-sample.php` as a template.
      *
-     * @param object $session
      * @return string
      */
-    private function _getConfigOutput($session): string
+    private function _getConfigOutput(): string
     {
         // Version data
         $version = new \FOSSBilling\Requirements();
@@ -361,11 +360,11 @@ final class Box_Installer
         $data['path_logs'] = PATH_ROOT . '/data/log/application.log';
         $data['db'] = [
             'type' => 'mysql',
-            'host' => $session->get('database_hostname'),
-            'port' => $session->get('database_port'),
-            'name' => $session->get('database_name'),
-            'user' => $session->get('database_username'),
-            'password' => $session->get('database_password'),
+            'host' => $this->session->get('database_hostname'),
+            'port' => $this->session->get('database_port'),
+            'name' => $this->session->get('database_name'),
+            'user' => $this->session->get('database_username'),
+            'password' => $this->session->get('database_password'),
         ];
         $data['twig']['cache'] = PATH_ROOT . '/data/cache';
 
@@ -375,13 +374,13 @@ final class Box_Installer
         return $output;
     }
 
-    private function _isValidInstallData($session): void
+    private function _isValidInstallData(): void
     {
-        if (!$this->canConnectToDatabase($session->get('database_hostname'), $session->get('database_name'), $session->get('database_username'), $session->get('database_password'))) {
+        if (!$this->canConnectToDatabase($this->session->get('database_hostname'), $this->session->get('database_name'), $this->session->get('database_username'), $this->session->get('database_password'))) {
             throw new Exception('Can not connect to database');
         }
 
-        if (!$this->isValidAdmin($session->get('admin_email'), $session->get('admin_password'), $session->get('admin_name'))) {
+        if (!$this->isValidAdmin($this->session->get('admin_email'), $this->session->get('admin_password'), $this->session->get('admin_name'))) {
             throw new Exception('Administrator\'s account is invalid');
         }
     }
