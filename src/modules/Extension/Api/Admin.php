@@ -50,6 +50,22 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Gets the readme as HTML for a given extension
+     * 
+     * @return string 
+     */
+    public function get_extension_readme($data): string
+    {
+        $required = [
+            'extension_id' => 'Extension ID was not passed',
+        ];
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);   
+        $extensionInfo =  $this->di['extension_manager']->getExtension($data['extension_id']);
+        return $this->di['parse_markdown']($extensionInfo['readme']);
+    }
+
+    /**
      * Get admin area navigation.
      *
      * @return array

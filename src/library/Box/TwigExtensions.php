@@ -287,9 +287,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_markdown_filter(Twig\Environment $env, $value)
     {
-        $content = $value ?? '';
-        $markdownParser = new GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
-        return $markdownParser->convert($content);
+        return $this->di['parse_markdown']($value);
     }
 
     public function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
