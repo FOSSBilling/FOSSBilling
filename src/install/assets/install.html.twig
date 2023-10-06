@@ -25,14 +25,19 @@
         </thead>
         <tbody>
             <tr>
+                <td>FOSSBilling Version</td>
+                <td class="{{ fossbilling_ver_ok ? 'green' : 'orange'}}">{{ fossbilling_ver }}</td>
+                <td>{% if not fossbilling_ver_ok %}FOSSBilling couldn't find valid version information. This is OK if you downloaded FOSSBilling directly from the main branch instead of a released version. However, be aware that the main branch may not be stable enough for production use.{% endif %}</td>
+            </tr>
+            <tr>
+                <td>Subfolder Detection</td>
+                <td class="{{ is_subfolder ? 'red' : 'green'}}">{{ is_subfolder ? 'FAIL' : 'OK' }}</td>
+                <td>{% if is_subfolder %}FOSSBilling does not support installing in a subfolder. Please move the application to your host document root. Refer to <a href='https://github.com/FOSSBilling/FOSSBilling/pull/1073' data-tooltip="Opens in a new window." target='_blank'>Issue #1073</a> for more information.{% endif %}</td>
+            </tr>
+            <tr>
                 <td>Operating System</td>
                 <td class="{{ os_ok ? 'green' : 'red'}}">{{ os }}</td>
                 <td>{% if not os_ok %}FOSSBilling might not work properly on your operating system{% endif %}</td>
-            </tr>
-            <tr>
-                <td>FOSSBilling Version</td>
-                <td class="{{ fossbilling_ver_ok ? 'green' : 'red'}}">{{ fossbilling_ver }}</td>
-                <td>{% if not fossbilling_ver_ok %}FOSSBilling couldn't find valid version information. This is okay if you downloaded FOSSBilling directly from the main branch, instead of a released version. But beware, the main branch may not be stable enough for production use.{% endif %}</td>
             </tr>
             <tr>
                 <td>PHP Version</td>

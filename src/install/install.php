@@ -74,6 +74,7 @@ final class FOSSBilling_Installer
 {
     private Session $session;
     private PDO $pdo;
+    private \FOSSBilling\Requirements $requirements;
 
     public function __construct()
     {
@@ -151,21 +152,22 @@ final class FOSSBilling_Installer
                 break;
             case 'index':
             default:
-                $se = new \FOSSBilling\Requirements();
-                $options = $se->getOptions();
+                $this->requirements = new \FOSSBilling\Requirements();
+                $options = $this->requirements->getOptions();
                 $vars = [
-                    'folders' => $se->folders(),
-                    'files' => $se->files(),
+                    'folders' => $this->requirements->folders(),
+                    'files' => $this->requirements->files(),
                     'os' => PHP_OS,
-                    'os_ok' => true,
+                    'os_ok' => true, // @todo What is this even for?...
+                    'is_subfolder' => $this->isSubfolder(),
                     'fossbilling_ver' => \FOSSBilling\Version::VERSION,
-                    'fossbilling_ver_ok' => $se->isFOSSBillingVersionOk(),
+                    'fossbilling_ver_ok' => $this->requirements->isFOSSBillingVersionOk(),
                     'php_ver' => $options['php']['version'],
                     'php_ver_req' => $options['php']['min_version'],
                     'php_safe_mode' => $options['php']['safe_mode'],
-                    'php_ver_ok' => $se->isPhpVersionOk(),
-                    'extensions' => $se->extensions(),
-                    'canInstall' => $se->canInstall(),
+                    'php_ver_ok' => $this->requirements->isPhpVersionOk(),
+                    'extensions' => $this->requirements->extensions(),
+                    'canInstall' => $this->canInstall(),
                     'database_hostname' => $this->session->get('database_hostname'),
                     'database_name' => $this->session->get('database_name'),
                     'database_username' => $this->session->get('database_username'),
@@ -284,6 +286,30 @@ final class FOSSBilling_Installer
         }
 
         return true;
+    }
+
+    /**
+     * Attempt to detect if the application is under a subfolder.
+     *
+     * @return boolean
+     */
+    private function isSubfolder(): bool
+    {
+        return substr_count(BB_URL_INSTALL, '/') > 4 ? true : false;
+    }
+
+    /**
+     * Wrapper for additional checks not supported by the primary requirements class.
+     *
+     * @return boolean
+     */
+    private function canInstall(): bool
+    {
+        // Verify we are not a subfolder
+        if ($this->isSubfolder()) return false;
+
+        // Trigger original requirements
+        return $this->requirements->canInstall();
     }
 
     /**
