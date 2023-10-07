@@ -146,3 +146,17 @@ label:has(+ textarea[required])::after{
         border: 1px $primary solid;
     }
 }
+
+.email-list {
+    border-radius: 0;
+    .list-group-item {
+        border: 0;
+        border-bottom: 1px solid var(--bs-border-color);
+        border-left: 2px solid transparent;
+        &.active {
+            border-left: 2px solid var(--bs-primary-border-subtle);
+            background: rgba($primary, .1);
+            color: $dark;
+        }
+    }
+}
