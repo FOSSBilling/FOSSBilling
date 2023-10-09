@@ -29,12 +29,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message) {
       sessionStorage.setItem(key, message);
       if (typeof reload === 'boolean' && reload) {
-        bb.redirect();
+        bb.reload();
       } else if (typeof reload === 'string') {
         bb.redirect(reload);
       }
     }
   }
   flashMessage({});
+
+  /**
+   * Add asterisk to required field labels
+   */
+  const requiredInputs = document.querySelectorAll('input[required], textarea[required]');
+  requiredInputs.forEach(input => {
+    const label = input.previousElementSibling;
+    const isAuth = input.parentElement.parentElement.classList.contains('auth');
+    if (!isAuth && label && label.tagName.toLowerCase() === 'label') {
+      const asterisk = document.createElement('span');
+      asterisk.textContent = ' *';
+      asterisk.classList.add('text-danger');
+      label.appendChild(asterisk);
+    }
+  });
 });
 

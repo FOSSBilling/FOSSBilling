@@ -31,12 +31,6 @@ body {
     font-size: .875rem;
 }
 
-label:has(+ input[required])::after,
-label:has(+ textarea[required])::after{
-    content: " *";
-    color: $danger;
-}
-
 .offcanvas-item {
     border-bottom: 1px rgba(#000, .1) solid;
 
