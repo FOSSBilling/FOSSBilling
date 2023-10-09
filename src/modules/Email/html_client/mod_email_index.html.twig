@@ -46,7 +46,7 @@
                                      id="mail-{{ loop.index }}" role="tabpanel">
                                     <div class="card-body">
                                         <h5 class="mb-0">{{ email.subject }}</h5>
-                                        <div class="card-header">
+                                        <div class="card-header px-0">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="d-flex flex-column gap-1">
                                                     <span class="d-block"><span class="text-muted me-2">{{ 'From'|trans }}</span>{{ email.sender }}</span>
@@ -54,8 +54,15 @@
                                                 </div>
                                                 <div class="d-flex flex-column gap-2">
                                                     <div class="btn-group d-flex" role="group" aria-label="Mail Action">
-                                                        <a class="btn btn-sm btn-outline-secondary email-resend" href="#" data-id="{{ email.id }}">{{ 'Resend'|trans }}</a>
-                                                        <a class="btn btn-sm btn-outline-danger border-start-0 email-delete" href="#" data-id="{{ email.id }}">{{ 'Delete'|trans }}</a>
+                                                        <a class="btn btn-sm btn-outline-secondary border-end-0" href="{{ 'email'|link }}/{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
+                                                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z" /></svg>
+                                                        </a>
+                                                        <a class="btn btn-sm btn-outline-secondary email-resend" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Resend'|trans }}">
+                                                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6,5.75L10.25,10H7V16H13.5L15.5,18H7A2,2 0 0,1 5,16V10H1.75L6,5.75M18,18.25L13.75,14H17V8H10.5L8.5,6H17A2,2 0 0,1 19,8V14H22.25L18,18.25Z" /></svg>
+                                                        </a>
+                                                        <a class="btn btn-sm btn-outline-danger border-start-0 email-delete" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                                                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19M8,9H16V19H8V9M15.5,4L14.5,3H9.5L8.5,4H5V6H19V4H15.5Z" /></svg>
+                                                        </a>
                                                     </div>
                                                     <small class="text-muted">{{ email.created_at|format_date }}</small>
                                                 </div>
