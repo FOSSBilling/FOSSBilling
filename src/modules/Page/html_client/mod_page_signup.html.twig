@@ -20,7 +20,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="text-center m-4">{{ 'Create a new account'|trans }}</h5>
-                        <form method="post" action="" id="client-signup">
+                        <form method="post" action="" id="client-signup" class="auth">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% set r = guest.client_required %}
 
