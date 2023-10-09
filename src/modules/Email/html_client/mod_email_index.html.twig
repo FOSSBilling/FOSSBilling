@@ -77,7 +77,11 @@
                         </div>
                     </div>
                 </div>
-                {% include "partial_pagination.html.twig" with {'list': emails} %}
+                    {% if emails.pages >= 2 %}
+                        <div class="card-footer">
+                            {% include "partial_pagination.html.twig" with {'list': emails} %}
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
