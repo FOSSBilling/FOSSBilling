@@ -29,7 +29,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <table class="table table-striped table-bordered table-sm">
+                    <table class="table table-hover table-bordered table-sm">
                         <tbody>
                         <tr>
                             <td><label>{{ 'Order'|trans }}</label></td>
@@ -129,7 +129,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                        <table class="table table-striped table-bordered table-sm">
+                        <table class="table table-hover table-bordered table-sm">
                             <thead>
                             <tr>
                                 <th>{{ 'Product/Service'|trans }}</th>
@@ -148,10 +148,10 @@
                                     <td>{{ addon.period|period_title }}</td>
                                     <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                                     <td>
-                                        <span class="label {% if addon.status == 'active' %}label-success{% elseif addon.status == 'pending_setup' %}label-warning{% endif %}">{{ mf.status_name(addon.status) }}</span>
+                                        <span class="badge {% if addon.status == 'active' %}bg-success{% elseif addon.status == 'pending_setup' %}bg-warning{% endif %}">{{ mf.status_name(addon.status) }}</span>
                                     </td>
                                     <td class="actions">
-                                        <a class="btn btn-primary awe-cog" href="{{ '/order/service/manage'|link }}/{{ addon.id }}"></a>
+                                        <a class="btn btn-outline-primary btn-sm" href="{{ '/order/service/manage'|link }}/{{ addon.id }}">{{ 'Manage'|trans }}</a>
                                     </td>
                                 </tr>
                             {% endfor %}
