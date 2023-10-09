@@ -198,9 +198,11 @@
                         <form class="api-form" method="post" action="client/profile/api_key_reset" id="change-api-key"
                               data-api-msg="API key was changed">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                            <div class="alert alert-warning" role="alert">
-                                <strong>{{ 'Warning!'|trans }}</strong>&nbsp;{{ 'Resetting the key will break existing applications using it!'|trans }}
-                            </div>
+                            {% if client.profile_api_key_get %}
+                                <div class="alert alert-warning" role="alert">
+                                    <strong>{{ 'Warning!'|trans }}</strong>&nbsp;{{ 'Resetting the key will break existing applications using it!'|trans }}
+                                </div>
+                            {% endif %}
                             <div class="mb-3">
                                 <label for="api-key" class="form-label">{{ 'Your API key'|trans }}</label>
                                 <input class="form-control" readonly type="text"
