@@ -834,16 +834,17 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
     exit;
 });
 
-/**
+/*
  * Converts markdown into HTML and returns the result.
- * 
+ *
  * @param string|null $content The content to convert
- * 
+ *
  * @return string
  */
 $di['parse_markdown'] = $di->protect(function (?string $content) {
     $parser = new League\CommonMark\GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
     $content ??= '';
+
     return $parser->convert($content);
 });
 
