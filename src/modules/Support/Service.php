@@ -688,6 +688,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $author = $this->di['db']->load('Client', $model->client_id);
         }
 
+        if(!$author){
+            return [];
+        }
+
         return [
             'name' => $author->getFullName(),
             'email' => $author->email,
