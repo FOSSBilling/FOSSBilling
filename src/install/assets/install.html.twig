@@ -108,20 +108,20 @@
                     <p>Enter your MySQL connection information.</p>
 
                     <fieldset>
-                        <label for="database_hostname">Database Hostname <span class="red">*</span></label>
+                        <label for="database_hostname">Database hostname <span class="red">*</span></label>
                         <input type="text" id="database_hostname" name="database_hostname" value="{{ database_hostname|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
                         <small>Usually <strong>localhost</strong>. For Docker, use <strong>mysql</strong>.</small>
     
-                        <label for="database_port">Database Port <span class="red">*</span></label>
+                        <label for="database_port">Database port <span class="red">*</span></label>
                         <input type="number" id="database_port" name="database_port" value="{{ database_port|default('3306') }}" placeholder="Usually 3306." required>
     
-                        <label for="database_name">Database Name <span class="red">*</span></label>
+                        <label for="database_name">Database name <span class="red">*</span></label>
                         <input type="text" id="database_name" name="database_name" value="{{ request.database_name|default(database_name) }}" placeholder="Enter the name of the database." required>
     
-                        <label for="database_username">Database Username <span class="red">*</span></label>
+                        <label for="database_username">Database username <span class="red">*</span></label>
                         <input type="text" id="database_username" name="database_username" value="{{ request.database_username|default(database_username) }}" placeholder="Enter the MySQL username." required>
     
-                        <label for="database_password">Database Password <span class="red">*</span></label>
+                        <label for="database_password">Database password <span class="red">*</span></label>
                         <input type="password" id="database_password" name="database_password" value="{{ request.database_password|default(database_password) }}" placeholder="Enter the MySQL password." required>
                     </fieldset>
                 </details>
@@ -155,7 +155,7 @@
                         <label for="currency_title">Title <span class="red">*</span></label>
                         <input type="text" id="currency_title" name="currency_title" value="{{ request.currency_title|default(currency_title) }}" required>
     
-                        <label for="currency_format">Price Format <span class="red">*</span></label>
+                        <label for="currency_format">Price format <span class="red">*</span></label>
                         <input type="text" id="currency_format" name="currency_format" value="{{ request.currency_format|default(currency_format) }}" required>
 
                         <label for="agreement">
