@@ -157,6 +157,11 @@
     
                         <label for="currency_format">Price Format <span class="red">*</span></label>
                         <input type="text" id="currency_format" name="currency_format" value="{{ request.currency_format|default(currency_format) }}" required>
+
+                        <label for="agreement">
+                            <input type="checkbox" id="agreement" name="agreement" required>
+                            I agree to the Apache 2.0 license, and acknowledge that this software is provided as-is. I understand it is my responsibility to verify it's use and compliance with all local laws that may apply.
+                        </label>
                     </fieldset>
                 </details>
 
