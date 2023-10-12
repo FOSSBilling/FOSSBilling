@@ -255,7 +255,7 @@ final class FOSSBilling_Installer
         // Attempt to create the database.
         try {
             $this->pdo->exec("CREATE DATABASE `" .  $this->session->get('database_name') . "` CHARACTER SET utf8 COLLATE utf8_general_ci;");
-        } catch (PDOException $e) {
+        } catch (PDOException) {
             // Silently fail if the database already exists.
         }
 
