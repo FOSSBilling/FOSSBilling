@@ -14,13 +14,11 @@ use Symfony\Component\HttpClient\HttpClient;
 use Twig\Loader\FilesystemLoader;
 
 date_default_timezone_set('UTC');
-
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
 ini_set('error_log', 'php_error.log');
-
 define('PATH_ROOT', dirname(__DIR__));
 const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR . 'library';
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
@@ -36,183 +34,178 @@ const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'cache';
-
-
-/*
-  Config paths & templates
-*/
 const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
 const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
-
-/*
-  htaccess path
-*/
 const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
+const PAGE_INSTALL = './assets/install.html.twig';
+const PAGE_RESULT = './assets/result.html.twig';
 
-// Ensure library/ is on include_path
+// Set default include path
 set_include_path(implode(PATH_SEPARATOR, [
     PATH_LIBRARY,
     get_include_path(),
 ]));
 
+// Load autoloader
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
-
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+
+// Build the environment
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
-
 $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
 $url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url) . '/';
-
 define('BB_URL', $root_url);
 const BB_URL_INSTALL = BB_URL . 'install/';
 const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
-final class Box_Installer
+// Load action and initialize the installer
+$action = $_GET['a'] ?? 'index';
+$installer = new FOSSBilling_Installer();
+
+// Run the installer only in non-CLI mode
+if (!Environment::isCLI()) {
+    $installer->run($action);
+}
+
+// Inline installer class.
+final class FOSSBilling_Installer
 {
     private Session $session;
+    private PDO $pdo;
+    private \FOSSBilling\Requirements $requirements;
 
     public function __construct()
     {
-        include 'session.php';
+        require_once 'session.php';
         $this->session = new Session();
     }
 
+    /**
+     * Action router.
+     *
+     * @param string $action
+     * @return void
+     */
     public function run($action): void
     {
         switch ($action) {
-            case 'check-db':
-                $user = $_POST['db_user'];
-                $host = $_POST['db_host'];
-                $port = $_POST['db_port'];
-                $pass = $_POST['db_pass'];
-                $name = $_POST['db_name'];
-
-                if (!$this->canConnectToDatabase($host . ';' . $port, $name, $user, $pass)) {
-                    echo 'Could not connect to database. Please check database details. You might need to create database first.';
-                } else {
-                    $this->session->set('db_host', $host);
-                    $this->session->set('db_port', $port);
-                    $this->session->set('db_name', $name);
-                    $this->session->set('db_user', $user);
-                    $this->session->set('db_pass', $pass);
-                    echo 'ok';
+            case 'install':
+                // Make sure this is a POST request
+                if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+                    header('Location: ' . BB_URL_INSTALL);
+                    die;
                 }
 
-                break;
-
-            case 'install':
+                // Installer validation
                 try {
-                    // Initializing database connection
-                    $user = $_POST['db_user'];
-                    $host = $_POST['db_host'];
-                    $port = $_POST['db_port'];
-                    $pass = $_POST['db_pass'];
-                    $name = $_POST['db_name'];
-                    if (!$this->canConnectToDatabase($host . ';' . $port, $name, $user, $pass)) {
-                        throw new Exception('Could not connect to the database, or the database does not exist');
+                    // Make sure we are not already installed. Prevents tampered requests from being able to trigger the installer.
+                    if ($this->isAlreadyInstalled()) {
+                        throw new Exception('FOSSBilling is already installed.');
                     }
 
-                    $this->session->set('db_host', $host);
-                    $this->session->set('db_port', $port);
-                    $this->session->set('db_name', $name);
-                    $this->session->set('db_user', $user);
-                    $this->session->set('db_pass', $pass);
+                    // Handle database information
+                    $this->session->set('database_hostname', $_POST['database_hostname']);
+                    $this->session->set('database_port', $_POST['database_port']);
+                    $this->session->set('database_name', $_POST['database_name']);
+                    $this->session->set('database_username', $_POST['database_username']);
+                    $this->session->set('database_password', $_POST['database_password']);
+                    $this->connectDatabase();
 
-                    // Configuring administrator's account
-                    $admin_email = $_POST['admin_email'];
-                    $admin_pass = $_POST['admin_pass'];
-                    $admin_name = $_POST['admin_name'];
-                    if (!$this->isValidAdmin($admin_email, $admin_pass, $admin_name)) {
-                        throw new Exception('Administrator\'s account is invalid');
-                    }
+                    // Handle admin information
+                    $this->session->set('admin_name', $_POST['admin_name']);
+                    $this->session->set('admin_email', $_POST['admin_email']);
+                    $this->session->set('admin_password', $_POST['admin_password']);
+                    $this->validateAdmin();
 
-                    $this->session->set('admin_email', $admin_email);
-                    $this->session->set('admin_pass', $admin_pass);
-                    $this->session->set('admin_name', $admin_name);
+                    // Setup default currency
+                    $this->session->set('currency_code', $_POST['currency_code']);
+                    $this->session->set('currency_title', $_POST['currency_title']);
+                    $this->session->set('currency_format', $_POST['currency_format']);
 
-                    // Get the default currency
-                    $currency_code = $_POST['currency_code'];
-                    $currency_title = $_POST['currency_title'];
-                    $currency_format = $_POST['currency_format'];
-
-                    $this->session->set('currency_code', $currency_code);
-                    $this->session->set('currency_title', $currency_title);
-                    $this->session->set('currency_format', $currency_format);
-
-                    $this->session->set('license', 'FOSSBilling');
-                    $this->makeInstall($this->session);
+                    // Attempt installation
+                    $this->install();
                     $this->generateEmailTemplates();
                     session_destroy();
+
+                    // Installation is successful
+                    echo $this->render(PAGE_RESULT, [
+                        'success' => true,
+                        'config_file_path' => PATH_CONFIG,
+                        'cron_path' => PATH_CRON,
+                        'install_module_path' => PATH_INSTALL,
+                        'url_customer' => BB_URL,
+                        'url_admin' => BB_URL_ADMIN,
+                    ]);
+
                     // Try to remove install folder
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
                         $config = require PATH_CONFIG;
                         if (!$config['debug']) {
-                            $this->rmAllDir('..' . DIRECTORY_SEPARATOR . 'install');
+                            $this->removeDirectory('..' . DIRECTORY_SEPARATOR . 'install');
                         }
                     } catch (Exception) {
-                        // do nothing
+                        // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
                     }
-                    echo 'ok';
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    // Route to result page with exception information
+                    echo $this->render(PAGE_RESULT, [
+                        'success' => false,
+                        'message' => $e->getMessage(),
+                    ]);
                 }
                 break;
-
             case 'index':
             default:
-                $this->session->set('agree', true);
-
-                $se = new \FOSSBilling\Requirements();
-                $options = $se->getOptions();
+                $this->requirements = new \FOSSBilling\Requirements();
+                $options = $this->requirements->getOptions();
                 $vars = [
-                    'tos' => $this->getLicense(),
-
-                    'folders' => $se->folders(),
-                    'files' => $se->files(),
+                    'folders' => $this->requirements->folders(),
+                    'files' => $this->requirements->files(),
                     'os' => PHP_OS,
-                    'os_ok' => true,
+                    'os_ok' => (str_starts_with(strtoupper(PHP_OS), 'WIN')) ? false : true,
+                    'is_subfolder' => $this->isSubfolder(),
                     'fossbilling_ver' => \FOSSBilling\Version::VERSION,
-                    'fossbilling_ver_ok' => $se->isFOSSBillingVersionOk(),
+                    'fossbilling_ver_ok' => $this->requirements->isFOSSBillingVersionOk(),
                     'php_ver' => $options['php']['version'],
                     'php_ver_req' => $options['php']['min_version'],
                     'php_safe_mode' => $options['php']['safe_mode'],
-                    'php_ver_ok' => $se->isPhpVersionOk(),
-                    'extensions' => $se->extensions(),
-                    'all_ok' => $se->canInstall(),
-
-                    'db_host' => $this->session->get('db_host'),
-                    'db_name' => $this->session->get('db_name'),
-                    'db_user' => $this->session->get('db_user'),
-                    'db_pass' => $this->session->get('db_pass'),
-
-                    'admin_email' => $this->session->get('admin_email'),
-                    'admin_pass' => $this->session->get('admin_pass'),
+                    'php_ver_ok' => $this->requirements->isPhpVersionOk(),
+                    'extensions' => $this->requirements->extensions(),
+                    'canInstall' => $this->canInstall(),
+                    'alreadyInstalled' => $this->isAlreadyInstalled(),
+                    'database_hostname' => $this->session->get('database_hostname'),
+                    'database_name' => $this->session->get('database_name'),
+                    'database_username' => $this->session->get('database_username'),
+                    'database_password' => $this->session->get('database_password'),
                     'admin_name' => $this->session->get('admin_name'),
-
-                    'currency_code' => $this->session->get('currency_code'),
-                    'currency_title' => $this->session->get('currency_title'),
-                    'currency_format' => $this->session->get('currency_format'),
-
-                    'license' => $this->session->get('license'),
-                    'agree' => $this->session->get('agree'),
-
+                    'admin_email' => $this->session->get('admin_email'),
+                    'admin_password' => $this->session->get('admin_password'),
+                    'currency_code' => $this->session->get('currency_code') ?: 'USD',
+                    'currency_title' => $this->session->get('currency_title') ?: 'US Dollar',
+                    'currency_format' => $this->session->get('currency_format') ?: '${{price}}',
                     'install_module_path' => PATH_INSTALL,
                     'cron_path' => PATH_CRON,
                     'config_file_path' => PATH_CONFIG,
                     'live_site' => BB_URL,
                     'admin_site' => BB_URL_ADMIN,
-
                     'domain' => pathinfo(BB_URL, PATHINFO_BASENAME),
                 ];
-                echo $this->render('./assets/install.html.twig', $vars);
+                echo $this->render(PAGE_INSTALL, $vars);
                 break;
         }
     }
 
+    /**
+     * Render a page with Twig.
+     *
+     * @param string $name
+     * @param array $vars
+     * @return string
+     */
     private function render($name, $vars = []): string
     {
         $options = [
@@ -226,28 +219,23 @@ final class Box_Installer
         ];
         $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
-        // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
         $twig->addGlobal('version', \FOSSBilling\Version::VERSION);
 
         return $twig->render($name, $vars);
     }
 
-    private function getLicense(): bool|string
+    /**
+     * Attempt to open the database connection.
+     *
+     * @return void
+     */
+    private function connectDatabase(): void
     {
-        $path = PATH_LICENSE;
-        if (!file_exists($path)) {
-            return 'FOSSBilling is licensed under the Apache License, Version 2.0.' . PHP_EOL . 'Please visit https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE for full license text.';
-        }
-
-        return file_get_contents($path);
-    }
-
-    private function getPdo($host, $db, $user, $pass): PDO
-    {
-        $pdo = new PDO('mysql:host=' . $host,
-            $user,
-            $pass,
+        // Open the connection
+        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';' . $this->session->get('database_port'),
+            $this->session->get('database_username'),
+            $this->session->get('database_password'),
             [
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -255,122 +243,141 @@ final class Box_Installer
             ]
         );
 
-        $pdo->exec('SET NAMES "utf8"');
-        $pdo->exec('SET CHARACTER SET utf8');
-        $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
-        $pdo->exec('SET character_set_results = utf8');
-        $pdo->exec('SET character_set_server = utf8');
-        $pdo->exec('SET SESSION interactive_timeout = 28800');
-        $pdo->exec('SET SESSION wait_timeout = 28800');
+        // Set required MySQL environment settings
+        $this->pdo->exec('SET NAMES "utf8"');
+        $this->pdo->exec('SET CHARACTER SET utf8');
+        $this->pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
+        $this->pdo->exec('SET character_set_results = utf8');
+        $this->pdo->exec('SET character_set_server = utf8');
+        $this->pdo->exec('SET SESSION interactive_timeout = 28800');
+        $this->pdo->exec('SET SESSION wait_timeout = 28800');
 
-        // try create database if permissions allows
+        // Attempt to create the database.
         try {
-            $pdo->exec("CREATE DATABASE `$db` CHARACTER SET utf8 COLLATE utf8_general_ci;");
+            $this->pdo->exec("CREATE DATABASE `" .  $this->session->get('database_name') . "` CHARACTER SET utf8 COLLATE utf8_general_ci;");
         } catch (PDOException $e) {
-            error_log($e->getMessage());
+            // Silently fail if the database already exists.
         }
 
-        $pdo->query("USE `$db`;");
-
-        return $pdo;
+        // Select the database as default for future queries
+        $this->pdo->query("USE `" .  $this->session->get('database_name') . "`;");
     }
 
-    private function canConnectToDatabase($host, $db, $user, $pass): bool
+    /**
+     * Validate admin information meets all required parameters.
+     *
+     * @return boolean
+     */
+    private function validateAdmin(): bool
     {
-        try {
-            $this->getPdo($host, $db, $user, $pass);
-        } catch (Exception $e) {
-            error_log($e->getMessage());
+        if (!filter_var($this->session->get('admin_email'), FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('The admin email is not a valid address.');
+        }
 
-            return false;
+        if (strlen($this->session->get('admin_password')) < 8) {
+            throw new Exception('Minimum admin password length is 8 characters.');
+        }
+
+        if (!preg_match("#[0-9]+#", $this->session->get('admin_password'))) {
+            throw new Exception('Admin password must include at least one number.');
+        }
+
+        if (!preg_match("#[a-z]+#", $this->session->get('admin_password'))) {
+            throw new Exception('Admin password must include at least one lowercase letter.');
+        }
+
+        if (!preg_match("#[A-Z]+#", $this->session->get('admin_password'))) {
+            throw new Exception('Admin password must include at least one uppercase letter.');
+        }
+
+        if (empty($this->session->get('admin_name'))) {
+            throw new Exception('You must enter an Admin Name.');
         }
 
         return true;
     }
 
-    private function isValidAdmin($email, $pass, $name): bool
+    /**
+     * Attempt to detect if the application is under a subfolder.
+     *
+     * @return boolean
+     */
+    private function isSubfolder(): bool
     {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return false;
-        }
-
-        if (strlen($pass) < 8) {
-            throw new Exception('Minimum password length is 8 characters.');
-        }
-
-        if (!preg_match("#[0-9]+#", $pass)) {
-            throw new Exception('Password must include at least one number.');
-        }
-
-        if (!preg_match("#[a-z]+#", $pass)) {
-            throw new Exception('Password must include at least one lowercase letter.');
-        }
-
-        if (!preg_match("#[A-Z]+#", $pass)) {
-            throw new Exception('Password must include at least one uppercase letter.');
-        }
-
-        if (empty($name)) {
-            return false;
-        }
-
-        return true;
+        return substr_count(BB_URL_INSTALL, '/') > 4 ? true : false;
     }
 
-    private function makeInstall($ns): bool
+    /**
+     * Wrapper for additional checks not supported by the primary requirements class.
+     *
+     * @return boolean
+     */
+    private function canInstall(): bool
     {
-        $this->_isValidInstallData($ns);
-        $this->_createConfigurationFile($ns);
+        // Validate FOSSBilling isn't placed under a sub-folder and check the other requirements
+        return !$this->isSubfolder() && $this->requirements->canInstall();
+    }
 
-        $pdo = $this->getPdo($ns->get('db_host') . ';' . $ns->get('db_port'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
+    /**
+     * Check if we are already installed.
+     *
+     * @return boolean
+     */
+    public function isAlreadyInstalled(): bool
+    {
+        return file_exists(PATH_CONFIG) ? true : false;
+    }
 
+    /**
+     * Installation processor.
+     *
+     * @return boolean
+     */
+    private function install(): bool
+    {
+        // Load database structure
         $sql = file_get_contents(PATH_SQL);
         $sql_content = file_get_contents(PATH_SQL_DATA);
-
         if (!$sql || !$sql_content) {
             throw new Exception('Could not read structure.sql file');
         }
 
+        // Read content, parse queries into an array, then loop and execute each query
         $sql .= $sql_content;
-
         $sql = preg_split('/\;[\r]*\n/ism', $sql);
         $sql = array_map('trim', $sql);
         foreach ($sql as $query) {
             if (!trim($query)) {
                 continue;
             }
-
-            $pdo->query($query);
+            $this->pdo->query($query);
         }
 
+        // Create default administrator
         $passwordObject = new Box_Password();
-        $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_pass, 1, NOW(), NOW());");
+        $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW());");
         $stmt->execute([
-            'admin_name' => $ns->get('admin_name'),
-            'admin_email' => $ns->get('admin_email'),
-            'admin_pass' => $passwordObject->hashIt($ns->get('admin_pass')),
+            'admin_name' => $this->session->get('admin_name'),
+            'admin_email' => $this->session->get('admin_email'),
+            'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
         ]);
 
-        $stmt = $pdo->prepare("DELETE FROM currency WHERE code='USD'");
+        // Delete default currency from content file and use currency passed in the installer
+        $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();
-
-        $stmt = $pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
+        $stmt = $this->pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
         $stmt->execute([
-            'currency_title' => $ns->get('currency_title'),
-            'currency_code' => $ns->get('currency_code'),
-            'currency_format' => $ns->get('currency_format'),
+            'currency_title' => $this->session->get('currency_title'),
+            'currency_code' => $this->session->get('currency_code'),
+            'currency_format' => $this->session->get('currency_format'),
         ]);
 
-        /*
-          Copy config templates when applicable
-        */
+        // Copy config templates when applicable
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
-        /*
-          If .htaccess doesn't exist, grab it from Github.
-        */
+        // If .htaccess doesn't exist, fetch the latest from GitHub.
         if (!file_exists(PATH_HTACCESS)) {
             try {
                 $client = HttpClient::create();
@@ -381,24 +388,22 @@ final class Box_Installer
             }
         }
 
-        return true;
-    }
-
-    private function _createConfigurationFile($data): void
-    {
-        $output = $this->_getConfigOutput($data);
+        // Create the configuration file
+        $output = $this->getConfigOutput();
         if (!file_put_contents(PATH_CONFIG, $output)) {
             throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
+
+        // Installation completed successfully
+        return true;
     }
 
     /**
      * Generate the `config.php` file using the `config-sample.php` as a template.
      *
-     * @param object $ns
      * @return string
      */
-    private function _getConfigOutput($ns): string
+    private function getConfigOutput(): string
     {
         // Version data
         $version = new \FOSSBilling\Requirements();
@@ -417,11 +422,11 @@ final class Box_Installer
         $data['path_logs'] = PATH_ROOT . '/data/log/application.log';
         $data['db'] = [
             'type' => 'mysql',
-            'host' => $ns->get('db_host'),
-            'port' => $ns->get('db_port'),
-            'name' => $ns->get('db_name'),
-            'user' => $ns->get('db_user'),
-            'password' => $ns->get('db_pass'),
+            'host' => $this->session->get('database_hostname'),
+            'port' => $this->session->get('database_port'),
+            'name' => $this->session->get('database_name'),
+            'user' => $this->session->get('database_username'),
+            'password' => $this->session->get('database_password'),
         ];
         $data['twig']['cache'] = PATH_ROOT . '/data/cache';
 
@@ -431,17 +436,11 @@ final class Box_Installer
         return $output;
     }
 
-    private function _isValidInstallData($ns): void
-    {
-        if (!$this->canConnectToDatabase($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'))) {
-            throw new Exception('Can not connect to database');
-        }
-
-        if (!$this->isValidAdmin($ns->get('admin_email'), $ns->get('admin_pass'), $ns->get('admin_name'))) {
-            throw new Exception('Administrator\'s account is invalid');
-        }
-    }
-
+    /**
+     * Generate the default email templates.
+     *
+     * @return boolean
+     */
     private function generateEmailTemplates(): bool
     {
         $emailService = new Service();
@@ -452,14 +451,20 @@ final class Box_Installer
         return $emailService->templateBatchGenerate();
     }
 
-    public function rmAllDir($dir)
+    /**
+     * Recursively remove a directory at a specific path.
+     *
+     * @param string $dir
+     * @return void
+     */
+    public function removeDirectory($dir)
     {
         if (is_dir($dir)) {
             $contents = scandir($dir);
             foreach ($contents as $content) {
                 if ('.' !== $content && '..' !== $content) {
                     if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
-                        $this->rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
+                        $this->removeDirectory($dir . DIRECTORY_SEPARATOR . $content);
                     } else {
                         unlink($dir . DIRECTORY_SEPARATOR . $content);
                     }
@@ -469,12 +474,4 @@ final class Box_Installer
             rmdir($dir);
         }
     }
-}
-
-$action = $_GET['a'] ?? 'index';
-$installer = new Box_Installer();
-
-// Don't attempt to run the installer if we're not in a web environment. This is to prevent the installer from running when using prepare.php to prepare the environment for testing.
-if (!Environment::isCLI()) {
-    $installer->run($action);
 }

@@ -1,42 +1,59 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>FOSSBilling setup</title>
-  <base href="{{ constant('BB_URL_INSTALL') }}"/>
-  <link href="./assets/css/main.css" rel="stylesheet" type="text/css" />
-</head>
-
-<body>
-<div id="header" class="wrapper">
-    <div class="logo"><a href="{{ constant('BB_URL_INSTALL') }}" title="FOSSBilling"><img src="../themes/huraga/assets/img/logo.svg" alt="FOSSBilling logo" height="50px" width="238"/></a></div>
-    <div class="middleNav">
-      <ul>
-        <li class="iForum"><a href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank" title="Report a bug on GitHub"><span>Report a bug</span></a></li>
-        <li class="iDocs"><a href="https://fossbilling.org/docs" target="_blank" title="FOSSBilling documentation"><span>Documentation</span></a></li>
-      </ul>
-    </div>
-    <div class="fix"></div>
-</div>
-
-<div class="wrapper">
-  <div class="leftNav">
-    {% block left %}{% endblock %}
-  </div>
-
-  <div class="content" id="container">
-    {% block content %}{% endblock %}
-  </div>
-  <div class="fix"></div>
-</div>
-
-<div id="footer">
-	<div class="wrapper">
-    <span>&copy; Copyright {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="FOSSBilling" target="_blank">FOSSBilling {{version}}</a></span>
-  </div>
-</div>
-
-
-{% block js %}{% endblock %}
-</body>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="./assets/css/pico.min.css" rel="stylesheet">
+        <title>FOSSBilling Installation</title>
+        <base href="{{ constant('BB_URL_INSTALL') }}"/>
+        <style type="text/css">
+            .green {
+                color: green;
+                font-weight: bold;
+            }
+            .red {
+                color: red;
+                font-weight: bold;
+            }
+            .orange {
+                color: orange;
+                font-weight: bold;
+            }
+            hr {
+                margin-bottom: 3em;
+            }
+            .button-inline {
+                display: inline;
+                width: 25%;
+            }
+            .float-right-margin {
+                float: right;
+                margin-right: 1.5em;
+            }
+            .float-left-margin {
+                float: left;
+                margin-left: 1.5em;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="container">
+            <nav style='padding-bottom: 1em;'>
+                <ul>
+                    <li><a href="{{ constant('BB_URL_INSTALL') }}" title="FOSSBilling"><img src="../themes/huraga/assets/img/logo_white.svg" alt="FOSSBilling Logo" height="50px" width="238"/></a></li>
+                </ul>
+                <ul>
+                    <li><a href="https://fossbilling.org/docs" target="_blank" data-tooltip="Opens in a new window.">Documentation</a></li>
+                    <li><a href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank" data-tooltip="Opens in a new window.">Bug Reports</a></li>
+                </ul>
+            </nav>
+            {% block page %}{% endblock %}
+        </main>
+        <footer class="container">
+            <small>
+                <span>&copy; Copyright {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="FOSSBilling" target="_blank" data-tooltip="Opens in a new tab.">FOSSBilling {{version}}</a></span>
+            </small>
+        </footer>
+        {% block javascript %}{% endblock %}
+    </body>
 </html>
