@@ -140,21 +140,29 @@ class Admin extends \Api_Abstract
             'first_name' => 'First name is required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
+    
         $validator = $this->di['validator'];
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-
+    
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
             throw new \Box_Exception('Email is already registered.');
         }
-
+    
         $validator->isPasswordStrong($data['password']);
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
-        $id = $service->adminCreateClient($data);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
-
+    
+        // Copy data and remove password for the before event
+        $eventDataBefore = $data;
+        unset($eventDataBefore['password']);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $eventDataBefore]);
+        
+        $id = $service->adminCreateClient($data);  // The method adminCreateClient gets the full data including password
+    
+        // Copy data and remove password for the after event
+        $eventDataAfter = $data;
+        unset($eventDataAfter['password']);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $eventDataAfter]);
+    
         return $id;
     }
 
@@ -247,8 +255,9 @@ class Admin extends \Api_Abstract
         if (($data['currency'] ?? null) && $service->canChangeCurrency($client, $data['currency'] ?? null)) {
             $client->currency = $data['currency'] ?? $client->currency;
         }
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
+        $eventDataBefore = $data;
+        unset($eventDataBefore['password']);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $eventDataBefore]);
 
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {
@@ -326,8 +335,9 @@ class Admin extends \Api_Abstract
         $this->di['validator']->isPasswordStrong($data['password']);
 
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $data]);
+        $eventDataBefore = $data;
+        unset($eventDataBefore['password']);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $eventDataBefore]);
 
         $client->pass = $this->di['password']->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
@@ -336,7 +346,7 @@ class Admin extends \Api_Abstract
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('client', $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
         $this->di['logger']->info('Changed client #%s password', $client->id);
 

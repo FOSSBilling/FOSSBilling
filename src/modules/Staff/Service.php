@@ -457,11 +457,14 @@ class Service implements InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Admin', 3);
-
+    
         $signature = $data['signature'] ?? null;
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
-
+    
+        // Copy data and remove password for event
+        $eventData = $data;
+        unset($eventData['password']);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $eventData]);
+    
         $model = $this->di['db']->dispense('Admin');
         $model->role = \Model_Admin::ROLE_STAFF;
         $model->admin_group_id = $data['admin_group_id'];
@@ -472,19 +475,20 @@ class Service implements InjectionAwareInterface
         $model->signature = $signature;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
-
+    
         try {
             $newId = $this->di['db']->store($model);
         } catch (\RedBeanPHP\RedException) {
             throw new \Box_Exception('Staff member with email :email is already registered', [':email' => $data['email']], 788954);
         }
-
+    
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
-
+    
         $this->di['logger']->info('Created new staff member %s', $newId);
-
+    
         return (int) $newId;
     }
+    
 
     public function createAdmin(array $data)
     {

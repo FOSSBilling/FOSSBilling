@@ -540,29 +540,43 @@ class Service implements InjectionAwareInterface
 
     public function adminCreateClient(array $data)
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $data]);
-        $client = $this->createClient($data);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        // Send the data without the password to the before event
+        $eventData = $data;
+        unset($eventData['password']);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $eventData]);
+        
+        $client = $this->createClient($data); // createClient gets the full data including password
+        
+        // Send the data without the password to the after event
+        $eventDataAfter = ['id' => $client->id];
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => $eventDataAfter]);
+        
         $this->di['logger']->info('Created new client #%s', $client->id);
-
+    
         return $client->id;
     }
+    
 
     public function guestCreateClient(array $data)
     {
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientAddress();
+        unset($event_params['password']);  // remove password from event data
         $this->di['events_manager']->fire(['event' => 'onBeforeClientSignUp', 'params' => $event_params]);
-
+    
         $data['ip'] = $this->di['request']->getClientAddress();
         $data['status'] = \Model_Client::ACTIVE;
-        $client = $this->createClient($data);
-
-        $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        $client = $this->createClient($data);  // createClient gets the full data including password
+    
+        // For the after event, we'll create a new array without the password
+        $eventDataAfter = ['id' => $client->id];
+        $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $eventDataAfter]);
+        
         $this->di['logger']->info('Client #%s signed up', $client->id);
-
+    
         return $client;
     }
+    
 
     public function remove(\Model_Client $model)
     {
