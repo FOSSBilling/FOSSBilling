@@ -326,11 +326,11 @@ globalThis.FOSSBilling = {
         color = 'primary';
     }
 
-    const container = document.querySelector('.toast-container');
+    const container = document.querySelector('.toast-container'); // Get the existing container or create if not present
 
     const element = document.createElement('div');
     container.appendChild(element);
-    element.classList.add('toast', 'show');
+    element.classList.add('toast', 'show'); // Add 'show' class to display the toast immediately
     element.setAttribute('role', 'alert');
     element.setAttribute('aria-live', 'assertive');
     element.setAttribute('aria-atomic', 'true');
@@ -364,7 +364,7 @@ globalThis.FOSSBilling = {
     element.appendChild(bodyDiv);
 
     element.addEventListener('hidden.bs.toast', () => {
-      container.removeChild(element);
+      container.removeChild(element); // Remove the toast element from the container when it's hidden
     });
 
     // Create a new Bootstrap toast instance and show it
