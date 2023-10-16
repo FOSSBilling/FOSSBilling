@@ -29,13 +29,16 @@ const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 function checkConfig()
 {
     $filesystem = new Filesystem();
-
-    $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] == 1)) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
-    $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-
     // Check if configuration is available, and redirect to installer if not.
     if (!$filesystem->exists(PATH_CONFIG)) {
         if ($filesystem->exists('install/index.php')) {
+            // Build the base URL for the installation, including the protocol and hostname.
+            $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] == 1)) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+
+            // Append the directory name to the base URL.
+            $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+
+            // Use the base URL to redirect to the installer, sending HTTP 307 to indicate a temporary redirect.
             header('Location: ' . $base_url . '/install/index.php', true, 307);
         } else {
             throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
