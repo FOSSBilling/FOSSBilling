@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,9 +12,11 @@
 
 namespace FOSSBilling;
 
+use SebastianBergmann\Type\TrueType;
+
 class ErrorPage
 {
-    public function __construct()
+    public static function setupTrans()
     {
         /* If the __trans function is undefined, this probably means we experienced an unrecoverable error during the initialization of FOSSBilling.
          * As a workaround, we define a "polyfill" for it here which just returns the original (english) string, handling placeholders in the process.
@@ -35,7 +39,7 @@ class ErrorPage
      *
      * @return array
      */
-    private function getCodes(): array
+    private static function getCodes(): array
     {
         return [
             '1' => [
@@ -45,13 +49,15 @@ class ErrorPage
                     'label' => __trans('View more info on the composer website'),
                     'href' => 'https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies',
                 ],
+                'report' => false,
             ],
             '2' => [
                 'message' => __trans('For security reasons, you must delete the installation directory before you can use FOSSBilling. :code', [':code' => '(<code>/install</code>)']),
                 'link' => [
                     'label' => __trans('View more info on the Getting Started guide'),
                     'href' => 'https://fossbilling.org/docs/getting-started/shared#remove-the-installer',
-                ]
+                ],
+                'report' => false,
             ],
             '3' => [
                 'title' => __trans('Your Configuration is Empty'),
@@ -59,7 +65,8 @@ class ErrorPage
                 'link' => [
                     'label' => __trans('See the example config.'),
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/config-sample.php',
-                ]
+                ],
+                'report' => false,
             ],
             '4' => [
                 'title' => __trans('Migration is required'),
@@ -67,7 +74,8 @@ class ErrorPage
                 'link' => [
                     'label' => __trans('Check the migration guide.'),
                     'href' => 'https://fossbilling.org/docs/getting-started/migrate-from-boxbilling',
-                ]
+                ],
+                'report' => false,
             ],
             '5' => [
                 'title' => __trans("Missing .htaccess file"),
@@ -75,7 +83,8 @@ class ErrorPage
                 'link' => [
                     'label' => __trans("Check the default .htaccess"),
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/.htaccess',
-                ]
+                ],
+                'report' => false,
             ],
         ];
     }
@@ -83,7 +92,7 @@ class ErrorPage
     /* List of code categories. The "start" and "end" values are considered valid for a category.
      * (Example: an error code of 50 will match the "FOSSBilling Loader" category)
      */
-    private array $codeCategories = [
+    private static array $codeCategories = [
         'FOSSBilling Loader' => [
             'start' => 1,
             'end' => 50,
@@ -100,7 +109,7 @@ class ErrorPage
      * @param int $code The error code
      * @return array
      */
-    private function getCodeInfo(int $code): array
+    public static function getCodeInfo(int $code): array
     {
         $errorDetails = [
             'title' => __trans('An error has occurred.'),
@@ -108,10 +117,11 @@ class ErrorPage
                 'label' => __trans('View the FOSSBilling documentation'),
                 'href' => 'https://fossbilling.org/docs',
             ],
-            'category' => __trans('None')
+            'category' => __trans('None'),
+            'report' => true,
         ];
 
-        $codes = $this->getCodes();
+        $codes = self::getCodes();
 
         if (key_exists($code, $codes)) {
             $codeInfo = $codes[$code];
@@ -119,7 +129,7 @@ class ErrorPage
         }
 
         $errorDetails['category'] = 'Generic';
-        foreach ($this->codeCategories as $categoryName => $categoryRange) {
+        foreach (self::$codeCategories as $categoryName => $categoryRange) {
             if ($code >= $categoryRange['start'] && $code <= $categoryRange['end']) {
                 $errorDetails['category'] = $categoryName;
                 break;

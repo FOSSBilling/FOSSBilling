@@ -150,6 +150,15 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
+    if(!class_exists('\FOSSBilling\ErrorPage')){
+        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+    }
+
+    // If the trans function isn't setup, define a "polyfill" for it.
+    \FOSSBilling\ErrorPage::setupTrans();
+
+    \Sentry\captureException($e);
+
     $message = htmlspecialchars($e->getMessage());
     if (getenv('APP_ENV') === 'test') {
         echo $message . PHP_EOL;
@@ -184,7 +193,6 @@ function exceptionHandler($e)
 
         echo $whoops->handleException($e);
     } else {
-        include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
         $errorPage = new \FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $message);
     }
@@ -192,25 +200,27 @@ function exceptionHandler($e)
 
 function reginsterSentry(array $config): void
 {
-    $sentryDNS = '--replace--this--during--release--process--';
+    $sentryDSN = '--replace--this--during--release--process--';
 
     // Registers Sentry for error reporting if enabled.
     $options = [
-        'before_send' => function (\Sentry\Event $event): ?\Sentry\Event {
-            // TODO: Add filters here for errors we don't want to get.
+        'before_send' => function (\Sentry\Event $event, ?\Sentry\EventHint $hint): ?\Sentry\Event {
+            $errorInfo = \FOSSBilling\ErrorPage::getCodeInfo($hint->exception->getCode());
+
+            if (!$errorInfo['report']) {
+                return null;
+            }
+
             return $event;
         },
 
         'environment' => Environment::getCurrentEnvironment(),
         'release' => FOSSBilling\Version::VERSION,
-
-        // Sends 100% of all errors. We can reduce this later if we want.
-        'traces_sample_rate' => 1.0,
     ];
 
-    if ($config['debug_and_monitoring']['report_errors'] && $sentryDNS !== '--replace--this--during--release--process--') {
+    if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this--during--release--process--') {
         // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
-        $options['dsn'] = $sentryDNS;
+        $options['dsn'] = $sentryDSN;
     };
 
     // If the system URL is correctly set, we can get the UUID for this instance. Otherwise, let Sentry try to come up with one
