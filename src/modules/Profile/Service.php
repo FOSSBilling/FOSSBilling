@@ -114,7 +114,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \FOSSBilling\Exception('Email can not be changed');
+            throw new \FOSSBilling\InformationException('Email can not be changed');
         }
 
         if (!empty($email)) {
@@ -122,7 +122,7 @@ class Service implements InjectionAwareInterface
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
-                throw new \FOSSBilling\Exception('Can not change email. It is already registered.');
+                throw new \FOSSBilling\InformationException('Can not change email. It is already registered.');
             }
 
             $client->email = $email;
@@ -134,7 +134,7 @@ class Service implements InjectionAwareInterface
 
         $birthday = $data['birthday'] ?? null;
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
-            throw new \FOSSBilling\Exception('Invalid birthdate value');
+            throw new \FOSSBilling\InformationException('Invalid birthdate value');
         }
         $client->birthday = $birthday;
 

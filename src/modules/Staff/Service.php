@@ -38,7 +38,7 @@ class Service implements InjectionAwareInterface
         if (!$model instanceof \Model_Admin) {
             $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
 
-            throw new \FOSSBilling\Exception('Check your login details', null, 403);
+            throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->id, 'ip' => $ip]]);
@@ -421,7 +421,7 @@ class Service implements InjectionAwareInterface
     public function delete(\Model_Admin $model)
     {
         if ($model->protected) {
-            throw new \FOSSBilling\Exception('This administrator account is protected and can not be removed');
+            throw new \FOSSBilling\InformationException('This administrator account is protected and can not be removed');
         }
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
 
@@ -476,7 +476,7 @@ class Service implements InjectionAwareInterface
         try {
             $newId = $this->di['db']->store($model);
         } catch (\RedBeanPHP\RedException) {
-            throw new \FOSSBilling\Exception('Staff member with email :email is already registered', [':email' => $data['email']], 788954);
+            throw new \FOSSBilling\InformationException('Staff member with email :email is already registered', [':email' => $data['email']], 788954);
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
@@ -561,7 +561,7 @@ class Service implements InjectionAwareInterface
     {
         $id = $model->id;
         if ($model->id == 1) {
-            throw new \FOSSBilling\Exception('Administrators group can not be removed');
+            throw new \FOSSBilling\InformationException('Administrators group can not be removed');
         }
 
         $sql = 'SELECT count(1)
@@ -569,7 +569,7 @@ class Service implements InjectionAwareInterface
                 WHERE admin_group_id = :id';
         $staffMembersInGroup = $this->di['db']->getCell($sql, ['id' => $model->id]);
         if ($staffMembersInGroup > 0) {
-            throw new \FOSSBilling\Exception('Can not remove group which has staff members');
+            throw new \FOSSBilling\InformationException('Can not remove group which has staff members');
         }
 
         $this->di['db']->trash($model);

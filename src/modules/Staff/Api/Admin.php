@@ -107,7 +107,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function change_password($data)
     {
@@ -120,7 +120,7 @@ class Admin extends \Api_Abstract
         $validator->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\Exception('Passwords do not match');
+            throw new \FOSSBilling\InformationException('Passwords do not match');
         }
 
         $validator->isPasswordStrong($data['password']);

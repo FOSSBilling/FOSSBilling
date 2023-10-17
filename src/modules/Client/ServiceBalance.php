@@ -117,16 +117,16 @@ class ServiceBalance implements InjectionAwareInterface
      *
      * @return \Model_ClientBalance
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function deductFunds(\Model_Client $client, $amount, $description, array $data = null)
     {
         if (!is_numeric($amount)) {
-            throw new \FOSSBilling\Exception('Funds amount is invalid');
+            throw new \FOSSBilling\InformationException('Funds amount is invalid');
         }
 
         if (strlen(trim($description)) == 0) {
-            throw new \FOSSBilling\Exception('Funds description is invalid');
+            throw new \FOSSBilling\InformationException('Funds description is invalid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');

@@ -511,7 +511,7 @@ class Service implements InjectionAwareInterface
         $cartService = $this->di['mod_service']('cart');
         // check stock
         if (!$cartService->isStockAvailable($product, $qty)) {
-            throw new \FOSSBilling\Exception('Product :id is out of stock.', [':id' => $product->id], 831);
+            throw new \FOSSBilling\InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
         }
 
         // Addons must have defined master order
@@ -975,7 +975,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->status != \Model_ClientOrder::STATUS_ACTIVE) {
-            throw new \FOSSBilling\Exception('Only active orders can be suspended');
+            throw new \FOSSBilling\InformationException('Only active orders can be suspended');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_SUSPEND);

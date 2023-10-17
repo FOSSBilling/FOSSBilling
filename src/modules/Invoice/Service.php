@@ -628,7 +628,7 @@ class Service implements InjectionAwareInterface
             case 'negative_invoice':
                 $total = $this->getTotalWithTax($invoice);
                 if ($total <= 0) {
-                    throw new \FOSSBilling\Exception('Can not refund invoice with negative amount');
+                    throw new \FOSSBilling\InformationException('Can not refund invoice with negative amount');
                 }
 
                 $new = $this->di['db']->dispense('Invoice');
@@ -843,7 +843,7 @@ class Service implements InjectionAwareInterface
         $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
         foreach ($invoiceItem as $item) {
             if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
-                throw new \FOSSBilling\Exception('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
+                throw new \FOSSBilling\InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
             }
         }
 
@@ -910,7 +910,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->price <= 0) {
-            throw new \FOSSBilling\Exception('Invoices are not generated for 0 amount orders');
+            throw new \FOSSBilling\InformationException('Invoices are not generated for 0 amount orders');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
@@ -1078,7 +1078,7 @@ class Service implements InjectionAwareInterface
     public function generateFundsInvoice(\Model_Client $client, $amount)
     {
         if (!$client->currency) {
-            throw new \FOSSBilling\Exception('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+            throw new \FOSSBilling\InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
         $systemService = $this->di['mod_service']('system');
@@ -1087,11 +1087,11 @@ class Service implements InjectionAwareInterface
         $max_amount = $systemService->getParamValue('funds_max_amount', null);
 
         if ($min_amount && $amount < $min_amount) {
-            throw new \FOSSBilling\Exception('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
+            throw new \FOSSBilling\InformationException('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
         }
 
         if ($max_amount && $amount > $max_amount) {
-            throw new \FOSSBilling\Exception('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
+            throw new \FOSSBilling\InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
         $proforma = $this->di['db']->dispense('Invoice');

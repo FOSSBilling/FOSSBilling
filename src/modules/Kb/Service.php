@@ -241,7 +241,7 @@ class Service
         $articlesCount = $this->di['db']->getCell('SELECT count(*) as cnt FROM kb_article WHERE kb_article_category_id = :kb_article_category_id', $bindings);
 
         if ($articlesCount > 0) {
-            throw new \FOSSBilling\Exception('Can not remove category which has articles');
+            throw new \FOSSBilling\InformationException('Can not remove category which has articles');
         }
 
         $id = $model->id;

@@ -79,11 +79,11 @@ class ServiceTransaction implements InjectionAwareInterface
         $skip_validation = isset($data['skip_validation']) ? (bool) $data['skip_validation'] : false;
         if (!$skip_validation) {
             if (!isset($data['bb_invoice_id'])) {
-                throw new \FOSSBilling\Exception('Transaction invoice id is missing');
+                throw new \FOSSBilling\InformationException('Transaction invoice id is missing');
             }
 
             if (!isset($data['bb_gateway_id'])) {
-                throw new \FOSSBilling\Exception('Payment gateway id is missing');
+                throw new \FOSSBilling\InformationException('Payment gateway id is missing');
             }
             $this->di['db']->getExistingModelById('Invoice', $data['bb_invoice_id'], 'Invoice was not found');
             $this->di['db']->getExistingModelById('PayGateway', $data['bb_gateway_id'], 'Gateway was not found');

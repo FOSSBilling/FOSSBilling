@@ -43,16 +43,16 @@ class Service implements InjectionAwareInterface
     public function validateOrderData(array &$data)
     {
         if (!isset($data['server_id'])) {
-            throw new \FOSSBilling\Exception('Hosting product is not configured completely. Configure server for hosting product.', null, 701);
+            throw new \FOSSBilling\InformationException('Hosting product is not configured completely. Configure server for hosting product.', null, 701);
         }
         if (!isset($data['hosting_plan_id'])) {
-            throw new \FOSSBilling\Exception('Hosting product is not configured completely. Configure hosting plan for hosting product.', null, 702);
+            throw new \FOSSBilling\InformationException('Hosting product is not configured completely. Configure hosting plan for hosting product.', null, 702);
         }
         if (!isset($data['sld']) || empty($data['sld'])) {
-            throw new \FOSSBilling\Exception('Domain name is invalid.', null, 703);
+            throw new \FOSSBilling\InformationException('Domain name is invalid.', null, 703);
         }
         if (!isset($data['tld']) || empty($data['tld'])) {
-            throw new \FOSSBilling\Exception('Domain extension is invalid.', null, 704);
+            throw new \FOSSBilling\InformationException('Domain extension is invalid.', null, 704);
         }
     }
 
@@ -252,7 +252,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['username']) || empty($data['username'])) {
-            throw new \FOSSBilling\Exception('Account username is missing or is invalid');
+            throw new \FOSSBilling\InformationException('Account username is missing or is invalid');
         }
 
         $u = strtolower($data['username']);
@@ -274,7 +274,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
-            throw new \FOSSBilling\Exception('Account ip is missing or is invalid');
+            throw new \FOSSBilling\InformationException('Account ip is missing or is invalid');
         }
 
         $ip = $data['ip'];
@@ -298,7 +298,7 @@ class Service implements InjectionAwareInterface
             !isset($data['tld']) || empty($data['tld'])
             || !isset($data['sld']) || empty($data['sld'])
         ) {
-            throw new \FOSSBilling\Exception('Domain sld or tld is missing');
+            throw new \FOSSBilling\InformationException('Domain sld or tld is missing');
         }
 
         $sld = $data['sld'];
@@ -324,7 +324,7 @@ class Service implements InjectionAwareInterface
             !isset($data['password']) || !isset($data['password_confirm'])
             || $data['password'] != $data['password_confirm']
         ) {
-            throw new \FOSSBilling\Exception('Account password is missing or is invalid');
+            throw new \FOSSBilling\InformationException('Account password is missing or is invalid');
         }
 
         $newPassword = $data['password'];
@@ -782,7 +782,7 @@ class Service implements InjectionAwareInterface
         $id = $model->id;
         $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
         if ($serviceHosting) {
-            throw new \FOSSBilling\Exception('Can not remove hosting plan which has active accounts');
+            throw new \FOSSBilling\InformationException('Can not remove hosting plan which has active accounts');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted hosting plan %s', $id);

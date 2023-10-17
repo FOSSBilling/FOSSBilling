@@ -125,7 +125,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         $title = $data['title'] ?? '';
         if (empty($title)) {
-            throw new \FOSSBilling\Exception('Invoice item title is missing');
+            throw new \FOSSBilling\InformationException('Invoice item title is missing');
         }
 
         $period = $data['period'] ?? 0;

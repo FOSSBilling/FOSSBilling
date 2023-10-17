@@ -93,7 +93,7 @@ class Admin extends \Api_Abstract
         if ($data['type'] == 'domain') {
             $model = $service->getMainDomainProduct();
             if ($model instanceof \Model_Product) {
-                throw new \FOSSBilling\Exception('You have already created domain product.', null, 413);
+                throw new \FOSSBilling\InformationException('You have already created domain product.', null, 413);
             }
         }
 

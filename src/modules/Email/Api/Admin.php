@@ -382,7 +382,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
-            throw new \FOSSBilling\Exception('Receiver is not defined. Define to or to_client or to_staff parameter');
+            throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
 
         return $this->getService()->sendTemplate($data);

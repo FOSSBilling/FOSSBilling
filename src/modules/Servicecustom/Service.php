@@ -35,14 +35,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if ($field['required'] == 1) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
-                        throw new \FOSSBilling\Exception('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
+                        throw new \FOSSBilling\InformationException('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
                 if ($field['readonly'] == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
-                        throw new \FOSSBilling\Exception('Field ' . $field['label'] . ' is read only. You can not change its value', null, 5468);
+                        throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You can not change its value', null, 5468);
                     }
                 }
             }

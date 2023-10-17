@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
     {
         $f_rate = $this->getRateByCode($foreign_code);
         if ($f_rate == 0) {
-            throw new \FOSSBilling\Exception('Currency conversion rate can not be zero');
+            throw new \FOSSBilling\InformationException('Currency conversion rate can not be zero');
         }
 
         return 1 / $f_rate;
@@ -319,7 +319,7 @@ class Service implements InjectionAwareInterface
     public function rm(\Model_Currency $model)
     {
         if ($model->is_default) {
-            throw new \FOSSBilling\Exception('Can not remove default currency');
+            throw new \FOSSBilling\InformationException('Can not remove default currency');
         }
 
         if ($model->code === null || empty($model->code)) {
@@ -472,7 +472,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($conversionRate)) {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
-                throw new \FOSSBilling\Exception('Currency rate is invalid', null, 151);
+                throw new \FOSSBilling\InformationException('Currency rate is invalid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
         }

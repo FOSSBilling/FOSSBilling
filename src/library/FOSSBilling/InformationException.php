@@ -11,7 +11,7 @@
 
 namespace FOSSBilling;
 
-class informationException extends Exception
+class InformationException extends Exception
 {
     /**
      * Creates a new translated information exception.

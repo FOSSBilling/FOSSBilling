@@ -55,7 +55,7 @@ class Box_AppClient extends Box_App
                 error_log($e);
             }
         }
-        $e = new \FOSSBilling\Exception('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         error_log($e->getMessage());
         http_response_code(404);
@@ -73,7 +73,7 @@ class Box_AppClient extends Box_App
         } catch (Twig\Error\LoaderError $e) {
             error_log($e->getMessage());
             http_response_code(404);
-            throw new \FOSSBilling\Exception('Page not found', null, 404);
+            throw new \FOSSBilling\InformationException('Page not found', null, 404);
         }
 
         if ($fileName . '.' . $ext == 'mod_page_sitemap.xml') {

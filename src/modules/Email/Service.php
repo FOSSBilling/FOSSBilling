@@ -134,7 +134,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client']) && !isset($data['to_admin'])) {
-            throw new \FOSSBilling\Exception('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
+            throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
         }
         $vars = $data;
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
@@ -193,7 +193,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $sent = false;
 
         if (!$from) {
-            throw new \FOSSBilling\Exception('From email address can not be empty');
+            throw new \FOSSBilling\InformationException('From email address can not be empty');
         }
 
         if (isset($staff)) {

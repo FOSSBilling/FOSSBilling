@@ -48,23 +48,23 @@ class Validate
     public function isPasswordStrong($pwd) : bool
     {
         if( strlen($pwd) < 8 ) {
-            throw new \FOSSBilling\Exception("Minimum password length is 8 characters.");
+            throw new \FOSSBilling\InformationException("Minimum password length is 8 characters.");
         }
 
         if( strlen($pwd) > 256 ) {
-            throw new \FOSSBilling\Exception("Maximum password length is 256 characters.");
+            throw new \FOSSBilling\InformationException("Maximum password length is 256 characters.");
         }
 
         if( !preg_match("#[0-9]+#", $pwd) ) {
-            throw new \FOSSBilling\Exception("Password must include at least one number.");
+            throw new \FOSSBilling\InformationException("Password must include at least one number.");
         }
 
         if( !preg_match("#[a-z]+#", $pwd) ) {
-            throw new \FOSSBilling\Exception("Password must include at least one lowercase letter.");
+            throw new \FOSSBilling\InformationException("Password must include at least one lowercase letter.");
         }
 
         if( !preg_match("#[A-Z]+#", $pwd) ) {
-            throw new \FOSSBilling\Exception("Password must include at least one uppercase letter.");
+            throw new \FOSSBilling\InformationException("Password must include at least one uppercase letter.");
         }
 
         /*
@@ -80,22 +80,22 @@ class Validate
      * @param array $data - Array to search for keys
      * @param array $variables - Array of variables for message placeholders (:placeholder)
      * @param integer $code - Exception code
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function checkRequiredParamsForArray(array $required, array $data, array $variables = NULL, $code = 0)
     {
         foreach ($required as $key => $msg) {
 
             if(!isset($data[$key])){
-                throw new \FOSSBilling\Exception($msg, $variables, $code);
+                throw new \FOSSBilling\InformationException($msg, $variables, $code);
             }
 
             if (is_string($data[$key]) && strlen(trim($data[$key])) === 0){
-                throw new \FOSSBilling\Exception($msg, $variables, $code);
+                throw new \FOSSBilling\InformationException($msg, $variables, $code);
             }
 
             if (!is_numeric($data[$key]) && empty($data[$key])){
-                throw new \FOSSBilling\Exception($msg, $variables, $code);
+                throw new \FOSSBilling\InformationException($msg, $variables, $code);
             }
         }
     }

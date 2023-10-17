@@ -172,7 +172,7 @@ class Update implements InjectionAwareInterface
     /**
      * Perform system update.
      *
-     * @throws \FOSSBilling\Exception if latest version already installed.
+     * @throws \FOSSBilling\InformationException if latest version already installed.
      * @throws \FOSSBilling\Exception if unable to download the update archive.
      * @throws \FOSSBilling\Exception if unable to extract the update archive.
      *
@@ -182,7 +182,7 @@ class Update implements InjectionAwareInterface
     {
         $updateBranch = $this->getUpdateBranch();
         if ($updateBranch !== 'preview' && !$this->isUpdateAvailable()) {
-            throw new \FOSSBilling\Exception('You have latest version of FOSSBilling. You do not need to update.');
+            throw new \FOSSBilling\InformationException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         error_log('Started FOSSBilling auto-update script');

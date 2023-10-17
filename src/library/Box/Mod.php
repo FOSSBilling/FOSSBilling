@@ -203,7 +203,7 @@ class Box_Mod
     public function update()
     {
         if($this->isCore()) {
-            throw new \FOSSBilling\Exception('Core module can not be updated');
+            throw new \FOSSBilling\InformationException('Core module can not be updated');
         }
 
         if($this->hasService()) {

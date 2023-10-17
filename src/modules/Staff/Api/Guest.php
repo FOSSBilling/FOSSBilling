@@ -29,7 +29,7 @@ class Guest extends \Api_Abstract
     {
         $allow = (!is_countable($this->di['db']->findOne('Admin', '1=1')) || count($this->di['db']->findOne('Admin', '1=1')) == 0);
         if (!$allow) {
-            throw new \FOSSBilling\Exception('Administrator account already exists', null, 55);
+            throw new \FOSSBilling\InformationException('Administrator account already exists', null, 55);
         }
         $required = [
             'email' => 'Administrator email is missing.',
@@ -76,7 +76,7 @@ class Guest extends \Api_Abstract
             if ($allowed_ips) {
                 $allowed_ips = array_map('trim', $allowed_ips);
                 if (!in_array($this->getIp(), $allowed_ips)) {
-                    throw new \FOSSBilling\Exception('You are not allowed to login to admin area from :ip address', [':ip' => $this->getIp()], 403);
+                    throw new \FOSSBilling\InformationException('You are not allowed to login to admin area from :ip address', [':ip' => $this->getIp()], 403);
                 }
             }
         }
@@ -88,7 +88,7 @@ class Guest extends \Api_Abstract
     {
         $config = $this->getMod()->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-            throw new \FOSSBilling\Exception('Password reset has been disabled');
+            throw new \FOSSBilling\InformationException('Password reset has been disabled');
         }
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
         $required = [
@@ -101,16 +101,16 @@ class Guest extends \Api_Abstract
         $validator->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\Exception('Passwords do not match');
+            throw new \FOSSBilling\InformationException('Passwords do not match');
         }
 
         $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
         if (!$reset instanceof \Model_AdminPasswordReset) {
-            throw new \FOSSBilling\Exception('The link have expired or you have already confirmed password reset.');
+            throw new \FOSSBilling\InformationException('The link have expired or you have already confirmed password reset.');
         }
 
         if (strtotime($reset->created_at) - time() + 900 < 0) {
-            throw new \FOSSBilling\Exception('The link have expired or you have already confirmed password reset.');
+            throw new \FOSSBilling\InformationException('The link have expired or you have already confirmed password reset.');
         }
 
         $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
@@ -133,7 +133,7 @@ class Guest extends \Api_Abstract
     {
         $config = $this->getMod()->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-            throw new \FOSSBilling\Exception('Password reset has been disabled');
+            throw new \FOSSBilling\InformationException('Password reset has been disabled');
         }
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
         $required = [

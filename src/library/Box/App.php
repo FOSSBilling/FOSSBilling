@@ -349,7 +349,7 @@ class Box_App
                 header('HTTP/1.0 503 Service Unavailable');
 
                 if ('api' == $this->mod) {
-                    $exc = new \FOSSBilling\Exception('The system is undergoing maintenance. Please try again later', [], 503);
+                    $exc = new \FOSSBilling\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
                     $apiController = new \Box\Mod\Api\Controller\Client;
                     $apiController->setDi($this->di);
                     return $apiController->renderJson(null, $exc);
@@ -378,7 +378,7 @@ class Box_App
             }
         }
 
-        $e = new \FOSSBilling\Exception('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         return $this->show404($e);
     }

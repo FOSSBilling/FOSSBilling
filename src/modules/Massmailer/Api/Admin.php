@@ -69,7 +69,7 @@ class Admin extends \Api_Abstract
 
         if (isset($data['from_name'])) {
             if (empty($data['from_name'])) {
-                throw new \FOSSBilling\Exception('Message from name can not be empty');
+                throw new \FOSSBilling\InformationException('Message from name can not be empty');
             }
             $model->from_name = $data['from_name'];
         }
@@ -151,7 +151,7 @@ Order our services at {{ "order"|link }}
         $client_id = $this->_getTestClientId();
 
         if (empty($model->content)) {
-            throw new \FOSSBilling\Exception('Add some content before sending message');
+            throw new \FOSSBilling\InformationException('Add some content before sending message');
         }
 
         $this->getService()->sendMessage($model, $client_id);
@@ -172,7 +172,7 @@ Order our services at {{ "order"|link }}
         $model = $this->_getMessage($data);
 
         if (empty($model->content)) {
-            throw new \FOSSBilling\Exception('Add some content before sending message');
+            throw new \FOSSBilling\InformationException('Add some content before sending message');
         }
 
         $mod = $this->di['mod']('massmailer');

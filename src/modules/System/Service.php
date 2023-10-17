@@ -95,7 +95,7 @@ class Service
         }
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', $param)) {
-                throw new \FOSSBilling\Exception('Invalid parameter name, received: param_', ['param_' => $param]);
+                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
             }
         }
         $query = "SELECT param, value
@@ -1360,7 +1360,7 @@ class Service
             if (array_key_exists($data['country'], $codes)) {
                 return $codes[$data['country']];
             } else {
-                throw new \FOSSBilling\Exception('Country :code phone code is not registered', [':code' => $data['country']]);
+                throw new \FOSSBilling\InformationException('Country :code phone code is not registered', [':code' => $data['country']]);
             }
         }
 

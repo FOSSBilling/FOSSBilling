@@ -215,7 +215,7 @@ class Admin extends \Api_Abstract
         $service_domains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
         $count = is_countable($service_domains) ? count($service_domains) : 0;
         if ($count > 0) {
-            throw new \FOSSBilling\Exception('TLD is used by :count: domains', [':count:' => $count], 707);
+            throw new \FOSSBilling\InformationException('TLD is used by :count: domains', [':count:' => $count], 707);
         }
 
         return $this->getService()->tldRm($model);
@@ -240,7 +240,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
-            throw new \FOSSBilling\Exception('Tld already registered');
+            throw new \FOSSBilling\InformationException('Tld already registered');
         }
 
         return $this->getService()->tldCreate($data);
@@ -357,7 +357,7 @@ class Admin extends \Api_Abstract
         $count = is_array($service_domains) ? count($service_domains) : 0; // Handle the case where $service_domains might be null
 
         if ($count > 0) {
-            throw new \FOSSBilling\Exception('Registrar is used by :count: domains', [':count:' => $count], 707);
+            throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
         return $this->getService()->registrarRm($model);
