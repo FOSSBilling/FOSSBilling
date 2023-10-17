@@ -64,7 +64,7 @@ class Guest extends \Api_Abstract
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
-            throw new \Box_Exception('TLD not found');
+            throw new \FOSSBilling\Exception('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model);
@@ -87,16 +87,16 @@ class Guest extends \Api_Abstract
         $sld = htmlspecialchars($data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            throw new \Box_Exception('Domain :domain is invalid', [':domain' => $sld]);
+            throw new \FOSSBilling\Exception('Domain :domain is invalid', [':domain' => $sld]);
         }
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof \Model_Tld) {
-            throw new \Box_Exception('Domain availability could not be determined. TLD is not active.');
+            throw new \FOSSBilling\Exception('Domain availability could not be determined. TLD is not active.');
         }
 
         if (!$this->getService()->isDomainAvailable($tld, $sld)) {
-            throw new \Box_Exception('Domain is not available.');
+            throw new \FOSSBilling\Exception('Domain is not available.');
         }
 
         return true;
@@ -118,10 +118,10 @@ class Guest extends \Api_Abstract
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof \Model_Tld) {
-            throw new \Box_Exception('TLD is not active.');
+            throw new \FOSSBilling\Exception('TLD is not active.');
         }
         if (!$this->getService()->canBeTransferred($tld, $data['sld'])) {
-            throw new \Box_Exception('Domain can not be transferred.');
+            throw new \FOSSBilling\Exception('Domain can not be transferred.');
         }
 
         return true;

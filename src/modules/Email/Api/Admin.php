@@ -99,7 +99,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function email_resend($data)
     {
@@ -111,7 +111,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         return $this->getService()->resend($model);
@@ -122,7 +122,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function email_delete($data)
     {
@@ -134,7 +134,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         $id = $model->id;
@@ -175,7 +175,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function template_get($data)
     {
@@ -194,7 +194,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function template_delete($data)
     {
@@ -206,7 +206,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_EmailTemplate) {
-            throw new \Box_Exception('Email template not found');
+            throw new \FOSSBilling\Exception('Email template not found');
         }
 
         $id = $model->id;
@@ -223,7 +223,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - newly created template id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function template_create($data)
     {
@@ -247,7 +247,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      * =     */
     public function template_update($data)
     {
@@ -382,7 +382,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
-            throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff parameter');
+            throw new \FOSSBilling\Exception('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
 
         return $this->getService()->sendTemplate($data);

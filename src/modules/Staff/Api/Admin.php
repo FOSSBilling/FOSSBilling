@@ -40,7 +40,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function get($data)
     {
@@ -65,7 +65,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update($data)
     {
@@ -88,7 +88,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function delete($data)
     {
@@ -107,7 +107,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function change_password($data)
     {
@@ -120,7 +120,7 @@ class Admin extends \Api_Abstract
         $validator->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
-            throw new \Box_Exception('Passwords do not match');
+            throw new \FOSSBilling\Exception('Passwords do not match');
         }
 
         $validator->isPasswordStrong($data['password']);
@@ -137,7 +137,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - ID of newly created staff member
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function create($data)
     {
@@ -229,7 +229,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new staff group ID
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function group_create($data)
     {
@@ -246,7 +246,7 @@ class Admin extends \Api_Abstract
      *
      * @return array - group details
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function group_get($data)
     {
@@ -265,7 +265,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function group_delete($data)
     {
@@ -286,7 +286,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function group_update($data)
     {

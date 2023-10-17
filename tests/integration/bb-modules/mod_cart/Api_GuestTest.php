@@ -81,7 +81,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
             ),
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Selected billing period is invalid for the selected addon');
 
         $bool = $this->api_guest->cart_add_item($data);
@@ -101,7 +101,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
             ),
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Addon period parameter not passed');
 
         $bool = $this->api_guest->cart_add_item($data);
@@ -126,7 +126,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testAddDisabledPeriod()
     {
@@ -525,7 +525,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     public function testApplyPromoForClient($discount, $clientGroupId, $ids, $shouldThrowException)
     {
         if ($shouldThrowException) {
-            $this->expectException(\Box_Exception::class);
+            $this->expectException(\FOSSBilling\Exception::class);
         }
         $this->api_guest->cart_reset();
 

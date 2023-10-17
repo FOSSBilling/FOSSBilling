@@ -15,7 +15,7 @@ class Theme
     public function __construct(private $name)
     {
         if (!file_exists($this->getPath())) {
-            throw new \Box_Exception('Theme ":name" does not exist', [':name' => $name]);
+            throw new \FOSSBilling\Exception('Theme ":name" does not exist', [':name' => $name]);
         }
     }
 

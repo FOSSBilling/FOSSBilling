@@ -259,7 +259,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - inquiry id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function public_ticket_create($data)
     {
@@ -279,7 +279,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function public_ticket_get($data)
     {
@@ -298,7 +298,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function public_ticket_delete($data)
     {
@@ -317,7 +317,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function public_ticket_close($data)
     {
@@ -339,7 +339,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function public_ticket_update($data)
     {
@@ -358,7 +358,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function public_ticket_reply($data)
     {
@@ -413,7 +413,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function helpdesk_get($data)
     {
@@ -438,7 +438,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function helpdesk_update($data)
     {
@@ -462,7 +462,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function helpdesk_create($data)
     {
@@ -479,7 +479,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function helpdesk_delete($data)
     {
@@ -533,7 +533,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_get($data)
     {
@@ -552,7 +552,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_delete($data)
     {
@@ -573,7 +573,7 @@ class Admin extends \Api_Abstract
      *
      * @return int
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_create($data)
     {
@@ -597,7 +597,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_update($data)
     {
@@ -626,7 +626,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_category_get($data)
     {
@@ -647,7 +647,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_category_update($data)
     {
@@ -668,7 +668,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_category_delete($data)
     {
@@ -687,7 +687,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new category id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function canned_category_create($data)
     {
@@ -704,7 +704,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new note id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function note_create($data)
     {
@@ -724,7 +724,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function note_delete($data)
     {
@@ -743,7 +743,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function task_complete($data)
     {

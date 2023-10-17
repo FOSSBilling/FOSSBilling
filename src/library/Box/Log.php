@@ -69,7 +69,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
             switch (is_countable($params) ? count($params) : 0) {
                 case 0:
-                    throw new \Box_Exception('Missing log message');
+                    throw new \FOSSBilling\Exception('Missing log message');
                 case 1:
                     $message = array_shift($params);
                     $extras = null;
@@ -84,7 +84,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
             }
             $this->log($message, $priority, $params);
         } else {
-            throw new \Box_Exception('Bad log priority');
+            throw new \FOSSBilling\Exception('Bad log priority');
         }
     }
 
@@ -103,7 +103,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!isset($this->_priorities[$priority])) {
-            throw new \Box_Exception('Bad log priority');
+            throw new \FOSSBilling\Exception('Bad log priority');
         }
 
         if ($this->_min_priority && $priority > $this->_min_priority) {

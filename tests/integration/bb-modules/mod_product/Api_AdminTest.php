@@ -212,7 +212,7 @@ class Api_Admin_ProductTest extends ApiTestCase
             'type'                  => Model_ProductTable::DOMAIN,
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage('You have already created domain product.');
 

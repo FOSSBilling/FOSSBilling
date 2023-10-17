@@ -103,7 +103,7 @@ class GuestTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Parameter ext is missing');
         $this->api->settings($data);
 

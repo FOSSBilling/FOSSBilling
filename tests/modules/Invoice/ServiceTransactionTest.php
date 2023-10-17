@@ -156,7 +156,7 @@ class ServiceTransactionTest extends \BBTestCase
             'bb_gateway_id'   => 1,
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Transaction invoice id is missing');
         $this->service->create($data);
     }
@@ -177,7 +177,7 @@ class ServiceTransactionTest extends \BBTestCase
             'bb_invoice_id'   => 2,
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Payment gateway id is missing');
         $this->service->create($data);
     }
@@ -418,7 +418,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processTransaction')
-            ->will($this->throwException(new \Box_Exception($exceptionMessage)));
+            ->will($this->throwException(new \FOSSBilling\Exception($exceptionMessage)));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -428,7 +428,7 @@ class ServiceTransactionTest extends \BBTestCase
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($exceptionMessage);
         $serviceMock->preProcessTransaction($transactionModel);
     }

@@ -50,7 +50,7 @@ class Guest extends \Api_Abstract
     public function article_get($data)
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \Box_Exception('ID or slug is missing');
+            throw new \FOSSBilling\Exception('ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -64,7 +64,7 @@ class Guest extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_KbArticle) {
-            throw new \Box_Exception('Article item not found');
+            throw new \FOSSBilling\Exception('Article item not found');
         }
         $this->getService()->hitView($model);
 
@@ -112,7 +112,7 @@ class Guest extends \Api_Abstract
     public function category_get($data)
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \Box_Exception('Category ID or slug is missing');
+            throw new \FOSSBilling\Exception('Category ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -126,7 +126,7 @@ class Guest extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_KbArticleCategory) {
-            throw new \Box_Exception('Knowledge base category not found');
+            throw new \FOSSBilling\Exception('Knowledge base category not found');
         }
 
         return $this->getService()->categoryToApiArray($model, $this->getIdentity());

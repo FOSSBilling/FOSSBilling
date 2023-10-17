@@ -103,7 +103,7 @@ class Client extends \Api_Abstract
     {
         $model = $this->_getOrder($data);
         if (!in_array($model->status, [\Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
-            throw new \Box_Exception('Only pending and failed setup orders can be deleted.');
+            throw new \FOSSBilling\Exception('Only pending and failed setup orders can be deleted.');
         }
 
         return $this->getService()->deleteFromOrder($model);
@@ -118,7 +118,7 @@ class Client extends \Api_Abstract
 
         $order = $this->getService()->findForClientById($this->getIdentity(), $data['id']);
         if (!$order instanceof \Model_ClientOrder) {
-            throw new \Box_Exception('Order not found');
+            throw new \FOSSBilling\Exception('Order not found');
         }
 
         return $order;

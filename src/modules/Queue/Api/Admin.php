@@ -93,7 +93,7 @@ class Admin extends \Api_Abstract
         $service = $mod->getService();
         $handler = $data['handler'] ?? $data['queue'];
         if (!method_exists($service, $handler)) {
-            throw new \Box_Exception('Message handler function :method does not exists', [':ext' => $data['mod'], ':method' => $service::class . ':' . $handler]);
+            throw new \FOSSBilling\Exception('Message handler function :method does not exists', [':ext' => $data['mod'], ':method' => $service::class . ':' . $handler]);
         }
 
         $interval = isset($data['interval']) ? (int) $data['interval'] : 30;

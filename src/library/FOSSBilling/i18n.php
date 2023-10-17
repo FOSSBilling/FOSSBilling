@@ -126,13 +126,13 @@ class i18n
      * 
      * @return bool To indicate if it was successful,
      *  
-     * @throws \Box_Exception 
+     * @throws \FOSSBilling\Exception 
      */
     public static function toggleLocale(string $locale): bool
     {
         $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
         if (!is_dir($basePath)) {
-            throw new \Box_Exception('Unable to enable / disable the locale as it is not present in the locale folder.');
+            throw new \FOSSBilling\Exception('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
         $disablePath = $basePath . DIRECTORY_SEPARATOR . '.disabled';

@@ -127,7 +127,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Extension not found');
         $this->api->update($data);
     }

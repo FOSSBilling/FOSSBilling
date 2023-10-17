@@ -177,7 +177,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $v = new \FOSSBilling\Validate();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($required['message']);
 
         $v->checkRequiredParamsForArray($required, $data);
@@ -195,7 +195,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $v = new \FOSSBilling\Validate();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($required['message']);
 
         $v->checkRequiredParamsForArray($required, $data);

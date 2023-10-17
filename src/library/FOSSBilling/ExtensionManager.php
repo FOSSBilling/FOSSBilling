@@ -44,14 +44,14 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The extension details
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function getExtension(string $id): array
     {
         $manifest = $this->makeRequest('extension/' . $id);
 
         if (empty($manifest)) {
-            throw new \Box_Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
+            throw new \FOSSBilling\Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
         }
 
         return $manifest;
@@ -64,14 +64,14 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of releases of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the "releases" array)
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function getExtensionReleases(string $id): array
     {
         $releases = $this->getExtension($id)['releases'];
 
         if (empty($releases) || !is_array($releases)) {
-            throw new \Box_Exception('Unable to fetch the releases of the extension from the FOSSBilling extension directory.');
+            throw new \FOSSBilling\Exception('Unable to fetch the releases of the extension from the FOSSBilling extension directory.');
         }
 
         return $releases;
@@ -84,7 +84,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The latest release of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the first element in the "releases" array)
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function getLatestExtensionRelease(string $id): array
     {
@@ -92,7 +92,7 @@ class ExtensionManager implements InjectionAwareInterface
         $latest = reset($releases);
 
         if (empty($latest) || !is_array($latest)) {
-            throw new \Box_Exception('Unable to fetch the latest release of the extension.');
+            throw new \FOSSBilling\Exception('Unable to fetch the latest release of the extension.');
         }
 
         return $latest;
@@ -144,7 +144,7 @@ class ExtensionManager implements InjectionAwareInterface
      * @param array $params The array of parameters to pass to the API endpoint
      *
      * @return array The API response
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function makeRequest(string $endpoint, array $params = []): array
     {
@@ -165,15 +165,15 @@ class ExtensionManager implements InjectionAwareInterface
             $json = $response->toArray();
 
             if (is_null($json)) {
-                throw new \Box_Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
+                throw new \FOSSBilling\Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
             }
 
             if (isset($json['error']) && is_array($json['error'])) {
-                throw new \Box_Exception($json['error']['message'], null, 746);
+                throw new \FOSSBilling\Exception($json['error']['message'], null, 746);
             }
 
             if (!isset($json['result']) || !is_array($json['result'])) {
-                throw new \Box_Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+                throw new \FOSSBilling\Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
             }
 
             return $json['result'];

@@ -58,7 +58,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $service->setDi($di);
         $code = 'EUR';
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $service->getBaseCurrencyRate($code); //Expecting exception
     }
 
@@ -314,8 +314,8 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $service->setAsDefault($model); //Currency code is null, should throw an \Box_Exception
+        $this->expectException(\FOSSBilling\Exception::class);
+        $service->setAsDefault($model); //Currency code is null, should throw an \FOSSBilling\Exception
     }
 
     public function testgetPairs()
@@ -522,8 +522,8 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $service->rm($model); //will throw \Box_Exception because default currency can not be removed
+        $this->expectException(\FOSSBilling\Exception::class);
+        $service->rm($model); //will throw \FOSSBilling\Exception because default currency can not be removed
     }
 
 
@@ -566,8 +566,8 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $service->rm($model); //will throw \Box_Exception because currency code is not set
+        $this->expectException(\FOSSBilling\Exception::class);
+        $service->rm($model); //will throw \FOSSBilling\Exception because currency code is not set
     }
 
     public function testToApiArray()
@@ -687,9 +687,9 @@ class ServiceTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue(false));
-            $this->expectException(\Box_Exception::class);
+            $this->expectException(\FOSSBilling\Exception::class);
 
-        $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); //Expecting \Box_Exception every time
+        $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testUpdateConversionRateException()
@@ -714,8 +714,8 @@ class ServiceTest extends \BBTestCase
             ->method('getByCode')
             ->will($this->returnValue($model));
 
-        $this->expectException(\Box_Exception::class);
-        $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); //Expecting \Box_Exception every time
+        $this->expectException(\FOSSBilling\Exception::class);
+        $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testUpdateCurrencyRates()
@@ -847,7 +847,7 @@ class ServiceTest extends \BBTestCase
             ->method('getByCode')
             ->will($this->returnValue(null));
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $service->deleteCurrencyByCode($code);
 
         $this->assertIsBool($result);

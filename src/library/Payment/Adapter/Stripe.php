@@ -180,7 +180,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             }
         } catch (\Stripe\Exception\CardException | \Stripe\Exception\InvalidRequestException | \Stripe\Exception\AuthenticationException | \Stripe\Exception\ApiConnectionException | \Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
-            throw new \Box_Exception("There was an error when processing the transaction");
+            throw new \FOSSBilling\Exception("There was an error when processing the transaction");
         }
 
         $paymentStatus = match ($charge->status) {

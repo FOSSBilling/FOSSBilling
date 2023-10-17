@@ -129,7 +129,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage('You have already created domain product');
         $this->api->prepare($data);
@@ -163,7 +163,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage(sprintf('Product type %s is not registered', $data['type']));
         $this->api->prepare($data);
@@ -241,7 +241,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('priority params is missing');
         $this->api->update_priority($data);
     }
@@ -648,7 +648,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Promo id is missing');
         $this->api->promo_get($data);
     }

@@ -151,7 +151,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }

@@ -95,7 +95,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $available = $this->getAvailable();
         if (!in_array($code, $available)) {
-            throw new \Box_Exception('Payment gateway is not available for installation.');
+            throw new \FOSSBilling\Exception('Payment gateway is not available for installation.');
         }
 
         $new = $this->di['db']->dispense('PayGateway');
@@ -249,7 +249,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $class = $this->getAdapterClassName($pg);
 
         if (!class_exists($class)) {
-            throw new \Box_Exception('Payment gateway :adapter was not found', [':adapter' => $class]);
+            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $class]);
         }
 
         $adapter = new $class($config);
@@ -278,12 +278,12 @@ class ServicePayGateway implements InjectionAwareInterface
         $class = $this->getAdapterClassName($pg);
         if (!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '.php')) {
             if (!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/' . $pg->gateway . '.php')) {
-                throw new \Box_Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
+                throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
             }
         }
 
         if (!class_exists($class)) {
-            throw new \Box_Exception("Payment gateway class $class was not found");
+            throw new \FOSSBilling\Exception("Payment gateway class $class was not found");
         }
 
         if (!method_exists($class, 'getConfig')) {

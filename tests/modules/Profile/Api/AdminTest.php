@@ -97,7 +97,7 @@ class AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Profile\Api\Admin();
         $adminApi->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $adminApi->change_password(array());
         $this->fail('password should be passed');
 

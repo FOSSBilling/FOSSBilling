@@ -222,7 +222,7 @@ class Api_ClientTest extends \BBTestCase
             'content' => 'Content',
             'id'      => rand(1, 100),
         );
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->ticket_reply($data);
 
         $this->assertIsInt($result);

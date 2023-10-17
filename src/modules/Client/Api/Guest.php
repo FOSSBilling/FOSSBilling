@@ -56,7 +56,7 @@ class Guest extends \Api_Abstract
         $config = $this->di['mod_config']('client');
 
         if (isset($config['disable_signup']) && $config['disable_signup']) {
-            throw new \Box_Exception('New registrations are temporary disabled');
+            throw new \FOSSBilling\Exception('New registrations are temporary disabled');
         }
 
         $required = [
@@ -68,7 +68,7 @@ class Guest extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
-            throw new \Box_Exception('Passwords do not match.');
+            throw new \FOSSBilling\Exception('Passwords do not match.');
         }
 
         $this->getService()->checkExtraRequiredFields($data);
@@ -81,7 +81,7 @@ class Guest extends \Api_Abstract
         $email = $this->di['tools']->validateAndSanitizeEmail($email);
         $email = strtolower(trim($email));
         if ($service->clientAlreadyExists($email)) {
-            throw new \Box_Exception('Email is already registered. You may want to login instead of registering.');
+            throw new \FOSSBilling\Exception('Email is already registered. You may want to login instead of registering.');
         }
 
         $client = $service->guestCreateClient($data);
@@ -106,7 +106,7 @@ class Guest extends \Api_Abstract
      *
      * @return array - session data
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function login($data)
     {
@@ -127,7 +127,7 @@ class Guest extends \Api_Abstract
         if (!$client instanceof \Model_Client) {
             $this->di['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
 
-            throw new \Box_Exception('Please check your login details.', [], 401);
+            throw new \FOSSBilling\Exception('Please check your login details.', [], 401);
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
@@ -146,7 +146,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function reset_password($data)
     {
@@ -220,16 +220,16 @@ class Guest extends \Api_Abstract
         $validator->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
-            throw new \Box_Exception('Passwords do not match');
+            throw new \FOSSBilling\Exception('Passwords do not match');
         }
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {
-            throw new \Box_Exception('The link has expired or you have already reset your password.');
+            throw new \FOSSBilling\Exception('The link has expired or you have already reset your password.');
         }
 
         if (strtotime($reset->created_at) - time() + 900 < 0) {
-            throw new \Box_Exception('The link has expired or you have already reset your password.');
+            throw new \FOSSBilling\Exception('The link has expired or you have already reset your password.');
         }
 
         $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');

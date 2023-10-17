@@ -39,7 +39,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function get($data)
     {
@@ -50,7 +50,7 @@ class Admin extends \Api_Abstract
 
         $meta = $this->di['db']->load('extension_meta', $data['id']);
         if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
-            throw new \Box_Exception('Notification message was not found');
+            throw new \FOSSBilling\Exception('Notification message was not found');
         }
 
         return $this->getService()->toApiArray($meta);
@@ -77,7 +77,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function delete($data)
     {
@@ -88,7 +88,7 @@ class Admin extends \Api_Abstract
 
         $meta = $this->di['db']->load('extension_meta', $data['id']);
         if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
-            throw new \Box_Exception('Notification message was not found');
+            throw new \FOSSBilling\Exception('Notification message was not found');
         }
         $this->di['db']->trash($meta);
 
@@ -100,7 +100,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function delete_all()
     {

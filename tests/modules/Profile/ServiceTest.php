@@ -256,7 +256,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new Service();
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $service->updateClient($model, $data);
         $this->assertTrue($result);
     }
@@ -311,7 +311,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new Service();
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $service->updateClient($model, $data);
         $this->assertTrue($result);
     }

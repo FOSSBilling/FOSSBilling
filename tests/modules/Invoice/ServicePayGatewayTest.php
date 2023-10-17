@@ -138,7 +138,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAvailable')
             ->will($this->returnValue(array()));
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Payment gateway is not available for installation.');
         $serviceMock->install($code);
     }
@@ -362,7 +362,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Payment gateway  was not found');
         $serviceMock->getPaymentAdapter($payGatewayModel, $invoiceModel);
     }
@@ -399,7 +399,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAdapterClassName')
             ->will($this->returnValue($expected));
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf("Payment gateway class %s was not found", $expected));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }
@@ -416,7 +416,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName');
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf("Payment gateway %s was not found", $payGatewayModel->gateway));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }

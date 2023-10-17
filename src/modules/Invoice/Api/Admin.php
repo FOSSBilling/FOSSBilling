@@ -230,7 +230,7 @@ class Admin extends \Api_Abstract
      *
      * @return string - invoice id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function renewal_invoice($data)
     {
@@ -242,7 +242,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
         if ($model->price <= 0) {
-            throw new \Box_Exception('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
+            throw new \FOSSBilling\Exception('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
         }
 
         return $this->getService()->renewInvoice($model, $data);
@@ -606,7 +606,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_get($data)
     {
@@ -625,7 +625,7 @@ class Admin extends \Api_Abstract
     /**
      * Copy gateway from existing one.
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_copy($data)
     {
@@ -652,7 +652,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_update($data)
     {
@@ -672,7 +672,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_delete($data)
     {
@@ -718,7 +718,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function subscription_create($data)
     {
@@ -733,7 +733,7 @@ class Admin extends \Api_Abstract
         $payGateway = $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
 
         if ($client->currency != $data['currency']) {
-            throw new \Box_Exception('Client currency must match subscription currency. Check if clients currency is defined.');
+            throw new \FOSSBilling\Exception('Client currency must match subscription currency. Check if clients currency is defined.');
         }
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
 
@@ -751,7 +751,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function subscription_update($data)
     {
@@ -771,7 +771,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function subscription_get($data)
     {
@@ -792,7 +792,7 @@ class Admin extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_Subscription) {
-            throw new \Box_Exception('Subscription not found');
+            throw new \FOSSBilling\Exception('Subscription not found');
         }
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -805,7 +805,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function subscription_delete($data)
     {
@@ -825,7 +825,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function tax_delete($data)
     {

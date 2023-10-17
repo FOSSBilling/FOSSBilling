@@ -75,7 +75,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->get($data);
     }
@@ -133,7 +133,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->update($data);
     }
@@ -160,7 +160,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Paid Invoice can not be modified');
         $this->api->update($data);
     }
@@ -238,7 +238,7 @@ class ClientTest extends \BBTestCase {
 
         $data['order_id'] = 1;
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d is free. No need to generate invoice.', $clientOrder->id));
         $this->api->renewal_invoice($data);
 
@@ -270,7 +270,7 @@ class ClientTest extends \BBTestCase {
 
         $data['order_id'] = 1;
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order not found');
         $this->api->renewal_invoice($data);
     }

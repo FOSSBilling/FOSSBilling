@@ -117,7 +117,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $guestApi->setService($kbService);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $guestApi->article_get(array());
         $this->assertIsArray($result);
     }
@@ -148,7 +148,7 @@ class Api_GuestTest extends \BBTestCase
         $di = new \Pimple\Container();
 
         $guestApi->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $guestApi->article_get($data);
         $this->assertIsArray($result);
     }
@@ -180,7 +180,7 @@ class Api_GuestTest extends \BBTestCase
             'slug' => 'article-slug'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $guestApi->article_get($data);
         $this->assertIsArray($result);
     }
@@ -308,7 +308,7 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $guestApi->setService($kbService);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $guestApi->category_get(array());
         $this->assertIsArray($result);
     }
@@ -337,7 +337,7 @@ class Api_GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $guestApi->category_get($data);
         $this->assertIsArray($result);
     }
@@ -366,7 +366,7 @@ class Api_GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $guestApi->category_get($data);
         $this->assertIsArray($result);
     }

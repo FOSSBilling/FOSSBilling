@@ -319,7 +319,7 @@ class Service implements InjectionAwareInterface
         $theme_path = $this->getThemesPath() . $theme;
 
         if (!file_exists($theme_path)) {
-            throw new \Box_Exception('Theme was not found in path :path', [':path' => $theme_path]);
+            throw new \FOSSBilling\Exception('Theme was not found in path :path', [':path' => $theme_path]);
         }
         $manifest = $theme_path . '/manifest.json';
 
@@ -336,7 +336,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_array($config)) {
-            throw new \Box_Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
+            throw new \FOSSBilling\Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
         }
 
         $paths = [$theme_path . '/html'];

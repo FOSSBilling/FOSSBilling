@@ -117,7 +117,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function is_allowed($data)
     {
@@ -171,13 +171,13 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update_core($data)
     {
         $updater = $this->di['updater'];
         if ($updater->getUpdateBranch() !== 'preview' && !$updater->isUpdateAvailable()) {
-            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.');
+            throw new \FOSSBilling\Exception('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         $new_version = $updater->getLatestVersion();
@@ -195,7 +195,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function manual_update()
     {

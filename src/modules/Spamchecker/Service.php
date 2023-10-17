@@ -54,7 +54,7 @@ class Service implements InjectionAwareInterface
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map('trim', $blocked_ips);
             if (in_array($di['request']->getClientAddress(), $blocked_ips)) {
-                throw new \Box_Exception('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
+                throw new \FOSSBilling\Exception('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
             }
         }
     }
@@ -75,11 +75,11 @@ class Service implements InjectionAwareInterface
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             if (isset($config['captcha_version']) && 2 == $config['captcha_version']) {
                 if (!isset($config['captcha_recaptcha_privatekey']) || '' == $config['captcha_recaptcha_privatekey']) {
-                    throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
+                    throw new \FOSSBilling\Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
 
                 if (!isset($params['g-recaptcha-response']) || '' == $params['g-recaptcha-response']) {
-                    throw new \Box_Exception('You have to complete the CAPTCHA to continue');
+                    throw new \FOSSBilling\Exception('You have to complete the CAPTCHA to continue');
                 }
 
                 $client = HttpClient::create();
@@ -93,10 +93,10 @@ class Service implements InjectionAwareInterface
                 $content = $response->toArray();
 
                 if (!$content['success']) {
-                    throw new \Box_Exception('reCAPTCHA verification failed.');
+                    throw new \FOSSBilling\Exception('reCAPTCHA verification failed.');
                 }
             } else {
-                throw new \Box_Exception('reCAPTCHA verification failed.');
+                throw new \FOSSBilling\Exception('reCAPTCHA verification failed.');
             }
         }
 
@@ -127,13 +127,13 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($json->username->appears) && $json->username->appears) {
-            throw new \Box_Exception('Your username is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\Exception('Your username is blacklisted in the Stop Forum Spam database');
         }
         if (isset($json->email->appears) && $json->email->appears) {
-            throw new \Box_Exception('Your e-mail is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\Exception('Your e-mail is blacklisted in the Stop Forum Spam database');
         }
         if (isset($json->ip->appears) && $json->ip->appears) {
-            throw new \Box_Exception('Your IP address is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\Exception('Your IP address is blacklisted in the Stop Forum Spam database');
         }
 
         return false;

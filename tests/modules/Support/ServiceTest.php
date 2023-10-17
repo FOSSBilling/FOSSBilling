@@ -438,7 +438,7 @@ class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->findOneByClient($client, rand(1, 100));
         $this->assertInstanceOf('Model_SupportTicket', $result);
     }
@@ -1090,7 +1090,7 @@ class ServiceTest extends \BBTestCase
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = rand(1, 100);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result       = $this->service->helpdeskRm($helpdesk);
         $this->assertTrue($result);
     }
@@ -1541,7 +1541,7 @@ class ServiceTest extends \BBTestCase
 
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
     }
 
@@ -1617,7 +1617,7 @@ class ServiceTest extends \BBTestCase
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->messageCreateForTicket($ticket, null, 'Content');
         $this->assertIsInt($result);
         $this->assertEquals($result, $randId);
@@ -1663,7 +1663,7 @@ class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->publicFindOneByHash(sha1(uniqid()));
         $this->assertInstanceOf('Model_SupportPTicket', $result);
     }
@@ -2581,7 +2581,7 @@ class ServiceTest extends \BBTestCase
     public function testCanClientSubmitNewTicket($ticket, $hours, $expected)
     {
         if (!$expected) {
-            $this->expectException(\Box_Exception::class);
+            $this->expectException(\FOSSBilling\Exception::class);
         }
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())

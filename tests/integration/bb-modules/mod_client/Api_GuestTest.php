@@ -39,7 +39,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testRequiredFields()
     {
@@ -152,7 +152,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testCreateWithCustomRequiredException()
     {

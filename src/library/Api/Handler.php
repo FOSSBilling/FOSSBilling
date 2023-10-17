@@ -39,7 +39,7 @@ final class Api_Handler implements InjectionAwareInterface
     public function __call($method, $arguments)
     {
         if(!str_contains($method, '_')) {
-            throw new \Box_Exception("Method :method must contain underscore", array(':method'=>$method), 710);
+            throw new \FOSSBilling\Exception("Method :method must contain underscore", array(':method'=>$method), 710);
         }
 
         if(isset($arguments[0])) {
@@ -52,7 +52,7 @@ final class Api_Handler implements InjectionAwareInterface
         $method_name = implode('_', $e);
 
         if(empty($mod)) {
-            throw new \Box_Exception('Invalid module name', null, 714);
+            throw new \FOSSBilling\Exception('Invalid module name', null, 714);
         }
 
         //cache
@@ -64,7 +64,7 @@ final class Api_Handler implements InjectionAwareInterface
         $service = $this->di['mod']('extension')->getService();
 
         if(!$service->isExtensionActive('mod',$mod)) {
-            throw new \Box_Exception('FOSSBilling module :mod is not installed/activated',array(':mod'=>$mod), 715);
+            throw new \FOSSBilling\Exception('FOSSBilling module :mod is not installed/activated',array(':mod'=>$mod), 715);
         }
 
         // permissions check
@@ -72,7 +72,7 @@ final class Api_Handler implements InjectionAwareInterface
             $staff_service = $this->di['mod_service']('Staff');
             if(!$staff_service->hasPermission($this->identity, $mod, $method_name)) {
                 if($this->_acl_exception) {
-                    throw new \Box_Exception('You do not have access to :mod module', array(':mod'=>$mod), 725);
+                    throw new \FOSSBilling\Exception('You do not have access to :mod module', array(':mod'=>$mod), 725);
                 } else {
                     if(BB_DEBUG) {
                         error_log('You do not have access to '.$mod. ' module');
@@ -87,7 +87,7 @@ final class Api_Handler implements InjectionAwareInterface
         $api = new $api_class();
 
         if(!$api instanceof Api_Abstract ) {
-            throw new \Box_Exception('Api class must be instance of Api_Abstract', null, 730);
+            throw new \FOSSBilling\Exception('Api class must be instance of Api_Abstract', null, 730);
         }
 
         $bb_mod = $this->di['mod']($mod);
@@ -103,7 +103,7 @@ final class Api_Handler implements InjectionAwareInterface
         if(!method_exists($api, $method_name) || !is_callable(array($api, $method_name))) {
             $reflector = new ReflectionClass($api);
             if(!$reflector->hasMethod('__call')) {
-                throw new \Box_Exception(':type API call :method does not exist in module :module', array(':type'=>ucfirst($this->type), ':method'=>$method_name,':module'=>$mod), 740);
+                throw new \FOSSBilling\Exception(':type API call :method does not exist in module :module', array(':type'=>ucfirst($this->type), ':method'=>$method_name,':module'=>$mod), 740);
             }
         }
         $res = $api->{$method_name}($arguments);

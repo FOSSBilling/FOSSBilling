@@ -51,12 +51,12 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function settings($data)
     {
         if (!isset($data['ext'])) {
-            throw new \Box_Exception('Parameter ext is missing');
+            throw new \FOSSBilling\Exception('Parameter ext is missing');
         }
         $service = $this->getService();
         $config = $service->getConfig($data['ext']);

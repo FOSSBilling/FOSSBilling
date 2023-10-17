@@ -8,14 +8,14 @@ class Box_PeriodTest extends PHPUnit\Framework\TestCase
 
     public function testException()
     {
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invalid period code. Period definition must be 2 chars length');
         $p = new Box_Period('1');
     }
 
     public function testException2()
     {
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Period Error. Unit Z is not defined');
         $p = new Box_Period('1Z');
     }

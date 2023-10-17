@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
     {
         $f_rate = $this->getRateByCode($foreign_code);
         if ($f_rate == 0) {
-            throw new \Box_Exception('Currency conversion rate can not be zero');
+            throw new \FOSSBilling\Exception('Currency conversion rate can not be zero');
         }
 
         return 1 / $f_rate;
@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($currency->code === null || empty($currency->code)) {
-            throw new \Box_Exception('Currency code not provided');
+            throw new \FOSSBilling\Exception('Currency code not provided');
         }
 
         $sql1 = 'UPDATE currency SET is_default = 0 WHERE 1';
@@ -319,11 +319,11 @@ class Service implements InjectionAwareInterface
     public function rm(\Model_Currency $model)
     {
         if ($model->is_default) {
-            throw new \Box_Exception('Can not remove default currency');
+            throw new \FOSSBilling\Exception('Can not remove default currency');
         }
 
         if ($model->code === null || empty($model->code)) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         $sql = 'DELETE FROM currency WHERE code = :code';
@@ -454,7 +454,7 @@ class Service implements InjectionAwareInterface
 
         $model = $this->getByCode($code);
         if (!$model instanceof \Model_Currency) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         if (isset($title)) {
@@ -472,7 +472,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($conversionRate)) {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
-                throw new \Box_Exception('Currency rate is invalid', null, 151);
+                throw new \FOSSBilling\Exception('Currency rate is invalid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
         }
@@ -537,7 +537,7 @@ class Service implements InjectionAwareInterface
                 }
             }
 
-            throw new \Box_Exception('Failed to get currency rates for :currency from the European Central Bank API', [':currency' => $to_Currency]);
+            throw new \FOSSBilling\Exception('Failed to get currency rates for :currency from the European Central Bank API', [':currency' => $to_Currency]);
         } else {
             $client = HttpClient::create();
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
@@ -553,7 +553,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
+                throw new \FOSSBilling\Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
             } else {
                 return (float) $array['quotes'][$from_Currency . $to_Currency];
             }
@@ -565,7 +565,7 @@ class Service implements InjectionAwareInterface
         $model = $this->getByCode($code);
 
         if (!$model instanceof \Model_Currency) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
         $code = $model->code;
 

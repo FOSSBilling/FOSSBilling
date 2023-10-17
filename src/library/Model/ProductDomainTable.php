@@ -214,7 +214,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $tld = '';
 
         if (!isset($config['action'])) {
-            throw new \Box_Exception('Could not determine domain price. Domain action is missing', null, 498);
+            throw new \FOSSBilling\Exception('Could not determine domain price. Domain action is missing', null, 498);
         }
 
         if ($config['action'] == 'owndomain') {
@@ -231,7 +231,7 @@ class Model_ProductDomainTable extends Model_ProductTable
 
         $tld = $rtable->findOneByTld($tld);
         if (!$tld instanceof Model_Tld) {
-            throw new \Box_Exception('Unknown TLD. Could not determine registration price');
+            throw new \FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
         }
 
         if ($config['action'] == 'register') {
@@ -252,6 +252,6 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     public function rm(Model_Product $product)
     {
-        throw new \Box_Exception('Domain product can not be removed.');
+        throw new \FOSSBilling\Exception('Domain product can not be removed.');
     }
 }

@@ -70,7 +70,7 @@ class Admin extends \Api_Abstract
     /**
      * @return \Model_ServiceLicense
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function _getService(array $data)
     {
@@ -82,7 +82,7 @@ class Admin extends \Api_Abstract
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceLicense) {
-            throw new \Box_Exception('Order is not activated');
+            throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         return $s;

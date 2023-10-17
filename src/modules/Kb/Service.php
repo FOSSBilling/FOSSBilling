@@ -144,7 +144,7 @@ class Service
         $model = $this->di['db']->findOne('KbArticle', 'id = ?', [$id]);
 
         if (!$model instanceof \Model_KbArticle) {
-            throw new \Box_Exception('Article not found');
+            throw new \FOSSBilling\Exception('Article not found');
         }
 
         if (isset($articleCategoryId)) {
@@ -241,7 +241,7 @@ class Service
         $articlesCount = $this->di['db']->getCell('SELECT count(*) as cnt FROM kb_article WHERE kb_article_category_id = :kb_article_category_id', $bindings);
 
         if ($articlesCount > 0) {
-            throw new \Box_Exception('Can not remove category which has articles');
+            throw new \FOSSBilling\Exception('Can not remove category which has articles');
         }
 
         $id = $model->id;

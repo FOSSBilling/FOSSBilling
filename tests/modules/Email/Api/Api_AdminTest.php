@@ -200,7 +200,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email not found');
         $adminApi->email_resend($data);
     }
@@ -229,7 +229,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email not found');
         $adminApi->email_delete($data);
     }
@@ -401,7 +401,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email template not found');
         $adminApi->template_delete($data);
     }
@@ -453,7 +453,7 @@ class Api_AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $adminApi->template_send(array('code' => 'code'));
     }
 

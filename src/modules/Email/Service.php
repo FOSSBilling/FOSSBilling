@@ -134,7 +134,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client']) && !isset($data['to_admin'])) {
-            throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
+            throw new \FOSSBilling\Exception('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
         }
         $vars = $data;
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
@@ -193,7 +193,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $sent = false;
 
         if (!$from) {
-            throw new \Box_Exception('From email address can not be empty');
+            throw new \FOSSBilling\Exception('From email address can not be empty');
         }
 
         if (isset($staff)) {
@@ -448,7 +448,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $t = $this->di['db']->findOne('EmailTemplate', 'action_code = :action', [':action' => $code]);
 
         if (!$t instanceof \Model_EmailTemplate) {
-            throw new \Box_Exception('Email template :code was not found', [':code' => $code]);
+            throw new \FOSSBilling\Exception('Email template :code was not found', [':code' => $code]);
         }
 
         $d = ['code' => $code];
@@ -463,7 +463,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$id]);
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         return $model;
@@ -637,7 +637,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 // If the error message is long, truncate it and inform the user the rest is in the error log.
                 $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message, 0, 350) . '...' : $message;
 
-                throw new \Box_Exception($truncated);
+                throw new \FOSSBilling\Exception($truncated);
             }
         }
 

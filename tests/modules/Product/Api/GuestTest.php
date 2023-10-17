@@ -64,7 +64,7 @@ class GuestTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Product ID or slug is missing');
         $this->api->get($data);
     }
@@ -134,7 +134,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Product not found');
         $this->api->get($data);
     }

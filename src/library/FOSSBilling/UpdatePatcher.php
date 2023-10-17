@@ -49,14 +49,14 @@ class UpdatePatcher implements InjectionAwareInterface
         $currentConfig = include $configPath;
 
         if (!is_array($currentConfig)) {
-            throw new \Box_Exception('Unable to load existing configuration');
+            throw new \FOSSBilling\Exception('Unable to load existing configuration');
         }
 
         // Create backup of current configuration.
         try {
             $filesystem->copy($configPath, substr($configPath, 0, -4) . '.old.php');
         } catch (FileNotFoundException | IOException) {
-            throw new \Box_Exception('Unable to create backup of configuration file');
+            throw new \FOSSBilling\Exception('Unable to create backup of configuration file');
         }
 
         $newConfig = $currentConfig;
@@ -102,7 +102,7 @@ class UpdatePatcher implements InjectionAwareInterface
         try {
             $filesystem->dumpFile($configPath, $output);
         } catch (IOException) {
-            throw new \Box_Exception('Error when writing updated configuration file.');
+            throw new \FOSSBilling\Exception('Error when writing updated configuration file.');
         }
     }
 
@@ -160,7 +160,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $statement = $this->di['pdo']->prepare($sql);
         try {
             $statement->execute();
-        } catch (\Box_Exception $e) {
+        } catch (\FOSSBilling\Exception $e) {
             error_log($e->getMessage());
         }
     }

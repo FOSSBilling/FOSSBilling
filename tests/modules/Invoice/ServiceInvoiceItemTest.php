@@ -95,7 +95,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Could not activate proforma item. Order %d not found', $orderId));
         $serviceMock->executeTask($invoiceItemModel);
     }

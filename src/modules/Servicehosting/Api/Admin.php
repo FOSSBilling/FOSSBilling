@@ -23,7 +23,7 @@ class Admin extends \Api_Abstract
     public function change_plan($data)
     {
         if (!isset($data['plan_id'])) {
-            throw new \Box_Exception('plan_id is missing');
+            throw new \FOSSBilling\Exception('plan_id is missing');
         }
 
         [$order, $s] = $this->_getService($data);
@@ -175,7 +175,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - server id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function server_create($data)
     {
@@ -196,7 +196,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function server_get($data)
     {
@@ -216,7 +216,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function server_delete($data)
     {
@@ -232,7 +232,7 @@ class Admin extends \Api_Abstract
         $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
 
         if ($count > 0) {
-            throw new \Box_Exception('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
+            throw new \FOSSBilling\Exception('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
         }
 
         return (bool) $this->getService()->deleteServer($model);
@@ -256,7 +256,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function server_update($data)
     {
@@ -280,7 +280,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function server_test_connection($data)
     {
@@ -327,7 +327,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function hp_delete($data)
     {
@@ -344,7 +344,7 @@ class Admin extends \Api_Abstract
         // Ensure $hosting_services is an array before counting its elements
         $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
         if ($count > 0) {
-            throw new \Box_Exception('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
+            throw new \FOSSBilling\Exception('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
         }
 
         return (bool) $this->getService()->deleteHp($model);
@@ -355,7 +355,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function hp_get($data)
     {
@@ -376,7 +376,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function hp_update($data)
     {
@@ -397,7 +397,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new hosting plan id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function hp_create($data)
     {
@@ -422,7 +422,7 @@ class Admin extends \Api_Abstract
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceHosting) {
-            throw new \Box_Exception('Order is not activated');
+            throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         return [$order, $s];

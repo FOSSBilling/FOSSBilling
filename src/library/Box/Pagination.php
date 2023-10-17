@@ -41,10 +41,10 @@ class Box_Pagination implements InjectionAwareInterface
         $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
         if (!is_numeric($page) || $page < 1 ){
-           throw new \Box_Exception('Invalid page number');
+           throw new \FOSSBilling\Exception('Invalid page number');
         }
         if (!is_numeric($per_page) || $per_page < 1 ){
-           throw new \Box_Exception('Invalid per page number');
+           throw new \FOSSBilling\Exception('Invalid per page number');
         }
 
         $offset = ($page - 1) * $per_page;
@@ -73,10 +73,10 @@ class Box_Pagination implements InjectionAwareInterface
         $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
         if (!is_numeric($page) || $page < 1 ){
-           throw new \Box_Exception('Invalid page number');
+           throw new \FOSSBilling\Exception('Invalid page number');
         }
         if (!is_numeric($per_page) || $per_page < 1 ){
-           throw new \Box_Exception('Invalid per page number');
+           throw new \FOSSBilling\Exception('Invalid per page number');
         }
 
         $offset = ($page - 1) * $per_page;

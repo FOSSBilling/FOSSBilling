@@ -20,7 +20,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function free_tlds($data = [])
     {
@@ -35,7 +35,7 @@ class Guest extends \Api_Abstract
         if ($product->type !== \Model_Product::HOSTING) {
             $friendlyName = ucfirst(__trans('Product type'));
 
-            throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+            throw new \FOSSBilling\Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
 
         return $this->getService()->getFreeTlds($product);

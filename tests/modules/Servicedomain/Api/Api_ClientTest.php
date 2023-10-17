@@ -241,7 +241,7 @@ class Api_ClientTest extends \BBTestCase
 
         $data   = array();
         
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
 
         $this->assertTrue($result);
@@ -275,7 +275,7 @@ class Api_ClientTest extends \BBTestCase
             'order_id' => rand(1, 100)
         );
         
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
 
         $this->assertTrue($result);
@@ -309,7 +309,7 @@ class Api_ClientTest extends \BBTestCase
             'order_id' => rand(1, 100)
         );
         
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
 
         $this->assertTrue($result);

@@ -44,7 +44,7 @@ class Guest extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_Currency) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         return $service->toApiArray($model);

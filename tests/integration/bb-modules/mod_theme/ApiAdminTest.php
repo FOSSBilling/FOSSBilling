@@ -25,7 +25,7 @@ class Api_Admin_ThemeTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testThemeNotFound()
     {

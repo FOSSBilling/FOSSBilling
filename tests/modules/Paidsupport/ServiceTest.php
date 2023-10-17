@@ -90,7 +90,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($paidSupportConfig['error_msg']);
         $this->service->enoughInBalanceToOpenTicket($clientModel);
     }

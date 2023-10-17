@@ -327,7 +327,7 @@ $di['twig'] = $di->factory(function () use ($di) {
         if (($config['i18n']['locale'] ?? 'en_US') == 'en_US') {
             $dateFormatter = new \IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
-            throw new \Box_Exception('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);
+            throw new \FOSSBilling\Exception('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);
         }
     }
 
@@ -462,7 +462,7 @@ $di['loggedin_client'] = function () use ($di) {
  *
  * @return \Model_Admin|null The existing logged-in admin model object, or null if no admin is logged in.
  *
- * @throws \Box_Exception If the script is running in CLI or CGI mode and there is no cron admin available.
+ * @throws \FOSSBilling\Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
     if (Environment::isCLI()) {

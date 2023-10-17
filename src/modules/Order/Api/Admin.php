@@ -163,7 +163,7 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
-            throw new \Box_Exception('Only suspended orders can be unsuspended');
+            throw new \FOSSBilling\Exception('Only suspended orders can be unsuspended');
         }
 
         return $this->getService()->unsuspendFromOrder($order);
@@ -195,7 +195,7 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
-            throw new \Box_Exception('Only canceled orders can be uncanceled');
+            throw new \FOSSBilling\Exception('Only canceled orders can be uncanceled');
         }
 
         return $this->getService()->uncancelFromOrder($order);
@@ -254,7 +254,7 @@ class Admin extends \Api_Abstract
         $order = $this->_getOrder($data);
 
         if (!isset($data['config']) || !is_array($data['config'])) {
-            throw new \Box_Exception('Order config not passed');
+            throw new \FOSSBilling\Exception('Order config not passed');
         }
 
         $config = $data['config'];

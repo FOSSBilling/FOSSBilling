@@ -109,17 +109,17 @@ class Service implements InjectionAwareInterface
         $iterations = $c['iterations'] ?? 10;
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \Model_ServiceLicense) {
-            throw new \Box_Exception('Could not activate order. Service was not created');
+            throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
         $plugin = $this->_getPlugin($model);
 
         if (!is_object($plugin)) {
-            throw new \Box_Exception('License plugin :plugin was not found', [':plugin' => $model->plugin]);
+            throw new \FOSSBilling\Exception('License plugin :plugin was not found', [':plugin' => $model->plugin]);
         }
 
         if (!method_exists($plugin, 'generate')) {
-            throw new \Box_Exception('License plugin do not have generate method');
+            throw new \FOSSBilling\Exception('License plugin do not have generate method');
         }
 
         if (method_exists($plugin, 'setDi')) {
@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
         do {
             $licenseKey = $plugin->generate($model, $order, $c);
             if ($i++ >= $iterations) {
-                throw new \Box_Exception('Maximum number of iterations reached while generating license key');
+                throw new \FOSSBilling\Exception('Maximum number of iterations reached while generating license key');
             }
         } while ($this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $licenseKey]) !== null);
 

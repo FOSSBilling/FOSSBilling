@@ -31,7 +31,7 @@ class Service
     public function getParamValue($param, $default = null)
     {
         if (empty($param)) {
-            throw new \Box_Exception('Parameter key is missing');
+            throw new \FOSSBilling\Exception('Parameter key is missing');
         }
 
         $query = 'SELECT value
@@ -95,7 +95,7 @@ class Service
         }
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', $param)) {
-                throw new \Box_Exception('Invalid parameter name, received: param_', ['param_' => $param]);
+                throw new \FOSSBilling\Exception('Invalid parameter name, received: param_', ['param_' => $param]);
             }
         }
         $query = "SELECT param, value
@@ -308,7 +308,7 @@ class Service
     {
         try {
             return $this->di['central_alerts']->filterAlerts();
-        } catch (\Box_Exception $e) {
+        } catch (\FOSSBilling\Exception $e) {
             return [
                 [
                     'type' => 'warning',
@@ -467,7 +467,7 @@ class Service
         $stmt->execute(['param' => $param]);
         $results = $stmt->fetchColumn();
         if ($results === false) {
-            throw new \Box_Exception('Parameter :param does not exist', [':param' => $param]);
+            throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
         return $results;
@@ -1360,7 +1360,7 @@ class Service
             if (array_key_exists($data['country'], $codes)) {
                 return $codes[$data['country']];
             } else {
-                throw new \Box_Exception('Country :code phone code is not registered', [':code' => $data['country']]);
+                throw new \FOSSBilling\Exception('Country :code phone code is not registered', [':code' => $data['country']]);
             }
         }
 

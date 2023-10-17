@@ -136,11 +136,11 @@ class Service implements InjectionAwareInterface
         $text = preg_replace('~[^\-\w]+~', '', $text);
 
         if (is_numeric(substr($text, 0, 1))) {
-            throw new \Box_Exception('Field name can not start with number.', null, 1649);
+            throw new \FOSSBilling\Exception('Field name can not start with number.', null, 1649);
         }
 
         if (empty($text)) {
-            throw new \Box_Exception('Field name can not be empty. Please make sure it is not empty and does not contain special characters.', null, 3502);
+            throw new \FOSSBilling\Exception('Field name can not be empty. Please make sure it is not empty and does not contain special characters.', null, 3502);
         }
 
         return $text;
@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
         $field['form_id'] = $get_field['form_id'];
 
         if ($this->formFieldNameExists(['form_id' => $field['form_id'], 'field_name' => $field['name'], 'field_id' => $fieldId])) {
-            throw new \Box_Exception('Unfortunately field with this name exists in this form already. Form must have different field names.', null, 7628);
+            throw new \FOSSBilling\Exception('Unfortunately field with this name exists in this form already. Form must have different field names.', null, 7628);
         }
 
         $field['options'] = isset($field['options']) ? json_encode($field['options']) : '';
@@ -168,10 +168,10 @@ class Service implements InjectionAwareInterface
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
                 if (!$this->isArrayUnique(array_filter($field['values'], 'strlen'))) {
-                    throw new \Box_Exception(ucfirst($field['type']) . ' values must be unique', null, 1597);
+                    throw new \FOSSBilling\Exception(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
                 if (!$this->isArrayUnique(array_filter($field['labels'], 'strlen'))) {
-                    throw new \Box_Exception(ucfirst($field['type']) . ' labels must be unique', null, 1598);
+                    throw new \FOSSBilling\Exception(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
                 $field['options'] = array_combine($field['labels'], $field['values']);
                 $field['options'] = array_filter($field['options'], 'strlen');
@@ -179,7 +179,7 @@ class Service implements InjectionAwareInterface
             }
             if ($field['type'] == 'textarea') {
                 if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count((array) array_filter($field['textarea_size'], 'is_numeric'))) {
-                    throw new \Box_Exception('Textarea size options must be integer values', null, 3510);
+                    throw new \FOSSBilling\Exception('Textarea size options must be integer values', null, 3510);
                 }
                 $field['options'] = array_combine($field['textarea_option'], $field['textarea_size']);
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);

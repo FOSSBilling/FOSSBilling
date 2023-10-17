@@ -78,7 +78,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new product id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function prepare($data)
     {
@@ -93,13 +93,13 @@ class Admin extends \Api_Abstract
         if ($data['type'] == 'domain') {
             $model = $service->getMainDomainProduct();
             if ($model instanceof \Model_Product) {
-                throw new \Box_Exception('You have already created domain product.', null, 413);
+                throw new \FOSSBilling\Exception('You have already created domain product.', null, 413);
             }
         }
 
         $types = $service->getTypes();
         if (!array_key_exists($data['type'], $types)) {
-            throw new \Box_Exception('Product type :type is not registered', [':type' => $data['type']], 413);
+            throw new \FOSSBilling\Exception('Product type :type is not registered', [':type' => $data['type']], 413);
         }
 
         $categoryId = $data['product_category_id'] ?? null;
@@ -128,7 +128,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update($data)
     {
@@ -143,12 +143,12 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update_priority($data)
     {
         if (!isset($data['priority']) || !is_array($data['priority'])) {
-            throw new \Box_Exception('priority params is missing');
+            throw new \FOSSBilling\Exception('priority params is missing');
         }
 
         $service = $this->getService();
@@ -187,7 +187,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new addon id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function addon_create($data)
     {
@@ -212,7 +212,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function addon_get($data)
     {
@@ -223,7 +223,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
-            throw new \Box_Exception('Addon not found');
+            throw new \FOSSBilling\Exception('Addon not found');
         }
         $service = $this->getService();
 
@@ -251,7 +251,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function addon_update($data)
     {
@@ -262,7 +262,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
-            throw new \Box_Exception('Addon not found');
+            throw new \FOSSBilling\Exception('Addon not found');
         }
         $this->di['logger']->info('Updated addon #%s', $model->id);
 
@@ -311,7 +311,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function category_update($data)
     {
@@ -336,7 +336,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function category_get($data)
     {
@@ -358,7 +358,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new category id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function category_create($data)
     {
@@ -381,7 +381,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function category_delete($data)
     {
@@ -430,7 +430,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - new promo code id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function promo_create($data)
     {
@@ -464,7 +464,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function promo_get($data)
     {
@@ -497,7 +497,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function promo_update($data)
     {
@@ -518,7 +518,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function promo_delete($data)
     {

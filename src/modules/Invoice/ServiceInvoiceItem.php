@@ -58,7 +58,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $order_id = $this->getOrderId($item);
             $order = $this->di['db']->load('ClientOrder', $order_id);
             if (!$order instanceof \Model_ClientOrder) {
-                throw new \Box_Exception('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
+                throw new \FOSSBilling\Exception('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
             }
             $orderService = $this->di['mod_service']('Order');
             switch ($item->task) {
@@ -125,7 +125,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         $title = $data['title'] ?? '';
         if (empty($title)) {
-            throw new \Box_Exception('Invoice item title is missing');
+            throw new \FOSSBilling\Exception('Invoice item title is missing');
         }
 
         $period = $data['period'] ?? 0;

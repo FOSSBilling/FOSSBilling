@@ -112,7 +112,7 @@ class ClientTest extends \BBTestCase {
         $clientModel->loadBean(new \DummyBean());
         $this->api->setIdentity($clientModel);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }

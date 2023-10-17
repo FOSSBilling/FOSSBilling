@@ -247,7 +247,7 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Pricing type is required');
         $serviceMock->updateProduct($modelProduct, $data);
     }
@@ -471,7 +471,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove product which has active orders.');
         $this->service->deleteProduct($model);
     }
@@ -576,7 +576,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove product category with products');
         $this->service->removeProductCategory($modelProductCategory);
 

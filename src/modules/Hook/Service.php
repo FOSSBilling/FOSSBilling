@@ -115,7 +115,7 @@ class Service implements InjectionAwareInterface
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     private function connect($data)
     {
