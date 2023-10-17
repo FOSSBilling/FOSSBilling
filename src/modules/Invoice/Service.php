@@ -559,7 +559,7 @@ class Service implements InjectionAwareInterface
         $epsilon = 0.05;
 
         if (abs($balance - $required) < $epsilon) {
-            if ($this->di['config']['debug']) {
+            if ($this->di['config']['debug_and_monitoring']['debug']) {
                 error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
@@ -568,14 +568,14 @@ class Service implements InjectionAwareInterface
         }
 
         if ($balance - $required > 0.00001) {
-            if ($this->di['config']['debug']) {
+            if ($this->di['config']['debug_and_monitoring']['debug']) {
                 error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
 
             return true;
         }
-        if ($this->di['config']['debug']) {
+        if ($this->di['config']['debug_and_monitoring']['debug']) {
             error_log(sprintf('Invoice %s could not be paid with credits. Money in balance %s Required: %s', $invoice->id, $balance, $required));
         }
     }
@@ -708,7 +708,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case 'manual':
-                if ($this->di['config']['debug']) {
+                if ($this->di['config']['debug_and_monitoring']['debug']) {
                     error_log('Refunds are managed manually. No actions performed');
                 }
 
@@ -876,7 +876,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id']);
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
-                if ($this->di['config']['debug']) {
+                if ($this->di['config']['debug_and_monitoring']['debug']) {
                     error_log($e->getMessage());
                 }
             }

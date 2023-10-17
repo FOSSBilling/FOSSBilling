@@ -80,6 +80,10 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
+        $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Remove depreciated config keys/subkeys.
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
@@ -302,6 +306,6 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 }

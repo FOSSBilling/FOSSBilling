@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -57,7 +58,7 @@ function checkInstaller()
     if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php') && Environment::isProduction()) {
         // Throw exception only if debug mode is NOT enabled.
         $config = require PATH_CONFIG;
-        if (!$config['debug']) {
+        if (!$config['debug_and_monitoring']['debug']) {
             throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
         }
     }
@@ -189,6 +190,37 @@ function exceptionHandler($e)
     }
 }
 
+function reginsterSentry(array $config): void
+{
+    $sentryDNS = '--replace--this--during--release--process--';
+
+    // Registers Sentry for error reporting if enabled.
+    $options = [
+        'before_send' => function (\Sentry\Event $event): ?\Sentry\Event {
+            // TODO: Add filters here for errors we don't want to get.
+            return $event;
+        },
+
+        'enviroment' => Environment::getCurrentEnvironment(),
+        'release' => FOSSBilling\Version::VERSION,
+
+        // Sends 100% of all errors. We can reduce this later if we want.
+        'traces_sample_rate' => 1.0,
+    ];
+
+    if ($config['debug_and_monitoring']['report_errors'] && $sentryDNS !== '--replace--this--during--release--process--') {
+        // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
+        $options['dsn'] = $sentryDNS;
+    };
+
+    // If the system URL is correctly set, we can get the UUID for this instance. Otherwise, let Sentry try to come up with one
+    if (!empty(BB_URL)) {
+        $options['server_name'] = FOSSBilling\Instance::getInstanceID();
+    }
+
+    \Sentry\init($options);
+}
+
 /*
  *
  * Initialize App.
@@ -223,13 +255,16 @@ $config = require PATH_CONFIG;
 
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
-define('BB_DEBUG', $config['debug']);
+define('BB_DEBUG', $config['debug_and_monitoring']['debug']);
 define('BB_URL', $config['url']);
 define('PATH_CACHE', $config['path_data'] . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
+
+// Now that the config file is loaded, we can enable Sentry
+reginsterSentry($config);
 
 // Initial setup and checks passed, now we setup our custom autoloader.
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
@@ -246,7 +281,7 @@ checkSSL();
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
 ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
-if ($config['debug']) {
+if ($config['debug_and_monitoring']['debug']) {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');

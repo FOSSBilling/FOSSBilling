@@ -144,7 +144,7 @@ final class FOSSBilling_Installer
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
                         $config = require PATH_CONFIG;
-                        if (!$config['debug']) {
+                        if (!$config['debug_and_monitoring']['debug']) {
                             $this->removeDirectory('..' . DIRECTORY_SEPARATOR . 'install');
                         }
                     } catch (Exception) {

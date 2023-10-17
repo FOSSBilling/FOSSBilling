@@ -132,7 +132,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         }
 
         //do not log debug level messages if debug is OFF
-        if ($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
+        if ($this->di['config']['debug_and_monitoring']['debug'] === FALSE && $event['priority'] > self::INFO) {
             return;
         }
 

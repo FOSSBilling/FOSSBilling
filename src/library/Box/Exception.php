@@ -21,9 +21,9 @@ class Box_Exception extends Exception
 	public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
 	{
 		$config = include PATH_ROOT . '/config.php';
-		$debug = $config['debug'] ?? false;
-		$logStack = $config['log_stacktrace'] ?? true;
-		$stackLength = $config['stacktrace_length'] ?? 25;
+		$debug = $config['debug_and_monitoring']['debug'] ?? false;
+		$logStack = $config['debug_and_monitoring']['log_stacktrace'] ?? true;
+		$stackLength = $config['debug_and_monitoring']['stacktrace_length'] ?? 25;
 
 		if ($debug && $logStack) {
 			error_log('An exception has been thrown. Stacktrace:');

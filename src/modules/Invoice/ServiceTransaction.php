@@ -561,7 +561,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 $invoiceService = $this->di['mod_service']('Invoice');
                 $invoiceService->tryPayWithCredits($tx->Invoice);
             } catch (\Exception $e) {
-                if ($this->di['config']['debug']) {
+                if ($this->di['config']['debug_and_monitoring']['debug']) {
                     error_log($e->getMessage());
                 }
             }
