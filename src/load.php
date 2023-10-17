@@ -150,7 +150,7 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
-    if(!class_exists('\FOSSBilling\ErrorPage')){
+    if (!class_exists('\FOSSBilling\ErrorPage')) {
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
     }
 
@@ -218,7 +218,11 @@ function reginsterSentry(array $config): void
         'release' => FOSSBilling\Version::VERSION,
     ];
 
-    if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this--during--release--process--') {
+    /**
+     * Here we validate that the DSN is correctly set and that error reporting is enabled before passing it off to the Sentry SDK.
+     * It may look a bit odd, but the DSN placeholder value here is split into two strings and concatenated so we can easily perform a `sed` replacement of the placeholder without it effecting this check
+     */
+    if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this-- ' . 'during--release--process--' && !empty($sentryDSN)) {
         // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
         $options['dsn'] = $sentryDSN;
     };

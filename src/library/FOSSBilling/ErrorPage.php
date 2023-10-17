@@ -12,8 +12,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use SebastianBergmann\Type\TrueType;
-
 class ErrorPage
 {
     public static function setupTrans()

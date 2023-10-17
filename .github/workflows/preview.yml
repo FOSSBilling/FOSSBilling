@@ -86,6 +86,12 @@ jobs:
           mv Version2.php Version.php
         working-directory: ./build/source/library/FOSSBilling
 
+      - name: Add in the Sentry DSN
+        if: vars.SENTRY_DSN
+        run: |
+          sed -i "s/--replace--this--during--release--process--/${vars.SENTRY_DSN}/g" load.php
+        working-directory: ./build/source/      
+
       - name: Upload the Final Artifact to GitHub
         uses: actions/upload-artifact@v3
         with:
