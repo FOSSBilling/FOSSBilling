@@ -80,6 +80,8 @@ class Client implements InjectionAwareInterface
         try {
             $this->_apiCall($role, $call, $p);
         } catch (\Exception $exc) {
+            // Let Sentry capture the exception and then send it
+            \Sentry\captureException($exc);
             $this->renderJson(null, $exc);
         }
     }

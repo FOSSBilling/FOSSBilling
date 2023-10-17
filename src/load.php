@@ -157,6 +157,7 @@ function exceptionHandler($e)
     // If the trans function isn't setup, define a "polyfill" for it.
     \FOSSBilling\ErrorPage::setupTrans();
 
+    // Let Sentry capture the exception and then send it
     \Sentry\captureException($e);
 
     $message = htmlspecialchars($e->getMessage());
@@ -229,7 +230,7 @@ function registerSentry(array $config): void
      * It may look a bit odd, but the DSN placeholder value here is split into two strings and concatenated so we can easily perform a `sed` replacement of the placeholder without it effecting this check
      */
     /* @phpstan-ignore-next-line (The empty check is added to catch a possible edge-case where CI may the placeholder with an empty string) */
-    if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this-- ' . 'during--release--process--' && !empty($sentryDSN)) {
+    if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this--' . 'during--release--process--' && !empty($sentryDSN)) {
         // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
         $options['dsn'] = $sentryDSN;
     };
