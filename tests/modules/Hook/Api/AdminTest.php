@@ -52,7 +52,7 @@ class AdminTest extends \BBTestCase {
     {
         $data['event'] = 'testEvent';
 
-        $configMock = array('debug' => true);
+        $configMock = array('debug_and_monitoring' => ['debug' => true]);
 
         $logMock = $this->getMockBuilder('\Box_log')->getMock();
 

@@ -667,7 +667,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['logger']         = $loggerMock;
         $di['license_server'] = $licenseServerMock;
-        $di['config']         = array('debug' => false);
+        $di['config']         = array('debug_and_monitoring' => ['debug' => false]);
         $this->service->setDi($di);
 
         $result = $this->service->checkLicenseDetails($data);
@@ -696,7 +696,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['logger']         = $loggerMock;
         $di['license_server'] = $licenseServerMock;
-        $di['config']         = array('debug' => false);
+        $di['config']         = array('debug_and_monitoring' => ['debug' => false]);
         $this->service->setDi($di);
 
         $result = $this->service->checkLicenseDetails($data);
