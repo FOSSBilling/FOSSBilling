@@ -207,4 +207,14 @@ class Admin extends \Api_Abstract
 
         return true;
     }
+
+    /**
+     * Returns the unique instance ID for this FOSSBilling installation.
+     * 
+     * @return string 
+     */
+    public function instance_id(): string
+    {
+        return \FOSSBilling\Instance::getInstanceID();
+    }
 }

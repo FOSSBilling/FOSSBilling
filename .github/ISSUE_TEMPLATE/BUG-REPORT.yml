@@ -58,6 +58,13 @@ body:
       required: true
 
   - type: input
+    id: ID
+    attributes:
+      label: FOSSBilling instance ID
+      description: If you have opted in to error reporting, providing your instance ID below allows us to provide better technical support for you.
+      placeholder: XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX
+
+  - type: input
     id: module
     attributes:
       label: Module version
