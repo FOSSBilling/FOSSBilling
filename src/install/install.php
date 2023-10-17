@@ -106,6 +106,9 @@ final class FOSSBilling_Installer
                         throw new Exception('FOSSBilling is already installed.');
                     }
 
+                    // Set if they've opted into error reporting
+                    $this->session->set('error_reporting', $_POST['error_reporting']);
+
                     // Handle database information
                     $this->session->set('database_hostname', $_POST['database_hostname']);
                     $this->session->set('database_port', $_POST['database_port']);
@@ -414,7 +417,8 @@ final class FOSSBilling_Installer
         $data = require PATH_CONFIG_SAMPLE;
 
         // Handle dynamic configs
-        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS() ? true : false;
+        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
+        $data['debug_and_monitoring']['report_errors'] = (bool)$this->session->get('error_reporting');
         $data['update_branch'] = $updateBranch;
         $data['salt'] = md5(random_bytes(13));
         $data['url'] = BB_URL;

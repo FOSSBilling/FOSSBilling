@@ -201,7 +201,7 @@ function reginsterSentry(array $config): void
             return $event;
         },
 
-        'enviroment' => Environment::getCurrentEnvironment(),
+        'environment' => Environment::getCurrentEnvironment(),
         'release' => FOSSBilling\Version::VERSION,
 
         // Sends 100% of all errors. We can reduce this later if we want.
@@ -263,13 +263,13 @@ define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
 
-// Now that the config file is loaded, we can enable Sentry
-reginsterSentry($config);
-
 // Initial setup and checks passed, now we setup our custom autoloader.
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
+
+// Now that the config file is loaded, we can enable Sentry
+reginsterSentry($config);
 
 // Verify the installer was removed.
 checkInstaller();

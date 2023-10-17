@@ -10,16 +10,34 @@
             <li>Delete your database tables or recreate your database.</li>
             <li>Delete <strong>config.php</strong>.</li>
             <li>Refresh this page and you will see the installer.</p>
+        </ol>
     {% else %}
         <p>Thank you for choosing FOSSBilling! Our installer will have you up and running in just a few more minutes. <br>Simply follow each step below and soon you'll have FOSSBilling installed.</p>
-
-        <p>FOSSBilling is licensed under the Apache License, Version 2.0. <a href='https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE' target='_blank' data-tooltip="Opens in a new tab.">Click here</a> for full license text.</p>
     
         <progress id="overall-progress" value="0" max="4"></progress>
 
         <hr />
 
+        <form id='form' action="/install/install.php?a=install" method="post">
         <details {% if not canInstall %} open {% endif %} id="step-1">
+            <summary>Step 1) Agree to the FOSSBilling license and review error reporting options</summary>
+
+            <label for="agreement">
+                <input type="checkbox" id="agreement" name="agreement" required>
+                I agree to the <a href='https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE' target='_blank' data-tooltip="Opens in a new tab.">Apache License version 2.0,</a> and acknowledge that this software is provided as-is.
+            </label>
+            <small>FOSSBilling is licensed under the Apache License version 2.0. You assume responsibility to verify it's use and compliance with all local laws that may apply.</small>
+
+            <br><br>
+
+            <label for="error-reporting">
+                <input type="checkbox" id="error-reporting" name="error_reporting">
+                (Optional) Enable automated error and performance reporting to help improve FOSSBilling.
+            </label>
+            <small><a href="#" data-target="learn-reporting" onClick="toggleModal(event)">Learn more</a></small>
+        </details>
+
+        <details {% if not canInstall %} open {% endif %} id="step-2">
             <summary>Step 1) Check system requirements</summary>
             {% if canInstall %}
                 <p class="green">All basic requirements to install FOSSBilling are met.</p>
@@ -101,9 +119,8 @@
         <p>Meet all system requirements, then refresh the page to see the setup form.</p>
 
         {% else %}
-            <form id='form' action="/install/install.php?a=install" method="post">
-                <details id="step-2">
-                    <summary>Step 2) Enter database details</summary>
+                <details id="step-3">
+                    <summary>Step 3) Enter database details</summary>
 
                     <p>Enter your MySQL connection information.</p>
 
@@ -126,8 +143,8 @@
                     </fieldset>
                 </details>
 
-                <details id="step-3">
-                    <summary>Step 3) Configure your administrator account</summary>
+                <details id="step-4">
+                    <summary>Step 4) Configure your administrator account</summary>
 
                     <p>Create your administrator login details below.</p>
     
@@ -143,8 +160,8 @@
                     </fieldset>
                 </details>
 
-                <details id="step-4">
-                    <summary>Step 4) Configure the default currency</summary>
+                <details id="step-5">
+                    <summary>Step 5 Configure the default currency</summary>
 
                     <p>Configure your default currency and price format.</p>
     
@@ -157,11 +174,6 @@
     
                         <label for="currency_format">Price format <span class="red">*</span></label>
                         <input type="text" id="currency_format" name="currency_format" value="{{ request.currency_format|default(currency_format) }}" required>
-
-                        <label for="agreement">
-                            <input type="checkbox" id="agreement" name="agreement" required>
-                            I agree to the Apache 2.0 license, and acknowledge that this software is provided as-is. I understand it is my responsibility to verify it's use and compliance with all local laws that may apply.
-                        </label>
                     </fieldset>
                 </details>
 
@@ -175,7 +187,32 @@
                     <br>
                     <p id="time-note" class="float-right-margin" hidden="true">Installation may take up to 30 seconds depending on the speed of your system.</p>
                 </div>
-            </form>
+        </form>
+
+            <!-- Below is the "learn more" modal for error and performance reporting -->
+            <dialog id="learn-reporting">
+                <article>
+                    <a href="#close"
+                        aria-label="Close"
+                        class="close"
+                        data-target="learn-reporting"
+                        onClick="toggleModal(event)">
+                    </a>
+                <h3>Error and performance reporting</h3>
+                <p>FOSSBilling optionally includes automated error and performance reporting, which allows us to improve the software and offer better technical support.</p>
+                <p>Reports are collected using <a href="https://sentry.io/welcome/" target='_blank' data-tooltip="Opens in a new tab.">Sentry.io</a> and data is <a href="https://sentry.io/security/" target='_blank' data-tooltip="Opens in a new tab.">retained securely</a> for up to 90 days.</p>
+                <p>Sensitive information is automatically scrubbed and is never recorded.</p> 
+                <p>See <a href="" target='_blank' data-tooltip="Opens in a new tab.">what's collected</a> on the FOSSBilling documentation.</p><!-- TODO: add this to the docs and correct the link. DO NOT MERGE until this is done! -->
+                <footer>
+                    <a href="#confirm"
+                        role="button"
+                        data-target="learn-reporting"
+                        onClick="toggleModal(event)">
+                        Got it
+                    </a>
+                </footer>
+                </article>
+            </dialog>
         {% endif %}
     {% endif %}
 {% endblock %}
@@ -194,6 +231,7 @@
             const step2 = document.getElementById("step-2");
             const step3 = document.getElementById("step-3");
             const step4 = document.getElementById("step-4");
+            const step5 = document.getElementById("step-5");
 
             function isStepAllowed(step) {
                 for (let i = (step - 1); i >= 1; i--) {
@@ -201,11 +239,11 @@
                         return false;
                     }
                 }
-                return step <= 5;
+                return step <= 6;
             }
 
             function updateStepVisibility(step) {
-                [step1, step2, step3, step4].forEach((stepElement, index) => {
+                [step1, step2, step3, step4, step5].forEach((stepElement, index) => {
                     stepElement.open = index + 1 === step ? true : false;
                 });
             }
@@ -226,7 +264,7 @@
 
             function updateButtons() {
                 backButton.disabled = currentStep === 1;
-                nextButton.disabled = currentStep === 5 || {{ canInstall ? 'false' : 'true' }};
+                nextButton.disabled = currentStep === 6 || {{ canInstall ? 'false' : 'true' }};
 
                 if(currentStep === 5){
                     nextButton.hidden = true;
@@ -287,7 +325,7 @@
             }
     
             // Use event delegation for every step
-            [step2, step3, step4].forEach((stepElement, index) => {
+            [step2, step3, step4, step5].forEach((stepElement, index) => {
                 handleStepToggle(stepElement, index + 2);
             });
         });
