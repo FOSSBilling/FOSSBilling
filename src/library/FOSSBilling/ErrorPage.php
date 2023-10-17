@@ -84,6 +84,18 @@ class ErrorPage
                 ],
                 'report' => false,
             ],
+            // Incomplete server manager configuration. Is listed here so it's not forwarded to Sentry.io
+            2001 => [
+                'report' => false,
+            ],
+            // Incomplete registrar configuration. Is listed here so it's not forwarded to Sentry.io
+            3001 => [
+                'report' => false,
+            ],
+            // Incomplete payment gateway configuration. Is listed here so it's not forwarded to Sentry.io
+            4001 => [
+                'report' => false,
+            ]
         ];
     }
 
@@ -99,6 +111,18 @@ class ErrorPage
             'start' => 400,
             'end' => 599,
         ],
+        'Server Managers' => [
+            'start' => 2000,
+            'end'   => 2999,
+        ],
+        'Domain Registration' => [
+            'start' => 3000,
+            'end'   => 3999,
+        ],
+        'Payment Gateway' => [
+            'start' => 4000,
+            'end'   => 4999,
+        ]
     ];
 
     /**
