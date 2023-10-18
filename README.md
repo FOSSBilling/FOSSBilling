@@ -22,7 +22,6 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/FOSSBilling/FOSSBilling/badge)](https://www.codefactor.io/repository/github/fossbilling/fossbilling)
 [![Financial Contributors](https://opencollective.com/FOSSBilling/tiers/badge.svg?color=brightgreen)](https://opencollective.com/fossbilling)
 [![Crowdin](https://badges.crowdin.net/e/c70c78b4ab1e71424ce53dcf6bca9b12/localized.svg)](https://fossbilling.crowdin.com/FOSSBilling)
-[![huntr](https://cdn.huntr.dev/huntr_security_badge_mono.svg)](https://huntr.dev/repos/fossbilling/fossbilling/)
 
 </div>
 
