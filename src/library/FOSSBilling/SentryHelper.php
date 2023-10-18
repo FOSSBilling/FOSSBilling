@@ -71,14 +71,14 @@ class SentryHelper
     {
         \Sentry\withScope(function (Scope $scope) use ($e): void {
             $errorInfo = ErrorPage::getCodeInfo($e->getCode());
-            $exceptionpath = $e->getFile();
+            $exceptionPath = $e->getFile();
 
             // Tag the event with the exception's category.
             $scope->setTag('exception.category', $errorInfo['category']);
 
             // If we can, tag the event with the module or library that threw the exception.
-            if (str_starts_with($exceptionpath, PATH_MODS)) {
-                $strippedPath = str_replace(PATH_MODS, '', $exceptionpath);
+            if (str_starts_with($exceptionPath, PATH_MODS)) {
+                $strippedPath = str_replace(PATH_MODS, '', $exceptionPath);
                 $level = 0;
                 $module = 'Unknown';
 
@@ -91,8 +91,8 @@ class SentryHelper
                 }
                 $scope->setTag('module.name', $module);
                 error_log($module);
-            } else if (str_starts_with($exceptionpath, PATH_LIBRARY)) {
-                $scope->setTag('library.class', pathinfo($exceptionpath, PATHINFO_FILENAME));
+            } else if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
+                $scope->setTag('library.class', pathinfo($exceptionPath, PATHINFO_FILENAME));
             }
 
             // Finally tag the event with what is probably the webserver in use, then send the event to Sentry.
