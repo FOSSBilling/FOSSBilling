@@ -954,7 +954,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $class;
     }
 
-    public function registrarGetRegistrarAdapter(\Model_TldRegistrar $r, \Model_ClientOrder $order = null)
+    public function registrarGetRegistrarAdapter(\Model_TldRegistrar $r, ?\Model_ClientOrder $order = null)
     {
         $config = $this->registrarGetConfiguration($r);
         $class = $this->registrarGetRegistrarAdapterClassName($r);
