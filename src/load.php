@@ -158,7 +158,7 @@ function exceptionHandler($e)
     \FOSSBilling\ErrorPage::setupTrans();
 
     // Let Sentry capture the exception and then send it
-    \Sentry\captureException($e);
+    \FOSSBilling\SentryHelper::captureException($e);
 
     $message = htmlspecialchars($e->getMessage());
     if (getenv('APP_ENV') === 'test') {
@@ -197,49 +197,6 @@ function exceptionHandler($e)
         $errorPage = new \FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $message);
     }
-}
-
-function registerSentry(array $config): void
-{
-    $sentryDSN = '--replace--this--during--release--process--';
-
-    // Registers Sentry for error reporting if enabled.
-    $options = [
-        'before_send' => function (\Sentry\Event $event, ?\Sentry\EventHint $hint): ?\Sentry\Event {
-            if ($hint) {
-                $errorInfo = \FOSSBilling\ErrorPage::getCodeInfo($hint->exception->getCode());
-
-                if (!$errorInfo['report']) {
-                    return null;
-                }
-
-                if ($hint->exception instanceof \FOSSBilling\InformationException) {
-                    return null;
-                }
-            }
-
-            return $event;
-        },
-
-        'environment' => Environment::getCurrentEnvironment(),
-        'release' => FOSSBilling\Version::VERSION,
-    ];
-
-    /**
-     * Here we validate that the DSN is correctly set and that error reporting is enabled before passing it off to the Sentry SDK.
-     * It may look a bit odd, but the DSN placeholder value here is split into two strings and concatenated so we can easily perform a `sed` replacement of the placeholder without it effecting this check
-     */
-    if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this--' . 'during--release--process--' && !empty($sentryDSN)) {
-        // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
-        $options['dsn'] = $sentryDSN;
-    };
-
-    // If the system URL is correctly set, we can get the UUID for this instance. Otherwise, let Sentry try to come up with one
-    if (!empty(BB_URL)) {
-        $options['server_name'] = FOSSBilling\Instance::getInstanceID();
-    }
-
-    \Sentry\init($options);
 }
 
 /*
@@ -290,7 +247,7 @@ $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
 // Now that the config file is loaded, we can enable Sentry
-registerSentry($config);
+\FOSSBilling\SentryHelper::registerSentry($config);
 
 // Verify the installer was removed.
 checkInstaller();
