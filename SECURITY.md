@@ -13,7 +13,7 @@
 ## Reporting Vulnerabilities
 
 FOSSBilling accepts vulnerability reports directly through GitHub, to open a new one simply [click here](https://github.com/FOSSBilling/FOSSBilling/security/advisories/new).
-Existing advisories can be found [here on GitHub](https://github.com/FOSSBilling/FOSSBilling/security/advisories) as well.
+If you are looking for existing advisories, those can be found [here on GitHub](https://github.com/FOSSBilling/FOSSBilling/security/advisories).
 
 If you have a bug or a suggestion that is not related to an exploit, it should be reported [via a new issue](https://github.com/FOSSBilling/FOSSBilling/issues/new/choose). (But please check if someone has already submitted it first!)
 
