@@ -20,6 +20,11 @@ abstract class Registrar_AdapterAbstract
     protected $_testMode = false;
 
     /**
+    * Related order
+     */
+    protected ?\Model_ClientOrder $_order = null;
+
+    /**
      * Return array with configuration
      * 
      * Must be overriden in adapter class
@@ -238,6 +243,16 @@ abstract class Registrar_AdapterAbstract
     public function enableTestMode()
     {
         $this->_testMode = true;
+        return $this;
+    }
+
+    /**
+     * Sets the order related to the domain.
+     */
+    public function setOrder(\Model_ClientOrder $order): static
+    {
+        $this->_order = $order;
+
         return $this;
     }
 }
