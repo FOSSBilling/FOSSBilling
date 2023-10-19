@@ -24,6 +24,10 @@ class Instance
      */
     public static function getInstanceID(): string
     {
+        if(empty(BB_URL)){
+            return 'Unknown';
+        }
+
         $uuid = Uuid::uuid5(Uuid::NAMESPACE_URL, BB_URL);
         return $uuid->toString();
     }

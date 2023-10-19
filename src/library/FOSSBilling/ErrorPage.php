@@ -170,6 +170,7 @@ class ErrorPage
     {
         $error = $this->getCodeInfo($code);
         $error['message'] ??= __trans('You\'ve received a generic error message: :errorMessage', [':errorMessage' => '<code>' . $message . '</code>']);
+        $instanceID = Instance::getInstanceID();
 
         $page = '
         <!DOCTYPE html>
@@ -206,18 +207,6 @@ class ErrorPage
                 font-size: 3.75rem;
                 font-weight: 600;
                 margin-bottom: 0px;
-            }
-
-            .error-code {
-                font-size: 1rem;
-                font-weight: 200;
-                margin: 0px;
-            }
-
-            .error-category {
-                font-size: 1rem;
-                font-weight: 200;
-                margin: 0px;
             }
 
             .error-message {
@@ -279,14 +268,38 @@ class ErrorPage
                 text-decoration: none;
             }
 
+            .list-horizontal li {
+                display:inline-block;
+            }
+            
+            .list-horizontal li:before {
+                content: "\2022";
+                color:#fff;
+                font-size:11px;
+                margin-left: 1.5em;
+                margin-right: 0.5em;
+            }
+
+            .list-horizontal li:first-child:before {
+                content: "\2022";
+                color:#fff;
+                font-size:11px;
+                margin-left: -2em;
+                margin-right: 0.5em;
+              }
+
             </style>
             </head>
             <body>
                 <div class="container">
                 <div class="error-container">
                     <p class="error-title">' . $error['title'] . '</p>
-                    <p class="error-code">' . __trans('Error Code: #:number', [':number' => $code]) . '</p>
-                    <p class="error-category">' . __trans('Component: :category', [':category' => $error['category']]) . '</p>
+                    <ul class="list-horizontal">
+                        <li>' . __trans('Instance ID: :id:', [':id:' => $instanceID]) . '</li>
+                        <li>' . __trans('Error Code: #:number', [':number' => $code]) . '</li>
+                        <li>' . __trans('Component: :category', [':category' => $error['category']]) . '</li>
+                    </ul>
+
                     <p class="error-message" id="specialized">' . $error['message'] . '</p>
                     <p class="error-message" id="original" style="display: none;">' . $message . '</p>
 

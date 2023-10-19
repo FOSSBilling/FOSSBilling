@@ -136,10 +136,27 @@ function checkWebServer()
  */
 function errorHandler(int $number, string $message, string $file, int $line)
 {
+    // Just some housekeeping to ensure a few things we rely on are loaded.
+    if (!class_exists('\FOSSBilling\ErrorPage')) {
+        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+    }
+
+    if (!class_exists('\FOSSBilling\SentryHelper')) {
+        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
+    }
+
+    // If the trans function isn't setup, define a "polyfill" for it.
+    \FOSSBilling\ErrorPage::setupTrans();
+
+    // Now we can handle the error appropriately.
     if ($number === E_RECOVERABLE_ERROR) {
         exceptionHandler(new ErrorException($message, $number, 0, $file, $line));
     } else {
-        error_log($number . ' ' . $message . ' ' . $file . ' ' . $line);
+        $errorType = FOSSBilling\SentryHelper::getErrorType($number);
+        $completedMessage = ($errorType . " ($number): " . $message . ' in ' . $file . ' on line ' . $line);
+
+        \Sentry\captureMessage($completedMessage, FOSSBilling\SentryHelper::getSeverityLevel($errorType));
+        error_log($completedMessage);
     }
 
     return false;
@@ -150,23 +167,17 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
-    if (!class_exists('\FOSSBilling\ErrorPage')) {
-        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
-    }
-
-    // If the trans function isn't setup, define a "polyfill" for it.
-    \FOSSBilling\ErrorPage::setupTrans();
-
     // Let Sentry capture the exception and then send it
     \FOSSBilling\SentryHelper::captureException($e);
 
-    $message = htmlspecialchars($e->getMessage());
     if (getenv('APP_ENV') === 'test') {
         echo $message . PHP_EOL;
-
         return;
+    } else {
+        error_log($message);
     }
-    error_log($message);
+
+    $message = htmlspecialchars($e->getMessage());
 
     if (defined('BB_MODE_API')) {
         $code = $e->getCode() ?: 9998;
@@ -186,7 +197,8 @@ function exceptionHandler($e)
         $prettyPage->setPageTitle('An error ocurred');
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
-            'Error code' => $e->getCode(),
+            'Error code'  => $e->getCode(),
+            'Instance ID' => \FOSSBilling\Instance::getInstanceID(),
         ]);
         $whoops->pushHandler($prettyPage);
         $whoops->allowQuit(false);
@@ -259,12 +271,14 @@ checkSSL();
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
 ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
+
+// We disable PHP's error reporting as our own error handler will log it and send it to Sentry.
+error_reporting(0);
+
 if ($config['debug_and_monitoring']['debug']) {
-    error_reporting(E_ALL);
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
 } else {
-    error_reporting(E_RECOVERABLE_ERROR);
     ini_set('display_errors', '0');
     ini_set('display_startup_errors', '0');
 }

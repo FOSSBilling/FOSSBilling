@@ -15,13 +15,13 @@ namespace FOSSBilling;
 use \Sentry\Event;
 use \Sentry\EventHint;
 use \Sentry\State\Scope;
+use \Sentry\Severity;
 
 class SentryHelper
 {
     public static function registerSentry(array $config): void
     {
         $sentryDSN = '--replace--this--during--release--process--';
-        //$sentryDSN = 'https://1735e8299adb8d9099e47eefcf0b8f42@o4506063756328960.ingest.sentry.io/4506063757901824';
 
         // Registers Sentry for error reporting if enabled.
         $options = [
@@ -43,6 +43,12 @@ class SentryHelper
 
             'environment' => Environment::getCurrentEnvironment(),
             'release' => Version::VERSION,
+
+            // This option is disabled by default, but we set it to false here to be explicit & ensure it can never change unexpectedly.
+            'send_default_pii' => false,
+
+            // Stack traces are always sent for Exceptions, but if debug mode is enabled we will send them for errors too.
+            'attach_stacktrace' => (bool)BB_DEBUG,
         ];
 
         /**
@@ -52,13 +58,9 @@ class SentryHelper
         if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this--' . 'during--release--process--' && !empty($sentryDSN)) {
             // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
             $options['dsn'] = $sentryDSN;
-        };
-
-        // If the system URL is correctly set, we can get the UUID for this instance. Otherwise, let Sentry try to come up with one
-        if (!empty(BB_URL)) {
-            $options['server_name'] = Instance::getInstanceID();
         }
 
+        $options['server_name'] = Instance::getInstanceID();
         \Sentry\init($options);
     }
 
@@ -99,6 +101,83 @@ class SentryHelper
             self::estimateWebServer($scope);
             \Sentry\captureException($e);
         });
+    }
+
+    /**
+     * Accepts a PHP error's number and returns what type of error it is.
+     */
+    public static function getErrorType(int $number): string
+    {
+        switch ($number) {
+            case E_ERROR:
+                return 'Error';
+                break;
+            case E_WARNING:
+                return 'Warning';
+                break;
+            case E_PARSE:
+                return 'Parse error';
+                break;
+            case E_NOTICE:
+                return 'Runtime notice';
+                break;
+            case E_CORE_ERROR:
+                return 'Fatal PHP startup error';
+                break;
+            case E_CORE_WARNING:
+                return 'PHP startup warning';
+                break;
+            case E_COMPILE_ERROR:
+                return 'Zend compile error';
+                break;
+            case E_COMPILE_WARNING:
+                return 'Zend compile warning';
+                break;
+            case E_USER_ERROR:
+                return 'User-generated error';
+                break;
+            case E_USER_WARNING:
+                return 'User-generated warning';
+                break;
+            case E_USER_NOTICE:
+                return 'User-generated notice';
+                break;
+            case E_STRICT:
+                return 'PHP Strict code checking';
+                break;
+            case E_RECOVERABLE_ERROR:
+                return 'Recoverable error';
+                break;
+            case E_DEPRECATED:
+                return 'PHP deprecation warning';
+                break;
+            case E_USER_DEPRECATED:
+                return 'User-generated deprecation warning';
+                break;
+            default:
+                return 'Unknown error';
+                break;
+        }
+    }
+
+    /**
+     * Returns the apprioriate Sentry severity level for a given error type.
+     */
+    public static function getSeverityLevel(string $type): Severity
+    {
+        if (stripos($type, 'fatal') !== false) {
+            return Severity::fatal();
+        }
+        // We check for deprecation before warning because the message for them also includes 'warning'
+        if (stripos($type, 'deprecation') !== false) {
+            return Severity::info();
+        }
+        if (stripos($type, 'warning') !== false) {
+            return Severity::warning();
+        }
+
+        // Default to error
+        Severity::error();
     }
 
     /**
