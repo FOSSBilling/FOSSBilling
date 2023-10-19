@@ -161,7 +161,7 @@ class SentryHelper
     }
 
     /**
-     * Returns the apprioriate Sentry severity level for a given error type.
+     * Returns the appropriate Sentry severity level for a given error type.
      */
     public static function getSeverityLevel(string $type): Severity
     {
@@ -177,7 +177,7 @@ class SentryHelper
         }
 
         // Default to error
-        Severity::error();
+        return Severity::error();
     }
 
     /**

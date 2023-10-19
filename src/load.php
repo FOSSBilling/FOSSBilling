@@ -171,10 +171,10 @@ function exceptionHandler($e)
     \FOSSBilling\SentryHelper::captureException($e);
 
     if (getenv('APP_ENV') === 'test') {
-        echo $message . PHP_EOL;
+        echo $e->getMessage() . PHP_EOL;
         return;
     } else {
-        error_log($message);
+        error_log($e->getMessage());
     }
 
     $message = htmlspecialchars($e->getMessage());
