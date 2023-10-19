@@ -44,7 +44,7 @@ If you need more reasons than that though, then because...
 
 ### Code of Conduct
 
-First off, no matter how you plan to take part, please take a couple of minutes to read our code of conduct before contributing anything.
+First off, no matter how you plan to participate, please take a couple of minutes to read our code of conduct before contributing anything.
 
 This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) server.
 
@@ -69,7 +69,7 @@ There are a lot of different ways that you can get involved in the FOSSBilling p
 
 ### Reporting bugs
 
-If you find a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behavior :computer:, and find related reports :mag_right:.
+If you find a bug in FOSSBilling, please report it. Following these guidelines help maintainers and the community understand your report :pencil:, reproduce the behavior :computer:, and find related reports :mag_right:.
 
 #### Before submitting a bug report
 
