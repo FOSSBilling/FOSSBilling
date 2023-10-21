@@ -406,20 +406,21 @@ $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
  *
  */
 $di['is_admin_logged'] = function () use ($di) {
-    $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+    if (!$di['auth']->isAdminLoggedIn()) {
+        $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 
-    if (!$di['auth']->isAdminLoggedIn() && str_starts_with($url, '/api/')) {
-        throw new Exception('Admin is not logged in');
+        if (str_starts_with($url, '/api/')) {
+            throw new Exception('Admin is not logged in');
+        }
+
+        $redirectUri = str_replace('/admin', '', $url) . '?' . http_build_query($_GET);
+        $loginUrl = sprintf('%s?redirect=%s', $di['url']->adminLink('staff/login'), urlencode($redirectUri));
+
+        header(sprintf('Location: %s', $loginUrl));
+        exit;
     }
 
-    $uri = str_replace('/admin', '', $url);
-    unset($_GET['_url']);
-
-    $redirectUri = $uri . (empty($_GET) ? '' : '?' . http_build_query($_GET));
-
-    $loginUrl = sprintf('%s?redirect=%s', $di['url']->adminLink('staff/login'), urlencode($redirectUri));
-    header("Location: $loginUrl");
-    exit;
+    return true;
 };
 
 /*
