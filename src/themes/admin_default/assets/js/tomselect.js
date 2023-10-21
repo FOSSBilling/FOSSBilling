@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
       optionClass: "dropdown-item",
       valueField: "value",
       labelField: "label",
-      searchField: ["label", "value"],
+      searchField: [],
       load: (query, callback) => {
         let items;
         let restUrl = new URL(
