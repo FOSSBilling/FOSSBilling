@@ -413,6 +413,8 @@ $di['is_admin_logged'] = function () use ($di) {
             throw new Exception('Admin is not logged in');
         }
 
+        unset($_GET['_url']);
+
         $redirectUri = str_replace('/admin', '', $url) . '?' . http_build_query($_GET);
         $loginUrl = sprintf('%s?redirect=%s', $di['url']->adminLink('staff/login'), urlencode($redirectUri));
 
