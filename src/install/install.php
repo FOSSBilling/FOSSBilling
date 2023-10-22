@@ -375,6 +375,12 @@ final class FOSSBilling_Installer
             'currency_format' => $this->session->get('currency_format'),
         ]);
 
+        $stmt = $this->pdo->prepare("INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())");
+        $stmt->execute([
+            ':param' => 'last_error_reporting_nudge',
+            ':value' => \FOSSBilling\Version::VERSION,
+        ]);
+
         // Copy config templates when applicable
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
@@ -409,7 +415,6 @@ final class FOSSBilling_Installer
     private function getConfigOutput(): string
     {
         // Version data
-        $version = new \FOSSBilling\Requirements();
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
         $updateBranch = (preg_match($reg, \FOSSBilling\Version::VERSION, $matches) !== 0) ? "release" : "preview";
 

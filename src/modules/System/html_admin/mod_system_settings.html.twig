@@ -28,7 +28,7 @@
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company details'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
@@ -41,6 +41,9 @@
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
             </li>
         </ul>
 
@@ -528,6 +531,26 @@ ZW=Zimbabwe
                                 <div class="datagrid-content"><a href="https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE">Apache 2.0</a></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-reporting" role="tabpanel">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ 'Error reporting'|trans }}</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if admin.system_error_reporting_enabled %}
+                            <div class="alert alert-success" role="alert">
+                                <p>{{ 'Error reporting is enabled.'|trans}}</p>
+                                <p>{{ 'This FOSSBilling instance is automatically sending errors which allows us to more easily improve the software and keep it stable. Thanks!'|trans }}</p>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger" role="alert">
+                                <p>{{ 'Error reporting is disabled.'|trans}}</p>
+                                <p>{{ 'Please consider enabled error reporting, doing so allows us to provide you with better technical support and helps us to proactively improve FOSSBilling.'|trans }}</p>
+                            </div>
+                        {% endif %}
+                        <p>I promise to put words here that will be helpful and well written</p>
                     </div>
                 </div>
 

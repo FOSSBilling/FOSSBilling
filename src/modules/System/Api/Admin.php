@@ -217,4 +217,12 @@ class Admin extends \Api_Abstract
     {
         return \FOSSBilling\Instance::getInstanceID();
     }
+
+    /**
+     * Returns if error reporting is enabled or not on this FOSSBilling instance.
+     */
+    public function error_reporting_enabled(): bool
+    {
+        return (bool)$this->di['config']['debug_and_monitoring']['report_errors'];
+    }
 }
