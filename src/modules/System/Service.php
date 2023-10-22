@@ -279,38 +279,42 @@ class Service
             }
         }
 
-        error_log("Completed cron check");
-        // Get the last time we've nudged the user about error reporting
-        $lastErrorReportingNudge = $this->getParamValue('last_error_reporting_nudge');
-        error_log("Got the last nudge");
-        $result = $this->di['cache']->get('error_reporting_nudge', function (ItemInterface $item) use ($lastErrorReportingNudge) {
-            $item->expiresAfter(15 * 60);
-            $url = $this->di['url']->adminLink('extension/settings/system');
-            $this->setParamValue('last_error_reporting_nudge', Version::VERSION);
+        /**
+         * The below logic is to help ensure that we nudge the user when needed about error reporting. 
+         */
+        if (Environment::isProduction()) {
+            // Get the last time we've nudged the user about error reporting
+            $lastErrorReportingNudge = $this->getParamValue('last_error_reporting_nudge');
 
-            if (!$lastErrorReportingNudge) {
-                // The user upgraded from a version that didn't have error reporting functionality, so let's nudge them about it now.
-                return [
-                    'text' => 'We\'d apreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
-                    'url' => $url,
-                ];
-            } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && $this->di['config']['debug_and_monitoring']['report_errors']) {
-                /**
-                 * The installation already had error reporting enabled, but something has changed so we should nudge the user to review the changes.
-                 * This message is cached for a full 24 hours to help ensure it is seen.
-                 */
-                $item->expiresAfter(60 * 60 * 24);
-                return [
-                    'text' => 'Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what\'s been changed. (This message will remain for 24 hours)',
-                    'url' => $url,
-                ];
-            } else {
-                return [];
+            $result = $this->di['cache']->get('error_reporting_nudge', function (ItemInterface $item) use ($lastErrorReportingNudge) {
+                $item->expiresAfter(15 * 60);
+                $url = $this->di['url']->adminLink('extension/settings/system');
+                $this->setParamValue('last_error_reporting_nudge', Version::VERSION);
+
+                if (!$lastErrorReportingNudge) {
+                    // The user upgraded from a version that didn't have error reporting functionality, so let's nudge them about it now.
+                    return [
+                        'text' => 'We\'d apreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
+                        'url' => $url,
+                    ];
+                } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && $this->di['config']['debug_and_monitoring']['report_errors']) {
+                    /**
+                     * The installation already had error reporting enabled, but something has changed so we should nudge the user to review the changes.
+                     * This message is cached for a full 24 hours to help ensure it is seen.
+                     */
+                    $item->expiresAfter(60 * 60 * 24);
+                    return [
+                        'text' => 'Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what\'s been changed. (This message will remain for 24 hours)',
+                        'url' => $url,
+                    ];
+                } else {
+                    return [];
+                }
+            });
+
+            if ($result) {
+                $msgs['info'][] = $result;
             }
-        });
-
-        if ($result) {
-            $msgs['info'][] = $result;
         }
 
         $install = PATH_ROOT . '/install';

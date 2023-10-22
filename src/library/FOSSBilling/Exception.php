@@ -22,7 +22,7 @@ class Exception extends \Exception
 	 */
 	public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
 	{
-		$config = include PATH_ROOT . '/config.php';
+		$config = include PATH_CONFIG;
 		$debug = $config['debug_and_monitoring']['debug'] ?? false;
 		$logStack = $config['debug_and_monitoring']['log_stacktrace'] ?? true;
 		$stackLength = $config['debug_and_monitoring']['stacktrace_length'] ?? 25;

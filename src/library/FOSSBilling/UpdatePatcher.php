@@ -45,8 +45,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $filesystem = new Filesystem();
 
-        $configPath = PATH_ROOT . '/config.php';
-        $currentConfig = include $configPath;
+        $currentConfig = include PATH_CONFIG;
 
         if (!is_array($currentConfig)) {
             throw new \FOSSBilling\Exception('Unable to load existing configuration');
@@ -54,7 +53,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
         // Create backup of current configuration.
         try {
-            $filesystem->copy($configPath, substr($configPath, 0, -4) . '.old.php');
+            $filesystem->copy(PATH_CONFIG, substr(PATH_CONFIG, 0, -4) . '.old.php');
         } catch (FileNotFoundException | IOException) {
             throw new \FOSSBilling\Exception('Unable to create backup of configuration file');
         }
@@ -100,7 +99,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
         // Write updated configuration file.
         try {
-            $filesystem->dumpFile($configPath, $output);
+            $filesystem->dumpFile(PATH_CONFIG, $output);
         } catch (IOException) {
             throw new \FOSSBilling\Exception('Error when writing updated configuration file.');
         }
