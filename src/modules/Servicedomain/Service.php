@@ -643,16 +643,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
 
-        /*
-            TODO: registrarGetRegistrarAdapter Only accepts one parameter
         if ($order instanceof \Model_ClientOrder) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
         } else {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
         }
-        */
-
-        $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         $d = new \Registrar_Domain();
 
@@ -959,7 +954,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $class;
     }
 
-    public function registrarGetRegistrarAdapter(\Model_TldRegistrar $r)
+    public function registrarGetRegistrarAdapter(\Model_TldRegistrar $r, ?\Model_ClientOrder $order = null)
     {
         $config = $this->registrarGetConfiguration($r);
         $class = $this->registrarGetRegistrarAdapterClassName($r);
@@ -969,6 +964,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $registrar->setLog($this->di['logger']);
+
+        if ($order) {
+            $registrar->setOrder($order);
+        }
 
         if (isset($r->test_mode) && $r->test_mode) {
             $registrar->enableTestMode();
