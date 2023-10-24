@@ -415,21 +415,55 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function uninstall(\Model_Extension $ext)
+    /**
+     * @throws \Box_Exception
+     */
+    public function uninstall(\Model_Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
         $this->deactivate($ext);
 
-        switch ($ext->type) {
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                break;
+        $this->di['db']->trash($ext);
 
-            default:
+        $this->deleteExtension($ext->type, $ext->name);
+
+        return true;
+    }
+
+    /**
+     * @throws \Box_Exception
+     */
+    public function deleteExtension($type, $id): bool
+    {
+        switch ($type) {
+            case \FOSSBilling\ExtensionManager::TYPE_MOD:
+                $destination = PATH_MODS . DIRECTORY_SEPARATOR . $id;
+
+                break;
+            case \FOSSBilling\ExtensionManager::TYPE_THEME:
+                $destination = PATH_THEMES . DIRECTORY_SEPARATOR . $id;
+
+                break;
+            case \FOSSBilling\ExtensionManager::TYPE_TRANSLATION:
+                $destination = PATH_LANGS . DIRECTORY_SEPARATOR . $id . '/LC_MESSAGES';
+
+                break;
+            case \FOSSBilling\ExtensionManager::TYPE_PG:
+                $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . $id;
+
                 break;
         }
 
-        $this->di['db']->trash($ext);
+        if (isset($destination)) {
+            if (file_exists($destination)) {
+                $this->removeDirectory($destination);
+            } else {
+                throw new \Box_Exception('Extension :id does not seem to be installed.', [':id' => $id], 436);
+            }
+        } else {
+            throw new \Box_Exception('Extension type (:type) cannot be automatically deleted.', [':type' => $type]);
+        }
 
         return true;
     }
@@ -775,6 +809,25 @@ class Service implements InjectionAwareInterface
             } else {
                 throw $e;
             }
+        }
+    }
+
+    /**
+     * Recursively remove a directory at a specific path.
+     */
+    public function removeDirectory(string $dir): void
+    {
+        if (is_dir($dir)) {
+            $contents = array_diff(scandir($dir), ['.', '..']);
+            foreach ($contents as $content) {
+                $contentPath = $dir . DIRECTORY_SEPARATOR . $content;
+                if (is_file($contentPath)) {
+                    unlink($contentPath);
+                } else {
+                    $this->removeDirectory($contentPath);
+                }
+            }
+            rmdir($dir);
         }
     }
 }
