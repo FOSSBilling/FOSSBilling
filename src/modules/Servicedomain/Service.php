@@ -674,6 +674,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $address2 = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
         $birthday = !empty($client->birthday) ? $client->birthday : '';
         $company_number = !empty($client->company_number) ? $client->company_number : '';
+        $document_nr = !empty($client->document_nr) ? $client->document_nr : '';
 
         $contact = new \Registrar_Domain_Contact();
         $contact
@@ -694,7 +695,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ->setAddress2($address2)
             ->setFax($phone)
             ->setFaxCC($phone_cc)
-            ->setBirthday($birthday);
+            ->setBirthday($birthday)
+            ->setDocumentNr($document_nr);
 
         $d->setContactRegistrar($contact);
         $d->setContactAdmin($contact);
