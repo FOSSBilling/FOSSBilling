@@ -28,10 +28,10 @@
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company details'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
+                <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company legal'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
@@ -43,7 +43,7 @@
                 <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
+                <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error reporting'|trans }}</a>
             </li>
         </ul>
 
@@ -539,6 +539,7 @@ ZW=Zimbabwe
                         <h3 class="card-title">{{ 'Error reporting'|trans }}</h3>
                     </div>
                     <div class="card-body">
+                        {% set last_change = admin.system_last_error_reporting_change %}
                         {% if admin.system_error_reporting_enabled %}
                             <div class="alert alert-success" role="alert">
                                 <p>{{ 'Error reporting is enabled.'|trans}}</p>
@@ -552,7 +553,15 @@ ZW=Zimbabwe
                                 <a class="btn btn-success api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now enabled.'|trans }}">{{'Enable error reporting'|trans}}</a>
                             </div>
                         {% endif %}
-                        <p>I promise to put words here that will be helpful and well written</p>
+                        <p>{{ 'FOSSBilling optionally includes autoamted error reporting to help aid the project\'s development and stability. To find the most up-to-date information about it, you should review the links and information below.'|trans }}</p>
+                        <ul>
+                            <li><a href="https://fossbilling.org/docs/faq/error-reporting" target="_blank">{{ 'Learn more about error reporting'|trans }}</a></li>
+                            <li>
+                                <a href="https://fossbilling.org/docs/faq/error-reporting#error-reporting-changelog" target="_blank">{{ 'Error reporting changelog'|trans }}</a>
+                                <span class="text-muted">({{ 'Last applicable behavior change change: '|trans }} {{ last_change }})</span>
+                            </li>
+                        </ul>
+                        <span class="text-muted">{{ 'The last applicable behavior change represents the most recent FOSSBilling version that changed error reporting which also applies to this current version. There may have been more recent changes than what\'s listed.'|trans }}</span>
                     </div>
                 </div>
 

@@ -13,6 +13,7 @@
  */
 
 namespace Box\Mod\System\Api;
+
 use Symfony\Component\Filesystem\Filesystem;
 
 class Admin extends \Api_Abstract
@@ -241,9 +242,17 @@ class Admin extends \Api_Abstract
         // Create the output file
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($config, true) . ';';
-        
+
         // Finally write it to the disk and then return bool if no exceptions were thrown.
         $filesystem->dumpFile(PATH_CONFIG, $output);
         return true;
+    }
+
+    /**
+     * Returns the last FOSSBilling version number that changed error reporting behavior.
+     */
+    public function last_error_reporting_change(): string
+    {
+        return \FOSSBilling\SentryHelper::last_change;
     }
 }
