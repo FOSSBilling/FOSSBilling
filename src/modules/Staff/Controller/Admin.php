@@ -64,11 +64,8 @@ class Admin implements InjectionAwareInterface
             return $app->redirect('');
         }
 
-        $redirect_uri = 'index';
-
-        if (isset($_GET['redirect'])) {
-            $redirect_uri = urldecode($_GET['redirect']);
-        }
+        $redirect_uri = $this->di['session']->get('redirect_uri') ?: 'index';
+        $this->di['session']->delete('redirect_uri');
 
         return $app->render('mod_staff_login', ['create_admin' => $create, 'redirect_uri' => $redirect_uri]);
     }

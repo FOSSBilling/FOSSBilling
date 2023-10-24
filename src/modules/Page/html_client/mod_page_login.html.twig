@@ -68,7 +68,8 @@ $(function() {
         bb.post('guest/client/login',
             $(this).serialize(),
             function(result) {
-                bb.redirect();
+                const { redirect_uri } = result;
+                bb.redirect(redirect_uri || undefined);
             }
         );
 
