@@ -110,13 +110,13 @@ class Client extends \Api_Abstract
         $this->di['validator']->isPasswordStrong($data['new_password']);
 
         if ($data['new_password'] != $data['confirm_password']) {
-            throw new \Exception('Passwords do not match');
+            throw new \FOSSBilling\InformationException('Passwords do not match');
         }
 
         $client = $this->getIdentity();
 
         if (!$this->di['password']->verify($data['current_password'], $client->pass)) {
-            throw new \Exception('Current password incorrect');
+            throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 
         $this->getService()->invalidateSessions();
