@@ -87,10 +87,13 @@ jobs:
         working-directory: ./build/source/library/FOSSBilling
 
       - name: Add in the Sentry DSN
-        if: vars.SENTRY_DSN
+        if: ${{ vars.SENTRY_DSN }}
         run: |
-          sed -i "s/--replace--this--during--release--process--/${vars.SENTRY_DSN}/g" SentryHelper.php
-        working-directory: ./build/source/library/FOSSBilling     
+          d=$'\03'
+          sed -i "s${d}--replace--this--during--release--process--${d}$SENTRY_DSN$d" SentryHelper.php
+        working-directory: ./build/source/library/FOSSBilling
+        env:
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
 
       - name: Upload the Final Artifact to GitHub
         uses: actions/upload-artifact@v3
