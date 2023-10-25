@@ -40,6 +40,9 @@ const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
 const PAGE_INSTALL = './assets/install.html.twig';
 const PAGE_RESULT = './assets/result.html.twig';
 
+// Some functions and classes reference this, so we define it here to avoid errors.
+const BB_DEBUG = false;
+
 // Set default include path
 set_include_path(implode(PATH_SEPARATOR, [
     PATH_LIBRARY,
