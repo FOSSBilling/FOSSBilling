@@ -121,7 +121,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         $sessionID = $_COOKIE['PHPSESSID'];
         $maxAge = time() - $this->di['config']['security']['session_lifespan'];
 
-        $fingerprint = new \FOSSBilling\Fingerprint;
+        $fingerprint = new Fingerprint;
         /** @var \RedBeanPHP\OODBBean $session */
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
 
@@ -150,7 +150,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
 
         // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
         if (!is_null($session)) {
-            $fingerprint = new \FOSSBilling\Fingerprint;
+            $fingerprint = new Fingerprint;
             $session->fingerprint = json_encode($fingerprint->fingerprint());
             $this->di['db']->store($session);
         }

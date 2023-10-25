@@ -127,7 +127,7 @@ class Mail implements InjectionAwareInterface
      *
      * @param int $priority The priority of the email message, represented as an integer between 1 and 5.
      *
-     * @throws \FOSSBilling\Exception if the provided priority is invalid.
+     * @throws InformationException if the provided priority is invalid.
      *
      * @return void
      */
@@ -136,7 +136,7 @@ class Mail implements InjectionAwareInterface
         if (is_int($priority) && $priority >= Email::PRIORITY_HIGHEST && $priority <= Email::PRIORITY_LOWEST) {
             $this->email->priority($priority);
         } else {
-            throw new \FOSSBilling\Exception("Provided priority (:priority) is invalid. Please provide an integer between 1 and 5 or use the pre-defined symfony constants.", [':priority' => $priority]);
+            throw new InformationException("Provided priority (:priority) is invalid. Please provide an integer between 1 and 5 or use the pre-defined symfony constants.", [':priority' => $priority]);
         }
     }
 
@@ -145,7 +145,7 @@ class Mail implements InjectionAwareInterface
      *
      * @param array|null $options An optional array of options specific to the chosen transport method.
      * 
-     * @throws \FOSSBilling\Exception If the transport method is unknown or if required options for the selected transport aren't defined
+     * @throws InformationException If the transport method is unknown or if required options for the selected transport aren't defined
      */
     public function send(array|null $options = null): void
     {
@@ -153,7 +153,7 @@ class Mail implements InjectionAwareInterface
             case 'sendmail':
                 $dsn = 'sendmail://default';
                 if (!function_exists('proc_open')) {
-                    throw new \FOSSBilling\Exception("FOSSBilling requires the proc_open PHP function to be enabled when using the sendmail transport");
+                    throw new InformationException("FOSSBilling requires the proc_open PHP function to be enabled when using the sendmail transport");
                 }
                 break;
             case 'smtp':
@@ -161,18 +161,18 @@ class Mail implements InjectionAwareInterface
                 break;
             case 'sendgrid':
                 if (empty($options['sendgrid_key'])) {
-                    throw new \FOSSBilling\Exception("A Sendgrid API key is required to send emails via Sendgrid");
+                    throw new InformationException("A Sendgrid API key is required to send emails via Sendgrid");
                 }
                 $dsn = 'sendgrid://' . $options['sendgrid_key'] . '@default';
                 break;
             case 'custom':
                 if (empty($this->dsn)) {
-                    throw new \FOSSBilling\Exception("Unable to send email: 'Custom' transport method was selected without a custom DSN");
+                    throw new InformationException("Unable to send email: 'Custom' transport method was selected without a custom DSN");
                 }
                 $dsn = $this->dsn;
                 break;
             default:
-                throw new \FOSSBilling\Exception('Unknown mail transport: :transport', [':transport' => $this->transport]);
+                throw new InformationException('Unknown mail transport: :transport', [':transport' => $this->transport]);
         }
 
         try {
@@ -180,7 +180,7 @@ class Mail implements InjectionAwareInterface
             $mailer = new Mailer($transport);
             $mailer->send($this->email);
         } catch (TransportExceptionInterface $e) {
-            throw new \FOSSBilling\Exception("Failed to send email via :transport with the exception :e", [':transport' => $this->transport, ':e' => $e]);
+            throw new Exception("Failed to send email via :transport with the exception :e", [':transport' => $this->transport, ':e' => $e]);
         }
     }
 
@@ -189,14 +189,14 @@ class Mail implements InjectionAwareInterface
      *
      * @param array $options An associative array of SMTP options including 'smtp_host', 'smtp_port', 'smtp_username', and 'smtp_password'.
      *
-     * @throws \FOSSBilling\Exception if the SMTP host or port is not configured.
+     * @throws InformationException if the SMTP host or port is not configured.
      *
      * @return string A string representing the DSN for the SMTP transport.
      */
     private function __smtpDsn(array $options): string
     {
         if (empty($options['smtp_host']) || empty($options['smtp_port'])) {
-            throw new \FOSSBilling\Exception('SMTP host or port is not configured');
+            throw new InformationException('SMTP host or port is not configured');
         }
 
         $host = urlencode(trim($options['smtp_host']));

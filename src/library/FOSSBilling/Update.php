@@ -82,7 +82,7 @@ class Update implements InjectionAwareInterface
      * @param string $branch The branch to return the latest information for;
      *                       valid values are: 'preview' or 'release'.
      *
-     * @throws \FOSSBilling\Exception if there is an error downloading the latest
+     * @throws Exception if there is an error downloading the latest
      *                        version information.
      *
      * @return array
@@ -113,7 +113,7 @@ class Update implements InjectionAwareInterface
                     $releaseInfo = $response->toArray();
                 } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
                     error_log($e->getMessage());
-                    throw new \FOSSBilling\Exception('Failed to download the latest version information. Further details are available in the error log.');
+                    throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
                 }
 
                 return [
@@ -182,7 +182,7 @@ class Update implements InjectionAwareInterface
     {
         $updateBranch = $this->getUpdateBranch();
         if ($updateBranch !== 'preview' && !$this->isUpdateAvailable()) {
-            throw new \FOSSBilling\InformationException('You have latest version of FOSSBilling. You do not need to update.');
+            throw new InformationException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         error_log('Started FOSSBilling auto-update script');
@@ -204,7 +204,7 @@ class Update implements InjectionAwareInterface
             fclose($fileHandler);
         } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
             error_log($e->getMessage());
-            throw new \FOSSBilling\Exception('Failed to download the update archive. Further details are available in the error log.');
+            throw new Exception('Failed to download the update archive. Further details are available in the error log.');
         }
 
         // @TODO - Validate downloaded file hash.
@@ -217,7 +217,7 @@ class Update implements InjectionAwareInterface
             $zip->close();
         } catch (ZipException $e) {
             error_log($e->getMessage());
-            throw new \FOSSBilling\Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+            throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
         // Apply system patches and migrate configuration file.
@@ -235,7 +235,7 @@ class Update implements InjectionAwareInterface
             $filesystem->mkdir(PATH_CACHE, 0777);
         } catch (IOException $e) {
             error_log($e->getMessage());
-            throw new \FOSSBilling\Exception("Unable to clear cache and/or remove install folder. Further details are available in the error log.");
+            throw new Exception("Unable to clear cache and/or remove install folder. Further details are available in the error log.");
         }
 
         // Log off the current user and destroy the session.

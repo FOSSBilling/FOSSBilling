@@ -132,7 +132,7 @@ class i18n
     {
         $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
         if (!is_dir($basePath)) {
-            throw new \FOSSBilling\Exception('Unable to enable / disable the locale as it is not present in the locale folder.');
+            throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
         $disablePath = $basePath . DIRECTORY_SEPARATOR . '.disabled';

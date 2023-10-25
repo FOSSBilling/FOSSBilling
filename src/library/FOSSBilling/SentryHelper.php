@@ -45,7 +45,7 @@ class SentryHelper
                         return null;
                     }
 
-                    if ($hint->exception instanceof \FOSSBilling\InformationException) {
+                    if ($hint->exception instanceof InformationException) {
                         return null;
                     }
                 }

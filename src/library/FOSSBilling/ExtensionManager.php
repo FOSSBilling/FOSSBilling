@@ -51,7 +51,7 @@ class ExtensionManager implements InjectionAwareInterface
         $manifest = $this->makeRequest('extension/' . $id);
 
         if (empty($manifest)) {
-            throw new \FOSSBilling\Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
+            throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
         }
 
         return $manifest;
@@ -71,7 +71,7 @@ class ExtensionManager implements InjectionAwareInterface
         $releases = $this->getExtension($id)['releases'];
 
         if (empty($releases) || !is_array($releases)) {
-            throw new \FOSSBilling\Exception('Unable to fetch the releases of the extension from the FOSSBilling extension directory.');
+            throw new Exception('Unable to fetch the releases of the extension from the FOSSBilling extension directory.');
         }
 
         return $releases;
@@ -92,7 +92,7 @@ class ExtensionManager implements InjectionAwareInterface
         $latest = reset($releases);
 
         if (empty($latest) || !is_array($latest)) {
-            throw new \FOSSBilling\Exception('Unable to fetch the latest release of the extension.');
+            throw new Exception('Unable to fetch the latest release of the extension.');
         }
 
         return $latest;
@@ -129,7 +129,7 @@ class ExtensionManager implements InjectionAwareInterface
         $latest = $this->getLatestExtensionRelease($extension);
 
         if ($this->di['config']['update_branch'] === 'release') {
-            if (version_compare(\FOSSBilling\Version::VERSION, $latest['min_fossbilling_version'], '<')) {
+            if (version_compare(Version::VERSION, $latest['min_fossbilling_version'], '<')) {
                 return false;
             }
         }
@@ -165,15 +165,15 @@ class ExtensionManager implements InjectionAwareInterface
             $json = $response->toArray();
 
             if (is_null($json)) {
-                throw new \FOSSBilling\Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
+                throw new Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
             }
 
             if (isset($json['error']) && is_array($json['error'])) {
-                throw new \FOSSBilling\Exception($json['error']['message'], null, 746);
+                throw new Exception($json['error']['message'], null, 746);
             }
 
             if (!isset($json['result']) || !is_array($json['result'])) {
-                throw new \FOSSBilling\Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+                throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
             }
 
             return $json['result'];

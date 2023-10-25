@@ -48,23 +48,23 @@ class Validate
     public function isPasswordStrong($pwd) : bool
     {
         if( strlen($pwd) < 8 ) {
-            throw new \FOSSBilling\InformationException("Minimum password length is 8 characters.");
+            throw new InformationException("Minimum password length is 8 characters.");
         }
 
         if( strlen($pwd) > 256 ) {
-            throw new \FOSSBilling\InformationException("Maximum password length is 256 characters.");
+            throw new InformationException("Maximum password length is 256 characters.");
         }
 
         if( !preg_match("#[0-9]+#", $pwd) ) {
-            throw new \FOSSBilling\InformationException("Password must include at least one number.");
+            throw new InformationException("Password must include at least one number.");
         }
 
         if( !preg_match("#[a-z]+#", $pwd) ) {
-            throw new \FOSSBilling\InformationException("Password must include at least one lowercase letter.");
+            throw new InformationException("Password must include at least one lowercase letter.");
         }
 
         if( !preg_match("#[A-Z]+#", $pwd) ) {
-            throw new \FOSSBilling\InformationException("Password must include at least one uppercase letter.");
+            throw new InformationException("Password must include at least one uppercase letter.");
         }
 
         /*
@@ -87,15 +87,15 @@ class Validate
         foreach ($required as $key => $msg) {
 
             if(!isset($data[$key])){
-                throw new \FOSSBilling\InformationException($msg, $variables, $code);
+                throw new InformationException($msg, $variables, $code);
             }
 
             if (is_string($data[$key]) && strlen(trim($data[$key])) === 0){
-                throw new \FOSSBilling\InformationException($msg, $variables, $code);
+                throw new InformationException($msg, $variables, $code);
             }
 
             if (!is_numeric($data[$key]) && empty($data[$key])){
-                throw new \FOSSBilling\InformationException($msg, $variables, $code);
+                throw new InformationException($msg, $variables, $code);
             }
         }
     }
@@ -104,7 +104,7 @@ class Validate
     {
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
             $friendlyName = ucfirst(__trans('Birthdate'));
-            throw new \FOSSBilling\Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+            throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
         return true;
     }
