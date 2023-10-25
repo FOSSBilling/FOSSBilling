@@ -245,7 +245,7 @@ $config = require PATH_CONFIG;
 
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
-define('BB_DEBUG', $config['debug_and_monitoring']['debug']);
+define('BB_DEBUG', (bool)$config['debug_and_monitoring']['debug']);
 define('BB_URL', $config['url']);
 define('PATH_CACHE', $config['path_data'] . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
@@ -275,7 +275,7 @@ ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
 // We disable PHP's error reporting as our own error handler will log it and send it to Sentry.
 error_reporting(0);
 
-if ($config['debug_and_monitoring']['debug']) {
+if (BB_DEBUG) {
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
 } else {

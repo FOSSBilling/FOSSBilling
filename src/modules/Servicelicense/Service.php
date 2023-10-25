@@ -431,7 +431,7 @@ class Service implements InjectionAwareInterface
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');
-        if ($this->di['config']['debug_and_monitoring']['debug']) {
+        if (BB_DEBUG) {
             $log->debug(print_r($data, 1));
         }
 

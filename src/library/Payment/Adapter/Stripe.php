@@ -125,7 +125,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
-        if ($this->di['config']['debug_and_monitoring']['debug']) {
+        if (BB_DEBUG) {
             error_log(json_encode($e->getJsonBody()));
         }
         throw new Exception($tx->error);
