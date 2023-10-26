@@ -14,24 +14,6 @@ namespace FOSSBilling;
 
 class ErrorPage
 {
-    public static function setupTrans()
-    {
-        /* If the __trans function is undefined, this probably means we experienced an unrecoverable error during the initialization of FOSSBilling.
-         * As a workaround, we define a "polyfill" for it here which just returns the original (english) string, handling placeholders in the process.
-         * This allows us to have translation functionality in our error pages, while also handling cases where they aren't setup.
-         */
-        if (!function_exists('__trans')) {
-            function __trans(string $msgid, array $values = null)
-            {
-                if (is_array($values)) {
-                    $msgid = strtr($msgid, $values);
-                }
-
-                return $msgid;
-            }
-        }
-    }
-
     /**
      * Returns the list of error codes and their specialized messages. All Error code parameters are optional.
      *
@@ -41,45 +23,45 @@ class ErrorPage
     {
         return [
             '1' => [
-                'title' => __trans('Unable to find Composer Packages'),
-                'message' => 'The composer packages appear to be missing. This shouldn\'t happen if you are using a release version of FOSSBilling. If you are developer, you will need to install dependencies using :code.', [':code' => '<code>composer install</code>'],
+                'title' => 'Unable to find Composer Packages',
+                'message' => 'The composer packages appear to be missing. This shouldn\'t happen if you are using a release version of FOSSBilling. If you are developer, you will need to install dependencies using <code>composer install</code>.',
                 'link' => [
-                    'label' => __trans('View more info on the composer website'),
+                    'label' => 'View more info on the composer website',
                     'href' => 'https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies',
                 ],
                 'report' => false,
             ],
             '2' => [
-                'message' => __trans('For security reasons, you must delete the installation directory before you can use FOSSBilling. :code', [':code' => '(<code>/install</code>)']),
+                'message' => 'For security reasons, you must delete the installation directory before you can use FOSSBilling. (<code>/install</code>)',
                 'link' => [
-                    'label' => __trans('View more info on the Getting Started guide'),
+                    'label' => 'View more info on the Getting Started guide',
                     'href' => 'https://fossbilling.org/docs/getting-started/shared#remove-the-installer',
                 ],
                 'report' => false,
             ],
             '3' => [
-                'title' => __trans('Your Configuration is Empty'),
-                'message' => __trans('Your FOSSBilling configuration seems to either be empty or non-existent. You may need to re-install FOSSBilling, or re-create the :code file based on the example config.', [':code' => '<code>config.php</code>']),
+                'title' => 'Your Configuration is Empty',
+                'message' => 'Your FOSSBilling configuration seems to either be empty or non-existent. You may need to re-install FOSSBilling, or re-create the <code>config.php</code> file based on the example config.',
                 'link' => [
-                    'label' => __trans('See the example config.'),
+                    'label' => 'See the example config.',
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/config-sample.php',
                 ],
                 'report' => false,
             ],
             '4' => [
-                'title' => __trans('Migration is required'),
-                'message' => __trans('Legacy BoxBilling or FOSSBilling preview files have been found. The file structure within FOSSBilling, along with the configuration format, has since changed. :lineBreak See the migration guide for assistance in migrating to the latest version of FOSSBilling.', [':lineBreak' => '<br>']),
+                'title' => 'Migration is required',
+                'message' => 'Legacy BoxBilling or FOSSBilling preview files have been found. The file structure within FOSSBilling, along with the configuration format, has since changed. <br> See the migration guide for assistance in migrating to the latest version of FOSSBilling.',
                 'link' => [
-                    'label' => __trans('Check the migration guide.'),
+                    'label' => 'Check the migration guide.',
                     'href' => 'https://fossbilling.org/docs/getting-started/migrate-from-boxbilling',
                 ],
                 'report' => false,
             ],
             '5' => [
-                'title' => __trans("Missing .htaccess file"),
-                'message' => __trans("You appear to be running an Apache or LiteSpeed based webserver without a valid :code file. Please create one using the default FOSSBilling .htaccess file.", [':code', '<b><em>.htaccess</em></b>']),
+                'title' => "Missing .htaccess file",
+                'message' => "You appear to be running an Apache or LiteSpeed based webserver without a valid <b><em>.htaccess</em></b> file. Please create one using the default FOSSBilling .htaccess file.",
                 'link' => [
-                    'label' => __trans("Check the default .htaccess"),
+                    'label' => "Check the default .htaccess",
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/.htaccess',
                 ],
                 'report' => false,
@@ -134,12 +116,12 @@ class ErrorPage
     public static function getCodeInfo(int $code): array
     {
         $errorDetails = [
-            'title' => __trans('An error has occurred.'),
+            'title' => 'An error has occurred.',
             'link' => [
-                'label' => __trans('View the FOSSBilling documentation'),
+                'label' => 'View the FOSSBilling documentation',
                 'href' => 'https://fossbilling.org/docs',
             ],
-            'category' => __trans('None'),
+            'category' => 'None',
             'report' => true,
         ];
 
@@ -169,7 +151,7 @@ class ErrorPage
     public function generatePage(int $code, string $message)
     {
         $error = $this->getCodeInfo($code);
-        $error['message'] ??= __trans('You\'ve received a generic error message: :errorMessage', [':errorMessage' => '<code>' . $message . '</code>']);
+        $error['message'] ??= "You've received a generic error message: <code> . $message . </code>";
         $instanceID = INSTANCE_ID ?? 'Unknown';
 
         $page = '
@@ -295,16 +277,16 @@ class ErrorPage
                 <div class="error-container">
                     <p class="error-title">' . $error['title'] . '</p>
                     <ul class="list-horizontal">
-                        <li>' . __trans('Instance ID: :id:', [':id:' => $instanceID]) . '</li>
-                        <li>' . __trans('Error Code: #:number', [':number' => $code]) . '</li>
-                        <li>' . __trans('Component: :category', [':category' => $error['category']]) . '</li>
+                        <li>' . "Instance ID: $instanceID" . '</li>
+                        <li>' . "Error Code: #$code" . '</li>
+                        <li>' . 'Component: '. $error['category'] . '</li>
                     </ul>
 
                     <p class="error-message" id="specialized">' . $error['message'] . '</p>
                     <p class="error-message" id="original" style="display: none;">' . $message . '</p>
 
                     <div class="link-container">
-                        <button id="toggle" class="button" onclick="toggle()">' . __trans("Show original message") . '</button>
+                        <button id="toggle" class="button" onclick="toggle()">Show original message</button>
                         <a class="button" target="_blank" href="' . $error['link']['href'] . '">' . $error['link']['label'] . '</a>
                     </div>
 
@@ -329,11 +311,11 @@ class ErrorPage
                         if (og.style.display === "none") {
                             og.style.display = "block";
                             specialized.style.display = "none";
-                            document.querySelector("#toggle").innerHTML = "' . __trans("Show specialized message") . '";
+                            document.querySelector("#toggle").innerHTML = "Show specialized message";
                         } else {
                             og.style.display = "none";
                             specialized.style.display = "block";
-                            document.querySelector("#toggle").innerHTML = "' . __trans("Show original message") . '";
+                            document.querySelector("#toggle").innerHTML = "Show original message";
                         }
                     }
                 </script>

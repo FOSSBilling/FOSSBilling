@@ -252,7 +252,11 @@ define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
-define('INSTANCE_ID', $config['info']['instance_id']);
+if(!empty($config['info']['instance_id'])){
+    define('INSTANCE_ID', $config['info']['instance_id']);
+} else {
+    define('INSTANCE_ID', 'Unknown');
+}
 
 // Initial setup and checks passed, now we setup our custom autoloader.
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
