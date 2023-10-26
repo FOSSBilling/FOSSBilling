@@ -159,7 +159,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $statement = $this->di['pdo']->prepare($sql);
         try {
             $statement->execute();
-        } catch (\FOSSBilling\Exception $e) {
+        } catch (\Exception $e) {
             error_log($e->getMessage());
         }
     }

@@ -80,7 +80,8 @@ class Validate
      * @param array $data - Array to search for keys
      * @param array $variables - Array of variables for message placeholders (:placeholder)
      * @param integer $code - Exception code
-     * @throws \FOSSBilling\InformationException
+     * 
+     * @throws InformationException
      */
     public function checkRequiredParamsForArray(array $required, array $data, array $variables = NULL, $code = 0)
     {
