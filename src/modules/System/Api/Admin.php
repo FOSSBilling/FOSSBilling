@@ -217,7 +217,7 @@ class Admin extends \Api_Abstract
      */
     public function instance_id(): string
     {
-        return \FOSSBilling\Instance::getInstanceID();
+        return INSTANCE_ID;
     }
 
     /**

@@ -78,7 +78,7 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
     private function _getSalt($pass = null)
     {
         if (null == $pass) {
-            $pass = $this->di['config']['salt'];
+            $pass = $this->di['config']['info']['salt'];
         }
         return pack('H*', hash('md5', $pass));
     }

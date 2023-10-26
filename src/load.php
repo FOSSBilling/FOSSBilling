@@ -198,7 +198,7 @@ function exceptionHandler($e)
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
             'Error code'  => $e->getCode(),
-            'Instance ID' => \FOSSBilling\Instance::getInstanceID(),
+            'Instance ID' => INSTANCE_ID ?? 'Unknown',
         ]);
         $whoops->pushHandler($prettyPage);
         $whoops->allowQuit(false);
@@ -252,6 +252,7 @@ define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
+define('INSTANCE_ID', $config['info']['instance_id']);
 
 // Initial setup and checks passed, now we setup our custom autoloader.
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';

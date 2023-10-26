@@ -12,6 +12,7 @@ use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
 use Symfony\Component\HttpClient\HttpClient;
 use Twig\Loader\FilesystemLoader;
+use Ramsey\Uuid\Uuid;
 
 date_default_timezone_set('UTC');
 error_reporting(E_ALL);
@@ -428,7 +429,8 @@ final class FOSSBilling_Installer
         $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
         $data['debug_and_monitoring']['report_errors'] = (bool)$this->session->get('error_reporting');
         $data['update_branch'] = $updateBranch;
-        $data['salt'] = md5(random_bytes(13));
+        $data['info']['salt'] = bin2hex(random_bytes(16));
+        $data['info']['instance_id'] = Uuid::uuid4()->toString();
         $data['url'] = BB_URL;
         $data['path_data'] = PATH_ROOT . '/data';
         $data['path_logs'] = PATH_ROOT . '/data/log/application.log';

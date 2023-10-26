@@ -611,7 +611,7 @@ class Service implements InjectionAwareInterface
 
     private function _getSalt()
     {
-        return $this->di['config']['salt'];
+        return $this->di['config']['info']['salt'];
     }
 
     public function getCoreAndActiveModules()

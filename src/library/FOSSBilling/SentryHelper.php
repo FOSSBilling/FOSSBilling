@@ -72,7 +72,7 @@ class SentryHelper
             $options['dsn'] = $sentryDSN;
         }
 
-        $options['server_name'] = Instance::getInstanceID();
+        $options['server_name'] = INSTANCE_ID;
         \Sentry\init($options);
     }
 

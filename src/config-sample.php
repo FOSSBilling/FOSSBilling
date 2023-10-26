@@ -45,7 +45,10 @@ return [
         'report_errors' => false,
     ],
 
-    'salt' => '',
+    'info' => [
+        'salt' => '',
+        'instance_id' => 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX',
+    ],
 
     /*
      * Full URL where FOSSBilling is installed with trailing slash.

@@ -170,7 +170,7 @@ class ErrorPage
     {
         $error = $this->getCodeInfo($code);
         $error['message'] ??= __trans('You\'ve received a generic error message: :errorMessage', [':errorMessage' => '<code>' . $message . '</code>']);
-        $instanceID = Instance::getInstanceID();
+        $instanceID = INSTANCE_ID ?? 'Unknown';
 
         $page = '
         <!DOCTYPE html>

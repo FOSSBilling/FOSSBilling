@@ -672,8 +672,8 @@ class Service implements InjectionAwareInterface
             if (isset($headers['pass'])) {
                 unset($headers['pass']);
             }
-            if (isset($headers['salt'])) {
-                unset($headers['salt']);
+            if (isset($headers['info']['salt'])) {
+                unset($headers['info']['salt']);
             }
         } else {
             $headers = ['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency'];

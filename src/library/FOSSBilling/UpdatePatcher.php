@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Ramsey\Uuid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
@@ -83,9 +84,11 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
         $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
+        $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
+        $newConfig['info']['salt'] ??= $newConfig['salt'];
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
+        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt'];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan'
         ];
