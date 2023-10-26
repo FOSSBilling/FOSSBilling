@@ -497,9 +497,8 @@ $di['set_return_uri'] = function () use ($di) {
     $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
     unset($_GET['_url']);
 
-    $admin_prefix = $di['config']['admin_area_prefix'];
-    if (str_starts_with($url, $admin_prefix)) {
-        $url = substr($url, strlen($admin_prefix));
+    if (str_starts_with($url, ADMIN_PREFIX)) {
+        $url = substr($url, strlen(ADMIN_PREFIX));
     }
     $redirectUri = $url . '?' . http_build_query($_GET);
 
