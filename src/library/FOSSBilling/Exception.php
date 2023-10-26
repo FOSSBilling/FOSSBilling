@@ -39,8 +39,8 @@ class Exception extends \Exception
 		// Translate the exception
 		if (function_exists('__trans')) {
 			$message = __trans($message, $variables);
-		} elseif (is_array($values)) {
-			$message = strtr($message, $values);
+		} elseif (is_array($variables)) {
+			$message = strtr($message, $variables);
 		}
 
 		// Pass the message to the parent
