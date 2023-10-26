@@ -160,7 +160,9 @@ class UpdatePatcher implements InjectionAwareInterface
         try {
             $statement->execute();
         } catch (\Exception $e) {
+            // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
+            throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
     }
 
