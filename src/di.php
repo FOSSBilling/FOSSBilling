@@ -374,7 +374,7 @@ $di['is_client_logged'] = function () use ($di) {
             throw new Exception('Client is not logged in');
         } else {
             // Redirect to login page if browser request
-            $di['set_redirect_uri'];
+            $di['set_return_uri'];
             $login_url = $di['url']->link('login');
             header("Location: $login_url");
         }
@@ -414,7 +414,7 @@ $di['is_admin_logged'] = function () use ($di) {
             throw new Exception('Admin is not logged in');
         }
 
-        $di['set_redirect_uri'];
+        $di['set_return_uri'];
 
         header(sprintf('Location: %s', $di['url']->adminLink('staff/login')));
         exit;
@@ -493,11 +493,15 @@ $di['loggedin_admin'] = function () use ($di) {
     }
 };
 
-$di['set_redirect_uri'] = function () use ($di) {
+$di['set_return_uri'] = function () use ($di) {
     $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
     unset($_GET['_url']);
 
-    $redirectUri = str_replace('/admin', '', $url) . '?' . http_build_query($_GET);
+    $admin_prefix = $di['config']['admin_area_prefix'];
+    if (str_starts_with($url, $admin_prefix)) {
+        $url = substr($url, strlen($admin_prefix));
+    }
+    $redirectUri = $url . '?' . http_build_query($_GET);
 
     $di['session']->set('redirect_uri', $redirectUri);
 };
