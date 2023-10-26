@@ -145,9 +145,6 @@ function errorHandler(int $number, string $message, string $file, int $line)
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
     }
 
-    // If the trans function isn't setup, define a "polyfill" for it.
-    \FOSSBilling\ErrorPage::setupTrans();
-
     // Now we can handle the error appropriately.
     if ($number === E_RECOVERABLE_ERROR) {
         exceptionHandler(new ErrorException($message, $number, 0, $file, $line));
