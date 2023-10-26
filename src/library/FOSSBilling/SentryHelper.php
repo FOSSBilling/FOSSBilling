@@ -104,7 +104,6 @@ class SentryHelper
                     $level++;
                 }
                 $scope->setTag('module.name', $module);
-                error_log($module);
             } else if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
                 $scope->setTag('library.class', pathinfo($exceptionPath, PATHINFO_FILENAME));
             }

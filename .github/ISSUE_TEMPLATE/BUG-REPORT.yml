@@ -1,13 +1,31 @@
 name: Bug report
 description: Create a report to help us improve FOSSBilling
-title: "[Bug]"
+title: "[Bug] Enter a short title of the issue you are having here"
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Please ensure that there is no existing issue for your bug, and fill out the title before continuing.
-        **Important: DO NOT include any private/sensitive information such as email addresses, passwords, IP addresses, or hostnames.**
+        # Bug reporting
+
+        - Please ensure that there is no existing issue for your bug, and fill out the title before continuing.
+        - **Important: DO NOT include any private/sensitive information such as email addresses, passwords, IP addresses, or hostnames.**
+        - You may find the error log for your installation under the `/data/log` folder. For the most part, we specifically want for the `error.log` file.
+        - Before attaching the error log, please validate that it does not contain any private or sensitive information.
+        
+        ## Instance ID and error reporting
+
+        This guide will ask you for your instance ID. If you do not have error reporting enabled, you may skip this step.
+        If you have error reporting enabled and do not know how to find the instance ID, please refer to the [documentation](https://fossbilling.org/docs/faq/error-reporting#what-is-the-instance-id-and-where-do-i-find-it).
+        
+        ### What not to send when using error reporting
+
+        If you have error reporting enabled and have provided us with the instance ID, please **do not** attach the `error.log` file to this ticket.
+        We have access to an error log that includes more information than the one you have and may gain acceess to it using the instance ID you provide.
+        By not attaching the `error.log` file, you are helping us keep your information private and secure.
+
+        If we require more information that wasn't already collected via error reporting, we will will specifically ask for you to share it with us.
+        Thanks!
 
   - type: textarea
     id: describe
