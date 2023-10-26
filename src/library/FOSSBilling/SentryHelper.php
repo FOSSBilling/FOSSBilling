@@ -79,9 +79,9 @@ class SentryHelper
     /**
      * Captures an exception and sends it to Sentry, adding additional information that we'd find useful.
      * 
-     * @param \Exception $e
+     * @param \Exception|\Error $e
      */
-    public static function captureException(\Exception $e)
+    public static function captureException(\Exception|\Error $e)
     {
         \Sentry\withScope(function (Scope $scope) use ($e): void {
             $errorInfo = ErrorPage::getCodeInfo($e->getCode());
