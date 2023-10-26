@@ -172,9 +172,9 @@ class Update implements InjectionAwareInterface
     /**
      * Perform system update.
      *
-     * @throws \FOSSBilling\InformationException if latest version already installed.
-     * @throws \FOSSBilling\Exception if unable to download the update archive.
-     * @throws \FOSSBilling\Exception if unable to extract the update archive.
+     * @throws InformationException if latest version already installed.
+     * @throws Exception if unable to download the update archive.
+     * @throws Exception if unable to extract the update archive.
      *
      * @return void
      */

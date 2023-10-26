@@ -126,7 +126,7 @@ class i18n
      * 
      * @return bool To indicate if it was successful,
      *  
-     * @throws \FOSSBilling\Exception 
+     * @throws InformationException 
      */
     public static function toggleLocale(string $locale): bool
     {

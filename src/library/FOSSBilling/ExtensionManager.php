@@ -44,7 +44,8 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The extension details
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response
-     * @throws \FOSSBilling\Exception
+     * 
+     * @throws Exception
      */
     public function getExtension(string $id): array
     {
@@ -64,7 +65,8 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of releases of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the "releases" array)
-     * @throws \FOSSBilling\Exception
+     * 
+     * @throws Exception
      */
     public function getExtensionReleases(string $id): array
     {
@@ -84,7 +86,8 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The latest release of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the first element in the "releases" array)
-     * @throws \FOSSBilling\Exception
+     * 
+     * @throws Exception
      */
     public function getLatestExtensionRelease(string $id): array
     {
@@ -144,7 +147,8 @@ class ExtensionManager implements InjectionAwareInterface
      * @param array $params The array of parameters to pass to the API endpoint
      *
      * @return array The API response
-     * @throws \FOSSBilling\Exception
+     * 
+     * @throws Exception
      */
     public function makeRequest(string $endpoint, array $params = []): array
     {
