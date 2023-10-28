@@ -61,7 +61,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
      * @param $method
      * @param $params
      * @return void
-     * @throws Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function __call($method, $params): void
     {
@@ -93,7 +93,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
      * @param $priority
      * @param $extras
      * @return void
-     * @throws Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function log($message, $priority, $extras = null): void
     {

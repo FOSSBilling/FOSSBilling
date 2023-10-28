@@ -12,6 +12,8 @@ class Box_Exception extends FOSSBilling\Exception
 {
 	/**
 	 * Creates a new translated exception.
+	 * 
+	 * @deprecated 0.6.0, you should use FOSSBilling\Exception instead which is a drop in replacement.
 	 *
 	 * @param string $message error message
 	 * @param array|null $variables translation variables
@@ -21,6 +23,7 @@ class Box_Exception extends FOSSBilling\Exception
 	public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
 	{
         // Pass the message to the parent
+		trigger_error('Box_Exception is deprectated and soon to be removed.', E_USER_DEPRECATED);
         parent::__construct($message, $variables, $code, $protected);
 	}
 }

@@ -8,10 +8,10 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-class Server_Exception extends Box_Exception
+class Server_Exception extends FOSSBilling\Exception
 {
     /**
-     * Creates a new translated exception, using the Box_Exception class.
+     * Creates a new translated exception, using the FOSSBilling\Exception class.
      *
 	 * @param string $message error message
 	 * @param array|null $variables translation variables

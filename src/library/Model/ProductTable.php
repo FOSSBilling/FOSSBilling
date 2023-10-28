@@ -58,7 +58,7 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
                 '3Y'  => 'tria'
             };
         } catch (\UnhandledMatchError) {
-            throw new Box_Exception('Unknown period selected ' . $code);
+            throw new FOSSBilling\Exception('Unknown period selected ' . $code);
         }
     }
 
