@@ -124,7 +124,6 @@ final class FOSSBilling_Installer
                     $this->session->set('currency_code', $_POST['currency_code']);
                     $this->session->set('currency_title', $_POST['currency_title']);
                     $this->session->set('currency_format', $_POST['currency_format']);
-
                     // Attempt installation
                     $this->install();
                     $this->generateEmailTemplates();
@@ -296,6 +295,26 @@ final class FOSSBilling_Installer
 
         return true;
     }
+
+    /**
+     * Validate currency information meets all required parameters.
+     *
+     * @return boolean
+     */
+     private function validateCurrency(): bool
+     {
+        if (!preg_match("/^[A-Z]{3}$/", $this->session->get('currency_code'))) {
+            throw new Exception('Maximum currency code is 3 characters and may only contain capital letters');
+        }
+        if (strlen($this->session->get('currency_title')) > 50) {
+            throw new Exception('Maximum currency title is 50 characters');
+        }
+        if (strlen($this->session->get('currency_format')) > 30) {
+            throw new Exception('Maximum currency title is 30 characters');
+        }
+
+        return false;
+     }
 
     /**
      * Attempt to detect if the application is under a subfolder.
