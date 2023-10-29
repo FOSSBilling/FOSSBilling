@@ -65,7 +65,7 @@ class AdminTest extends \BBTestCase
     {
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('plan_id is missing');
         $this->api->change_plan($data);
     }
@@ -379,7 +379,7 @@ class AdminTest extends \BBTestCase
         $this->api->setDi($di);
 
         // Now, we expect an exception to be thrown because the server is used by service_hostings
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(704);
 
         $this->api->server_delete($data);
@@ -518,7 +518,7 @@ class AdminTest extends \BBTestCase
             // If the function doesn't throw an exception, then the test should assert the result
             $this->assertIsBool($result);
             $this->assertTrue($result);
-        } catch (\Box_Exception $e) {
+        } catch (\FOSSBilling\Exception $e) {
             // If the function throws an exception, the test should fail
             $this->fail("Exception thrown: " . $e->getMessage());
         }
@@ -695,7 +695,7 @@ class AdminTest extends \BBTestCase
 
         $this->api->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }

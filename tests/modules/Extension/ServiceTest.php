@@ -320,7 +320,7 @@ class ServiceTest extends \BBTestCase {
         $di['extension_manager'] = $extensionMock;
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(252);
         $this->expectExceptionMessage('Visit the extension directory for more information on updating this extension.');
         $this->service->update($model);
@@ -415,7 +415,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('FOSSBilling core modules can not be managed');
         $this->service->deactivate($ext);
     }
@@ -436,14 +436,14 @@ class ServiceTest extends \BBTestCase {
 
         $modMock->expects($this->atLeastOnce())
             ->method('uninstall')
-            ->willThrowException(new \Box_Exception($exceptionMessage));
+            ->willThrowException(new \FOSSBilling\Exception($exceptionMessage));
 
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(function ($name) use($modMock) { return $modMock;});
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($exceptionMessage);
         $this->service->deactivate($ext);
     }

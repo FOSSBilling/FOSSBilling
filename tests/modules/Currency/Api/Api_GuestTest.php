@@ -109,8 +109,8 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $guestApi->setService($service);
-        $this->expectException(\Box_Exception::class);
-        $result = $guestApi->get(array()); //Expecting \Box_Exception
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $guestApi->get(array()); //Expecting \FOSSBilling\Exception
     }
 
     public function formatPriceFormatProvider()

@@ -73,7 +73,7 @@ class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Product type is invalid');
         $this->api->free_tlds(array('product_id' => 1));
     }

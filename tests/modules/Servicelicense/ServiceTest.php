@@ -179,7 +179,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->action_activate($clientOrderModel);
         $this->assertTrue($result);
     }
@@ -206,7 +206,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('License plugin %s was not found', $serviceLicenseModel->plugin));
         $this->service->action_activate($clientOrderModel);
     }
@@ -229,7 +229,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
         $this->service->action_activate($clientOrderModel);
     }
@@ -667,7 +667,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['logger']         = $loggerMock;
         $di['license_server'] = $licenseServerMock;
-        $di['config']         = array('debug' => false);
+        $di['config']         = array('debug_and_monitoring' => ['debug' => false]);
         $this->service->setDi($di);
 
         $result = $this->service->checkLicenseDetails($data);
@@ -696,7 +696,7 @@ class ServiceTest extends \BBTestCase
         $di                   = new \Pimple\Container();
         $di['logger']         = $loggerMock;
         $di['license_server'] = $licenseServerMock;
-        $di['config']         = array('debug' => false);
+        $di['config']         = array('debug_and_monitoring' => ['debug' => false]);
         $this->service->setDi($di);
 
         $result = $this->service->checkLicenseDetails($data);

@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Ramsey\Uuid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
@@ -45,18 +46,17 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $filesystem = new Filesystem();
 
-        $configPath = PATH_ROOT . '/config.php';
-        $currentConfig = include $configPath;
+        $currentConfig = include PATH_CONFIG;
 
         if (!is_array($currentConfig)) {
-            throw new \Box_Exception('Unable to load existing configuration');
+            throw new Exception('Unable to load existing configuration');
         }
 
         // Create backup of current configuration.
         try {
-            $filesystem->copy($configPath, substr($configPath, 0, -4) . '.old.php');
+            $filesystem->copy(PATH_CONFIG, substr(PATH_CONFIG, 0, -4) . '.old.php');
         } catch (FileNotFoundException | IOException) {
-            throw new \Box_Exception('Unable to create backup of configuration file');
+            throw new Exception('Unable to create backup of configuration file');
         }
 
         $newConfig = $currentConfig;
@@ -80,9 +80,15 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
+        $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['report_errors'] ??= false;
+        $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
+        $newConfig['info']['salt'] ??= $newConfig['salt'];
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
+        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt'];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan'
         ];
@@ -96,9 +102,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
         // Write updated configuration file.
         try {
-            $filesystem->dumpFile($configPath, $output);
+            $filesystem->dumpFile(PATH_CONFIG, $output);
         } catch (IOException) {
-            throw new \Box_Exception('Error when writing updated configuration file.');
+            throw new Exception('Error when writing updated configuration file.');
         }
     }
 
@@ -156,8 +162,10 @@ class UpdatePatcher implements InjectionAwareInterface
         $statement = $this->di['pdo']->prepare($sql);
         try {
             $statement->execute();
-        } catch (\Box_Exception $e) {
+        } catch (\Exception $e) {
+            // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
+            throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
     }
 
@@ -302,6 +310,6 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 }

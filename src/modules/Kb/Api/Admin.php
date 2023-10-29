@@ -52,7 +52,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('KbArticle', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_KbArticle) {
-            throw new \Box_Exception('Article not found');
+            throw new \FOSSBilling\Exception('Article not found');
         }
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
@@ -126,7 +126,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('KbArticle', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_KbArticle) {
-            throw new \Box_Exception('Article not found');
+            throw new \FOSSBilling\Exception('Article not found');
         }
 
         $this->getService()->rm($model);
@@ -168,7 +168,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('KbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_KbArticleCategory) {
-            throw new \Box_Exception('Article Category not found');
+            throw new \FOSSBilling\Exception('Article Category not found');
         }
 
         return $this->getService()->categoryToApiArray($model);
@@ -213,7 +213,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('KbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_KbArticleCategory) {
-            throw new \Box_Exception('Article Category not found');
+            throw new \FOSSBilling\Exception('Article Category not found');
         }
 
         $title = $data['title'] ?? null;
@@ -238,7 +238,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('KbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_KbArticleCategory) {
-            throw new \Box_Exception('Category not found');
+            throw new \FOSSBilling\Exception('Category not found');
         }
 
         return $this->getService()->categoryRm($model);

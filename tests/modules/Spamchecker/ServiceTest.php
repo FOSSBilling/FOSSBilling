@@ -94,7 +94,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getDi')
             ->willReturn($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf("Your IP address (%s) is blocked. Please contact our support to lift your block.", $clientIp), 403);
         $this->service->isBlockedIp($boxEventMock);
     }

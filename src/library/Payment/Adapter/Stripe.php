@@ -30,19 +30,19 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
     {
         if ($this->config['test_mode']) {
             if (!isset($this->config['test_api_key'])) {
-                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Test API Key']);
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Test API Key'], 4001);
             }
             if (!isset($this->config['test_pub_key'])) {
-                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Test publishable key']);
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Test publishable key'], 4001);
             }
 
             $this->stripe = new StripeClient($this->config['test_api_key']);
         } else {
             if (!isset($this->config['api_key'])) {
-                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'API key']);
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'API key'], 4001);
             }
             if (!isset($this->config['pub_key'])) {
-                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Publishable key']);
+                throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'Stripe', ':missing' => 'Publishable key'], 4001);
             }
 
             $this->stripe = new StripeClient($this->config['api_key']);
@@ -125,7 +125,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
-        if ($this->di['config']['debug']) {
+        if (BB_DEBUG) {
             error_log(json_encode($e->getJsonBody()));
         }
         throw new Exception($tx->error);
@@ -180,7 +180,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             }
         } catch (\Stripe\Exception\CardException | \Stripe\Exception\InvalidRequestException | \Stripe\Exception\AuthenticationException | \Stripe\Exception\ApiConnectionException | \Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
-            throw new \Box_Exception("There was an error when processing the transaction");
+            throw new \FOSSBilling\Exception("There was an error when processing the transaction");
         }
 
         $paymentStatus = match ($charge->status) {

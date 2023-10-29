@@ -100,7 +100,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $clientApi->get(array('id' => 1));
         $this->assertIsArray($result);
 
@@ -168,7 +168,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $clientApi->resend(array('id' => 1));
         $this->assertIsArray($result);
 
@@ -235,7 +235,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $clientApi->delete(array('id' => 1));
         $this->assertIsArray($result);
 

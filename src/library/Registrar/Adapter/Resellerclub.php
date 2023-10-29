@@ -37,14 +37,14 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $this->config['userid'] = $options['userid'];
             unset($options['userid']);
         } else {
-            throw new Registrar_Exception('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub Reseller ID" at "Configuration -> Domain registration".');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'ResellerClub', ':missing' => 'ResellerClub Reseller ID'], 3001);
         }
 
         if(isset($options['api-key']) && !empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
             unset($options['api-key']);
         } else {
-            throw new Registrar_Exception('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub API Key" at "Configuration -> Domain registration".');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'ResellerClub', ':missing' => 'ResellerClub API Key'], 3001);
         }
     }
     

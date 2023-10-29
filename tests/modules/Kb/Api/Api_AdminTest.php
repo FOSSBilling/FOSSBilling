@@ -87,7 +87,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $adminApi->article_get($data);
     }
 
@@ -216,7 +216,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(true));
         $adminApi->setService($kbService);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $adminApi->article_delete(array('id' => rand(1, 100)));
         $this->assertTrue($result);
     }
@@ -299,7 +299,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Category ID not passed'));
+            ->willThrowException(new \FOSSBilling\Exception('Category ID not passed'));
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
@@ -309,7 +309,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $adminApi->setService($kbService);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $adminApi->category_get(array());
         $this->assertIsArray($result);
     }
@@ -342,7 +342,7 @@ class Api_AdminTest extends \BBTestCase
             'id' => rand(1, 100)
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $adminApi->category_get($data);;
         $this->assertIsArray($result);
     }
@@ -436,14 +436,14 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Category ID not passed'));
+            ->willThrowException(new \FOSSBilling\Exception('Category ID not passed'));
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
 
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $adminApi->category_update($data);
         $this->assertIsArray($result);
     }
@@ -481,7 +481,7 @@ class Api_AdminTest extends \BBTestCase
             'description' => 'Description',
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $adminApi->category_update($data);
         $this->assertIsArray($result);
     }
@@ -539,12 +539,12 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Category ID not passed'));
+            ->willThrowException(new \FOSSBilling\Exception('Category ID not passed'));
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $data   = array();
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $adminApi->category_delete($data);
         $this->assertIsArray($result);
     }
@@ -578,7 +578,7 @@ class Api_AdminTest extends \BBTestCase
             'id' => rand(1, 100)
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $adminApi->category_delete($data);
         $this->assertIsArray($result);
     }

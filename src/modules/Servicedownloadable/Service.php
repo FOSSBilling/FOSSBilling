@@ -56,7 +56,7 @@ class Service implements InjectionAwareInterface
     {
         $c = json_decode($order->config, 1);
         if (!is_array($c)) {
-            throw new \Box_Exception(sprintf('Order #%s config is missing', $order->id));
+            throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->id));
         }
         $this->validateOrderData($c);
 
@@ -166,7 +166,7 @@ class Service implements InjectionAwareInterface
     {
         $request = $this->di['request'];
         if ($request->hasFiles() == 0) {
-            throw new \Box_Exception('Error uploading file');
+            throw new \FOSSBilling\Exception('Error uploading file');
         }
         $files = $request->getUploadedFiles();
         $file = $files[0];
@@ -213,13 +213,13 @@ class Service implements InjectionAwareInterface
     /**
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order)
     {
         $request = $this->di['request'];
         if ($request->hasFiles() == 0) {
-            throw new \Box_Exception('Error uploading file');
+            throw new \FOSSBilling\Exception('Error uploading file');
         }
         $productService = $this->di['mod_service']('product');
         $files = $request->getUploadedFiles();
@@ -272,7 +272,7 @@ class Service implements InjectionAwareInterface
         $filename = $info['filename'];
         $path = $info['path'];
         if (!file_exists($path)) {
-            throw new \Box_Exception('File can not be downloaded at the moment. Please contact support', null, 404);
+            throw new \FOSSBilling\Exception('File can not be downloaded at the moment. Please contact support', null, 404);
         }
         $this->hitDownload($serviceDownloadable);
         $this->sendDownload($filename, $path);

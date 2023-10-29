@@ -28,7 +28,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
     public function __construct(private $config)
     {
         if (!isset($this->config['email'])) {
-            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'PayPal', ':missing' => 'PayPal Email address']);
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'PayPal', ':missing' => 'PayPal Email address'], 4001);
         }
     }
 

@@ -17,7 +17,7 @@ class ThemeTest extends \BBTestCase {
     public function testNotExistingTheme()
     {
         $themeName = 'not existing theme';
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Theme "%s" does not exist', $themeName));
         new \Box\Mod\Theme\Model\Theme($themeName);
     }

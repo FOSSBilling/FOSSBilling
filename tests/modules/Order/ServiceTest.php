@@ -1301,7 +1301,7 @@ class ServiceTest extends \BBTestCase
         });
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Currency could not be determined for order');
         $this->service->createOrder($modelClient, $modelProduct, array());
     }
@@ -1347,7 +1347,7 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(831);
         $this->expectExceptionMessage('Product 1 is out of stock.');
         $this->service->createOrder($modelClient, $modelProduct, array());
@@ -1395,7 +1395,7 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(832);
         $this->expectExceptionMessage('Group ID parameter is missing for addon product order');
         $this->service->createOrder($modelClient, $modelProduct, array());
@@ -1449,7 +1449,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $serviceMock->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Parent order 1 was not found');
         $serviceMock->createOrder($modelClient, $modelProduct, array('group_id' => 1));
     }
@@ -1550,7 +1550,7 @@ class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_CANCELED;
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Only pending setup or failed orders can be activated');
         $this->service->activateOrder($clientOrderModel);
     }
@@ -1782,7 +1782,7 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Only active orders can be suspended');
         $this->service->suspendFromOrder($clientOrderModel);
     }

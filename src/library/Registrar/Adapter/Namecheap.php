@@ -26,13 +26,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if (!empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'API Key']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'API Key'], 3001);
         }
 
         if (!empty($options['username'])) {
             $this->config['username'] = $options['username'];
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'Username']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'Username'], 3001);
         }
 
         if (empty($options['api-user-id'])) {
@@ -44,7 +44,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if (!empty($options['ip'])) {
             $this->config['ip'] = $options['ip'];
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'server IP address']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'server IP address'], 3001);
         }
     }
 

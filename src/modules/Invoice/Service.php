@@ -414,7 +414,7 @@ class Service implements InjectionAwareInterface
             if ($r instanceof \Model_Invoice && is_numeric($r->nr)) {
                 $next_nr = intval($r->nr) + 1;
             } else {
-                throw new \Box_Exception('Unable to determine the next invoice number');
+                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
             }
         }
 
@@ -559,7 +559,7 @@ class Service implements InjectionAwareInterface
         $epsilon = 0.05;
 
         if (abs($balance - $required) < $epsilon) {
-            if ($this->di['config']['debug']) {
+            if (BB_DEBUG) {
                 error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
@@ -568,14 +568,14 @@ class Service implements InjectionAwareInterface
         }
 
         if ($balance - $required > 0.00001) {
-            if ($this->di['config']['debug']) {
+            if (BB_DEBUG) {
                 error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
 
             return true;
         }
-        if ($this->di['config']['debug']) {
+        if (BB_DEBUG) {
             error_log(sprintf('Invoice %s could not be paid with credits. Money in balance %s Required: %s', $invoice->id, $balance, $required));
         }
     }
@@ -628,7 +628,7 @@ class Service implements InjectionAwareInterface
             case 'negative_invoice':
                 $total = $this->getTotalWithTax($invoice);
                 if ($total <= 0) {
-                    throw new \Box_Exception('Can not refund invoice with negative amount');
+                    throw new \FOSSBilling\InformationException('Can not refund invoice with negative amount');
                 }
 
                 $new = $this->di['db']->dispense('Invoice');
@@ -708,7 +708,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case 'manual':
-                if ($this->di['config']['debug']) {
+                if (BB_DEBUG) {
                     error_log('Refunds are managed manually. No actions performed');
                 }
 
@@ -843,7 +843,7 @@ class Service implements InjectionAwareInterface
         $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
         foreach ($invoiceItem as $item) {
             if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
-                throw new \Box_Exception('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
+                throw new \FOSSBilling\InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
             }
         }
 
@@ -876,7 +876,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id']);
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
-                if ($this->di['config']['debug']) {
+                if (BB_DEBUG) {
                     error_log($e->getMessage());
                 }
             }
@@ -910,7 +910,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->price <= 0) {
-            throw new \Box_Exception('Invoices are not generated for 0 amount orders');
+            throw new \FOSSBilling\InformationException('Invoices are not generated for 0 amount orders');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
@@ -1078,7 +1078,7 @@ class Service implements InjectionAwareInterface
     public function generateFundsInvoice(\Model_Client $client, $amount)
     {
         if (!$client->currency) {
-            throw new \Box_Exception('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+            throw new \FOSSBilling\InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
         $systemService = $this->di['mod_service']('system');
@@ -1087,11 +1087,11 @@ class Service implements InjectionAwareInterface
         $max_amount = $systemService->getParamValue('funds_max_amount', null);
 
         if ($min_amount && $amount < $min_amount) {
-            throw new \Box_Exception('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
+            throw new \FOSSBilling\InformationException('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
         }
 
         if ($max_amount && $amount > $max_amount) {
-            throw new \Box_Exception('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
+            throw new \FOSSBilling\InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
         $proforma = $this->di['db']->dispense('Invoice');
@@ -1117,16 +1117,16 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = ?', [$data['hash']]);
         if (!$invoice instanceof \Model_Invoice) {
-            throw new \Box_Exception('Invoice not found', null, 812);
+            throw new \FOSSBilling\Exception('Invoice not found', null, 812);
         }
 
         $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
         if (!$gtw instanceof \Model_PayGateway) {
-            throw new \Box_Exception('Payment method not found', null, 813);
+            throw new \FOSSBilling\Exception('Payment method not found', null, 813);
         }
 
         if (!$gtw->enabled) {
-            throw new \Box_Exception('Payment method not enabled', null, 814);
+            throw new \FOSSBilling\Exception('Payment method not enabled', null, 814);
         }
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -1185,7 +1185,7 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
         if (!$invoice instanceof \Model_Invoice) {
-            throw new \Box_Exception('Invoice not found');
+            throw new \FOSSBilling\Exception('Invoice not found');
         }
 
         if (isset($invoice->currency)) {

@@ -342,8 +342,8 @@ class Api_AdminTest extends \BBTestCase
 
         $adminApi->setService($service);
         $adminApi->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $adminApi->create($data); //Expecting \Box_Exception every time
+        $this->expectException(\FOSSBilling\Exception::class);
+        $adminApi->create($data); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testCreate()
@@ -418,7 +418,7 @@ class Api_AdminTest extends \BBTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testDeleteException()
     {
@@ -431,15 +431,15 @@ class Api_AdminTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')->willThrowException(new \Box_Exception(''));
+            ->method('checkRequiredParamsForArray')->willThrowException(new \FOSSBilling\Exception(''));
 
         $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
         $adminApi->setService($service);
-        $this->expectException(\Box_Exception::class);
-        $adminApi->delete(array()); //Expecting \Box_Exception every time
+        $this->expectException(\FOSSBilling\Exception::class);
+        $adminApi->delete(array()); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testDelete()
@@ -494,7 +494,7 @@ class Api_AdminTest extends \BBTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      * @dataProvider SetDefaultExceptionProvider
      */
     public function testSetDefaultException($data, $getByCodeCalled, $getByCodeReturn)
@@ -516,8 +516,8 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $adminApi->setService($service);
-        $this->expectException(\Box_Exception::class);
-        $adminApi->set_default($data); //Expecting \Box_Exception every time
+        $this->expectException(\FOSSBilling\Exception::class);
+        $adminApi->set_default($data); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testSetDefault()

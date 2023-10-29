@@ -19,15 +19,15 @@ class Server_Manager_Whm extends Server_Manager
 	public function init()
     {
         if(empty($this->_config['host'])) {
-            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'cPanel WHM', ':missing' => 'hostname']);
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'cPanel WHM', ':missing' => 'hostname'], 2001);
         }
 
         if(empty($this->_config['username'])) {
-            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'cPanel WHM', ':missing' => 'username']);
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'cPanel WHM', ':missing' => 'username'], 2001);
         }
 
         if(empty($this->_config['password']) && empty($this->_config['accesshash'])) {
-            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'cPanel WHM', ':missing' => 'authentication credentials']);
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'cPanel WHM', ':missing' => 'authentication credentials'], 2001);
         }
 
         // If port not set, use WHM default.

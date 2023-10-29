@@ -154,7 +154,7 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->validateOrderData($data);
         $this->assertNull($result);
     }
@@ -199,7 +199,7 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->validateOrderData($data);
         $this->assertNull($result);
     }
@@ -275,7 +275,7 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $serviceMock->validateOrderData($data);
         $this->assertNull($result);
     }
@@ -373,7 +373,7 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $serviceMock->validateOrderData($data);
         $this->assertNull($result);
     }
@@ -502,7 +502,7 @@ class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $serviceMock->action_create($order);
     }
 
@@ -591,7 +591,7 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->action_activate($order);
     }
 
@@ -669,7 +669,7 @@ class ServiceTest extends \BBTestCase
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result           = $this->service->action_renew($order);
 
         $this->assertTrue($result);
@@ -750,7 +750,7 @@ class ServiceTest extends \BBTestCase
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result           = $this->service->action_cancel($order);
 
         $this->assertTrue($result);
@@ -875,7 +875,7 @@ class ServiceTest extends \BBTestCase
         $serviceDomainModel = new \Model_ServiceDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->updateNameservers($serviceDomainModel, $data);
     }
 
@@ -1107,7 +1107,7 @@ class ServiceTest extends \BBTestCase
 
     public function testcanBeTransferredEmptySldException()
     {
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->canBeTransferred(new \Model_Tld(), '');
     }
 
@@ -1117,7 +1117,7 @@ class ServiceTest extends \BBTestCase
         $tldModel->loadBean(new \DummyBean());
         $tldModel->allow_transfer = false;
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->canBeTransferred($tldModel, 'example');
     }
 
@@ -1166,7 +1166,7 @@ class ServiceTest extends \BBTestCase
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->isDomainAvailable($tldModel, '');
     }
 
@@ -1182,7 +1182,7 @@ class ServiceTest extends \BBTestCase
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->isDomainAvailable($tldModel, 'example');
     }
 
@@ -1200,7 +1200,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->allow_register = false;
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->isDomainAvailable($model, 'example');
     }
 
@@ -1793,7 +1793,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->registrar = 'Non-Existing';
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->registrarGetRegistrarAdapterConfig($model);
         $this->assertIsArray($result);
     }
@@ -1804,7 +1804,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->registrar = 'Non-Existing';
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->registrarGetRegistrarAdapterConfig($model);
     }
 
@@ -1837,7 +1837,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->registrar = 'Non-Existing';
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $serviceMock->registrarGetRegistrarAdapter($model);
         $this->assertInstanceOf('Registrar_Adapter_' . $model->registrar, $result);
     }
@@ -1887,7 +1887,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->service->registrarRm($model);
 
     }

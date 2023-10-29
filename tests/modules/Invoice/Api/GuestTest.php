@@ -75,7 +75,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->get($data);
     }
@@ -133,7 +133,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->update($data);
     }
@@ -160,7 +160,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Paid Invoice can not be modified');
         $this->api->update($data);
     }
@@ -204,7 +204,7 @@ class GuestTest extends \BBTestCase {
             'gateway_id' => '',
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(810);
         $this->expectExceptionMessage('Invoice hash not passed. Missing param hash');
         $this->api->payment($data);
@@ -216,7 +216,7 @@ class GuestTest extends \BBTestCase {
             'hash' => '',
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(811);
         $this->expectExceptionMessage('Payment method not found. Missing param gateway_id');
         $this->api->payment($data);

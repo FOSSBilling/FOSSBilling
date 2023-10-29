@@ -33,7 +33,9 @@
         "EMERG",
         "exploitability",
         "birthdate",
-        "Birthdate"
+        "Birthdate",
+        "jhurliman",
+        "jambroseclarke"
     ],
 
     "ignoreWords": [

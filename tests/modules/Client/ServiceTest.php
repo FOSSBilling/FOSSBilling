@@ -47,7 +47,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invalid email confirmation link');
         $clientService->approveClientEmailByHash('');
     }
@@ -427,7 +427,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Currency can not be changed. Client already have invoices issued.');
         $clientService->canChangeCurrency($model, $currency);
     }
@@ -541,7 +541,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientService = new \Box\Mod\Client\Service();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Define clients currency before adding funds.');
         $clientService->addFunds($modelClient, $amount, $description);
 
@@ -559,7 +559,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientService = new \Box\Mod\Client\Service();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Funds amount is invalid');
         $clientService->addFunds($modelClient, $amount, $description);
     }
@@ -577,7 +577,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientService = new \Box\Mod\Client\Service();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Funds description is invalid');
         $result = $clientService->addFunds($modelClient, $amount, $description);
         $this->assertTrue($result);
@@ -757,7 +757,7 @@ class ServiceTest extends \BBTestCase {
         $service->setDi($di);
 
         $data = array('id' => 0);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Client not found');
         $service->get($data);
     }
@@ -993,7 +993,7 @@ class ServiceTest extends \BBTestCase {
 
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove group with clients');
         $service->deleteGroup($model);
     }
@@ -1166,7 +1166,7 @@ class ServiceTest extends \BBTestCase {
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email can not be changed');
         $service->canChangeEmail($clientModel, $email);
     }
@@ -1184,7 +1184,7 @@ class ServiceTest extends \BBTestCase {
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Field Id cannot be empty');
         $service->checkExtraRequiredFields($data);
     }
@@ -1207,7 +1207,7 @@ class ServiceTest extends \BBTestCase {
         $data = array();
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Field custom_field_title cannot be empty');
         $service->checkCustomFields($data);
 

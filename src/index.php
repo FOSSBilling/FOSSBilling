@@ -47,14 +47,14 @@ $app->setDi($di);
 if (!is_null($http_err_code)) {
     switch ($http_err_code) {
         case '404':
-            $e = new Box_Exception('Page :url not found', [':url' => $url], 404);
+            $e = new FOSSBilling\Exception('Page :url not found', [':url' => $url], 404);
             echo $app->show404($e);
 
             break;
         default:
             $http_err_code = intval($http_err_code);
             http_response_code($http_err_code);
-            $e = new Box_Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
+            $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
             echo $app->render('error', ['exception' => $e]);
     }
     exit;

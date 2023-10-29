@@ -115,7 +115,7 @@ class GuestTest extends \BBTestCase
         $client->setDi($di);
         $client->setService($serviceMock);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email is already registered. You may want to login instead of registering.');
         $client->create($data);
     }
@@ -140,7 +140,7 @@ class GuestTest extends \BBTestCase
         });
         $client->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('New registrations are temporary disabled');
         $client->create($data);
     }
@@ -168,7 +168,7 @@ class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $client->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Passwords do not match.');
         $client->create($data);
     }
@@ -411,7 +411,7 @@ class GuestTest extends \BBTestCase
         $client->setDi($di);
 
         // Expect a Box_Exception to be thrown with a specific message
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
         $client->update_password($data);
     }

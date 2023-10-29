@@ -1001,7 +1001,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf("Invoice is related to order #%d. Please cancel order first.", $rel_id));
         $this->service->deleteInvoiceByClient($invoiceModel);
     }
@@ -1161,7 +1161,7 @@ class ServiceTest extends \BBTestCase
         $clientOrder->loadBean(new \DummyBean());
         $clientOrder->price = 0;
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoices are not generated for 0 amount orders');
         $this->service->generateForOrder($clientOrder);
     }
@@ -1261,7 +1261,7 @@ class ServiceTest extends \BBTestCase
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('executeTask')
             ->with($invoiceItemModel)
-            ->willThrowException(new \Box_Exception('tesitng exception..'));
+            ->willThrowException(new \FOSSBilling\Exception('tesitng exception..'));
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getAllNotExecutePaidItems')
             ->willReturn(array(array()));
@@ -1401,7 +1401,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         $this->service->generateFundsInvoice($clientModel, 10);
     }
@@ -1425,7 +1425,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(981);
         $this->expectExceptionMessage('Amount must be at least ' . $minAmount);
         $this->service->generateFundsInvoice($clientModel, $fundsAmount);
@@ -1450,7 +1450,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(982);
         $this->expectExceptionMessage('Amount cannot exceed ' . $maxAmount);
         $this->service->generateFundsInvoice($clientModel, $fundsAmount);
@@ -1525,7 +1525,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(812);
         $this->expectExceptionMessage('Invoice not found');
         $this->service->processInvoice($data);
@@ -1554,7 +1554,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(813);
         $this->expectExceptionMessage('Payment method not found');
         $this->service->processInvoice($data);
@@ -1586,7 +1586,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(814);
         $this->expectExceptionMessage('Payment method not enabled');
         $this->service->processInvoice($data);

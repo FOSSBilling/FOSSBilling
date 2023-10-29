@@ -61,7 +61,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
      * @param $method
      * @param $params
      * @return void
-     * @throws Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function __call($method, $params): void
     {
@@ -69,7 +69,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
             switch (is_countable($params) ? count($params) : 0) {
                 case 0:
-                    throw new \Box_Exception('Missing log message');
+                    throw new \FOSSBilling\Exception('Missing log message');
                 case 1:
                     $message = array_shift($params);
                     $extras = null;
@@ -84,7 +84,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
             }
             $this->log($message, $priority, $params);
         } else {
-            throw new \Box_Exception('Bad log priority');
+            throw new \FOSSBilling\Exception('Bad log priority');
         }
     }
 
@@ -93,7 +93,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
      * @param $priority
      * @param $extras
      * @return void
-     * @throws Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function log($message, $priority, $extras = null): void
     {
@@ -103,7 +103,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!isset($this->_priorities[$priority])) {
-            throw new \Box_Exception('Bad log priority');
+            throw new \FOSSBilling\Exception('Bad log priority');
         }
 
         if ($this->_min_priority && $priority > $this->_min_priority) {
@@ -132,7 +132,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         }
 
         //do not log debug level messages if debug is OFF
-        if ($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
+        if (!BB_DEBUG && $event['priority'] > self::INFO) {
             return;
         }
 

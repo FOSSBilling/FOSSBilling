@@ -69,7 +69,7 @@ class Tools
         $class = 'Box_Mod_' . ucfirst($type) . '_Service';
         $file = PATH_MODS . '/mod_' . $type . '/Service.php';
         if (!file_exists($file)) {
-            throw new \Box_Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
+            throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
         }
         require_once $file;
         return new $class();
@@ -246,7 +246,7 @@ class Tools
         $class = 'Model_' . ucfirst($type) . 'Table';
         $file = PATH_LIBRARY . '/Model/' . $type . 'Table.php';
         if (!file_exists($file)) {
-            throw new \Box_Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
+            throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
         }
         require_once $file;
         return new $class();
@@ -277,7 +277,7 @@ class Tools
         if (!filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) {
             if ($throw) {
                 $friendlyName = ucfirst(__trans('Email address'));
-                throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+                throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
             } else {
                 return false;
             }

@@ -84,7 +84,7 @@ class Api_Client_SupportTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testCanSubmitTicketException()
     {

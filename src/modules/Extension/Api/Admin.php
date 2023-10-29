@@ -95,7 +95,7 @@ class Admin extends \Api_Abstract
      *
      * @param array $data The post data sent to the API. Should contain a key named `locale_id` which is set to the locale ID to change. (`en_US` for example)
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function toggle_language(array $data): bool
     {
@@ -129,7 +129,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update($data)
     {
@@ -148,7 +148,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function activate($data)
     {
@@ -169,7 +169,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool - true
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function deactivate($data)
     {
@@ -210,7 +210,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function install($data)
     {
@@ -243,7 +243,7 @@ class Admin extends \Api_Abstract
      *
      * @return array - configuration parameters
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function config_get($data)
     {
@@ -269,7 +269,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function config_save($data)
     {
@@ -292,7 +292,7 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
         $ext = $service->findExtension($data['type'], $data['id']);
         if (!$ext instanceof \Model_Extension) {
-            throw new \Box_Exception('Extension not found');
+            throw new \FOSSBilling\Exception('Extension not found');
         }
 
         return $ext;

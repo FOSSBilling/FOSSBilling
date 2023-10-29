@@ -849,7 +849,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $service->getEmailById(5);
     }
 
@@ -1105,7 +1105,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $service->resetTemplateByCode('mod_email_test');
     }
 

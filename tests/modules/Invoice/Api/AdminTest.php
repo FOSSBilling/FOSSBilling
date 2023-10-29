@@ -386,7 +386,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d is free. No need to generate invoice.', $model->id));
         $this->api->renewal_invoice($data);
     }
@@ -1134,7 +1134,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Client currency must match subscription currency. Check if clients currency is defined.');
         $this->api->subscription_create($data);
     }

@@ -116,7 +116,7 @@ class GuestTest extends \BBTestCase
             'currency' => 'EUR'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Currency not found');
         $result = $this->guestApi->set_currency($data);
         $this->assertTrue($result);
@@ -276,7 +276,7 @@ class GuestTest extends \BBTestCase
             'promocode' => 'CODE'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->guestApi->apply_promo($data);
         $this->assertTrue($result);
     }
@@ -315,7 +315,7 @@ class GuestTest extends \BBTestCase
             'promocode' => 'CODE'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->guestApi->apply_promo($data);
 
         $this->assertTrue($result);
@@ -353,7 +353,7 @@ class GuestTest extends \BBTestCase
             'promocode' => 'CODE'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->guestApi->apply_promo($data);
 
         $this->assertTrue($result);

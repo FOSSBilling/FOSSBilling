@@ -58,7 +58,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         try {
             if (!$t->isAssetsPathWritable()) {
-                throw new \Box_Exception('Theme ":name" assets folder is not writable. Files can not be uploaded and settings can not be saved. Set folder permissions to 777', [':name' => $t->getName()]);
+                throw new \FOSSBilling\Exception('Theme ":name" assets folder is not writable. Files can not be uploaded and settings can not be saved. Set folder permissions to 777', [':name' => $t->getName()]);
             }
             $service->updateSettings($t, $preset, $_POST);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);

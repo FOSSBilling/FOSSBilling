@@ -8,14 +8,14 @@ class Registrar_Adapter_Netearthone extends Registrar_Adapter_Resellerclub
             $this->config['userid'] = $options['userid'];
             unset($options['userid']);
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'NetEarthOne', ':missing' => 'NetEarthOne Reseller ID']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'NetEarthOne', ':missing' => 'NetEarthOne Reseller ID'], 3001);
         }
 
         if(isset($options['api-key']) && !empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
             unset($options['api-key']);
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'NetEarthOne', ':missing' => 'NetEarthOne API Key']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'NetEarthOne', ':missing' => 'NetEarthOne API Key'], 3001);
         }
     }
 

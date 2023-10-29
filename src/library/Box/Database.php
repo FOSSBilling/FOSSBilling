@@ -177,13 +177,13 @@ class Box_Database implements InjectionAwareInterface
      * @param int $id
      * @param string $message
      * @return \RedBeanPHP\SimpleModel
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function getExistingModelById($modelName, $id, $message = "Model :name not found in the database")
     {
         $model = $this->load($modelName, (int)$id);
         if (null === $model) {
-            throw new \Box_Exception($message, [':name' => $modelName]);
+            throw new \FOSSBilling\Exception($message, [':name' => $modelName]);
         }
 
         return $model;

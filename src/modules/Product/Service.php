@@ -203,7 +203,7 @@ class Service implements InjectionAwareInterface
             $types = $this->getPaymentTypes();
 
             if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
-                throw new \Box_Exception('Pricing type is required');
+                throw new \FOSSBilling\InformationException('Pricing type is required');
             }
             $productPayment = $this->di['db']->getExistingModelById('ProductPayment', $model->product_payment_id, 'Product payment not found');
 
@@ -414,7 +414,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         if ($orderService->productHasOrders($product)) {
-            throw new \Box_Exception('Can not remove product which has active orders.');
+            throw new \FOSSBilling\InformationException('Can not remove product which has active orders.');
         }
         $id = $product->id;
         $this->di['db']->trash($product);
@@ -473,7 +473,7 @@ class Service implements InjectionAwareInterface
     {
         $model = $this->di['db']->findOne('Product', 'product_category_id = :category_id', [':category_id' => $category->id]);
         if ($model instanceof \Model_Product) {
-            throw new \Box_Exception('Can not remove product category with products');
+            throw new \FOSSBilling\InformationException('Can not remove product category with products');
         }
         $id = $category->id;
         $this->di['db']->trash($category);
@@ -877,7 +877,7 @@ class Service implements InjectionAwareInterface
     public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data)
     {
         if ($this->di['db']->findOne('Promo', 'code = :code', [':code' => $code])) {
-            throw new \Box_Exception('This promotion code already exists.');
+            throw new \FOSSBilling\InformationException('This promotion code already exists.');
         }
 
         $systemService = $this->di['mod_service']('system');

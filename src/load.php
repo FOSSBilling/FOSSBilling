@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -57,7 +58,7 @@ function checkInstaller()
     if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php') && Environment::isProduction()) {
         // Throw exception only if debug mode is NOT enabled.
         $config = require PATH_CONFIG;
-        if (!$config['debug']) {
+        if (!$config['debug_and_monitoring']['debug']) {
             throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
         }
     }
@@ -135,10 +136,24 @@ function checkWebServer()
  */
 function errorHandler(int $number, string $message, string $file, int $line)
 {
+    // Just some housekeeping to ensure a few things we rely on are loaded.
+    if (!class_exists('\FOSSBilling\ErrorPage')) {
+        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+    }
+
+    if (!class_exists('\FOSSBilling\SentryHelper')) {
+        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
+    }
+
+    // Now we can handle the error appropriately.
     if ($number === E_RECOVERABLE_ERROR) {
         exceptionHandler(new ErrorException($message, $number, 0, $file, $line));
     } else {
-        error_log($number . ' ' . $message . ' ' . $file . ' ' . $line);
+        $errorType = FOSSBilling\SentryHelper::getErrorType($number);
+        $completedMessage = ($errorType . " ($number): " . $message . ' in ' . $file . ' on line ' . $line);
+
+        \Sentry\captureMessage($completedMessage, FOSSBilling\SentryHelper::getSeverityLevel($errorType));
+        error_log($completedMessage);
     }
 
     return false;
@@ -149,13 +164,17 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler($e)
 {
-    $message = htmlspecialchars($e->getMessage());
-    if (getenv('APP_ENV') === 'test') {
-        echo $message . PHP_EOL;
+    // Let Sentry capture the exception and then send it
+    \FOSSBilling\SentryHelper::captureException($e);
 
+    if (getenv('APP_ENV') === 'test') {
+        echo $e->getMessage() . PHP_EOL;
         return;
+    } else {
+        error_log($e->getMessage());
     }
-    error_log($message);
+
+    $message = htmlspecialchars($e->getMessage());
 
     if (defined('BB_MODE_API')) {
         $code = $e->getCode() ?: 9998;
@@ -175,7 +194,8 @@ function exceptionHandler($e)
         $prettyPage->setPageTitle('An error ocurred');
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
-            'Error code' => $e->getCode(),
+            'Error code'  => $e->getCode(),
+            'Instance ID' => INSTANCE_ID ?? 'Unknown',
         ]);
         $whoops->pushHandler($prettyPage);
         $whoops->allowQuit(false);
@@ -183,7 +203,6 @@ function exceptionHandler($e)
 
         echo $whoops->handleException($e);
     } else {
-        include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
         $errorPage = new \FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $message);
     }
@@ -223,18 +242,26 @@ $config = require PATH_CONFIG;
 
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
-define('BB_DEBUG', $config['debug']);
+define('BB_DEBUG', (bool)$config['debug_and_monitoring']['debug']);
 define('BB_URL', $config['url']);
 define('PATH_CACHE', $config['path_data'] . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
+if(!empty($config['info']['instance_id'])){
+    define('INSTANCE_ID', $config['info']['instance_id']);
+} else {
+    define('INSTANCE_ID', 'Unknown');
+}
 
 // Initial setup and checks passed, now we setup our custom autoloader.
 include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
+
+// Now that the config file is loaded, we can enable Sentry
+\FOSSBilling\SentryHelper::registerSentry($config);
 
 // Verify the installer was removed.
 checkInstaller();
@@ -246,12 +273,14 @@ checkSSL();
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
 ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
-if ($config['debug']) {
-    error_reporting(E_ALL);
+
+// We disable PHP's error reporting as our own error handler will log it and send it to Sentry.
+error_reporting(0);
+
+if (BB_DEBUG) {
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
 } else {
-    error_reporting(E_RECOVERABLE_ERROR);
     ini_set('display_errors', '0');
     ini_set('display_startup_errors', '0');
 }

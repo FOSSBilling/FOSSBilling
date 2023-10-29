@@ -72,7 +72,7 @@ class Api_GuestTest extends \BBTestCase
             'message' => '',
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->guestApi->ticket_create($data);
 
         $this->assertIsString($result);

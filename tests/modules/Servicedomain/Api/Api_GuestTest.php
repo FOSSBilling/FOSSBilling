@@ -88,7 +88,7 @@ class Api_GuestTest extends \BBTestCase
             'tld' => '.com'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->guestApi->pricing($data);
         $this->assertIsArray($result);
     }
@@ -139,7 +139,7 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->guestApi->check($data);
     }
 
@@ -170,7 +170,7 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->guestApi->check($data);
     }
 
@@ -201,7 +201,7 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->guestApi->check($data);
     }
 
@@ -258,7 +258,7 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->guestApi->can_be_transferred($data);
     }
 
@@ -286,7 +286,7 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->guestApi->can_be_transferred($data);
     }
 

@@ -317,7 +317,7 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_Extension $model)
     {
-        throw new \Box_Exception('Visit the extension directory for more information on updating this extension.', null, 252);
+        throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
     public function activate(\Model_Extension $ext)
@@ -366,13 +366,13 @@ class Service implements InjectionAwareInterface
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $ext->name;
                 if ($this->isCoreModule($mod)) {
-                    throw new \Box_Exception('FOSSBilling core modules can not be managed');
+                    throw new \FOSSBilling\InformationException('FOSSBilling core modules can not be managed');
                 }
 
                 try {
                     $mm = $this->di['mod']($mod);
                     $mm->uninstall();
-                } catch (\Box_Exception $e) {
+                } catch (\FOSSBilling\Exception $e) {
                     if ($e->getCode() != 408) {
                         throw $e;
                     }
@@ -431,7 +431,7 @@ class Service implements InjectionAwareInterface
 
         $code = $response->getStatusCode();
         if ($code !== 200) {
-            throw new \Box_Exception('Failed to download the extension with error :code', [':code' => $code]);
+            throw new \FOSSBilling\Exception('Failed to download the extension with error :code', [':code' => $code]);
         }
 
         foreach ($client->stream($response) as $chunk) {
@@ -448,7 +448,7 @@ class Service implements InjectionAwareInterface
         } catch (\PhpZip\Exception\ZipException $e) {
             error_log($e->getMessage());
 
-            throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+            throw new \FOSSBilling\Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
         switch ($type) {
@@ -472,13 +472,13 @@ class Service implements InjectionAwareInterface
 
         if (isset($destination)) {
             if (file_exists($destination)) {
-                throw new \Box_Exception('Extension :id seems to be already installed.', [':id' => $id], 436);
+                throw new \FOSSBilling\Exception('Extension :id seems to be already installed.', [':id' => $id], 436);
             }
             if (!rename($extractedPath, $destination)) {
-                throw new \Box_Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
+                throw new \FOSSBilling\Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
             }
         } else {
-            throw new \Box_Exception('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
+            throw new \FOSSBilling\InformationException('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
         }
 
         if (file_exists($zipPath)) {
@@ -509,12 +509,12 @@ class Service implements InjectionAwareInterface
         $mod = $this->di['mod']($ext->name);
 
         if ($mod->isCore()) {
-            throw new \Box_Exception('FOSSBilling core modules can not be installed or removed');
+            throw new \FOSSBilling\InformationException('FOSSBilling core modules can not be installed or removed');
         }
 
         $info = $mod->getManifest();
         if (isset($info['minimum_boxbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_boxbilling_version']) > 0) {
-            throw new \Box_Exception('Module can not be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
+            throw new \FOSSBilling\InformationException('Module can not be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
         }
 
         // Allow install module even if no installer exists
@@ -522,7 +522,7 @@ class Service implements InjectionAwareInterface
         // perform install script if available
         try {
             $mod->install();
-        } catch (\Box_Exception $e) {
+        } catch (\FOSSBilling\Exception $e) {
             if ($e->getCode() != 408) {
                 throw $e;
             }
@@ -611,7 +611,7 @@ class Service implements InjectionAwareInterface
 
     private function _getSalt()
     {
-        return $this->di['config']['salt'];
+        return $this->di['config']['info']['salt'];
     }
 
     public function getCoreAndActiveModules()

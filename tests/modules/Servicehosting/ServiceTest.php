@@ -48,7 +48,7 @@ class ServiceTest extends \BBTestCase {
 
         unset ($data [ $field ]);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($exceptionMessage, $excCode);
         $this->service->validateOrderData($data);
     }
@@ -199,7 +199,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_renew($orderModel);
 
@@ -257,7 +257,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_suspend($orderModel);
 
@@ -315,7 +315,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_unsuspend($orderModel);
 
@@ -372,7 +372,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_cancel($orderModel);
     }
@@ -559,7 +559,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Account username is missing or is invalid');
         $this->service->changeAccountUsername($orderModel, $model, $data);
     }
@@ -612,7 +612,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Account ip is missing or is invalid');
         $this->service->changeAccountIp($orderModel, $model, $data);
     }
@@ -666,7 +666,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Domain sld or tld is missing');
         $this->service->changeAccountDomain($orderModel, $model, $data);
     }
@@ -720,7 +720,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Account password is missing or is invalid');
         $this->service->changeAccountPassword($orderModel, $model, $data);
     }
@@ -1000,7 +1000,7 @@ class ServiceTest extends \BBTestCase {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(654);
         $this->expectExceptionMessage('Invalid server manager. Server was not configured properly');
         $this->service->getServerManager($hostingServerModel);
@@ -1018,7 +1018,7 @@ class ServiceTest extends \BBTestCase {
         });
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Server manager %s is invalid', $hostingServerModel->manager));
         $this->service->getServerManager($hostingServerModel);
     }

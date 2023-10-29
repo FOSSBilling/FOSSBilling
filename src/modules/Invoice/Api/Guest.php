@@ -21,7 +21,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function get($data)
     {
@@ -32,7 +32,7 @@ class Guest extends \Api_Abstract
 
         $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
-            throw new \Box_Exception('Invoice was not found');
+            throw new \FOSSBilling\Exception('Invoice was not found');
         }
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
@@ -45,7 +45,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update($data)
     {
@@ -56,10 +56,10 @@ class Guest extends \Api_Abstract
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$invoice) {
-            throw new \Box_Exception('Invoice was not found');
+            throw new \FOSSBilling\Exception('Invoice was not found');
         }
         if ($invoice->status == 'paid') {
-            throw new \Box_Exception('Paid Invoice can not be modified');
+            throw new \FOSSBilling\InformationException('Paid Invoice can not be modified');
         }
 
         $updateParams = [];
@@ -94,16 +94,16 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function payment($data)
     {
         if (!isset($data['hash'])) {
-            throw new \Box_Exception('Invoice hash not passed. Missing param hash', null, 810);
+            throw new \FOSSBilling\Exception('Invoice hash not passed. Missing param hash', null, 810);
         }
 
         if (!isset($data['gateway_id'])) {
-            throw new \Box_Exception('Payment method not found. Missing param gateway_id', null, 811);
+            throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', null, 811);
         }
 
         return $this->getService()->processInvoice($data);
@@ -112,7 +112,7 @@ class Guest extends \Api_Abstract
     /**
      * Generates PDF for given invoice.
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function pdf($data)
     {

@@ -196,7 +196,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
         $admin_Client->setService($serviceMock);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email is already registered.');
         $admin_Client->create($data);
     }
@@ -402,7 +402,7 @@ class AdminTest extends \BBTestCase
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not change email. It is already registered.');
         $admin_Client->update($data);
     }
@@ -417,7 +417,7 @@ class AdminTest extends \BBTestCase
         $di['validator'] = new \FOSSBilling\Validate();
         $admin_Client->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Id required');
         $admin_Client->update($data);
     }
@@ -491,7 +491,7 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $admin_Client->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Passwords do not match');
         $admin_Client->change_password($data);
     }

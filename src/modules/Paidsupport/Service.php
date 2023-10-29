@@ -120,7 +120,7 @@ class Service implements InjectionAwareInterface
         $clientBalance = $clientBalanceService->getClientBalance($client);
 
         if ($this->getTicketPrice() > $clientBalance) {
-            throw new \Box_Exception($this->getErrorMessage());
+            throw new \FOSSBilling\Exception($this->getErrorMessage());
         }
 
         return true;

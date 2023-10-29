@@ -11,6 +11,8 @@
 namespace Box\Mod\System;
 
 use FOSSBilling\Environment;
+use FOSSBilling\SentryHelper;
+use FOSSBilling\Version;
 use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -31,7 +33,7 @@ class Service
     public function getParamValue($param, $default = null)
     {
         if (empty($param)) {
-            throw new \Box_Exception('Parameter key is missing');
+            throw new \FOSSBilling\Exception('Parameter key is missing');
         }
 
         $query = 'SELECT value
@@ -95,7 +97,7 @@ class Service
         }
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', $param)) {
-                throw new \Box_Exception('Invalid parameter name, received: param_', ['param_' => $param]);
+                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
             }
         }
         $query = "SELECT param, value
@@ -259,12 +261,12 @@ class Service
                 // And now return the correctly message for the given situation
                 if (!$last_exec) {
                     return [
-                        'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly. (Message is cached for 15 minutes)',
+                        'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly. (Message will remain for 15 minutes)',
                         'url' => $cronUrl,
                     ];
                 } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
                     return [
-                        'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes. (Message is cached for 15 minutes)',
+                        'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes. (Message will remain for 15 minutes)',
                         'url' => $cronUrl,
                     ];
                 } else {
@@ -274,6 +276,44 @@ class Service
 
             if ($result) {
                 $msgs['danger'][] = $result;
+            }
+        }
+
+        /**
+         * The below logic is to help ensure that we nudge the user when needed about error reporting. 
+         */
+        if (Environment::isProduction()) {
+            // Get the last time we've nudged the user about error reporting
+            $lastErrorReportingNudge = $this->getParamValue('last_error_reporting_nudge');
+
+            $result = $this->di['cache']->get('error_reporting_nudge', function (ItemInterface $item) use ($lastErrorReportingNudge) {
+                $item->expiresAfter(15 * 60);
+                $url = $this->di['url']->adminLink('extension/settings/system');
+                $this->setParamValue('last_error_reporting_nudge', Version::VERSION);
+
+                if (!$lastErrorReportingNudge) {
+                    // The user upgraded from a version that didn't have error reporting functionality, so let's nudge them about it now.
+                    return [
+                        'text' => 'We\'d apreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
+                        'url' => $url,
+                    ];
+                } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && $this->di['config']['debug_and_monitoring']['report_errors']) {
+                    /**
+                     * The installation already had error reporting enabled, but something has changed so we should nudge the user to review the changes.
+                     * This message is cached for a full 24 hours to help ensure it is seen.
+                     */
+                    $item->expiresAfter(60 * 60 * 24);
+                    return [
+                        'text' => 'Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what\'s been changed. (This message will remain for 24 hours)',
+                        'url' => $url,
+                    ];
+                } else {
+                    return [];
+                }
+            });
+
+            if ($result) {
+                $msgs['info'][] = $result;
             }
         }
 
@@ -308,7 +348,7 @@ class Service
     {
         try {
             return $this->di['central_alerts']->filterAlerts();
-        } catch (\Box_Exception $e) {
+        } catch (\FOSSBilling\Exception $e) {
             return [
                 [
                     'type' => 'warning',
@@ -467,7 +507,7 @@ class Service
         $stmt->execute(['param' => $param]);
         $results = $stmt->fetchColumn();
         if ($results === false) {
-            throw new \Box_Exception('Parameter :param does not exist', [':param' => $param]);
+            throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
         return $results;
@@ -1360,7 +1400,7 @@ class Service
             if (array_key_exists($data['country'], $codes)) {
                 return $codes[$data['country']];
             } else {
-                throw new \Box_Exception('Country :code phone code is not registered', [':code' => $data['country']]);
+                throw new \FOSSBilling\InformationException('Country :code phone code is not registered', [':code' => $data['country']]);
             }
         }
 

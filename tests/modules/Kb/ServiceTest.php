@@ -337,7 +337,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $service->setDi($di);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $service->updateArticle($randId, $kb_article_category_id, $title, $slug, $status, $content, $views);
         $this->assertIsBool($result);
         $this->assertTrue($result);
@@ -497,7 +497,7 @@ class ServiceTest extends \BBTestCase
         $model->KbArticle = new \Model_KbArticle();
         $model->KbArticle->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $service->categoryRm($model);
         $this->assertNull($result);
     }

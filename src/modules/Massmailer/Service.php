@@ -158,11 +158,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
-            throw new \Box_Exception('Disabled for security reasons (Demo mode enabled)');
+            throw new \FOSSBilling\InformationException('Disabled for security reasons (Demo mode enabled)');
         }
 
         if (!Environment::isProduction()) {
-            if ($this->di['config']['debug']) {
+            if (BB_DEBUG) {
                 error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
 

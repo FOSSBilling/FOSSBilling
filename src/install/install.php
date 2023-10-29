@@ -12,6 +12,7 @@ use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
 use Symfony\Component\HttpClient\HttpClient;
 use Twig\Loader\FilesystemLoader;
+use Ramsey\Uuid\Uuid;
 
 date_default_timezone_set('UTC');
 error_reporting(E_ALL);
@@ -39,6 +40,9 @@ const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' .
 const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
 const PAGE_INSTALL = './assets/install.html.twig';
 const PAGE_RESULT = './assets/result.html.twig';
+
+// Some functions and classes reference this, so we define it here to avoid errors.
+const BB_DEBUG = false;
 
 // Set default include path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -106,6 +110,9 @@ final class FOSSBilling_Installer
                         throw new Exception('FOSSBilling is already installed.');
                     }
 
+                    // Set if they've opted into error reporting
+                    $this->session->set('error_reporting', $_POST['error_reporting']);
+
                     // Handle database information
                     $this->session->set('database_hostname', $_POST['database_hostname']);
                     $this->session->set('database_port', $_POST['database_port']);
@@ -144,7 +151,7 @@ final class FOSSBilling_Installer
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
                         $config = require PATH_CONFIG;
-                        if (!$config['debug']) {
+                        if (!$config['debug_and_monitoring']['debug']) {
                             $this->removeDirectory('..' . DIRECTORY_SEPARATOR . 'install');
                         }
                     } catch (Exception) {
@@ -372,6 +379,12 @@ final class FOSSBilling_Installer
             'currency_format' => $this->session->get('currency_format'),
         ]);
 
+        $stmt = $this->pdo->prepare("INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())");
+        $stmt->execute([
+            ':param' => 'last_error_reporting_nudge',
+            ':value' => \FOSSBilling\Version::VERSION,
+        ]);
+
         // Copy config templates when applicable
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
@@ -406,7 +419,6 @@ final class FOSSBilling_Installer
     private function getConfigOutput(): string
     {
         // Version data
-        $version = new \FOSSBilling\Requirements();
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
         $updateBranch = (preg_match($reg, \FOSSBilling\Version::VERSION, $matches) !== 0) ? "release" : "preview";
 
@@ -414,9 +426,11 @@ final class FOSSBilling_Installer
         $data = require PATH_CONFIG_SAMPLE;
 
         // Handle dynamic configs
-        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS() ? true : false;
+        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
+        $data['debug_and_monitoring']['report_errors'] = (bool)$this->session->get('error_reporting');
         $data['update_branch'] = $updateBranch;
-        $data['salt'] = md5(random_bytes(13));
+        $data['info']['salt'] = bin2hex(random_bytes(16));
+        $data['info']['instance_id'] = Uuid::uuid4()->toString();
         $data['url'] = BB_URL;
         $data['path_data'] = PATH_ROOT . '/data';
         $data['path_logs'] = PATH_ROOT . '/data/log/application.log';

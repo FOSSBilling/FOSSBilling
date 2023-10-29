@@ -18,7 +18,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $options = array();
 
         $this->expectException(Registrar_Exception::class);
-        $this->expectExceptionMessage('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub Reseller ID" at "Configuration -> Domain registration".');
+        $this->expectExceptionMessage('ResellerClub" domain registrar is not fully configured. Please configure the ResellerClub Reseller ID');
 
         $adapter = new \Registrar_Adapter_Resellerclub($options);
     }
@@ -30,7 +30,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         );
 
         $this->expectException(Registrar_Exception::class);
-        $this->expectExceptionMessage('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub API Key" at "Configuration -> Domain registration".');
+        $this->expectExceptionMessage('The "ResellerClub" domain registrar is not fully configured. Please configure the ResellerClub API Key');
 
         new \Registrar_Adapter_Resellerclub($options);
     }

@@ -281,7 +281,7 @@ class ServiceTest extends \BBTestCase
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->removeProduct($cart, rand(1, 100));
         $this->assertTrue($result);
     }
@@ -435,7 +435,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $serviceMock->applyPromo($cart, $promo);
         $this->assertTrue($result);
     }
@@ -705,7 +705,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testCheckoutCartClientIsNotAbleToUsePromoException()
     {
@@ -735,7 +735,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $serviceMock->checkoutCart($cart, $client);
 
         $this->assertIsArray($result);
@@ -812,12 +812,12 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Period parameter not passed'));
+            ->willThrowException(new \FOSSBilling\Exception('Period parameter not passed'));
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Period parameter not passed');
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
@@ -860,7 +860,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Selected billing period is invalid');
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
@@ -899,7 +899,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage("This item is currently out of stock");
         $serviceMock->addItem($cartModel, $productModel, $data);
     }

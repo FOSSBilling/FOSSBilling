@@ -271,7 +271,7 @@ class Api_AdminTest extends \BBTestCase
         $data = array(
             'tld' => '.com'
         );
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->adminApi->tld_get($data);
     }
 
@@ -337,7 +337,7 @@ class Api_AdminTest extends \BBTestCase
             'tld' => '.com'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->adminApi->tld_delete($data);
     }
 
@@ -394,7 +394,7 @@ class Api_AdminTest extends \BBTestCase
             'tld' => '.com'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->tld_create($data);
         $this->assertIsInt($result);
     }
@@ -452,7 +452,7 @@ class Api_AdminTest extends \BBTestCase
             'tld' => '.com'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->adminApi->tld_update($data);
     }
 
@@ -571,7 +571,7 @@ class Api_AdminTest extends \BBTestCase
             'code' => 'ResellerClub'
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->registrar_install($data);
 
         $this->assertTrue($result);
@@ -618,7 +618,7 @@ class Api_AdminTest extends \BBTestCase
         // Test case 2: Servicedomains associated with the registrar
         $serviceMock->expects($this->never())->method('registrarRm'); // Since there are servicedomains, registrarRm should not be called
         $dbMock->expects($this->once())->method('find')->will($this->returnValue([new \Model_ServiceDomain()])); // Mocking the find() method to return servicedomains
-        $this->expectException('\Box_Exception'); // Expecting an exception to be thrown
+        $this->expectException('\FOSSBilling\Exception'); // Expecting an exception to be thrown
         $this->expectExceptionCode(707); // Expecting the exception code to be 707
         $result = $this->adminApi->registrar_delete($data); // This should throw an exception
     }
@@ -642,7 +642,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Registrar ID is missing'));
+            ->willThrowException(new \FOSSBilling\Exception('Registrar ID is missing'));
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -650,7 +650,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->registrar_delete($data);
 
         $this->assertTrue($result);
@@ -708,7 +708,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Registrar ID is missing'));
+            ->willThrowException(new \FOSSBilling\Exception('Registrar ID is missing'));
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -716,7 +716,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->registrar_copy($data);
 
         $this->assertTrue($result);
@@ -774,7 +774,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Registrar ID is missing'));
+            ->willThrowException(new \FOSSBilling\Exception('Registrar ID is missing'));
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -782,7 +782,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->registrar_get($data);
 
         $this->assertIsArray($result);
@@ -853,7 +853,7 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Registrar ID is missing'));
+            ->willThrowException(new \FOSSBilling\Exception('Registrar ID is missing'));
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
@@ -861,7 +861,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->registrar_update($data);
 
         $this->assertTrue($result);
@@ -931,13 +931,13 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willThrowException(new \Box_Exception('Registrar ID is missing'));
+            ->willThrowException(new \FOSSBilling\Exception('Registrar ID is missing'));
         $di['validator'] = $validatorMock;
         $this->adminApi->setDi($di);
 
         $data   = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->update($data);
 
         $this->assertTrue($result);
@@ -977,7 +977,7 @@ class Api_AdminTest extends \BBTestCase
             'order_id' => rand(1, 100)
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->adminApi->update($data);
 
         $this->assertTrue($result);

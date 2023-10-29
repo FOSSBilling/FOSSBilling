@@ -244,7 +244,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket = $this->di['db']->findOne('SupportTicket', 'id = :id AND client_id = :client_id', $bindings);
 
         if (!$ticket instanceof \Model_SupportTicket) {
-            throw new \Box_Exception('Ticket not found');
+            throw new \FOSSBilling\Exception('Ticket not found');
         }
 
         return $ticket;
@@ -648,7 +648,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
         if ((is_countable($tickets) ? count($tickets) : 0) > 0) {
-            throw new \Box_Exception('Can not remove helpdesk which has tickets');
+            throw new \FOSSBilling\InformationException('Can not remove helpdesk which has tickets');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted helpdesk #%s', $id);
@@ -855,7 +855,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $timeSinceLast = round(abs(strtotime($lastTicket->created_at) - strtotime(date('Y-m-d H:i:s'))) / 3600, 0);
 
         if ($timeSinceLast < $hours) {
-            throw new \Box_Exception(sprintf('You can submit one ticket per %s hours. %s hours left', $hours, $hours - $timeSinceLast));
+            throw new \FOSSBilling\InformationException(sprintf('You can submit one ticket per %s hours. %s hours left', $hours, $hours - $timeSinceLast));
         }
 
         return true;
@@ -871,7 +871,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $orderService = $this->di['mod_service']('order');
             $o = $orderService->findForClientById($client, $rel_id);
             if (!$o instanceof \Model_ClientOrder) {
-                throw new \Box_Exception('Order ID does not exist');
+                throw new \FOSSBilling\Exception('Order ID does not exist');
             }
         }
 
@@ -881,7 +881,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($rel_task == 'upgrade') {
             if (empty($o) || empty($rel_new_value)) {
-                throw new \Box_Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
+                throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
             $product = $this->di['db']->getExistingModelById('Product', $o->product_id);
@@ -889,13 +889,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (!in_array($rel_new_value, $allowedUpgrades)) {
                 $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
 
-                throw new \Box_Exception('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
+                throw new \FOSSBilling\InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
             }
         }
 
         // check if support ticket with same uncompleted task already exists
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {
-            throw new \Box_Exception('We have already received this request.');
+            throw new \FOSSBilling\InformationException('We have already received this request.');
         }
 
         $mod = $this->di['mod']('support');
@@ -970,7 +970,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         } elseif ($identity instanceof \Model_Client) {
             $msg->client_id = $identity->id;
         } else {
-            throw new \Box_Exception('Identity is invalid');
+            throw new \FOSSBilling\Exception('Identity is invalid');
         }
         $msg->content = $content;
         $msg->ip = $this->di['request']->getClientAddress();
@@ -999,7 +999,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $publicTicket = $this->di['db']->findOne('SupportPTicket', 'hash = :hash', $bindings);
         if (!$publicTicket instanceof \Model_SupportPTicket) {
-            throw new \Box_Exception('Public ticket not found');
+            throw new \FOSSBilling\Exception('Public ticket not found');
         }
 
         return $publicTicket;

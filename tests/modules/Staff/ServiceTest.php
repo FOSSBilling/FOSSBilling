@@ -101,7 +101,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage('Check your login details');
         $service->login($email, $password, $ip);
@@ -1002,7 +1002,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new \Box\Mod\Staff\Service();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('This administrator account is protected and can not be removed');
         $service->delete($adminModel);
     }
@@ -1147,7 +1147,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(788954);
         $this->expectExceptionMessage(sprintf('Staff member with email %s is already registered', $data['email']));
         $service->create($data);
@@ -1332,7 +1332,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new \Box\Mod\Staff\Service();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Administrators group can not be removed');
         $service->deleteGroup($adminGroupModel);
     }
@@ -1353,7 +1353,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove group which has staff members');
         $service->deleteGroup($adminGroupModel);
     }

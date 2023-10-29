@@ -23,7 +23,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function message()
     {

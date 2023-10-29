@@ -35,14 +35,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if ($field['required'] == 1) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
-                        throw new \Box_Exception('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
+                        throw new \FOSSBilling\InformationException('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
                 if ($field['readonly'] == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
-                        throw new \Box_Exception('Field ' . $field['label'] . ' is read only. You can not change its value', null, 5468);
+                        throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You can not change its value', null, 5468);
                     }
                 }
             }
@@ -76,7 +76,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Could not activate order. Service was not created', null, 7456);
+            throw new \FOSSBilling\Exception('Could not activate order. Service was not created', null, 7456);
         }
 
         $this->callOnAdapter($model, 'activate');
@@ -216,7 +216,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'activate',
         ];
         if (in_array($method, $forbidden_methods)) {
-            throw new \Box_Exception('Custom plugin method :method is forbidden', [':method' => $method], 403);
+            throw new \FOSSBilling\Exception('Custom plugin method :method is forbidden', [':method' => $method], 403);
         }
 
         return $this->callOnAdapter($model, $method, $params);
@@ -225,7 +225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function updateConfig($orderId, $config)
     {
         if (!is_array($config)) {
-            throw new \Box_Exception('Config must be an array');
+            throw new \FOSSBilling\Exception('Config must be an array');
         }
 
         $model = $this->getServiceCustomByOrderId($orderId);
@@ -245,7 +245,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $s = $orderService->getOrderService($order);
 
         if (!$s instanceof \Model_ServiceCustom) {
-            throw new \Box_Exception('Order is not activated');
+            throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         return $s;
@@ -262,7 +262,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = sprintf('Plugin/%s/%s.php', $plugin, $plugin);
         if (!Environment::isTesting() && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
-            $e = new \Box_Exception('Plugin class file :file was not found', [':file' => $file], 3124);
+            $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (BB_DEBUG) {
                 error_log($e->getMessage());
             }
@@ -276,7 +276,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $adapter = new $plugin($config);
 
         if (!method_exists($adapter, $method)) {
-            throw new \Box_Exception('Plugin :plugin does not support action :action', [':plugin' => $plugin, ':action' => $method], 3125);
+            throw new \FOSSBilling\Exception('Plugin :plugin does not support action :action', [':plugin' => $plugin, ':action' => $method], 3125);
         }
 
         $orderService = $this->di['mod_service']('order');
@@ -292,7 +292,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
         return $model;

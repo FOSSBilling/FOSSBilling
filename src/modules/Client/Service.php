@@ -32,7 +32,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
         $result = $db->getRow('SELECT id, client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email" AND meta_value = :hash', [':hash' => $hash]);
         if (!$result) {
-            throw new \Box_Exception('Invalid email confirmation link');
+            throw new \FOSSBilling\InformationException('Invalid email confirmation link');
         }
         $db->exec('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
         $db->exec('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
@@ -180,7 +180,7 @@ class Service implements InjectionAwareInterface
     {
         $limit = $data['per_page'] ?? 30;
         if (!is_numeric($limit) || $limit < 1) {
-            throw new \Box_Exception('Invalid per page number');
+            throw new \FOSSBilling\InformationException('Invalid per page number');
         }
 
         [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, CONCAT(c.company, ': (', c.first_name, ' ', c.last_name, ')') as client");
@@ -222,12 +222,12 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->di['db']->findOne('Invoice', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($invoice instanceof \Model_Invoice) {
-            throw new \Box_Exception('Currency can not be changed. Client already have invoices issued.');
+            throw new \FOSSBilling\InformationException('Currency can not be changed. Client already have invoices issued.');
         }
 
         $order = $this->di['db']->findOne('ClientOrder', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($order instanceof \Model_ClientOrder) {
-            throw new \Box_Exception('Currency can not be changed. Client already have orders.');
+            throw new \FOSSBilling\InformationException('Currency can not be changed. Client already have orders.');
         }
 
         return true;
@@ -236,15 +236,15 @@ class Service implements InjectionAwareInterface
     public function addFunds(\Model_Client $client, $amount, $description, array $data = [])
     {
         if (!$client->currency) {
-            throw new \Box_Exception('Define clients currency before adding funds.');
+            throw new \FOSSBilling\InformationException('Define clients currency before adding funds.');
         }
 
         if (!is_numeric($amount)) {
-            throw new \Box_Exception('Funds amount is invalid');
+            throw new \FOSSBilling\InformationException('Funds amount is invalid');
         }
 
         if (empty($description)) {
-            throw new \Box_Exception('Funds description is invalid');
+            throw new \FOSSBilling\InformationException('Funds description is invalid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');
@@ -412,7 +412,7 @@ class Service implements InjectionAwareInterface
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['email'])) {
-            throw new \Box_Exception('Client ID or email is required');
+            throw new \FOSSBilling\InformationException('Client ID or email is required');
         }
 
         $db = $this->di['db'];
@@ -426,7 +426,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$client instanceof \Model_Client) {
-            throw new \Box_Exception('Client not found');
+            throw new \FOSSBilling\Exception('Client not found');
         }
 
         return $client;
@@ -469,7 +469,7 @@ class Service implements InjectionAwareInterface
     {
         $client = $this->di['db']->findOne('Client', 'client_group_id = ?', [$model->id]);
         if ($client) {
-            throw new \Box_Exception('Can not remove group with clients');
+            throw new \FOSSBilling\Exception('Can not remove group with clients');
         }
 
         $this->di['db']->trash($model);
@@ -629,7 +629,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \Box_Exception('Email can not be changed');
+            throw new \FOSSBilling\InformationException('Email can not be changed');
         }
 
         return true;
@@ -643,7 +643,7 @@ class Service implements InjectionAwareInterface
             if (!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
 
-                throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
+                throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
             }
         }
     }
@@ -659,7 +659,7 @@ class Service implements InjectionAwareInterface
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
                     $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
 
-                    throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
+                    throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
                 }
             }
         }
@@ -687,7 +687,7 @@ class Service implements InjectionAwareInterface
      *
      * @return bool|int
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function password_reset_valid($data)
     {
@@ -699,7 +699,7 @@ class Service implements InjectionAwareInterface
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {
-            throw new \Box_Exception('The link has expired or you have already reset your password.');
+            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
         }
 
         $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);

@@ -15,14 +15,14 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $this->config['apikey'] = $options['apikey'];
             unset($options['apikey']);
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API key']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API key'], 3001);
         }
 
         if(isset($options['password']) && !empty($options['password'])) {
             $this->config['password'] = $options['password'];
             unset($options['password']);
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API password']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API password'], 3001);
         }
     }
 
