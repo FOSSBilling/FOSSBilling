@@ -2,6 +2,8 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
+{% set active_menu = 'support' %}
+
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
@@ -14,35 +16,34 @@
         <li class="breadcrumb-item">
             <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Canned responses'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Canned Responses'|trans }}</li>
     </ol>
 {% endblock %}
 
-{% set active_menu = 'support' %}
-{% block meta_title %}Canned responses{% endblock %}
+{% block meta_title %}Canned Responses{% endblock %}
 
 {% block content %}
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned responses'|trans }}</a>
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned Responses'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New response'|trans }}
+                {{ 'New Response'|trans }}
             </a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Categories'|trans }}</a>
+            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New category'|trans }}
+                {{ 'New Category'|trans }}
             </a>
         </li>
     </ul>

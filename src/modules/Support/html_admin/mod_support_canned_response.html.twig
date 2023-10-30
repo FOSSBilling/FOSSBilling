@@ -2,9 +2,9 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% set active_menu = 'support' %}
+{% block meta_title %}{{ 'Canned Response'|trans }}{% endblock %}
 
-{% block meta_title %}{{ 'Canned response'|trans }}{% endblock %}
+{% set active_menu = 'support' %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -19,7 +19,7 @@
             <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support/canned-responses'|alink }}">{{ 'Canned responses'|trans }}</a>
+            <a href="{{ 'support/canned-responses'|alink }}">{{ 'Canned Responses'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ response.title }}</li>
     </ol>
@@ -46,7 +46,7 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}:</label>
                 <div class="col">
                     <textarea class="bb-textarea" name="content" rows="10">{{ response.content }}</textarea>
                 </div>

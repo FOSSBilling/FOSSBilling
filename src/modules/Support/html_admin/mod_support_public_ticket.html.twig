@@ -16,7 +16,10 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">{{ 'Public tickets'|trans }}</a>
+            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">{{ 'Public Tickets'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">#{{ ticket.id }} - {{ ticket.subject }}</li>
     </ol>
@@ -69,12 +72,12 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="text-end">{{ 'Time opened'|trans }}:</td>
+                        <td class="text-end">{{ 'Time Opened'|trans }}:</td>
                         <td>{{ ticket.created_at|format_date }}</td>
                     </tr>
                     {% if ticket.created_at != ticket.updated_at %}
                     <tr>
-                        <td class="text-end">{{ 'Last updated'|trans }}:</td>
+                        <td class="text-end">{{ 'Last Updated'|trans }}:</td>
                         <td>{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
                     </tr>
                     {% endif %}
@@ -107,7 +110,7 @@
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#eye" />
                     </svg>
-                    <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>
+                    <span class="d-block text-secondary">{{ 'View as Client'|trans }}</span>
                 </a>
             </div>
         </div>

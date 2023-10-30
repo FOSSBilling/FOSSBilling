@@ -310,8 +310,8 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to complete merging the Kb and Support modules.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
 
-                // Renames the "support_kb_article" and "support_kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
-                $q = "RENAME TABLE support_kb_article TO support_kb_article, support_kb_article_category TO support_kb_article_category;";
+                // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
+                $q = "RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;";
                 $this->executeSql($q);
 
                 // If the Kb extension is currently active, set enabled in Support settings.

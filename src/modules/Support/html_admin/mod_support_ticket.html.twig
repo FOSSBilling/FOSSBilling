@@ -14,7 +14,10 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support tickets'|trans }}</a>
+            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|alink }}">{{ 'Tickets'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">#{{ ticket.id }} - {{ ticket.subject }}</li>
     </ul>
@@ -39,7 +42,7 @@
             <a class="nav-link" href="#tab-notes" data-bs-toggle="tab">{{ 'Notes'|trans }} {% if ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-support" data-bs-toggle="tab">{{ 'Client tickets'|trans }}</a>
+            <a class="nav-link" href="#tab-support" data-bs-toggle="tab">{{ 'Client Tickets'|trans }}</a>
         </li>
     </ul>
 
@@ -56,7 +59,7 @@
                         <td><a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Help desk'|trans }}</td>
+                        <td>{{ 'Helpdesk'|trans }}</td>
                         <td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td>
                     </tr>
                     <tr>
@@ -68,7 +71,7 @@
                             {% endfor %}
                     </tr>
                     <tr>
-                        <td>{{ 'Time opened'|trans }}</td>
+                        <td>{{ 'Time Opened'|trans }}</td>
                         <td>{{ ticket.created_at|format_date }}</td>
                     </tr>
 
@@ -82,14 +85,14 @@
 
                     {% if task.type == 'order' %}
                     <tr>
-                        <td><label>{{ 'Related to'|trans }}</label></td>
+                        <td><label>{{ 'Related To'|trans }}</label></td>
                         <td><a href="{{ 'order/manage'|alink }}/{{ task.id }}">Order #{{ task.id }}</a></td>
                     </tr>
                     {% endif %}
 
                     {% if task.task == 'upgrade' %}
                     <tr>
-                        <td><label>{{ 'Upgrade to'|trans }}</label></td>
+                        <td><label>{{ 'Upgrade To'|trans }}</label></td>
                         <td><a href="{{ 'product/manage'|alink }}/{{ task.new_value }}">{{ admin.product_get_pairs[task.new_value] }}</a></td>
                     </tr>
                     {% endif %}
@@ -121,7 +124,7 @@
                 {% if task.status == 'pending' %}
                 <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
                     <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1">
-                    <span>{{ 'Set Task complete'|trans }}</span>
+                    <span>{{ 'Set Task Complete'|trans }}</span>
                 </a>
                 {% endif %}
             </div>
@@ -138,7 +141,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Helpdesk'|trans }}</label>
                         <div class="col">
                             {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, ticket.support_helpdesk_id, 1) }}
                         </div>
@@ -211,7 +214,7 @@
                 <thead>
                     <tr>
                         <th>{{ 'ID'|trans }}</th>
-                        <th>{{ 'Help desk'|trans }}</th>
+                        <th>{{ 'Helpdesk'|trans }}</th>
                         <th>{{ 'Subject'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
                         <th class="w-1"></th>
@@ -259,7 +262,7 @@
                     <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
-                    {{ 'New support ticket'|trans }}
+                    {{ 'New Support Ticket'|trans }}
                 </a>
             </div>
         </div>
