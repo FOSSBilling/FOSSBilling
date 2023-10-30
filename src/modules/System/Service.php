@@ -139,25 +139,24 @@ class Service
         ];
         $results = $this->_getMultipleParams($c);
 
-        $baseUrl = $this->di['config']['url'];
         $logoUrl = $results['company_logo'] ?? null;
         if ($logoUrl !== null && !str_contains($logoUrl, 'http')) {
-            $logoUrl = $baseUrl . $logoUrl;
+            $logoUrl = BB_URL . $logoUrl;
         }
 
         $logoUrlDark = $results['company_logo_dark'] ?? null;
         if ($logoUrlDark !== null && !str_contains($logoUrlDark, 'http')) {
-            $logoUrlDark = $baseUrl . $logoUrlDark;
+            $logoUrlDark = BB_URL . $logoUrlDark;
         }
         $logoUrlDark ??= $logoUrl;
 
         $faviconUrl = $results['company_favicon'] ?? null;
         if ($faviconUrl !== null && !str_contains($faviconUrl, 'http')) {
-            $faviconUrl = $baseUrl . $faviconUrl;
+            $faviconUrl = BB_URL . $faviconUrl;
         }
 
         return [
-            'www' => $baseUrl,
+            'www' => BB_URL,
             'name' => isset($results['company_name']) ? htmlspecialchars($results['company_name'], ENT_QUOTES, 'UTF-8') : null,
             'email' => isset($results['company_email']) ? htmlspecialchars($results['company_email'], ENT_QUOTES, 'UTF-8') : null,
             'tel' => isset($results['company_tel']) ? htmlspecialchars($results['company_tel'], ENT_QUOTES, 'UTF-8') : null,

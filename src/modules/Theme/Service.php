@@ -237,7 +237,7 @@ class Service implements InjectionAwareInterface
         if ($theme == null || !file_exists($path . $theme)) {
             $theme = $default;
         }
-        $url = $this->di['config']['url'] . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
+        $url = BB_URL . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
 
         return ['code' => $theme, 'url' => $url];
     }

@@ -263,7 +263,6 @@ class Box_App
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
 
         $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
-        $rootUrl = $this->di['config']['url'];
 
         // Allow access to the staff panel all the time
         $adminApiPrefixes = [
@@ -274,7 +273,7 @@ class Box_App
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix) {
-            $realAdminApiUrl = '/' === $rootUrl[-1] ? substr($rootUrl, 0, -1) . $adminApiPrefix : $rootUrl . $adminApiPrefix;
+            $realAdminApiUrl = '/' === BB_URL[-1] ? substr(BB_URL, 0, -1) . $adminApiPrefix : BB_URL . $adminApiPrefix;
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
         }
         foreach ($allowedURLs as $url) {
@@ -322,10 +321,8 @@ class Box_App
     protected function checkAdminPrefix()
     {
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
-        $adminPrefix = $this->di['config']['admin_area_prefix'];
-        $rootUrl = $this->di['config']['url'];
 
-        $realAdminUrl = '/' === $rootUrl[-1] ? substr($rootUrl, 0, -1) . $adminPrefix : $rootUrl . $adminPrefix;
+        $realAdminUrl = '/' === BB_URL[-1] ? substr(BB_URL, 0, -1) . ADMIN_PREFIX : BB_URL . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 
         if (0 !== preg_match('/^' . str_replace('/', '\/', $realAdminPath) . '(.*)/', $REQUEST_URI)) {

@@ -17,12 +17,12 @@ class i18n
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
      *
      * @param bool $autoDetect Indicates if the user's Accept-Language header should be used to select the correct locale for them.
-     * 
+     *
      * @return string The locale code to use for the system.
      */
     public static function getActiveLocale(bool $autoDetect = true): string
     {
-        $config = include PATH_ROOT . '/config.php';
+        $config = include PATH_CONFIG;
         $locale = null;
 
         /**
@@ -93,7 +93,7 @@ class i18n
      * Retrieve a list of available locales, optionally including their details.
      *
      * @param bool $includeLocaleDetails (optional) Whether to include locale details or not. Defaults to false.
-     * 
+     *
      * @param bool $disabled Set to true if you want it to return a list of the disabled locales, defaults to false which will return the enabled locales.
      *
      * @return array An array of locales, sorted alphabetically. If `$includeLocaleDetails` is true, the array will contain
@@ -121,12 +121,12 @@ class i18n
 
     /**
      * Enables / disables a locale depending on it's current status.
-     * 
+     *
      * @param string $locale The locale code to toggle. (Example: `en_US`)
-     * 
+     *
      * @return bool To indicate if it was successful,
-     *  
-     * @throws InformationException 
+     *
+     * @throws InformationException
      */
     public static function toggleLocale(string $locale): bool
     {
@@ -149,10 +149,10 @@ class i18n
     /**
      * Returns how complete a locale is.
      * Will return 0 if the `completion.php` doesn't exist or if it doesn't include the specified locale.
-     * 
+     *
      * @param string $locale The locale ID (Example: `en_US`)
-     * 
-     * @return int The percentage complete for the specified locale. 
+     *
+     * @return int The percentage complete for the specified locale.
      */
     public static function getLocaleCompletionPercent(string $locale): int
     {
@@ -171,9 +171,9 @@ class i18n
 
     /**
      * Internal helper function that gets the list of locales off of the disk.
-     * 
+     *
      * @param bool $disabled Set to true to get the list of disabled locales. True returns the list of enabled locales.
-     * 
+     *
      * @return array The list of locale codes, sorted alphabetically.
      */
     private static function getLocaleList(bool $disabled = false): array

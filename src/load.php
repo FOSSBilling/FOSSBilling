@@ -247,9 +247,9 @@ define('BB_URL', $config['url']);
 define('PATH_DATA', $config['path_data']);
 define('PATH_CACHE', PATH_DATA . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
-define('BB_SSL', str_starts_with($config['url'], 'https'));
+define('BB_SSL', str_starts_with(BB_URL, 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
-define('BB_URL_API', $config['url'] . 'api/');
+define('BB_URL_API', BB_URL . 'api/');
 if (!empty($config['info']['instance_id'])) {
     define('INSTANCE_ID', $config['info']['instance_id']);
 } else {

@@ -1062,7 +1062,7 @@ class ServiceTest extends \BBTestCase
     {
         $filename = 'cfg.file';
         $config   = array('path_data' => '/home');
-        $expected = $config['path_data'] . '/uploads/' . md5($filename);
+        $expected = PATH_DATA . '/uploads/' . md5($filename);
 
         $di           = new \Pimple\Container();
         $di['config'] = $config;

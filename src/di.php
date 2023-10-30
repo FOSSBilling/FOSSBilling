@@ -27,16 +27,16 @@ use Twig\Extra\Intl\IntlExtension;
 $di = new \Pimple\Container();
 
 /*
- * Returns the current FOSSBilling config from config.php
+ * Returns the current FOSSBilling config.
  *
  * @param void
  *
  * @return array
  */
 $di['config'] = function () {
-    $array = include PATH_ROOT . '/config.php';
+    $config = include PATH_CONFIG;
 
-    return $array;
+    return $config;
 };
 
 /*
@@ -66,7 +66,7 @@ $di['logger'] = function () use ($di) {
 
         $log->addWriter($writer2);
     } else {
-        $monolog = new \FOSSBilling\Monolog($di);
+        $monolog = new \FOSSBilling\Monolog();
         $log->addWriter($monolog);
     }
 

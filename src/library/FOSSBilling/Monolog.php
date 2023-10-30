@@ -14,7 +14,7 @@ use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 
-class Monolog implements InjectionAwareInterface
+class Monolog
 {
     protected $logger = null;
     public string $dateFormat = "d-M-Y H:i:s e";
@@ -29,22 +29,13 @@ class Monolog implements InjectionAwareInterface
         "event"
     ];
 
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
-    public function __construct(protected ?\Pimple\Container $di)
+    public function __construct()
     {
         $channels = $this->channels;
 
         foreach ($channels as $channel) {
-            $path = $di['config']['path_data'] . '/log/' . $channel . '.log';
+
+            $path = PATH_LOG . DIRECTORY_SEPARATOR . $channel . '.log';
 
             $this->logger[$channel] = new Logger($channel);
             $stream = new StreamHandler($path, Logger::DEBUG);

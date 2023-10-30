@@ -347,7 +347,7 @@ class ServicePayGateway implements InjectionAwareInterface
             $p['bb_invoice_id'] = $model->id;
         }
 
-        return $this->di['config']['url'] . 'ipn.php?' . http_build_query($p);
+        return BB_URL . 'ipn.php?' . http_build_query($p);
     }
 
     /**
@@ -389,6 +389,6 @@ class ServicePayGateway implements InjectionAwareInterface
             $p['bb_redirect'] = 1;
         }
 
-        return $this->di['config']['url'] . 'ipn.php?' . http_build_query($p);
+        return BB_URL . 'ipn.php?' . http_build_query($p);
     }
 }

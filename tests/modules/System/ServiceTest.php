@@ -29,7 +29,7 @@ class ServiceTest extends \BBTestCase
     {
         $config = array('url' => 'www.fossbilling.org');
         $expected = array(
-            'www'                   => $config['url'],
+            'www'                   => 'http://localhost/',
             'name'                  => 'Inc. Test',
             'email'                 => 'work@example.eu',
             'tel'                   =>   NULL,
