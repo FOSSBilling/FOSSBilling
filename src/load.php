@@ -137,11 +137,11 @@ function checkWebServer()
 function errorHandler(int $number, string $message, string $file, int $line)
 {
     // Just some housekeeping to ensure a few things we rely on are loaded.
-    if (!class_exists('\FOSSBilling\ErrorPage')) {
+    if (!class_exists('\\' . \FOSSBilling\ErrorPage::class)) {
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
     }
 
-    if (!class_exists('\FOSSBilling\SentryHelper')) {
+    if (!class_exists('\\' . \FOSSBilling\SentryHelper::class)) {
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
     }
 
@@ -169,6 +169,7 @@ function exceptionHandler($e)
 
     if (getenv('APP_ENV') === 'test') {
         echo $e->getMessage() . PHP_EOL;
+
         return;
     } else {
         error_log($e->getMessage());
@@ -194,7 +195,7 @@ function exceptionHandler($e)
         $prettyPage->setPageTitle('An error ocurred');
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
-            'Error code'  => $e->getCode(),
+            'Error code' => $e->getCode(),
             'Instance ID' => INSTANCE_ID ?? 'Unknown',
         ]);
         $whoops->pushHandler($prettyPage);
@@ -242,14 +243,14 @@ $config = require PATH_CONFIG;
 
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
-define('BB_DEBUG', (bool)$config['debug_and_monitoring']['debug']);
+define('BB_DEBUG', (bool) $config['debug_and_monitoring']['debug']);
 define('BB_URL', $config['url']);
 define('PATH_CACHE', $config['path_data'] . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
-if(!empty($config['info']['instance_id'])){
+if (!empty($config['info']['instance_id'])) {
     define('INSTANCE_ID', $config['info']['instance_id']);
 } else {
     define('INSTANCE_ID', 'Unknown');

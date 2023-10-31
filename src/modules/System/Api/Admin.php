@@ -212,8 +212,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Returns the unique instance ID for this FOSSBilling installation.
-     * 
-     * @return string 
      */
     public function instance_id(): string
     {
@@ -225,7 +223,7 @@ class Admin extends \Api_Abstract
      */
     public function error_reporting_enabled(): bool
     {
-        return (bool)$this->di['config']['debug_and_monitoring']['report_errors'];
+        return (bool) $this->di['config']['debug_and_monitoring']['report_errors'];
     }
 
     /**
@@ -245,6 +243,7 @@ class Admin extends \Api_Abstract
 
         // Finally write it to the disk and then return bool if no exceptions were thrown.
         $filesystem->dumpFile(PATH_CONFIG, $output);
+
         return true;
     }
 
