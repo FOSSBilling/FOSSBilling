@@ -195,7 +195,7 @@ class Service implements InjectionAwareInterface
     public function checkPermissionsAndThrowException(string $module, string $key = null, mixed $constraint = null): void
     {
         if (!$this->hasPermission(null, $module, $key, $constraint)) {
-            throw new \Box_Exception('You do not have permission to perform this action', [], 403);
+            throw new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
         }
     }
 

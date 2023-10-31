@@ -728,7 +728,7 @@ class Service implements InjectionAwareInterface
         // First check if any access is allowed to the module for this person
         if (!$staff_service->hasPermission(null, $module)) {
             http_response_code(403);
-            $e = new \Box_Exception('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
+            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
             if (!is_null($app)) {
                 echo $app->render('error', ['exception' => $e]);
                 exit;
@@ -742,7 +742,7 @@ class Service implements InjectionAwareInterface
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
         if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
             http_response_code(403);
-            $e = new \Box_Exception('You do not have permission to perform this action', [], 403);
+            $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
                 echo $app->render('error', ['exception' => $e]);
                 exit;
