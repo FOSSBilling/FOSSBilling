@@ -128,21 +128,6 @@ class Update implements InjectionAwareInterface
     }
 
     /**
-     * Checks if current FOSSBilling version is a preview.
-     *
-     * @return bool True if preview, false if not.
-     */
-    private function isPreviewVersion(): bool
-    {
-        $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
-        if (preg_match($reg, $this->getLatestVersion())) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    /**
      * Check if an update is available for the current FOSSBilling version.
      *
      * @return bool True if update is available, false if not.
@@ -151,7 +136,7 @@ class Update implements InjectionAwareInterface
     {
         $version = $this->getLatestVersion();
         $result = Version::compareVersion($version);
-        $result = ($this->isPreviewVersion() && $this->getUpdateBranch() === "release") ? 1 : $result;
+        $result = (Version::isPreviewVersion() && $this->getUpdateBranch() === "release") ? 1 : $result;
         return ($result > 0);
     }
 
