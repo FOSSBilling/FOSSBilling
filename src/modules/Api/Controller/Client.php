@@ -127,7 +127,7 @@ class Client implements InjectionAwareInterface
             $url = strtolower(BB_URL);
             $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower($_SERVER['HTTP_REFERER']) : null;
             if (!$referer || !str_starts_with($referer, $url)) {
-                throw new \FOSSBilling\Exception('Invalid request. Make sure request origin is :from', [':from' => BB_URL], 1004);
+                throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => BB_URL], 1004);
             }
         }
 
@@ -138,7 +138,7 @@ class Client implements InjectionAwareInterface
     {
         $ips = $this->_api_config['allowed_ips'];
         if (!empty($ips) && !in_array($this->_getIp(), $ips)) {
-            throw new \FOSSBilling\Exception('Unauthorized IP', null, 1002);
+            throw new \FOSSBilling\InformationException('Unauthorized IP', null, 1002);
         }
 
         return true;
@@ -192,15 +192,15 @@ class Client implements InjectionAwareInterface
         }
 
         if (!isset($_SERVER['PHP_AUTH_USER'])) {
-            throw new \FOSSBilling\Exception('Authentication Failed', null, 201);
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         }
 
         if (!isset($_SERVER['PHP_AUTH_PW'])) {
-            throw new \FOSSBilling\Exception('Authentication Failed', null, 202);
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 202);
         }
 
         if (empty($_SERVER['PHP_AUTH_PW'])) {
-            throw new \FOSSBilling\Exception('Authentication Failed', null, 206);
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 206);
         }
 
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
@@ -214,7 +214,7 @@ class Client implements InjectionAwareInterface
             case 'client':
                 $model = $this->di['db']->findOne('Client', 'api_token = ?', [$password]);
                 if (!$model instanceof \Model_Client) {
-                    throw new \FOSSBilling\Exception('Authentication Failed', null, 204);
+                    throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
                 }
                 $this->di['session']->set('client_id', $model->id);
 
@@ -223,7 +223,7 @@ class Client implements InjectionAwareInterface
             case 'admin':
                 $model = $this->di['db']->findOne('Admin', 'api_token = ?', [$password]);
                 if (!$model instanceof \Model_Admin) {
-                    throw new \FOSSBilling\Exception('Authentication Failed', null, 205);
+                    throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
                 $sessionAdminArray = [
                     'id' => $model->id,
@@ -237,7 +237,7 @@ class Client implements InjectionAwareInterface
 
             case 'guest': // do not allow at the moment
             default:
-                throw new \FOSSBilling\Exception('Authentication Failed', null, 203);
+                throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
         }
     }
 
@@ -298,7 +298,7 @@ class Client implements InjectionAwareInterface
     /**
      * Checks if the CSRF token provided is valid.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function _checkCSRFToken()
     {
@@ -329,7 +329,7 @@ class Client implements InjectionAwareInterface
         }
 
         if (!is_null($expectedToken) && $expectedToken !== $token) {
-            throw new \FOSSBilling\Exception('CSRF token invalid', null, 403);
+            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
         }
     }
 }
