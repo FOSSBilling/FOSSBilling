@@ -250,7 +250,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old guzzlehttp package, as we no longer
                 // use it. Also serves as an example for how to perform file action.
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'guzzlehttp' => 'unlink',
+                    PATH_VENDOR . DIRECTORY_SEPARATOR . 'guzzlehttp' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -258,8 +258,8 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old htaccess.txt file, and any old config.php backup.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'htaccess.txt' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'config.php.old' => 'unlink',
+                    PATH_ROOT . DIRECTORY_SEPARATOR . 'htaccess.txt' => 'unlink',
+                    PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php.old' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -269,22 +269,22 @@ class UpdatePatcher implements InjectionAwareInterface
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1091
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1063
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'phpmailer' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'images' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'bb-deprecated.scss' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'dataTable-deprecated.scss' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'main-deprecated.scss' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Mail.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Ftp.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'FileCacheExcption.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Zip.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Requirements.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Version.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Extension.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Cookie.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'ExceptionAuth.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Response.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Config.php' => 'unlink',
+                    PATH_VENDOR . DIRECTORY_SEPARATOR . 'phpmailer' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'images' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'bb-deprecated.scss' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'dataTable-deprecated.scss' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'main-deprecated.scss' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Mail.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Ftp.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'FileCacheExcption.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Zip.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Requirements.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Version.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Extension.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Cookie.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'ExceptionAuth.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Response.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Config.php' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -292,7 +292,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old FileCache class that was replaced with Symfony's Cache component.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'FileCache.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FileCache.php' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -306,7 +306,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "ALTER TABLE session ADD created_at int(11);";
                 $this->executeSql($q);
             },
-
         ];
         ksort($patches, SORT_NATURAL);
 
