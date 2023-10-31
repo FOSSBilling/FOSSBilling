@@ -16,6 +16,7 @@ final class Version
     public const PATCH = 0;
     public const MINOR = 1;
     public const MAJOR = 2;
+    public const semverRegex = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
 
     /**
      * Compare the specified FOSSBilling version string $version
@@ -61,5 +62,10 @@ final class Version
                 return self::PATCH;
             }
         }
+    }
+
+    public static function isPreviewVersion(): bool
+    {
+        return (preg_match(self::semverRegex, \FOSSBilling\Version::VERSION, $matches) !== 0) ? false : true;
     }
 }

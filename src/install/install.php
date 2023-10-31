@@ -418,9 +418,7 @@ final class FOSSBilling_Installer
      */
     private function getConfigOutput(): string
     {
-        // Version data
-        $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
-        $updateBranch = (preg_match($reg, \FOSSBilling\Version::VERSION, $matches) !== 0) ? "release" : "preview";
+        $updateBranch = \FOSSBilling\Version::isPreviewVersion() ? "preview" : "release";
 
         // Load default sample config
         $data = require PATH_CONFIG_SAMPLE;

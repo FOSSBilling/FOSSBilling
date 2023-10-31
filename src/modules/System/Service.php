@@ -297,7 +297,7 @@ class Service
                         'text' => 'We\'d apreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
                         'url' => $url,
                     ];
-                } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && $this->di['config']['debug_and_monitoring']['report_errors']) {
+                } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && $this->di['config']['debug_and_monitoring']['report_errors'] && !Version::isPreviewVersion()) {
                     /**
                      * The installation already had error reporting enabled, but something has changed so we should nudge the user to review the changes.
                      * This message is cached for a full 24 hours to help ensure it is seen.
