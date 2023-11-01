@@ -150,7 +150,7 @@ class ErrorPage
      */
     public function generatePage(int $code, string $message)
     {
-        $error = $this->getCodeInfo($code);
+        $error = static::getCodeInfo($code);
         $error['message'] ??= "You've received a generic error message: <code> . $message . </code>";
         $instanceID = INSTANCE_ID ?? 'Unknown';
 

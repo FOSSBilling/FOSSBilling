@@ -119,56 +119,24 @@ class SentryHelper
      */
     public static function getErrorType(int $number): string
     {
-        switch ($number) {
-            case E_ERROR:
-                return 'Error';
-                break;
-            case E_WARNING:
-                return 'Warning';
-                break;
-            case E_PARSE:
-                return 'Parse error';
-                break;
-            case E_NOTICE:
-                return 'Runtime notice';
-                break;
-            case E_CORE_ERROR:
-                return 'Fatal PHP startup error';
-                break;
-            case E_CORE_WARNING:
-                return 'PHP startup warning';
-                break;
-            case E_COMPILE_ERROR:
-                return 'Zend compile error';
-                break;
-            case E_COMPILE_WARNING:
-                return 'Zend compile warning';
-                break;
-            case E_USER_ERROR:
-                return 'User-generated error';
-                break;
-            case E_USER_WARNING:
-                return 'User-generated warning';
-                break;
-            case E_USER_NOTICE:
-                return 'User-generated notice';
-                break;
-            case E_STRICT:
-                return 'PHP Strict code checking';
-                break;
-            case E_RECOVERABLE_ERROR:
-                return 'Recoverable error';
-                break;
-            case E_DEPRECATED:
-                return 'PHP deprecation warning';
-                break;
-            case E_USER_DEPRECATED:
-                return 'User-generated deprecation warning';
-                break;
-            default:
-                return 'Unknown error';
-                break;
-        }
+        return match ($number) {
+            E_ERROR => 'Error',
+            E_WARNING => 'Warning',
+            E_PARSE => 'Parse error',
+            E_NOTICE => 'Runtime notice',
+            E_CORE_ERROR => 'Fatal PHP startup error',
+            E_CORE_WARNING => 'PHP startup warning',
+            E_COMPILE_ERROR => 'Zend compile error',
+            E_COMPILE_WARNING => 'Zend compile warning',
+            E_USER_ERROR => 'User-generated error',
+            E_USER_WARNING => 'User-generated warning',
+            E_USER_NOTICE => 'User-generated notice',
+            E_STRICT => 'PHP Strict code checking',
+            E_RECOVERABLE_ERROR => 'Recoverable error',
+            E_DEPRECATED => 'PHP deprecation warning',
+            E_USER_DEPRECATED => 'User-generated deprecation warning',
+            default => 'Unknown error',
+        };
     }
 
     /**
