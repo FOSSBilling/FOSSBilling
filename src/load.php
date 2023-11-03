@@ -21,7 +21,6 @@ const PATH_THEMES = PATH_ROOT . DIRECTORY_SEPARATOR . 'themes';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_UPLOADS = PATH_ROOT . DIRECTORY_SEPARATOR . 'uploads';
-const PATH_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';
 const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 
 /*
@@ -245,8 +244,9 @@ $config = require PATH_CONFIG;
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 define('BB_DEBUG', (bool) $config['debug_and_monitoring']['debug']);
 define('BB_URL', $config['url']);
-define('PATH_CACHE', $config['path_data'] . DIRECTORY_SEPARATOR . 'cache');
-define('PATH_LOG', $config['path_data'] . DIRECTORY_SEPARATOR . 'log');
+define('PATH_DATA', $config['path_data']);
+define('PATH_CACHE', PATH_DATA . DIRECTORY_SEPARATOR . 'cache');
+define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('BB_URL_API', $config['url'] . 'api/');
