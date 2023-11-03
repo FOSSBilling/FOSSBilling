@@ -22,6 +22,6 @@
     "litepicker": "^2.0.12",
     "select2": "^4.0.13",
     "sortable-tablesort": "^3.0.0",
-    "tom-select": "^2.3.0"
+    "tom-select": "^2.3.1"
   }
 }
