@@ -176,7 +176,7 @@ $di['pager'] = function () use ($di) {
 $di['url'] = function () use ($di) {
     $url = new Box_Url();
     $url->setDi($di);
-    $url->setBaseUri(BB_URL);
+    $url->setBaseUri(SYSTEM_URL);
 
     return $url;
 };

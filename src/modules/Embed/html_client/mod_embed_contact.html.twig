@@ -111,7 +111,7 @@ $(function() {
     $('#anti-spam').remove();
 
     $('#public-ticket-create').on('submit', function(event) {
-        $.post("{{ constant('BB_URL_API') }}guest/support/ticket_create",
+        $.post("{{ constant('SYSTEM_URL') }}api/guest/support/ticket_create",
         $(this).serialize(),
         function(json) {
             if(json.error) {

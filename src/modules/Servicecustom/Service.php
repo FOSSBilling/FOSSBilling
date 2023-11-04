@@ -263,7 +263,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $file = sprintf('Plugin/%s/%s.php', $plugin, $plugin);
         if (!Environment::isTesting() && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
             $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
-            if (BB_DEBUG) {
+            if (DEBUG) {
                 error_log($e->getMessage());
             }
 

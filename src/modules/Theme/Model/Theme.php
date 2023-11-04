@@ -145,7 +145,7 @@ class Theme
 
     public function getUrl()
     {
-        return BB_URL . 'themes/' . $this->name;
+        return SYSTEM_URL . 'themes/' . $this->name;
     }
 
     public function getPath()

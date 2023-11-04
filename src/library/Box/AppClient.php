@@ -16,7 +16,7 @@ class Box_AppClient extends Box_App
         $m->registerClientRoutes($this);
 
         if ('api' == $this->mod) {
-            define('BB_MODE_API', true);
+            define('API_MODE', true);
         } else {
             $extensionService = $this->di['mod_service']('extension');
             if ($extensionService->isExtensionActive('mod', 'redirect')) {
@@ -51,7 +51,7 @@ class Box_AppClient extends Box_App
         try {
             return $this->render($tpl, ['post' => $_POST], $ext);
         } catch (Exception $e) {
-            if (BB_DEBUG) {
+            if (DEBUG) {
                 error_log($e);
             }
         }

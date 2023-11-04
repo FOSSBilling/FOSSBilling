@@ -124,10 +124,10 @@ class Client implements InjectionAwareInterface
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
         $check_referer_header = isset($this->_api_config['require_referrer_header']) ? (bool) $this->_api_config['require_referrer_header'] : false;
         if ($check_referer_header) {
-            $url = strtolower(BB_URL);
+            $url = strtolower(SYSTEM_URL);
             $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower($_SERVER['HTTP_REFERER']) : null;
             if (!$referer || !str_starts_with($referer, $url)) {
-                throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => BB_URL], 1004);
+                throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => SYSTEM_URL], 1004);
             }
         }
 

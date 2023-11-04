@@ -38,7 +38,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $url = urldecode(BB_URL . 'sitemap.xml');
+        $url = urldecode(SYSTEM_URL . 'sitemap.xml');
 
         $engines = $this->_getEngines();
 
@@ -70,7 +70,7 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         $result = [
-            'sitemap_url' => BB_URL . 'sitemap.xml',
+            'sitemap_url' => SYSTEM_URL . 'sitemap.xml',
             'last_exec' => $systemService->getParamValue('mod_seo_last_sitemap_submit'),
             'engines' => $this->_getEngineDetails(),
         ];

@@ -141,22 +141,22 @@ class Service
 
         $logoUrl = $results['company_logo'] ?? null;
         if ($logoUrl !== null && !str_contains($logoUrl, 'http')) {
-            $logoUrl = BB_URL . $logoUrl;
+            $logoUrl = SYSTEM_URL . $logoUrl;
         }
 
         $logoUrlDark = $results['company_logo_dark'] ?? null;
         if ($logoUrlDark !== null && !str_contains($logoUrlDark, 'http')) {
-            $logoUrlDark = BB_URL . $logoUrlDark;
+            $logoUrlDark = SYSTEM_URL . $logoUrlDark;
         }
         $logoUrlDark ??= $logoUrl;
 
         $faviconUrl = $results['company_favicon'] ?? null;
         if ($faviconUrl !== null && !str_contains($faviconUrl, 'http')) {
-            $faviconUrl = BB_URL . $faviconUrl;
+            $faviconUrl = SYSTEM_URL . $faviconUrl;
         }
 
         return [
-            'www' => BB_URL,
+            'www' => SYSTEM_URL,
             'name' => isset($results['company_name']) ? htmlspecialchars($results['company_name'], ENT_QUOTES, 'UTF-8') : null,
             'email' => isset($results['company_email']) ? htmlspecialchars($results['company_email'], ENT_QUOTES, 'UTF-8') : null,
             'tel' => isset($results['company_tel']) ? htmlspecialchars($results['company_tel'], ENT_QUOTES, 'UTF-8') : null,

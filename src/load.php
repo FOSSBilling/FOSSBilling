@@ -176,7 +176,7 @@ function exceptionHandler($e)
 
     $message = htmlspecialchars($e->getMessage());
 
-    if (defined('BB_MODE_API')) {
+    if (defined('API_MODE')) {
         $code = $e->getCode() ?: 9998;
         $result = ['result' => null, 'error' => ['message' => $message, 'code' => $code]];
         echo json_encode($result);
@@ -184,7 +184,7 @@ function exceptionHandler($e)
         return false;
     }
 
-    if (defined('BB_DEBUG') && BB_DEBUG && file_exists(PATH_VENDOR)) {
+    if (defined('DEBUG') && DEBUG && file_exists(PATH_VENDOR)) {
         /**
          * If advanced debugging is enabled, print Whoops instead of our error page.
          * flip/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
@@ -242,14 +242,12 @@ $config = require PATH_CONFIG;
 
 // Config loaded - set globals and relevant settings.
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
-define('BB_DEBUG', (bool) $config['debug_and_monitoring']['debug']);
-define('BB_URL', $config['url']);
+define('ADMIN_PREFIX', $config['admin_area_prefix']);
+define('DEBUG', (bool) $config['debug_and_monitoring']['debug']);
 define('PATH_DATA', $config['path_data']);
 define('PATH_CACHE', PATH_DATA . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
-define('BB_SSL', str_starts_with(BB_URL, 'https'));
-define('ADMIN_PREFIX', $config['admin_area_prefix']);
-define('BB_URL_API', BB_URL . 'api/');
+define('SYSTEM_URL', $config['url']);
 if (!empty($config['info']['instance_id'])) {
     define('INSTANCE_ID', $config['info']['instance_id']);
 } else {
@@ -278,7 +276,7 @@ ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
 // We disable PHP's error reporting as our own error handler will log it and send it to Sentry.
 error_reporting(0);
 
-if (BB_DEBUG) {
+if (DEBUG) {
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
 } else {

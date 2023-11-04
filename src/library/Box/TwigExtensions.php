@@ -167,19 +167,19 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_mod_asset_url($asset, $mod)
     {
-        return BB_URL . 'modules/' . ucfirst($mod) . '/assets/' . $asset;
+        return SYSTEM_URL . 'modules/' . ucfirst($mod) . '/assets/' . $asset;
     }
 
     public function twig_asset_url(Twig\Environment $env, $asset)
     {
         $globals = $env->getGlobals();
 
-        return BB_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
+        return SYSTEM_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
     }
 
     public function twig_library_url($path)
     {
-        return BB_URL . 'library/' . $path;
+        return SYSTEM_URL . 'library/' . $path;
     }
 
     public function twig_img_tag($path, $alt = null)

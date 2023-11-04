@@ -195,7 +195,7 @@ class Service implements InjectionAwareInterface
             $iconPath = 'assets/icons/cog.svg';
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
-                $iconPath = BB_URL . $icon_url;
+                $iconPath = SYSTEM_URL . $icon_url;
             }
             $result[$key]['icon_url'] = $iconPath;
         }

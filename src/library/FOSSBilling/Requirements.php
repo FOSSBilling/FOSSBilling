@@ -67,7 +67,7 @@ class Requirements implements InjectionAwareInterface
         $data['PHP_VERSION']    = PHP_VERSION;
 
         $data['FOSSBilling']    = array(
-            'BB_LOCALE'     =>  $this->di['config']['i18n']['locale'],
+            'locale'        =>  $this->di['config']['i18n']['locale'],
             'version'       =>  \FOSSBilling\Version::VERSION,
         );
 
@@ -150,7 +150,7 @@ class Requirements implements InjectionAwareInterface
                     $result[$file] = true;
                 } else {
                     $result[$file] = false;
-                    $this->_all_ok = false;   
+                    $this->_all_ok = false;
                 }
                 @unlink($file);
             } else {

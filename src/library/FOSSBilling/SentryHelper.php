@@ -28,7 +28,7 @@ class SentryHelper
 
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.
-     *  
+     *
      * @param array $config The FOSSBilling config.
      */
     public static function registerSentry(array $config): void
@@ -60,7 +60,7 @@ class SentryHelper
             'send_default_pii' => false,
 
             // Stack traces are always sent for Exceptions, but if debug mode is enabled we will send them for errors too.
-            'attach_stacktrace' => (bool)BB_DEBUG,
+            'attach_stacktrace' => (bool)DEBUG,
         ];
 
         /**
@@ -78,7 +78,7 @@ class SentryHelper
 
     /**
      * Captures an exception and sends it to Sentry, adding additional information that we'd find useful.
-     * 
+     *
      * @param \Exception|\Error $e
      */
     public static function captureException(\Exception|\Error $e)

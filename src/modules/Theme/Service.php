@@ -237,7 +237,7 @@ class Service implements InjectionAwareInterface
         if ($theme == null || !file_exists($path . $theme)) {
             $theme = $default;
         }
-        $url = BB_URL . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
+        $url = SYSTEM_URL . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -251,11 +251,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentClientAreaThemeCode()
     {
-        if (defined('BB_THEME_CLIENT')) {
-            $theme = BB_THEME_CLIENT;
-        } else {
-            $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
-        }
+        $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
 
         return !empty($theme) ? $theme : 'huraga';
     }
@@ -345,10 +341,10 @@ class Service implements InjectionAwareInterface
             $ext = trim($config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
-            $config['url'] = BB_URL . 'themes/' . $ext . '/';
+            $config['url'] = SYSTEM_URL . 'themes/' . $ext . '/';
             $paths[] = $this->getThemesPath() . $ext . '/html';
         } else {
-            $config['url'] = BB_URL . 'themes/' . $theme . '/';
+            $config['url'] = SYSTEM_URL . 'themes/' . $theme . '/';
         }
 
         // add installed modules paths
