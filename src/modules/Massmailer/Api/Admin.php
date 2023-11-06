@@ -268,7 +268,12 @@ Order our services at {{ "order"|link }}
      */
     public function get_test_client(): string
     {
-        $client = $this->di['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
+        try {
+            $client = $this->di['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
+        } catch (\Exception) {
+            return 'Unknown';
+        }
+
         return $client->email;
     }
 
