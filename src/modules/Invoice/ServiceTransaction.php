@@ -402,7 +402,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $transaction->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($transaction);
 
-            if (BB_DEBUG) {
+            if (DEBUG) {
                 error_log($e->getMessage());
             }
             if (Environment::isTesting()) {
@@ -561,7 +561,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 $invoiceService = $this->di['mod_service']('Invoice');
                 $invoiceService->tryPayWithCredits($tx->Invoice);
             } catch (\Exception $e) {
-                if (BB_DEBUG) {
+                if (DEBUG) {
                     error_log($e->getMessage());
                 }
             }

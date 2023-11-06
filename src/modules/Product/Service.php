@@ -740,7 +740,7 @@ class Service implements InjectionAwareInterface
 
     public function getSavePath($filename = null)
     {
-        $path = $this->di['config']['path_data'] . '/uploads/';
+        $path = PATH_DATA . '/uploads/';
         if ($filename !== null) {
             $path .= md5($filename);
         }

@@ -12,7 +12,7 @@ namespace FOSSBilling;
 
 /**
  * The base FOSSBilling exception class. Implements translation and stacktrace logging.
- * 
+ *
  * @package FOSSBilling
  */
 class Exception extends \Exception
@@ -23,7 +23,7 @@ class Exception extends \Exception
 	 * @param string $message error message
 	 * @param array|null $variables translation variables
 	 * @param int $code The exception code.
-	 * @param bool $protected If the variables in this should be considered protect, if so, hide them from the stack trace. 
+	 * @param bool $protected If the variables in this should be considered protect, if so, hide them from the stack trace.
 	 */
 	public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
 	{
@@ -31,7 +31,7 @@ class Exception extends \Exception
 		$logStack = $config['debug_and_monitoring']['log_stacktrace'] ?? true;
 		$stackLength = $config['debug_and_monitoring']['stacktrace_length'] ?? 25;
 
-		if (BB_DEBUG && $logStack) {
+		if (DEBUG && $logStack) {
 			error_log('An exception has been thrown. Stacktrace:');
 			error_log($this->stackTrace($stackLength, $protected));
 		}

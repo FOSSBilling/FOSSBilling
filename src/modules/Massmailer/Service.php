@@ -162,7 +162,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!Environment::isProduction()) {
-            if (BB_DEBUG) {
+            if (DEBUG) {
                 error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
 

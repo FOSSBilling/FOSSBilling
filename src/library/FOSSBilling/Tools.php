@@ -55,7 +55,7 @@ class Tools
     public function url($link = null)
     {
         $link = trim($link, '/');
-        return BB_URL . $link;
+        return SYSTEM_URL . $link;
     }
 
     public function hasService($type)

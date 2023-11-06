@@ -328,7 +328,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $mail = new \FOSSBilling\Mail($email->sender, $email->recipients, $email->sender, $email->content_html, $settings['mailer'] ?? 'sendmail', $settings['custom_dsn'] ?? null);
 
         if (Environment::isTesting()) {
-            if (BB_DEBUG) {
+            if (DEBUG) {
                 error_log('Skipping email sending in test environment');
             }
 

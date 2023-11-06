@@ -35,14 +35,14 @@ const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'cache';
-const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
-const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
+const HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
+const HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
 const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
 const PAGE_INSTALL = './assets/install.html.twig';
 const PAGE_RESULT = './assets/result.html.twig';
 
 // Some functions and classes reference this, so we define it here to avoid errors.
-const BB_DEBUG = false;
+const DEBUG = false;
 
 // Set default include path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -61,9 +61,9 @@ $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
 $url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url) . '/';
-define('BB_URL', $root_url);
-const BB_URL_INSTALL = BB_URL . 'install/';
-const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
+define('SYSTEM_URL', $root_url);
+const URL_INSTALL = SYSTEM_URL . 'install/';
+const URL_ADMIN = SYSTEM_URL . 'index.php?_url=/admin';
 
 // Load action and initialize the installer
 $action = $_GET['a'] ?? 'index';
@@ -99,7 +99,7 @@ final class FOSSBilling_Installer
             case 'install':
                 // Make sure this is a POST request
                 if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-                    header('Location: ' . BB_URL_INSTALL);
+                    header('Location: ' . URL_INSTALL);
                     die;
                 }
 
@@ -143,8 +143,8 @@ final class FOSSBilling_Installer
                         'config_file_path' => PATH_CONFIG,
                         'cron_path' => PATH_CRON,
                         'install_module_path' => PATH_INSTALL,
-                        'url_customer' => BB_URL,
-                        'url_admin' => BB_URL_ADMIN,
+                        'url_customer' => SYSTEM_URL,
+                        'url_admin' => URL_ADMIN,
                     ]);
 
                     // Try to remove install folder
@@ -197,9 +197,9 @@ final class FOSSBilling_Installer
                     'install_module_path' => PATH_INSTALL,
                     'cron_path' => PATH_CRON,
                     'config_file_path' => PATH_CONFIG,
-                    'live_site' => BB_URL,
-                    'admin_site' => BB_URL_ADMIN,
-                    'domain' => pathinfo(BB_URL, PATHINFO_BASENAME),
+                    'live_site' => SYSTEM_URL,
+                    'admin_site' => URL_ADMIN,
+                    'domain' => pathinfo(SYSTEM_URL, PATHINFO_BASENAME),
                 ];
                 echo $this->render(PAGE_INSTALL, $vars);
                 break;
@@ -311,7 +311,7 @@ final class FOSSBilling_Installer
      */
     private function isSubfolder(): bool
     {
-        return substr_count(BB_URL_INSTALL, '/') > 4 ? true : false;
+        return substr_count(URL_INSTALL, '/') > 4 ? true : false;
     }
 
     /**
@@ -386,8 +386,8 @@ final class FOSSBilling_Installer
         ]);
 
         // Copy config templates when applicable
-        if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
-            copy(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
+        if (!file_exists(HURAGA_CONFIG) && file_exists(HURAGA_CONFIG_TEMPLATE)) {
+            copy(HURAGA_CONFIG_TEMPLATE, HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
         // If .htaccess doesn't exist, fetch the latest from GitHub.
@@ -429,7 +429,7 @@ final class FOSSBilling_Installer
         $data['update_branch'] = $updateBranch;
         $data['info']['salt'] = bin2hex(random_bytes(16));
         $data['info']['instance_id'] = Uuid::uuid4()->toString();
-        $data['url'] = BB_URL;
+        $data['url'] = SYSTEM_URL;
         $data['path_data'] = PATH_ROOT . '/data';
         $data['path_logs'] = PATH_ROOT . '/data/log/application.log';
         $data['db'] = [

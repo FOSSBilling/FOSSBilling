@@ -163,7 +163,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getDescription');
 
-        $url = 'http://fossbilling.vm/';
+        $url = 'http://localhost/';
         $expected = array(
             'id'                         => null,
             'code'                       => null,
