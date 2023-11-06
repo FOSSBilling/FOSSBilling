@@ -261,6 +261,17 @@ Order our services at {{ "order"|link }}
         ];
     }
 
+    /**
+     * Returns the email associated with the test client
+     * 
+     * @return string 
+     */
+    public function get_test_client(): string
+    {
+        $client = $this->di['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
+        return $client->email;
+    }
+
     private function _getTestClientId()
     {
         $mod = $this->di['mod']('massmailer');

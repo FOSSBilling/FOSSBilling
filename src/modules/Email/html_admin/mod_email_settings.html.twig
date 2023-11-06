@@ -180,9 +180,11 @@
                     </form>
                 </div>
 
-                <div class="tab-pane fade show active" id="tab-queue" role="tabpanel">
+                <div class="tab-pane fade show" id="tab-queue" role="tabpanel">
                     {% include 'partial_search.html.twig' %}
                     <div class="table-responsive">
+                        <p>{{ 'FOSSBilling queues emails to have them be sent via cron in the background. Here you may find the list of queued emails and how many times the system has tried to send them.'|trans }}</p>
+                        <p>{{ 'Emails that have been sent or that failed to be sent will not be listed here.'|trans }}</p>
                         <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                             <thead>
                             <tr>
@@ -195,7 +197,6 @@
                                 <th>{{ 'Updated at'|trans }}</th>
                             </tr>
                             </thead>
-
                             <tbody>
                             {% set queue = admin.email_get_queue({ 'per_page': 100, 'page': request.page }|merge(request)) %}
                             {% for i, queuedEmail in queue.list %}

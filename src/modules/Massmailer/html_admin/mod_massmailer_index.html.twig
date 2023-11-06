@@ -115,7 +115,7 @@
                     </div>
                     {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
                     <form method="post" action="admin/extension/config_save" class="api-form"
-                          data-api-msg="{{ 'Configuration updated'|trans }}">
+                          data-api-reload="1">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="ext" value="mod_massmailer">
                         <div class="card-body">
@@ -136,6 +136,7 @@
                                         <input type="hidden" name="test_client_id" value="{{ request.test_client_id }}" />
                                     {% endif %}
                                 </div>
+                                <span class="text-muted">{{ 'Test emails will be sent to: '|trans }} {{ admin.massmailer_get_test_client }}</span>
                             </div>
                         </div>
                         <div class="card-footer text-end">
