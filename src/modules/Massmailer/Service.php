@@ -138,7 +138,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$ps, $pc];
     }
 
-    public function sendMessage($model, $client_id)
+    public function sendMessage($model, $client_id, $sendNow = false)
     {
         [$ps, $pc] = $this->getParsed($model, $client_id);
 
@@ -169,32 +169,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return true;
         }
 
-        // Setup the email settings & recipients
-        $settings = $this->di['mod']('email')->getConfig();
-        $transport = $settings['mailer'] ?? 'sendmail';
-        $customDSN = $settings['custom_dsn'] ?? null;
-        $sender = [
-            'email' => $data['from'],
-            'name' => $data['from_name'],
-        ];
-        $recipient = [
-            'email' => $data['to'],
-            'name' => $data['to_name'],
-        ];
-
-        try {
-            // Send the email
-            $mail = new \FOSSBilling\Mail($sender, $recipient, $data['subject'], $data['content'], $transport, $customDSN);
-            $mail->send($settings);
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-        }
-
-        // Log the email activity to the database if enabled
-        if (isset($settings['log_enabled']) && $settings['log_enabled']) {
-            $activityService = $this->di['mod_service']('activity');
-            $activityService->logEmail($data['subject'], $client_id, $data['from'], $data['to'], $data['content']);
-        }
+        $emailService = $this->di['mod_service']('email');
+        $emailService->sendMail($data['to'], $data['from'], $data['subject'], $data['content'], $data['to_name'], $data['from_name'], $data['client_id'], null, $sendNow);
 
         return true;
     }
@@ -212,16 +188,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $row;
-    }
-
-    public static function onAfterAdminCronRun(\Box_Event $event)
-    {
-        try {
-            $di = $event->getDi();
-            $di['api_admin']->queue_execute(['queue' => 'massmailer']);
-        } catch (\Exception $e) {
-            error_log('Error executing massmailer queue: ' . $e->getMessage());
-        }
     }
 
     public function sendMail($params)

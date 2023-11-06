@@ -154,7 +154,7 @@ Order our services at {{ "order"|link }}
             throw new \FOSSBilling\InformationException('Add some content before sending message');
         }
 
-        $this->getService()->sendMessage($model, $client_id);
+        $this->getService()->sendMessage($model, $client_id, true);
 
         $this->di['logger']->info('Sent test mail message #%s to client ', $model->id);
 
@@ -175,22 +175,9 @@ Order our services at {{ "order"|link }}
             throw new \FOSSBilling\InformationException('Add some content before sending message');
         }
 
-        $mod = $this->di['mod']('massmailer');
-        $c = $mod->getConfig();
-        $interval = isset($c['interval']) ? (int) $c['interval'] : 30;
-        $max = isset($c['limit']) ? (int) $c['limit'] : 25;
-
         $clients = $this->getService()->getMessageReceivers($model, $data);
         foreach ($clients as $c) {
-            $d = [
-                'queue' => 'massmailer',
-                'mod' => 'massmailer',
-                'handler' => 'sendMail',
-                'max' => $max,
-                'interval' => $interval,
-                'params' => ['msg_id' => $model->id, 'client_id' => $c['id']],
-            ];
-            $this->di['api_admin']->queue_message_add($d);
+            $this->getService()->sendMail(['msg_id' => $model->id, 'client_id' => $c['id']]);
         }
 
         $model->status = 'sent';
