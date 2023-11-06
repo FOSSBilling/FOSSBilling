@@ -20,7 +20,6 @@ use \Sentry\HttpClient\HttpClientInterface;
 use \Sentry\HttpClient\Request;
 use \Sentry\HttpClient\Response;
 use \Sentry\Options;
-use \Sentry\Util\Http as SentryHttp;
 use Symfony\Component\HttpClient\HttpClient;
 
 class SentryHelper
@@ -46,15 +45,25 @@ class SentryHelper
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
+                if ($dsn === null) {
+                    throw new \RuntimeException('The DSN option must be set to use the HttpClient.');
+                }
+
+                $requestData = $request->getStringBody();
+                if ($requestData === null) {
+                    throw new \RuntimeException('The request data is empty.');
+                }
 
                 $client = HttpClient::create();
+                $requestHeaders = \Sentry\Util\Http::getRequestHeaders($dsn, \Sentry\Client::SDK_IDENTIFIER, \Sentry\Client::SDK_VERSION);
                 $response = $client->request(
                     'POST',
-                    $dsn->__toString(),
+                    $dsn->getEnvelopeApiEndpointUrl(),
                     [
-                        'headers' => SentryHttp::getRequestHeaders($dsn, \Sentry\Client::SDK_IDENTIFIER, \Sentry\Client::SDK_VERSION),
+                        'headers' => $requestHeaders
                     ]
                 );
+
                 return new Response($response->getStatusCode(), $response->getHeaders(), '');
             }
         };
