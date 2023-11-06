@@ -389,6 +389,35 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
+    public function queueGetSearchQuery($data)
+    {
+        $query = 'SELECT * FROM mod_email_queue';
+
+        $search = $data['search'] ?? null;
+
+        $where = [];
+        $bindings = [];
+
+        if ($search) {
+            $search = "%$search%";
+
+            $where[] = '(recipient LIKE :recipient OR subject LIKE :subject OR content LIKE :content OR to_name LIKE :to_name)';
+
+            $bindings[':recipient'] = $search;
+            $bindings[':subject'] = $search;
+            $bindings[':content'] = $search;
+            $bindings[':to_name'] = $search;
+        }
+
+        if (!empty($where)) {
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $query .= ' ORDER BY updated_at DESC';
+
+        return [$query, $bindings];
+    }
+
     public function templateToApiArray(\Model_EmailTemplate $model, $deep = false)
     {
         $data = [
@@ -608,17 +637,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         } catch (\Exception $e) {
             $message = $e->getMessage();
             error_log($message);
-
-            // Prevent mass retries of emails if one of them is "invalid"
-            if (str_contains($message, 'Invalid address:')) {
-                try {
-                    $this->di['db']->trash($queue);
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                }
-
-                return true;
-            }
 
             if ($queue->priority) {
                 --$queue->priority;
