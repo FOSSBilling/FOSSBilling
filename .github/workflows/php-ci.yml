@@ -59,7 +59,7 @@ jobs:
     needs: [ composer ]
     strategy:
       matrix:
-        php: [ 8.0 ]
+        php: [ 8.1 ]
 
     name: PHP ${{ matrix.php }} - PHPStan
     steps:
@@ -84,7 +84,7 @@ jobs:
     needs: [ composer, phpstan ]
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2 ]
+        php: [ 8.1, 8.2 ]
 
     name: PHP ${{ matrix.php }} - PHPUnit
     steps:
