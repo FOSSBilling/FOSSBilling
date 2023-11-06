@@ -2,7 +2,23 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Support tickets'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Support Tickets'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Tickets'|trans }}</li>
+    </ul>
+{% endblock %}
 
 {% set active_menu = 'support' %}
 
@@ -11,7 +27,7 @@
 {% if request.show_filter %}
     <section class="card mb-3">
         <div class="card-body">
-            <h5>{{ 'Filter support tickets'|trans }}</h5>
+            <h5>{{ 'Filter Support Tickets'|trans }}</h5>
             <form method="get">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="form-group mb-3 row">
@@ -27,13 +43,13 @@
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Ticket subject'|trans }}</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Ticket Subject'|trans }}</label>
                     <div class="col">
                         <input class="form-control" type="text" name="subject" value="{{ request.subject }}">
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Ticket messages'|trans }}</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Ticket Messages'|trans }}</label>
                     <div class="col">
                         <input class="form-control" type="text" name="content" value="{{ request.content }}">
                     </div>
@@ -51,13 +67,13 @@
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}:</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Helpdesk'|trans }}:</label>
                     <div class="col">
-                        {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, request.support_helpdesk_id, 0, "All help desks") }}
+                        {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, request.support_helpdesk_id, 0, "All helpdesks") }}
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label" for="created_at">{{ 'Created at'|trans }}</label>
+                    <label class="form-label col-3 col-form-label" for="created_at">{{ 'Created At'|trans }}</label>
                     <div class="col">
                         <div class="input-group">
                             <div class="input-icon w-100">
@@ -158,14 +174,14 @@
 {% block content %}
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Support tickets'|trans }}</a>
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tickets'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New ticket'|trans }}
+                {{ 'New Client Ticket'|trans }}
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -173,7 +189,7 @@
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New email'|trans }}
+                {{ 'New Public Ticket'|trans }}
             </a>
         </li>
     </ul>
@@ -272,7 +288,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <h5>{{ 'Open ticket for existing client'|trans }}</h5>
+                <h5>{{ 'Open Ticket for Existing Client'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
@@ -294,7 +310,7 @@
                         </div>
                     </div>
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Helpdesk'|trans }}</label>
                         <div class="col">
                             {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, '', 1) }}
                         </div>
@@ -318,11 +334,11 @@
 
         <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
             <div class="card-body">
-                <h5>{{ 'Open public ticket for non client'|trans }}</h5>
+                <h5>{{ 'Open Public Ticket for Non-client'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Receivers name'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Receiver Name'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="text" name="name" required placeholder="{{ 'John Smith'|trans }}">
                         </div>
@@ -336,7 +352,7 @@
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required placeholder="{{ 'Email subject'|trans }}">
+                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required placeholder="{{ 'Email Subject'|trans }}">
                         </div>
                     </div>
                     <div class="form-group mb-3 row">

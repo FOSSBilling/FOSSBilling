@@ -19,7 +19,7 @@
             <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/support'|alink }}#tab-helpdesks">{{ 'Support settings'|trans }}</a>
+            <a href="{{ 'extension/settings/support'|alink }}#tab-helpdesks">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Helpdesk -'|trans }} {{ helpdesk.name }}</li>
     </ol>
@@ -30,11 +30,11 @@
 <div class="card">
     <div class="card-header">
         <div>
-            <h1 class="card-title">{{ 'Support help desk'|trans }} - {{ helpdesk.name }}</h1>
-            <p class="card-subtitle">{{ 'Help desk name will be visible for clients when submitting new ticket. Define very large number of hours to disable auto close ticket option.'|trans }}</p>
+            <h1 class="card-title">{{ 'Helpdesk'|trans }} - {{ helpdesk.name }}</h1>
+            <p class="card-subtitle">{{ 'Helpdesk name will be visible for clients when submitting a new ticket.'|trans }}</p>
         </div>
     </div>
-    <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="api-form" data-api-msg="{{ 'Help desk updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="api-form" data-api-msg="{{ 'Helpdesk Updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="mb-3 row">
@@ -56,13 +56,14 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Close after'|trans }}</label>
+                <label class="col-md-3 col-form-label">{{ 'Close tickets after (in hours)'|trans }}</label>
                 <div class="col-md-6">
-                    <input class="form-control" type="text" name="close_after" value="{{ helpdesk.close_after }}" required>
+                    <input class="form-control" type="text" size="3" name="close_after" value="{{ helpdesk.close_after }}" required>
+                    <small class="form-hint">{{ 'Define a very large number of hours to disable auto close ticket option.'|trans }}</small>
                 </div>
             </div>
             <div class="row">
-                <label class="col-md-3 form-label">{{ 'Can reopen'|trans }}</label>
+                <label class="col-md-3 form-label">{{ 'Tickets can be reopened?'|trans }}</label>
                 <div class="col-md-6">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1"{% if helpdesk.can_reopen %} checked{% endif %}>
@@ -84,7 +85,7 @@
                     <svg class="icon">
                         <use xlink:href="#arrow-sm-left" />
                     </svg>
-                    {{ 'Go back'|trans }}
+                    {{ 'Go Back'|trans }}
                 </a>
                 <a class="btn btn-icon btn-danger api-link"
                    href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"

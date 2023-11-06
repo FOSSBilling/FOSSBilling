@@ -794,4 +794,247 @@ class Admin extends \Api_Abstract
 
         return true;
     }
+
+
+    /*
+    * Support Knowledge Base.
+    */
+
+    /**
+     * Get paginated list of knowledge base articles.
+     *
+     * @return array
+     */
+    public function kb_article_get_list($data)
+    {
+        $status = $data['status'] ?? null;
+        $search = $data['search'] ?? null;
+        $cat = $data['cat'] ?? null;
+
+        $pager = $this->getService()->kbSearchArticles($status, $search, $cat);
+
+        foreach ($pager['list'] as $key => $item) {
+            $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
+            $pager['list'][$key] = $this->getService()->kbToApiArray($article);
+        }
+
+        return $pager;
+    }
+
+    /**
+     * Get knowledge base article.
+     *
+     * @return array
+     */
+    public function kb_article_get($data)
+    {
+        $required = [
+            'id' => 'Article id not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
+
+        if (!$model instanceof \Model_SupportKbArticle) {
+            throw new \FOSSBilling\InformationException('Article not found');
+        }
+
+        return $this->getService()->kbToApiArray($model, true, $this->getIdentity());
+    }
+
+    /**
+     * Create new knowledge base article.
+     *
+     * @optional string $status - knowledge base article status
+     * @optional string $content - knowledge base article content
+     *
+     * @return array
+     */
+    public function kb_article_create($data)
+    {
+        $required = [
+            'kb_article_category_id' => 'Article category id not passed',
+            'title' => 'Article title not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $articleCategoryId = $data['kb_article_category_id'];
+        $title = $data['title'];
+        $status = $data['status'] ?? \Model_SupportKbArticle::DRAFT;
+        $content = $data['content'] ?? null;
+
+        return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
+    }
+
+    /**
+     * Update knowledge base article.
+     *
+     * @optional string $title - knowledge base article title
+     * @optional int $kb_article_category_id - knowledge base category ID
+     * @optional string $slug - knowledge base article slug
+     * @optional string $status - knowledge base article status
+     * @optional string $content - knowledge base article content
+     * @optional int $views - knowledge base article views counter
+     *
+     * @return bool
+     */
+    public function kb_article_update($data)
+    {
+        $required = [
+            'id' => 'Article ID not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $articleCategoryId = $data['kb_article_category_id'] ?? null;
+        $title = $data['title'] ?? null;
+        $slug = $data['slug'] ?? null;
+        $status = $data['status'] ?? null;
+        $content = $data['content'] ?? null;
+        $views = $data['views'] ?? null;
+
+        return $this->getService()->kbUpdateArticle($data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
+    }
+
+    /**
+     * Delete knowledge base article.
+     *
+     * @return bool
+     */
+    public function kb_article_delete($data)
+    {
+        $required = [
+            'id' => 'Article ID not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
+
+        if (!$model instanceof \Model_SupportKbArticle) {
+            throw new \FOSSBilling\InformationException('Article not found');
+        }
+
+        $this->getService()->kbRm($model);
+
+        return true;
+    }
+
+    /**
+     * Get paginated list of knowledge base categories.
+     *
+     * @return array
+     */
+    public function kb_category_get_list($data)
+    {
+        [$sql, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $pager = $this->di['pager']->getAdvancedResultSet($sql, $bindings, $per_page);
+
+        foreach ($pager['list'] as $key => $item) {
+            $category = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');
+            $pager['list'][$key] = $this->getService()->kbCategoryToApiArray($category, $this->getIdentity());
+        }
+
+        return $pager;
+    }
+
+    /**
+     * Get knowledge base category.
+     *
+     * @return array
+     */
+    public function kb_category_get($data)
+    {
+        $required = [
+            'id' => 'Category ID not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
+
+        if (!$model instanceof \Model_SupportKbArticleCategory) {
+            throw new \FOSSBilling\InformationException('Article Category not found');
+        }
+
+        return $this->getService()->kbCategoryToApiArray($model);
+    }
+
+    /**
+     * Create new knowledge base category.
+     *
+     * @optional string $description - knowledge base category description
+     *
+     * @return array
+     */
+    public function kb_category_create($data)
+    {
+        $required = [
+            'title' => 'Category title not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $title = $data['title'];
+        $description = $data['description'] ?? null;
+
+        return $this->getService()->kbCreateCategory($title, $description);
+    }
+
+    /**
+     * Update knowledge base category.
+     *
+     * @optional string $title - knowledge base category title
+     * @optional string $slug  - knowledge base category slug
+     * @optional string $description - knowledge base category description
+     *
+     * @return array
+     */
+    public function kb_category_update($data)
+    {
+        $required = [
+            'id' => 'Category ID not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
+
+        if (!$model instanceof \Model_SupportKbArticleCategory) {
+            throw new \FOSSBilling\InformationException('Article Category not found');
+        }
+
+        $title = $data['title'] ?? null;
+        $slug = $data['slug'] ?? null;
+        $description = $data['description'] ?? null;
+
+        return $this->getService()->kbUpdateCategory($model, $title, $slug, $description);
+    }
+
+    /**
+     * Delete knowledge base category.
+     *
+     * @return bool
+     */
+    public function kb_category_delete($data)
+    {
+        $required = [
+            'id' => 'Category ID not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
+
+        if (!$model instanceof \Model_SupportKbArticleCategory) {
+            throw new \FOSSBilling\InformationException('Category not found');
+        }
+
+        return $this->getService()->kbCategoryRm($model);
+    }
+
+    /**
+     * Get knowledge base categories id, title pairs.
+     *
+     * @return array
+     */
+    public function kb_category_get_pairs($data)
+    {
+        return $this->getService()->kbCategoryGetPairs();
+    }
 }

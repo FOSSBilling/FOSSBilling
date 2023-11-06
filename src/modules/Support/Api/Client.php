@@ -121,7 +121,7 @@ class Client extends \Api_Abstract
         $ticket = $this->di['db']->findOne('SupportTicket', 'id = :id AND client_id = :client_id', $bindings);
 
         if (!$ticket instanceof \Model_SupportTicket) {
-            throw new \FOSSBilling\Exception('Ticket not found');
+            throw new \FOSSBilling\InformationException('Ticket not found');
         }
 
         if (!$this->getService()->canBeReopened($ticket)) {
