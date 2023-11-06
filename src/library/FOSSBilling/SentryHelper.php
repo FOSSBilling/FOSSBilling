@@ -16,6 +16,12 @@ use \Sentry\Event;
 use \Sentry\EventHint;
 use \Sentry\State\Scope;
 use \Sentry\Severity;
+use \Sentry\HttpClient\HttpClientInterface;
+use \Sentry\HttpClient\Request;
+use \Sentry\HttpClient\Response;
+use \Sentry\Options;
+use \Sentry\Util\Http as SentryHttp;
+use Symfony\Component\HttpClient\HttpClient;
 
 class SentryHelper
 {
@@ -35,8 +41,29 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
+        $httpClient = new class() implements HttpClientInterface
+        {
+            public function sendRequest(Request $request, Options $options): Response
+            {
+                $dsn = $options->getDsn();
+
+                $client = HttpClient::create();
+                $response = $client->request(
+                    'POST',
+                    $dsn->__toString(),
+                    [
+                        'headers' => SentryHttp::getRequestHeaders($dsn, \Sentry\Client::SDK_IDENTIFIER, \Sentry\Client::SDK_VERSION),
+                    ]
+                );
+                return new Response($response->getStatusCode(), $response->getHeaders(), '');
+            }
+        };
+
         // Registers Sentry for error reporting if enabled.
         $options = [
+            // We explicitly set the HTTP client to use the Symfony HTTP client to provide wider support VS their default cURL client.
+            'http_client' => $httpClient,
+
             'before_send' => function (Event $event, ?EventHint $hint): ?Event {
                 if ($hint) {
                     $errorInfo = ErrorPage::getCodeInfo($hint->exception->getCode());
@@ -44,14 +71,12 @@ class SentryHelper
                     if (!$errorInfo['report']) {
                         return null;
                     }
-
-                    if ($hint->exception instanceof InformationException) {
-                        return null;
-                    }
                 }
 
                 return $event;
             },
+
+            'ignore_exceptions' => [InformationException::class],
 
             'environment' => Environment::getCurrentEnvironment(),
             'release' => Version::VERSION,
