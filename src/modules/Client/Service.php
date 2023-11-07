@@ -183,7 +183,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Invalid per page number');
         }
 
-        [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, CONCAT(c.company, ': (', c.first_name, ' ', c.last_name, ')') as client");
+        [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, IF(c.company <> '', CONCAT(c.first_name, ' ', c.last_name, ' (', c.company, ')'), CONCAT(c.first_name, ' ', c.last_name)) as client");
         $sql .= sprintf(' LIMIT %u', $limit);
 
         return $this->di['db']->getAssoc($sql, $params);
