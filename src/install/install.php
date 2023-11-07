@@ -430,8 +430,7 @@ final class FOSSBilling_Installer
         $data['info']['salt'] = bin2hex(random_bytes(16));
         $data['info']['instance_id'] = Uuid::uuid4()->toString();
         $data['url'] = SYSTEM_URL;
-        $data['path_data'] = PATH_ROOT . '/data';
-        $data['path_logs'] = PATH_ROOT . '/data/log/application.log';
+        $data['path_data'] = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';
         $data['db'] = [
             'type' => 'mysql',
             'host' => $this->session->get('database_hostname'),
@@ -440,7 +439,7 @@ final class FOSSBilling_Installer
             'user' => $this->session->get('database_username'),
             'password' => $this->session->get('database_password'),
         ];
-        $data['twig']['cache'] = PATH_ROOT . '/data/cache';
+        $data['twig']['cache'] = PATH_ROOT . DIRECTORY_SEPARATOR. 'data' . DIRECTORY_SEPARATOR . 'cache';
 
         // Build and return data
         $output = '<?php ' . PHP_EOL;
@@ -456,7 +455,7 @@ final class FOSSBilling_Installer
     private function generateEmailTemplates(): bool
     {
         $emailService = new Service();
-        $di = include PATH_ROOT . '/di.php';
+        $di = include PATH_ROOT . DIRECTORY_SEPARATOR . 'di.php';
         $di['translate']();
         $emailService->setDi($di);
 
