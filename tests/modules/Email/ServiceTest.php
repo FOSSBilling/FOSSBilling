@@ -992,7 +992,7 @@ class ServiceTest extends \BBTestCase
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->exactly(1))
-            ->method('findOne')->will($this->returnValue([$queueModel], false));
+            ->method('findAll')->will($this->returnValue([$queueModel]));
         $db->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(true));
