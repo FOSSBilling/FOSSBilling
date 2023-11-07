@@ -152,7 +152,6 @@ function errorHandler(int $number, string $message, string $file, int $line)
         $completedMessage = ($errorType . " ($number): " . $message . ' in ' . $file . ' on line ' . $line);
 
         \Sentry\captureMessage($completedMessage, FOSSBilling\SentryHelper::getSeverityLevel($errorType));
-        error_log($completedMessage);
     }
 
     return false;
@@ -272,9 +271,7 @@ checkSSL();
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
 ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
-
-// We disable PHP's error reporting as our own error handler will log it and send it to Sentry.
-error_reporting(0);
+error_reporting(E_ALL);
 
 if (DEBUG) {
     ini_set('display_errors', '1');

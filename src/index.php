@@ -13,14 +13,6 @@ $di = include __DIR__ . '/di.php';
 $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 $http_err_code = $_GET['_errcode'] ?? null;
 
-if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
-    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
-    $app = new Box_AppAdmin();
-} else {
-    $appUrl = $url;
-    $app = new Box_AppClient();
-}
-
 if ($url === '/run-patcher') {
     $patcher = new FOSSBilling\UpdatePatcher();
     $patcher->setDi($di);
@@ -36,6 +28,20 @@ if ($url === '/run-patcher') {
     } catch (\Exception $e) {
         exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
     }
+}
+
+if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
+    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
+    $app = new Box_AppAdmin();
+} else {
+    $appUrl = $url;
+    $app = new Box_AppClient();
+}
+
+// Prevent errors from being displayed in API mode as it can cause invalid JSON to be returned.
+if (defined('API_MODE')) {
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
 }
 
 $app->setUrl($appUrl);
