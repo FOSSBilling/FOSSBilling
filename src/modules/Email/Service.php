@@ -556,10 +556,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $sent = 0;
         $start = time();
 
+        $query = 'ORDER BY created_at ASC';
         if ($sendPerCron) {
-            $mailQueue = $this->di['db']->findAll('mod_email_queue', 'LIMIT :limit', [':limit' => $sendPerCron]);
+            $query .= ' LIMIT '  . intval($sendPerCron);
+            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
         } else {
-            $mailQueue = $this->di['db']->findAll('mod_email_queue');
+            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
         }
 
         foreach ($mailQueue as $email) {
