@@ -176,7 +176,6 @@ final class FOSSBilling_Installer
                     'os_ok' => (str_starts_with(strtoupper(PHP_OS), 'WIN')) ? false : true,
                     'is_subfolder' => $this->isSubfolder(),
                     'fossbilling_ver' => \FOSSBilling\Version::VERSION,
-                    'fossbilling_ver_ok' => $this->requirements->isFOSSBillingVersionOk(),
                     'php_ver' => $options['php']['version'],
                     'php_ver_req' => $options['php']['min_version'],
                     'php_safe_mode' => $options['php']['safe_mode'],

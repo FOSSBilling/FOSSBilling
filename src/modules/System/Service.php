@@ -324,12 +324,6 @@ class Service
             ];
         }
 
-        if ($this->getVersion() == '0.0.1') {
-            $msgs['warning'][] = [
-                'text' => 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the main branch, instead of a released version. But beware, the main branch may not be stable enough for production use.',
-            ];
-        }
-
         if (!extension_loaded('openssl')) {
             $msgs['warning'][] = [
                 'text' => sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl'),
