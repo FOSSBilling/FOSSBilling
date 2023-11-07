@@ -62,19 +62,19 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'uri' => $this->di['url']->adminLink('support/canned-responses'),
                     'index' => 400,
                     'class' => '',
-                ]
-            ]
+                ],
+            ],
         ];
 
         if ($this->di['mod']('support')->getService()->kbEnabled()) {
-            array_push($nav['subpages'],
+            $nav['subpages'][] =
                 [
                     'location' => 'support',
                     'index' => 500,
                     'label' => __trans('Knowledge Base'),
                     'uri' => $this->di['url']->adminLink('support/kb'),
                     'class' => '',
-                ]);
+                ];
         }
 
         return $nav;
@@ -189,13 +189,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_canned_category', ['category' => $c]);
     }
 
-
     /*
     * Support Knowledge Base.
     */
     public function get_kb_index(\Box_App $app)
     {
         $this->di['is_admin_logged'];
+
         return $app->render('mod_support_kb_index');
     }
 
@@ -203,6 +203,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_admin'];
         $post = $api->support_kb_article_get(['id' => $id]);
+
         return $app->render('mod_support_kb_article', ['post' => $post]);
     }
 
@@ -210,6 +211,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_admin'];
         $cat = $api->support_kb_category_get(['id' => $id]);
+
         return $app->render('mod_support_kb_category', ['category' => $cat]);
     }
 }

@@ -1501,7 +1501,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-
     /*
     * Knowledge Base Functions.
     */
@@ -1832,5 +1831,4 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         return $this->di['db']->findOne('SupportKbArticleCategory', 'slug = :slug', $bindings);
     }
-
 }
