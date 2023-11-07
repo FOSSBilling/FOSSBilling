@@ -60,7 +60,8 @@ class SentryHelper
                     'POST',
                     $dsn->getEnvelopeApiEndpointUrl(),
                     [
-                        'headers' => $requestHeaders
+                        'headers' => $requestHeaders,
+                        'body'    => $requestData,
                     ]
                 );
 
