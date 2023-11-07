@@ -38,12 +38,6 @@ if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $app = new Box_AppClient();
 }
 
-// Prevent errors from being displayed in API mode as it can cause invalid JSON to be returned.
-if (defined('API_MODE')) {
-    ini_set('display_errors', '0');
-    ini_set('display_startup_errors', '0');
-}
-
 $app->setUrl($appUrl);
 $di['translate']();
 $app->setDi($di);
