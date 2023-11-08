@@ -1113,6 +1113,7 @@ class Service implements InjectionAwareInterface
 
     public function processInvoice(array $data)
     {
+        $allowSubscribe = $data['allow_subscription'] ?? true;
         $subscribe = false;
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = ?', [$data['hash']]);
@@ -1131,7 +1132,7 @@ class Service implements InjectionAwareInterface
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        if ($subscribeService->isSubscribable($invoice->id) && $payGatewayService->canPerformRecurrentPayment($gtw)) {
+        if ($subscribeService->isSubscribable($invoice->id) && $payGatewayService->canPerformRecurrentPayment($gtw) && $allowSubscribe) {
             $subscribe = true;
         }
 

@@ -29,10 +29,13 @@
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         {% for gtw in guest.invoice_gateways %}
-                        {% if invoice.currency in gtw.accepted_currencies %}
-                        {% set banklink = 'invoice/banklink'|link %}
-                        <button type="button"  class="hover-popover" style="background: transparent url('{{gtw.logo.logo}}') no-repeat scroll 0% 0%; height:{{gtw.logo.height}}; width:{{gtw.logo.width}}; background-size: contain; border: 0; margin: 10px;" type="radio" name="gateway_id" gateway_id="{{ gtw.id }}" data-toggle="tooltip" title="{{ 'Pay with'|trans }} {{gtw.title}}" onclick="window.location.replace('{{banklink}}/{{invoice.hash}}/{{gtw.id}}')")></button>
-                        {% endif %}
+                            {% if invoice.currency in gtw.accepted_currencies %}
+                                <button type="button"  class="hover-popover"
+                                    style="background: transparent url('{{gtw.logo.logo}}') no-repeat scroll 0% 0%; height:{{gtw.logo.height}}; width:{{gtw.logo.width}}; background-size: contain; border: 0; margin: 10px;"
+                                    type="radio" name="gateway_id" gateway_id="{{ gtw.id }}" data-toggle="tooltip" title="{{ 'Pay with'|trans }} {{gtw.title}}"
+                                    onclick="paymentPromt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, '{{ gtw.title }}')">
+                                </button>
+                            {% endif %}
                         {% endfor %}
                         <input type="hidden" name="gateway_id" id="gateway_id">
                     </form>
@@ -241,15 +244,71 @@
             </section>
         </div>
     </article>
-</div>
+
+
+    <div class="modal fade" id="paymentPromt" tabindex="-1" role="dialog" aria-labelledby="paymentPromtLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="paymentPromtLabel"></h4>
+                </div>
+                <div class="modal-body">
+                    <p id="bodyText"></p>
+                    <a href="#" class="btn btn-primary" id="single">{{ "Pay now with a one-time payment"|trans }}</a>
+                    <a href="#" class="btn btn-primary" id="subscription" hidden="true">{{ "Pay now and create a subscription"|trans }}</a>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
-{% block js%}
+{% block js %}
 <script>
     $(function() {
         $(".hover-popover").tooltip({
             placement: 'top'
         });
     });
+
+    function paymentPromt(id, supportsSubscription, title){
+        invoiceHash = "{{ invoice.hash }}";
+        backLink    = "{{ 'invoice/banklink'|link }}";
+        paymentLink = backLink.concat('/', invoiceHash, '/', id);
+        invoiceSubscribable = {{ invoice.subscribable ? 'true' : 'false' }};
+
+        {% set anyGatewayDoesSubscriptions = false %}
+        {% for gtw in guest.invoice_gateways %}
+            {% if gtw.allow_recurrent %}
+                {% set anyGatewayDoesSubscriptions = true %}
+            {% endif %}
+        {% endfor %}
+
+        canAnyGatewayDoSubs = {{ anyGatewayDoesSubscriptions ? 'true' : 'false' }};
+
+        if(supportsSubscription && invoiceSubscribable){
+            document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and the selected payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
+            document.getElementById('subscription').style.display = '';
+        } else if (!invoiceSubscribable) {
+            document.getElementById('bodyText').textContent = "{{ 'This invoice can not be paid with a subscription.'|trans }}";
+            document.getElementById('subscription').style.display = 'none';
+        } else {
+            if(canAnyGatewayDoSubs){
+                document.getElementById('bodyText').textContent = "{{ 'If you would like to pay with a subscription, please use another payment gateway.'|trans }}";
+            } else {
+                document.getElementById('bodyText').textContent = "{{ 'This invoice can not be paid with a subscription.'|trans }}";
+            }
+            document.getElementById('subscription').style.display = 'none';
+        }
+
+        document.getElementById('paymentPromtLabel').textContent = "{{ 'Pay with'|trans }}".concat(" ", title);
+        document.getElementById('subscription').href = paymentLink;
+        document.getElementById('single').href = paymentLink.concat('?', 'allow_subscription=false');
+
+        $('#paymentPromt').modal();
+    }
 </script>
-{% endblock%}
+{% endblock %}
