@@ -54,13 +54,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% if not fossbilling_ver_ok %}
-                        <tr>
-                            <td>FOSSBilling version</td>
-                            <td class="orange">{{ fossbilling_ver }}</td>
-                            <td>FOSSBilling couldn't find valid version information. This is OK if you downloaded FOSSBilling directly from the main branch instead of a released version. However, be aware that the main branch may not be stable enough for production use.</td>
-                        </tr>
-                    {% endif %}
                     {% if is_subfolder %}
                         <tr>
                             <td>Subfolder detection</td>

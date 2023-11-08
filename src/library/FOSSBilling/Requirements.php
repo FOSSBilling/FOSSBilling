@@ -106,11 +106,6 @@ class Requirements implements InjectionAwareInterface
         return version_compare($current, $required, '>=');
     }
 
-    public function isFOSSBillingVersionOk(): bool
-    {
-        return \FOSSBilling\Version::VERSION !== '0.0.1';
-    }
-
     /**
      * What extensions must be loaded for FOSSBilling to function correctly
      */
