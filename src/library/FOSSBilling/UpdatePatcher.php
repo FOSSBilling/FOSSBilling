@@ -338,13 +338,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to complete remove the outdated queue module.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
 
-                // Drop the old queue tables.
-                $q = "DROP TABLE queue;";
-                $this->executeSql($q);
-
-                $q = "DROP TABLE queue_message;";
-                $this->executeSql($q);
-
                 $ext_service = $this->di['mod_service']('extension');
                 // If the queue extension exists, uninstall it.
                 $queue_ext = $ext_service->findExtension('mod', 'queue');
