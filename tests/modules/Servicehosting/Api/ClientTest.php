@@ -27,7 +27,7 @@ class ClientTest extends \BBTestCase {
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Client')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -50,7 +50,7 @@ class ClientTest extends \BBTestCase {
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Client')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -73,7 +73,7 @@ class ClientTest extends \BBTestCase {
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Client')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -211,4 +211,3 @@ class ClientTest extends \BBTestCase {
         $this->api->_getService($data);
     }
 }
- 

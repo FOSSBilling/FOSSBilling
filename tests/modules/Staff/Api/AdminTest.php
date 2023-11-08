@@ -560,7 +560,7 @@ class AdminTest extends \BBTestCase {
 
     public function testBatch_delete()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Staff\Api\Admin')->setMethods(array('login_history_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Staff\Api\Admin')->onlyMethods(array('login_history_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();

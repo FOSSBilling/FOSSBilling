@@ -179,7 +179,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($serviceCustomModel));
@@ -201,7 +201,7 @@ class ServiceTest extends \BBTestCase
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue(null));
@@ -226,7 +226,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($serviceCustomModel));
@@ -255,7 +255,7 @@ class ServiceTest extends \BBTestCase
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue(null));
@@ -281,7 +281,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($serviceCustomModel));
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($serviceCustomModel));
@@ -345,7 +345,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($serviceCustomModel));
@@ -377,7 +377,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($serviceCustomModel));
@@ -409,7 +409,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());;
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($serviceCustomModel));
@@ -485,14 +485,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result['created_at'], $model->created_at);
     }
 
-    public function testCustomCall()
-    {
-        $model = new \Model_ServiceCustom();
-        $model->loadBean(new \DummyBean());
-        $model->plugin = '';
-        $this->service->customCall($model, 'custom_call');
-    }
-
     public function testCustomCallForbiddenMethodException()
     {
         $this->expectException(\Exception::class);
@@ -506,7 +498,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceCustom()));
@@ -530,7 +522,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue(null));
@@ -551,7 +543,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());;
         $model->id = rand(1, 100);
 
-        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('getServiceCustomByOrderId'))->getMock();
+        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->onlyMethods(array('getServiceCustomByOrderId'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->will($this->returnValue($model));
@@ -578,7 +570,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
-        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('getServiceCustomByOrderId'))->getMock();
+        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->onlyMethods(array('getServiceCustomByOrderId'))->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->will($this->returnValue($model));

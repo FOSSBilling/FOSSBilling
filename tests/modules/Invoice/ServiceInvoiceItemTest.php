@@ -30,7 +30,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('creditInvoiceItem', 'getOrderId'))
+            ->onlyMethods(array('creditInvoiceItem', 'getOrderId'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('creditInvoiceItem');
@@ -80,7 +80,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $orderId                = 22;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('getOrderId'))
+            ->onlyMethods(array('getOrderId'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderId')
@@ -108,7 +108,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->rel_id = '{}';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('markAsExecuted'))
+            ->onlyMethods(array('markAsExecuted'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsExecuted');
@@ -148,7 +148,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         });
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('markAsExecuted'))
+            ->onlyMethods(array('markAsExecuted'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsExecuted');
@@ -164,7 +164,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->type = \Model_InvoiceItem::TYPE_CUSTOM;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('markAsExecuted'))
+            ->onlyMethods(array('markAsExecuted'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsExecuted');
@@ -318,7 +318,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testcreditInvoiceItem()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('getTotalWithTax'))
+            ->onlyMethods(array('getTotalWithTax'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTotalWithTax')
@@ -367,7 +367,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->quantity = $quantity;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('getTotal', 'getTax'))
+            ->onlyMethods(array('getTotal', 'getTax'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTotal')
@@ -422,4 +422,3 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 }
- 

@@ -27,7 +27,7 @@ class GuestTest extends \BBTestCase
         $adminId = 1;
 
         $apiMock = $this->getMockBuilder('\Box\Mod\Staff\Api\Guest')
-            ->setMethods(array('login'))
+            ->onlyMethods(array('login'))
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('login');

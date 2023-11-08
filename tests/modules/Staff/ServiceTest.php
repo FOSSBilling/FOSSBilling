@@ -147,7 +147,7 @@ class ServiceTest extends \BBTestCase
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('getPermissions'))
+            ->onlyMethods(array('getPermissions'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -164,7 +164,7 @@ class ServiceTest extends \BBTestCase
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('getPermissions'))
+            ->onlyMethods(array('getPermissions'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -183,7 +183,7 @@ class ServiceTest extends \BBTestCase
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('getPermissions'))
+            ->onlyMethods(array('getPermissions'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -202,7 +202,7 @@ class ServiceTest extends \BBTestCase
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('getPermissions'))
+            ->onlyMethods(array('getPermissions'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -798,7 +798,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function searchFilters()
+    public static function searchFilters()
     {
         return array(
             array(
@@ -1027,7 +1027,7 @@ class ServiceTest extends \BBTestCase
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($plainTextPassword);
-        
+
         $profileService = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
 
         $di                   = new \Pimple\Container();
@@ -1380,7 +1380,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function ActivityAdminHistorySearchFilters()
+    public static function ActivityAdminHistorySearchFilters()
     {
         return array(
             array(

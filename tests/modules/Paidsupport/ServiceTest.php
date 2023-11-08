@@ -335,8 +335,14 @@ class ServiceTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->withConsecutive(array('SupportTicket'), array('Client'))
-            ->willReturnOnConsecutiveCalls($supportTicketModel, $clientModel);
+            ->willReturnCallback(function (...$args) use ($supportTicketModel, $clientModel) {
+                $value = match($args[0]) {
+                    'SupportTicket' => $supportTicketModel,
+                    'Client' => $clientModel
+                };
+
+                return $value;
+            });
         $di['db'] = $dbMock;
 
         $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
@@ -390,8 +396,14 @@ class ServiceTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->withConsecutive(array('SupportTicket'), array('Client'))
-            ->willReturnOnConsecutiveCalls($supportTicketModel, $clientModel);
+            ->willReturnCallback(function (...$args) use ($supportTicketModel, $clientModel) {
+                $value = match($args[0]) {
+                    'SupportTicket' => $supportTicketModel,
+                    'Client' => $clientModel
+                };
+
+                return $value;
+            });
         $di['db'] = $dbMock;
 
         $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
@@ -474,7 +486,7 @@ class ServiceTest extends \BBTestCase {
             $helpdeskId => 0
         );
         $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
-            ->setMethods(array('getPaidHelpdeskConfig'))
+            ->onlyMethods(array('getPaidHelpdeskConfig'))
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
             ->method('getPaidHelpdeskConfig')
@@ -491,7 +503,7 @@ class ServiceTest extends \BBTestCase {
             $helpdeskId => 1
         );
         $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
-            ->setMethods(array('getPaidHelpdeskConfig'))
+            ->onlyMethods(array('getPaidHelpdeskConfig'))
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
             ->method('getPaidHelpdeskConfig')
@@ -507,7 +519,7 @@ class ServiceTest extends \BBTestCase {
         $helpdeskConfig = array();
 
         $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
-            ->setMethods(array('getPaidHelpdeskConfig'))
+            ->onlyMethods(array('getPaidHelpdeskConfig'))
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
             ->method('getPaidHelpdeskConfig')
@@ -601,4 +613,3 @@ class ServiceTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 }
- 

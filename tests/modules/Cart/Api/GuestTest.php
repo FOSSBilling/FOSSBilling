@@ -17,7 +17,7 @@ class GuestTest extends \BBTestCase
     public function testGet()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue(new \Model_Cart()));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -33,7 +33,7 @@ class GuestTest extends \BBTestCase
     public function testReset()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'resetCart'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'resetCart'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue(new \Model_Cart()));
         $serviceMock->expects($this->atLeastOnce())->method('resetCart')
@@ -49,7 +49,7 @@ class GuestTest extends \BBTestCase
     public function testSet_currency()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'changeCartCurrency'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'changeCartCurrency'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue(new \Model_Cart()));
         $serviceMock->expects($this->atLeastOnce())->method('changeCartCurrency')
@@ -62,7 +62,7 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')
-            ->setMethods(array('getByCode'))->getMock();
+            ->onlyMethods(array('getByCode'))->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
             ->will($this->returnValue(new \Model_Currency()));
 
@@ -86,7 +86,7 @@ class GuestTest extends \BBTestCase
     public function testSet_currencyNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'changeCartCurrency'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'changeCartCurrency'))->getMock();
         $serviceMock->expects($this->never())->method('getSessionCart')
             ->will($this->returnValue(new \Model_Cart()));
         $serviceMock->expects($this->never())->method('changeCartCurrency')
@@ -99,7 +99,7 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')
-            ->setMethods(array('getByCode'))->getMock();
+            ->onlyMethods(array('getByCode'))->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
             ->will($this->returnValue(null));
 
@@ -129,13 +129,13 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart',))->getMock();
+            ->onlyMethods(array('getSessionCart',))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
 
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')
-            ->setMethods(array('toApiArray', 'getDefault'))->getMock();
+            ->onlyMethods(array('toApiArray', 'getDefault'))->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
         $currencyServiceMock->expects($this->never())->method('getDefault')
@@ -170,13 +170,13 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart',))->getMock();
+            ->onlyMethods(array('getSessionCart',))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
 
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')
-            ->setMethods(array('toApiArray', 'getDefault'))->getMock();
+            ->onlyMethods(array('toApiArray', 'getDefault'))->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
         $currencyServiceMock->expects($this->atLeastOnce())->method('getDefault')
@@ -211,7 +211,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->atLeastOnce())->method('applyPromo')
@@ -249,7 +249,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->never())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->never())->method('applyPromo')
@@ -288,7 +288,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->never())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->never())->method('applyPromo')
@@ -328,7 +328,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'isPromoAvailableForClientGroup'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->never())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->never())->method('applyPromo')
@@ -367,7 +367,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'removePromo'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'removePromo'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->atLeastOnce())->method('removePromo')
@@ -387,7 +387,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'removeProduct'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'removeProduct'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->atLeastOnce())->method('removeProduct')
@@ -420,7 +420,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'addItem'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'addItem'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->atLeastOnce())->method('addItem')
@@ -461,7 +461,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'addItem'))->getMock();
+            ->onlyMethods(array('getSessionCart', 'addItem'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->atLeastOnce())->method('addItem')
@@ -469,7 +469,7 @@ class GuestTest extends \BBTestCase
 
 
         $apiMock = $this->getMockBuilder('\Box\Mod\Cart\Api\Guest')
-            ->setMethods(array('reset'))->getMock();
+            ->onlyMethods(array('reset'))->getMock();
         $apiMock->expects($this->atLeastOnce())->method('reset')
             ->will($this->returnValue($cart));
 

@@ -26,7 +26,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($simpleResultArr));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getSearchQuery', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getSearchQuery', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->will($this->returnValue(array('query', array())));
         $serviceMock->expects($this->atLeastOnce())
@@ -67,7 +67,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(array('toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
@@ -99,7 +99,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('ticketUpdate'))->getMock();
+            ->onlyMethods(array('ticketUpdate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketUpdate')
             ->will($this->returnValue(true));
 
@@ -131,7 +131,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportTicketMessage()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('ticketMessageUpdate'))->getMock();
+            ->onlyMethods(array('ticketMessageUpdate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketMessageUpdate')
             ->will($this->returnValue(true));
 
@@ -164,7 +164,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('rm'))->getMock();
+            ->onlyMethods(array('rm'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('rm')
             ->will($this->returnValue(true));
 
@@ -196,7 +196,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('ticketReply'))->getMock();
+            ->onlyMethods(array('ticketReply'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
             ->will($this->returnValue(true));
 
@@ -232,7 +232,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($ticket));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('closeTicket'))->getMock();
+            ->onlyMethods(array('closeTicket'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
             ->will($this->returnValue(true));
 
@@ -268,7 +268,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($ticket));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('closeTicket'))->getMock();
+            ->onlyMethods(array('closeTicket'))->getMock();
         $serviceMock->expects($this->never())->method('closeTicket')
             ->will($this->returnValue(true));
 
@@ -333,7 +333,7 @@ class Api_AdminTest extends \BBTestCase
     public function testBatch_ticket_auto_close()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getExpired', 'autoClose'))->getMock();
+            ->onlyMethods(array('getExpired', 'autoClose'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getExpired')
             ->will($this->returnValue(array(array('id' => 1), array('id' => 2))));
         $serviceMock->expects($this->atLeastOnce())->method('autoClose')
@@ -367,7 +367,7 @@ class Api_AdminTest extends \BBTestCase
         $ticket->id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getExpired', 'autoClose'))->getMock();
+            ->onlyMethods(array('getExpired', 'autoClose'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getExpired')
             ->will($this->returnValue(array(array('id' => 1), array('id' => 2))));
         $serviceMock->expects($this->atLeastOnce())->method('autoClose')
@@ -392,7 +392,7 @@ class Api_AdminTest extends \BBTestCase
     public function testBatch_public_ticket_auto_close()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicGetExpired', 'publicAutoClose'))->getMock();
+            ->onlyMethods(array('publicGetExpired', 'publicAutoClose'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetExpired')
             ->will($this->returnValue(array(new \Model_SupportPTicket(), new \Model_SupportPTicket())));
         $serviceMock->expects($this->atLeastOnce())->method('publicAutoClose')
@@ -412,7 +412,7 @@ class Api_AdminTest extends \BBTestCase
         $ticket->id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicGetExpired', 'publicAutoClose'))->getMock();
+            ->onlyMethods(array('publicGetExpired', 'publicAutoClose'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetExpired')
             ->will($this->returnValue(array($ticket, $ticket)));
         $serviceMock->expects($this->atLeastOnce())->method('publicAutoClose')
@@ -435,7 +435,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::CLOSED => 'Closed',
         );
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getStatuses', 'counter'))->getMock();
+            ->onlyMethods(array('getStatuses', 'counter'))->getMock();
         $serviceMock->expects($this->never())->method('getStatuses')
             ->will($this->returnValue($statuses));
         $serviceMock->expects($this->atLeastOnce())->method('counter')
@@ -456,7 +456,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::CLOSED => 'Closed',
         );
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getStatuses', 'counter'))->getMock();
+            ->onlyMethods(array('getStatuses', 'counter'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getStatuses')
             ->will($this->returnValue($statuses));
         $serviceMock->expects($this->never())->method('counter')
@@ -485,7 +485,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($resultSet));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicGetSearchQuery', 'publicToApiArray'))->getMock();
+            ->onlyMethods(array('publicGetSearchQuery', 'publicToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetSearchQuery')
             ->will($this->returnValue(array('query', array())));
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
@@ -521,7 +521,7 @@ class Api_AdminTest extends \BBTestCase
 
         $randID      = rand(1, 100);
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicTicketCreate'))->getMock();
+            ->onlyMethods(array('publicTicketCreate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketCreate')
             ->will($this->returnValue($randID));
 
@@ -558,7 +558,7 @@ class Api_AdminTest extends \BBTestCase
 
         $randID      = rand(1, 100);
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicToApiArray'))->getMock();
+            ->onlyMethods(array('publicToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
             ->will($this->returnValue(array()));
 
@@ -590,7 +590,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportPTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicRm'))->getMock();
+            ->onlyMethods(array('publicRm'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicRm')
             ->will($this->returnValue(true));
 
@@ -622,7 +622,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportPTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicCloseTicket'))->getMock();
+            ->onlyMethods(array('publicCloseTicket'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicCloseTicket')
             ->will($this->returnValue(true));
 
@@ -655,7 +655,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportPTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicTicketUpdate'))->getMock();
+            ->onlyMethods(array('publicTicketUpdate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketUpdate')
             ->will($this->returnValue(true));
 
@@ -688,7 +688,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportPTicket()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicTicketReply'))->getMock();
+            ->onlyMethods(array('publicTicketReply'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReply')
             ->will($this->returnValue(true));
 
@@ -717,7 +717,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::CLOSED => 'Closed',
         );
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicGetStatuses', 'publicCounter'))->getMock();
+            ->onlyMethods(array('publicGetStatuses', 'publicCounter'))->getMock();
         $serviceMock->expects($this->never())->method('publicGetStatuses')
             ->will($this->returnValue($statuses));
         $serviceMock->expects($this->atLeastOnce())->method('publicCounter')
@@ -738,7 +738,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::CLOSED => 'Closed',
         );
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicGetStatuses', 'publicCounter'))->getMock();
+            ->onlyMethods(array('publicGetStatuses', 'publicCounter'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetStatuses')
             ->will($this->returnValue($statuses));
         $serviceMock->expects($this->never())->method('publicCounter')
@@ -762,7 +762,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('helpdeskGetSearchQuery'))->getMock();
+            ->onlyMethods(array('helpdeskGetSearchQuery'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetSearchQuery')
             ->will($this->returnValue(array('query', array())));
 
@@ -782,7 +782,7 @@ class Api_AdminTest extends \BBTestCase
     public function testHelpdeks_get_pairs()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('helpdeskGetPairs'))->getMock();
+            ->onlyMethods(array('helpdeskGetPairs'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetPairs')
             ->will($this->returnValue(array()));
 
@@ -807,7 +807,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportHelpdesk()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('helpdeskToApiArray'))->getMock();
+            ->onlyMethods(array('helpdeskToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskToApiArray')
             ->will($this->returnValue(true));
 
@@ -840,7 +840,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportHelpdesk()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('helpdeskUpdate'))->getMock();
+            ->onlyMethods(array('helpdeskUpdate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskUpdate')
             ->will($this->returnValue(true));
 
@@ -868,7 +868,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('helpdeskCreate'))->getMock();
+            ->onlyMethods(array('helpdeskCreate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskCreate')
             ->will($this->returnValue(true));
 
@@ -900,7 +900,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportHelpdesk()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('helpdeskRm'))->getMock();
+            ->onlyMethods(array('helpdeskRm'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskRm')
             ->will($this->returnValue(true));
 
@@ -933,7 +933,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($resultSet));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedGetSearchQuery', 'cannedToApiArray'))->getMock();
+            ->onlyMethods(array('cannedGetSearchQuery', 'cannedToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedGetSearchQuery')
             ->will($this->returnValue(array('query', array())));
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
@@ -990,7 +990,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportPr()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedToApiArray'))->getMock();
+            ->onlyMethods(array('cannedToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
             ->will($this->returnValue(array()));
 
@@ -1023,7 +1023,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportPr()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedRm'))->getMock();
+            ->onlyMethods(array('cannedRm'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedRm')
             ->will($this->returnValue(array()));
 
@@ -1051,7 +1051,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedCreate'))->getMock();
+            ->onlyMethods(array('cannedCreate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCreate')
             ->will($this->returnValue(rand(1, 100)));
 
@@ -1081,7 +1081,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedUpdate'))->getMock();
+            ->onlyMethods(array('cannedUpdate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedUpdate')
             ->will($this->returnValue(rand(1, 100)));
 
@@ -1141,7 +1141,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportPrCategory()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedCategoryToApiArray'))->getMock();
+            ->onlyMethods(array('cannedCategoryToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryToApiArray')
             ->will($this->returnValue(array()));
 
@@ -1177,7 +1177,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($supportCategory));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedCategoryUpdate'))->getMock();
+            ->onlyMethods(array('cannedCategoryUpdate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryUpdate')
             ->will($this->returnValue(array()));
 
@@ -1214,7 +1214,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue($supportCategory));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedCategoryRm'))->getMock();
+            ->onlyMethods(array('cannedCategoryRm'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryRm')
             ->will($this->returnValue(array()));
 
@@ -1242,7 +1242,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('cannedCategoryCreate'))->getMock();
+            ->onlyMethods(array('cannedCategoryCreate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryCreate')
             ->will($this->returnValue(array()));
 
@@ -1268,7 +1268,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('noteCreate'))->getMock();
+            ->onlyMethods(array('noteCreate'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteCreate')
             ->will($this->returnValue(array()));
 
@@ -1302,7 +1302,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('noteRm'))->getMock();
+            ->onlyMethods(array('noteRm'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteRm')
             ->will($this->returnValue(array()));
 
@@ -1335,7 +1335,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('ticketTaskComplete'))->getMock();
+            ->onlyMethods(array('ticketTaskComplete'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketTaskComplete')
             ->will($this->returnValue(true));
 
@@ -1361,7 +1361,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatch_delete()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Support\Api\Admin')->setMethods(array('ticket_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Support\Api\Admin')->onlyMethods(array('ticket_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('ticket_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
@@ -1379,7 +1379,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatch_delete_public()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Support\Api\Admin')->setMethods(array('public_ticket_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Support\Api\Admin')->onlyMethods(array('public_ticket_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('public_ticket_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
@@ -1412,7 +1412,7 @@ class Api_AdminTest extends \BBTestCase
             'cat'    => 'category'
         );
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbSearchArticles'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbSearchArticles'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbSearchArticles')
             ->will($this->returnValue(array('list' => array())));
@@ -1452,7 +1452,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbToApiArray'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbToApiArray'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbToApiArray')
             ->will($this->returnValue(array()));
@@ -1500,7 +1500,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCreateArticle'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCreateArticle'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCreateArticle')
             ->will($this->returnValue($id));
@@ -1531,7 +1531,7 @@ class Api_AdminTest extends \BBTestCase
             "views"                  => rand(1, 100),
         );
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateArticle'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbUpdateArticle'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbUpdateArticle')
             ->will($this->returnValue(true));
@@ -1575,7 +1575,7 @@ class Api_AdminTest extends \BBTestCase
 
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbRm'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbRm'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbRm')
             ->will($this->returnValue(true));
@@ -1604,7 +1604,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbRm'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbRm'))->getMock();
         $kbService->expects($this->never())
             ->method('kbRm')
             ->will($this->returnValue(true));
@@ -1637,7 +1637,7 @@ class Api_AdminTest extends \BBTestCase
 
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryGetSearchQuery'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryGetSearchQuery'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryGetSearchQuery')
             ->will($this->returnValue(true));
@@ -1666,7 +1666,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryToApiArray'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryToApiArray'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryToApiArray')
             ->will($this->returnValue(array()));
@@ -1697,7 +1697,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryToApiArray'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryToApiArray'))->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryToApiArray')
             ->will($this->returnValue(array()));
@@ -1726,7 +1726,7 @@ class Api_AdminTest extends \BBTestCase
         $di['db'] = $db;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryToApiArray'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryToApiArray'))->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryToApiArray')
             ->will($this->returnValue(array()));
@@ -1745,7 +1745,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCreateCategory'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCreateCategory'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCreateCategory')
             ->will($this->returnValue(array()));
@@ -1773,7 +1773,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateCategory'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbUpdateCategory'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbUpdateCategory')
             ->will($this->returnValue(array()));
@@ -1810,7 +1810,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateCategory'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbUpdateCategory'))->getMock();
         $kbService->expects($this->never())
             ->method('kbUpdateCategory')
             ->will($this->returnValue(array()));
@@ -1841,7 +1841,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbUpdateCategory'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbUpdateCategory'))->getMock();
         $kbService->expects($this->never())
             ->method('kbUpdateCategory')
             ->will($this->returnValue(array()));
@@ -1878,7 +1878,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryRm'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryRm'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryRm')
             ->will($this->returnValue(array()));
@@ -1910,7 +1910,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryRm'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryRm'))->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryRm')
             ->will($this->returnValue(array()));
@@ -1940,7 +1940,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryRm'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryRm'))->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryRm')
             ->will($this->returnValue(array()));
@@ -1974,7 +1974,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->setMethods(array('kbCategoryGetPairs'))->getMock();
+        $kbService = $this->getMockBuilder('Box\Mod\Support\Service')->onlyMethods(array('kbCategoryGetPairs'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryGetPairs')
             ->will($this->returnValue(array()));

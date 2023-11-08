@@ -132,7 +132,7 @@ class ServiceTest extends \BBTestCase {
             ->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->setMethods(array('generateEmailConfirmationLink'))->getMock();
+        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->onlyMethods(array('generateEmailConfirmationLink'))->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
             method('generateEmailConfirmationLink')->will($this->returnValue('Link_string'));
 
@@ -189,7 +189,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
-    public function searchQueryData()
+    public static function searchQueryData()
     {
         return array(
             array(array(), 'SELECT c.*', array()),
@@ -456,7 +456,7 @@ class ServiceTest extends \BBTestCase {
         $clientService->canChangeCurrency($model, $currency);
     }
 
-    public function searchBalanceQueryData()
+    public static function searchBalanceQueryData()
     {
         return array(
             array(array(), 'FROM client_balance as m', array()),
@@ -599,7 +599,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function searchHistoryQueryData()
+    public static function searchHistoryQueryData()
     {
         return array(
             array(array(), 'SELECT ach.*, c.first_name, c.last_name, c.email', array()),
@@ -712,7 +712,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    public function getProvider()
+    public static function getProvider()
     {
         return array(
             array('id', 1),
@@ -802,7 +802,7 @@ class ServiceTest extends \BBTestCase {
         $di['db'] = $dbMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
-            ->setMethods(array('getClientBalance'))
+            ->onlyMethods(array('getClientBalance'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientBalance');
@@ -814,9 +814,10 @@ class ServiceTest extends \BBTestCase {
 
     }
 
-    public function testIsClientTaxableProvider()
+    public static function testIsClientTaxableProvider()
     {
-        $this->assertTrue(true);
+        $self = new ServiceTest('ServiceTest');
+        $self->assertTrue(true);
         return array(
             array(
                 false,

@@ -51,7 +51,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $eventMock = $this->getMockBuilder('\Box_Event')
-            ->setMethods(array('getParameters', 'getDi'))
+            ->onlyMethods(array('getParameters', 'getDi'))
             ->disableOriginalConstructor()
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
@@ -92,7 +92,7 @@ class ServiceTest extends \BBTestCase {
         $eventParams = array();
 
         $eventMock = $this->getMockBuilder('\Box_Event')
-            ->setMethods(array('getParameters'))
+            ->onlyMethods(array('getParameters'))
             ->disableOriginalConstructor()
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
@@ -112,7 +112,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $eventMock = $this->getMockBuilder('\Box_Event')
-            ->setMethods(array('getParameters', 'getDi'))
+            ->onlyMethods(array('getParameters', 'getDi'))
             ->disableOriginalConstructor()
             ->getMock();
         $eventMock->expects($this->atLeastOnce())

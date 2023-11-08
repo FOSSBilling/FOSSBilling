@@ -372,7 +372,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $apiMock = $this->getMockBuilder('\Box\Mod\Product\Api\Admin')
-            ->setMethods(array('update'))
+            ->onlyMethods(array('update'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -406,7 +406,7 @@ class AdminTest extends \BBTestCase {
     public function testaddon_delete()
     {
         $apiMock = $this->getMockBuilder('\Box\Mod\Product\Api\Admin')
-            ->setMethods(array('delete'))
+            ->onlyMethods(array('delete'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())

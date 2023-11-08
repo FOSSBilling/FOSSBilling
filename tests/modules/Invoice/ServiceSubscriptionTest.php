@@ -173,7 +173,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function searchQueryData()
+    public static function searchQueryData()
     {
         return array(
             array(
@@ -273,7 +273,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     public function testgetSubscriptionPeriod()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceSubscription')
-            ->setMethods(array('isSubscribable'))
+            ->onlyMethods(array('isSubscribable'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -314,4 +314,3 @@ class ServiceSubscriptionTest extends \BBTestCase
     }
 
 }
- 

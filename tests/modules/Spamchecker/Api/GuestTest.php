@@ -23,7 +23,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function datarecaptchaConfig()
+    public static function datarecaptchaConfig()
     {
         return array(
             array(
@@ -83,7 +83,7 @@ class GuestTest extends \BBTestCase
             return $config;
         });
 
-        
+
         $this->api->setDi($di);
         $result = $this->api->recaptcha(array());
 

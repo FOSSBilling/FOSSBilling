@@ -28,7 +28,7 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue($simpleResultArr));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSearchQuery', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getSearchQuery', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->will($this->returnValue(array('query', array())));
         $serviceMock->expects($this->atLeastOnce())
@@ -69,7 +69,7 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_Cart()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(array('toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 

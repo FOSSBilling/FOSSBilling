@@ -19,12 +19,12 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('updateNameservers'))->getMock();
+            ->onlyMethods(array('updateNameservers'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateNameservers')
             ->will($this->returnValue(true));
 
@@ -50,12 +50,12 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('updateContacts'))->getMock();
+            ->onlyMethods(array('updateContacts'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateContacts')
             ->will($this->returnValue(true));
 
@@ -73,12 +73,12 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('enablePrivacyProtection'))->getMock();
+            ->onlyMethods(array('enablePrivacyProtection'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('enablePrivacyProtection')
             ->will($this->returnValue(true));
 
@@ -96,12 +96,12 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('disablePrivacyProtection'))->getMock();
+            ->onlyMethods(array('disablePrivacyProtection'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('disablePrivacyProtection')
             ->will($this->returnValue(true));
 
@@ -119,12 +119,12 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('getTransferCode'))->getMock();
+            ->onlyMethods(array('getTransferCode'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getTransferCode')
             ->will($this->returnValue(true));
 
@@ -142,12 +142,12 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('lock'))->getMock();
+            ->onlyMethods(array('lock'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('lock')
             ->will($this->returnValue(true));
 
@@ -165,12 +165,12 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('unlock'))->getMock();
+            ->onlyMethods(array('unlock'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('unlock')
             ->will($this->returnValue(true));
 
@@ -191,7 +191,7 @@ class Api_ClientTest extends \BBTestCase
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('findForClientById')
             ->will($this->returnValue(new \Model_ClientOrder()));
@@ -223,7 +223,7 @@ class Api_ClientTest extends \BBTestCase
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
         $orderService->expects($this->never())
             ->method('findForClientById')
             ->will($this->returnValue(new \Model_ClientOrder()));
@@ -240,7 +240,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data   = array();
-        
+
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
 
@@ -255,7 +255,7 @@ class Api_ClientTest extends \BBTestCase
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('findForClientById')
             ->will($this->returnValue(null));
@@ -274,7 +274,7 @@ class Api_ClientTest extends \BBTestCase
         $data   = array(
             'order_id' => rand(1, 100)
         );
-        
+
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
 
@@ -289,7 +289,7 @@ class Api_ClientTest extends \BBTestCase
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('findForClientById')
             ->will($this->returnValue(new \Model_ClientOrder()));
@@ -308,7 +308,7 @@ class Api_ClientTest extends \BBTestCase
         $data   = array(
             'order_id' => rand(1, 100)
         );
-        
+
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
 
@@ -316,4 +316,3 @@ class Api_ClientTest extends \BBTestCase
     }
 
 }
- 

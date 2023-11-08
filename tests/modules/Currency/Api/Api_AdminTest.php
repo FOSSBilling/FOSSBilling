@@ -288,8 +288,10 @@ class Api_AdminTest extends \BBTestCase
 
     }
 
-    public function CreateExceptionProvider()
+    public static function CreateExceptionProvider()
     {
+        $self = new Api_AdminTest('Api_AdminTest');
+
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
@@ -300,9 +302,9 @@ class Api_AdminTest extends \BBTestCase
                     'code'   => 'EUR',
                     'format' => '€{{price}}'
                 ),
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
                 $model, //currency exists already
-                $this->never(),
+                $self->never(),
 
             ),
             array(
@@ -310,9 +312,9 @@ class Api_AdminTest extends \BBTestCase
                     'code'   => 'NON', //Non existing currency
                     'format' => '€{{price}}'
                 ),
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
                 null,
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
 
             ),
         );
@@ -455,7 +457,7 @@ class Api_AdminTest extends \BBTestCase
             'format' => '€{{price}}'
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('deleteCurrencyByCode'))->getMock();
+        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->onlyMethods(array('deleteCurrencyByCode'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('deleteCurrencyByCode')
             ->will($this->returnValue(true));
@@ -476,8 +478,10 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function SetDefaultExceptionProvider()
+    public static function SetDefaultExceptionProvider()
     {
+        $self = new Api_AdminTest('Api_AdminTest');
+
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
@@ -487,7 +491,7 @@ class Api_AdminTest extends \BBTestCase
                 array(
                     'code' => 'EUR' //model is not instance of \Model_Currency
                 ),
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
                 null,
             ),
         );

@@ -40,7 +40,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertEquals($expected, $result);
     }
 
-    public function typeValidationData()
+    public static function typeValidationData()
     {
         return array(
             array('select', true),
@@ -57,7 +57,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertEquals($expected, $result);
     }
 
-    public function isArrayUniqueData()
+    public static function isArrayUniqueData()
     {
         return array(
             array(array('sameValue', 'sameValue'), false),
@@ -144,7 +144,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertEquals($newFieldId, $result);
     }
 
-    public function updateFieldTypeData()
+    public static function updateFieldTypeData()
     {
         return array(
             array('select'),
@@ -224,7 +224,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -253,7 +253,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -282,7 +282,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -543,7 +543,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('getFormFields', 'addNewForm', 'addNewField'))
+            ->onlyMethods(array('getFormFields', 'addNewForm', 'addNewField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())

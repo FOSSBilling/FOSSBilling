@@ -127,7 +127,7 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('setParamValue'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->onlyMethods(array('setParamValue'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->will($this->returnValue(true));
@@ -147,7 +147,7 @@ class ServiceTest extends \BBTestCase
         $latestVersion = '1.0.0';
         $type = 'info';
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('getParamValue'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->onlyMethods(['getParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->returnValue(false));
@@ -165,8 +165,6 @@ class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
             return $systemServiceMock;
         });
-        $di['tools'] = $toolsMock;
-
 
         $systemServiceMock->setDi($di);
 
@@ -177,7 +175,7 @@ class ServiceTest extends \BBTestCase
     public function testtemplateExistsEmptyPaths()
     {
         $getThemeResults = array('paths' => array());
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('getThemeConfig'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->addMethods(array('getThemeConfig'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getThemeConfig')
             ->will($this->returnValue($getThemeResults));
@@ -380,7 +378,7 @@ class ServiceTest extends \BBTestCase
     public function testsetPendingMessage()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')
-            ->setMethods(array('getPendingMessages'))
+            ->onlyMethods(array('getPendingMessages'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPendingMessages')

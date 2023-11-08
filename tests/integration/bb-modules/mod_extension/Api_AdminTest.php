@@ -49,7 +49,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $extension =  new Model_Extension();
         $extension->loadBean(new \RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->setMethods(array('update', 'findExtension'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(array('update', 'findExtension'))->getMock();
         $serviceMock->expects($this->any())
             ->method('update')
             ->will($this->returnValue($versions));
@@ -149,7 +149,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $extension =  new Model_Extension();
         $extension->loadBean(new \RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->setMethods(array('downloadAndExtract'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(array('downloadAndExtract'))->getMock();
         $serviceMock->expects($this->any())
             ->method('downloadAndExtract')
             ->will($this->returnValue(true));

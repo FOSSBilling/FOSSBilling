@@ -27,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function dataForSearchQuery()
+    public static function dataForSearchQuery()
     {
         return array(
             array(array(), 'FROM invoice p', array()),
@@ -253,7 +253,7 @@ class ServiceTest extends \BBTestCase
     public function testonAfterAdminInvoicePaymentReceived()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('toApiArray'))
+            ->onlyMethods(array('toApiArray'))
             ->getMock();
         $arr         = array(
             'total'  => 1,
@@ -306,7 +306,7 @@ class ServiceTest extends \BBTestCase
     public function testonAfterAdminInvoiceReminderSent()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('toApiArray'))
+            ->onlyMethods(array('toApiArray'))
             ->getMock();
         $arr         = array(
             'total'  => 1,
@@ -392,7 +392,7 @@ class ServiceTest extends \BBTestCase
     public function testonEventAfterInvoiceIsDue()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('toApiArray'))
+            ->onlyMethods(array('toApiArray'))
             ->getMock();
         $arr         = array(
             'total'  => 1,
@@ -444,7 +444,7 @@ class ServiceTest extends \BBTestCase
     public function testmarkAsPaid()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('countIncome'))
+            ->onlyMethods(array('countIncome'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -507,7 +507,7 @@ class ServiceTest extends \BBTestCase
     public function testcountIncome()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal'))
+            ->onlyMethods(array('getTotal'))
             ->getMock();
 
         $invoiceModel = new \Model_Invoice();
@@ -533,7 +533,7 @@ class ServiceTest extends \BBTestCase
     public function testprepareInvoiceCurrencyWasNotDefined()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('setInvoiceDefaults'))
+            ->onlyMethods(array('setInvoiceDefaults'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -677,7 +677,7 @@ class ServiceTest extends \BBTestCase
     public function testapproveInvoice()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('tryPayWithCredits'))
+            ->onlyMethods(array('tryPayWithCredits'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -713,7 +713,7 @@ class ServiceTest extends \BBTestCase
         $tax         = 2.2;
         $expected    = $total + $tax;
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal', 'getTax'))
+            ->onlyMethods(array('getTotal', 'getTax'))
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -767,7 +767,7 @@ class ServiceTest extends \BBTestCase
         $total       = 10;
         $tax         = 2.2;
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal', 'getTax', 'countIncome', 'addNote'))
+            ->onlyMethods(array('getTotal', 'getTax', 'countIncome', 'addNote'))
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -919,7 +919,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteInvoiceByAdmin()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('rmInvoice'))
+            ->onlyMethods(array('rmInvoice'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('rmInvoice');
@@ -947,7 +947,7 @@ class ServiceTest extends \BBTestCase
         $invoiceItemModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('rmInvoice'))
+            ->onlyMethods(array('rmInvoice'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('rmInvoice');
@@ -1017,7 +1017,7 @@ class ServiceTest extends \BBTestCase
         $clientOrder->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('generateForOrder', 'approveInvoice'))
+            ->onlyMethods(array('generateForOrder', 'approveInvoice'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('approveInvoice');
@@ -1045,7 +1045,7 @@ class ServiceTest extends \BBTestCase
         $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('findAllUnpaid', 'tryPayWithCredits'))
+            ->onlyMethods(array('findAllUnpaid', 'tryPayWithCredits'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findAllUnpaid')
@@ -1074,7 +1074,7 @@ class ServiceTest extends \BBTestCase
         $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('tryPayWithCredits'))
+            ->onlyMethods(array('tryPayWithCredits'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('tryPayWithCredits');
@@ -1113,7 +1113,7 @@ class ServiceTest extends \BBTestCase
     public function testgenerateForOrder()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('setInvoiceDefaults'))
+            ->onlyMethods(array('setInvoiceDefaults'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('setInvoiceDefaults');
@@ -1194,7 +1194,7 @@ class ServiceTest extends \BBTestCase
         $invoiceModel->id = $newId;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('generateForOrder', 'approveInvoice'))
+            ->onlyMethods(array('generateForOrder', 'approveInvoice'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('approveInvoice');
@@ -1288,7 +1288,7 @@ class ServiceTest extends \BBTestCase
         $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getUnpaidInvoicesLateFor', 'sendInvoiceReminder'))
+            ->onlyMethods(array('getUnpaidInvoicesLateFor', 'sendInvoiceReminder'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('sendInvoiceReminder');
@@ -1470,7 +1470,7 @@ class ServiceTest extends \BBTestCase
         $maxAmount = 50;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('setInvoiceDefaults'))
+            ->onlyMethods(array('setInvoiceDefaults'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('setInvoiceDefaults');
@@ -1595,7 +1595,7 @@ class ServiceTest extends \BBTestCase
     public function testprocessInvoice()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getPaymentInvoice'))
+            ->onlyMethods(array('getPaymentInvoice'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPaymentInvoice')

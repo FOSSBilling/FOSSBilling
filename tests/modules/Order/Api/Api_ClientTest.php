@@ -29,7 +29,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testGet_list()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('getSearchQuery', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getSearchQuery', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->will($this->returnValue(array('query', array())));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -75,7 +75,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testGet_listExpiring()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('getSoonExpiringActiveOrdersQuery'))->getMock();
+            ->onlyMethods(array('getSoonExpiringActiveOrdersQuery'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSoonExpiringActiveOrdersQuery')
             ->will($this->returnValue(array('query', array())));
 
@@ -109,13 +109,13 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->onlyMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(array('toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
@@ -132,7 +132,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testAddons()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('getOrderAddonsList', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getOrderAddonsList', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
             ->will($this->returnValue(array(new Model_ClientOrder())));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -141,7 +141,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->onlyMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
@@ -162,13 +162,13 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->onlyMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('getOrderServiceData'))->getMock();
+            ->onlyMethods(array('getOrderServiceData'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderServiceData')
             ->will($this->returnValue(array()));
 
@@ -191,12 +191,12 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->onlyMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
 
-        $productServiceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->setMethods(array('getUpgradablePairs'))->getMock();
+        $productServiceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->onlyMethods(array('getUpgradablePairs'))->getMock();
         $productServiceMock->expects($this->atLeastOnce())
             ->method("getUpgradablePairs")
             ->will($this->returnValue(array()));
@@ -227,13 +227,13 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
-        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->onlyMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('deleteFromOrder'))->getMock();
+            ->onlyMethods(array('deleteFromOrder'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('deleteFromOrder')
             ->will($this->returnValue(true));
 
@@ -252,13 +252,13 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\Box\Mod\Order\Api\Client')->onlyMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->will($this->returnValue($order));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('deleteFromOrder'))->getMock();
+            ->onlyMethods(array('deleteFromOrder'))->getMock();
         $serviceMock->expects($this->never())->method('deleteFromOrder')
             ->will($this->returnValue(true));
 
@@ -285,7 +285,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('findForClientById', 'toApiArray'))->getMock();
+            ->onlyMethods(array('findForClientById', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findForClientById')
             ->will($this->returnValue($order));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -318,7 +318,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('findForClientById', 'toApiArray'))->getMock();
+            ->onlyMethods(array('findForClientById', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findForClientById')
             ->will($this->returnValue(null));
         $serviceMock->expects($this->never())->method('toApiArray')

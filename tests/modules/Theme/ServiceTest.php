@@ -34,7 +34,7 @@ class ServiceTest extends \BBTestCase {
     {
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('setCurrentThemePreset'))
+            ->onlyMethods(array('setCurrentThemePreset'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('setCurrentThemePreset');
@@ -106,7 +106,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetThemePresets()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('updateSettings'))
+            ->onlyMethods(array('updateSettings'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateSettings');
@@ -202,7 +202,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetThemeSettingsWithEmptyPresets()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('getCurrentThemePreset'))
+            ->onlyMethods(array('getCurrentThemePreset'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCurrentThemePreset')
@@ -265,7 +265,7 @@ class ServiceTest extends \BBTestCase {
     public function testregenerateThemeSettingsDataFile()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('getThemePresets', 'getThemeSettings', 'getCurrentThemePreset'))
+            ->onlyMethods(array('getThemePresets', 'getThemeSettings', 'getCurrentThemePreset'))
             ->getMock();
 
         $presets = array(
@@ -312,7 +312,6 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue('location/Of/'));
 
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $result = $this->service->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
@@ -345,7 +344,7 @@ class ServiceTest extends \BBTestCase {
         $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('getCurrentClientAreaThemeCode', 'getTheme'))
+            ->onlyMethods(array('getCurrentClientAreaThemeCode', 'getTheme'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
