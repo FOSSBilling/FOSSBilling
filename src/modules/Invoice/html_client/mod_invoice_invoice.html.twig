@@ -33,7 +33,7 @@
                                 <button type="button"  class="hover-popover"
                                     style="background: transparent url('{{gtw.logo.logo}}') no-repeat scroll 0% 0%; height:{{gtw.logo.height}}; width:{{gtw.logo.width}}; background-size: contain; border: 0; margin: 10px;"
                                     type="radio" name="gateway_id" gateway_id="{{ gtw.id }}" data-toggle="tooltip" title="{{ 'Pay with'|trans }} {{gtw.title}}"
-                                    onclick="paymentPromt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, '{{ gtw.title }}')">
+                                    onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, '{{ gtw.title }}')">
                                 </button>
                             {% endif %}
                         {% endfor %}
@@ -246,12 +246,12 @@
     </article>
 
 
-    <div class="modal fade" id="paymentPromt" tabindex="-1" role="dialog" aria-labelledby="paymentPromtLabel" aria-hidden="true">
+    <div class="modal fade" id="paymentPrompt" tabindex="-1" role="dialog" aria-labelledby="paymentPromptLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title" id="paymentPromtLabel"></h4>
+                    <h4 class="modal-title" id="paymentPromptLabel"></h4>
                 </div>
                 <div class="modal-body">
                     <p id="bodyText"></p>
@@ -274,7 +274,7 @@
         });
     });
 
-    function paymentPromt(id, supportsSubscription, title){
+    function paymentPrompt(id, supportsSubscription, title){
         invoiceHash = "{{ invoice.hash }}";
         backLink    = "{{ 'invoice/banklink'|link }}";
         paymentLink = backLink.concat('/', invoiceHash, '/', id);
@@ -304,11 +304,11 @@
             document.getElementById('subscription').style.display = 'none';
         }
 
-        document.getElementById('paymentPromtLabel').textContent = "{{ 'Pay with'|trans }}".concat(" ", title);
+        document.getElementById('paymentPromptLabel').textContent = "{{ 'Pay with'|trans }}".concat(" ", title);
         document.getElementById('subscription').href = paymentLink;
         document.getElementById('single').href = paymentLink.concat('?', 'allow_subscription=false');
 
-        $('#paymentPromt').modal();
+        $('#paymentPrompt').modal();
     }
 </script>
 {% endblock %}
