@@ -277,7 +277,7 @@
     function paymentPrompt(id, supportsSubscription, title){
         invoiceHash = "{{ invoice.hash }}";
         backLink    = "{{ 'invoice/banklink'|link }}";
-        paymentLink = backLink.concat('/', invoiceHash, '/', id);
+        paymentLink = new URL(backLink.concat('/', invoiceHash, '/', id));
         invoiceSubscribable = {{ invoice.subscribable ? 'true' : 'false' }};
 
         {% set anyGatewayDoesSubscriptions = false %}
@@ -306,7 +306,8 @@
 
         document.getElementById('paymentPromptLabel').textContent = "{{ 'Pay with'|trans }}".concat(" ", title);
         document.getElementById('subscription').href = paymentLink;
-        document.getElementById('single').href = paymentLink.concat('?', 'allow_subscription=false');
+        paymentLink.searchParams.append('allow_subscription', 0); 
+        document.getElementById('single').href = paymentLink;
 
         $('#paymentPrompt').modal();
     }
