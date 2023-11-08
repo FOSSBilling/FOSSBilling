@@ -795,7 +795,6 @@ class Admin extends \Api_Abstract
         return true;
     }
 
-
     /*
     * Support Knowledge Base.
     */

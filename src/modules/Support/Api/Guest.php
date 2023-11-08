@@ -90,7 +90,6 @@ class Guest extends \Api_Abstract
         return $this->getService()->publicTicketReplyForGuest($publicTicket, $data['message']);
     }
 
-
     /*
     * Support Knowledge Base Functions.
     */
@@ -98,7 +97,7 @@ class Guest extends \Api_Abstract
     /**
      * Get whether the knowledge base is enabled, or not.
      *
-     * @return boolean
+     * @return bool
      */
     public function kb_enabled()
     {
