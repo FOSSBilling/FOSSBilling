@@ -17,6 +17,10 @@ class Box_AppClient extends Box_App
 
         if ('api' == $this->mod) {
             define('API_MODE', true);
+
+            // Prevent errors from being displayed in API mode as it can cause invalid JSON to be returned.
+            ini_set('display_errors', '0');
+            ini_set('display_startup_errors', '0');
         } else {
             $extensionService = $this->di['mod_service']('extension');
             if ($extensionService->isExtensionActive('mod', 'redirect')) {
