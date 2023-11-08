@@ -568,19 +568,36 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Sends emails from queue, respecting the configured time limit and emails per cron limit.
+     * If an email fails to be sent, it will be skipped and retried on the next cron run until the retry limit is reached.
+     * 
+     * @return void 
+     */
     public function batchSend()
     {
         $mod = $this->di['mod']('email');
         $settings = $mod->getConfig();
-        $tries = 0;
+
         $time_limit = ($settings['time_limit'] ?? 5) * 60;
+        $sendPerCron = $settings['queue_once'] ?? 0;
+
+        $sent = 0;
         $start = time();
-        while ($email = $this->di['db']->findOne('ModEmailQueue', ' status = \'unsent\' ORDER BY updated_at ')) {
-            $this->_sendFromQueue($email);
-            ++$tries;
-            if (isset($settings['queue_once']) && $settings['queue_once'] && $settings['queue_once'] <= $tries) {
-                break;
-            }
+
+        $query = 'ORDER BY created_at ASC';
+        if ($sendPerCron) {
+            $query .= ' LIMIT '  . intval($sendPerCron);
+            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
+        } else {
+            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
+        }
+
+        foreach ($mailQueue as $email) {
+            $mailModel = new \Model_ModEmailQueue();
+            $mailModel->loadBean($email);
+            $this->_sendFromQueue($mailModel);
+            ++$sent;
             if ($time_limit && time() - $start > $time_limit) {
                 break;
             }

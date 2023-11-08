@@ -979,8 +979,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $queueModel = new \Model_ModEmailQueue();
-        $queueModel->loadBean(new \DummyBean());
+        $queueModel = new \DummyBean();
         $queueModel->priority = 10;
         $queueModel->tries = 10;
         $queueModel->subject = 'subject';
@@ -992,9 +991,8 @@ class ServiceTest extends \BBTestCase
         $queueModel->to_name = 'To Name';
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->exactly(2))
-            ->method('findOne')
-            ->will($this->onConsecutiveCalls($queueModel, false));
+        $db->expects($this->exactly(1))
+            ->method('findAll')->will($this->returnValue([$queueModel]));
         $db->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(true));
@@ -1017,13 +1015,6 @@ class ServiceTest extends \BBTestCase
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
             ->will($this->returnValue($isExtensionActiveReturn));
-
-
-       /* Will not work be called because APP_ENV != 'prod'
-        * $mailMock->expects($this->atLeastOnce())
-            ->method('send')
-            ->will($this->returnValue(true));
-       */
 
         $di           = new \Pimple\Container();
         $di['db']     = $db;
