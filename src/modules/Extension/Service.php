@@ -315,7 +315,7 @@ class Service implements InjectionAwareInterface
         return $extension;
     }
 
-    public function update(\Model_Extension $model)
+    public function update(\Model_Extension $model): never
     {
         throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }

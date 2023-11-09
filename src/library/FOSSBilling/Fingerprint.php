@@ -13,7 +13,7 @@ namespace FOSSBilling;
 
 class Fingerprint
 {
-    private array $fingerprintProperties;
+    private readonly array $fingerprintProperties;
 
     public function __construct()
     {

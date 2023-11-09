@@ -77,7 +77,7 @@ if (!Environment::isCLI()) {
 // Inline installer class.
 final class FOSSBilling_Installer
 {
-    private Session $session;
+    private readonly Session $session;
     private PDO $pdo;
     private \FOSSBilling\Requirements $requirements;
 

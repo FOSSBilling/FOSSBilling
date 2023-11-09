@@ -1,7 +1,7 @@
 <?php
 class Example
 {
-    public function __construct(private ?array $config = null)
+    public function __construct(private readonly ?array $config = null)
     {
     }
     

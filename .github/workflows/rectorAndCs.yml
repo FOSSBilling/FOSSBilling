@@ -38,7 +38,9 @@ jobs:
         php-version: '8.2'
 
     - name: Run Reactor
-      run: php src/vendor/bin/rector
+      run: |
+        php src/vendor/bin/rector
+        php src/vendor/bin/rector --config=rectorTests.php
 
     - name: Run PHP CS Fixer
       run: php src/vendor/bin/php-cs-fixer fix

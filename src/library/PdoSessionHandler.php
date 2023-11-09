@@ -21,7 +21,7 @@ class PdoSessionHandler
     /**
      * @var \PDO PDO instance.
      */
-    private \PDO $pdo;
+    private readonly \PDO $pdo;
 
     /**
      * @var array Database options.
@@ -57,11 +57,7 @@ class PdoSessionHandler
         }
         $this->pdo = $pdo;
 
-        $this->dbOptions = array_merge(array(
-                'db_id_col'   => 'id',
-                'db_data_col' => 'content',
-                'db_time_col' => 'modified_at',
-            ), $dbOptions);
+        $this->dbOptions = ['db_id_col'   => 'id', 'db_data_col' => 'content', 'db_time_col' => 'modified_at', ...$dbOptions];
     }
 
     /**

@@ -170,7 +170,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'state'             =>  $c->getState(),
         );
 
-        $params = array_merge($optional_params, $required_params);
+        $params = [...$optional_params, ...$required_params];
         $result = $this->_makeRequest('contacts/modify', $params, 'POST');
         return ($result['status'] == 'Success');
     }
@@ -476,7 +476,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'mobile'                         =>  '',
         );
 
-        $params = array_merge($optional_params, $params);
+        $params = [...$optional_params, ...$params];
         $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
         return $customer_id;
     }
@@ -653,10 +653,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      */
     public function includeAuthorizationParams(array $params)
     {
-        return array_merge($params, array(
-            'auth-userid' => $this->config['userid'],
-            'api-key' => $this->config['api-key'],
-        ));
+        return [...$params, 'auth-userid' => $this->config['userid'], 'api-key' => $this->config['api-key']];
     }
 
     /**

@@ -240,17 +240,17 @@ class Server_Manager_CWP extends Server_Manager
 	/**
 	 * Function graveyard for things CWP doesn't support
 	 */
-	public function changeAccountUsername(Server_Account $a, $new)
+	public function changeAccountUsername(Server_Account $a, $new): never
 	{
 		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('username changes')]);
 	}
 
-	public function changeAccountDomain(Server_Account $a, $new)
+	public function changeAccountDomain(Server_Account $a, $new): never
 	{
 		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account domain')]);
 	}
 
-	public function changeAccountIp(Server_Account $a, $new)
+	public function changeAccountIp(Server_Account $a, $new): never
 	{
 		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account IP')]);
 	}

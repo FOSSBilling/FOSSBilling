@@ -20,7 +20,7 @@ class Mail implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    private Email $email;
+    private readonly Email $email;
     private ?string $transport = null;
     private ?string $dsn = null;
 

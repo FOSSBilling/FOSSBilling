@@ -29,7 +29,7 @@ class SentryHelper
      * IF you modify what's reported, update this to the version number to the release that includes your changes.
      * This is important as we rely on it to inform the user that they may want to review what's been changed.
      */
-    public const last_change = '0.6.0';
+    final public const last_change = '0.6.0';
 
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.

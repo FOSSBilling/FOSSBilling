@@ -77,13 +77,13 @@ class PhpConsole {
 	CLIENT
 	 **************************************************************/
 
-	public const clientProtocolCookie = 'phpcslc';
-	public const serverProtocolCookie = 'phpcsls';
-	public const serverProtocol = 4;
-	public const messagesCookiePrefix = 'phpcsl_';
-	public const cookiesLimit = 50;
-	public const cookieSizeLimit = 4000;
-	public const messageLengthLimit = 2500;
+	final public const clientProtocolCookie = 'phpcslc';
+	final public const serverProtocolCookie = 'phpcsls';
+	final public const serverProtocol = 4;
+	final public const messagesCookiePrefix = 'phpcsl_';
+	final public const cookiesLimit = 50;
+	final public const cookieSizeLimit = 4000;
+	final public const messageLengthLimit = 2500;
 
 	protected static $isEnabledOnClient;
 	protected static $isDisabled;
@@ -234,7 +234,7 @@ class PhpConsole {
 			}
 		}
 
-		$this->oldErrorHandler = set_error_handler(array($this, 'handleError'));
+		$this->oldErrorHandler = set_error_handler($this->handleError(...));
 		register_shutdown_function(array($this, 'checkFatalError'));
 	}
 
@@ -275,7 +275,7 @@ class PhpConsole {
 	protected $oldExceptionsHandler;
 
 	protected function initExceptionsHandler() {
-		$this->oldExceptionsHandler = set_exception_handler(array($this, 'handleException'));
+		$this->oldExceptionsHandler = set_exception_handler($this->handleException(...));
 	}
 
 	public function handleException(\Throwable $exception) {

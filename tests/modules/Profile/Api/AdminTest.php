@@ -89,7 +89,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePasswordExceptions()
+    public function testChangePasswordExceptions(): never
     {
         $di = new \Pimple\Container();
         $di['validator'] = new \FOSSBilling\Validate();
