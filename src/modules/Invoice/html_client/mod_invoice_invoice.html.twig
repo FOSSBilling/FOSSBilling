@@ -290,7 +290,7 @@
         canAnyGatewayDoSubs = {{ anyGatewayDoesSubscriptions ? 'true' : 'false' }};
 
         if(supportsSubscription && invoiceSubscribable){
-            document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and your choosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
+            document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
             document.getElementById('subscription').style.display = '';
         } else if (!invoiceSubscribable) {
             document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
