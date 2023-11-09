@@ -894,14 +894,9 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt');
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['tools'] = new \FOSSBilling\Tools();
-        $di['password'] = $passwordMock;
+        $di             = new \Pimple\Container();
+        $di['db']       = $dbMock;
+        $di['tools']    = new \FOSSBilling\Tools();
 
         $service = new Service();
         $service->setDi($di);
@@ -1595,8 +1590,8 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $member_id = 1;
-        $expected = json_decode($queryResult, 1);
-        $result = $service->getPermissions($member_id);
+        $expected  = json_decode($queryResult, true);
+        $result    = $service->getPermissions($member_id);
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }

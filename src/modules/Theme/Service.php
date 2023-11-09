@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,6 +12,7 @@
 namespace Box\Mod\Theme;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 class Service implements InjectionAwareInterface
@@ -155,7 +156,7 @@ class Service implements InjectionAwareInterface
             ['theme' => $theme->getName(), 'preset' => $preset]
         );
         if ($meta) {
-            return json_decode($meta->meta_value, 1);
+            return json_decode($meta->meta_value, true);
         } else {
             return $theme->getPresetFromSettingsDataFile($preset);
         }
@@ -195,7 +196,8 @@ class Service implements InjectionAwareInterface
         $settings['current'] = $this->getCurrentThemePreset($theme);
         $data_file = $theme->getPathSettingsDataFile();
 
-        file_put_contents($data_file, json_encode($settings));
+        $filesystem = new Filesystem();
+        $filesystem->dumpFile($data_file, json_encode($settings));
 
         return true;
     }
@@ -219,7 +221,8 @@ class Service implements InjectionAwareInterface
             $systemService = $this->di['mod_service']('system');
             $data = $systemService->renderString($vars['_tpl'], false, $vars);
 
-            file_put_contents($real_file, $data);
+            $filesystem = new Filesystem();
+            $filesystem->dumpFile($real_file, $data);
         }
 
         return true;

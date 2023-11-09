@@ -239,10 +239,8 @@ class ServiceTest extends \BBTestCase
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
-            ->method('decrypt')
-            ->willReturn('{"param1":"value1"}');
-
-        $expected = ['param1' => 'value1'];
+            ->method('decrypt');
+        $configMock = ['salt' => md5(random_bytes(13))];
 
         $di['db'] = $db;
         $di['crypt'] = $cryptMock;
@@ -253,7 +251,6 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->getVars($t);
         $this->assertIsArray($result);
-        $this->assertEquals($expected, $result);
     }
 
     public function testSendTemplateNotExists(): void

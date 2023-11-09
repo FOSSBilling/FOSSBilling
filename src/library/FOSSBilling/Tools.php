@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -12,10 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Egulias\EmailValidator\EmailValidator;
-use Egulias\EmailValidator\Validation\DNSCheckValidation;
-use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
-use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\RetryableHttpClient;
 
@@ -31,37 +26,6 @@ class Tools
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
-    }
-
-    /**
-     * Return site url.
-     *
-     * @return string
-     */
-    public function url($link = null)
-    {
-        $link = trim($link, '/');
-
-        return SYSTEM_URL . $link;
-    }
-
-    public function hasService($type)
-    {
-        $file = PATH_MODS . '/mod_' . $type . '/Service.php';
-
-        return file_exists($file);
-    }
-
-    public function getService($type)
-    {
-        $class = 'Box_Mod_' . ucfirst($type) . '_Service';
-        $file = PATH_MODS . '/mod_' . $type . '/Service.php';
-        if (!file_exists($file)) {
-            throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
-        }
-        require_once $file;
-
-        return new $class();
     }
 
     public function checkPerms($path, $perm = '0777')
@@ -80,89 +44,6 @@ class Tools
         return false;
     }
 
-    public function emptyFolder($folder)
-    {
-        /* Original source for this lovely code snippet: https://stackoverflow.com/a/24563703
-         * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
-         */
-        if (file_exists($folder)) {
-            $di = new \RecursiveDirectoryIterator($folder, \FilesystemIterator::SKIP_DOTS);
-            $ri = new \RecursiveIteratorIterator($di, \RecursiveIteratorIterator::CHILD_FIRST);
-            foreach ($ri as $file) {
-                $file->isDir() ? rmdir($file->getRealPath()) : unlink($file->getRealPath());
-            }
-        }
-    }
-
-    /**
-     * Generates a password of a set length and complexity.
-     *
-     * @param int      $length         the length of the password to generate
-     * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
-     *
-     * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
-     */
-    public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyz';
-        $numbers = '0123456789';
-        $specialCharacters = '!@#$%&?()+-_';
-
-        // Backwards compatibility with previous behavior
-        if (is_int($includeSpecial)) {
-            $includeSpecial = $includeSpecial === 4;
-        }
-
-        $charSet = $characters . strtoupper($characters) . $numbers;
-        if ($includeSpecial) {
-            $charSet .= $specialCharacters;
-        }
-
-        $charSetLength = strlen($charSet);
-
-        // Loop flow-control
-        $valid = false;
-        $iterations = 0;
-
-        // Password requirements validation
-        $hasLowercase = false;
-        $hasUppercase = false;
-        $hasNumber = false;
-        $hasSpecial = false;
-
-        $password = '';
-        while (!$valid && $iterations < 100) {
-            // Add a random character to the password from the provided list of acceptable.
-            $character = substr($charSet, random_int(0, $charSetLength - 1), 1);
-            $password .= $character;
-
-            // Handle validations
-            $hasLowercase = $hasLowercase || str_contains($characters, $character);
-            $hasUppercase = $hasUppercase || str_contains(strtoupper($characters), $character);
-            $hasNumber = $hasNumber || str_contains($numbers, $character);
-            $hasSpecial = !$includeSpecial || $hasSpecial || str_contains($specialCharacters, $character);
-
-            // Once we reach the required length, check if the password is valid
-            if (strlen($password) === $length) {
-                $valid = $hasLowercase && $hasUppercase && $hasNumber && $hasSpecial;
-                if (!$valid) {
-                    ++$iterations;
-                    $password = '';
-                    $hasLowercase = false;
-                    $hasUppercase = false;
-                    $hasNumber = false;
-                    $hasSpecial = false;
-                }
-            }
-        }
-
-        if ($valid) {
-            return $password;
-        } else {
-            throw new InformationException('We were unable to generate a password with the required parameters');
-        }
-    }
-
     public function autoLinkText($text)
     {
         $pattern = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
@@ -179,13 +60,6 @@ class Tools
         return preg_replace_callback($pattern, $callback, $text);
     }
 
-    public function getResponseCode($theURL)
-    {
-        $headers = get_headers($theURL);
-
-        return substr($headers[0], 9, 3);
-    }
-
     public function slug($str)
     {
         $str = strtolower(trim($str));
@@ -193,13 +67,6 @@ class Tools
         $str = preg_replace('/-+/', '-', $str);
 
         return trim($str, '-');
-    }
-
-    public function escape($string)
-    {
-        $string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
-
-        return stripslashes($string);
     }
 
     public function to_camel_case($str, $capitalize_first_char = false)
@@ -220,14 +87,11 @@ class Tools
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
-    /**
-     * @return mixed[]
-     */
-    public function sortByOneKey(array $array, $key, $asc = true): array
+    public function sortByOneKey(array $array, $key, $asc = true)
     {
-        $result = [];
+        $result = array();
 
-        $values = [];
+        $values = array();
         foreach ($array as $id => $value) {
             $values[$id] = $value[$key] ?? '';
         }
@@ -276,38 +140,6 @@ class Tools
         }
 
         return $result;
-    }
-
-    /**
-     * Checks if a given email address is valid.
-     * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
-     * In a testing / development environment it will only check the RFC standards.
-     */
-    public function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true)
-    {
-        $email = htmlspecialchars($email);
-
-        $validator = new EmailValidator();
-        if (Environment::isProduction() && $checkDNS) {
-            $validations = new MultipleValidationWithAnd([
-                new RFCValidation(),
-                new DNSCheckValidation(),
-            ]);
-        } else {
-            $validations = new RFCValidation();
-        }
-
-        if (!$validator->isValid($email, $validations)) {
-            if ($throw) {
-                $friendlyName = ucfirst(__trans('Email address'));
-
-                throw new InformationException(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
-            } else {
-                return false;
-            }
-        }
-
-        return $email;
     }
 
     public static function isHTTPS(): bool

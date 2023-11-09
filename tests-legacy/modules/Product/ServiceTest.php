@@ -96,9 +96,9 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->onConsecutiveCalls($modelProductPayment, $modelProductCategory));
 
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di                = new \Pimple\Container();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(fn() => $serviceMock);
 
         $model->setDi($di);
         $serviceMock->setDi($di);

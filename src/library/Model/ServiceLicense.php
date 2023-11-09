@@ -10,39 +10,24 @@
  */
 class Model_ServiceLicense extends RedBeanPHP\SimpleModel
 {
-    public function getAllowedIps(): array
+    public function getAllowedIps()
     {
-        if (isset($this->ips) && json_validate($this->ips)) {
-            return json_decode($this->ips, true);
-        }
+        $allowedIps = json_decode($this->ips, true);
 
-        return [];
-    }
-
-    public function getAllowedVersions(): array
-    {
-        if (isset($this->versions) && json_validate($this->versions)) {
-            return json_decode($this->versions, true);
-        }
-
-        return [];
+        return is_array($allowedIps) ? $allowedIps : [];
     }
 
     public function getAllowedHosts(): array
     {
-        if (isset($this->hosts) && json_validate($this->hosts)) {
-            return json_decode($this->hosts, true);
-        }
+        $allowedVersions = json_decode($this->versions, true);
 
-        return [];
+        return is_array($allowedVersions) ? $allowedVersions : [];
     }
 
     public function getAllowedPaths(): array
     {
-        if (isset($this->paths) && json_validate($this->paths)) {
-            return json_decode($this->paths, true);
-        }
+        $allowedHosts = json_decode($this->hosts, true);
 
-        return [];
+        return is_array($allowedHosts) ? $allowedHosts : [];
     }
 }

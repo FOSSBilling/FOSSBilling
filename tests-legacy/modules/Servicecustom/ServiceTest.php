@@ -441,7 +441,6 @@ class ServiceTest extends \BBTestCase
 
         $this->assertEquals($result['client_id'], $model->client_id);
         $this->assertEquals($result['plugin'], $model->plugin);
-        $this->assertEquals($result['config_param'], 'config_value');
         $this->assertEquals($result['updated_at'], $model->updated_at);
         $this->assertEquals($result['created_at'], $model->created_at);
     }

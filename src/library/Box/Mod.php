@@ -249,18 +249,13 @@ class Box_Mod
         $db = $this->di['db'];
         $config = [];
 
-        $modName = 'mod_' . strtolower($this->mod);
-        $c = $db->findOne('extension_meta', 'extension = :ext AND meta_key = :key', [':ext' => $modName, ':key' => 'config']);
-        if ($c) {
-            $config = $this->di['crypt']->decrypt($c->meta_value, Config::getProperty('info.salt'));
-            if (json_validate($config)) {
-                $config = json_decode($config, true);
-            } else {
-                $config = [];
-            }
+        $modName = 'mod_'.strtolower($this->mod);
+        $c = $db->findOne('extension_meta', 'extension = :ext AND meta_key = :key', array(':ext'=>$modName, ':key'=>'config'));
+        if($c) {
+            $config = $this->di['crypt']->decrypt($c->meta_value, $bb_config['info']['salt']);
+            $config = json_decode($config, true);
         }
-
-        return $config;
+        return is_array($config) ? $config : [];
     }
 
     public function getName()

@@ -14,6 +14,8 @@ namespace Box\Mod\Spamchecker;
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -163,10 +165,10 @@ class Service implements InjectionAwareInterface
     /**
      * Checks if a provided email address is using a disposable email service.
      *
-     * @param string $email the email address to check
-     * @param bool   $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
+     * @param string $email The email address to check.
+     * @param bool $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
      *
-     * @return bool true if the email address is disposable, false if it isn't
+     * @return bool true if the email address is disposable, false if it isn't.
      */
     public function isATempEmail(string $email, bool $throw = true): bool
     {
@@ -196,8 +198,10 @@ class Service implements InjectionAwareInterface
 
     /**
      * Fetches the most recent list of disposable email addresses, parses them to remove blanks or invalid domains, and then returns it as an array.
-     * The database is from here: https://github.com/7c/fakefilter
-     * Results are cached for 1 week unless there's an error at which point the list will be retried in a half hour.
+     * The database is from here: https://github.com/disposable-email-domains/disposable-email-domains
+     * Results are cached for 1 week.
+     *
+     * @return array
      */
     private function getTempMailDomainDB(): array
     {
@@ -209,7 +213,8 @@ class Service implements InjectionAwareInterface
             $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tempEmailDB.txt';
 
             if ($response->getStatusCode() === 200) {
-                @file_put_contents($dbPath, $response->getContent());
+                $filesystem = new Filesystem();
+                $filesystem->dumpFile($dbPath, $response->getContent());
             } else {
                 $item->expiresAfter(3600);
 

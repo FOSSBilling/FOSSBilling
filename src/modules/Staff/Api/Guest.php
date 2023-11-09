@@ -41,7 +41,7 @@ class Guest extends \Api_Abstract
         $validator->isPasswordStrong($data['password']);
 
         if (!is_null($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         }
 
         $result = $this->getService()->createAdmin($data);
@@ -67,7 +67,7 @@ class Guest extends \Api_Abstract
         ];
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $config = $this->getMod()->getConfig();
 
@@ -147,7 +147,7 @@ class Guest extends \Api_Abstract
         ];
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
 
         if (!$c instanceof \Model_Admin) {

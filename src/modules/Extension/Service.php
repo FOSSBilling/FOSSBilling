@@ -515,7 +515,8 @@ class Service implements InjectionAwareInterface
             unlink($zipPath);
         }
 
-        $this->di['tools']->emptyFolder($extractedPath);
+        $filesystem = new Filesystem();
+        $filesystem->remove($extractedPath);
 
         return true;
     }
@@ -595,33 +596,22 @@ class Service implements InjectionAwareInterface
 
     public function getConfig($ext): array
     {
-        return $this->di['cache']->get("config_$ext", function (ItemInterface $item) use ($ext) {
-            $item->expiresAfter(60 * 60);
+        $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
+        if (is_null($c)) {
+            $c = $this->di['db']->dispense('ExtensionMeta');
+            $c->extension = $ext;
+            $c->meta_key = 'config';
+            $c->meta_value = null;
+            $c->created_at = date('Y-m-d H:i:s');
+            $c->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($c);
+            $config = [];
+        } else {
+            $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
+            $config = json_decode($config, true);
+        }
 
-            $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
-            if (is_null($c)) {
-                $c = $this->di['db']->dispense('ExtensionMeta');
-                $c->extension = $ext;
-                $c->meta_key = 'config';
-                $c->meta_value = null;
-                $c->created_at = date('Y-m-d H:i:s');
-                $c->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($c);
-                $config = [];
-            } else {
-                $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-
-                if (is_string($config) && json_validate($config)) {
-                    $config = json_decode($config, true);
-                } else {
-                    $config = [];
-                }
-            }
-
-            $config['ext'] = $ext;
-
-            return $config;
-        });
+        return is_array($config) ? $config : [];
     }
 
     public function setConfig($data)

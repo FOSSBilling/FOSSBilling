@@ -404,11 +404,7 @@ class Service implements InjectionAwareInterface
 
     public function isPromoAvailableForClientGroup(\Model_Promo $promo)
     {
-        if (is_string($promo->client_groups) && json_validate($promo->client_groups)) {
-            $clientGroups = json_decode($promo->client_groups, true);
-        } else {
-            $clientGroups = [];
-        }
+        $clientGroups = json_decode($promo->client_groups, true) ?: [];
 
         if (empty($clientGroups)) {
             return true;
@@ -773,11 +769,7 @@ class Service implements InjectionAwareInterface
 
     public function getItemConfig(\Model_CartProduct $model)
     {
-        if (is_string($model->config) && json_validate($model->config)) {
-            return json_decode($model->config, true);
-        }
-
-        return [];
+        return json_decode($model->config, true) ?: [];
     }
 
     public function cartProductToApiArray(\Model_CartProduct $model)

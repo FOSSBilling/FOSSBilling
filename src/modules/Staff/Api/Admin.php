@@ -76,7 +76,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!is_null($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         }
 
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
@@ -151,7 +151,7 @@ class Admin extends \Api_Abstract
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
 
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $validator->isPasswordStrong($data['password']);
 

@@ -76,8 +76,9 @@ class Admin extends \Api_Abstract
         }
 
         if (isset($data['from_email'])) {
-            $this->di['tools']->validateAndSanitizeEmail($data['from_email']);
-            $this->di['tools']->generatePassword(32);
+            $password = new \Box_Password;
+            $this->di['validator']->validateAndSanitizeEmail($data['from_email']);
+            $password->generate(32);
             $model->from_email = $data['from_email'];
         }
 

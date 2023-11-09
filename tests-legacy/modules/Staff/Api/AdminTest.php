@@ -229,7 +229,6 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
         $this->api->setDi($di);

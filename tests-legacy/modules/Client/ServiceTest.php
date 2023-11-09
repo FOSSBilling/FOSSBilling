@@ -67,6 +67,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
         $di['tools'] = $toolsMock;
+        $di['url'] = $urlMock;
 
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);

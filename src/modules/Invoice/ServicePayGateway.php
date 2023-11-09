@@ -213,16 +213,16 @@ class ServicePayGateway implements InjectionAwareInterface
                 if (array_key_exists('logo', $adapter->getConfig())) {
                     $gateway['logo'] = $adapter->getConfig()['logo'];
                     if (file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $adapter->getConfig()['logo']['logo'])) {
-                        $gateway['logo']['logo'] = $this->di['tools']->url('/library/Payment/Adapter/' . $adapter->getConfig()['logo']['logo']);
+                        $gateway['logo']['logo'] = $this->di['url']->get('/library/Payment/Adapter/' . $adapter->getConfig()['logo']['logo']);
                     } else {
                         if (file_exists(PATH_DATA . '/assets/gateways/' . $adapter->getConfig()['logo']['logo'])) {
-                            $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/' . $adapter->getConfig()['logo']['logo']);
+                            $gateway['logo']['logo'] = $this->di['url']->get('/data/assets/gateways/' . $adapter->getConfig()['logo']['logo']);
                         } else {
-                            $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/default.png');
+                            $gateway['logo']['logo'] = $this->di['url']->get('/data/assets/gateways/default.png');
                         }
                     }
                 } else {
-                    $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/default.png');
+                    $gateway['logo']['logo'] = $this->di['url']->get('/data/assets/gateways/default.png');
                 }
                 $result[] = $gateway;
             }
@@ -238,11 +238,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getPaymentAdapter(\Model_PayGateway $pg, ?\Model_Invoice $model = null, $optional = [])
     {
-        if (is_string($pg->config) && json_validate($pg->config)) {
-            $config = json_decode($pg->config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($pg->config, true) ?: [];
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['test_mode'] = $pg->test_mode;
@@ -250,11 +246,11 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['cancel_url'] = $this->getCancelUrl($pg, $model);
         $defaults['notify_url'] = $this->getCallbackUrl($pg, $model);
         $defaults['redirect_url'] = $this->getCallbackRedirect($pg, $model);
-        $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
+        $defaults['continue_shopping_url'] = $this->di['url']->link('/order');
         $defaults['single_page'] = true;
         if ($model instanceof \Model_Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link('/invoice/thank-you/' . $model->hash, ['restore_session' => session_id()]);
-            $defaults['invoice_url'] = $this->di['tools']->url('/invoice/' . $model->hash);
+            $defaults['thankyou_url'] = $this->di['url']->link('/invoice/thank-you/' . $model->hash);
+            $defaults['invoice_url'] = $this->di['url']->link('/invoice/' . $model->hash);
         }
 
         if (isset($optional['auto_redirect'])) {

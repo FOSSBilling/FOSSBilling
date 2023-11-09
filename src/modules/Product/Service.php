@@ -80,11 +80,7 @@ class Service implements InjectionAwareInterface
     {
         $repo = $model->getTable();
         $addons = $this->getAddonsApiArray($model);
-        if (is_string($model->config) && json_validate($model->config)) {
-            $config = json_decode($model->config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($model->config, true) ?: [];
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
 
@@ -271,11 +267,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['config']) && is_array($data['config'])) {
-            if (is_string($model->config) && json_validate($model->config)) {
-                $current = json_decode($model->config, true);
-            } else {
-                $current = [];
-            }
+            $current = json_decode($model->config, true) ?: [];
             $c = array_merge($current, $data['config']);
             $model->config = json_encode($c);
         }
@@ -773,20 +765,12 @@ class Service implements InjectionAwareInterface
 
     private function getPeriods(\Model_Promo $model): array
     {
-        if (is_string($model->periods) && json_validate($model->periods)) {
-            return json_decode($model->periods, true);
-        }
-
-        return [];
+        return json_decode($model->periods, true) ?: [];
     }
 
     private function getProducts(\Model_Promo $model): array
     {
-        if (is_string($model->products) && json_validate($model->products)) {
-            return json_decode($model->products, true);
-        }
-
-        return [];
+        return json_decode($model->products, true) ?: [];
     }
 
     /**
@@ -805,13 +789,8 @@ class Service implements InjectionAwareInterface
 
     public function getProductAddons(\Model_Product $model)
     {
-        if (is_string($model->addons) && json_validate($model->addons)) {
-            $ids = json_decode($model->addons, true);
-        } else {
-            $ids = [];
-        }
-
-        if ($ids === []) {
+        $ids = json_decode($model->addons, true) ?: [];
+        if (empty($ids)) {
             return [];
         }
 
@@ -826,11 +805,7 @@ class Service implements InjectionAwareInterface
         $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
         $pricing = $this->toProductPaymentApiArray($productPayment);
 
-        if (is_string($model->config) && json_validate($model->config)) {
-            $config = json_decode($model->config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($model->config, true) ?: [];
 
         return [
             'id' => $model->id,
