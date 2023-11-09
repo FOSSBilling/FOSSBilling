@@ -95,7 +95,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
-        $pass = $this->di['tools']->generatePassword(10, 4);
+        $password = new \Box_Password;
+
+        $pass = $password->generate(10, 4);
         $c = $orderService->getConfig($order);
         if (isset($c['password']) && !empty($c['password'])) {
             $pass = $c['password'];
@@ -941,7 +943,7 @@ class Service implements InjectionAwareInterface
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
         $data['tld'] = $tld;
-        $c = $this->di['tools']->decodeJ($product->config);
+        $c = json_decode($product->config, true) ?: [];
 
         return array_merge($c, $data);
     }
@@ -950,7 +952,7 @@ class Service implements InjectionAwareInterface
     {
         $data = $this->prependOrderConfig($product, $data);
         $product->getService()->validateOrderData($data);
-        $c = $this->di['tools']->decodeJ($product->config);
+        $c = json_decode($product->config, true) ?: [];
 
         $dc = $data['domain'];
         $action = $dc['action'];
@@ -983,7 +985,7 @@ class Service implements InjectionAwareInterface
      */
     public function getFreeTlds(\Model_Product $product)
     {
-        $config = $this->di['tools']->decodeJ($product->config);
+        $config = json_decode($product->config, true) ?: [];
         $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {

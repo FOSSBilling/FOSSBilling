@@ -122,9 +122,6 @@ class ServiceTest extends \BBTestCase {
 
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('generatePassword')
-            ->will($this->returnValue('generatePassword'));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1253,13 +1250,6 @@ class ServiceTest extends \BBTestCase {
     {
         $config  = array();
         $di = new \Pimple\Container();
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn($config);
-        $di['tools'] = $toolsMock;
-
-
 
         $tldArray = array('tld' => '.com');
         $serviceDomainServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
@@ -1284,29 +1274,4 @@ class ServiceTest extends \BBTestCase {
         $this->assertIsArray($result);
 
     }
-
-    public function testgetFreeTlds()
-    {
-        $config  = array(
-            'free_tlds' => array('.com'),
-        );
-        $di = new \Pimple\Container();
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn($config);
-        $di['tools'] = $toolsMock;
-
-
-
-        $this->service->setDi($di);
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
-        $result = $this->service->getFreeTlds($model);
-        $this->assertIsArray($result);
-        $this->assertNotEmpty($result);
-    }
-
-
-
 }

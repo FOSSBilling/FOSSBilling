@@ -873,14 +873,9 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt');
-
         $di             = new \Pimple\Container();
         $di['db']       = $dbMock;
         $di['tools']    = new \FOSSBilling\Tools();
-        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);

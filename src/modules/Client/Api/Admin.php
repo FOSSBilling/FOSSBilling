@@ -142,7 +142,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $validator = $this->di['validator'];
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $validator->validateAndSanitizeEmail($data['email']);
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
@@ -234,7 +234,7 @@ class Admin extends \Api_Abstract
 
         if (!is_null($data['email'] ?? null)) {
             $email = $data['email'];
-            $email = $this->di['tools']->validateAndSanitizeEmail($email);
+            $email = $this->di['validator']->validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
                 throw new \FOSSBilling\InformationException('Can not change email. It is already registered.');
             }

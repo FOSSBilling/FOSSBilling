@@ -355,16 +355,18 @@ class Service implements InjectionAwareInterface
             return $cron;
         }
 
-        $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
+        $password = new \Box_Password;
+
+        $cronEmail = $password->generate() . '@' . $password->generate() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $CronPass = $this->di['tools']->generatePassword(256, 4);
+        $CronPass = $password->generate(256, 4);
 
         $cron = $this->di['db']->dispense('Admin');
         $cron->role = \Model_Admin::ROLE_CRON;
         $cron->admin_group_id = 1;
         $cron->email = $cronEmail;
-        $cron->pass = $this->di['password']->hashIt($CronPass);
+        $cron->pass = $password->hashIt($CronPass);
         $cron->name = 'System Cron Job';
         $cron->signature = '';
         $cron->protected = 1;

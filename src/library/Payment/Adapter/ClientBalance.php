@@ -65,7 +65,7 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
-        $invoiceUrl = $this->di['tools']->url('invoice/'.$invoiceModel->hash);
+        $invoiceUrl = $this->di['url']->link('invoice/'.$invoiceModel->hash);
 
         $out = "<script type='text/javascript'>
                 $(document).ready(function(){

@@ -591,11 +591,8 @@ $di['tools'] = function () use ($di) {
  *
  * @return \FOSSBilling\Validate
  */
-$di['validator'] = function () use ($di) {
-    $validator = new \FOSSBilling\Validate();
-    $validator->setDi($di);
-
-    return $validator;
+$di['validator'] = function () {
+    return new \FOSSBilling\Validate;
 };
 
 /*

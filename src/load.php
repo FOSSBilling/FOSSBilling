@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +11,7 @@
 
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
@@ -31,12 +32,12 @@ function checkConfig()
     $filesystem = new Filesystem();
     // Check if configuration is available, and redirect to installer if not.
     if (!$filesystem->exists(PATH_CONFIG)) {
-        if ($filesystem->exists('install/index.php')) {
+        if ($filesystem->exists(Path::normalize('install/index.php'))) {
             // Build the base URL for the installation, including the protocol and hostname.
             $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] == 1)) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
 
             // Append the directory name to the base URL.
-            $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+            $base_url .= rtrim(Path::getDirectory($_SERVER['SCRIPT_NAME']), '/');
 
             // Use the base URL to redirect to the installer, sending HTTP 307 to indicate a temporary redirect.
             header('Location: ' . $base_url . '/install/index.php', true, 307);
@@ -54,7 +55,7 @@ function checkInstaller()
     $filesystem = new Filesystem();
 
     // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php') && Environment::isProduction()) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install/install.php')) && Environment::isProduction()) {
         // Throw exception only if debug mode is NOT enabled.
         $config = require PATH_CONFIG;
         if (!$config['debug_and_monitoring']['debug']) {
@@ -137,11 +138,11 @@ function errorHandler(int $number, string $message, string $file, int $line)
 {
     // Just some housekeeping to ensure a few things we rely on are loaded.
     if (!class_exists('\\' . \FOSSBilling\ErrorPage::class)) {
-        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+        require_once Path::normalize(PATH_LIBRARY .  '/FOSSBilling/ErrorPage.php');
     }
 
     if (!class_exists('\\' . \FOSSBilling\SentryHelper::class)) {
-        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
+        require_once Path::normalize(PATH_LIBRARY . '/FOSSBilling/SentryHelper.php');
     }
 
     // Now we can handle the error appropriately.
@@ -225,7 +226,7 @@ ini_set('display_startup_errors', '1');
 checkRequirements();
 
 // Requirements met - load required packages/files.
-require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
+require Path::normalize(PATH_VENDOR . '/autoload.php');
 
 // Check web server and web server settings.
 checkWebServer();
@@ -243,9 +244,7 @@ $config = require PATH_CONFIG;
 date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
 define('ADMIN_PREFIX', $config['admin_area_prefix']);
 define('DEBUG', (bool) $config['debug_and_monitoring']['debug']);
-define('PATH_DATA', $config['path_data']);
-define('PATH_CACHE', PATH_DATA . DIRECTORY_SEPARATOR . 'cache');
-define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
+define('PATH_LOG', PATH_LOG);
 define('SYSTEM_URL', $config['url']);
 if (!empty($config['info']['instance_id'])) {
     define('INSTANCE_ID', $config['info']['instance_id']);
@@ -254,7 +253,7 @@ if (!empty($config['info']['instance_id'])) {
 }
 
 // Initial setup and checks passed, now we setup our custom autoloader.
-include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+include Path::normalize(PATH_LIBRARY . '/FOSSBilling/Autoloader.php');
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
@@ -265,12 +264,13 @@ $loader->register();
 checkInstaller();
 
 // Check if SSL required, and enforce if so.
+
 checkSSL();
 
 // Set error and exception handlers, and default logging settings.
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
-ini_set('error_log', PATH_LOG . DIRECTORY_SEPARATOR . 'php_error.log');
+ini_set('error_log', Path::normalize(PATH_LOG . '/php_error.log'));
 error_reporting(E_ALL);
 
 if (DEBUG) {

@@ -11,6 +11,7 @@
 namespace Box\Mod\Theme;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 class Service implements InjectionAwareInterface
 {
@@ -195,7 +196,8 @@ class Service implements InjectionAwareInterface
         $settings['current'] = $this->getCurrentThemePreset($theme);
         $data_file = $theme->getPathSettingsDataFile();
 
-        $this->di['tools']->file_put_contents(json_encode($settings), $data_file);
+        $filesystem = new Filesystem();
+        $filesystem->dumpFile($data_file, json_encode($settings));
 
         return true;
     }
@@ -219,7 +221,8 @@ class Service implements InjectionAwareInterface
             $systemService = $this->di['mod_service']('system');
             $data = $systemService->renderString($vars['_tpl'], false, $vars);
 
-            $this->di['tools']->file_put_contents($data, $real_file);
+            $filesystem = new Filesystem();
+            $filesystem->dumpFile($real_file, $data);
         }
 
         return true;

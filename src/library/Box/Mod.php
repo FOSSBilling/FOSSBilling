@@ -237,9 +237,9 @@ class Box_Mod
         $c = $db->findOne('extension_meta', 'extension = :ext AND meta_key = :key', array(':ext'=>$modName, ':key'=>'config'));
         if($c) {
             $config = $this->di['crypt']->decrypt($c->meta_value, $bb_config['info']['salt']);
-            $config = $this->di['tools']->decodeJ($config);
+            $config = json_decode($config, true);
         }
-        return $config;
+        return is_array($config) ? $config : [];
     }
 
     public function getName()

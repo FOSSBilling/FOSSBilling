@@ -1313,15 +1313,8 @@ class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('isPromoAvailableForClientGroupProvider')]
     public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult)
     {
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn(json_decode($promo->client_groups, 1));
-
         $di                    = new \Pimple\Container();
         $di['loggedin_client'] = $client;
-        $di['tools']           = $toolsMock;
         $this->service->setDi($di);
 
         $result = $this->service->isPromoAvailableForClientGroup($promo);

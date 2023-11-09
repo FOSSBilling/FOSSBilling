@@ -77,7 +77,7 @@ class Service implements InjectionAwareInterface
     {
         $repo = $model->getTable();
         $addons = $this->getAddonsApiArray($model);
-        $config = $this->di['tools']->decodeJ($model->config, 1);
+        $config = json_decode($model->config, true) ?: [];
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
 
@@ -264,7 +264,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $current = $this->di['tools']->decodeJ($model->config);
+            $current = json_decode($model->config, true) ?: [];
             $c = array_merge($current, $data['config']);
             $model->config = json_encode($c);
         }
@@ -774,12 +774,12 @@ class Service implements InjectionAwareInterface
 
     private function getPeriods(\Model_Promo $model)
     {
-        return $this->di['tools']->decodeJ($model->periods);
+        return json_decode($model->periods, true) ?: [];
     }
 
     private function getProducts(\Model_Promo $model)
     {
-        return $this->di['tools']->decodeJ($model->products);
+        return json_decode($model->products, true) ?: [];
     }
 
     private function getAddonsApiArray(\Model_Product $model)
@@ -795,7 +795,7 @@ class Service implements InjectionAwareInterface
 
     public function getProductAddons(\Model_Product $model)
     {
-        $ids = $this->di['tools']->decodeJ($model->addons);
+        $ids = json_decode($model->addons, true) ?: [];
         if (empty($ids)) {
             return [];
         }
@@ -811,7 +811,7 @@ class Service implements InjectionAwareInterface
         $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
         $pricing = $this->toProductPaymentApiArray($productPayment);
 
-        $config = $this->di['tools']->decodeJ($model->config);
+        $config = json_decode($model->config, true) ?: [];
 
         return [
             'id' => $model->id,

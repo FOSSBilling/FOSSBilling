@@ -16,6 +16,9 @@ use FOSSBilling\Version;
 use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Exception\IOException;
+
 
 class Service
 {
@@ -428,7 +431,15 @@ class Service
 
     public function clearCache()
     {
-        $this->di['tools']->emptyFolder(PATH_CACHE);
+        // Clear cache.
+        try {
+            $filesystem = new Filesystem();
+            $filesystem->remove([PATH_CACHE]);
+            $filesystem->mkdir(PATH_CACHE, 0777);
+        } catch (IOException $e) {
+            error_log($e->getMessage());
+            throw new \Exception("Unable to clear cache and/or remove install folder. Further details are available in the error log.");
+        }
 
         return true;
     }

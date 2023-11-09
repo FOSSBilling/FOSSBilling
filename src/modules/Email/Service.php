@@ -124,7 +124,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $config = $this->di['config'];
         $json = $this->di['crypt']->decrypt($t->vars, $config['info']['salt']);
 
-        return $this->di['tools']->decodeJ($json);
+        return json_decode($json, true) ?: [];
     }
 
     public function sendTemplate($data)

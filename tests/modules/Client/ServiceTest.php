@@ -65,12 +65,15 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(1));
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('url')
+
+        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
+        $urlMock->expects($this->atLeastOnce())->method('link')
             ->will($this->returnValue('fossbilling.org/index.php/client/confirm-email/'));
 
         $di = new \Pimple\Container();
         $di['db'] = $database;
         $di['tools'] = $toolsMock;
+        $di['url'] = $urlMock;
 
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);

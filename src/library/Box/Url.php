@@ -47,7 +47,6 @@ class Box_Url implements \FOSSBilling\InjectionAwareInterface
             $link .= '?' . http_build_query($params);
         }
 
-
         return $link;
     }
 

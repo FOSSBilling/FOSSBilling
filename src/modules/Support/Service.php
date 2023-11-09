@@ -802,7 +802,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForGuest($data)
     {
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientAddress();
@@ -1215,7 +1215,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function publicTicketCreate($data, \Model_Admin $identity)
     {
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 

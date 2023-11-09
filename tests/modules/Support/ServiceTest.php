@@ -1404,7 +1404,8 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
@@ -1412,6 +1413,7 @@ class ServiceTest extends \BBTestCase
         $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $di['tools']          = $toolsMock;
+        $di['validator']      = $validatorMock;
 
         $this->service->setDi($di);
 
@@ -2005,7 +2007,8 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
@@ -2013,6 +2016,8 @@ class ServiceTest extends \BBTestCase
         $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $di['tools']          = $toolsMock;
+        $di['validator']      = $validatorMock;
+
         $this->service->setDi($di);
 
         $admin = new \Model_Admin();

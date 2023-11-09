@@ -51,7 +51,6 @@ class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
         $apiMock->setDi($di);
@@ -141,7 +140,6 @@ class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
@@ -173,7 +171,6 @@ class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
