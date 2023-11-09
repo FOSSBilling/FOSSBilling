@@ -163,14 +163,14 @@ class Service implements InjectionAwareInterface
      * Checks if a provided email address is using a disposable email service.
      * 
      * @param string $email The email address to check.
-     * @param bool (optional) $throw Configures if you want the function to throw an exception. Defaults to true.
+     * @param bool $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
      * 
-     * @return bool Ture if the email address is disposable, fasle if it isn't.
+     * @return bool true if the email address is disposable, false if it isn't.
      */
     public function isATempEmail(string $email, bool $throw = true): bool
     {
         /* 
-         * The EmailChecker pacakge utilizes PHP's email verification which does not correctly validate international email addresses.
+         * The EmailChecker package utilizes PHP's email verification which does not correctly validate international email addresses.
          * We are already using a proper validation package that does validate these as it should, so below is actually a workaround for the limitation.
          * @see https://github.com/MattKetmo/EmailChecker/issues/92
          * 
@@ -213,18 +213,18 @@ class Service implements InjectionAwareInterface
                 return [];
             }
 
-            @$databse = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             @unlink($dbPath);
-            if (!$databse) {
+            if (!$database) {
                 return [];
             }
 
-            $result = array_filter($databse, function ($domain) {
+            $result = array_filter($database, function ($domain) {
                 return filter_var($domain, FILTER_VALIDATE_DOMAIN);
             });
 
-            print_r($databse, true);
-            return $databse;
+            print_r($database, true);
+            return $database;
         });
     }
 }

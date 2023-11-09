@@ -70,7 +70,7 @@ class Server_Manager_Plesk extends Server_Manager
             /*
     		if (count($ips['exclusive']) == 0) {
     			// Disabled. Resellers can also use shared IP addresses.
-                // throw new Server_Exception('Out of free IP adresses');
+                // throw new Server_Exception('Out of free IP addresses');
             }
             */
             if ((is_countable($ips['exclusive']) ? count($ips['exclusive']) : 0) > 0) {

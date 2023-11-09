@@ -277,8 +277,8 @@ class Tools
 
     /**
      * Checks if a given email address is valid.
-     * In a production enviroment, this will both check that the email address matches RFC standards as well as validating the domain.
-     * In a testing / development enviroment it will only check the RFC standards.
+     * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
+     * In a testing / development environment it will only check the RFC standards.
      */
     public function validateAndSanitizeEmail(string $email, bool $throw = true)
     {
