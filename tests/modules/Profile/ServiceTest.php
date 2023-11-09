@@ -104,17 +104,10 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(true));
 
-
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($password);
-
         $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['password']       = $passwordMock;
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -343,17 +336,10 @@ class ServiceTest extends \BBTestCase
 
         $password = 'new password';
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($password);
-
-
         $di                   = new \Pimple\Container();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['password']       = $passwordMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());

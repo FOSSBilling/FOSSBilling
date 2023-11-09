@@ -253,9 +253,8 @@ $di['session'] = function () use ($di) {
  *
  * @return \FOSSBilling\Request
  */
-$di['request'] = function () use ($di) {
+$di['request'] = function () {
     $service = new \FOSSBilling\Request();
-    $service->setDi($di);
 
     return $service;
 };
@@ -615,19 +614,6 @@ $di['central_alerts'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling\CentralAlerts
- */
-$di['central_alerts'] = function () use ($di) {
-    $centralalerts = new \FOSSBilling\CentralAlerts();
-    $centralalerts->setDi($di);
-
-    return $centralalerts;
-};
-
-/*
- *
- * @param void
- *
  * @return \FOSSBilling\ExtensionManager
  */
 $di['extension_manager'] = function () use ($di) {
@@ -687,18 +673,6 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
 
     return $s;
 });
-
-/*
- * @param void
- *
- * @return \FOSSBilling\Requirements
- */
-$di['requirements'] = function () use ($di) {
-    $r = new \FOSSBilling\Requirements();
-    $r->setDi($di);
-
-    return $r;
-};
 
 /*
  * Creates a new Box_Period object using the provided period code and returns it.
@@ -779,13 +753,6 @@ $di['license_server'] = function () use ($di) {
  * @return \GeoIp2\Database\Reader
  */
 $di['geoip'] = fn () => new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
-
-/*
- * @param void
- *
- * @return \Box_Password
- */
-$di['password'] = fn () => new Box_Password();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.

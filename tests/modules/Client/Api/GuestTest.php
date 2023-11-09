@@ -339,10 +339,6 @@ class GuestTest extends \BBTestCase
         $eventMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->once())
-            ->method('hashIt');
-
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->once())
             ->method('checkRequiredParamsForArray')
@@ -355,7 +351,6 @@ class GuestTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['password'] = $passwordMock;
         $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
         $di['mod_service'] =  $di->protect(fn($name) => $emailServiceMock);

@@ -112,7 +112,9 @@ class Admin extends \Api_Abstract
 
         $staff = $this->getIdentity();
 
-        if (!$this->di['password']->verify($data['current_password'], $staff->pass)) {
+        $box_passwd = new \Box_Password;
+
+        if (!$box_passwd->verify($data['current_password'], $staff->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 

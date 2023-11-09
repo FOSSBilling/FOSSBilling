@@ -312,6 +312,8 @@ class Admin extends \Api_Abstract
      */
     public function change_password($data)
     {
+        $box_passwd = new \Box_Password;
+
         $required = [
             'id' => 'ID required',
             'password' => 'Password required',
@@ -329,7 +331,7 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $data]);
 
-        $client->pass = $this->di['password']->hashIt($data['password']);
+        $client->pass = $box_passwd->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 
