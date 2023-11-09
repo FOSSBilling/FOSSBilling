@@ -444,18 +444,13 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
         $di                   = new \Pimple\Container();
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger']         = new \Box_Log();
-        $di['password']       = $passwordMock;
+
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')

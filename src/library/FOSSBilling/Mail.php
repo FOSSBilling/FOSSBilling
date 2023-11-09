@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -16,23 +17,11 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 
-class Mail implements InjectionAwareInterface
+class Mail
 {
-    protected ?\Pimple\Container $di = null;
-
     private readonly Email $email;
     private ?string $transport = null;
     private ?string $dsn = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
 
     /**
      * Constructor for creating an email message. The custom DSN will be used if you either don't provide a transport or use 'custom' for it.
@@ -144,7 +133,7 @@ class Mail implements InjectionAwareInterface
      * Sends the email that was created and configured when the class was constructed
      *
      * @param array|null $options An optional array of options specific to the chosen transport method.
-     * 
+     *
      * @throws InformationException If the transport method is unknown or if required options for the selected transport aren't defined
      */
     public function send(array|null $options = null): void

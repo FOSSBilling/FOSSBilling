@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -19,7 +19,7 @@ class InformationException extends Exception
      * @param string $message error message
      * @param array|null $variables translation variables
      * @param int $code The exception code.
-     * @param bool $protected If the variables in this should be considered protect, if so, hide them from the stack trace. 
+     * @param bool $protected If the variables in this should be considered protect, if so, hide them from the stack trace.
      */
     public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
     {

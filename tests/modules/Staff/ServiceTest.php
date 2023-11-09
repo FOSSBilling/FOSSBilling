@@ -873,14 +873,9 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt');
-
         $di             = new \Pimple\Container();
         $di['db']       = $dbMock;
         $di['tools']    = new \FOSSBilling\Tools();
-        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1021,19 +1016,14 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($plainTextPassword);
-
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
-        $di['password']       = $passwordMock;
         $di['mod_service'] = $di->protect(fn() => $profileService);
+
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1075,17 +1065,11 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
         $di['mod_service']    = $di->protect(fn() => $systemServiceMock);
-        $di['password']       = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1128,17 +1112,11 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
         $di['logger']         = $logMock;
         $di['db']             = $dbMock;
         $di['mod_service']    = $di->protect(fn() => $systemServiceMock);
-        $di['password']       = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1176,11 +1154,6 @@ class ServiceTest extends \BBTestCase
 
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $di                = new \Pimple\Container();
         $di['logger']      = $logMock;
         $di['db']          = $dbMock;
@@ -1189,7 +1162,6 @@ class ServiceTest extends \BBTestCase
                 return $systemService;
             }
         });
-        $di['password']    = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);

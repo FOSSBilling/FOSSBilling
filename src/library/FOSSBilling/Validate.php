@@ -12,18 +12,6 @@ namespace FOSSBilling;
 
 class Validate
 {
-    protected ?\Pimple\Container $di = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
     /**
      * Check if second level domain (SLD) is valid.
      */
@@ -80,7 +68,7 @@ class Validate
      * @param array $data - Array to search for keys
      * @param array $variables - Array of variables for message placeholders (:placeholder)
      * @param integer $code - Exception code
-     * 
+     *
      * @throws InformationException
      */
     public function checkRequiredParamsForArray(array $required, array $data, array $variables = NULL, $code = 0)

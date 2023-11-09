@@ -113,8 +113,10 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\InformationException('The link have expired or you have already confirmed password reset.');
         }
 
+        $box_passwd = new \Box_Password;
+
         $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
-        $c->pass = $this->di['password']->hashIt($data['password']);
+        $c->pass = $box_passwd->hashIt($data['password']);
         $this->di['db']->store($c);
 
         $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);

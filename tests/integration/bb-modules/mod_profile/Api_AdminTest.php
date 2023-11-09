@@ -26,6 +26,8 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
 
     public function testPassword()
     {
+        $box_passwd = new \Box_Password;
+
         $data = array(
             'password' =>  'demo12313123A',
             'password_confirm' =>  'demo12313123A',
@@ -36,6 +38,6 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
         $array = $this->api_admin->profile_get();
         $password = $this->di['db']->getCell('Select pass from admin where id = ?', array($array['id']));
 
-        $this->assertTrue($this->di['password']->verify($data['password'], $password));
+        $this->assertTrue($box_passwd->verify($data['password'], $password));
     }
 }

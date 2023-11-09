@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\HttpClient\HttpClient;
 
 class ExtensionManager implements InjectionAwareInterface
 {
@@ -44,7 +45,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The extension details
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response
-     * 
+     *
      * @throws Exception
      */
     public function getExtension(string $id): array
@@ -65,7 +66,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of releases of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the "releases" array)
-     * 
+     *
      * @throws Exception
      */
     public function getExtensionReleases(string $id): array
@@ -86,7 +87,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The latest release of the extension
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the first element in the "releases" array)
-     * 
+     *
      * @throws Exception
      */
     public function getLatestExtensionRelease(string $id): array
@@ -130,8 +131,9 @@ class ExtensionManager implements InjectionAwareInterface
     public function isExtensionCompatible(string $extension): bool
     {
         $latest = $this->getLatestExtensionRelease($extension);
+        $config = include PATH_CONFIG;
 
-        if ($this->di['config']['update_branch'] === 'release') {
+        if ($config['update_branch'] === 'release') {
             if (version_compare(Version::VERSION, $latest['min_fossbilling_version'], '<')) {
                 return false;
             }
@@ -147,7 +149,7 @@ class ExtensionManager implements InjectionAwareInterface
      * @param array $params The array of parameters to pass to the API endpoint
      *
      * @return array The API response
-     * 
+     *
      * @throws Exception
      */
     public function makeRequest(string $endpoint, array $params = []): array
@@ -158,12 +160,11 @@ class ExtensionManager implements InjectionAwareInterface
         return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
             $item->expiresAfter(60 * 60);
 
-            $httpClient = \Symfony\Component\HttpClient\HttpClient::create();
+            $httpClient = HttpClient::create();
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
                 'query' => [...$params, 'fossbilling_version' => \FOSSBilling\Version::VERSION],
             ]);
-
             $json = $response->toArray();
 
             if (is_null($json)) {

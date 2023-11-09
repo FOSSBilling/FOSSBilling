@@ -871,17 +871,10 @@ class ServiceTest extends \BBTestCase {
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -919,18 +912,11 @@ class ServiceTest extends \BBTestCase {
             ->method('getClientAddress')
             ->will($this->returnValue($ip));
 
-
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['request'] = $requestMock;
-        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);

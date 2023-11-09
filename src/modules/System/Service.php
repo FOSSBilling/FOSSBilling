@@ -11,6 +11,7 @@
 namespace Box\Mod\System;
 
 use FOSSBilling\Environment;
+use FOSSBilling\Requirements;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Version;
 use Pimple\Container;
@@ -448,7 +449,7 @@ class Service
             }
         }
 
-        $r = $this->di['requirements'];
+        $r = new Requirements;
         $data = $r->getInfo();
         $data['last_patch'] = $this->getParamValue('last_patch');
 

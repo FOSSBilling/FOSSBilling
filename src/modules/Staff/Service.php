@@ -359,12 +359,13 @@ class Service implements InjectionAwareInterface
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
         $CronPass = $this->di['tools']->generatePassword(256, 4);
+        $box_passwd = new \Box_Password;
 
         $cron = $this->di['db']->dispense('Admin');
         $cron->role = \Model_Admin::ROLE_CRON;
         $cron->admin_group_id = 1;
         $cron->email = $cronEmail;
-        $cron->pass = $this->di['password']->hashIt($CronPass);
+        $cron->pass = $box_passwd->hashIt($CronPass);
         $cron->name = 'System Cron Job';
         $cron->signature = '';
         $cron->protected = 1;
@@ -439,7 +440,8 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
-        $model->pass = $this->di['password']->hashIt($password);
+        $box_passwd = new \Box_Password;
+        $model->pass = $box_passwd->hashIt($password);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -462,11 +464,13 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
+        $box_passwd = new \Box_Password;
+
         $model = $this->di['db']->dispense('Admin');
         $model->role = \Model_Admin::ROLE_STAFF;
         $model->admin_group_id = $data['admin_group_id'];
         $model->email = $data['email'];
-        $model->pass = $this->di['password']->hashIt($data['password']);
+        $model->pass = $box_passwd->hashIt($data['password']);
         $model->name = $data['name'];
         $model->status = $model->getStatus($data['status']);
         $model->signature = $signature;
@@ -488,12 +492,14 @@ class Service implements InjectionAwareInterface
 
     public function createAdmin(array $data)
     {
+        $box_passwd = new \Box_Password;
+
         $admin = $this->di['db']->dispense('Admin');
         $admin->role = 'admin';
         $admin->admin_group_id = 1;
         $admin->name = 'Administrator';
         $admin->email = $data['email'];
-        $admin->pass = $this->di['password']->hashIt($data['password']);
+        $admin->pass = $box_passwd->hashIt($data['password']);
         $admin->protected = 1;
         $admin->status = 'active';
         $admin->created_at = date('Y-m-d H:i:s');

@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
@@ -253,7 +252,7 @@ class ErrorPage
             .list-horizontal li {
                 display:inline-block;
             }
-            
+
             .list-horizontal li:before {
                 content: "\2022";
                 color:#fff;

@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
-use Ramsey\Uuid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
