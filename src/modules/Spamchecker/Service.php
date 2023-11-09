@@ -219,12 +219,9 @@ class Service implements InjectionAwareInterface
                 return [];
             }
 
-            $result = array_filter($database, function ($domain) {
+            return array_filter($database, function ($domain) {
                 return filter_var($domain, FILTER_VALIDATE_DOMAIN);
             });
-
-            print_r($database, true);
-            return $database;
         });
     }
 }
