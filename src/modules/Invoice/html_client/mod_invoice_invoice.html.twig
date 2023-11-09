@@ -290,16 +290,16 @@
         canAnyGatewayDoSubs = {{ anyGatewayDoesSubscriptions ? 'true' : 'false' }};
 
         if(supportsSubscription && invoiceSubscribable){
-            document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and the selected payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
+            document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and your choosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
             document.getElementById('subscription').style.display = '';
         } else if (!invoiceSubscribable) {
-            document.getElementById('bodyText').textContent = "{{ 'This invoice can not be paid with a subscription.'|trans }}";
+            document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
             document.getElementById('subscription').style.display = 'none';
         } else {
             if(canAnyGatewayDoSubs){
-                document.getElementById('bodyText').textContent = "{{ 'If you would like to pay with a subscription, please use another payment gateway.'|trans }}";
+                document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it. Optionally, you may choose a different payment gateway if you wish to pay using a subscription.'|trans }}";
             } else {
-                document.getElementById('bodyText').textContent = "{{ 'This invoice can not be paid with a subscription.'|trans }}";
+                document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
             }
             document.getElementById('subscription').style.display = 'none';
         }
