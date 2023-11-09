@@ -189,9 +189,9 @@ class Server_Manager_Plesk extends Server_Manager
     	$this->getLog()->info('Changing password for account ' . $a->getUsername());
 
     	if ($a->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['passwd' => $a->getPassword()]);
+            $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['passwd' => htmlspecialchars($new)]);
     	} else {
-            $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['passwd' => $a->getPassword()]);
+            $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['passwd' => htmlspecialchars($new)]);
     	}
 
     	return $result;
