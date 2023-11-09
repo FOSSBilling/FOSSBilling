@@ -23,6 +23,7 @@
         "ext-zlib": "*",
         "antcms/antloader": "^2.0.2",
         "dompdf/dompdf": "^2.0.1",
+        "egulias/email-validator": "^4.0",
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
         "geoip2/geoip2": "^2.10.0",
@@ -30,6 +31,7 @@
         "lcharette/webpack-encore-twig": "^1.1.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
+        "mattketmo/email-checker": "^2.2",
         "monolog/monolog": "^3.5",
         "nelexa/zip": "^4.0.2",
         "php-http/message-factory": "*",
@@ -76,6 +78,8 @@
         "vendor-dir": "src/vendor"
     },
     "replace": {
-        "php-http/message-factory": "*"
+        "php-http/message-factory": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php80": "*"
     }
 }
