@@ -29,7 +29,7 @@ class ServiceTransactionTest extends \BBTestCase
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)
             ->onlyMethods(array('getReceived', 'preProcessTransaction'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -118,7 +118,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($newId));
 
-        $requestMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
+        $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress');
 
@@ -276,17 +276,15 @@ class ServiceTransactionTest extends \BBTestCase
                 array('txn_id' => 'longTxn_id'), array('txn_id' => 'longTxn_id'), 'AND m.txn_id = :txn_id',
             ),
             array(
-                array('date_from' => '2012-12-12'), array('date_from' => 1355270400), 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
+                array('date_from' => '2012-12-12'), array('date_from' => 1_355_270_400), 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
             ),
             array(
-                array('date_to' => '2012-12-12'), array('date_to' => 1355270400), 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
+                array('date_to' => '2012-12-12'), array('date_to' => 1_355_270_400), 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
             ),
         );
     }
 
-    /**
-     * @dataProvider searchQueryData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
     public function testgetSearchQuery($data, $expectedParams, $expectedStringPart)
     {
         $di = new \Pimple\Container();
@@ -296,7 +294,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(strpos($result[0], $expectedStringPart) !== false);
+        $this->assertTrue(str_contains($result[0], $expectedStringPart));
         $this->assertEquals($expectedParams, $result[1]);
     }
 
@@ -385,7 +383,7 @@ class ServiceTransactionTest extends \BBTestCase
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)
             ->onlyMethods(array('processTransaction'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -413,7 +411,7 @@ class ServiceTransactionTest extends \BBTestCase
 
         $exceptionMessage = 'Exception created with PHPUnit Test';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)
             ->addMethods(['oldProcessLogic'])
             ->onlyMethods(['processTransaction'])
             ->getMock();
@@ -441,9 +439,7 @@ class ServiceTransactionTest extends \BBTestCase
         );
     }
 
-    /**
-     * @dataProvider paymentsAdapterProvider_withprocessTransaction
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('paymentsAdapterProvider_withprocessTransaction')]
     public function testprocessTransaction_supportProcessTransaction($adapter)
     {
         $id               = 1;
@@ -467,14 +463,14 @@ class ServiceTransactionTest extends \BBTestCase
         $paymentAdapterMock->expects($this->atLeastOnce())
             ->method('processTransaction');
 
-        $payGatewayService = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')->getMock();
+        $payGatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
         $payGatewayService->expects($this->atLeastOnce())
             ->method('getPaymentAdapter')
             ->will($this->returnValue($paymentAdapterMock));
 
         $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($payGatewayService) { return $payGatewayService; });
+        $di['mod_service'] = $di->protect(fn() => $payGatewayService);
         $di['api_system']  = new \Api_Handler(new \Model_Admin());
         $this->service->setDi($di);
 
@@ -483,7 +479,7 @@ class ServiceTransactionTest extends \BBTestCase
 
     public function getReceived()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)
             ->onlyMethods(array('getSearchQuery'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -553,7 +549,7 @@ class ServiceTransactionTest extends \BBTestCase
 
     public function testcreateAndProcess()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)
             ->onlyMethods(array('create', 'processTransaction'))
             ->getMock();
         $serviceMock->expects($this->once())

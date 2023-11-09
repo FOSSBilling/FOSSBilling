@@ -127,7 +127,7 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->onlyMethods(array('setParamValue'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->onlyMethods(array('setParamValue'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->will($this->returnValue(true));
@@ -147,12 +147,12 @@ class ServiceTest extends \BBTestCase
         $latestVersion = '1.0.0';
         $type = 'info';
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->onlyMethods(['getParamValue'])->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->onlyMethods(['getParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->returnValue(false));
 
-        $updaterMock = $this->getMockBuilder('\FOSSBilling\Update')->getMock();
+        $updaterMock = $this->getMockBuilder('\\' . \FOSSBilling\Update::class)->getMock();
         $updaterMock->expects($this->atLeastOnce())
             ->method('isUpdateAvailable')
             ->will($this->returnValue(true));
@@ -162,9 +162,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['updater'] = $updaterMock;
-        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
-            return $systemServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
 
         $systemServiceMock->setDi($di);
 
@@ -175,15 +173,13 @@ class ServiceTest extends \BBTestCase
     public function testtemplateExistsEmptyPaths()
     {
         $getThemeResults = array('paths' => array());
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->addMethods(array('getThemeConfig'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->addMethods(array('getThemeConfig'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getThemeConfig')
             ->will($this->returnValue($getThemeResults));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
-            return $systemServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
         $this->service->setDi($di);
 
         $result = $this->service->templateExists('defaultFile.cp');
@@ -204,7 +200,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
 
 
-        $twigMock = $this->getMockBuilder('\Twig\Environment')->disableOriginalConstructor()->getMock();
+        $twigMock = $this->getMockBuilder('\\' . \Twig\Environment::class)->disableOriginalConstructor()->getMock();
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
         $twigMock->method('createTemplate')
@@ -261,7 +257,7 @@ class ServiceTest extends \BBTestCase
 
     public function testclearCache()
     {
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('emptyFolder')
             ->will($this->returnValue(true));
@@ -295,9 +291,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array('countries' => 'US')));
 
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(function () use ($modMock) {
-            return $modMock;
-        });
+        $di['mod'] = $di->protect(fn() => $modMock);
 
         $this->service->setDi($di);
         $result = $this->service->getCountries();
@@ -312,9 +306,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array('countries' => 'US')));
 
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(function () use ($modMock) {
-            return $modMock;
-        });
+        $di['mod'] = $di->protect(fn() => $modMock);
 
         $this->service->setDi($di);
         $result = $this->service->getEuCountries();
@@ -345,7 +337,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -362,7 +354,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -377,7 +369,7 @@ class ServiceTest extends \BBTestCase
 
     public function testsetPendingMessage()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)
             ->onlyMethods(array('getPendingMessages'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -386,7 +378,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('set')
             ->with('pending_messages');
@@ -404,7 +396,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('delete')
             ->with('pending_messages');

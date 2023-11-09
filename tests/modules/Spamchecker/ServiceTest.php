@@ -26,16 +26,14 @@ class ServiceTest extends \BBTestCase {
 
     public function testonBeforeClientSignUp()
     {
-        $spamCheckerService = $this->getMockBuilder('\Box\Mod\Spamchecker\Service')->getMock();
+        $spamCheckerService = $this->getMockBuilder('\\' . \Box\Mod\Spamchecker\Service::class)->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($spamCheckerService){
-            return $spamCheckerService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -47,16 +45,14 @@ class ServiceTest extends \BBTestCase {
 
     public function testonBeforeGuestPublicTicketOpen()
     {
-        $spamCheckerService = $this->getMockBuilder('\Box\Mod\Spamchecker\Service')->getMock();
+        $spamCheckerService = $this->getMockBuilder('\\' . \Box\Mod\Spamchecker\Service::class)->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($spamCheckerService){
-            return $spamCheckerService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -75,7 +71,7 @@ class ServiceTest extends \BBTestCase {
         );
 
 
-        $reqMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
+        $reqMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $reqMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
             ->willReturn($clientIp);
@@ -95,7 +91,7 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf("Your IP address (%s) is blocked. Please contact our support to lift your block.", $clientIp), 403);
+        $this->expectExceptionMessage(sprintf("Your IP address (%s) is blocked. Please contact our support to lift your block.", $clientIp));
         $this->service->isBlockedIp($boxEventMock);
     }
 
@@ -108,7 +104,7 @@ class ServiceTest extends \BBTestCase {
         );
 
 
-        $reqMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
+        $reqMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $reqMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
             ->willReturn($clientIp);

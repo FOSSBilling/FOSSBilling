@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 {
     private function getAdapter()
@@ -300,9 +298,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * @dataProvider providerTestArray
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('providerTestArray')]
     public function testisKeyValueNotEmpty($array, $key, $expected)
     {
         $options = [

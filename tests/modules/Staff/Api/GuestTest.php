@@ -26,18 +26,18 @@ class GuestTest extends \BBTestCase
     {
         $adminId = 1;
 
-        $apiMock = $this->getMockBuilder('\Box\Mod\Staff\Api\Guest')
+        $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Api\Guest::class)
             ->onlyMethods(array('login'))
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('login');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createAdmin')
             ->will($this->returnValue($adminId));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -50,7 +50,7 @@ class GuestTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -127,20 +127,20 @@ class GuestTest extends \BBTestCase
             ->method('getConfig')
             ->will($this->returnValue(array()));
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('login')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -165,14 +165,14 @@ class GuestTest extends \BBTestCase
             ->method('getConfig')
             ->will($this->returnValue($configArr));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 

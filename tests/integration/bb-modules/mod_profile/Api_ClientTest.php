@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_ProfileTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_client.xml';
@@ -22,7 +20,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
             'state'             =>  'n/a',
             'postcode'          =>  '123456',
             'phone_cc'          =>  1234,
-            'phone'             =>  1212121212121,
+            'phone'             =>  1_212_121_212_121,
         );
         $bool = $this->api_client->profile_update($data);
         $this->assertTrue($bool);
@@ -86,7 +84,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
         try {
             $this->api_client->profile_update(array('email'=>'new@email.com'));
             $this->fail('Email should not changed due to setting');
-        } catch(Exception $e) {
+        } catch(Exception) {
             //ok
         }
     }

@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_PromoTest extends ApiTestCase
 {
     public function testPromo()

@@ -18,7 +18,7 @@ class AdminTest extends \BBTestCase {
 
     public function getServiceMock()
     {
-        return $this->getMockBuilder('\Box\Mod\Formbuilder\Service')->getMock();
+        return $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
     }
 
     public function setup(): void
@@ -48,7 +48,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -68,7 +68,7 @@ class AdminTest extends \BBTestCase {
             'name' => 'testName',
             'type' => 'custom',
         );
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -77,7 +77,7 @@ class AdminTest extends \BBTestCase {
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Form style was not found in predefined list', 3657);
+        $this->expectExceptionMessage('Form style was not found in predefined list');
         $this->api->create_form($data);
     }
 
@@ -157,7 +157,7 @@ class AdminTest extends \BBTestCase {
             ->method('getForm')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -180,7 +180,7 @@ class AdminTest extends \BBTestCase {
             ->method('getFormFields')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -203,7 +203,7 @@ class AdminTest extends \BBTestCase {
             ->method('getField')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -240,7 +240,7 @@ class AdminTest extends \BBTestCase {
             ->method('removeForm')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -264,7 +264,7 @@ class AdminTest extends \BBTestCase {
             ->method('removeField')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -295,7 +295,7 @@ class AdminTest extends \BBTestCase {
             ->method('isArrayUnique')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -394,9 +394,7 @@ class AdminTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider form_settings_data
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('form_settings_data')]
     public function testupdate_form_settingsExceptions($missingField, $exceptionMessage, $exceptionCode)
     {
         $data = array(
@@ -408,7 +406,7 @@ class AdminTest extends \BBTestCase {
         unset($data[ $missingField ]);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage($exceptionMessage, $exceptionCode);
+        $this->expectExceptionMessage($exceptionMessage);
         $this->api->update_form_settings($data);
     }
 

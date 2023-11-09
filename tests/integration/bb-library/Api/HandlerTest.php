@@ -2,7 +2,7 @@
 class HandlerTest extends BBDbApiTestCase
 {
 
-    public function api_roles()
+    public static function api_roles()
     {
         return array(
             array('api_guest'),
@@ -11,9 +11,7 @@ class HandlerTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider api_roles
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('api_roles')]
     public function testInstances($apiName)
     {
         $api = $this->di[$apiName];

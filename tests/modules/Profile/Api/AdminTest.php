@@ -41,7 +41,7 @@ class AdminTest extends \BBTestCase
 
     public function testLogout()
     {
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -59,7 +59,7 @@ class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Profile\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('updateAdmin')
@@ -76,7 +76,7 @@ class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Profile\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('generateNewApiKey')
@@ -117,7 +117,7 @@ class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->pass = $di['password']->hashIt('oldpw');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Profile\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('changeAdminPassword')

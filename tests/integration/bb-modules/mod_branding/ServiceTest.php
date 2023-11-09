@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends ApiTestCase
 {
     private $configLicense = null;

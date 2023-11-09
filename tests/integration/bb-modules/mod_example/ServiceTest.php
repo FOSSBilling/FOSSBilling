@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'example.xml';
@@ -27,7 +25,7 @@ class ServiceTest extends BBDbApiTestCase
         $data = array(
             'client_id' => 1
         );
-        list($sql, $params) = $service->getSearchQuery($data);
+        [$sql, $params] = $service->getSearchQuery($data);
         $this->assertIsString($sql);
         $this->assertIsArray($params);
         $this->assertArrayHasKey(':client_id', $params);

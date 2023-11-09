@@ -26,7 +26,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getAdvancedResultSet')
             ->will($this->returnValue($simpleResultArr));
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(array('getSearchQuery', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->will($this->returnValue(array('query', array())));
@@ -49,7 +49,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
@@ -62,14 +62,14 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicket_get()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(array('findOneByClient', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
             ->will($this->returnValue(new \Model_SupportTicket()));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -80,13 +80,13 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data   = array(
-            'id' => rand(1, 100)
+            'id' => random_int(1, 100)
         );
         $result = $this->clientApi->ticket_get($data);
 
@@ -95,7 +95,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testHelpdesk_get_pairs()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(array('helpdeskGetPairs'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetPairs')
             ->will($this->returnValue(array(0 => 'General')));
@@ -109,12 +109,12 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicket_create()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(array('ticketCreateForClient'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForClient')
-            ->will($this->returnValue(rand(1, 100)));
+            ->will($this->returnValue(random_int(1, 100)));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -131,7 +131,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
@@ -139,7 +139,7 @@ class Api_ClientTest extends \BBTestCase
         $data   = array(
             'content'             => 'Content',
             'subject'             => 'Subject',
-            'support_helpdesk_id' => rand(1, 100),
+            'support_helpdesk_id' => random_int(1, 100),
         );
         $result = $this->clientApi->ticket_create($data);
 
@@ -148,14 +148,14 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicket_reply()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(array('canBeReopened', 'ticketReply'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->will($this->returnValue(true));
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
-            ->will($this->returnValue(rand(1, 100)));
+            ->will($this->returnValue(random_int(1, 100)));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -172,14 +172,14 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data   = array(
             'content' => 'Content',
-            'id'      => rand(1, 100),
+            'id'      => random_int(1, 100),
         );
         $result = $this->clientApi->ticket_reply($data);
 
@@ -189,14 +189,14 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicket_replyCanNotBeReopenedException()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(array('canBeReopened', 'ticketReply'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->will($this->returnValue(false));
         $serviceMock->expects($this->never())->method('ticketReply')
-            ->will($this->returnValue(rand(1, 100)));
+            ->will($this->returnValue(random_int(1, 100)));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -213,14 +213,14 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data   = array(
             'content' => 'Content',
-            'id'      => rand(1, 100),
+            'id'      => random_int(1, 100),
         );
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->ticket_reply($data);
@@ -230,14 +230,14 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicket_close()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(array('findOneByClient', 'closeTicket'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
             ->will($this->returnValue(new \Model_SupportTicket()));
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
-            ->will($this->returnValue(rand(1, 100)));
+            ->will($this->returnValue(random_int(1, 100)));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -248,14 +248,14 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data   = array(
             'content' => 'Content',
-            'id'      => rand(1, 100),
+            'id'      => random_int(1, 100),
         );
         $result = $this->clientApi->ticket_close($data);
 

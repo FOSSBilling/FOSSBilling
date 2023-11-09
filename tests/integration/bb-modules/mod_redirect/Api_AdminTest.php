@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Redirect_Api_AdminTest extends BBModTestCase
 {
     protected $_mod = 'redirect';

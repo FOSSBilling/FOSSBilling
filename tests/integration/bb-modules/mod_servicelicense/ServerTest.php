@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'servicelicense.xml';
@@ -17,31 +15,29 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
             array(array(
                 'license' => 'BOX-NOT-EXISTS',
                 'host'    => 'tests.com',
-                'path'    => dirname(__FILE__),
+                'path'    => __DIR__,
                 'version' => '0.0.2',
             ), false, false),
 
             array(array(
                 'license' => 'no_validation',
                 'host'    => 'tests.com',
-                'path'    => dirname(__FILE__),
+                'path'    => __DIR__,
                 'version' => '0.0.2',
             ), false, false),
             array(array(
                 'license' => 'valid',
                 'host'    => 'www.tests.com',
-                'path'    => dirname(__FILE__),
+                'path'    => __DIR__,
                 'version' => '0.0.2',
             ), true, true),
         );
     }
 
-    /**
-     * @dataProvider variations
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('variations')]
     public function testLicenseServer($data, $valid, $validation)
     {
-        $service = $this->getMockBuilder('Box\Mod\Servicelicense\Service')->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($this->any())
             ->method('isLicenseActive')
             ->will($this->returnValue(true));
@@ -64,12 +60,8 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = new Box_Log();
-        $di['mod']         = $di->protect(function () use ($service) {
-                return new Box_Mod('servicelicense');
-            });
-        $di['mod_service'] = $di->protect(function () use ($service) {
-                return $service;
-            });
+        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn() => $service);
 
         $server = new \Box\Mod\Servicelicense\Server($di['logger']);
         $server->setDi($di);
@@ -85,13 +77,13 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
             array(array(
                 'license' => 'validation_fail',
                 'host'    => 'tests.com',
-                'path'    => dirname(__FILE__),
+                'path'    => __DIR__,
                 'version' => '0.0.2',
             ), false),
             array(array(
                 'license' => 'valid',
                 'host'    => 'www.tests.com',
-                'path'    => dirname(__FILE__),
+                'path'    => __DIR__,
                 'version' => '0.0.2',
             ), true),
         );
@@ -102,13 +94,13 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $data = array(
             'license' => 'valid',
             'host'    => 'tests.com',
-            'path'    => dirname(__FILE__),
+            'path'    => __DIR__,
             'version' => '0.0.2',
         );
 
         $valid = true;
 
-        $service = $this->getMockBuilder('Box\Mod\Servicelicense\Service')->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($this->any())
             ->method('isLicenseActive')
             ->will($this->returnValue(true));
@@ -128,12 +120,8 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = $this->di['logger'];
-        $di['mod']         = $di->protect(function () use ($service) {
-                return new Box_Mod('servicelicense');
-            });
-        $di['mod_service'] = $di->protect(function () use ($service) {
-                return $service;
-            });
+        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn() => $service);
 
         $server = new \Box\Mod\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
@@ -151,13 +139,13 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $data = array(
             'license' => 'non_existing',
             'host'    => 'tests.com',
-            'path'    => dirname(__FILE__),
+            'path'    => __DIR__,
             'version' => '0.0.2',
         );
 
         $valid = true;
 
-        $service = $this->getMockBuilder('Box\Mod\Servicelicense\Service')->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($this->never())
             ->method('isLicenseActive')
             ->will($this->returnValue(true));
@@ -177,12 +165,8 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = $this->di['logger'];
-        $di['mod']         = $di->protect(function () use ($service) {
-                return new Box_Mod('servicelicense');
-            });
-        $di['mod_service'] = $di->protect(function () use ($service) {
-                return $service;
-            });
+        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn() => $service);
 
         $server = new \Box\Mod\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
@@ -218,20 +202,20 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 
     /**
      * @expectedException LogicException
-     * @dataProvider testLicenseServerProcessValidationFailProvider
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('testLicenseServerProcessValidationFailProvider')]
     public function testLicenseServerProcessValidationFail($isActive, $validIp, $validHost, $validVersion, $validPath, $called)
     {
         $data = array(
             'license' => 'valid',
             'host'    => 'tests.com',
-            'path'    => dirname(__FILE__),
+            'path'    => __DIR__,
             'version' => '0.0.2',
         );
 
         $valid = true;
 
-        $service = $this->getMockBuilder('Box\Mod\Servicelicense\Service')->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($called[0])
             ->method('isLicenseActive')
             ->will($this->returnValue($isActive));
@@ -251,12 +235,8 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di                = new \Pimple\Container();
         $di['db']          = $this->di['db'];
         $di['logger']      = $this->di['logger'];
-        $di['mod']         = $di->protect(function () use ($service) {
-                return new Box_Mod('servicelicense');
-            });
-        $di['mod_service'] = $di->protect(function () use ($service) {
-                return $service;
-            });
+        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn() => $service);
 
         $server = new \Box\Mod\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);

@@ -1,10 +1,10 @@
 <?php
 putenv("APP_ENV=test");
-define('PATH_TESTS', dirname(__FILE__));
+define('PATH_TESTS', __DIR__);
 
-require_once dirname(__FILE__) . '/../src/load.php';
-require_once dirname(__FILE__) . '/../src/vendor/autoload.php';
-$config = include dirname(__FILE__) . '/../src/config.php';
+require_once __DIR__ . '/../src/load.php';
+require_once __DIR__ . '/../src/vendor/autoload.php';
+$config = include __DIR__ . '/../src/config.php';
 
 define('BB_DB_NAME', $config['db']['name']);
 define('BB_DB_USER', $config['db']['user']);

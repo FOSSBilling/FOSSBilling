@@ -16,7 +16,7 @@ class GuestTest extends \BBTestCase
     public function testfree_tlds()
     {
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -35,7 +35,7 @@ class GuestTest extends \BBTestCase
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getFreeTlds')
             ->with($model)
@@ -50,7 +50,7 @@ class GuestTest extends \BBTestCase
     public function testfree_tlds_ProductTypeIsNotHosting()
     {
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -68,7 +68,7 @@ class GuestTest extends \BBTestCase
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('getFreeTlds');
         $this->api->setService($serviceMock);
         $this->api->setDi($di);

@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_NewsTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extension_news.xml';
@@ -99,9 +97,7 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider testNewsMoreTagProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('testNewsMoreTagProvider')]
     public function testNewsMoreTag($content, $expectedExcerpt)
     {
         $data = array(

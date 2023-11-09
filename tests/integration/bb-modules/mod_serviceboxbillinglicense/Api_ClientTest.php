@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'serviceboxbillinglicense.xml';

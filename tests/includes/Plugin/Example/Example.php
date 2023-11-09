@@ -1,11 +1,8 @@
 <?php
 class Example
 {
-    private $config = array();
-    
-    public function __construct(array $options = null)
+    public function __construct(private ?array $config = null)
     {
-        $this->config = $options;
     }
     
     public function activate($service, $order, $params = array())

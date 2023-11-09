@@ -21,7 +21,7 @@ class AdminTest extends \BBTestCase {
                     ->method('getSimpleResultSet')
                     ->will($this->returnValue($simpleResultArr));
 
-        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
                 ->method('getSearchQuery')
                 ->will($this->returnValue('String'));
@@ -31,7 +31,7 @@ class AdminTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
+        $di['mod_service'] = $di->protect(fn() => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -60,7 +60,7 @@ class AdminTest extends \BBTestCase {
                     ->method('getSimpleResultSet')
                     ->will($this->returnValue($simpleResultArr));
 
-        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
                 ->method('getSearchQuery')
                 ->will($this->returnValue('String'));
@@ -70,7 +70,7 @@ class AdminTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
+        $di['mod_service'] = $di->protect(fn() => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -94,7 +94,7 @@ class AdminTest extends \BBTestCase {
 
     public function testlog_email()
     {
-        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->onlyMethods(array('logEmail'))->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->onlyMethods(array('logEmail'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('logEmail')
             ->will($this->returnValue(true));
@@ -129,7 +129,7 @@ class AdminTest extends \BBTestCase {
             method('trash');
 
         $di['db'] = $databaseMock;
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -144,10 +144,10 @@ class AdminTest extends \BBTestCase {
 
     public function testBatch_delete()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Activity\Api\Admin')->onlyMethods(array('log_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Api\Admin::class)->onlyMethods(array('log_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('log_delete')->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'emails.xml';
@@ -175,7 +173,7 @@ class Api_AdminTest extends BBDbApiTestCase
 
         $clientModel = $this->di['db']->load('Client', $params['to_client']);
 
-        $this->assertTrue(strpos($emailModel->subject, $clientModel->first_name) !== false, 'Template variables were not populated');
+        $this->assertTrue(str_contains($emailModel->subject, $clientModel->first_name), 'Template variables were not populated');
     }
     
     public function testSendToClient()

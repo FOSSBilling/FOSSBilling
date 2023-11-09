@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_InvoiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'transactions.xml';
@@ -29,9 +27,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider gateways
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('gateways')]
     public function testPayment($id, $iid)
     {
         $pf = $this->di['db']->findOne('Invoice', $iid);

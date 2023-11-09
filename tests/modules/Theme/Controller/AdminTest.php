@@ -37,7 +37,7 @@ class AdminTest extends \BBTestCase {
             ->with('mod_theme_preset')
             ->willReturn('Rendering ...');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getSettingsPageHtml')
             ->willReturn('');
@@ -52,7 +52,7 @@ class AdminTest extends \BBTestCase {
             ->willReturn(false);
 
 
-        $themeServiceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')->getMock();
+        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
@@ -91,12 +91,12 @@ class AdminTest extends \BBTestCase {
         $boxAppMock->expects($this->atLeastOnce())
             ->method('redirect');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('isAssetsPathWritable')
             ->willReturn(true);
 
-        $themeServiceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')->getMock();
+        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
@@ -148,7 +148,7 @@ class AdminTest extends \BBTestCase {
         $boxAppMock->expects($this->atLeastOnce())
             ->method('redirect');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('isAssetsPathWritable')
             ->willReturn(false);
@@ -156,7 +156,7 @@ class AdminTest extends \BBTestCase {
             ->method('getName')
             ->willReturn('PHPUnit Controlled exception');
 
-        $themeServiceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')->getMock();
+        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);

@@ -18,7 +18,7 @@ class ClientTest extends \BBTestCase {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-       $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
+       $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(array('getSessionCart', 'checkoutCart'))
            ->getMock();
        $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
@@ -42,7 +42,7 @@ class ClientTest extends \BBTestCase {
         $this->clientApi->setIdentity($client);
 
         $data   = array(
-            'id' => rand(1, 100)
+            'id' => random_int(1, 100)
         );
         $di = new \Pimple\Container();
 

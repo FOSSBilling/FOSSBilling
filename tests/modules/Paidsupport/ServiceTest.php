@@ -30,7 +30,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientTotalAmount = 25;
 
-        $clientBalanceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -65,7 +65,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientTotalAmount = 0;
 
-        $clientBalanceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -102,7 +102,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientTotalAmount = 4;
 
-        $clientBalanceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -137,7 +137,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientTotalAmount = 4;
 
-        $clientBalanceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -176,7 +176,7 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($clientModel);
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
+        $paidSupportMock = $this->getMockBuilder('\\' . \Box\Mod\Paidsupport\Service::class)->getMock();
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(true);
@@ -220,7 +220,7 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($clientModel);
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
+        $paidSupportMock = $this->getMockBuilder('\\' . \Box\Mod\Paidsupport\Service::class)->getMock();
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(false);
@@ -345,7 +345,7 @@ class ServiceTest extends \BBTestCase {
             });
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
+        $paidSupportMock = $this->getMockBuilder('\\' . \Box\Mod\Paidsupport\Service::class)->getMock();
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(true);
@@ -353,7 +353,7 @@ class ServiceTest extends \BBTestCase {
             ->method('enoughInBalanceToOpenTicket')
             ->with($clientModel);
 
-        $clientBalanceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('deductFunds');
 
@@ -406,7 +406,7 @@ class ServiceTest extends \BBTestCase {
             });
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
+        $paidSupportMock = $this->getMockBuilder('\\' . \Box\Mod\Paidsupport\Service::class)->getMock();
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(false);
@@ -485,7 +485,7 @@ class ServiceTest extends \BBTestCase {
         $helpdeskConfig = array(
             $helpdeskId => 0
         );
-        $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
+        $paidSupportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Paidsupport\Service::class)
             ->onlyMethods(array('getPaidHelpdeskConfig'))
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
@@ -502,7 +502,7 @@ class ServiceTest extends \BBTestCase {
         $helpdeskConfig = array(
             $helpdeskId => 1
         );
-        $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
+        $paidSupportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Paidsupport\Service::class)
             ->onlyMethods(array('getPaidHelpdeskConfig'))
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
@@ -518,7 +518,7 @@ class ServiceTest extends \BBTestCase {
         $helpdeskId = 1;
         $helpdeskConfig = array();
 
-        $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
+        $paidSupportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Paidsupport\Service::class)
             ->onlyMethods(array('getPaidHelpdeskConfig'))
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
@@ -597,7 +597,7 @@ class ServiceTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('setConfig')
             ->willReturn(true);

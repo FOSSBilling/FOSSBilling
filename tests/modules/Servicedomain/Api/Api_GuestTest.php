@@ -15,7 +15,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testTlds()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->will($this->returnValue(array()));
@@ -40,14 +40,14 @@ class Api_GuestTest extends \BBTestCase
 
     public function testPricing()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'tldToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(new \Model_Tld()));
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -67,14 +67,14 @@ class Api_GuestTest extends \BBTestCase
 
     public function testPricingTldNotFoundException()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'tldToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(null));
         $serviceMock->expects($this->never())->method('tldToApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -95,7 +95,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheck()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'isDomainAvailable'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(new \Model_Tld()));
@@ -104,7 +104,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
 
@@ -123,7 +123,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheckSldNotValidException()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(false));
         $validatorMock->expects($this->atLeastOnce())
@@ -145,7 +145,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheckTldNotFoundException()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'isDomainAvailable'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(null));
@@ -154,7 +154,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
         $validatorMock->expects($this->atLeastOnce())
@@ -176,7 +176,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheckDomainNotAvailableException()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'isDomainAvailable'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(new \Model_Tld()));
@@ -185,7 +185,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->will($this->returnValue(true));
         $validatorMock->expects($this->atLeastOnce())
@@ -207,14 +207,14 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCan_be_transferred()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'canBeTransferred'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(new \Model_Tld()));
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -236,14 +236,14 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCan_be_transferredTldNotFoundException()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'canBeTransferred'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(null));
         $serviceMock->expects($this->never())->method('canBeTransferred')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -264,14 +264,14 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCan_be_transferredCanNotBeTransferredException()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(array('tldFindOneByTld', 'canBeTransferred'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(new \Model_Tld()));
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->will($this->returnValue(false));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

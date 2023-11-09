@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_cart.xml';
@@ -506,7 +504,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     }
 
 
-    public function testApplyPromoForClientProvider()
+    public static function testApplyPromoForClientProvider()
     {
         $ids = array(1, 2);
 
@@ -519,9 +517,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider testApplyPromoForClientProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('testApplyPromoForClientProvider')]
     public function testApplyPromoForClient($discount, $clientGroupId, $ids, $shouldThrowException)
     {
         if ($shouldThrowException) {

@@ -30,7 +30,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel     = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -47,9 +47,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->returnValue($taxModel));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $clientServiceMock);
         $di['db']          = $dbMock;
         $this->service->setDi($di);
 
@@ -64,7 +62,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel     = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -81,9 +79,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->onConsecutiveCalls(null, $taxModel));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $clientServiceMock);
         $di['db']          = $dbMock;
         $this->service->setDi($di);
 
@@ -98,7 +94,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel     = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -115,9 +111,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->onConsecutiveCalls(null, null, $taxModel));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $clientServiceMock);
         $di['db']          = $dbMock;
         $this->service->setDi($di);
 
@@ -131,7 +125,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -144,9 +138,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->onConsecutiveCalls(null, null, null));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $clientServiceMock);
         $di['db']          = $dbMock;
         $this->service->setDi($di);
 
@@ -161,7 +153,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -171,9 +163,7 @@ class ServiceTaxTest extends \BBTestCase
         $taxModel->loadBean(new \DummyBean());
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $clientServiceMock);
         $this->service->setDi($di);
 
         $taxRateExpected = 0;
@@ -208,13 +198,13 @@ class ServiceTaxTest extends \BBTestCase
             ->method('find')
             ->willReturn(array($invoiceItemModel));
 
-        $invoiceItemService = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
+        $invoiceItemService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceInvoiceItem::class)->getMock();
         $invoiceItemService->expects($this->atLeastOnce())
             ->method('getTax')
             ->willReturn(21);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($invoiceItemService) { return $invoiceItemService; });
+        $di['mod_service'] = $di->protect(fn() => $invoiceItemService);
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -244,7 +234,7 @@ class ServiceTaxTest extends \BBTestCase
 
     public function testcreate()
     {
-        $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -261,9 +251,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->returnValue($newId));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($systemService) {
-            return $systemService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $systemService);
         $di['db']          = $dbMock;
         $di['logger']      = new \Box_Log();
         $this->service->setDi($di);
@@ -318,7 +306,7 @@ class ServiceTaxTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
-        $systemService   = $this->getMockBuilder('\Box\Mod\System\Service')
+        $systemService   = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)
             ->getMock();
         $euCountriesData = array(
             'AT' => 'Austria',
@@ -336,7 +324,7 @@ class ServiceTaxTest extends \BBTestCase
             ->method('getEuVat')
             ->will($this->returnValue($euVatData));
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTax')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)
             ->onlyMethods(array('create'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -344,9 +332,7 @@ class ServiceTaxTest extends \BBTestCase
 
         $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($systemService) {
-            return $systemService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $systemService);
         $serviceMock->setDi($di);
 
         $result = $serviceMock->setupEUTaxes(array());

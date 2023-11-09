@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class ModTest extends BBDbApiTestCase
 {
     public function testConfig()

@@ -1,3 +1,3 @@
 <?php
-require_once dirname(__FILE__) . '/../../src/load.php';
-$di = include dirname(__FILE__). '/../../src/di.php';
+require_once __DIR__ . '/../../src/load.php';
+$di = include __DIR__. '/../../src/di.php';

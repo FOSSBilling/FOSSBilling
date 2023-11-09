@@ -32,7 +32,7 @@ class GuestTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
@@ -82,7 +82,7 @@ class GuestTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->with('hide_version_public')
@@ -104,7 +104,7 @@ class GuestTest extends \BBTestCase {
         $authMock->method('isAdminLoggedIn')->willReturn(false);
         $authMock->method('isClientLoggedIn')->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCompany')
             ->willReturn($companyData);
@@ -140,7 +140,7 @@ class GuestTest extends \BBTestCase {
         $authMock->method('isAdminLoggedIn')->willReturn(false);
         $authMock->method('isClientLoggedIn')->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCompany')
             ->willReturn($companyData);
@@ -174,7 +174,7 @@ class GuestTest extends \BBTestCase {
         $data = array(
 
         );
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $servuceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $servuceMock->expects($this->atLeastOnce())
             ->method('getPhoneCodes')
             ->will($this->returnValue(array()));
@@ -187,7 +187,7 @@ class GuestTest extends \BBTestCase {
 
     public function teststates()
     {
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $servuceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $servuceMock->expects($this->atLeastOnce())
             ->method('getStates')
             ->will($this->returnValue(array()));
@@ -200,7 +200,7 @@ class GuestTest extends \BBTestCase {
 
     public function testcountries_eunion()
     {
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $servuceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $servuceMock->expects($this->atLeastOnce())
             ->method('getEuCountries')
             ->will($this->returnValue(array()));
@@ -213,7 +213,7 @@ class GuestTest extends \BBTestCase {
 
     public function testcountries()
     {
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $servuceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $servuceMock->expects($this->atLeastOnce())
             ->method('getCountries')
             ->will($this->returnValue(array()));
@@ -234,7 +234,7 @@ class GuestTest extends \BBTestCase {
     {
         $data = array('code' => 'periodCode');
 
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $servuceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $servuceMock->expects($this->atLeastOnce())
             ->method('getPeriod')
             ->will($this->returnValue('periodTtitleValue'));
@@ -265,7 +265,7 @@ class GuestTest extends \BBTestCase {
             'file' => 'testing.txt',
         );
 
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $servuceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $servuceMock->expects($this->atLeastOnce())
             ->method('templateExists')
             ->will($this->returnValue(true));
@@ -304,7 +304,7 @@ class GuestTest extends \BBTestCase {
 
     public function testget_pending_messages()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $messageArr = array('Important message to user');
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPendingMessages')

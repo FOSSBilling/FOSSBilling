@@ -28,7 +28,7 @@ class AdminTest extends \BBTestCase {
         $data = array(
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParams')
             ->will($this->returnValue(array()));
@@ -44,7 +44,7 @@ class AdminTest extends \BBTestCase {
         $data = array(
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateParams')
             ->will($this->returnValue(true));
@@ -65,7 +65,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMessages')
             ->will($this->returnValue(array()));
@@ -82,7 +82,7 @@ class AdminTest extends \BBTestCase {
             'file' => 'testing.txt',
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('templateExists')
             ->will($this->returnValue(true));
@@ -100,7 +100,7 @@ class AdminTest extends \BBTestCase {
             '_tpl' => 'default'
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('renderString')
             ->will($this->returnValue('returnStringType'));
@@ -117,7 +117,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getEnv')
             ->will($this->returnValue(array()));
@@ -137,12 +137,12 @@ class AdminTest extends \BBTestCase {
             'mod' => 'extension',
         );
 
-        $staffServiceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->getMock();
+        $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
         $staffServiceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -169,14 +169,14 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('clearCache')
             ->will($this->returnValue(true));
 
         $this->api->setService($serviceMock);
 
-        $result = $this->api->clear_cache($data);
+        $result = $this->api->clear_cache();
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
