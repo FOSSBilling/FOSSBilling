@@ -13,7 +13,7 @@ namespace FOSSBilling;
 
 class Fingerprint
 {
-    private array $fingerprintProperties;
+    private readonly array $fingerprintProperties;
 
     public function __construct()
     {
@@ -91,7 +91,7 @@ class Fingerprint
 
         foreach ($this->fingerprintProperties as $name => $properties) {
             if (!empty($properties['source'])) {
-                $fingerprint[$name] = hash('md5', $properties['source']);
+                $fingerprint[$name] = hash('md5', (string) $properties['source']);
             }
         }
 
@@ -124,7 +124,7 @@ class Fingerprint
                 // Do nothing in this case, as the property isn't in either fingerprint.
             } else {
                 $itemCount++;
-                $hashedData = hash('md5', $properties['source']);
+                $hashedData = hash('md5', (string) $properties['source']);
 
                 if ($fingerprint[$name] !== $hashedData) {
                     $scoreSubtract += $properties['weight'];
@@ -167,13 +167,13 @@ class Fingerprint
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
         // Extract the browser name
-        if (preg_match('/(?:Chrome|CriOS)\/([0-9\.]+)/', $userAgent, $matches)) {
+        if (preg_match('/(?:Chrome|CriOS)\/([0-9\.]+)/', (string) $userAgent, $matches)) {
             $browser = 'Chrome';
             $version = $matches[1];
-        } elseif (preg_match('/Firefox\/([0-9\.]+)/', $userAgent, $matches)) {
+        } elseif (preg_match('/Firefox\/([0-9\.]+)/', (string) $userAgent, $matches)) {
             $browser = 'Firefox';
             $version = $matches[1];
-        } elseif (preg_match('/Safari\/([0-9\.]+)/', $userAgent, $matches)) {
+        } elseif (preg_match('/Safari\/([0-9\.]+)/', (string) $userAgent, $matches)) {
             $browser = 'Safari';
             $version = $matches[1];
         } else {
@@ -182,11 +182,11 @@ class Fingerprint
         }
 
         // Extract the operating system
-        if (preg_match('/Windows NT ([0-9\.]+)/', $userAgent, $matches)) {
+        if (preg_match('/Windows NT ([0-9\.]+)/', (string) $userAgent, $matches)) {
             $os = 'Windows NT ' . $matches[1];
-        } elseif (preg_match('/Mac OS X ([0-9_]+)/', $userAgent, $matches)) {
+        } elseif (preg_match('/Mac OS X ([0-9_]+)/', (string) $userAgent, $matches)) {
             $os = 'Mac OS X';
-        } elseif (preg_match('/Linux/', $userAgent)) {
+        } elseif (preg_match('/Linux/', (string) $userAgent)) {
             $os = 'Linux';
         } else {
             $os = 'Unknown';

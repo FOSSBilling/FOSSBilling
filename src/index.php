@@ -30,8 +30,8 @@ if ($url === '/run-patcher') {
     }
 }
 
-if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
-    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
+if (strncasecmp((string) $url, (string) ADMIN_PREFIX, strlen((string) ADMIN_PREFIX)) === 0) {
+    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', (string) $url));
     $app = new Box_AppAdmin();
 } else {
     $appUrl = $url;

@@ -38,12 +38,12 @@ class Box_Password {
      */
     public function hashIt($password)
     {
-        return password_hash($password, $this->algo, $this->options);
+        return password_hash((string) $password, $this->algo, $this->options);
     }
 
     public function verify ($password, $hash)
     {
-        return password_verify((string) $password, $hash);
+        return password_verify((string) $password, (string) $hash);
     }
 
     public function needsRehash($hash)

@@ -181,7 +181,7 @@ class Server_Manager_Hestia extends Server_Manager
             'arg2' => $a->getPassword(),
             'arg3' => $client->getEmail(),
             'arg4' => $packname,
-            'arg5' => trim($client->getFullName()),
+            'arg5' => trim((string) $client->getFullName()),
         ];
         // Make request and create user
         $result1 = $this->_makeRequest($postvars);
@@ -330,7 +330,7 @@ class Server_Manager_Hestia extends Server_Manager
     /**
      * Change account username on server.
      */
-    public function changeAccountUsername(Server_Account $a, $new)
+    public function changeAccountUsername(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('username changes')]);
     }
@@ -338,7 +338,7 @@ class Server_Manager_Hestia extends Server_Manager
     /**
      * Change account domain on server.
      */
-    public function changeAccountDomain(Server_Account $a, $new)
+    public function changeAccountDomain(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('changing the account domain')]);
     }
@@ -373,7 +373,7 @@ class Server_Manager_Hestia extends Server_Manager
     /**
      * Change account IP on server.
      */
-    public function changeAccountIp(Server_Account $a, $new)
+    public function changeAccountIp(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('changing the account IP')]);
     }

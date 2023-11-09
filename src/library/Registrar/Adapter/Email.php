@@ -67,7 +67,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         throw new Registrar_Exception('Email registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability']);
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception('Email registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain transferability']);
     }
@@ -192,7 +192,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             return true;
         }
 
-        mail($this->config['email'], $params['subject'], $c);
+        mail((string) $this->config['email'], (string) $params['subject'], $c);
         $log->info("Email sent: ".$params['subject']);
         return true;
     }

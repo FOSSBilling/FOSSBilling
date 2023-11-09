@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
     private function slugify($text)
     {
         // replace non letter or digits by _
-        $text = preg_replace('~[^\\pL\d]+~u', '_', $text);
+        $text = preg_replace('~[^\\pL\d]+~u', '_', (string) $text);
 
         // trim
         $text = trim($text, '_');
@@ -168,10 +168,10 @@ class Service implements InjectionAwareInterface
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
                 if (!$this->isArrayUnique(array_filter($field['values'], 'strlen'))) {
-                    throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
+                    throw new \FOSSBilling\InformationException(ucfirst((string) $field['type']) . ' values must be unique', null, 1597);
                 }
                 if (!$this->isArrayUnique(array_filter($field['labels'], 'strlen'))) {
-                    throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
+                    throw new \FOSSBilling\InformationException(ucfirst((string) $field['type']) . ' labels must be unique', null, 1598);
                 }
                 $field['options'] = array_combine($field['labels'], $field['values']);
                 $field['options'] = array_filter($field['options'], 'strlen');
@@ -217,7 +217,7 @@ class Service implements InjectionAwareInterface
         $formModel = $this->di['db']->getExistingModelById('Form', $formId);
         $result = $this->di['db']->toArray($formModel);
 
-        $result['style'] = json_decode($result['style'], true);
+        $result['style'] = json_decode((string) $result['style'], true);
         $result['fields'] = $this->getFormFields($result['id']);
         $result['fields'] = $this->fieldsJsonDecode($result['fields']);
 
@@ -240,8 +240,8 @@ class Service implements InjectionAwareInterface
     private function fieldsJsonDecode($fields)
     {
         foreach ($fields as $key => $r) {
-            $fields[$key]['options'] = json_decode($r['options'], true);
-            $fields[$key]['default_value'] = (json_decode($r['default_value'])) ? (json_decode($r['default_value'], true)) : $r['default_value'];
+            $fields[$key]['options'] = json_decode((string) $r['options'], true);
+            $fields[$key]['default_value'] = (json_decode((string) $r['default_value'])) ? (json_decode((string) $r['default_value'], true)) : $r['default_value'];
         }
 
         return $fields;
@@ -279,8 +279,8 @@ class Service implements InjectionAwareInterface
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
 
-        if (str_starts_with($result['options'], '{') || str_starts_with($result['options'], '[')) {
-            $result['options'] = json_decode($result['options']);
+        if (str_starts_with((string) $result['options'], '{') || str_starts_with((string) $result['options'], '[')) {
+            $result['options'] = json_decode((string) $result['options']);
         }
 
         return $result;

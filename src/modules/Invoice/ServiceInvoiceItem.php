@@ -101,7 +101,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         if ($item->type == \Model_InvoiceItem::TYPE_HOOK_CALL) {
             try {
-                $params = json_decode($item->rel_id);
+                $params = json_decode((string) $item->rel_id);
                 $this->di['events_manager']->fire(['event' => $item->task, 'params' => $params]);
             } catch (\Exception $e) {
                 error_log($e->getMessage());

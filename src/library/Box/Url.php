@@ -53,7 +53,7 @@ class Box_Url implements \FOSSBilling\InjectionAwareInterface
 
     public function adminLink($uri, $params = array())
     {
-        $uri = trim($uri, '/');
+        $uri = trim((string) $uri, '/');
         $uri = ADMIN_PREFIX . '/' . $uri;
         return $this->link($uri, $params);
     }

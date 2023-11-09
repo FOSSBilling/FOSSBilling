@@ -13,7 +13,7 @@ class Model_ServiceLicense extends \RedBeanPHP\SimpleModel
     private function _decodeJson($j)
     {
         if(isset($j)){
-            $config = json_decode($j, true);
+            $config = json_decode((string) $j, true);
             return is_array($config) ? $config : array();
         } else {
             return array();

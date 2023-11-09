@@ -182,7 +182,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($row['filter']) {
-            $row['filter'] = json_decode($row['filter'], 1);
+            $row['filter'] = json_decode((string) $row['filter'], 1);
         } else {
             $row['filter'] = [];
         }

@@ -126,7 +126,7 @@ class Admin implements InjectionAwareInterface
         if (!$reset instanceof \Model_AdminPasswordReset) {
             throw new \FOSSBilling\InformationException('The link have expired or you have already confirmed password reset.');
         }
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
+        if (strtotime((string) $reset->created_at) - time() + 900 < 0) {
             throw new \FOSSBilling\InformationException('The link have expired or you have already confirmed password reset.');
         }
         $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');

@@ -128,7 +128,7 @@ class ServicePayGateway implements InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $result['supports_one_time_payments'] = $single;
             $result['supports_subscriptions'] = $recurrent;
-            $result['config'] = json_decode($model->config, 1);
+            $result['config'] = json_decode((string) $model->config, 1);
             $result['form'] = $this->getFormElements($model);
             $result['description'] = $this->getDescription($model);
             $result['enabled'] = $model->enabled;
@@ -315,7 +315,7 @@ class ServicePayGateway implements InjectionAwareInterface
             return array_keys($currencyService->getPairs());
         }
 
-        return json_decode($model->accepted_currencies, 1);
+        return json_decode((string) $model->accepted_currencies, 1);
     }
 
     public function getFormElements(\Model_PayGateway $model)

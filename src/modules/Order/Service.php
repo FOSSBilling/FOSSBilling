@@ -236,12 +236,12 @@ class Service implements InjectionAwareInterface
     {
         $s = $this->di['tools']->to_camel_case($order->service_type, true);
 
-        return 'Service' . ucfirst($s);
+        return 'Service' . ucfirst((string) $s);
     }
 
     public function getServiceOrder($service)
     {
-        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
+        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', (string) $service::class));
 
         $bindings = [
             'service_type' => $type,
@@ -335,7 +335,7 @@ class Service implements InjectionAwareInterface
         $supportService = $this->di['mod_service']('support');
 
         $data = $this->di['db']->toArray($model);
-        $data['config'] = json_decode($model->config, 1);
+        $data['config'] = json_decode((string) $model->config, 1);
         $data['total'] = $this->getTotal($model);
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
@@ -436,17 +436,17 @@ class Service implements InjectionAwareInterface
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at";
-            $bindings[':created_at'] = date('Y-m-d', strtotime($created_at));
+            $bindings[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(co.created_at) >= :date_from';
-            $bindings[':date_from'] = strtotime($date_from);
+            $bindings[':date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(co.created_at) <= :date_to';
-            $bindings[':date_to'] = strtotime($date_to);
+            $bindings[':date_to'] = strtotime((string) $date_to);
         }
 
         // smartSearch
@@ -578,13 +578,13 @@ class Service implements InjectionAwareInterface
 
         $order->notes = $data['notes'] ?? $order->notes;
         if (isset($data['created_at'])) {
-            $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
+            $order->created_at = date('Y-m-d H:i:s', strtotime((string) $data['created_at']));
         } else {
             $order->created_at = date('Y-m-d H:i:s');
         }
 
         if (isset($data['updated_at'])) {
-            $order->updated_at = date('Y-m-d H:i:s', strtotime($data['updated_at']));
+            $order->updated_at = date('Y-m-d H:i:s', strtotime((string) $data['updated_at']));
         } else {
             $order->updated_at = date('Y-m-d H:i:s');
         }
@@ -681,7 +681,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => $event_params]);
         $result = $this->createFromOrder($order);
         if (is_array($result)) {
-            $event_params = array_merge($event_params, $result);
+            $event_params = [...$event_params, ...$result];
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => $event_params]);
 
@@ -723,7 +723,7 @@ class Service implements InjectionAwareInterface
 
         // set automatic order expiration
         if (!empty($order->period)) {
-            $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at);
+            $from_time = ($order->expires_at === null) ? time() : strtotime((string) $order->expires_at);
 
             $period = $this->di['period']($order->period);
             $order->expires_at = date('Y-m-d H:i:s', $period->getExpirationTime($from_time));
@@ -864,17 +864,17 @@ class Service implements InjectionAwareInterface
 
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
-            $order->created_at = date('Y-m-d H:i:s', strtotime($created_at));
+            $order->created_at = date('Y-m-d H:i:s', strtotime((string) $created_at));
         }
 
         $activated_at = $data['activated_at'] ?? null;
         if (!empty($activated_at)) {
-            $order->activated_at = date('Y-m-d H:i:s', strtotime($activated_at));
+            $order->activated_at = date('Y-m-d H:i:s', strtotime((string) $activated_at));
         }
 
         $expires_at = $data['expires_at'] ?? null;
         if (!empty($expires_at)) {
-            $order->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
+            $order->expires_at = date('Y-m-d H:i:s', strtotime((string) $expires_at));
         }
         if (empty($expires_at) && !is_null($expires_at)) {
             $order->expires_at = null;
@@ -940,7 +940,7 @@ class Service implements InjectionAwareInterface
 
         // set automatic order expiration
         if (!empty($order->period)) {
-            $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at); // from expiration date
+            $from_time = ($order->expires_at === null) ? time() : strtotime((string) $order->expires_at); // from expiration date
 
             $config = $this->di['mod_config']('order');
             $logic = $config['order_renewal_logic'] ?? '';
@@ -948,8 +948,8 @@ class Service implements InjectionAwareInterface
             if ($logic == 'from_today') {
                 $from_time = time(); // renew order from the date renewal occurred
             } elseif ($logic == 'from_greater') {
-                if (strtotime($order->expires_at) > time()) {
-                    $from_time = strtotime($order->expires_at);
+                if (strtotime((string) $order->expires_at) > time()) {
+                    $from_time = strtotime((string) $order->expires_at);
                 } else {
                     $from_time = time();
                 }

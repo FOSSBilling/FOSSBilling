@@ -95,12 +95,12 @@ class ServiceBalance implements InjectionAwareInterface
 
         if ($date_from !== null) {
             $where[] = 'm.created_at >= :date_from';
-            $params[':date_from'] = strtotime($date_from);
+            $params[':date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to !== null) {
             $where[] = 'm.created_at <= :date_to';
-            $params[':date_to'] = strtotime($date_to);
+            $params[':date_to'] = strtotime((string) $date_to);
         }
 
         if (!empty($where)) {

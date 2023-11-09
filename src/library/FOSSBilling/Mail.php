@@ -20,7 +20,7 @@ class Mail implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    private Email $email;
+    private readonly Email $email;
     private ?string $transport = null;
     private ?string $dsn = null;
 
@@ -199,10 +199,10 @@ class Mail implements InjectionAwareInterface
             throw new InformationException('SMTP host or port is not configured');
         }
 
-        $host = urlencode(trim($options['smtp_host']));
+        $host = urlencode(trim((string) $options['smtp_host']));
 
         if (!empty($options['smtp_username'])) {
-            $username = urlencode(trim($options['smtp_username']));
+            $username = urlencode(trim((string) $options['smtp_username']));
             $pass = urlencode(trim($options['smtp_password'] ?? ''));
 
             $authString = !empty($pass) ? $username . ':' . $pass : $username;

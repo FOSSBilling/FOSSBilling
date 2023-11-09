@@ -77,8 +77,8 @@ class CentralAlerts implements InjectionAwareInterface
                 $alerts = array_filter($alerts, fn($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function($alert) use ($version) {
-                    $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');
-                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower($alert['max_fossbilling_version']), '<=');
+                    $overThanTheMinimum = version_compare(strtolower($version), strtolower((string) $alert['min_fossbilling_version']), '>=');
+                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower((string) $alert['max_fossbilling_version']), '<=');
 
                     return $overThanTheMinimum && $lessThanTheMaximum;
                 });
@@ -104,9 +104,7 @@ class CentralAlerts implements InjectionAwareInterface
             $httpClient = HttpClient::create();
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
-                'query' => array_merge($params, [
-                    'fossbilling_version' => Version::VERSION,
-                ]),
+                'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
             $json = $response->toArray();
         } catch (TransportExceptionInterface | HttpExceptionInterface $e) {

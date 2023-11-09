@@ -90,6 +90,6 @@ class Guest extends \Api_Abstract
         $c['format'] = ($p >= 0) ? $c['format'] : '-' . $c['format'];
         $p = $p >= 0 ? $p : '-' . $p;
 
-        return str_replace('{{price}}', $p, $c['format']);
+        return str_replace('{{price}}', $p, (string) $c['format']);
     }
 }

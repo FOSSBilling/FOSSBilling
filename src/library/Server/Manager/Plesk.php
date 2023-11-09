@@ -50,7 +50,7 @@ class Server_Manager_Plesk extends Server_Manager
         return true;
     }
     
-    public function synchronizeAccount(Server_Account $a)
+    public function synchronizeAccount(Server_Account $a): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
     }
@@ -197,7 +197,7 @@ class Server_Manager_Plesk extends Server_Manager
     	return $result;
     }
 
-    public function changeAccountUsername(Server_Account $a, $new)
+    public function changeAccountUsername(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
     }
@@ -224,7 +224,7 @@ class Server_Manager_Plesk extends Server_Manager
         $this->_client->webspace()->request($params);
     }
 
-    public function changeAccountIp(Server_Account $a, $new)
+    public function changeAccountIp(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('changing the account IP')]);
     }

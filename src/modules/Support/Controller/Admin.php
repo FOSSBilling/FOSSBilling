@@ -123,7 +123,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 $last_message = end($ticket['messages']);
                 reset($ticket);
 
-                $hours_passed = (round((time() - strtotime($last_message['created_at'])) / 3600) > $config['delay_hours']);
+                $hours_passed = (round((time() - strtotime((string) $last_message['created_at'])) / 3600) > $config['delay_hours']);
                 if ($hours_passed) {
                     $delay_canned = $api->support_canned_get(['id' => $config['delay_message_id']]);
                     $cdm = $delay_canned['content'];

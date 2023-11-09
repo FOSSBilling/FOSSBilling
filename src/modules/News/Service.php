@@ -76,11 +76,11 @@ class Service
     {
         $admin = $this->di['db']->getRow('SELECT name, email FROM admin WHERE id=:id', ['id' => $row->admin_id]);
 
-        $pos = strpos($row->content, '<!--more-->');
-        $excerpt = ($pos) ? substr($row->content, 0, $pos) : null;
+        $pos = strpos((string) $row->content, '<!--more-->');
+        $excerpt = ($pos) ? substr((string) $row->content, 0, $pos) : null;
 
         // Remove <!--more--> from post content
-        $content = str_replace('<!--more-->', '', $row->content);
+        $content = str_replace('<!--more-->', '', (string) $row->content);
 
         $data = [
             'id' => $row->id,

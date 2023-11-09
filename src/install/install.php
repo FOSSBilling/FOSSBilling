@@ -77,7 +77,7 @@ if (!Environment::isCLI()) {
 // Inline installer class.
 final class FOSSBilling_Installer
 {
-    private Session $session;
+    private readonly Session $session;
     private PDO $pdo;
     private \FOSSBilling\Requirements $requirements;
 
@@ -280,19 +280,19 @@ final class FOSSBilling_Installer
             throw new Exception('The admin email is not a valid address.');
         }
 
-        if (strlen($this->session->get('admin_password')) < 8) {
+        if (strlen((string) $this->session->get('admin_password')) < 8) {
             throw new Exception('Minimum admin password length is 8 characters.');
         }
 
-        if (!preg_match("#[0-9]+#", $this->session->get('admin_password'))) {
+        if (!preg_match("#[0-9]+#", (string) $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one number.');
         }
 
-        if (!preg_match("#[a-z]+#", $this->session->get('admin_password'))) {
+        if (!preg_match("#[a-z]+#", (string) $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one lowercase letter.');
         }
 
-        if (!preg_match("#[A-Z]+#", $this->session->get('admin_password'))) {
+        if (!preg_match("#[A-Z]+#", (string) $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one uppercase letter.');
         }
 

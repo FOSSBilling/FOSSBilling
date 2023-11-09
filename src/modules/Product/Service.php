@@ -14,18 +14,18 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    public const CUSTOM = 'custom';
-    public const LICENSE = 'license';
-    public const ADDON = 'addon';
-    public const DOMAIN = 'domain';
-    public const DOWNLOADABLE = 'downloadable';
-    public const HOSTING = 'hosting';
-    public const MEMBERSHIP = 'membership';
-    public const VPS = 'vps';
+    final public const CUSTOM = 'custom';
+    final public const LICENSE = 'license';
+    final public const ADDON = 'addon';
+    final public const DOMAIN = 'domain';
+    final public const DOWNLOADABLE = 'downloadable';
+    final public const HOSTING = 'hosting';
+    final public const MEMBERSHIP = 'membership';
+    final public const VPS = 'vps';
 
-    public const SETUP_AFTER_ORDER = 'after_order';
-    public const SETUP_AFTER_PAYMENT = 'after_payment';
-    public const SETUP_MANUAL = 'manual';
+    final public const SETUP_AFTER_ORDER = 'after_order';
+    final public const SETUP_AFTER_PAYMENT = 'after_payment';
+    final public const SETUP_MANUAL = 'manual';
 
     protected ?\Pimple\Container $di = null;
 
@@ -136,8 +136,8 @@ class Service implements InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $list = $extensionService->getInstalledMods();
         foreach ($list as $mod) {
-            if (str_starts_with($mod, 'service')) {
-                $n = substr($mod, strlen('service'));
+            if (str_starts_with((string) $mod, 'service')) {
+                $n = substr((string) $mod, strlen('service'));
                 $data[$n] = ucfirst($n);
             }
         }
@@ -329,7 +329,7 @@ class Service implements InjectionAwareInterface
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        $config = json_decode($model->config, true);
+        $config = json_decode((string) $model->config, true);
 
         if (isset($data['config']) && is_array($data['config'])) {
             $config = array_intersect_key((array) $config, $data['config']);
@@ -618,7 +618,7 @@ class Service implements InjectionAwareInterface
         if (is_null($model->upgrades)) {
             $model->upgrades = '';
         }
-        $ids = json_decode($model->upgrades, 1);
+        $ids = json_decode((string) $model->upgrades, 1);
         $pids = $this->getProductTitlesByIds($ids);
         unset($pids[$model->id]);
 
@@ -742,7 +742,7 @@ class Service implements InjectionAwareInterface
     {
         $path = PATH_DATA . '/uploads/';
         if ($filename !== null) {
-            $path .= md5($filename);
+            $path .= md5((string) $filename);
         }
 
         return $path;
@@ -892,8 +892,8 @@ class Service implements InjectionAwareInterface
         $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
         $model->recurring = (bool) ($data['recurring'] ?? 0);
         $model->maxuses = (int) $data['maxuses'] ?? null;
-        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
-        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
+        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
+        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
         $model->products = json_encode($products);
         $model->periods = json_encode($periods);
         $model->client_groups = json_encode($clientGroups);
@@ -908,15 +908,15 @@ class Service implements InjectionAwareInterface
 
     public function toPromoApiArray(\Model_Promo $model, $deep = false, $identity = null)
     {
-        $products = $model->products ? $this->getProductTitlesByIds(json_decode($model->products, 1)) : null;
-        $clientGroups = $model->client_groups ? $this->di['tools']->getPairsForTableByIds('client_group', json_decode($model->client_groups, 1)) : null;
+        $products = $model->products ? $this->getProductTitlesByIds(json_decode((string) $model->products, 1)) : null;
+        $clientGroups = $model->client_groups ? $this->di['tools']->getPairsForTableByIds('client_group', json_decode((string) $model->client_groups, 1)) : null;
 
         $result = $this->di['db']->toArray($model);
         $result['applies_to'] = $products;
         $result['cgroups'] = $clientGroups;
-        $result['products'] = $model->products ? json_decode($model->products, 1) : null;
-        $result['periods'] = $model->periods ? json_decode($model->periods, 1) : null;
-        $result['client_groups'] = $model->client_groups ? json_decode($model->client_groups, 1) : null;
+        $result['products'] = $model->products ? json_decode((string) $model->products, 1) : null;
+        $result['periods'] = $model->periods ? json_decode((string) $model->periods, 1) : null;
+        $result['client_groups'] = $model->client_groups ? json_decode((string) $model->client_groups, 1) : null;
 
         return $result;
     }
@@ -931,8 +931,8 @@ class Service implements InjectionAwareInterface
         $model->once_per_client = $data['once_per_client'] ?? $model->once_per_client;
         $model->recurring = $data['recurring'] ?? $model->recurring;
         $model->used = $data['used'] ?? $model->used;
-        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
-        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
+        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
+        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
 
         if (!is_array($data['products'] ?? null)) {
             $model->products = null;

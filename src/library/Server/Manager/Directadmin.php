@@ -71,7 +71,7 @@ class Server_Manager_Directadmin extends Server_Manager
     public function generateUsername($domain_name)
     {
         // Username must be alphanumeric.
-        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
+        $username = preg_replace('/[^A-Za-z0-9]/', '', (string) $domain_name);
 
         // Username must start with a-z.
         $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97,122)), 0, 1) : $username;
@@ -329,17 +329,17 @@ class Server_Manager_Directadmin extends Server_Manager
         return true;
     }
 
-    public function changeAccountUsername(Server_Account $a, $new)
+    public function changeAccountUsername(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('username changes')]);
     }
 
-    public function changeAccountDomain(Server_Account $a, $new)
+    public function changeAccountDomain(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account domain')]);
     }
 
-    public function changeAccountIp(Server_Account $a, $new)
+    public function changeAccountIp(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account IP')]);
     }
@@ -453,7 +453,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $this->getLog()->debug('Raw Response: ' . $data);
 
         // add more replacers if needed
-        $data = str_replace('&#39', '"', $data);
+        $data = str_replace('&#39', '"', (string) $data);
 
         $data = preg_replace('|(\&\#\d+)|', '$1;', $data);
         $data = html_entity_decode($data);

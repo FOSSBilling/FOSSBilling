@@ -29,7 +29,7 @@ class SentryHelper
      * IF you modify what's reported, update this to the version number to the release that includes your changes.
      * This is important as we rely on it to inform the user that they may want to review what's been changed.
      */
-    public const last_change = '0.6.0';
+    final public const last_change = '0.6.0';
 
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.
@@ -200,11 +200,11 @@ class SentryHelper
     private static function estimateWebServer(Scope $scope): void
     {
         $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
-        if (function_exists('apache_get_version') || (stripos(strtolower($serverSoftware), 'apache') !== false)) {
+        if (function_exists('apache_get_version') || (stripos(strtolower((string) $serverSoftware), 'apache') !== false)) {
             $scope->setTag('webserver.used', 'Apache');
-        } else if (stripos(strtolower($serverSoftware), 'litespeed') !== false) {
+        } else if (stripos(strtolower((string) $serverSoftware), 'litespeed') !== false) {
             $scope->setTag('webserver.used', 'Litespeed');
-        } else if (stripos(strtolower($serverSoftware), 'nginx') !== false) {
+        } else if (stripos(strtolower((string) $serverSoftware), 'nginx') !== false) {
             $scope->setTag('webserver.used', 'NGINX');
         }
     }

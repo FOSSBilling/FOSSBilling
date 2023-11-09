@@ -12,7 +12,7 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public const METHOD = 'aes-256-cbc';
+    final public const METHOD = 'aes-256-cbc';
 
     public function __construct()
     {
@@ -56,7 +56,7 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
         }
         $key = $this->_getSalt($pass);
 
-        $text = base64_decode($text);
+        $text = base64_decode((string) $text);
 
         $ivsize = openssl_cipher_iv_length(self::METHOD);
         $iv = mb_substr($text, 0, $ivsize, '8bit');
@@ -80,6 +80,6 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
         if (null == $pass) {
             $pass = $this->di['config']['info']['salt'];
         }
-        return pack('H*', hash('md5', $pass));
+        return pack('H*', hash('md5', (string) $pass));
     }
 }

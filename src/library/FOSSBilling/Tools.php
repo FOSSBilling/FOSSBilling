@@ -29,7 +29,7 @@ class Tools
         $fp = @fopen($target, $mode);
 
         if ($fp) {
-            $bytes = fwrite($fp, $content);
+            $bytes = fwrite($fp, (string) $content);
             fclose($fp);
             return $bytes;
         } else {
@@ -54,7 +54,7 @@ class Tools
      */
     public function url($link = null)
     {
-        $link = trim($link, '/');
+        $link = trim((string) $link, '/');
         return SYSTEM_URL . $link;
     }
 
@@ -66,7 +66,7 @@ class Tools
 
     public function getService($type)
     {
-        $class = 'Box_Mod_' . ucfirst($type) . '_Service';
+        $class = 'Box_Mod_' . ucfirst((string) $type) . '_Service';
         $file = PATH_MODS . '/mod_' . $type . '/Service.php';
         if (!file_exists($file)) {
             throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
@@ -169,18 +169,18 @@ class Tools
             }
             return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
         };
-        return preg_replace_callback($pattern, $callback, $text);
+        return preg_replace_callback($pattern, $callback, (string) $text);
     }
 
     public function getResponseCode($theURL)
     {
         $headers = get_headers($theURL);
-        return substr($headers[0], 9, 3);
+        return substr((string) $headers[0], 9, 3);
     }
 
     public function slug($str)
     {
-        $str = strtolower(trim($str));
+        $str = strtolower(trim((string) $str));
         $str = preg_replace('/[^a-z0-9-]/', '-', $str);
         $str = preg_replace('/-+/', "-", $str);
         $str = trim($str, '-');
@@ -189,24 +189,24 @@ class Tools
 
     public function escape($string)
     {
-        $string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+        $string = htmlspecialchars((string) $string, ENT_QUOTES, 'UTF-8');
         return stripslashes($string);
     }
 
     public function to_camel_case($str, $capitalize_first_char = false)
     {
         if ($capitalize_first_char) {
-            $str[0] = strtoupper($str[0]);
+            $str[0] = strtoupper((string) $str[0]);
         }
-        $func = fn ($c) => strtoupper($c[1]);
-        return preg_replace_callback('/-([a-z])/', $func, $str);
+        $func = fn ($c) => strtoupper((string) $c[1]);
+        return preg_replace_callback('/-([a-z])/', $func, (string) $str);
     }
 
     public function from_camel_case($str)
     {
-        $str[0] = strtolower($str[0]);
-        $func = fn ($c) => "-" . strtolower($c[1]);
-        return preg_replace_callback('/([A-Z])/', $func, $str);
+        $str[0] = strtolower((string) $str[0]);
+        $func = fn ($c) => "-" . strtolower((string) $c[1]);
+        return preg_replace_callback('/([A-Z])/', $func, (string) $str);
     }
 
     public function decodeJ($json_str)
@@ -243,7 +243,7 @@ class Tools
 
     public function getTable($type)
     {
-        $class = 'Model_' . ucfirst($type) . 'Table';
+        $class = 'Model_' . ucfirst((string) $type) . 'Table';
         $file = PATH_LIBRARY . '/Model/' . $type . 'Table.php';
         if (!file_exists($file)) {
             throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
@@ -272,11 +272,11 @@ class Tools
 
     public function validateAndSanitizeEmail($email, $throw = true)
     {
-        $email = htmlspecialchars($email);
+        $email = htmlspecialchars((string) $email);
 
         if (!filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) {
             if ($throw) {
-                $friendlyName = ucfirst(__trans('Email address'));
+                $friendlyName = ucfirst((string) __trans('Email address'));
                 throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
             } else {
                 return false;
@@ -291,6 +291,6 @@ class Tools
         $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
 
         // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the other to will be set to `https`, so either one means we are connected via HTTPS.
-        return (strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0);
+        return (strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0);
     }
 }

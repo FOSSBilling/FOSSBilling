@@ -53,7 +53,7 @@ class Box_Pagination implements InjectionAwareInterface
         $sql .= sprintf(' LIMIT %u,%u', $offset, $per_page);
         $result = $this->di['db']->getAll($sql, $values);
 
-        $exploded = explode('FROM', $q);
+        $exploded = explode('FROM', (string) $q);
         $sql = 'SELECT count(1) FROM ' . $exploded[1];
         $total = $this->di['db']->getCell($sql , $values);
 
@@ -80,7 +80,7 @@ class Box_Pagination implements InjectionAwareInterface
         }
 
         $offset = ($page - 1) * $per_page;
-        $q = str_replace('SELECT ', 'SELECT SQL_CALC_FOUND_ROWS ', $q);
+        $q = str_replace('SELECT ', 'SELECT SQL_CALC_FOUND_ROWS ', (string) $q);
         $q .= sprintf(' LIMIT %u,%u', $offset, $per_page);
         $result = $this->di['db']->getAll($q, $values);
         $total = $this->di['db']->getCell('SELECT FOUND_ROWS();');

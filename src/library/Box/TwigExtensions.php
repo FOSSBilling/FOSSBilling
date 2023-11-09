@@ -37,44 +37,44 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return [
             'trans' => new TwigFilter('trans', '__trans'),
 
-            'alink' => new TwigFilter('alink', [$this, 'twig_bb_admin_link_filter'], ['is_safe' => ['html']]),
-            'link' => new TwigFilter('link', [$this, 'twig_bb_client_link_filter'], ['is_safe' => ['html']]),
-            'autolink' => new TwigFilter('autolink', [$this, 'twig_autolink_filter']),
+            'alink' => new TwigFilter('alink', $this->twig_bb_admin_link_filter(...), ['is_safe' => ['html']]),
+            'link' => new TwigFilter('link', $this->twig_bb_client_link_filter(...), ['is_safe' => ['html']]),
+            'autolink' => new TwigFilter('autolink', $this->twig_autolink_filter(...)),
 
-            'gravatar' => new TwigFilter('gravatar', [$this, 'twig_gravatar_filter']),
+            'gravatar' => new TwigFilter('gravatar', $this->twig_gravatar_filter(...)),
 
-            'markdown' => new TwigFilter('markdown', [$this, 'twig_markdown_filter'], ['needs_environment' => true, 'is_safe' => ['html']]),
+            'markdown' => new TwigFilter('markdown', $this->twig_markdown_filter(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
-            'truncate' => new TwigFilter('truncate', [$this, 'twig_truncate_filter'], ['needs_environment' => true]),
+            'truncate' => new TwigFilter('truncate', $this->twig_truncate_filter(...), ['needs_environment' => true]),
 
-            'timeago' => new TwigFilter('timeago', [$this, 'twig_timeago_filter']),
-            'daysleft' => new TwigFilter('daysleft', [$this, 'twig_daysleft_filter']),
+            'timeago' => new TwigFilter('timeago', $this->twig_timeago_filter(...)),
+            'daysleft' => new TwigFilter('daysleft', $this->twig_daysleft_filter(...)),
 
-            'size' => new TwigFilter('size', [$this, 'twig_size_filter']),
+            'size' => new TwigFilter('size', $this->twig_size_filter(...)),
 
-            'ipcountryname' => new TwigFilter('ipcountryname', [$this, 'twig_ipcountryname_filter']),
+            'ipcountryname' => new TwigFilter('ipcountryname', $this->twig_ipcountryname_filter(...)),
 
-            'number' => new TwigFilter('number', [$this, 'twig_number_filter']),
+            'number' => new TwigFilter('number', $this->twig_number_filter(...)),
 
-            'period_title' => new TwigFilter('period_title', [$this, 'twig_period_title'], ['needs_environment' => true, 'is_safe' => ['html']]),
+            'period_title' => new TwigFilter('period_title', $this->twig_period_title(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
-            'img_tag' => new TwigFilter('img_tag', [$this, 'twig_img_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
-            'script_tag' => new TwigFilter('script_tag', [$this, 'twig_script_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
-            'stylesheet_tag' => new TwigFilter('stylesheet_tag', [$this, 'twig_stylesheet_tag'], ['needs_environment' => false, 'is_safe' => ['html']]),
-            'mod_asset_url' => new TwigFilter('mod_asset_url', [$this, 'twig_mod_asset_url']),
-            'asset_url' => new TwigFilter('asset_url', [$this, 'twig_asset_url'], ['needs_environment' => true, 'is_safe' => ['html']]),
-            'library_url' => new TwigFilter('library_url', [$this, 'twig_library_url'], ['is_safe' => ['html']]),
+            'img_tag' => new TwigFilter('img_tag', $this->twig_img_tag(...), ['needs_environment' => false, 'is_safe' => ['html']]),
+            'script_tag' => new TwigFilter('script_tag', $this->twig_script_tag(...), ['needs_environment' => false, 'is_safe' => ['html']]),
+            'stylesheet_tag' => new TwigFilter('stylesheet_tag', $this->twig_stylesheet_tag(...), ['needs_environment' => false, 'is_safe' => ['html']]),
+            'mod_asset_url' => new TwigFilter('mod_asset_url', $this->twig_mod_asset_url(...)),
+            'asset_url' => new TwigFilter('asset_url', $this->twig_asset_url(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+            'library_url' => new TwigFilter('library_url', $this->twig_library_url(...), ['is_safe' => ['html']]),
 
-            'money' => new TwigFilter('money', [$this, 'twig_money'], ['needs_environment' => true, 'is_safe' => ['html']]),
-            'money_without_currency' => new TwigFilter('money_without_currency', [$this, 'twig_money_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
-            'money_convert' => new TwigFilter('money_convert', [$this, 'twig_money_convert'], ['needs_environment' => true, 'is_safe' => ['html']]),
-            'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', [$this, 'money_convert_without_currency'], ['needs_environment' => true, 'is_safe' => ['html']]),
+            'money' => new TwigFilter('money', $this->twig_money(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+            'money_without_currency' => new TwigFilter('money_without_currency', $this->twig_money_without_currency(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+            'money_convert' => new TwigFilter('money_convert', $this->twig_money_convert(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+            'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', $this->money_convert_without_currency(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
             // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
-            'filter' => new TwigFilter('filter', [$this, 'filteredFilter']),
-            'map' => new TwigFilter('map', [$this, 'filteredMap']),
-            'reduce' => new TwigFilter('reduce', [$this, 'filteredReduce']),
-            'sort' => new TwigFilter('sort', [$this, 'filteredSort']),
+            'filter' => new TwigFilter('filter', $this->filteredFilter(...)),
+            'map' => new TwigFilter('map', $this->filteredMap(...)),
+            'reduce' => new TwigFilter('reduce', $this->filteredReduce(...)),
+            'sort' => new TwigFilter('sort', $this->filteredSort(...)),
         ];
     }
 
@@ -167,7 +167,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_mod_asset_url($asset, $mod)
     {
-        return SYSTEM_URL . 'modules/' . ucfirst($mod) . '/assets/' . $asset;
+        return SYSTEM_URL . 'modules/' . ucfirst((string) $mod) . '/assets/' . $asset;
     }
 
     public function twig_asset_url(Twig\Environment $env, $asset)
@@ -184,9 +184,9 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_img_tag($path, $alt = null)
     {
-        $alt = is_null($alt) ? pathinfo($path, PATHINFO_BASENAME) : $alt;
+        $alt = is_null($alt) ? pathinfo((string) $path, PATHINFO_BASENAME) : $alt;
 
-        return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars($path), htmlspecialchars($alt), htmlspecialchars($alt));
+        return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars((string) $path), htmlspecialchars((string) $alt), htmlspecialchars((string) $alt));
     }
 
     public function twig_script_tag($path)
@@ -206,7 +206,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim($email)));
+        $url .= md5(strtolower(trim((string) $email)));
         $url .= "?s=$size&d=mp&r=g";
         return $url;
     }
@@ -226,7 +226,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
         };
 
-        return preg_replace_callback($pattern, $callback, $text);
+        return preg_replace_callback($pattern, $callback, (string) $text);
     }
 
     public function twig_number_filter($number, $decimals = 2, $dec_point = '.', $thousands_sep = '')
@@ -239,7 +239,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_daysleft_filter($iso8601)
     {
-        $timediff = strtotime($iso8601) - time();
+        $timediff = strtotime((string) $iso8601) - time();
 
         return intval($timediff / 86400);
     }
@@ -247,7 +247,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function twig_timeago_filter($iso8601)
     {
         $cur_tm = time();
-        $dif = $cur_tm - strtotime($iso8601);
+        $dif = $cur_tm - strtotime((string) $iso8601);
         $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
         $lngh = [1, 60, 3600, 86400, 604800, 2_630_880, 31_570_560, 315_705_600];
         $no = 0;
@@ -297,14 +297,14 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         if (is_null($value)) {
             $value = '';
         }
-        if (mb_strlen($value) > $length) {
+        if (mb_strlen((string) $value) > $length) {
             if ($preserve) {
-                if (false !== ($breakpoint = mb_strpos($value, ' ', $length))) {
+                if (false !== ($breakpoint = mb_strpos((string) $value, ' ', $length))) {
                     $length = $breakpoint;
                 }
             }
 
-            return mb_substr($value, 0, $length) . $separator;
+            return mb_substr((string) $value, 0, $length) . $separator;
         }
 
         return $value;

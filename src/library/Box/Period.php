@@ -10,18 +10,18 @@
 
 class Box_Period
 {
-    public const UNIT_DAY          = 'D';
-    public const UNIT_WEEK         = 'W';
-    public const UNIT_MONTH        = 'M';
-    public const UNIT_YEAR         = 'Y';
+    final public const UNIT_DAY          = 'D';
+    final public const UNIT_WEEK         = 'W';
+    final public const UNIT_MONTH        = 'M';
+    final public const UNIT_YEAR         = 'Y';
 
-    public const PERIOD_WEEK       = '1W';
-    public const PERIOD_MONTH      = '1M';
-    public const PERIOD_QUARTER    = '3M';
-    public const PERIOD_BIANNUAL   = '6M';
-    public const PERIOD_ANNUAL     = '1Y';
-    public const PERIOD_BIENNIAL    = '2Y';
-    public const PERIOD_TRIENNIAL    = '3Y';
+    final public const PERIOD_WEEK       = '1W';
+    final public const PERIOD_MONTH      = '1M';
+    final public const PERIOD_QUARTER    = '3M';
+    final public const PERIOD_BIANNUAL   = '6M';
+    final public const PERIOD_ANNUAL     = '1Y';
+    final public const PERIOD_BIENNIAL    = '2Y';
+    final public const PERIOD_TRIENNIAL    = '3Y';
 
     /**
      * Predefined periods
@@ -35,16 +35,16 @@ class Box_Period
         self::PERIOD_TRIENNIAL    =>    36,
     );
 
-    private string $unit;
+    private readonly string $unit;
     private int $qty;
 
     public function __construct($code)
     {
-        if (strlen($code) != 2) {
+        if (strlen((string) $code) != 2) {
             throw new \FOSSBilling\Exception("Invalid period code. Period definition must be 2 chars length");
         }
 
-        [$qty, $unit] = str_split($code);
+        [$qty, $unit] = str_split((string) $code);
 
         $units = $this->getUnits();
         $qty = (int)$qty;

@@ -262,9 +262,7 @@ Order our services at {{ "order"|link }}
     }
 
     /**
-     * Returns the email associated with the test client
-     * 
-     * @return string 
+     * Returns the email associated with the test client.
      */
     public function get_test_client(): string
     {

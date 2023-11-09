@@ -155,7 +155,7 @@ class Service implements InjectionAwareInterface
             ['theme' => $theme->getName(), 'preset' => $preset]
         );
         if ($meta) {
-            return json_decode($meta->meta_value, 1);
+            return json_decode((string) $meta->meta_value, 1);
         } else {
             return $theme->getPresetFromSettingsDataFile($preset);
         }
@@ -210,7 +210,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($files as $file) {
             $settings = $this->getThemeSettings($theme, $preset);
-            $real_file = pathinfo($file, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($file, PATHINFO_FILENAME);
+            $real_file = pathinfo((string) $file, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo((string) $file, PATHINFO_FILENAME);
 
             $vars = [];
 
@@ -338,7 +338,7 @@ class Service implements InjectionAwareInterface
         $paths = [$theme_path . '/html'];
 
         if (isset($config['extends'])) {
-            $ext = trim($config['extends'], '/');
+            $ext = trim((string) $config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
             $config['url'] = SYSTEM_URL . 'themes/' . $ext . '/';
@@ -356,7 +356,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
+            $p = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst((string) $mod) . DIRECTORY_SEPARATOR;
             $p .= $client ? 'html_client' : 'html_admin';
             if (file_exists($p)) {
                 $paths[] = $p;
@@ -420,7 +420,7 @@ class Service implements InjectionAwareInterface
 
     protected function isRouteAdmin()
     {
-        if (str_starts_with($_SERVER['REQUEST_URI'], ADMIN_PREFIX)) {
+        if (str_starts_with((string) $_SERVER['REQUEST_URI'], (string) ADMIN_PREFIX)) {
             return true;
         }
 

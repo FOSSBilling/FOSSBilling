@@ -101,27 +101,27 @@ class Admin extends \Api_Abstract
 
         $publish_at = $data['publish_at'] ?? 0;
         if ($publish_at) {
-            $model->publish_at = date('Y-m-d H:i:s', strtotime($publish_at));
+            $model->publish_at = date('Y-m-d H:i:s', strtotime((string) $publish_at));
         }
 
         $published_at = $data['published_at'] ?? 0;
         if ($published_at) {
-            $model->published_at = date('Y-m-d H:i:s', strtotime($published_at));
+            $model->published_at = date('Y-m-d H:i:s', strtotime((string) $published_at));
         }
 
         $expires_at = $data['expires_at'] ?? 0;
         if ($expires_at) {
-            $model->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
+            $model->expires_at = date('Y-m-d H:i:s', strtotime((string) $expires_at));
         }
 
         $created_at = $data['created_at'] ?? 0;
         if ($created_at) {
-            $model->created_at = date('Y-m-d H:i:s', strtotime($created_at));
+            $model->created_at = date('Y-m-d H:i:s', strtotime((string) $created_at));
         }
 
         $updated_at = $data['updated_at'] ?? 0;
         if ($created_at) {
-            $model->updated_at = date('Y-m-d H:i:s', strtotime($updated_at));
+            $model->updated_at = date('Y-m-d H:i:s', strtotime((string) $updated_at));
         }
         $model->admin_id = $this->getIdentity()->id;
         $this->di['db']->store($model);

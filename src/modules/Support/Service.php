@@ -324,17 +324,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(st.created_at, '%Y-%m-%d') = :created_at";
-            $bindings[':created_at'] = date('Y-m-d', strtotime($created_at));
+            $bindings[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(st.created_at) >= :date_from';
-            $bindings[':date_from'] = strtotime($date_from);
+            $bindings[':date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(st.created_at) <= :date_to';
-            $bindings[':date_to'] = strtotime($date_to);
+            $bindings[':date_to'] = strtotime((string) $date_to);
         }
         // smartSearch
         if ($search) {
@@ -852,7 +852,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return true;
         }
 
-        $timeSinceLast = round(abs(strtotime($lastTicket->created_at) - strtotime(date('Y-m-d H:i:s'))) / 3600, 0);
+        $timeSinceLast = round(abs(strtotime((string) $lastTicket->created_at) - strtotime(date('Y-m-d H:i:s'))) / 3600, 0);
 
         if ($timeSinceLast < $hours) {
             throw new \FOSSBilling\InformationException(sprintf('You can submit one ticket per %s hours. %s hours left', $hours, $hours - $timeSinceLast));

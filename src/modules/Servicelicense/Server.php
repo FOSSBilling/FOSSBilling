@@ -31,7 +31,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private \Box_Log $_log)
+    public function __construct(private readonly \Box_Log $_log)
     {
     }
 
@@ -60,7 +60,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
             }
         }
 
-        $ips_arr = explode(',', $ip);
+        $ips_arr = explode(',', (string) $ip);
         $ip = trim($ips_arr[0]);
 
         return $ip;
@@ -69,7 +69,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
     public function process($data)
     {
         if (!is_array($data)) {
-            $data = json_decode($data, true) ?: [];
+            $data = json_decode((string) $data, true) ?: [];
         }
 
         if (empty($data)) {

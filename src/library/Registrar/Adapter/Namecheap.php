@@ -15,7 +15,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     public function isKeyValueNotEmpty($array, $key)
     {
         $value = $array[$key] ?? '';
-        if (strlen(trim($value)) == 0) {
+        if (strlen(trim((string) $value)) == 0) {
             return false;
         }
         return true;
@@ -107,7 +107,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     public function isDomainAvailable(Registrar_Domain $domain)
     {
         $params = array(
-            'DomainList' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainList' => strtolower((string) $domain->getSld()) . $domain->getTld(),
             'Command' => 'namecheap.domains.check'
         );
 
@@ -220,12 +220,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      */
     public function includeAuthorizationParams(array $params)
     {
-        return array_merge(array(
-            'ApiUser' => $this->config['api-user-id'],
-            'ApiKey' => $this->config['api-key'],
-            'UserName' => $this->config['username'],
-            'ClientIp' => $this->config['ip'],
-        ), $params);
+        return ['ApiUser' => $this->config['api-user-id'], 'ApiKey' => $this->config['api-key'], 'UserName' => $this->config['username'], 'ClientIp' => $this->config['ip'], ...$params];
     }
 
 
@@ -263,7 +258,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     {
         $params = array(
             'Command' => 'namecheap.domains.setContacts',
-            'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainName' => strtolower((string) $domain->getSld()) . $domain->getTld(),
         );
 
         // Set contact data
@@ -429,7 +424,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      * @return string
      * @throws Registrar_Exception
      */
-    public function getEpp(Registrar_Domain $domain)
+    public function getEpp(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Namecheap', ':action:' => __trans('retrieving the transfer code')]);
     }
@@ -443,7 +438,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $params = array(
             'Command' => 'namecheap.domains.create',
-            'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainName' => strtolower((string) $domain->getSld()) . $domain->getTld(),
             'Years' => $domain->getRegistrationPeriod(),
         );
 
@@ -568,7 +563,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      * 
      * @throws Registrar_Exception
      */
-    public function deleteDomain(Registrar_Domain $domain)
+    public function deleteDomain(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Namecheap', ':action:' => __trans('deleting domains')]);
     }

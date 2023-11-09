@@ -139,7 +139,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
                     'currency'      =>  $ipn['mc_currency'],
                     'sid'           =>  $ipn['subscr_id'],
                     'status'        =>  'active',
-                    'period'        =>  str_replace(' ', '', $ipn['period3']),
+                    'period'        =>  str_replace(' ', '', (string) $ipn['period3']),
                     'amount'        =>  $ipn['amount3'],
                     'rel_type'      =>  'invoice',
                     'rel_id'        =>  $invoice['id'],
@@ -197,7 +197,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
     private function _isIpnValid($data)
     {
         // use http_raw_post_data instead of post due to encoding
-        parse_str($data['http_raw_post_data'], $post);
+        parse_str((string) $data['http_raw_post_data'], $post);
         $req = 'cmd=_notify-validate';
         foreach ((array) $post as $key => $value) {
             $value = urlencode(stripslashes($value));
@@ -226,7 +226,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         if ($post_vars) {
             if (is_array($post_vars)) {
                 foreach ($post_vars as $key => $val) {
-                    $post_contents .= ($post_contents ? '&' : '') . urlencode($key) . '=' . urlencode($val);
+                    $post_contents .= ($post_contents ? '&' : '') . urlencode($key) . '=' . urlencode((string) $val);
                 }
             } else {
                 $post_contents = $post_vars;

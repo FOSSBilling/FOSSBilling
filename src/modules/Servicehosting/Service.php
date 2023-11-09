@@ -255,7 +255,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Account username is missing or is invalid');
         }
 
-        $u = strtolower($data['username']);
+        $u = strtolower((string) $data['username']);
 
         if ($this->_performOnService($order)) {
             [$adapter, $account] = $this->_getAM($model);
@@ -489,7 +489,7 @@ class Service implements InjectionAwareInterface
             $result['active'] = $model->active;
             $result['secure'] = $model->secure;
             if (!is_null($model->assigned_ips)) {
-                $result['assigned_ips'] = json_decode($model->assigned_ips, 1);
+                $result['assigned_ips'] = json_decode((string) $model->assigned_ips, 1);
             } else {
                 $result['assigned_ips'] = '';
             }
@@ -497,7 +497,7 @@ class Service implements InjectionAwareInterface
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
             if (!is_null($model->config)) {
-                $result['config'] = json_decode($model->config, 1);
+                $result['config'] = json_decode((string) $model->config, 1);
             } else {
                 $result['config'] = [];
             }
@@ -528,7 +528,7 @@ class Service implements InjectionAwareInterface
 
         if ($data['domain']['action'] == 'owndomain') {
             $sld = $data['domain']['owndomain_sld'];
-            $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+            $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
         if ($data['domain']['action'] == 'register') {
@@ -689,7 +689,7 @@ class Service implements InjectionAwareInterface
 
         $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
-            $array = explode(PHP_EOL, $data['assigned_ips']);
+            $array = explode(PHP_EOL, (string) $data['assigned_ips']);
             $array = array_map('trim', $array);
             $array = array_diff($array, ['']);
             $model->assigned_ips = json_encode($array);
@@ -730,7 +730,7 @@ class Service implements InjectionAwareInterface
         $config['host'] = $model->hostname;
         $config['port'] = $model->port;
         if (!is_null($model->config)) {
-            $config['config'] = json_decode($model->config, 1);
+            $config['config'] = json_decode((string) $model->config, 1);
         } else {
             $config['config'] = [];
         }
@@ -808,7 +808,7 @@ class Service implements InjectionAwareInterface
             'max_sub' => $model->max_sub,
             'max_park' => $model->max_park,
             'max_addon' => $model->max_addon,
-            'config' => json_decode($model->config, 1),
+            'config' => json_decode((string) $model->config, 1),
 
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
@@ -830,7 +830,7 @@ class Service implements InjectionAwareInterface
         $model->max_park = $data['max_park'] ?? $model->max_park;
 
         /* add new config value to hosting plan */
-        $config = json_decode($model->config, 1);
+        $config = json_decode((string) $model->config, 1);
 
         $inConfig = $data['config'] ?? null;
 

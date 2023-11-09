@@ -33,7 +33,7 @@ class Guest extends \Api_Abstract
         $product = $this->di['db']->getExistingModelById('Product', $product_id, 'Product was not found');
 
         if ($product->type !== \Model_Product::HOSTING) {
-            $friendlyName = ucfirst(__trans('Product type'));
+            $friendlyName = ucfirst((string) __trans('Product type'));
 
             throw new \FOSSBilling\Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }

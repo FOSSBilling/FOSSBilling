@@ -117,7 +117,7 @@ class Service implements InjectionAwareInterface
         $has_settings = $filter['has_settings'] ?? null;
         $only_installed = $filter['installed'] ?? null;
         $installed_and_core = $filter['active'] ?? null;
-        $search = isset($filter['search']) ? strtolower($filter['search']) : null;
+        $search = isset($filter['search']) ? strtolower((string) $filter['search']) : null;
         $result = [];
 
         if ($installed_and_core) {
@@ -132,7 +132,7 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($installed as $im) {
-            $manifest = json_decode($im['manifest'], 1);
+            $manifest = json_decode((string) $im['manifest'], 1);
             if (!is_array($manifest)) {
                 error_log('Error decoding module json file. ' . $im['name']);
 
@@ -184,7 +184,7 @@ class Service implements InjectionAwareInterface
 
         if (!empty($search)) {
             foreach ($result as $idx => $mod) {
-                if (!str_contains(strtolower($mod['name']), $search)) {
+                if (!str_contains(strtolower((string) $mod['name']), $search)) {
                     unset($result[$idx]);
                 }
             }
@@ -203,9 +203,9 @@ class Service implements InjectionAwareInterface
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
-                $iconPath = realpath(PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($value['id']) . DIRECTORY_SEPARATOR . basename($icon_url));
+                $iconPath = realpath(PATH_MODS . DIRECTORY_SEPARATOR . ucfirst((string) $value['id']) . DIRECTORY_SEPARATOR . basename((string) $icon_url));
                 if (file_exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst($value['id']) . '_' . basename($icon_url);
+                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . basename((string) $icon_url);
                 }
             }
         }
@@ -315,7 +315,7 @@ class Service implements InjectionAwareInterface
         return $extension;
     }
 
-    public function update(\Model_Extension $model)
+    public function update(\Model_Extension $model): never
     {
         throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
@@ -355,7 +355,7 @@ class Service implements InjectionAwareInterface
     {
         switch ($ext->type) {
             case \FOSSBilling\ExtensionManager::TYPE_HOOK:
-                $file = ucfirst($ext->name) . '.php';
+                $file = ucfirst((string) $ext->name) . '.php';
                 $destination = PATH_LIBRARY . '/Hook/' . $file;
                 if (file_exists($destination)) {
                     unlink($destination);

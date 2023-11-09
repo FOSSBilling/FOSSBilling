@@ -30,7 +30,7 @@ class Service implements InjectionAwareInterface
     public function attachOrderConfig(\Model_Product $product, array &$data)
     {
         $config = $product->config;
-        isset($config) ? $config = json_decode($config, true) : $config = [];
+        isset($config) ? $config = json_decode((string) $config, true) : $config = [];
         $required = [
             'filename' => 'Product is not configured completely.',
         ];
@@ -54,7 +54,7 @@ class Service implements InjectionAwareInterface
      */
     public function action_create(\Model_ClientOrder $order)
     {
-        $c = json_decode($order->config, 1);
+        $c = json_decode((string) $order->config, 1);
         if (!is_array($c)) {
             throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->id));
         }
@@ -175,7 +175,7 @@ class Service implements InjectionAwareInterface
         move_uploaded_file($file->getRealPath(), $productService->getSavePath($file->getName()));
         // End upload
 
-        $config = json_decode($productModel->config, 1);
+        $config = json_decode((string) $productModel->config, 1);
         $productService->removeOldFile($config);
 
         // Check if update_orders is true and update all orders
@@ -190,7 +190,7 @@ class Service implements InjectionAwareInterface
                 $this->updateProductFile($serviceDownloadable, $ordermodel);
 
                 // Update the filename
-                $oldconfig = json_decode($order['config'], 1);
+                $oldconfig = json_decode((string) $order['config'], 1);
                 $oldconfig['filename'] = $file->getName();
 
                 // Save the change to the DB

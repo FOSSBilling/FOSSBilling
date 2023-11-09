@@ -108,7 +108,7 @@ class Box_Mod
 
     public function hasService($sub = '')
     {
-        $filename = sprintf('Service%s.php', ucfirst($sub));
+        $filename = sprintf('Service%s.php', ucfirst((string) $sub));
         return file_exists($this->_getModPath() . $filename);
     }
 
@@ -117,7 +117,7 @@ class Box_Mod
         if(!$this->hasService($sub)) {
             throw new \FOSSBilling\Exception('Module :mod does not have service class', array(':mod'=>$this->mod), 5898);
         }
-        $class = 'Box\\Mod\\'.ucfirst($this->mod).'\\Service'.ucfirst($sub);
+        $class = 'Box\\Mod\\'.ucfirst($this->mod).'\\Service'.ucfirst((string) $sub);
     	$service = new $class();
         if(method_exists($service, 'setDi')) {
             $service->setDi($this->di);

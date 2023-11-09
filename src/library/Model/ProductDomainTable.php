@@ -106,7 +106,7 @@ class Model_ProductDomainTable extends Model_ProductTable
                 }
             }
 
-            if (str_contains($addon_period, 'Y')) {
+            if (str_contains((string) $addon_period, 'Y')) {
 
                 if (min($ref_item_qty, $addon_qty) == 1) {
                     return 1;
@@ -250,7 +250,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
-    public function rm(Model_Product $product)
+    public function rm(Model_Product $product): never
     {
         throw new \FOSSBilling\Exception('Domain product can not be removed.');
     }

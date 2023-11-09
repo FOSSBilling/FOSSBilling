@@ -17,13 +17,13 @@ class ExtensionManager implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public const TYPE_MOD = 'mod';
-    public const TYPE_THEME = 'theme';
-    public const TYPE_PG = 'payment-gateway';
-    public const TYPE_SM = 'server-manager';
-    public const TYPE_DR = 'domain-registrar';
-    public const TYPE_HOOK = 'hook';
-    public const TYPE_TRANSLATION = 'translation';
+    final public const TYPE_MOD = 'mod';
+    final public const TYPE_THEME = 'theme';
+    final public const TYPE_PG = 'payment-gateway';
+    final public const TYPE_SM = 'server-manager';
+    final public const TYPE_DR = 'domain-registrar';
+    final public const TYPE_HOOK = 'hook';
+    final public const TYPE_TRANSLATION = 'translation';
 
     private string $_url = 'https://extensions.fossbilling.org/api/';
 
@@ -161,9 +161,7 @@ class ExtensionManager implements InjectionAwareInterface
             $httpClient = \Symfony\Component\HttpClient\HttpClient::create();
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
-                'query' => array_merge($params, [
-                    'fossbilling_version' => \FOSSBilling\Version::VERSION,
-                ]),
+                'query' => [...$params, 'fossbilling_version' => \FOSSBilling\Version::VERSION],
             ]);
 
             $json = $response->toArray();

@@ -42,7 +42,7 @@ class Service implements InjectionAwareInterface
 
     public function generateEmailConfirmationLink($client_id)
     {
-        $hash = strtolower($this->di['tools']->generatePassword(50));
+        $hash = strtolower((string) $this->di['tools']->generatePassword(50));
         $db = $this->di['db'];
 
         $meta = $db->dispense('ExtensionMeta');
@@ -138,17 +138,17 @@ class Service implements InjectionAwareInterface
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at";
-            $params[':created_at'] = date('Y-m-d', strtotime($created_at));
+            $params[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(c.created_at) >= :date_from';
-            $params[':date_from'] = strtotime($date_from);
+            $params[':date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_from';
-            $params[':date_to'] = strtotime($date_to);
+            $params[':date_to'] = strtotime((string) $date_to);
         }
 
         // smartSearch
@@ -485,8 +485,8 @@ class Service implements InjectionAwareInterface
         $client = $this->di['db']->dispense('Client');
 
         $client->auth_type = $data['auth_type'] ?? null;
-        $client->email = strtolower(trim($data['email'] ?? null));
-        $client->first_name = ucwords($data['first_name'] ?? null);
+        $client->email = strtolower(trim((string) ($data['email'] ?? null)));
+        $client->first_name = ucwords((string) ($data['first_name'] ?? null));
         $client->pass = $this->di['password']->hashIt($password);
 
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
@@ -531,7 +531,7 @@ class Service implements InjectionAwareInterface
         $client->ip = $data['ip'] ?? null;
 
         $created_at = $data['created_at'] ?? null;
-        $client->created_at = !empty($created_at) ? date('Y-m-d H:i:s', strtotime($created_at)) : date('Y-m-d H:i:s');
+        $client->created_at = !empty($created_at) ? date('Y-m-d H:i:s', strtotime((string) $created_at)) : date('Y-m-d H:i:s');
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 
@@ -641,7 +641,7 @@ class Service implements InjectionAwareInterface
         $required = $config['required'] ?? [];
         foreach ($required as $field) {
             if (!isset($checkArr[$field]) || empty($checkArr[$field])) {
-                $name = ucwords(str_replace('_', ' ', $field));
+                $name = ucwords(str_replace('_', ' ', (string) $field));
 
                 throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
             }
@@ -657,7 +657,7 @@ class Service implements InjectionAwareInterface
             $required = isset($cField['required']) && $cField['required'] ? true : false;
             if ($active && $required) {
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
-                    $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
+                    $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', (string) $cFieldName));
 
                     throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
                 }
@@ -704,7 +704,7 @@ class Service implements InjectionAwareInterface
 
         $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
         // Return the client ID if the reset request is valid (from within the last 15 minutes), otherwise return false
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
+        if (strtotime((string) $reset->created_at) - time() + 900 < 0) {
             return false;
         } else {
             return $c->id;

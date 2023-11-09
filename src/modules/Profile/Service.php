@@ -133,7 +133,7 @@ class Service implements InjectionAwareInterface
         $client->gender = $data['gender'] ?? $client->gender;
 
         $birthday = $data['birthday'] ?? null;
-        if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
+        if (strlen(trim((string) $birthday)) > 0 && strtotime((string) $birthday) === false) {
             throw new \FOSSBilling\InformationException('Invalid birthdate value');
         }
         $client->birthday = $birthday;
@@ -267,7 +267,7 @@ class Service implements InjectionAwareInterface
     private function deleteSessionIfMatching(array $session, string $type, int $id): void
     {
         // Decode the data for the current session and then verify it is for the selected type
-        $data = base64_decode($session['content']);
+        $data = base64_decode((string) $session['content']);
         $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
         if (!str_starts_with($data, $stringStart)) {
             return;

@@ -154,7 +154,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'updated_at' => $model->updated_at,
         ];
         if ($deep) {
-            $result['ipn'] = json_decode($model->ipn, true);
+            $result['ipn'] = json_decode((string) $model->ipn, true);
         }
 
         return $result;
@@ -229,12 +229,12 @@ class ServiceTransaction implements InjectionAwareInterface
 
         if ($date_from) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = strtotime($date_from);
+            $params['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = strtotime($date_to);
+            $params['date_to'] = strtotime((string) $date_to);
         }
 
         if ($search) {
@@ -362,7 +362,7 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'processTransaction'], 705);
         }
 
-        $ipn = json_decode($tx->ipn, 1);
+        $ipn = json_decode((string) $tx->ipn, 1);
 
         return $adapter->processTransaction($this->di['api_system'], $id, $ipn, $tx->gateway_id);
     }

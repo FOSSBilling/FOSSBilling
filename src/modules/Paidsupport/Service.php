@@ -104,7 +104,7 @@ class Service implements InjectionAwareInterface
         $config = $this->di['mod_config']('Paidsupport');
         $errorMessage = $config['error_msg'] ?? '';
 
-        return strlen(trim($errorMessage)) > 0 ? $errorMessage : 'Configure paid support module!';
+        return strlen(trim((string) $errorMessage)) > 0 ? $errorMessage : 'Configure paid support module!';
     }
 
     public function getPaidHelpdeskConfig()

@@ -69,7 +69,7 @@ class Service implements InjectionAwareInterface
 
     public function addItem(\Model_Cart $cart, \Model_Product $product, array $data)
     {
-        $event_params = array_merge($data, ['cart_id' => $cart->id, 'product_id' => $product->id]);
+        $event_params = [...$data, 'cart_id' => $cart->id, 'product_id' => $product->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeProductAddedToCart', 'params' => $event_params]);
 
         $productService = $product->getService();
@@ -221,7 +221,7 @@ class Service implements InjectionAwareInterface
         if ($removeAddons) {
             $allCartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
             foreach ((array) $allCartProducts as $cProduct) {
-                $config = json_decode($cProduct->config, true);
+                $config = json_decode((string) $cProduct->config, true);
                 if (isset($config['parent_id']) && $config['parent_id'] == $cartProduct->product_id) {
                     $this->di['db']->trash($cProduct);
                     $this->di['logger']->info('Removed product addon from shopping cart');
@@ -368,11 +368,11 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        if ($promo->start_at && (strtotime($promo->start_at) - time() > 0)) {
+        if ($promo->start_at && (strtotime((string) $promo->start_at) - time() > 0)) {
             return false;
         }
 
-        if ($promo->end_at && (strtotime($promo->end_at) - time() < 0)) {
+        if ($promo->end_at && (strtotime((string) $promo->end_at) - time() < 0)) {
             return false;
         }
 
@@ -519,15 +519,15 @@ class Service implements InjectionAwareInterface
              * It will, however, avoid instances like this when a domain name is entered with a capital letter:
              * https://github.com/boxbilling/boxbilling/discussions/1022#discussioncomment-1311819
              */
-            $item['register_sld'] = (isset($item['register_sld'])) ? strtolower($item['register_sld']) : null;
-            $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower($item['transfer_sld']) : null;
-            $item['sld'] = (isset($item['sld'])) ? strtolower($item['sld']) : null;
-            $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower($item['domain']['owndomain_sld']) : null;
-            $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower($item['domain']['register_sld']) : null;
-            $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
+            $item['register_sld'] = (isset($item['register_sld'])) ? strtolower((string) $item['register_sld']) : null;
+            $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower((string) $item['transfer_sld']) : null;
+            $item['sld'] = (isset($item['sld'])) ? strtolower((string) $item['sld']) : null;
+            $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower((string) $item['domain']['owndomain_sld']) : null;
+            $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower((string) $item['domain']['register_sld']) : null;
+            $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower((string) $item['domain']['transfer_sld']) : null;
 
             // Domain TLD must begin with a period - add if not present for owndomain.
-            $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
+            $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains((string) $item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
 
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;

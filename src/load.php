@@ -36,7 +36,7 @@ function checkConfig()
             $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] == 1)) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
 
             // Append the directory name to the base URL.
-            $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+            $base_url .= rtrim(dirname((string) $_SERVER['SCRIPT_NAME']), '/');
 
             // Use the base URL to redirect to the installer, sending HTTP 307 to indicate a temporary redirect.
             header('Location: ' . $base_url . '/install/index.php', true, 307);
@@ -123,7 +123,7 @@ function checkWebServer()
     // Check for missing required .htaccess on Apache and Apache-compatible web servers.
     $isApache = function_exists('apache_get_version') ? true : false;
     $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
-    if ($isApache or (stripos($serverSoftware, 'apache') !== false) or stripos($serverSoftware, 'litespeed') !== false) {
+    if ($isApache or (stripos((string) $serverSoftware, 'apache') !== false) or stripos((string) $serverSoftware, 'litespeed') !== false) {
         if (!$filesystem->exists('.htaccess')) {
             throw new Exception('Missing .htaccess file', 5);
         }
@@ -173,7 +173,7 @@ function exceptionHandler($e)
         error_log($e->getMessage());
     }
 
-    $message = htmlspecialchars($e->getMessage());
+    $message = htmlspecialchars((string) $e->getMessage());
 
     if (defined('API_MODE')) {
         $code = $e->getCode() ?: 9998;

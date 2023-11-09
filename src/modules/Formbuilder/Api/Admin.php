@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if (isset($data['type']) && (strtolower($data['type']) != 'horizontal' || strtolower($data['type']) != 'default')) {
+        if (isset($data['type']) && (strtolower((string) $data['type']) != 'horizontal' || strtolower((string) $data['type']) != 'default')) {
             throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
         }
 
@@ -281,7 +281,7 @@ class Admin extends \Api_Abstract
      */
     public function update_form_settings($data)
     {
-        if (!isset($data['form_id']) || (trim($data['form_id']) == '')) {
+        if (!isset($data['form_id']) || (trim((string) $data['form_id']) == '')) {
             throw new \FOSSBilling\InformationException('Form id was not passed', null, 1654);
         }
         if (!isset($data['form_name'])) {

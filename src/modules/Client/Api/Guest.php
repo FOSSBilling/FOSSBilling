@@ -79,7 +79,7 @@ class Guest extends \Api_Abstract
 
         $email = $data['email'] ?? null;
         $email = $this->di['tools']->validateAndSanitizeEmail($email);
-        $email = strtolower(trim($email));
+        $email = strtolower(trim((string) $email));
         if ($service->clientAlreadyExists($email)) {
             throw new \FOSSBilling\InformationException('Email is already registered. You may want to login instead of registering.');
         }
@@ -199,7 +199,7 @@ class Guest extends \Api_Abstract
         // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
         if ($reset->created_at == $reset->updated_at) {
             $emailService->sendTemplate($email);
-        } elseif (strtotime($reset->updated_at) - time() + 60 < 0) {
+        } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
             $emailService->sendTemplate($email);
         }
 
@@ -233,7 +233,7 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
         }
 
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
+        if (strtotime((string) $reset->created_at) - time() + 900 < 0) {
             throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
         }
 

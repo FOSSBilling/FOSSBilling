@@ -27,7 +27,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private \PdoSessionHandler $handler, private string $securityMode = 'regular', private bool $secure = true)
+    public function __construct(private readonly \PdoSessionHandler $handler, private readonly string $securityMode = 'regular', private bool $secure = true)
     {
     }
 
@@ -41,12 +41,12 @@ class Session implements \FOSSBilling\InjectionAwareInterface
 
         if (!headers_sent()) {
             session_set_save_handler(
-                [$this->handler, 'open'],
-                [$this->handler, 'close'],
-                [$this->handler, 'read'],
-                [$this->handler, 'write'],
-                [$this->handler, 'destroy'],
-                [$this->handler, 'gc']
+                $this->handler->open(...),
+                $this->handler->close(...),
+                $this->handler->read(...),
+                $this->handler->write(...),
+                $this->handler->destroy(...),
+                $this->handler->gc(...)
             );
         }
 
@@ -134,7 +134,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
             $this->di['db']->store($session);
         }
 
-        if (!$fingerprint->checkFingerprint(json_decode($session->fingerprint, true)) || $session->created_at <= $maxAge) {
+        if (!$fingerprint->checkFingerprint(json_decode((string) $session->fingerprint, true)) || $session->created_at <= $maxAge) {
             $this->di['db']->trash($session);
             unset($_COOKIE['PHPSESSID']);
         }

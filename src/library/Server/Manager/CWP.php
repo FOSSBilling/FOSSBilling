@@ -27,7 +27,7 @@ class Server_Manager_CWP extends Server_Manager
 		if (empty($this->_config['accesshash'])) {
 			throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'API Key / Access Hash'], 2001);
 		} else {
-			$this->_config['accesshash'] = trim($this->_config['accesshash']);
+			$this->_config['accesshash'] = trim((string) $this->_config['accesshash']);
 		}
 
 		if (empty($this->_config['port'])) {
@@ -126,7 +126,7 @@ class Server_Manager_CWP extends Server_Manager
 			'action'       => 'add',
 			'domain'       => $a->getDomain(),
 			'user'         => $a->getUsername(),
-			'pass'         => base64_encode($a->getPassword()),
+			'pass'         => base64_encode((string) $a->getPassword()),
 			'email'        => $client->getEmail(),
 			'package'      => $package,
 			'server_ips'   => $ip,
@@ -240,17 +240,17 @@ class Server_Manager_CWP extends Server_Manager
 	/**
 	 * Function graveyard for things CWP doesn't support
 	 */
-	public function changeAccountUsername(Server_Account $a, $new)
+	public function changeAccountUsername(Server_Account $a, $new): never
 	{
 		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('username changes')]);
 	}
 
-	public function changeAccountDomain(Server_Account $a, $new)
+	public function changeAccountDomain(Server_Account $a, $new): never
 	{
 		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account domain')]);
 	}
 
-	public function changeAccountIp(Server_Account $a, $new)
+	public function changeAccountIp(Server_Account $a, $new): never
 	{
 		throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account IP')]);
 	}

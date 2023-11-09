@@ -67,7 +67,7 @@ class Admin extends \Api_Abstract
             return false;
         }
 
-        $message = htmlspecialchars($data['message'], ENT_QUOTES, 'UTF-8');
+        $message = htmlspecialchars((string) $data['message'], ENT_QUOTES, 'UTF-8');
 
         return $this->getService()->create($message);
     }

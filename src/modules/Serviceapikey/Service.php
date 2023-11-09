@@ -29,7 +29,7 @@ class Service implements InjectionAwareInterface
 
     public function attachOrderConfig(\Model_Product $product, array $data): array
     {
-        !empty($product->config) ? $config = json_decode($product->config, true) : $config = [];
+        !empty($product->config) ? $config = json_decode((string) $product->config, true) : $config = [];
 
         return array_merge($config, $data);
     }
@@ -49,7 +49,7 @@ class Service implements InjectionAwareInterface
 
     public function activate(OODBBean $order, OODBBean $model): bool
     {
-        $config = json_decode($order->config, 1);
+        $config = json_decode((string) $order->config, 1);
         if (!is_object($model)) {
             throw new \FOSSBilling\Exception('Order does not exist.');
         }
@@ -101,7 +101,7 @@ class Service implements InjectionAwareInterface
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
             'api_key' => $model->api_key,
-            'config' => json_decode($model->config, true),
+            'config' => json_decode((string) $model->config, true),
         ];
     }
 
@@ -141,7 +141,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Load the stored JSON config from the DB
-        $rawConfig = json_decode($model->config, true);
+        $rawConfig = json_decode((string) $model->config, true);
         $strippedConfig = [];
         if (!is_array($rawConfig)) {
             $rawConfig = [];
@@ -201,7 +201,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        $config = json_decode($model->config, true);
+        $config = json_decode((string) $model->config, true);
 
         $model->api_key = $this->generateKey($config);
         $model->updated_at = date('Y-m-d H:i:s');

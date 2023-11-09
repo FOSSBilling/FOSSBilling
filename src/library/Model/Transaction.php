@@ -10,8 +10,8 @@
 
 class Model_Transaction extends \RedBeanPHP\SimpleModel
 {
-    public const STATUS_RECEIVED        = 'received';
-    public const STATUS_APPROVED        = 'approved';
-    public const STATUS_PROCESSED       = 'processed';
-    public const STATUS_ERROR           = 'error';
+    final public const STATUS_RECEIVED        = 'received';
+    final public const STATUS_APPROVED        = 'approved';
+    final public const STATUS_PROCESSED       = 'processed';
+    final public const STATUS_ERROR           = 'error';
 }

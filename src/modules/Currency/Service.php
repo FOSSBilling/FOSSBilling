@@ -443,7 +443,7 @@ class Service implements InjectionAwareInterface
 
     public function validateCurrencyFormat($format)
     {
-        if (!str_contains($format, '{{price}}')) {
+        if (!str_contains((string) $format, '{{price}}')) {
             throw new \Exception('Currency format must include {{price}} tag', 3569);
         }
     }

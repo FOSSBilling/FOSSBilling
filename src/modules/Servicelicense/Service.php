@@ -34,7 +34,7 @@ class Service implements InjectionAwareInterface
     public function attachOrderConfig(\Model_Product $product, array $data)
     {
         $config = $product->config;
-        isset($config) ? $config = json_decode($config, true) : $config = [];
+        isset($config) ? $config = json_decode((string) $config, true) : $config = [];
 
         return array_merge($config, $data);
     }
@@ -411,7 +411,7 @@ class Service implements InjectionAwareInterface
 
         foreach (['ips', 'hosts', 'paths', 'versions'] as $key) {
             if (isset($data[$key])) {
-                $array = explode(PHP_EOL, $data[$key]);
+                $array = explode(PHP_EOL, (string) $data[$key]);
                 $array = array_map('trim', $array);
                 $array = array_diff($array, ['']);
                 $s->{$key} = json_encode($array);

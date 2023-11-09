@@ -19,14 +19,14 @@ class Box_UrlHelper {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-        if (strtoupper($method) == $requestMethod) {
+        if (strtoupper((string) $method) == $requestMethod) {
 
             $paramNames = array();
             $paramValues = array();
 
-            preg_match_all('@:([a-zA-Z]+)@', $url, $paramNames, PREG_PATTERN_ORDER);                    // get param names
+            preg_match_all('@:([a-zA-Z]+)@', (string) $url, $paramNames, PREG_PATTERN_ORDER);                    // get param names
             $paramNames = $paramNames[1];                                                               // we want the set of matches
-            $regexedUrl = preg_replace_callback('@:[a-zA-Z_\-]+@', array($this, 'regexValue'), $url);   // replace param with regex capture
+            $regexedUrl = preg_replace_callback('@:[a-zA-Z_\-]+@', $this->regexValue(...), (string) $url);   // replace param with regex capture
             if (preg_match('@^' . $regexedUrl . '$@', $requestUri, $paramValues)) {                            // determine match and get param values
                 array_shift($paramValues);                                                              // remove the complete text match
                 $counted = count($paramNames);
@@ -39,7 +39,7 @@ class Box_UrlHelper {
     }
 
     private function regexValue($matches) {
-        $key = str_replace(':', '', $matches[0]);
+        $key = str_replace(':', '', (string) $matches[0]);
         if (array_key_exists($key, $this->conditions)) {
             return '(' . $this->conditions[$key] . ')';
         } else {

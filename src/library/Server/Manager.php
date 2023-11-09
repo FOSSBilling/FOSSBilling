@@ -94,7 +94,7 @@ abstract class Server_Manager
      */
     public function generateUsername(mixed $domain_name)
     {
-        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
+        $username = preg_replace('/[^A-Za-z0-9]/', '', (string) $domain_name);
         $username = substr($username, 0, 7);
         $randnum = random_int(0, 9);
         $prefix = $this->_config['config']['userprefix'] ?? '';

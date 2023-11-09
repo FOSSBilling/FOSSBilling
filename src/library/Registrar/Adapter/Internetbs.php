@@ -71,7 +71,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         return ($result['status'] == 'AVAILABLE');
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('checking domain transferability')]);
     }
@@ -171,7 +171,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
     }
 
-    public function deleteDomain(Registrar_Domain $domain)
+    public function deleteDomain(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('deleting domains')]);
     }
@@ -403,7 +403,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
     private function _createDomainObj($result, Registrar_Domain $domain)
     {
         $type = 'contacts_registrant_';
-        $tel = explode('.', $result[$type . 'phonenumber']);
+        $tel = explode('.', (string) $result[$type . 'phonenumber']);
         $name = '';
 
         // domain specific
@@ -455,7 +455,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
                         || ($result['privatewhois'] == 'PARTIAL');
         }
 
-        $domain->setExpirationTime(strtotime($result['expirationdate']));
+        $domain->setExpirationTime(strtotime((string) $result['expirationdate']));
         $domain->setPrivacyEnabled($privacy);
         $domain->setEpp($result['transferauthinfo']);
         $domain->setContactRegistrar($c);

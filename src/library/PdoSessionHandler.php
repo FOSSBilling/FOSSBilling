@@ -21,7 +21,7 @@ class PdoSessionHandler
     /**
      * @var \PDO PDO instance.
      */
-    private \PDO $pdo;
+    private readonly \PDO $pdo;
 
     /**
      * @var array Database options.
@@ -57,11 +57,7 @@ class PdoSessionHandler
         }
         $this->pdo = $pdo;
 
-        $this->dbOptions = array_merge(array(
-                'db_id_col'   => 'id',
-                'db_data_col' => 'content',
-                'db_time_col' => 'modified_at',
-            ), $dbOptions);
+        $this->dbOptions = ['db_id_col'   => 'id', 'db_data_col' => 'content', 'db_time_col' => 'modified_at', ...$dbOptions];
     }
 
     /**
@@ -148,7 +144,7 @@ class PdoSessionHandler
             $sessionRows = $stmt->fetchAll(\PDO::FETCH_NUM);
 
             if (count($sessionRows) == 1) {
-                return base64_decode($sessionRows[0][0]);
+                return base64_decode((string) $sessionRows[0][0]);
             }
 
             // session does not exist, create it
@@ -172,7 +168,7 @@ class PdoSessionHandler
         $dbTimeCol = $this->dbOptions['db_time_col'];
 
         //session data can contain non binary safe characters so we need to encode it
-        $encoded = base64_encode($data);
+        $encoded = base64_encode((string) $data);
 
         try {
             $driver = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
