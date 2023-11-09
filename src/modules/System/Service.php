@@ -13,7 +13,7 @@ namespace Box\Mod\System;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
-use FOSSBilling\GeoIP\Reader;
+use FOSSBilling\Requirements;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Version;
 use Pimple\Container;
@@ -477,8 +477,8 @@ class Service
             }
         }
 
-        $r = new \FOSSBilling\Requirements();
-        $data = $r->checkCompat();
+        $r = new Requirements;
+        $data = $r->getInfo();
         $data['last_patch'] = $this->getParamValue('last_patch');
 
         return $data;

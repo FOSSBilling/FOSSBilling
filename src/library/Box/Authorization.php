@@ -38,10 +38,12 @@ class Box_Authorization
         }
 
         $user = $this->passwordBackwardCompatibility($user, $plainTextPassword);
-        if ($this->di['password']->verify($plainTextPassword, $user->pass)) {
-            if ($this->di['password']->needsRehash($user->pass)) {
-                $user->pass = $this->di['password']->hashIt($plainTextPassword);
-                $user->updated_at = date('Y-m-d H:i:s');
+
+        $password = new \Box_Password;
+
+        if ($password->verify($plainTextPassword, $user->pass)){
+            if ($password->needsRehash($user->pass)){
+                $user->pass = $password->hashIt($plainTextPassword);
                 $this->di['db']->store($user);
             }
 
@@ -53,8 +55,10 @@ class Box_Authorization
 
     public function passwordBackwardCompatibility($user, $plainTextPassword)
     {
-        if (sha1($plainTextPassword) == $user->pass) {
-            $user->pass = $this->di['password']->hashIt($plainTextPassword);
+        $password = new \Box_Password;
+
+        if (sha1($plainTextPassword) == $user->pass){
+            $user->pass = $password->hashIt($plainTextPassword);
             $this->di['db']->store($user);
         }
 

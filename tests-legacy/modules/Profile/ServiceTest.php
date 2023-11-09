@@ -104,16 +104,10 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($password);
-
-        $di = new \Pimple\Container();
-        $di['logger'] = new \Box_Log();
+        $di                   = new \Pimple\Container();
+        $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db'] = $dbMock;
-        $di['password'] = $passwordMock;
+        $di['db']             = $dbMock;
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -338,16 +332,10 @@ class ServiceTest extends \BBTestCase
 
         $password = 'new password';
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($password);
-
-        $di = new \Pimple\Container();
-        $di['logger'] = new \Box_Log();
+        $di                   = new \Pimple\Container();
+        $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db'] = $dbMock;
-        $di['password'] = $passwordMock;
+        $di['db']             = $dbMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());

@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -14,45 +13,14 @@ namespace FOSSBilling;
 
 class Requirements
 {
-    private bool $isOk = true;
-
-    public array $php_reqs = [
-        'required_extensions' => [
-            'curl',
-            'intl',
-            'openssl',
-            'pdo_mysql',
-            'xml',
-            'dom',
-            'iconv',
-            'json',
-            'zlib',
-            'gd',
-        ],
-        'suggested_extensions' => [
-            'mbstring' => 'improved performance',
-            'opcache' => 'improved performance',
-            'imagick' => 'improved performance',
-            'bz2' => 'optional support for bzip2 archives',
-            'simplexml' => 'the Plesk integration',
-            'xml' => 'the Plesk integration',
-        ],
-        'min_version' => '8.2',
-    ];
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
     private bool $_all_ok = true;
     private array $_options = array();
     private Filesystem $filesystem;
 
     public function __construct()
     {
-        $this->_options = array(
-            'php'   =>  array(
+        $this->_options = [
+            'php'   =>  [
                 'extensions' => array(
                     'pdo_mysql',
                     'zlib',
@@ -84,13 +52,15 @@ class Requirements
 
     public function getInfo(): array
     {
+        $config = include PATH_CONFIG;
+
         $data = array();
         $data['ip']             = $_SERVER['SERVER_ADDR'] ?? null;
         $data['PHP_OS']         = PHP_OS;
         $data['PHP_VERSION']    = PHP_VERSION;
 
         $data['FOSSBilling']    = array(
-            'locale'        =>  $this->di['config']['i18n']['locale'],
+            'locale'        =>  $config['i18n']['locale'],
             'version'       =>  \FOSSBilling\Version::VERSION,
         );
 

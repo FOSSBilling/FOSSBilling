@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -28,7 +27,6 @@ class CentralAlerts implements InjectionAwareInterface
     {
         $this->di = $di;
     }
-
     public function getDi(): ?Container
     {
         return $this->di;
@@ -71,14 +69,15 @@ class CentralAlerts implements InjectionAwareInterface
     public function filterAlerts(array $type = [], string $version = Version::VERSION): array
     {
         $alerts = $this->getAlerts();
+        $config = include PATH_CONFIG;
 
         if (!empty($type)) {
             $alerts = array_filter($alerts, fn ($alert): bool => in_array($alert['type'], $type));
         }
 
         if ($version) {
-            if (Config::getProperty('update_branch', 'release') === 'preview') {
-                $alerts = array_filter($alerts, fn ($alert) => $alert['include_preview_branch']);
+            if ($config['update_branch'] === 'preview') {
+                $alerts = array_filter($alerts, fn($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function ($alert) use ($version) {
                     $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');

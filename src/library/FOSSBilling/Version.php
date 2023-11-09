@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -38,10 +37,9 @@ final class Version
     /**
      * Used to compare two different FOSSBilling versions to determine if updating between them is considered a major, minor, or a patch update.
      *
-     * @param string      $new     The new FOSSBilling version to compare against
-     * @param string|null $current (optional) Defaults to the current version, however you can override it if you wanted / needed
-     *
-     * @return int 0-2 to indicate the type of update
+     * @param string $new The new FOSSBilling version to compare against
+     * @param null|string $current (optional) Defaults to the current version, however you can override it if you wanted / needed
+     * @return int 0-2 to indicate the type of update.
      */
     public static function getUpdateType(string $new, ?string $current = null): int
     {

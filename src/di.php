@@ -707,13 +707,6 @@ $di['license_server'] = function () use ($di) {
 $di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader();
 
 /*
- * @param void
- *
- * @return \FOSSBilling\PasswordManager
- */
-$di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
-
-/*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
  *
  * @param string $textDomain The text domain to create the translation object with.

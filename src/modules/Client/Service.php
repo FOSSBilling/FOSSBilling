@@ -475,6 +475,8 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data)
     {
+        $box_passwd = new \Box_Password;
+
         $password = $data['password'] ?? uniqid();
 
         $client = $this->di['db']->dispense('Client');
@@ -482,7 +484,7 @@ class Service implements InjectionAwareInterface
         $client->auth_type = $data['auth_type'] ?? null;
         $client->email = strtolower(trim($data['email'] ?? null));
         $client->first_name = ucwords($data['first_name'] ?? null);
-        $client->pass = $this->di['password']->hashIt($password);
+        $client->pass = $box_passwd->hashIt($password);
 
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {

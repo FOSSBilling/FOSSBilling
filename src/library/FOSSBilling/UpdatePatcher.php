@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Ramsey\Uuid\Uuid;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Filesystem\Filesystem;

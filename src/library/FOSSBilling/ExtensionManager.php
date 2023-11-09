@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\HttpClient\HttpClient;
 
 class ExtensionManager implements InjectionAwareInterface
 {
@@ -135,8 +136,9 @@ class ExtensionManager implements InjectionAwareInterface
     public function isExtensionCompatible(string $extension): bool
     {
         $latest = $this->getLatestExtensionRelease($extension);
+        $config = include PATH_CONFIG;
 
-        if (Config::getProperty('update_branch', 'release') === 'release') {
+        if ($config['update_branch'] === 'release') {
             if (version_compare(Version::VERSION, $latest['min_fossbilling_version'], '<')) {
                 return false;
             }
@@ -163,12 +165,11 @@ class ExtensionManager implements InjectionAwareInterface
         return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
             $item->expiresAfter(60 * 60);
 
-            $httpClient = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+            $httpClient = HttpClient::create();
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
                 'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
-
             $json = $response->toArray();
 
             if (is_null($json)) {
