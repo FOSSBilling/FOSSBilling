@@ -421,7 +421,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     /**
      * Should return domain transfer code
      *
-     * @return string
      * @throws Registrar_Exception
      */
     public function getEpp(Registrar_Domain $domain): never
