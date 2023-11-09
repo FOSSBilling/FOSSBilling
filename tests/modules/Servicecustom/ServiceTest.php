@@ -412,13 +412,8 @@ class ServiceTest extends \BBTestCase
             'J' => 5,
             0   => 'N'
         );
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->will($this->returnValue($decoded));
 
         $di          = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $model = new \Model_ServiceCustom();
@@ -433,15 +428,8 @@ class ServiceTest extends \BBTestCase
 
     public function testToApiArray()
     {
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->will($this->returnValue(array('config_param' => 'config_value')));
-
         $di          = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
-
 
         $model = new \Model_ServiceCustom();
         $model->loadBean(new \DummyBean());
@@ -456,7 +444,6 @@ class ServiceTest extends \BBTestCase
 
         $this->assertEquals($result['client_id'], $model->client_id);
         $this->assertEquals($result['plugin'], $model->plugin);
-        $this->assertEquals($result['config_param'], 'config_value');
         $this->assertEquals($result['updated_at'], $model->updated_at);
         $this->assertEquals($result['created_at'], $model->created_at);
     }

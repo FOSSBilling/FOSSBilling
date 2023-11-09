@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Filesystem;
+
 class Requirements
 {
     private bool $_all_ok = true;
@@ -31,7 +33,7 @@ class Requirements
                 'version'       =>  PHP_VERSION,
                 'min_version'   =>  '8.1',
                 'safe_mode'     =>  ini_get('safe_mode'),
-            ),
+            ],
             'writable_folders' => [
                 PATH_CACHE,
                 PATH_LOG,
@@ -40,7 +42,7 @@ class Requirements
             'writable_files' => array(
                 PATH_CONFIG,
             ),
-        );
+        ];
 
         $this->filesystem = new Filesystem();
     }

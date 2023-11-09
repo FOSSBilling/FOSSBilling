@@ -14,6 +14,7 @@ use EmailChecker\Adapter;
 use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
@@ -161,19 +162,19 @@ class Service implements InjectionAwareInterface
 
     /**
      * Checks if a provided email address is using a disposable email service.
-     * 
+     *
      * @param string $email The email address to check.
      * @param bool $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
-     * 
+     *
      * @return bool true if the email address is disposable, false if it isn't.
      */
     public function isATempEmail(string $email, bool $throw = true): bool
     {
-        /* 
+        /*
          * The EmailChecker package utilizes PHP's email verification which does not correctly validate international email addresses.
          * We are already using a proper validation package that does validate these as it should, so below is actually a workaround for the limitation.
          * @see https://github.com/MattKetmo/EmailChecker/issues/92
-         * 
+         *
          * Without this workaround, FOSSBilling would be unable to accept international email addresses when disposable email checking is enabled.
          */
         $adapter = new Adapter\ArrayAdapter($this->getTempMailDomainDB());
@@ -196,8 +197,8 @@ class Service implements InjectionAwareInterface
      * Fetches the most recent list of disposable email addresses, parses them to remove blanks or invalid domains, and then returns it as an array.
      * The database is from here: https://github.com/disposable-email-domains/disposable-email-domains
      * Results are cached for 1 week.
-     * 
-     * @return array 
+     *
+     * @return array
      */
     private function getTempMailDomainDB(): array
     {
@@ -209,7 +210,8 @@ class Service implements InjectionAwareInterface
             $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tempEmailDB.txt';
 
             if ($response->getStatusCode() === 200) {
-                file_put_contents($dbPath, $response->getContent());
+                $filesystem = new Filesystem();
+                $filesystem->dumpFile($dbPath, $response->getContent());
             } else {
                 return [];
             }

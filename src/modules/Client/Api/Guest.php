@@ -78,7 +78,7 @@ class Guest extends \Api_Abstract
         $service = $this->getService();
 
         $email = $data['email'] ?? null;
-        $email = $this->di['tools']->validateAndSanitizeEmail($email);
+        $email = $this->di['validator']->validateAndSanitizeEmail($email);
         $email = strtolower(trim($email));
         if ($service->clientAlreadyExists($email)) {
             throw new \FOSSBilling\InformationException('Email is already registered. You may want to login instead of registering.');
@@ -115,7 +115,7 @@ class Guest extends \Api_Abstract
             'password' => 'Password required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $event_params = $data;
         $event_params['ip'] = $this->ip;
@@ -161,7 +161,7 @@ class Guest extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray(['email' => 'Email required'], $data);
 
         // Sanitize email
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 

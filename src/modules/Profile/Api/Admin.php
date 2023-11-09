@@ -72,7 +72,7 @@ class Admin extends \Api_Abstract
     public function update($data)
     {
         if (!is_null($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateAdmin($this->getIdentity(), $data);

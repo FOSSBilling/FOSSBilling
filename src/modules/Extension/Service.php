@@ -10,7 +10,9 @@
 
 namespace Box\Mod\Extension;
 
+use FontLib\EOT\File;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 class Service implements InjectionAwareInterface
 {
@@ -485,7 +487,8 @@ class Service implements InjectionAwareInterface
             unlink($zipPath);
         }
 
-        $this->di['tools']->emptyFolder($extractedPath);
+        $filesystem = new Filesystem();
+        $filesystem->remove($extractedPath);
 
         return true;
     }
@@ -576,10 +579,10 @@ class Service implements InjectionAwareInterface
             $config = [];
         } else {
             $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-            $config = $this->di['tools']->decodeJ($config);
+            $config = json_decode($config, true);
         }
 
-        return $config;
+        return is_array($config) ? $config : [];
     }
 
     public function setConfig($data)

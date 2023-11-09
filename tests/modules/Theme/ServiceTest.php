@@ -291,8 +291,6 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue('location/Of/Assets/file'));
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_put_contents');
 
         $di = new \Pimple\Container();
         $di['tools'] = $toolsMock;

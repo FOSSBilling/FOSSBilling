@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,20 +11,13 @@
 
 namespace FOSSBilling;
 
+use Egulias\EmailValidator\EmailValidator;
+use Egulias\EmailValidator\Validation\DNSCheckValidation;
+use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
+use Egulias\EmailValidator\Validation\RFCValidation;
+
 class Validate
 {
-    protected ?\Pimple\Container $di = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
     /**
      * Check if second level domain (SLD) is valid.
      */
@@ -80,7 +74,7 @@ class Validate
      * @param array $data - Array to search for keys
      * @param array $variables - Array of variables for message placeholders (:placeholder)
      * @param integer $code - Exception code
-     * 
+     *
      * @throws InformationException
      */
     public function checkRequiredParamsForArray(array $required, array $data, array $variables = NULL, $code = 0)
@@ -108,5 +102,36 @@ class Validate
             throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
         return true;
+    }
+
+    /**
+     * Checks if a given email address is valid.
+     * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
+     * In a testing / development environment it will only check the RFC standards.
+     */
+    public function validateAndSanitizeEmail(string $email, bool $throw = true)
+    {
+        $email = htmlspecialchars($email);
+
+        $validator = new EmailValidator();
+        if (Environment::isProduction()) {
+            $validations = new MultipleValidationWithAnd([
+                new RFCValidation(),
+                new DNSCheckValidation()
+            ]);
+        } else {
+            $validations = new RFCValidation();
+        }
+
+        if (!$validator->isValid($email, $validations)) {
+            if ($throw) {
+                $friendlyName = ucfirst(__trans('Email address'));
+                throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+            } else {
+                return false;
+            }
+        }
+
+        return $email;
     }
 }

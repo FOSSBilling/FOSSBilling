@@ -52,8 +52,6 @@ class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
-
 
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn($name) => $configArr);
@@ -104,7 +102,6 @@ class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
@@ -195,7 +192,6 @@ class GuestTest extends \BBTestCase
             ->method("set");
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        //$toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -221,39 +217,37 @@ class GuestTest extends \BBTestCase
     public function testResetPasswordNewFlow()
     {
         $data['email'] = 'John@exmaple.com';
-    
+
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
-    
+
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
-    
+
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
-    
+
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-    
+
         // Specify that 'findOne' will be called exactly twice
         $dbMock->expects($this->exactly(2))->method('findOne')
             ->willReturnOnConsecutiveCalls($modelClient, null);
-    
+
         $dbMock->expects($this->once())
             ->method('dispense')->will($this->returnValue($modelPasswordReset));
-    
+
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->will($this->returnValue(1));
-    
+
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate');
-    
+
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->once())
-            ->method('validateAndSanitizeEmail')->will($this->returnValue($data['email']));
-    
+
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->once())
             ->method('checkRequiredParamsForArray')->will($this->returnValue(null));
-    
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
@@ -261,14 +255,14 @@ class GuestTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
         $di['validator'] = $validatorMock;
-    
+
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
-    
+
         $result = $client->reset_password($data);
         $this->assertTrue($result);
     }
-    
+
 
 
 
@@ -293,7 +287,6 @@ class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();

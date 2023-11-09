@@ -141,7 +141,8 @@ class ServiceTest extends \BBTestCase
                                       )));
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
@@ -154,6 +155,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
         $di['mod']            = $di->protect(fn() => $modMock);
         $di['tools']          = $toolsMock;
+        $di['validator']      = $validatorMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -268,7 +270,8 @@ class ServiceTest extends \BBTestCase
                                       )));
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
@@ -281,6 +284,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
         $di['mod']            = $di->protect(fn() => $modMock);
         $di['tools']          = $toolsMock;
+        $di['validator']      = $validatorMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());

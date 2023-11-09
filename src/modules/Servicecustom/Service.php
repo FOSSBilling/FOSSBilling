@@ -189,7 +189,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getConfig(\Model_ServiceCustom $model)
     {
-        return $this->di['tools']->decodeJ($model->config);
+        return json_decode($model->config, true) ?: [];
     }
 
     public function toApiArray(\Model_ServiceCustom $model)
@@ -272,7 +272,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         require_once $file;
 
-        $config = $this->di['tools']->decodeJ($model->plugin_config);
+        $config = json_decode($model->plugin_config, true) ?: [];
         $adapter = new $plugin($config);
 
         if (!method_exists($adapter, $method)) {
