@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function getSearchQueryProvider()
+    public static function getSearchQueryProvider()
     {
         return array(
             array(
@@ -330,7 +330,7 @@ class ServiceTest extends \BBTestCase
             'default_description' => 'DESCRIPTION',
         );
         $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendMail'))
+            ->onlyMethods(array('sendMail'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendMail')
@@ -392,8 +392,10 @@ class ServiceTest extends \BBTestCase
     }
 
 
-    public function sendTemplateExistsStaffProvider()
+    public static function sendTemplateExistsStaffProvider()
     {
+        $self = new ServiceTest('ServiceTest');
+
         return array(
             array(
                 array(
@@ -404,8 +406,8 @@ class ServiceTest extends \BBTestCase
                     'default_description' => 'DESCRIPTION',
                     'to_staff'            => 1,
                 ),
-                $this->never(),
-                $this->atLeastOnce(),
+                $self->never(),
+                $self->atLeastOnce(),
             ),
             array(
                 array(
@@ -416,8 +418,8 @@ class ServiceTest extends \BBTestCase
                     'default_description' => 'DESCRIPTION',
                     'to_client'           => 1
                 ),
-                $this->atLeastOnce(),
-                $this->never(),
+                $self->atLeastOnce(),
+                $self->never(),
             ),
 
         );
@@ -429,7 +431,7 @@ class ServiceTest extends \BBTestCase
     public function testSendTemplateExistsStaff($data, $clientGetExpects, $staffgetListExpects)
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendMail'))
+            ->onlyMethods(array('sendMail'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendMail')
@@ -585,7 +587,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function templateGetSearchQueryProvider()
+    public static function templateGetSearchQueryProvider()
     {
         return array(
             array(
@@ -720,7 +722,7 @@ class ServiceTest extends \BBTestCase
             )
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->setMethods(array('getVars'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->onlyMethods(array('getVars'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVars')
             ->will($this->returnValue(array('param1' => 'value1')));
@@ -735,8 +737,10 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public function template_updateProvider()
+    public static function template_updateProvider()
     {
+        $self = new ServiceTest('ServiceTest');
+
         return array(
             array(
                 array(
@@ -746,7 +750,7 @@ class ServiceTest extends \BBTestCase
                     'subject'  => null,
                     'content'  => null
                 ),
-                $this->never()
+                $self->never()
             ),
             array(
                 array(
@@ -756,7 +760,7 @@ class ServiceTest extends \BBTestCase
                     'subject'  => 'Subject',
                     'content'  => 'Content'
                 ),
-                $this->atLeastOnce()
+                $self->atLeastOnce()
             ),
         );
     }
@@ -771,7 +775,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $emailServiceMock = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('template_render'))->getMock();
+        $emailServiceMock = $this->getMockBuilder('Box\Mod\Email\Service')->addMethods(['template_render'])->getMock();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -889,12 +893,14 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($emailTemplateModel, $result);
     }
 
-    public function batchTemplateGenerateProvider()
+    public static function batchTemplateGenerateProvider()
     {
+        $self = new ServiceTest('ServiceTest');
+
         return array(
-            array(true, false, $this->never(), $this->never()),
-            array(false, true, $this->atLeastOnce(), $this->atLeastOnce()),
-            array(true, true, $this->atLeastOnce(), $this->never()),
+            array(true, false, $self->never(), $self->never()),
+            array(false, true, $self->atLeastOnce(), $self->atLeastOnce()),
+            array(true, true, $self->atLeastOnce(), $self->never()),
         );
     }
     /**
@@ -998,7 +1004,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
 
-        $activityMock = $this->getMockBuilder('\Box\Mod\Activity\Service')->setMethods(array('logEmail'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Activity\Service')->onlyMethods(array('logEmail'))->getMock();
         $activityMock->expects($this->atLeastOnce())
             ->method('logEmail')
             ->will($this->returnValue(true));

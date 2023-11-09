@@ -384,7 +384,7 @@ class AdminTest extends \BBTestCase {
     }
 
 
-    public function form_settings_data()
+    public static function form_settings_data()
     {
         return array(
             array('form_id', 'Form id was not passed', 1654),

@@ -19,12 +19,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('updateDomain'))->getMock();
+            ->onlyMethods(array('updateDomain'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateDomain')
             ->will($this->returnValue(true));
 
@@ -42,12 +42,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('updateNameservers'))->getMock();
+            ->onlyMethods(array('updateNameservers'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateNameservers')
             ->will($this->returnValue(true));
 
@@ -65,12 +65,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('updateContacts'))->getMock();
+            ->onlyMethods(array('updateContacts'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateContacts')
             ->will($this->returnValue(true));
 
@@ -88,12 +88,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('enablePrivacyProtection'))->getMock();
+            ->onlyMethods(array('enablePrivacyProtection'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('enablePrivacyProtection')
             ->will($this->returnValue(true));
 
@@ -111,12 +111,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('disablePrivacyProtection'))->getMock();
+            ->onlyMethods(array('disablePrivacyProtection'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('disablePrivacyProtection')
             ->will($this->returnValue(true));
 
@@ -134,12 +134,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('getTransferCode'))->getMock();
+            ->onlyMethods(array('getTransferCode'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getTransferCode')
             ->will($this->returnValue(true));
 
@@ -157,12 +157,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('lock'))->getMock();
+            ->onlyMethods(array('lock'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('lock')
             ->will($this->returnValue(true));
 
@@ -180,12 +180,12 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
-            ->setMethods(array('_getService'))->getMock();
+            ->onlyMethods(array('_getService'))->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('unlock'))->getMock();
+            ->onlyMethods(array('unlock'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('unlock')
             ->will($this->returnValue(true));
 
@@ -205,7 +205,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array('list' => array())));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('tldGetSearchQuery'))->getMock();
+            ->onlyMethods(array('tldGetSearchQuery'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldGetSearchQuery')
             ->will($this->returnValue(array('query', array())));
 
@@ -464,7 +464,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array('list' => array())));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('registrarGetSearchQuery'))->getMock();
+            ->onlyMethods(array('registrarGetSearchQuery'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetSearchQuery')
             ->will($this->returnValue(array('query', array())));
 
@@ -880,7 +880,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDomain()));
@@ -918,7 +918,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $orderService->expects($this->never())
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDomain()));
@@ -956,7 +956,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
+        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->onlyMethods(array('getOrderService'))->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue(null));

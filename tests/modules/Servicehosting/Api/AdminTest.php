@@ -33,7 +33,7 @@ class AdminTest extends \BBTestCase
 
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -74,7 +74,7 @@ class AdminTest extends \BBTestCase
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -97,7 +97,7 @@ class AdminTest extends \BBTestCase
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -120,7 +120,7 @@ class AdminTest extends \BBTestCase
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -143,7 +143,7 @@ class AdminTest extends \BBTestCase
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -166,7 +166,7 @@ class AdminTest extends \BBTestCase
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())
@@ -189,7 +189,7 @@ class AdminTest extends \BBTestCase
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
         $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
 
         $apiMock->expects($this->atLeastOnce())

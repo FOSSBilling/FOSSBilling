@@ -47,7 +47,7 @@ class Api_ClientTest extends \BBTestCase
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'toApiArray'))->getMock();
+        $service = $this->getMockBuilder('Box\Mod\Email\Service')->onlyMethods(array('findOneForClientById', 'toApiArray'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue($model));
@@ -79,7 +79,7 @@ class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById'))->getMock();
+        $service = $this->getMockBuilder('Box\Mod\Email\Service')->onlyMethods(array('findOneForClientById'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue(false));
@@ -113,7 +113,7 @@ class Api_ClientTest extends \BBTestCase
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'resend'))->getMock();
+        $service = $this->getMockBuilder('Box\Mod\Email\Service')->onlyMethods(array('findOneForClientById', 'resend'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue($model));
@@ -146,7 +146,7 @@ class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById'))->getMock();
+        $service = $this->getMockBuilder('Box\Mod\Email\Service')->onlyMethods(array('findOneForClientById'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue(false));
@@ -182,7 +182,7 @@ class Api_ClientTest extends \BBTestCase
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'rm'))->getMock();
+        $service = $this->getMockBuilder('Box\Mod\Email\Service')->onlyMethods(array('findOneForClientById', 'rm'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue($model));
@@ -213,7 +213,7 @@ class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById'))->getMock();
+        $service = $this->getMockBuilder('Box\Mod\Email\Service')->onlyMethods(array('findOneForClientById'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue(false));

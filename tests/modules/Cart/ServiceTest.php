@@ -69,18 +69,20 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result->session_id, $session_id);
     }
 
-    public function getSessionCartDoesNotExistProvider()
+    public static function getSessionCartDoesNotExistProvider()
     {
+        $self = new ServiceTest('ServiceTest');
+
         return array(
             array(
                 100,
-                $this->atLeastOnce(),
-                $this->never()
+                $self->atLeastOnce(),
+                $self->never()
             ),
             array(
                 null,
-                $this->never(),
-                $this->atLeastOnce()
+                $self->never(),
+                $self->atLeastOnce()
             )
         );
     }
@@ -121,7 +123,7 @@ class ServiceTest extends \BBTestCase
             ->method("get")
             ->will($this->returnValue($sessionGetWillReturn));
 
-        $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('getCurrencyByClientId', 'getDefault'))->getMock();
+        $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->onlyMethods(array('getCurrencyByClientId', 'getDefault'))->getMock();
         $currencyServiceMock->expects($getCurrencyByClientIdExpects)
             ->method("getCurrencyByClientId")
             ->will($this->returnValue($curencyModel));
@@ -173,7 +175,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array('type' => \Model_ProductPayment::RECURRENT)));
 
         $productModelMock = $this->getMockBuilder('\Model_Product')
-            ->setMethods(array('getTable'))->getMock();
+            ->onlyMethods(array('getTable'))->getMock();
         $productModelMock->expects($this->atLeastOnce())
             ->method('getTable')
             ->will($this->returnValue($productTable));
@@ -199,7 +201,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($pricingArray));
 
         $productModelMock = $this->getMockBuilder('\Model_Product')
-            ->setMethods(array('getTable'))->getMock();
+            ->onlyMethods(array('getTable'))->getMock();
         $productModelMock->expects($this->atLeastOnce())
             ->method('getTable')
             ->will($this->returnValue($productTable));
@@ -226,7 +228,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($pricingArray));
 
         $productModelMock = $this->getMockBuilder('\Model_Product')
-            ->setMethods(array('getTable'))->getMock();
+            ->onlyMethods(array('getTable'))->getMock();
         $productModelMock->expects($this->atLeastOnce())
             ->method('getTable')
             ->will($this->returnValue($productTable));
@@ -389,7 +391,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isEmptyCart'))->getMock();
+            ->onlyMethods(array('isEmptyCart'))->getMock();
         $serviceMock->expects($this->never())->method('isEmptyCart')
             ->will($this->returnValue(false));
 
@@ -418,7 +420,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isEmptyCart'))->getMock();
+            ->onlyMethods(array('isEmptyCart'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('isEmptyCart')
             ->will($this->returnValue(true));
 
@@ -465,7 +467,7 @@ class ServiceTest extends \BBTestCase
     public function testIsClientAbleToUsePromo()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('promoCanBeApplied', 'clientHadUsedPromo'))->getMock();
+            ->onlyMethods(array('promoCanBeApplied', 'clientHadUsedPromo'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->will($this->returnValue(true));
         $serviceMock->expects($this->atLeastOnce())->method('clientHadUsedPromo')
@@ -489,7 +491,7 @@ class ServiceTest extends \BBTestCase
     public function testClientHadUsedPromo()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('promoCanBeApplied'))->getMock();
+            ->onlyMethods(array('promoCanBeApplied'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->will($this->returnValue(true));
 
@@ -518,7 +520,7 @@ class ServiceTest extends \BBTestCase
     public function testIsClientAbleToUsePromoOncePerClient()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('promoCanBeApplied', 'clientHadUsedPromo'))->getMock();
+            ->onlyMethods(array('promoCanBeApplied', 'clientHadUsedPromo'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->will($this->returnValue(true));
         $serviceMock->expects($this->never())->method('clientHadUsedPromo')
@@ -541,7 +543,7 @@ class ServiceTest extends \BBTestCase
     public function testIsClientAbleToUsePromoCanNotBeApplied()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('promoCanBeApplied', 'clientHadUsedPromo'))->getMock();
+            ->onlyMethods(array('promoCanBeApplied', 'clientHadUsedPromo'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->will($this->returnValue(false));
         $serviceMock->expects($this->never())->method('clientHadUsedPromo')
@@ -561,7 +563,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function promoCanBeAppliedProvider()
+    public static function promoCanBeAppliedProvider()
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \DummyBean());
@@ -654,7 +656,7 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('createFromCart', 'isClientAbleToUsePromo', 'rm', 'isPromoAvailableForClientGroup'))->getMock();
+            ->onlyMethods(array('createFromCart', 'isClientAbleToUsePromo', 'rm', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('createFromCart')
             ->will($this->returnValue(array($order, rand(1, 100), array(rand(1, 100)))));
         $serviceMock->expects($this->atLeastOnce())->method('isClientAbleToUsePromo')
@@ -717,7 +719,7 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isClientAbleToUsePromo'))->getMock();
+            ->onlyMethods(array('isClientAbleToUsePromo'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('isClientAbleToUsePromo')
             ->will($this->returnValue(false));
 
@@ -800,7 +802,7 @@ class ServiceTest extends \BBTestCase
         $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isRecurrentPricing'))
+            ->onlyMethods(array('isRecurrentPricing'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isRecurrentPricing')
@@ -840,7 +842,7 @@ class ServiceTest extends \BBTestCase
         $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isRecurrentPricing', 'isPeriodEnabledForProduct'))
+            ->onlyMethods(array('isRecurrentPricing', 'isPeriodEnabledForProduct'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isRecurrentPricing')
@@ -883,7 +885,7 @@ class ServiceTest extends \BBTestCase
         $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isRecurrentPricing', 'isStockAvailable'))
+            ->onlyMethods(array('isRecurrentPricing', 'isStockAvailable'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isRecurrentPricing')
@@ -932,7 +934,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isRecurrentPricing', 'isStockAvailable', 'addProduct'))
+            ->onlyMethods(array('isRecurrentPricing', 'isStockAvailable', 'addProduct'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isRecurrentPricing')
@@ -980,7 +982,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isRecurrentPricing', 'isStockAvailable', 'addProduct'))
+            ->onlyMethods(array('isRecurrentPricing', 'isStockAvailable', 'addProduct'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isRecurrentPricing')
@@ -1031,7 +1033,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('isRecurrentPricing', 'isStockAvailable'))
+            ->onlyMethods(array('isRecurrentPricing', 'isStockAvailable'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isRecurrentPricing')
@@ -1074,7 +1076,7 @@ class ServiceTest extends \BBTestCase
         $cartProductModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getCartProducts', 'cartProductToApiArray'))
+            ->onlyMethods(array('getCartProducts', 'cartProductToApiArray'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCartProducts')
@@ -1120,15 +1122,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testcartProductToApiArray()
-    {
-        /*
-         * @TODO Need to transfer functions from CartProductTable;
-         */
-        $cartProductModel = new \Model_CartProduct();
-        $cartProductModel->loadBean(new \DummyBean());
-    }
-
     public function testgetProductDiscount()
     {
         $cartProductModel = new \Model_CartProduct();
@@ -1158,7 +1151,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'))
+            ->onlyMethods(array('getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRelatedItemsDiscount')
@@ -1199,7 +1192,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'))
+            ->onlyMethods(array('getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRelatedItemsDiscount')
@@ -1243,7 +1236,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'))
+            ->onlyMethods(array('getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRelatedItemsDiscount')
@@ -1262,7 +1255,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($discountSetup, $result[1]);
     }
 
-    public function isPromoAvailableForClientGroupProvider()
+    public static function isPromoAvailableForClientGroupProvider()
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \DummyBean());

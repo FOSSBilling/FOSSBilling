@@ -99,7 +99,7 @@ jobs:
       - name: Run PHPUnit Tests
         uses: php-actions/phpunit@v3
         with:
-          version: 9
+          version: 10
           php_version: ${{ matrix.php }}
           configuration: phpunit.xml.dist
         env:

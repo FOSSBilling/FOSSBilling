@@ -32,7 +32,7 @@ class ServiceTest extends \BBTestCase
             )
         );
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
@@ -41,7 +41,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -75,7 +75,7 @@ class ServiceTest extends \BBTestCase
             )
         );
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
@@ -84,7 +84,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -118,7 +118,7 @@ class ServiceTest extends \BBTestCase
             )
         );
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
@@ -127,7 +127,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -161,7 +161,7 @@ class ServiceTest extends \BBTestCase
             )
         );
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
+            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
@@ -170,7 +170,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -203,7 +203,7 @@ class ServiceTest extends \BBTestCase
             'author_name'  => 'Name',
         );
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
@@ -212,7 +212,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -244,7 +244,7 @@ class ServiceTest extends \BBTestCase
             'author_name'  => 'Name',
         );
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
@@ -253,7 +253,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -286,7 +286,7 @@ class ServiceTest extends \BBTestCase
             'author_name'  => 'Name',
         );
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
@@ -295,7 +295,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -329,7 +329,7 @@ class ServiceTest extends \BBTestCase
             'author_name'  => 'Name',
         );
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
@@ -338,7 +338,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($toApiArrayReturn));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(array('sendTemplate'))->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
@@ -443,7 +443,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_SupportTicket', $result);
     }
 
-    public function getSearchQueryProvider()
+    public static function getSearchQueryProvider()
     {
         return array(
             array(
@@ -626,7 +626,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function closeTicketProvider()
+    public static function closeTicketProvider()
     {
         return array(
             array(new \Model_Admin()),
@@ -757,11 +757,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->exactly(2))
             ->method('find')
-            ->withConsecutive(['SupportTicketNote'], ['SupportTicketMessage'])
-            ->willReturnOnConsecutiveCalls(
-                [new \Model_SupportTicketNote(), new \Model_SupportTicketNote()],
-                [new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage()]
-            );
+            ->willReturnCallback(function (...$args) {
+                $value = match($args[0]) {
+                    'SupportTicketNote' => new \Model_SupportTicketNote(),
+                    'SupportTicketMessage' => new \Model_SupportTicketMessage()
+                };
+
+                return $value;
+            });
 
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
@@ -792,8 +795,14 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($supportTicketMessageModel));
         $dbMock->expects($this->atleastOnce())
             ->method('load')
-            ->withConsecutive(['SupportHelpdesk'], ['Client'])
-            ->willReturnOnConsecutiveCalls($helpdesk, new \Model_Client());
+            ->willReturnCallback(function (...$args) use ($helpdesk) {
+                $value = match($args[0]) {
+                    'SupportHelpdesk' => $helpdesk,
+                    'Client' => new \Model_Client()
+                };
+
+                return $value;
+            });
 
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
@@ -801,7 +810,7 @@ class ServiceTest extends \BBTestCase
 
         $ticketMessages = array(new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage());
         $serviceMock    = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'))->getMock();
+            ->onlyMethods(array('messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('messageGetRepliesCount')
             ->will($this->returnValue(rand(1, 100)));
         $serviceMock->expects($this->atLeastOnce())->method('messageToApiArray')
@@ -840,8 +849,16 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(new \Model_SupportTicketMessage()));
         $dbMock->expects($this->atleastOnce())
             ->method('load')
-            ->withConsecutive(['SupportHelpdesk'], ['Client'])
-            ->willReturnOnConsecutiveCalls(new \Model_SupportHelpdesk(), new \Model_Client());
+            ->willReturnCallback(function (...$args) {
+                static $series = [
+                    ['SupportHelpdesk', new \Model_SupportHelpdesk()],
+                    ['Client', new \Model_Client()],
+                ];
+
+                [$expectedArgs, $return] = array_shift($series);
+
+                return $return;
+            });
 
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
@@ -849,7 +866,7 @@ class ServiceTest extends \BBTestCase
 
         $ticketMessages = array(new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage());
         $serviceMock    = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'))->getMock();
+            ->onlyMethods(array('messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('messageGetRepliesCount')
             ->will($this->returnValue(rand(1, 100)));
         $serviceMock->expects($this->atLeastOnce())->method('messageToApiArray')
@@ -890,7 +907,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(new \Model_Client()));
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
-            ->setMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(array('toApiArray'))->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
@@ -918,7 +935,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
-            ->setMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(array('toApiArray'))->getMock();
         $clientServiceMock->expects($this->never())->method('toApiArray')
             ->will($this->returnValue(array()));
 
@@ -986,7 +1003,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('noteGetAuthorDetails'))->getMock();
+            ->onlyMethods(array('noteGetAuthorDetails'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteGetAuthorDetails')
             ->will($this->returnValue(array()));
 
@@ -1209,7 +1226,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('messageGetAuthorDetails'))->getMock();
+            ->onlyMethods(array('messageGetAuthorDetails'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('messageGetAuthorDetails')
             ->will($this->returnValue(array()));
 
@@ -1279,7 +1296,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function ticketReplyProvider()
+    public static function ticketReplyProvider()
     {
         $admin = new \Model_Admin();
         $admin->loadBean(new \DummyBean());
@@ -1450,17 +1467,17 @@ class ServiceTest extends \BBTestCase
             'autorespond_message_id' => rand(1, 100)
         );
         $supportModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()
-            ->setMethods(array('getConfig'))->getMock();
+            ->onlyMethods(array('getConfig'))->getMock();
         $supportModMock->expects($this->atLeastOnce())->method('getConfig')
             ->will($this->returnValue($config));
 
         $staffServiceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('getCronAdmin'))->getMock();
+            ->onlyMethods(array('getCronAdmin'))->getMock();
         $staffServiceMock->expects($this->atLeastOnce())->method('getCronAdmin')
             ->will($this->returnValue(new \Model_Admin()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('ticketReply', 'messageCreateForTicket', 'cannedToApiArray'))->getMock();
+            ->onlyMethods(array('ticketReply', 'messageCreateForTicket', 'cannedToApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
             ->will($this->returnValue(new \Model_Admin()));
         $serviceMock->expects($this->atLeastOnce())->method('messageCreateForTicket')
@@ -1513,7 +1530,7 @@ class ServiceTest extends \BBTestCase
         $message->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('checkIfTaskAlreadyExists'))->getMock();
+            ->onlyMethods(array('checkIfTaskAlreadyExists'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('checkIfTaskAlreadyExists')
             ->will($this->returnValue(true));
 
@@ -1545,7 +1562,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
     }
 
-    public function messageCreateForTicketProvider()
+    public static function messageCreateForTicketProvider()
     {
         $admin = new \Model_Admin();
         $admin->loadBean(new \DummyBean());
@@ -1668,7 +1685,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_SupportPTicket', $result);
     }
 
-    public function publicGetSearchQueryProvider()
+    public static function publicGetSearchQueryProvider()
     {
         return array(
             array(
@@ -1783,7 +1800,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_SupportPTicket', $result[0]);
     }
 
-    public function publicCloseTicketProvider()
+    public static function publicCloseTicketProvider()
     {
         return array(
             array(new \Model_Admin()),
@@ -1858,16 +1875,18 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function publicToApiArrayProvider()
+    public static function publicToApiArrayProvider()
     {
+        $self = new ServiceTest('ServiceTest');
+
         return array(
             array(
                 new \Model_SupportPTicketMessage(),
-                $this->atLeastOnce()
+                $self->atLeastOnce()
             ),
             array(
                 null,
-                $this->never()
+                $self->never()
             )
         );
     }
@@ -1891,7 +1910,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($ticketMessages));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicMessageToApiArray', 'publicMessageGetAuthorDetails'))->getMock();
+            ->onlyMethods(array('publicMessageToApiArray', 'publicMessageGetAuthorDetails'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageToApiArray')
             ->will($this->returnValue(array()));
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
@@ -1973,7 +1992,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
-            ->setMethods(array('publicMessageGetAuthorDetails'))->getMock();
+            ->onlyMethods(array('publicMessageGetAuthorDetails'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
             ->will($this->returnValue(array()));
 
@@ -2389,7 +2408,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($randId));
 
         $settingsServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
-            ->setMethods(array('checkLimits'))->getMock();
+            ->addMethods(array('checkLimits'))->getMock();
         $settingsServiceMock->expects($this->atLeastOnce())->method('checkLimits')
             ->will($this->returnValue(null));
 
@@ -2553,7 +2572,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function canClientSubmitNewTicketProvider()
+    public static function canClientSubmitNewTicketProvider()
     {
 
         $ticket = new \Model_SupportTicket();
@@ -2741,7 +2760,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function kbToApiArrayProvider()
+    public static function kbToApiArrayProvider()
     {
         $model                         = new \Model_SupportKbArticle();
         $model->loadBean(new \DummyBean());
@@ -2797,7 +2816,7 @@ class ServiceTest extends \BBTestCase
                         'title' => $category->title,
                     ),
                     'content'    => $model->content,
-                    'status'                 => $model->status,
+                    'status'     => $model->status,
                 ),
                 true,
                 null,
@@ -2862,7 +2881,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->returnValue($model));
 
-        $tools = $this->getMockBuilder('\FOSSBilling\Tools')->setMethods(array('slug'))->getMock();
+        $tools = $this->getMockBuilder('\FOSSBilling\Tools')->onlyMethods(array('slug'))->getMock();
         $tools->expects($this->atLeastOnce())
             ->method('slug')
             ->will($this->returnValue('article-slug'));
@@ -2943,7 +2962,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function kbCategoryGetSearchQueryProvider()
+    public static function kbCategoryGetSearchQueryProvider()
     {
         return array(
             array(
@@ -3119,7 +3138,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->returnValue($articleCategoryModel));
 
-        $tools = $this->getMockBuilder('\FOSSBilling\Tools')->setMethods(array('slug'))->getMock();
+        $tools = $this->getMockBuilder('\FOSSBilling\Tools')->onlyMethods(array('slug'))->getMock();
         $tools->expects($this->atLeastOnce())
             ->method('slug')
             ->will($this->returnValue('article-slug'));

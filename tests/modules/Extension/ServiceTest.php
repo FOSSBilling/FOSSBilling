@@ -91,11 +91,6 @@ class ServiceTest extends \BBTestCase {
         $this->assertFalse($result);
     }
 
-    public function testonBeforeAdminCronRun()
-    {
-        //@TODO later create test
-    }
-
     public function testremoveNotExistingModules()
     {
         $model = new \Model_Extension();
@@ -121,7 +116,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertTrue($result > 0);
     }
 
-    public function searchQueryData()
+    public static function searchQueryData()
     {
         return array(
             array(array(), 'SELECT * FROM extension', array()),
@@ -244,7 +239,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetAdminNavigation()
     {
-        $extensionServiceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->setMethods(['getConfig'])->getMock();
+        $extensionServiceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getConfig'])->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array()));
@@ -557,7 +552,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')
-            ->setMethods(array('findExtension', 'activate'))
+            ->onlyMethods(array('findExtension', 'activate'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
@@ -600,7 +595,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')
-            ->setMethods(array('findExtension', 'activate'))
+            ->onlyMethods(array('findExtension', 'activate'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
@@ -693,7 +688,7 @@ class ServiceTest extends \BBTestCase {
             'ext' => 'extensionName',
         );
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->setMethods(['getConfig'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getConfig'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array()));

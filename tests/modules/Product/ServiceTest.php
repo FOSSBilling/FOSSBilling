@@ -64,7 +64,7 @@ class ServiceTest extends \BBTestCase
     public function testtoApiArray()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array(
+            ->onlyMethods(array(
                              'getStartingFromPrice',
                              'getUpgradablePairs',
                              'toProductPaymentApiArray',))
@@ -228,7 +228,7 @@ class ServiceTest extends \BBTestCase
     public function testupdateProductMissngPricingType()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getPaymentTypes'))
+            ->onlyMethods(array('getPaymentTypes'))
             ->getMock();
 
         $typesArr = array(
@@ -258,7 +258,7 @@ class ServiceTest extends \BBTestCase
         $modelProduct->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getPaymentTypes'))
+            ->onlyMethods(array('getPaymentTypes'))
             ->getMock();
 
         $typesArr = array(
@@ -767,7 +767,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getCategoryProducts', 'toApiArray'))
+            ->onlyMethods(array('getCategoryProducts', 'toApiArray'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -811,7 +811,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getCategoryProducts', 'toApiArray'))
+            ->onlyMethods(array('getCategoryProducts', 'toApiArray'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -940,7 +940,7 @@ class ServiceTest extends \BBTestCase
 
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getStartingDomainPrice', 'getStartingPrice'))
+            ->onlyMethods(array('getStartingDomainPrice', 'getStartingPrice'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getStartingDomainPrice')
@@ -1077,7 +1077,7 @@ class ServiceTest extends \BBTestCase
     public function testcanUpgradeTo_returnsTrue()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getUpgradablePairs'))
+            ->onlyMethods(array('getUpgradablePairs'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')
@@ -1098,7 +1098,7 @@ class ServiceTest extends \BBTestCase
     public function testcanUpgradeTo_upgradeIsImposible()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getUpgradablePairs'))
+            ->onlyMethods(array('getUpgradablePairs'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')

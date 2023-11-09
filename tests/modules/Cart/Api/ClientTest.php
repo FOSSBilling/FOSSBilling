@@ -19,7 +19,7 @@ class ClientTest extends \BBTestCase {
         $cart->loadBean(new \DummyBean());
 
        $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'checkoutCart'))
+            ->onlyMethods(array('getSessionCart', 'checkoutCart'))
            ->getMock();
        $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
@@ -52,4 +52,3 @@ class ClientTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 }
- 

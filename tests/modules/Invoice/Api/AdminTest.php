@@ -1343,7 +1343,7 @@ class AdminTest extends \BBTestCase {
 
     public function testBatch_delete()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->onlyMethods(array('delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->
         method('delete')->
         will($this->returnValue(true));
@@ -1362,7 +1362,7 @@ class AdminTest extends \BBTestCase {
 
     public function testBatch_delete_subscription()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('subscription_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->onlyMethods(array('subscription_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('subscription_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
@@ -1380,7 +1380,7 @@ class AdminTest extends \BBTestCase {
 
     public function testBatch_delete_transaction()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('transaction_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->onlyMethods(array('transaction_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('transaction_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
@@ -1399,7 +1399,7 @@ class AdminTest extends \BBTestCase {
 
     public function testBatch_delete_tax()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('tax_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->onlyMethods(array('tax_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('tax_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();

@@ -27,8 +27,10 @@ class Api_GuestTest extends \BBTestCase
         $this->assertArrayHasKey('USD', $result);
     }
 
-    public function getProvider()
+    public static function getProvider()
     {
+        $self = new Api_GuestTest('Api_GuestTest');
+
         $model = new \Model_Currency();
 
         return array(
@@ -37,14 +39,14 @@ class Api_GuestTest extends \BBTestCase
                     'code' => 'EUR'
                 ),
                 $model,
-                $this->atLeastOnce(),
-                $this->never()
+                $self->atLeastOnce(),
+                $self->never()
             ),
             array(
                 array(),
                 $model,
-                $this->never(),
-                $this->atLeastOnce()
+                $self->never(),
+                $self->atLeastOnce()
             )
         );
     }
@@ -113,7 +115,7 @@ class Api_GuestTest extends \BBTestCase
         $result = $guestApi->get(array()); //Expecting \FOSSBilling\Exception
     }
 
-    public function formatPriceFormatProvider()
+    public static function formatPriceFormatProvider()
     {
         return array(
             array(
@@ -159,7 +161,7 @@ class Api_GuestTest extends \BBTestCase
             'price'            => 100000,
             'without_currency' => false,
         );
-        $guestApi = $this->getMockBuilder('\Box\Mod\Currency\Api\Guest')->setMethods(array('get'))->getMock();
+        $guestApi = $this->getMockBuilder('\Box\Mod\Currency\Api\Guest')->onlyMethods(array('get'))->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->will($this->returnValue($willReturn));
@@ -175,7 +177,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 
-    public function formatProvider()
+    public static function formatProvider()
     {
         return array(
             array(
@@ -219,7 +221,7 @@ class Api_GuestTest extends \BBTestCase
         );
 
 
-        $guestApi = $this->getMockBuilder('\Box\Mod\Currency\Api\Guest')->setMethods(array('get'))->getMock();
+        $guestApi = $this->getMockBuilder('\Box\Mod\Currency\Api\Guest')->onlyMethods(array('get'))->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->will($this->returnValue($willReturn));
@@ -235,4 +237,3 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 }
- 

@@ -337,7 +337,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->returnValue($euVatData));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTax')
-            ->setMethods(array('create'))
+            ->onlyMethods(array('create'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('create');
@@ -374,4 +374,3 @@ class ServiceTaxTest extends \BBTestCase
     }
 
 }
- 

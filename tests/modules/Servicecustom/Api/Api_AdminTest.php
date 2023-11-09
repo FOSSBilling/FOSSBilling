@@ -16,7 +16,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testUpdate()
     {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('updateConfig'))->getMock();
+        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->onlyMethods(array('updateConfig'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateConfig')
             ->will($this->returnValue(null));
@@ -35,7 +35,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testUpdateOrderIdNotSetException()
     {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('updateConfig'))->getMock();
+        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->onlyMethods(array('updateConfig'))->getMock();
         $serviceMock->expects($this->never())
             ->method('updateConfig')
             ->will($this->returnValue(null));
@@ -55,7 +55,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testUpdateConfigNotSet()
     {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('updateConfig'))->getMock();
+        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->onlyMethods(array('updateConfig'))->getMock();
         $serviceMock->expects($this->never())
             ->method('updateConfig')
             ->will($this->returnValue(null));
@@ -72,7 +72,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testUpdateConfigIsNotArray()
     {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('updateConfig'))->getMock();
+        $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->onlyMethods(array('updateConfig'))->getMock();
         $serviceMock->expects($this->never())
             ->method('updateConfig')
             ->will($this->returnValue(null));
@@ -145,4 +145,3 @@ class Api_AdminTest extends \BBTestCase
         $this->api->__call('delete', $arguments);
     }
 }
- 

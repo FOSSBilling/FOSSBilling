@@ -30,7 +30,7 @@ class ServiceTransactionTest extends \BBTestCase
         $transactionModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
-            ->setMethods(array('getReceived', 'preProcessTransaction'))
+            ->onlyMethods(array('getReceived', 'preProcessTransaction'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getReceived')
@@ -242,7 +242,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function searchQueryData()
+    public static function searchQueryData()
     {
         return array(
             array(
@@ -386,7 +386,7 @@ class ServiceTransactionTest extends \BBTestCase
         $transactionModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
-            ->setMethods(array('processTransaction'))
+            ->onlyMethods(array('processTransaction'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processTransaction')
@@ -414,7 +414,8 @@ class ServiceTransactionTest extends \BBTestCase
         $exceptionMessage = 'Exception created with PHPUnit Test';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
-            ->setMethods(array('processTransaction', 'oldProcessLogic'))
+            ->addMethods(['oldProcessLogic'])
+            ->onlyMethods(['processTransaction'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processTransaction')
@@ -433,7 +434,7 @@ class ServiceTransactionTest extends \BBTestCase
         $serviceMock->preProcessTransaction($transactionModel);
     }
 
-    public function paymentsAdapterProvider_withprocessTransaction()
+    public static function paymentsAdapterProvider_withprocessTransaction()
     {
         return array(
             array('\Payment_Adapter_PayPalEmail'),
@@ -483,7 +484,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function getReceived()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
-            ->setMethods(array('getSearchQuery'))
+            ->onlyMethods(array('getSearchQuery'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
@@ -553,7 +554,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testcreateAndProcess()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
-            ->setMethods(array('create', 'processTransaction'))
+            ->onlyMethods(array('create', 'processTransaction'))
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('create');

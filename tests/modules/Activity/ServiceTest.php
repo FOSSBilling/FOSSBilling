@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function searchFilters()
+    public static function searchFilters()
     {
         return array(
             array(array(), 'FROM activity_system ', TRUE),
@@ -139,4 +139,4 @@ class ServiceTest extends \BBTestCase
     }
 
 }
- 
+

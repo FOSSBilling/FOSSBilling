@@ -216,8 +216,8 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $serviceMock = $this->getMockBuilder('\Box\Client\Service')
-            ->setMethods(array('remove'))
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+            ->onlyMethods(array('remove'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('remove')
@@ -761,8 +761,8 @@ class AdminTest extends \BBTestCase
             ->method('find')->with('Client', 'client_group_id = :group_id',[':group_id' => $data['id']])
             ->will($this->returnValue([])); // Return an empty array to simulate no clients assigned to the group
 
-        $serviceMock = $this->getMockBuilder('\Box\Client\Service')
-            ->setMethods(array('deleteGroup'))
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+            ->onlyMethods(array('deleteGroup'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteGroup')
@@ -842,7 +842,7 @@ class AdminTest extends \BBTestCase
 
     public function testBatch_delete()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->setMethods(array('delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->onlyMethods(array('delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
@@ -860,7 +860,7 @@ class AdminTest extends \BBTestCase
 
     public function testBatch_delete_log()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->setMethods(array('login_history_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->onlyMethods(array('login_history_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();

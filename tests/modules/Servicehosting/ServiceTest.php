@@ -24,7 +24,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function validateOrdertDataProvider()
+    public static function validateOrdertDataProvider()
     {
         return array(
             array('server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701),
@@ -133,7 +133,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store');
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -228,7 +228,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
         $serverManagerMock->expects($this->atLeastOnce())
@@ -286,7 +286,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
         $serverManagerMock->expects($this->atLeastOnce())
@@ -343,7 +343,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
         $serverManagerMock->expects($this->atLeastOnce())
@@ -425,7 +425,7 @@ class ServiceTest extends \BBTestCase {
 
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -464,7 +464,7 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('action_cancel'))
+            ->onlyMethods(array('action_cancel'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('action_cancel');
@@ -493,7 +493,7 @@ class ServiceTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM', 'getServerPackage'))
+            ->onlyMethods(array('_getAM', 'getServerPackage'))
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
         $serverManagerMock->expects($this->atLeastOnce())
@@ -524,7 +524,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -577,7 +577,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -631,7 +631,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -685,7 +685,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -739,7 +739,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('_getAM'))
+            ->onlyMethods(array('_getAM'))
             ->getMock();
 
         $accountObj = new \Server_Account();
@@ -1031,7 +1031,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(true));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('getServerManager'))
+            ->onlyMethods(array('getServerManager'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1191,7 +1191,7 @@ class ServiceTest extends \BBTestCase {
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('getServerManager'))
+            ->onlyMethods(array('getServerManager'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServerManager')
@@ -1226,7 +1226,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue('/admin/login'));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('getServerManager'))
+            ->onlyMethods(array('getServerManager'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServerManager')
@@ -1245,7 +1245,7 @@ class ServiceTest extends \BBTestCase {
         $hostingServerModel->manager = 'Custom';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
-            ->setMethods(array('getServerManager'))
+            ->onlyMethods(array('getServerManager'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServerManager')

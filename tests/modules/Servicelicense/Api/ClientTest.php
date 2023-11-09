@@ -30,7 +30,7 @@ class ClientTest extends \BBTestCase {
         );
 
         $apiMock = $this->getMockBuilder('\Box\Mod\Servicelicense\Api\Admin')
-            ->setMethods(array('_getService'))
+            ->onlyMethods(array('_getService'))
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')

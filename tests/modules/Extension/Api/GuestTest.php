@@ -31,7 +31,7 @@ class GuestTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function is_onProvider()
+    public static function is_onProvider()
     {
         return array(
             array(
@@ -113,9 +113,8 @@ class GuestTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
-        
+
         $result = $this->api->languages();
         $this->assertIsArray($result);
     }
 }
- 

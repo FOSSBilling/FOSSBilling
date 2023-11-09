@@ -94,7 +94,7 @@ class AdminTest extends \BBTestCase {
 
     public function testlog_email()
     {
-        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->setMethods(array('logEmail'))->getMock();
+        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->onlyMethods(array('logEmail'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('logEmail')
             ->will($this->returnValue(true));
@@ -144,7 +144,7 @@ class AdminTest extends \BBTestCase {
 
     public function testBatch_delete()
     {
-        $activityMock = $this->getMockBuilder('\Box\Mod\Activity\Api\Admin')->setMethods(array('log_delete'))->getMock();
+        $activityMock = $this->getMockBuilder('\Box\Mod\Activity\Api\Admin')->onlyMethods(array('log_delete'))->getMock();
         $activityMock->expects($this->atLeastOnce())->method('log_delete')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
