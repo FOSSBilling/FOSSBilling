@@ -180,11 +180,12 @@ class Service implements InjectionAwareInterface
         try {
             list($local, $domain) = Utilities::parseEmailAddress($email);
         } catch (\Exception) {
-            return true;
+            // Just to be on the safe side, assume the email is valid if there was an error.
+            return false;
         }
         $invalid = $adapter->isThrowawayDomain($domain);
 
-        if ($throw && $invalid) {
+        if ($invalid && $throw) {
             throw new \FOSSBilling\InformationException('Disposable email addresses are not allowed');
         }
 

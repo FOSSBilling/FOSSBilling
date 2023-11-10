@@ -80,6 +80,7 @@
     "replace": {
         "php-http/message-factory": "*",
         "symfony/polyfill-php72": "*",
-        "symfony/polyfill-php80": "*"
+        "symfony/polyfill-php80": "*",
+        "symfony/polyfill-php81": "*"
     }
 }
