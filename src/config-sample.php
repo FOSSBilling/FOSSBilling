@@ -114,8 +114,6 @@ return [
      */
     'path_data' => __DIR__ . '/data',
 
-    'path_logs' => __DIR__ . '/data/log/application.log',
-
     'log_to_db' => true,
 
     'db' => [
