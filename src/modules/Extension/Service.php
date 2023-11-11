@@ -418,8 +418,8 @@ class Service implements InjectionAwareInterface
             throw new \Exception('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 
-        $extractedPath = PATH_CACHE . '/' . md5(uniqid());
-        $zipPath = PATH_CACHE . '/' . md5(uniqid()) . '.zip';
+        $extractedPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid());
+        $zipPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid()) . '.zip';
 
         // Create a temporary directory to extract the extension
         mkdir($extractedPath, 0755, true);
