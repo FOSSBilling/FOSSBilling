@@ -242,7 +242,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $matches = [];
         preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches);
         $mod = $matches[1];
-        $path = PATH_MODS . '/' . ucfirst($mod) . '/html_email/' . $code . '.html.twig';
+        $path = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR . 'html_email' . DIRECTORY_SEPARATOR . $code . '.html.twig';
 
         if (file_exists($path)) {
             $tpl = file_get_contents($path);
