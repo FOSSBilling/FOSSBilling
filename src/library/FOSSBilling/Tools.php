@@ -10,6 +10,11 @@
 
 namespace FOSSBilling;
 
+use Egulias\EmailValidator\EmailValidator;
+use Egulias\EmailValidator\Validation\DNSCheckValidation;
+use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
+use Egulias\EmailValidator\Validation\RFCValidation;
+
 class Tools
 {
     protected ?\Pimple\Container $di = null;
@@ -270,11 +275,26 @@ class Tools
         return $result;
     }
 
-    public function validateAndSanitizeEmail($email, $throw = true)
+    /**
+     * Checks if a given email address is valid.
+     * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
+     * In a testing / development environment it will only check the RFC standards.
+     */
+    public function validateAndSanitizeEmail(string $email, bool $throw = true)
     {
         $email = htmlspecialchars($email);
 
-        if (!filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) {
+        $validator = new EmailValidator();
+        if (Environment::isProduction()) {
+            $validations = new MultipleValidationWithAnd([
+                new RFCValidation(),
+                new DNSCheckValidation()
+            ]);
+        } else {
+            $validations = new RFCValidation();
+        }
+
+        if (!$validator->isValid($email, $validations)) {
             if ($throw) {
                 $friendlyName = ucfirst(__trans('Email address'));
                 throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);

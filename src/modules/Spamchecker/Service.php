@@ -10,7 +10,10 @@
 
 namespace Box\Mod\Spamchecker;
 
-use \FOSSBilling\InjectionAwareInterface;
+use EmailChecker\Adapter;
+use EmailChecker\Utilities;
+use FOSSBilling\InjectionAwareInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
@@ -33,6 +36,7 @@ class Service implements InjectionAwareInterface
         $spamCheckerService = $di['mod_service']('Spamchecker');
         $spamCheckerService->isBlockedIp($event);
         $spamCheckerService->isSpam($event);
+        $spamCheckerService->isTemp($event);
     }
 
     public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
@@ -41,6 +45,7 @@ class Service implements InjectionAwareInterface
         $spamCheckerService = $di['mod_service']('Spamchecker');
         $spamCheckerService->isBlockedIp($event);
         $spamCheckerService->isSpam($event);
+        $spamCheckerService->isTemp($event);
     }
 
     /**
@@ -106,6 +111,21 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    public function isTemp(\Box_Event $event)
+    {
+        $di = $event->getDi();
+        $config = $di['mod_config']('Spamchecker');
+
+        $check = $config['check_temp_emails'] ?? false;
+        if ($check) {
+            $spamCheckerService = $di['mod_service']('Spamchecker');
+            $params = $event->getParameters();
+            $email = $params['email'] ?? '';
+
+            $spamCheckerService->isATempEmail($email, true);
+        }
+    }
+
     /**
      * Pass params:.
      *
@@ -137,5 +157,72 @@ class Service implements InjectionAwareInterface
         }
 
         return false;
+    }
+
+    /**
+     * Checks if a provided email address is using a disposable email service.
+     * 
+     * @param string $email The email address to check.
+     * @param bool $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
+     * 
+     * @return bool true if the email address is disposable, false if it isn't.
+     */
+    public function isATempEmail(string $email, bool $throw = true): bool
+    {
+        /* 
+         * The EmailChecker package utilizes PHP's email verification which does not correctly validate international email addresses.
+         * We are already using a proper validation package that does validate these as it should, so below is actually a workaround for the limitation.
+         * @see https://github.com/MattKetmo/EmailChecker/issues/92
+         * 
+         * Without this workaround, FOSSBilling would be unable to accept international email addresses when disposable email checking is enabled.
+         */
+        $adapter = new Adapter\ArrayAdapter($this->getTempMailDomainDB());
+        try {
+            list($local, $domain) = Utilities::parseEmailAddress($email);
+        } catch (\Exception) {
+            // Just to be on the safe side, assume the email is valid if there was an error.
+            return false;
+        }
+        $invalid = $adapter->isThrowawayDomain($domain);
+
+        if ($invalid && $throw) {
+            throw new \FOSSBilling\InformationException('Disposable email addresses are not allowed');
+        }
+
+        return $invalid;
+    }
+
+    /**
+     * Fetches the most recent list of disposable email addresses, parses them to remove blanks or invalid domains, and then returns it as an array.
+     * The database is from here: https://github.com/disposable-email-domains/disposable-email-domains
+     * Results are cached for 1 week.
+     * 
+     * @return array 
+     */
+    private function getTempMailDomainDB(): array
+    {
+        return $this->di['cache']->get('CentralAlerts.getAlerts', function (ItemInterface $item) {
+            $item->expiresAfter(604800); // Retain the DB cache for one week and then fetch the list again
+
+            $client = HttpClient::create();
+            $response = $client->request('GET', 'https://raw.githubusercontent.com/disposable-email-domains/disposable-email-domains/master/disposable_email_blocklist.conf');
+            $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tempEmailDB.txt';
+
+            if ($response->getStatusCode() === 200) {
+                file_put_contents($dbPath, $response->getContent());
+            } else {
+                return [];
+            }
+
+            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            @unlink($dbPath);
+            if (!$database) {
+                return [];
+            }
+
+            return array_filter($database, function ($domain) {
+                return filter_var($domain, FILTER_VALIDATE_DOMAIN);
+            });
+        });
     }
 }

@@ -35,7 +35,8 @@
         "birthdate",
         "Birthdate",
         "jhurliman",
-        "jambroseclarke"
+        "jambroseclarke",
+        "Egulias"
     ],
 
     "ignoreWords": [
@@ -365,7 +366,7 @@
         "progressbar",
         "valuenow",
         "valuemin",
-        "valuemax"
+        "valuemax",
     ],
     "ignorePaths": [
         "tests/**",
