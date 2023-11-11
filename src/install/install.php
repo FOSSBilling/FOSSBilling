@@ -439,7 +439,7 @@ final class FOSSBilling_Installer
             'user' => $this->session->get('database_username'),
             'password' => $this->session->get('database_password'),
         ];
-        $data['twig']['cache'] = PATH_ROOT . DIRECTORY_SEPARATOR. 'data' . DIRECTORY_SEPARATOR . 'cache';
+        $data['twig']['cache'] = PATH_CACHE;
 
         // Build and return data
         $output = '<?php ' . PHP_EOL;
