@@ -453,7 +453,7 @@ class Service implements InjectionAwareInterface
 
         switch ($type) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $destination = PATH_MODS . DIRECTORY_SEPARATOR . $id;
+                $destination = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($id);
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_THEME:
@@ -465,7 +465,7 @@ class Service implements InjectionAwareInterface
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_PG:
-                $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . $id;
+                $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . ucfirst($id);
 
                 break;
         }
