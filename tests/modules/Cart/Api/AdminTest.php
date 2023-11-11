@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase
             ->method('getSimpleResultSet')
             ->will($this->returnValue($simpleResultArr));
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(array('getSearchQuery', 'toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->will($this->returnValue(array('query', array())));
@@ -58,7 +58,7 @@ class AdminTest extends \BBTestCase
 
     public function testGet()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -68,7 +68,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_Cart()));
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(array('toApiArray'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
@@ -81,7 +81,7 @@ class AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data   = array(
-            'id' => rand(1, 100)
+            'id' => random_int(1, 100)
         );
         $result = $this->adminApi->get($data);
 
@@ -94,7 +94,7 @@ class AdminTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue(array(rand(1, 100), date('Y-m-d H:i:s'))));
+            ->will($this->returnValue(array(random_int(1, 100), date('Y-m-d H:i:s'))));
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
             ->will($this->returnValue(null));
@@ -105,7 +105,7 @@ class AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $data   = array(
-            'id' => rand(1, 100)
+            'id' => random_int(1, 100)
         );
         $result = $this->adminApi->batch_expire($data);
 

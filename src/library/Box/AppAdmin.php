@@ -26,7 +26,7 @@ class Box_AppAdmin extends Box_App
         return $template->render($variableArray);
     }
 
-    public function redirect($path)
+    public function redirect($path): never
     {
         $location = $this->di['url']->adminLink($path);
         header("Location: $location");

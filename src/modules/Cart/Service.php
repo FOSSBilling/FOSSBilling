@@ -69,7 +69,7 @@ class Service implements InjectionAwareInterface
 
     public function addItem(\Model_Cart $cart, \Model_Product $product, array $data)
     {
-        $event_params = array_merge($data, ['cart_id' => $cart->id, 'product_id' => $product->id]);
+        $event_params = [...$data, 'cart_id' => $cart->id, 'product_id' => $product->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeProductAddedToCart', 'params' => $event_params]);
 
         $productService = $product->getService();

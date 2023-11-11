@@ -31,9 +31,7 @@ class ServiceTest extends \BBTestCase
         );
     }
 
-    /**
-     * @dataProvider searchFilters
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
     public function testgetSearchQuery($filterKey, $search, $expected)
     {
         $di = new \Pimple\Container();
@@ -42,14 +40,14 @@ class ServiceTest extends \BBTestCase
         $result  = $service->getSearchQuery($filterKey);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
-        $this->assertTrue(strpos($result[0], $search) != false, $expected, $result);
+        $this->assertTrue(str_contains($result[0], $search), $expected);
     }
 
     public function testLogEmail()
     {
         $service = new \Box\Mod\Activity\Service();
         $data = array(
-            'client_id'    => rand(1, 100),
+            'client_id'    => random_int(1, 100),
             'sender'       => 'sender',
             'recipients'   => 'recipients',
             'subject'      => 'subject',

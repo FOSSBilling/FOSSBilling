@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_pairs()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Page\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Page\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPairs')

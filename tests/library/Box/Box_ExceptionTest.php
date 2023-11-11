@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_ExceptionTest extends PHPUnit\Framework\TestCase
 {
 

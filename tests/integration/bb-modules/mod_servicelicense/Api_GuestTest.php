@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_ServiceLicenseTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'licensing-server.xml';
@@ -17,7 +15,7 @@ class Api_Guest_ServiceLicenseTest extends BBDbApiTestCase
             array(array(
                 'license'       =>  'BOX-NOT-EXISTS',
                 'host'          =>  'tests.com',
-                'path'          =>  dirname(__FILE__),
+                'path'          =>  __DIR__,
                 'version'       =>  '0.0.2',
                 'legacy'        =>   1,
             ), false),
@@ -25,7 +23,7 @@ class Api_Guest_ServiceLicenseTest extends BBDbApiTestCase
             array(array(
                 'license'       =>  'no_validation',
                 'host'          =>  'tests.com',
-                'path'          =>  dirname(__FILE__),
+                'path'          =>  __DIR__,
                 'version'       =>  '0.0.2',
                 'legacy'        =>   1,
             ), false),
@@ -33,16 +31,14 @@ class Api_Guest_ServiceLicenseTest extends BBDbApiTestCase
             array(array(
                 'license'       =>  'valid',
                 'host'          =>  'www.tests.com',
-                'path'          =>  dirname(__FILE__),
+                'path'          =>  __DIR__,
                 'version'       =>  '0.0.2',
                 'legacy'        =>   1,
             ), true),
         );
     }
 
-    /**
-     * @dataProvider variations
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('variations')]
     public function testGuestServiceLicense($data, $valid)
     {
         $result = $this->api_guest->servicelicense_check($data);

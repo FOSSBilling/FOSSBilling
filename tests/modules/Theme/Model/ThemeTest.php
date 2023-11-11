@@ -6,7 +6,7 @@ namespace Box\Mod\Theme\Model;
 
 class ThemeTest extends \BBTestCase {
 
-    private $existingTheme = 'huraga';
+    private ?string $existingTheme = 'huraga';
 
     public function testgetName()
     {
@@ -90,7 +90,7 @@ class ThemeTest extends \BBTestCase {
         $theme = new \Box\Mod\Theme\Model\Theme($this->existingTheme);
         $result = $theme->getPathConfig();
         $this->assertIsString($result);
-        $this->assertTrue(strpos($result, 'config') !== false);
+        $this->assertTrue(str_contains($result, 'config'));
     }
 
     public function testgetPathAssets()
@@ -98,7 +98,7 @@ class ThemeTest extends \BBTestCase {
         $theme = new \Box\Mod\Theme\Model\Theme($this->existingTheme);
         $result = $theme->getPathAssets();
         $this->assertIsString($result);
-        $this->assertTrue(strpos($result, 'assets') !== false);
+        $this->assertTrue(str_contains($result, 'assets'));
     }
 
     public function testgetPathHtml()
@@ -106,7 +106,7 @@ class ThemeTest extends \BBTestCase {
         $theme = new \Box\Mod\Theme\Model\Theme($this->existingTheme);
         $result = $theme->getPathHtml();
         $this->assertIsString($result);
-        $this->assertTrue(strpos($result, 'html') !== false);
+        $this->assertTrue(str_contains($result, 'html'));
     }
 
     public function testgetPathSettingsDataFile()
@@ -114,7 +114,7 @@ class ThemeTest extends \BBTestCase {
         $theme = new \Box\Mod\Theme\Model\Theme($this->existingTheme);
         $result = $theme->getPathSettingsDataFile();
         $this->assertIsString($result);
-        $this->assertTrue(strpos($result, 'settings_data.json') !== false);
+        $this->assertTrue(str_contains($result, 'settings_data.json'));
     }
 
 }

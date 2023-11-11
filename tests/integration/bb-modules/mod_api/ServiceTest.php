@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends BBDbApiTestCase
 {
     protected $_mod = 'api';

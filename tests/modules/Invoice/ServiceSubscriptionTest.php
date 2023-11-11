@@ -104,13 +104,13 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('load')
             ->will($this->onConsecutiveCalls($clientModel, $gatewayModel));
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $payGatewayService = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
+        $payGatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
             ->getMock();
         $payGatewayService->expects($this->atLeastOnce())
             ->method('toApiArray')
@@ -209,9 +209,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         );
     }
 
-    /**
-     * @dataProvider searchQueryData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
     public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams)
     {
         $di              = new \Pimple\Container();
@@ -224,7 +222,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertIsArray($result[1]);
 
         $this->assertEquals($expectedParams, $result[1]);
-        $this->assertTrue(strpos($result[0], $expectedSqlPart) !== false);
+        $this->assertTrue(str_contains($result[0], $expectedSqlPart));
     }
 
     public function testisSubscribableisNotSusbcribable()
@@ -272,7 +270,7 @@ class ServiceSubscriptionTest extends \BBTestCase
 
     public function testgetSubscriptionPeriod()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceSubscription')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)
             ->onlyMethods(array('isSubscribable'))
             ->getMock();
 

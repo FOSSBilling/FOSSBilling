@@ -73,15 +73,11 @@ class GuestTest extends \BBTestCase
         );
     }
 
-    /**
-     * @dataProvider datarecaptchaConfig
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('datarecaptchaConfig')]
     public function testrecaptcha($config, $expected)
     {
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function () use ($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn() => $config);
 
 
         $this->api->setDi($di);

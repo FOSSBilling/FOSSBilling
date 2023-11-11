@@ -10,12 +10,12 @@ class ServiceTest extends \BBTestCase {
     {
         $service = new \Box\Mod\Page\Service();
 
-        $themeService = $this->getMockBuilder('\Box\Mod\Theme\Service')->getMock();
+        $themeService = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $themeService->expects($this->atLeastOnce())
             ->method('getCurrentClientAreaThemeCode');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function() use ($themeService) {return $themeService;});
+        $di['mod_service'] = $di->protect(fn() => $themeService);
 
         $service->setDi($di);
         $result = $service->getPairs();

@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_PeriodTest extends PHPUnit\Framework\TestCase
 {
 

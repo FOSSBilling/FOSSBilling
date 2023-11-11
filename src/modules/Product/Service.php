@@ -14,18 +14,18 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    public const CUSTOM = 'custom';
-    public const LICENSE = 'license';
-    public const ADDON = 'addon';
-    public const DOMAIN = 'domain';
-    public const DOWNLOADABLE = 'downloadable';
-    public const HOSTING = 'hosting';
-    public const MEMBERSHIP = 'membership';
-    public const VPS = 'vps';
+    final public const CUSTOM = 'custom';
+    final public const LICENSE = 'license';
+    final public const ADDON = 'addon';
+    final public const DOMAIN = 'domain';
+    final public const DOWNLOADABLE = 'downloadable';
+    final public const HOSTING = 'hosting';
+    final public const MEMBERSHIP = 'membership';
+    final public const VPS = 'vps';
 
-    public const SETUP_AFTER_ORDER = 'after_order';
-    public const SETUP_AFTER_PAYMENT = 'after_payment';
-    public const SETUP_MANUAL = 'manual';
+    final public const SETUP_AFTER_ORDER = 'after_order';
+    final public const SETUP_AFTER_PAYMENT = 'after_payment';
+    final public const SETUP_MANUAL = 'manual';
 
     protected ?\Pimple\Container $di = null;
 

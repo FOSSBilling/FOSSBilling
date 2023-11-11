@@ -25,12 +25,12 @@ class GuestTest extends \BBTestCase {
 
     public function testget()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -56,7 +56,7 @@ class GuestTest extends \BBTestCase {
 
     public function testgetInvoiceNotFound()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -82,12 +82,12 @@ class GuestTest extends \BBTestCase {
 
     public function testupdate()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -114,7 +114,7 @@ class GuestTest extends \BBTestCase {
 
     public function testupdateInvoiceNotFound()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -140,7 +140,7 @@ class GuestTest extends \BBTestCase {
 
     public function testupdateInvoiceIsPaid()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -167,13 +167,13 @@ class GuestTest extends \BBTestCase {
 
     public function testgateways()
     {
-        $gatewayServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')->getMock();
+        $gatewayServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
         $gatewayServiceMock->expects($this->atLeastOnce())
             ->method('getActive')
             ->will($this->returnValue(array()));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use($gatewayServiceMock) {return $gatewayServiceMock;});
+        $di['mod_service'] = $di->protect(fn() => $gatewayServiceMock);
 
         $this->api->setDi($di);
 
@@ -187,7 +187,7 @@ class GuestTest extends \BBTestCase {
             'hash' => '',
             'gateway_id' => '',
         );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processInvoice')
             ->will($this->returnValue(array()));
@@ -227,11 +227,11 @@ class GuestTest extends \BBTestCase {
         $data = array(
             'hash' => '',
         );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

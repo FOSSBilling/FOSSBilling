@@ -71,7 +71,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         return ($result['status'] == 'AVAILABLE');
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('checking domain transferability')]);
     }
@@ -171,7 +171,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
     }
 
-    public function deleteDomain(Registrar_Domain $domain)
+    public function deleteDomain(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('deleting domains')]);
     }

@@ -11,9 +11,9 @@
 
 abstract class Payment_AdapterAbstract
 {
-    public const TYPE_HTML             = 'html';
-    public const TYPE_FORM             = 'form';
-    public const TYPE_API              = 'api';
+    final public const TYPE_HTML             = 'html';
+    final public const TYPE_FORM             = 'form';
+    final public const TYPE_API              = 'api';
 
     /**
      * Response text for notify_url

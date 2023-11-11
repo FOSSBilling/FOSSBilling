@@ -681,7 +681,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => $event_params]);
         $result = $this->createFromOrder($order);
         if (is_array($result)) {
-            $event_params = array_merge($event_params, $result);
+            $event_params = [...$event_params, ...$result];
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => $event_params]);
 

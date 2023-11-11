@@ -48,12 +48,10 @@ class GuestTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider is_onProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('is_onProvider')]
     public function testis_on($data, $expected)
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isExtensionActive')
             ->will($this->returnValue(array()));
@@ -72,13 +70,13 @@ class GuestTest extends \BBTestCase {
 
     public function testtheme()
     {
-        $themeServiceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')->getMock();
+        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getThemeConfig')
             ->will($this->returnValue(array()));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function ($name) use($themeServiceMock) { return $themeServiceMock;});
+        $di['mod_service'] = $di->protect(fn($name) => $themeServiceMock);
 
         $this->api->setDi($di);
         $result = $this->api->theme();
@@ -89,7 +87,7 @@ class GuestTest extends \BBTestCase {
     {
         $data['ext'] = 'testExtension';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array()));

@@ -156,7 +156,7 @@ class Box_App
     /**
      * @param string $path
      */
-    public function redirect($path)
+    public function redirect($path): never
     {
         $location = $this->di['url']->link($path);
         header("Location: $location");

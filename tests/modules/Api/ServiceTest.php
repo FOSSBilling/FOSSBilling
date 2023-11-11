@@ -25,7 +25,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetRequestCount()
     {
-        $since = 674690401; // timestamp == '1991-05-20 00:00:01';
+        $since = 674_690_401; // timestamp == '1991-05-20 00:00:01';
         $ip = '1.2.3.4';
 
         $requestNumber = 11;

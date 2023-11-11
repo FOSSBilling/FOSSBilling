@@ -147,10 +147,10 @@ class ServiceTest extends \BBTestCase
                                           'disable_change_email' => 0
                                       )));
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->will($this->returnValue(false));
 
@@ -158,12 +158,8 @@ class ServiceTest extends \BBTestCase
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(function ($name) use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
-        $di['mod']            = $di->protect(function () use ($modMock) {
-            return $modMock;
-        });
+        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
+        $di['mod']            = $di->protect(fn() => $modMock);
         $di['tools']          = $toolsMock;
 
         $model = new \Model_Client();
@@ -181,14 +177,14 @@ class ServiceTest extends \BBTestCase
             'type'           => 'string',
             'address_1'      => 'string',
             'address_2'      => 'string',
-            'phone_cc'       => rand(10, 300),
-            'phone'          => rand(10000, 90000),
+            'phone_cc'       => random_int(10, 300),
+            'phone'          => random_int(10000, 90000),
             'country'        => 'string',
             'postcode'       => 'string',
             'city'           => 'string',
             'state'          => 'string',
             'document_type'  => 'string',
-            'document_nr'    => rand(100000, 900000),
+            'document_nr'    => random_int(100000, 900000),
             'lang'           => 'string',
             'notes'          => 'string',
             'custom_1'       => 'string',
@@ -231,7 +227,7 @@ class ServiceTest extends \BBTestCase
                                           'disable_change_email' => 1
                                       )));
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->never())->
         method('emailAlreadyRegistered')->will($this->returnValue(false));
 
@@ -239,12 +235,8 @@ class ServiceTest extends \BBTestCase
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(function ($name) use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
-        $di['mod']            = $di->protect(function () use ($modMock) {
-            return $modMock;
-        });
+        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
+        $di['mod']            = $di->protect(fn() => $modMock);
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -282,10 +274,10 @@ class ServiceTest extends \BBTestCase
                                           'disable_change_email' => 0
                                       )));
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->will($this->returnValue(true));
 
@@ -293,12 +285,8 @@ class ServiceTest extends \BBTestCase
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(function ($name) use ($clientServiceMock) {
-            return $clientServiceMock;
-        });
-        $di['mod']            = $di->protect(function () use ($modMock) {
-            return $modMock;
-        });
+        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
+        $di['mod']            = $di->protect(fn() => $modMock);
         $di['tools']          = $toolsMock;
 
         $model = new \Model_Client();
@@ -378,7 +366,7 @@ class ServiceTest extends \BBTestCase
 
     public function testLogoutClient()
     {
-        $sessionMock = $this->getMockBuilder("\FOSSBilling\Session")
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -394,7 +382,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new Service();
         $service->setDi($di);
-        $result = $service->logoutClient($model, 'new password');
+        $result = $service->logoutClient();
         $this->assertTrue($result);
     }
 }

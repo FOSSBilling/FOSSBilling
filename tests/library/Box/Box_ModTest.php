@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_ModTest extends PHPUnit\Framework\TestCase
 {
     public function testEmptyConfig()

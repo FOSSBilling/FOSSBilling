@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_cart.xml';

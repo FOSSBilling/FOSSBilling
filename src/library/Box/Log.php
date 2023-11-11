@@ -20,14 +20,14 @@
  */
 class Box_Log implements \FOSSBilling\InjectionAwareInterface
 {
-    public const EMERG = 0;  // Emergency: system is unusable
-    public const ALERT = 1;  // Alert: action must be taken immediately
-    public const CRIT = 2;  // Critical: critical conditions
-    public const ERR = 3;  // Error: error conditions
-    public const WARN = 4;  // Warning: warning conditions
-    public const NOTICE = 5;  // Notice: normal but significant condition
-    public const INFO = 6;  // Informational: informational messages
-    public const DEBUG = 7;  // Debug: debug messages
+    final public const EMERG = 0;  // Emergency: system is unusable
+    final public const ALERT = 1;  // Alert: action must be taken immediately
+    final public const CRIT = 2;  // Critical: critical conditions
+    final public const ERR = 3;  // Error: error conditions
+    final public const WARN = 4;  // Warning: warning conditions
+    final public const NOTICE = 5;  // Notice: normal but significant condition
+    final public const INFO = 6;  // Informational: informational messages
+    final public const DEBUG = 7;  // Debug: debug messages
 
     protected array $_priorities = [
         self::EMERG => 'EMERG',
@@ -144,14 +144,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
 
     protected function _packEvent($message, $priority)
     {
-        return array_merge([
-            'timestamp' => date('Y-m-d H:i:s'),
-            'message' => $message,
-            'priority' => $priority,
-            'priorityName' => $this->_priorities[$priority],
-        ],
-            $this->_extras
-        );
+        return ['timestamp' => date('Y-m-d H:i:s'), 'message' => $message, 'priority' => $priority, 'priorityName' => $this->_priorities[$priority], ...$this->_extras];
     }
 
     /**

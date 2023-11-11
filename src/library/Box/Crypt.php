@@ -12,7 +12,7 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public const METHOD = 'aes-256-cbc';
+    final public const METHOD = 'aes-256-cbc';
 
     public function __construct()
     {

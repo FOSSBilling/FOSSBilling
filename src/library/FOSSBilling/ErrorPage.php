@@ -148,7 +148,7 @@ class ErrorPage
      * @param string $message The original exception message
      * @return never
      */
-    public function generatePage(int $code, string $message)
+    public function generatePage(int $code, string $message): never
     {
         $error = static::getCodeInfo($code);
         $error['message'] ??= "You've received a generic error message: <code> . $message . </code>";

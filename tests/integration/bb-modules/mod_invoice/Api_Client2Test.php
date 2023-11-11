@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_InvoiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'transactions.xml';
@@ -160,23 +158,23 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
 
         if (count($list)) {
             $item = $list[0];
-            $this->arrayHasKey('id', $item);
-            $this->arrayHasKey('invoice_id', $item);
-            $this->arrayHasKey('txn_id', $item);
-            $this->arrayHasKey('txn_status', $item);
-            $this->arrayHasKey('gateway_id', $item);
-            $this->arrayHasKey('gateway', $item);
-            $this->arrayHasKey('amount', $item);
-            $this->arrayHasKey('currency', $item);
-            $this->arrayHasKey('type', $item);
-            $this->arrayHasKey('status', $item);
-            $this->arrayHasKey('ip', $item);
-            $this->arrayHasKey('validate_ipn', $item);
-            $this->arrayHasKey('error', $item);
-            $this->arrayHasKey('error_code', $item);
-            $this->arrayHasKey('note', $item);
-            $this->arrayHasKey('created_at', $item);
-            $this->arrayHasKey('updated_at', $item);
+            $this->arrayHasKey('id');
+            $this->arrayHasKey('invoice_id');
+            $this->arrayHasKey('txn_id');
+            $this->arrayHasKey('txn_status');
+            $this->arrayHasKey('gateway_id');
+            $this->arrayHasKey('gateway');
+            $this->arrayHasKey('amount');
+            $this->arrayHasKey('currency');
+            $this->arrayHasKey('type');
+            $this->arrayHasKey('status');
+            $this->arrayHasKey('ip');
+            $this->arrayHasKey('validate_ipn');
+            $this->arrayHasKey('error');
+            $this->arrayHasKey('error_code');
+            $this->arrayHasKey('note');
+            $this->arrayHasKey('created_at');
+            $this->arrayHasKey('updated_at');
         }
     }
 }

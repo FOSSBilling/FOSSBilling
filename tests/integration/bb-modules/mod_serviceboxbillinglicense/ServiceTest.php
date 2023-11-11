@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
     public function testService()
@@ -32,7 +30,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $order = $this->di['db']->load('ClientOrder', 1);
 
         $model = $service->create($order);
-        $this->assertInstanceOf('\RedBeanPHP\OODBBean', $model);
+        $this->assertInstanceOf('\\' . \RedBeanPHP\OODBBean::class, $model);
 
 
         $this->expectException(\FOSSBilling\Exception::class);

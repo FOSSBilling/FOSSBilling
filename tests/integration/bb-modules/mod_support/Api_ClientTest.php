@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_SupportTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_support.xml';

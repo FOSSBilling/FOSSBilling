@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 {
 
@@ -88,7 +86,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service->setDi($this->di);
 
         $result = $service->getCurrentClientAreaTheme();
-        $this->assertInstanceOf('\Box\Mod\Theme\Model\Theme', $result);
+        $this->assertInstanceOf('\\' . \Box\Mod\Theme\Model\Theme::class, $result);
         $this->assertEquals('huraga', $result->getName());
     }
 }

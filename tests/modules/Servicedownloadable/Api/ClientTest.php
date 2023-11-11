@@ -65,7 +65,7 @@ class ClientTest extends \BBTestCase {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
@@ -76,7 +76,7 @@ class ClientTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
+        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
 
         $this->api->setDi($di);
         $this->api->setIdentity($modelClient);
@@ -95,12 +95,12 @@ class ClientTest extends \BBTestCase {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedownloadable\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendFile')
             ->will($this->returnValue(true));
 
-        $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue(new \Model_ServiceDownloadable()));
@@ -116,7 +116,7 @@ class ClientTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
+        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
 
         $this->api->setDi($di);
         $this->api->setIdentity($modelClient);

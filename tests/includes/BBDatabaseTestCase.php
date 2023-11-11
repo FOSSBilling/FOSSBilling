@@ -3,7 +3,7 @@ use PHPUnit\Framework\TestCase;
 
 abstract class BBDatabaseTestCase extends Testcase
 {
-    static private $pdo = null;
+    static private ?\PDO $pdo = null;
     private $conn = NULL;
 
     protected $_seedFilesPath = NULL;

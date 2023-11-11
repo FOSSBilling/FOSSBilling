@@ -67,7 +67,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         throw new Registrar_Exception('Email registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability']);
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception('Email registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain transferability']);
     }

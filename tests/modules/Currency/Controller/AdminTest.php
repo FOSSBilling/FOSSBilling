@@ -24,7 +24,7 @@ class AdminTest extends \BBTestCase {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->once())
             ->method('get')
-            ->with('/currency/manage/:code', 'get_manage', array('code'=>'[a-zA-Z]+'), 'Box\Mod\Currency\Controller\Admin');
+            ->with('/currency/manage/:code', 'get_manage', array('code'=>'[a-zA-Z]+'), \Box\Mod\Currency\Controller\Admin::class);
 
         $controllerAdmin = new \Box\Mod\Currency\Controller\Admin();
         $controllerAdmin->register($boxAppMock);

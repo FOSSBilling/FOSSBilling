@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Client_ServiceTest extends ApiTestCase
 {
     public function testEvents()
@@ -88,7 +86,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $r = $this->di['db']->dispense('ClientPasswordReset');
         $r->client_id   = $id;
         $r->ip          = '10.0.0.1';
-        $r->hash        = sha1(rand(50, rand(10, 99)));
+        $r->hash        = sha1(random_int(50, random_int(10, 99)));
         $r->created_at  = date('Y-m-d H:i:s');
         $r->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($r);

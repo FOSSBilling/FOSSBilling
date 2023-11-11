@@ -64,7 +64,7 @@ class ServiceTest extends \BBTestCase {
         $database->expects($this->atLeastOnce())->method('store')
             ->will($this->returnValue(1));
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('url')
             ->will($this->returnValue('fossbilling.org/index.php/client/confirm-email/'));
 
@@ -79,7 +79,7 @@ class ServiceTest extends \BBTestCase {
         $result = $clientService->generateEmailConfirmationLink($client_id);
 
         $this->assertIsString($result);
-        $this->assertTrue(strpos($result, '/client/confirm-email/') !== false);
+        $this->assertTrue(str_contains($result, '/client/confirm-email/'));
     }
 
     public function testonAfterClientSignUp()
@@ -93,16 +93,14 @@ class ServiceTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->will($this->returnValue($eventParams));
 
-        $service = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->will($this->returnValue(true));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
-        $di['mod_config'] = $di->protect(function ($name) use($di) {
-            return array ('require_email_confirmation' => false);
-        });
+        $di['mod_service'] = $di->protect(fn() => $service);
+        $di['mod_config'] = $di->protect(fn($name) => array ('require_email_confirmation' => false));
 
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -127,12 +125,12 @@ class ServiceTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->will($this->returnValue($eventParams));
 
-        $service = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->onlyMethods(array('generateEmailConfirmationLink'))->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->onlyMethods(array('generateEmailConfirmationLink'))->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
             method('generateEmailConfirmationLink')->will($this->returnValue('Link_string'));
 
@@ -145,9 +143,7 @@ class ServiceTest extends \BBTestCase {
                 return $clientServiceMock;
             }
         });
-        $di['mod_config'] = $di->protect(function ($name) use($di) {
-            return array ('require_email_confirmation' => true);
-        });
+        $di['mod_config'] = $di->protect(fn($name) => array ('require_email_confirmation' => true));
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->will($this->returnValue($di));
@@ -169,12 +165,12 @@ class ServiceTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->will($this->returnValue($eventParams));
 
-        $service = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
         $service->expects($this->atLeastOnce())->
             method('sendTemplate')->will($this->throwException(new \Exception('exception created in unit test')));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
+        $di['mod_service'] = $di->protect(fn() => $service);
         $di['mod_config'] = $di->protect(function ($name) use($di) {
             array ('require_email_confirmation' => false);
         });
@@ -257,9 +253,7 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider searchQueryData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
     public function testgetSearchQuery($data, $expectedStr, $expectedParams)
     {
         $clientService = new \Box\Mod\Client\Service();
@@ -267,7 +261,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(strpos($result[0], $expectedStr) !== false, $result[0]);
+        $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == array());
     }
 
@@ -280,7 +274,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(strpos($result[0], $selectStmt) !== false, $result[0]);
+        $this->assertTrue(str_contains($result[0], $selectStmt), $result[0]);
     }
 
     public function testgetPairs()
@@ -410,7 +404,7 @@ class ServiceTest extends \BBTestCase {
         $currency = 'EUR';
         $model    = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $model->id       = rand(1, 100);
+        $model->id       = random_int(1, 100);
         $model->currency = 'USD';
 
         $invoiceModel = new \Model_Invoice();
@@ -437,7 +431,7 @@ class ServiceTest extends \BBTestCase {
         $currency = 'EUR';
         $model    = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $model->id       = rand(1, 100);
+        $model->id       = random_int(1, 100);
         $model->currency = 'USD';
 
         $clientOrderModel = new \Model_ClientOrder();
@@ -445,7 +439,7 @@ class ServiceTest extends \BBTestCase {
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->exactly(2))->method('findOne')
-            ->will($this->onConsecutiveCalls($this->returnValue(null, $clientorderModel)));
+            ->will($this->onConsecutiveCalls($this->returnValue(null)));
 
         $di       = new \Pimple\Container();
         $di['db'] = $database;
@@ -484,9 +478,7 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider searchBalanceQueryData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('searchBalanceQueryData')]
     public function testgetBalanceSearchQuery($data, $expectedStr, $expectedParams)
     {
 
@@ -494,12 +486,12 @@ class ServiceTest extends \BBTestCase {
 
         $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
         $clientBalanceService->setDi($di);
-        list ($sql, $params) = $clientBalanceService->getSearchQuery($data);
+        [$sql, $params] = $clientBalanceService->getSearchQuery($data);
         $this->assertNotEmpty($sql);
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(strpos($sql, $expectedStr) !== false, $sql);
+        $this->assertTrue(str_contains($sql, $expectedStr), $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == array());
 
     }
@@ -619,21 +611,19 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider searchHistoryQueryData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('searchHistoryQueryData')]
     public function testgetHistorySearchQuery($data, $expectedStr, $expectedParams)
     {
         $clientService = new \Box\Mod\Client\Service();
         $di = new \Pimple\Container();
 
         $clientService->setDi($di);
-        list ($sql, $params) = $clientService->getHistorySearchQuery($data);
+        [$sql, $params] = $clientService->getHistorySearchQuery($data);
         $this->assertNotEmpty($sql);
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(strpos($sql, $expectedStr) !== false, $sql);
+        $this->assertTrue(str_contains($sql, $expectedStr), $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == array());
     }
 
@@ -720,9 +710,7 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider getProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
     public function testget($fieldName, $fieldValue)
     {
 
@@ -801,7 +789,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->onlyMethods(array('getClientBalance'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -837,20 +825,16 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider testIsClientTaxableProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('testIsClientTaxableProvider')]
     public function testIsClientTaxable($getParamValueReturn, $tax_exempt, $expected)
     {
-        $service = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->returnValue($getParamValueReturn));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($service) {
-                return $service;
-            });
+        $di['mod_service'] = $di->protect(fn() => $service);
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -929,7 +913,7 @@ class ServiceTest extends \BBTestCase {
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-        $requestMock = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
+        $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $ip = '10.10.10.2';
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress')
@@ -1043,9 +1027,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
-        $di['mod_config'] = $di->protect(function ($name) use($di) {
-            return array ('require_email_confirmation' => false);
-        });
+        $di['mod_config'] = $di->protect(fn($name) => array ('require_email_confirmation' => false));
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1077,9 +1059,7 @@ class ServiceTest extends \BBTestCase {
         $di               = new \Pimple\Container();
         $di['db']         = $dbMock;
         $di['auth']       = $authMock;
-        $di['mod_config'] = $di->protect(function ($name) use ($di) {
-            return array('require_email_confirmation' => true);
-        });
+        $di['mod_config'] = $di->protect(fn($name) => array('require_email_confirmation' => true));
         $service          = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1098,9 +1078,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn($modName) => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1121,9 +1099,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn($modName) => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1140,9 +1116,7 @@ class ServiceTest extends \BBTestCase {
         $config = array();
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn($modName) => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1161,9 +1135,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn($modName) => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1179,9 +1151,7 @@ class ServiceTest extends \BBTestCase {
 
         $config['required'] = $required;
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn($modName) => $config);
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1201,9 +1171,7 @@ class ServiceTest extends \BBTestCase {
         );
         $config['custom_fields'] = $custom_field;
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn($modName) => $config);
 
         $data = array();
         $service = new \Box\Mod\Client\Service();
@@ -1225,9 +1193,7 @@ class ServiceTest extends \BBTestCase {
         );
         $config['custom_fields'] = $custom_field;
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn($modName) => $config);
 
         $data = array();
         $service = new \Box\Mod\Client\Service();

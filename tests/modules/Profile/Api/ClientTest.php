@@ -16,15 +16,13 @@ class ClientTest extends \BBTestCase
 
     public function testGet()
     {
-        $clientService = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $clientService = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($clientService) {
-            return $clientService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $clientService);
         $this->clientApi->setDi($di);
         $this->clientApi->setIdentity(new \Model_Client());
 
@@ -34,7 +32,7 @@ class ClientTest extends \BBTestCase
 
     public function testUpdate()
     {
-        $service = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('updateClient')
             ->will($this->returnValue(true));
@@ -62,7 +60,7 @@ class ClientTest extends \BBTestCase
     public function testApi_key_reset()
     {
         $apiKey  = '16047a3e69f5245756d73b419348f0c7';
-        $service = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('resetApiKey')
             ->will($this->returnValue($apiKey));
@@ -76,12 +74,12 @@ class ClientTest extends \BBTestCase
 
     public function testChange_password()
     {
-        $service = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('changeClientPassword')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -109,13 +107,13 @@ class ClientTest extends \BBTestCase
 
     public function testChange_passwordPasswordsDoNotMatchException()
     {
-        $service = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->never())
             ->method('changeClientPassword')
             ->will($this->returnValue(true));
 
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -137,7 +135,7 @@ class ClientTest extends \BBTestCase
 
     public function testLogout()
     {
-        $service = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('logoutClient')
             ->will($this->returnValue(true));

@@ -104,9 +104,7 @@ class CentralAlerts implements InjectionAwareInterface
             $httpClient = HttpClient::create();
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
-                'query' => array_merge($params, [
-                    'fossbilling_version' => Version::VERSION,
-                ]),
+                'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
             $json = $response->toArray();
         } catch (TransportExceptionInterface | HttpExceptionInterface $e) {

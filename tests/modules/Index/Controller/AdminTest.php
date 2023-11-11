@@ -48,25 +48,5 @@ class AdminTest extends \BBTestCase {
         $controller->setDi($di);
         $controller->get_index($boxAppMock);
     }
-
-    public function testget_index()
-    {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
-        $boxAppMock->expects($this->atLeastOnce())
-            ->method('redirect')
-            ->with('/staff/login');
-
-        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
-        $authorizationMock->expects($this->atLeastOnce())
-            ->method("isAdminLoggedIn")
-            ->willReturn(false);
-
-        $di = new \Pimple\Container();
-        $di['auth'] = $authorizationMock;
-
-        $controller = new \Box\Mod\Index\Controller\Admin();
-        $controller->setDi($di);
-        $controller->get_index($boxAppMock);
-    }
 }
  

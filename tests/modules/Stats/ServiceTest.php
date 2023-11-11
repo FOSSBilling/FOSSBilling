@@ -34,13 +34,13 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetOrdersStatuses()
     {
-        $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('counter')
             ->will($this->returnValue(array()));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
+        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -67,7 +67,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetSummary()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -100,7 +100,7 @@ class ServiceTest extends \BBTestCase {
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('fetchColumn');
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -116,14 +116,14 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetSummaryIncome()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('fetchColumn');
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -147,7 +147,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetProductSales()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -159,7 +159,7 @@ class ServiceTest extends \BBTestCase {
             ->method('fetchAll')
             ->will($this->returnValue($res));
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -178,7 +178,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testincomeAndRefundStats()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -193,7 +193,7 @@ class ServiceTest extends \BBTestCase {
             ->method('fetchAll')
             ->will($this->returnValue($res));
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -209,7 +209,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetRefunds()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -218,7 +218,7 @@ class ServiceTest extends \BBTestCase {
             ->method('fetchAll')
             ->will($this->returnValue(array()));
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -238,7 +238,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetIncome()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -247,7 +247,7 @@ class ServiceTest extends \BBTestCase {
             ->method('fetchAll')
             ->will($this->returnValue(array()));
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -267,7 +267,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetClientCountries()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -276,7 +276,7 @@ class ServiceTest extends \BBTestCase {
             ->method('fetchAll')
             ->will($this->returnValue(array()));
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -292,7 +292,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetSalesByCountry()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -301,7 +301,7 @@ class ServiceTest extends \BBTestCase {
             ->method('fetchAll')
             ->will($this->returnValue(array()));
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
@@ -317,7 +317,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetTableStats()
     {
-        $pdoStatmentMock = $this->getMockBuilder('\Box\Mod\Stats\PdoStatmentsMock')
+        $pdoStatmentMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -326,7 +326,7 @@ class ServiceTest extends \BBTestCase {
             ->method('fetchAll')
             ->will($this->returnValue(array()));
 
-        $pdoMock = $this->getMockBuilder('\Box\Mod\Stats\PdoMock')->getMock();
+        $pdoMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\PdoMock::class)->getMock();
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->will($this->returnValue($pdoStatmentMock));
