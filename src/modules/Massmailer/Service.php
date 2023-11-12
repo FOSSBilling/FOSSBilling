@@ -83,7 +83,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $row = $this->toApiArray($model);
         $filter = $row['filter'];
 
-        $sql = 'SELECT c.id, c.first_name, c.last_name
+        $sql = 'SELECT c.id
             FROM client c
             LEFT JOIN client_order co ON (co.client_id = c.id)
             WHERE 1
