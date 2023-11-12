@@ -24,6 +24,8 @@ if ($url === '/run-patcher') {
     try {
         $patcher->applyConfigPatches();
         $patcher->applyCorePatches();
+        $di['tools']->emptyFolder(PATH_CACHE);
+        
         exit('Patches have been applied');
     } catch (\Exception $e) {
         exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
