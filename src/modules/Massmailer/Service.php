@@ -83,7 +83,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $row = $this->toApiArray($model);
         $filter = $row['filter'];
 
-        $sql = 'SELECT c.id
+        $sql = 'SELECT DISTINCT c.id
             FROM client c
             LEFT JOIN client_order co ON (co.client_id = c.id)
             WHERE 1
@@ -114,7 +114,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \Exception($sql . ' ' . print_r($values, 1));
         }
 
-        return array_unique($this->di['db']->getAll($sql, $values), SORT_REGULAR);
+        return $this->di['db']->getAll($sql, $values);
     }
 
     public function getParsed($model, $client_id)
