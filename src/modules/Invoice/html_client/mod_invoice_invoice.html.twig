@@ -257,6 +257,7 @@
                     <p id="bodyText"></p>
                     <a href="#" class="btn btn-primary" id="single">{{ "Pay now with a one-time payment"|trans }}</a>
                     <a href="#" class="btn btn-primary" id="subscription" hidden="true">{{ "Pay now and create a subscription"|trans }}</a>
+                    <a href="#" class="btn btn-primary" id="pay-nondescript" hidden="true">{{ "Pay now"|trans }}</a>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">{{ 'Cancel'|trans }}</button>
@@ -289,23 +290,31 @@
 
         canAnyGatewayDoSubs = {{ anyGatewayDoesSubscriptions ? 'true' : 'false' }};
 
-        if(supportsSubscription && invoiceSubscribable){
-            document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
-            document.getElementById('subscription').style.display = '';
-        } else if (!invoiceSubscribable) {
+        {% if settings.prompt_subscription %}
+            if(supportsSubscription && invoiceSubscribable){
+                document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
+                document.getElementById('subscription').style.display = '';
+            } else if (!invoiceSubscribable) {
+                document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
+                document.getElementById('subscription').style.display = 'none';
+            } else {
+                if(canAnyGatewayDoSubs){
+                    document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it. Optionally, you may choose a different payment gateway if you wish to pay using a subscription.'|trans }}";
+                } else {
+                    document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
+                }
+                document.getElementById('subscription').style.display = 'none';
+            }
+        {% else %}
             document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
             document.getElementById('subscription').style.display = 'none';
-        } else {
-            if(canAnyGatewayDoSubs){
-                document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it. Optionally, you may choose a different payment gateway if you wish to pay using a subscription.'|trans }}";
-            } else {
-                document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
-            }
-            document.getElementById('subscription').style.display = 'none';
-        }
+            document.getElementById('single').style.display = 'none';
+            document.getElementById('pay-nondescript').style.display = '';
+        {% endif %}
 
         document.getElementById('paymentPromptLabel').textContent = "{{ 'Pay with'|trans }}".concat(" ", title);
         document.getElementById('subscription').href = paymentLink;
+        document.getElementById('pay-nondescript').href = paymentLink;
         paymentLink.searchParams.append('allow_subscription', 0); 
         document.getElementById('single').href = paymentLink;
 
