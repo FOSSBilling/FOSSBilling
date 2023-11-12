@@ -256,9 +256,25 @@ Order our services at {{ "order"|link }}
         $client_id = $this->_getTestClientId();
         [$ps, $pc] = $this->getService()->getParsed($model, $client_id);
 
+        $recipients    = [];
+        $getRecipients = $data['include_recipients'] ?? false;
+        $clients = $this->getService()->getMessageReceivers($model, $data);
+
+        if ($getRecipients) {
+            $clientService = $this->di['mod_service']('client');
+            foreach ($clients as $client) {
+                $clientInfo = $clientService->get(['id' => $client['id']]);
+                $recipients[] = [
+                    'email' => $clientInfo->email,
+                    'name'  => $clientInfo->first_name . ' ' . $clientInfo->last_name,
+                ];
+            }
+        }
+
         return [
-            'subject' => $ps,
-            'content' => $pc,
+            'subject'    => $ps,
+            'content'    => $pc,
+            'recipients' => $recipients,
         ];
     }
 
