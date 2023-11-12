@@ -367,6 +367,7 @@
         "valuenow",
         "valuemin",
         "valuemax",
+        "concat"
     ],
     "ignorePaths": [
         "tests/**",
