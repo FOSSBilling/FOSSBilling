@@ -114,7 +114,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \Exception($sql . ' ' . print_r($values, 1));
         }
 
-        return $this->di['db']->getAll($sql, $values);
+        return array_unique($this->di['db']->getAll($sql, $values), SORT_REGULAR);
     }
 
     public function getParsed($model, $client_id)
