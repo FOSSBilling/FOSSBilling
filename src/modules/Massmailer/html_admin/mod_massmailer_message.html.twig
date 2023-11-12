@@ -24,7 +24,6 @@
           id="msg-form">
         <div class="card-body">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
-            <input type="hidden" name="filter">
             <div class="row mb-3">
                 <label class="col-md-3 col-form-label">{{ 'From'|trans }}</label>
                 <div class="col-md-8">
@@ -65,7 +64,6 @@
             <div class="row mb-3">
                 <label class="col-md-3 col-form-label">{{ 'Client status and group'|trans }}</label>
                 <div class="col-md-8">
-                    <input type="hidden" name="filter">
                     <div class="row">
                         <div class="col-md-6">
                             <select class="form-select" name="filter[client_status][]" multiple="multiple" size="4">
@@ -88,7 +86,6 @@
             <div class="row mb-3">
                 <label class="col-md-3 col-form-label">{{ 'Has order'|trans }}</label>
                 <div class="col-md-8">
-                    <input type="hidden" name="filter">
                     <div class="row">
                         <div class="col-md-6">
                             <select class="form-select" name="filter[has_order_with_status][]" multiple="multiple" size="6">

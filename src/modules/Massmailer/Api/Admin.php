@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -177,7 +178,7 @@ Order our services at {{ "order"|link }}
 
         $clients = $this->getService()->getMessageReceivers($model, $data);
         foreach ($clients as $c) {
-            $this->getService()->sendMail(['msg_id' => $model->id, 'client_id' => $c['id']]);
+            $this->getService()->sendMessage($model, $c['id']);
         }
 
         $model->status = 'sent';
