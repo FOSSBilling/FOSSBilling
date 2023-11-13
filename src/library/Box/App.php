@@ -165,7 +165,7 @@ class Box_App
         $this->registerModule();
         $this->debugBar['time']->stopMeasure('registerModule');
 
-        $this->debugBar['time']->startMeasure('init', 'Initializing app');
+        $this->debugBar['time']->startMeasure('init', 'Initializing the app');
         $this->init();
         $this->debugBar['time']->stopMeasure('init');
 
@@ -212,6 +212,7 @@ class Box_App
 
     protected function executeShared($classname, $methodName, $params)
     {
+        $this->debugBar['time']->startMeasure('executeShared', 'Reflecting module controller (shared mapping)');
         $class = new $classname();
         if ($class instanceof InjectionAwareInterface) {
             $class->setDi($this->di);
@@ -227,12 +228,14 @@ class Box_App
                 $args[$param->name] = $param->getDefaultValue();
             }
         }
+        $this->debugBar['time']->stopMeasure('executeShared');
 
         return $reflection->invokeArgs($class, $args);
     }
 
     protected function execute($methodName, $params, $classname = null)
     {
+        $this->debugBar['time']->startMeasure('execute', 'Reflecting module controller');
         $return = $this->run_filter($this->before_filters, $methodName);
         if (!is_null($return)) {
             return $return;
@@ -248,6 +251,8 @@ class Box_App
                 $args[$param->name] = $param->getDefaultValue();
             }
         }
+
+        $this->debugBar['time']->stopMeasure('execute');
 
         $response = $reflection->invokeArgs($this, $args);
 
@@ -357,7 +362,7 @@ class Box_App
          * Block requests if the system is undergoing maintenance.
          * It will respect any URL/IP whitelisting under the configuration file.
          */
-        $maintmode = isset($this->di['config']['maintenance_mode']) ? $this->di['config']['maintenance_mode']['enabled'] : false;
+        $maintmode = $this->di['config']['maintenance_mode']['enabled'] ?? false;
         if ($maintmode) {
             // Check the allowlists
             if ($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
@@ -375,24 +380,30 @@ class Box_App
             }
         }
 
+        $this->debugBar['time']->startMeasure('sharedMapping', 'Checking shared mappings');
         $sharedCount = count($this->shared);
         for ($i = 0; $i < $sharedCount; ++$i) {
             $mapping = $this->shared[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
+                $this->debugBar['time']->stopMeasure('sharedMapping');
                 return $this->executeShared($mapping[4], $mapping[2], $url->params);
             }
         }
+        $this->debugBar['time']->stopMeasure('sharedMapping');
 
         // this class mappings
+        $this->debugBar['time']->startMeasure('mapping', 'Checking mappings');
         $mappingsCount = count($this->mappings);
         for ($i = 0; $i < $mappingsCount; ++$i) {
             $mapping = $this->mappings[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
+                $this->debugBar['time']->stopMeasure('mapping');
                 return $this->execute($mapping[2], $url->params);
             }
         }
+        $this->debugBar['time']->stopMeasure('mapping');
 
         $e = new \FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 

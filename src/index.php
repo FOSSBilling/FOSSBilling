@@ -47,7 +47,7 @@ if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
 $app->setUrl($appUrl);
 $app->setDi($di);
 
-$debugBar['time']->startMeasure('translate', 'Setup translations');
+$debugBar['time']->startMeasure('translate', 'Setting up translations');
 $di['translate']();
 $debugBar['time']->stopMeasure('translate');
 
