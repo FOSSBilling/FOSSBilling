@@ -48,19 +48,7 @@ FOSSBilling is designed to be extensible and to integrate easily with your favor
 
 ## Requirements
 
-The following environment is highly recommended for running FOSSBilling. It *may* be possible to install and run the software in other environments, but it will be untested and unsupported.
-
-- A suitable web server (Apache/nginx/LSWS)
-- PHP >= 8.1
-- MySQL >= 8, or MariaDB >= 10.3 *Other direct MySQL compatible DBs should also work but are not supported.*
-- The Following PHP extensions:
-  - curl (optional, but recommended)
-  - intl
-  - mbstring (optional, but recommended)
-  - openssl
-  - pdo_mysql
-  - xml
-  - zlib
+To find the most up-to-date system requirements for FOSSBilling, please go to the [system requirements](https://fossbilling.org/docs/getting-started/requirements) on our website.
 
 ## Installation
 
