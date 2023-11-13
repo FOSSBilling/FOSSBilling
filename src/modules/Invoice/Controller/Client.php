@@ -95,7 +95,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $data = [
-            'subscription' => $_GET['subscription'] ?? null,
+            'allow_subscription' => $_GET['allow_subscription'] ?? true,
             'hash' => $hash,
             'gateway_id' => $id,
             'auto_redirect' => true,
