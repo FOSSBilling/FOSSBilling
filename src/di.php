@@ -39,6 +39,19 @@ $di['config'] = function () {
     return $config;
 };
 
+$di['debugbar'] = function () use ($di) {
+    $debugbar = new \DebugBar\StandardDebugBar();
+
+    // Configuration collector
+    $config = $di['config'];
+    $config['salt'] = '********';
+    $config['db'] = array_fill_keys(array_keys($config['db']), '********');
+
+    $debugbar->addCollector(new \DebugBar\DataCollector\ConfigCollector($config));
+
+    return $debugbar;
+};
+
 /*
  * Create a new logger instance and configures it based on the settings in the configuration file.
  *
@@ -266,8 +279,8 @@ $di['request'] = function () use ($di) {
  * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
 $di['cache'] = fn () =>
-    // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
-    new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+// Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
 /*
  *
@@ -319,6 +332,7 @@ $di['twig'] = $di->factory(function () use ($di) {
     $twig->addExtension(new DebugExtension());
     $twig->addExtension(new TranslationExtension());
     $twig->addExtension($box_extensions);
+    $twig->addExtension(new \FOSSBilling\TwigExtensions\DebugBar($di));
     $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
 
     try {

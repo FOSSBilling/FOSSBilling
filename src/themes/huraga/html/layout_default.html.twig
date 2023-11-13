@@ -36,6 +36,8 @@
     <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url}}" defer="defer"></script>
     <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}" defer="defer"></script>
 
+    {{ DebugBar_renderHead() }}
+
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
 </head>
@@ -376,5 +378,6 @@
     {{ settings.inject_javascript | raw}}
 {% endif %}
 {% include 'partial_pending_messages.html.twig' ignore missing %}
+{{ DebugBar_render() }}
 </body>
 </html>
