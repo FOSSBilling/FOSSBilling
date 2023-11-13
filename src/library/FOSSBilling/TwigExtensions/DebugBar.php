@@ -12,30 +12,18 @@ declare(strict_types=1);
 namespace FOSSBilling\TwigExtensions;
 
 use DebugBar\JavascriptRenderer;
-use FOSSBilling\InjectionAwareInterface;
+use DebugBar\StandardDebugBar;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
-class DebugBar extends AbstractExtension implements InjectionAwareInterface
+class DebugBar extends AbstractExtension
 {
     protected ?\Pimple\Container $di;
     private JavascriptRenderer $debugbarRenderer;
 
-    public function __construct(\Pimple\Container $di)
+    public function __construct(StandardDebugBar $debugBar)
     {
-        $this->di = $di;
-
-        $this->debugbarRenderer = $di['debugbar']->getJavascriptRenderer();
-    }
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
+        $this->debugbarRenderer = $debugBar->getJavascriptRenderer();
     }
 
     public function getFunctions(): array

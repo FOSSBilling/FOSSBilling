@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,6 +10,8 @@
  */
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
+
+$debugBar = new \DebugBar\StandardDebugBar;
 
 $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 $http_err_code = $_GET['_errcode'] ?? null;
@@ -25,7 +28,7 @@ if ($url === '/run-patcher') {
         $patcher->applyConfigPatches();
         $patcher->applyCorePatches();
         $di['tools']->emptyFolder(PATH_CACHE);
-        
+
         exit('Patches have been applied');
     } catch (\Exception $e) {
         exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
@@ -34,15 +37,19 @@ if ($url === '/run-patcher') {
 
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
-    $app = new Box_AppAdmin();
+    $app = new Box_AppAdmin([], $debugBar);
 } else {
     $appUrl = $url;
-    $app = new Box_AppClient();
+    $app = new Box_AppClient([], $debugBar);
 }
 
+
 $app->setUrl($appUrl);
-$di['translate']();
 $app->setDi($di);
+
+$debugBar['time']->startMeasure('translate', 'Setup translations');
+$di['translate']();
+$debugBar['time']->stopMeasure('translate');
 
 // If HTTP error code has been passed, handle it.
 if (!is_null($http_err_code)) {
