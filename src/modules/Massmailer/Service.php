@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -83,7 +84,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $row = $this->toApiArray($model);
         $filter = $row['filter'];
 
-        $sql = 'SELECT c.id, c.first_name, c.last_name
+        $sql = 'SELECT DISTINCT c.id
             FROM client c
             LEFT JOIN client_order co ON (co.client_id = c.id)
             WHERE 1
@@ -138,7 +139,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$ps, $pc];
     }
 
-    public function sendMessage($model, $client_id, $sendNow = false)
+    public function sendMessage($model, $client_id, bool $sendNow = false)
     {
         [$ps, $pc] = $this->getParsed($model, $client_id);
 

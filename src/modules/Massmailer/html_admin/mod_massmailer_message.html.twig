@@ -24,7 +24,6 @@
           id="msg-form">
         <div class="card-body">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
-            <input type="hidden" name="filter">
             <div class="row mb-3">
                 <label class="col-md-3 col-form-label">{{ 'From'|trans }}</label>
                 <div class="col-md-8">
@@ -65,7 +64,6 @@
             <div class="row mb-3">
                 <label class="col-md-3 col-form-label">{{ 'Client status and group'|trans }}</label>
                 <div class="col-md-8">
-                    <input type="hidden" name="filter">
                     <div class="row">
                         <div class="col-md-6">
                             <select class="form-select" name="filter[client_status][]" multiple="multiple" size="4">
@@ -88,7 +86,6 @@
             <div class="row mb-3">
                 <label class="col-md-3 col-form-label">{{ 'Has order'|trans }}</label>
                 <div class="col-md-8">
-                    <input type="hidden" name="filter">
                     <div class="row">
                         <div class="col-md-6">
                             <select class="form-select" name="filter[has_order_with_status][]" multiple="multiple" size="6">
@@ -122,6 +119,13 @@
                             {{ 'Preview'|trans }}
                         </a>
                     </li>
+
+                    <li class="nav-item" role="presentation">
+                        <a href="#tab-preview" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-recipients" aria-selected="false" role="tab"
+                           tabindex="-1" id="recipient-tab">
+                            {{ 'Recipients'|trans }}
+                        </a>
+                    </li>
                 </ul>
 
                 <div class="card">
@@ -137,13 +141,30 @@
                     <div class="tab-content">
                         <div class="tab-pane fade" id="tab-preview" role="tabpanel">
                             <div class="p-4" id="preview-banner">
-                                <h3>Click on update and preview button</h3>
+                                <h3>{{ 'Click on the update and preview button'| trans }}</h3>
                             </div>
                             <div class="d-none" id="preview">
                                 <div class="card-header">
                                     <h3 class="card-title" id="preview-title"></h3>
                                 </div>
                                 <div class="card-body" id="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
+                            <div class="p-4" id="recipients-banner">
+                                <h3>{{ 'Click on the update and preview button'| trans }}</h3>
+                            </div>
+                            <div class="d-none" id="recipients">
+                                <div class="card-header">
+                                    <h3 class="card-title">{{ 'Message recipients'|trans }}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group" id="recipient-list" style="max-height: 1000px; overflow-y: auto;">
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -168,11 +189,23 @@
 {% autoescape "js" %}
 <script>
 function onAfterMessageUpdate() {
-    API.admin.post('massmailer/preview', { id: {{ msg.id }} }, function(result) {
+    API.admin.post('massmailer/preview', { id: {{ msg.id }}, include_recipients: 1 }, function(result) {
+        document.querySelector('#recipients-banner').classList.add('d-none');
         document.querySelector('#preview-banner').classList.add('d-none');
+        document.querySelector('#recipients').classList.remove('d-none');
         document.querySelector('#preview').classList.remove('d-none');
         document.querySelector('#preview-title').textContent = result.subject;
         document.querySelector('#preview-content').innerHTML = result.content;
+
+        result.recipients.forEach(function(recipient) {
+            const listItem = document.createElement('li');
+            listItem.classList.add('list-group-item');
+            listItem.textContent = recipient.name.concat(' (', recipient.email, ')');
+            document.getElementById('recipient-list').appendChild(listItem);
+        });
+
+        document.getElementById('recipient-tab').textContent = '{{ 'Recipients'|trans }}'.concat(' (', result.recipients.length, ')');
+
         const previewTab = new bootstrap.Tab(document.querySelector('#content-tabs a[data-bs-target="#tab-preview"]'));
         previewTab.show();
     });

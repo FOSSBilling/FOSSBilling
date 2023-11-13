@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -177,7 +178,7 @@ Order our services at {{ "order"|link }}
 
         $clients = $this->getService()->getMessageReceivers($model, $data);
         foreach ($clients as $c) {
-            $this->getService()->sendMail(['msg_id' => $model->id, 'client_id' => $c['id']]);
+            $this->getService()->sendMessage($model, $c['id']);
         }
 
         $model->status = 'sent';
@@ -255,9 +256,25 @@ Order our services at {{ "order"|link }}
         $client_id = $this->_getTestClientId();
         [$ps, $pc] = $this->getService()->getParsed($model, $client_id);
 
+        $recipients    = [];
+        $getRecipients = $data['include_recipients'] ?? false;
+        $clients = $this->getService()->getMessageReceivers($model, $data);
+
+        if ($getRecipients) {
+            $clientService = $this->di['mod_service']('client');
+            foreach ($clients as $client) {
+                $clientInfo = $clientService->get(['id' => $client['id']]);
+                $recipients[] = [
+                    'email' => $clientInfo->email,
+                    'name'  => $clientInfo->first_name . ' ' . $clientInfo->last_name,
+                ];
+            }
+        }
+
         return [
-            'subject' => $ps,
-            'content' => $pc,
+            'subject'    => $ps,
+            'content'    => $pc,
+            'recipients' => $recipients,
         ];
     }
 
