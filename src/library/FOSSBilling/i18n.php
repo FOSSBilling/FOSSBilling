@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Path;
+
 class i18n
 {
     /**
@@ -107,7 +109,7 @@ class i18n
             return $locales;
         }
         $details = [];
-        $array = include PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php';
+        $array = include Path::normalize(PATH_LANGS . '/locales.php');
         foreach ($locales as $locale) {
             $title = ($array[$locale] ?? $locale) . "($locale)";
             $details[] = [
@@ -130,12 +132,12 @@ class i18n
      */
     public static function toggleLocale(string $locale): bool
     {
-        $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
+        $basePath = Path::normalize(PATH_LANGS . '/' . $locale);
         if (!is_dir($basePath)) {
             throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
-        $disablePath = $basePath . DIRECTORY_SEPARATOR . '.disabled';
+        $disablePath = Path::normalize($basePath . '/.disabled');
 
         // Reverse the status of the locale
         if (file_exists($disablePath)) {
@@ -160,7 +162,7 @@ class i18n
             return 100;
         }
 
-        $completionFile = PATH_LANGS . DIRECTORY_SEPARATOR . 'completion.php';
+        $completionFile = Path::normalize(PATH_LANGS . '/completion.php');
         if (!file_exists($completionFile)) {
             return 0;
         }

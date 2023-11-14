@@ -8,11 +8,14 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Box_Mod
 {
     private ?string $mod = null;
-
     private ?\Pimple\Container $di = null;
+    private Filesystem $filesystem;
 
     private array $core = array(
         'api',
@@ -54,6 +57,7 @@ class Box_Mod
         }
 
         $this->mod = strtolower($mod);
+        $this->filesystem = new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -63,7 +67,7 @@ class Box_Mod
 
     public function hasManifest()
     {
-        return file_exists($this->_getModPath() . 'manifest.json');
+        return $this->filesystem->exists($this->_getModPath() . 'manifest.json');
     }
 
     public function getManifest()
@@ -109,7 +113,7 @@ class Box_Mod
     public function hasService($sub = '')
     {
         $filename = sprintf('Service%s.php', ucfirst($sub));
-        return file_exists($this->_getModPath() . $filename);
+        return $this->filesystem->exists($this->_getModPath() . $filename);
     }
 
     public function getService($sub = '')
@@ -127,7 +131,7 @@ class Box_Mod
 
     public function hasClientController()
     {
-        return file_exists($this->_getModPath() . 'Controller/Client.php');
+        return $this->filesystem->exists($this->_getModPath() . 'Controller/Client.php');
     }
 
     public function getClientController()
@@ -146,12 +150,12 @@ class Box_Mod
 
     public function hasSettingsPage()
     {
-        return file_exists($this->_getModPath() . 'html_admin/mod_'.$this->mod.'_settings.html.twig');
+        return $this->filesystem->exists($this->_getModPath() . 'html_admin/mod_'.$this->mod.'_settings.html.twig');
     }
 
     public function hasAdminController()
     {
-        return file_exists($this->_getModPath() . 'Controller/Admin.php');
+        return $this->filesystem->exists($this->_getModPath() . 'Controller/Admin.php');
     }
 
     public function getAdminController()
@@ -261,6 +265,6 @@ class Box_Mod
 
     private function _getModPath()
     {
-        return PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($this->mod) . DIRECTORY_SEPARATOR;
+        return Path::normalize(PATH_MODS . '/' . ucfirst($this->mod) . '/');
     }
 }

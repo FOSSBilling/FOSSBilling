@@ -11,6 +11,7 @@
 namespace Box\Mod\Cron;
 
 use FOSSBilling\Environment;
+use Symfony\Component\Filesystem\Path;
 
 class Service
 {
@@ -31,7 +32,7 @@ class Service
         $service = $this->di['mod_service']('system');
 
         $result = [
-            'cron_path' => PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php',
+            'cron_path' => Path::normalize(PATH_ROOT . '/cron.php'),
             'last_cron_exec' => $service->getParamValue('last_cron_exec'),
         ];
 

@@ -9,8 +9,8 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\InjectionAwareInterface;
 use DebugBar\StandardDebugBar;
+use FOSSBilling\InjectionAwareInterface;
 
 class Box_App
 {

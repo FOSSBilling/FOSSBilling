@@ -8,9 +8,13 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 {
     protected $options = array();
+    protected Filesystem $filesystem;
 
     /**
      * Constructor.
@@ -32,6 +36,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
             throw new \FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'type']);
         }
 
+        $this->filesystem = new Filesystem();
         $this->options = $options;
         $paths_arr = array($options['mods'], $options['theme']);
         $this->setPaths($paths_arr);
@@ -50,18 +55,18 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $name_split = explode("_", $name);
 
         $paths = array();
-        $paths[] = $this->options["theme"] . DIRECTORY_SEPARATOR . "html";
+        $paths[] = Path::normalize($this->options['theme'] . '/html');
         if (isset($name_split[1])) {
-            $paths[] = $this->options["mods"] . DIRECTORY_SEPARATOR . ucfirst($name_split[1]) . DIRECTORY_SEPARATOR . "html_" . $this->options["type"];
+            $paths[] = Path::normalize($this->options['mods'] . '/' . ucfirst($name_split[1]) . '/html_' . $this->options['type']);
         }
 
         foreach ($paths as $path) {
-            if (file_exists($path . DIRECTORY_SEPARATOR . $name)) {
-                return $this->cache[$name] = $path . '/' . $name;
+            if ($this->filesystem->exists(Path::normalize($path . '/' . $name))) {
+                return $this->cache[$name] = Path::normalize($path . '/' . $name);
             }
 
-            if (str_ends_with($name, 'icon.svg') && file_exists(dirname($path) . DIRECTORY_SEPARATOR . 'icon.svg')) {
-                return $this->cache[$name] = dirname($path) . DIRECTORY_SEPARATOR . 'icon.svg';
+            if (str_ends_with($name, 'icon.svg') && $this->filesystem->exists(Path::getDirectory($path) . '/icon.svg')) {
+                return $this->cache[$name] = Path::normalize(Path::getDirectory($path) . '/icon.svg');
             }
         }
 

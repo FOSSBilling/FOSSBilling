@@ -14,6 +14,7 @@ use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
+use Symfony\Component\Filesystem\Path;
 
 class Monolog
 {
@@ -36,7 +37,7 @@ class Monolog
 
         foreach ($channels as $channel) {
 
-            $path = PATH_LOG . DIRECTORY_SEPARATOR . $channel . '.log';
+            $path = Path::normalize(PATH_LOG . '' . $channel . '.log');
 
             $this->logger[$channel] = new Logger($channel);
             $stream = new StreamHandler($path, Level::Debug);
