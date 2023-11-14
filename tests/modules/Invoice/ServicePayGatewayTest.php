@@ -173,7 +173,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             'accepted_currencies'        => null,
             'supports_one_time_payments' => false,
             'supports_subscriptions'     => false,
-            'config'                     => null,
+            'config'                     => [],
             'form'                       => null,
             'description'                => null,
             'enabled'                    => null,
