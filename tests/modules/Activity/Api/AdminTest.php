@@ -128,7 +128,7 @@ class AdminTest extends \BBTestCase {
         $databaseMock->expects($this->atLeastOnce())->
             method('trash');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->setMethods(array('hasPermission'))->getMock();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->onlyMethods(array('hasPermission'))->getMock();
             $serviceMock->expects($this->atLeastOnce())
                 ->method('hasPermission')
                 ->willReturn(true);

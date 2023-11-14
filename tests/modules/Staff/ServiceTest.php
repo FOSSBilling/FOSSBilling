@@ -157,7 +157,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPermissions');
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->setMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
@@ -187,7 +187,7 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->will($this->returnValue(array('cart' => array(), 'client' => array())));
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->setMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
@@ -217,7 +217,7 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->will($this->returnValue(array('example' => array(), 'client' => array())));
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->setMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
@@ -977,7 +977,7 @@ class ServiceTest extends \BBTestCase
             ->method('store');
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1009,7 +1009,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash');
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1062,7 +1062,7 @@ class ServiceTest extends \BBTestCase
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1119,7 +1119,7 @@ class ServiceTest extends \BBTestCase
             ->with($data['password']);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1178,7 +1178,7 @@ class ServiceTest extends \BBTestCase
             ->with($data['password']);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1313,7 +1313,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($newGroupId));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1364,7 +1364,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(0));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1387,7 +1387,7 @@ class ServiceTest extends \BBTestCase
         $adminGroupModel->id = 1;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1408,7 +1408,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(2));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1433,7 +1433,7 @@ class ServiceTest extends \BBTestCase
             ->method('store');
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1557,7 +1557,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($pdoStatementMock));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->setMethods(array('hasPermission'))->getMock();
+            ->onlyMethods(array('hasPermission'))->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
