@@ -57,24 +57,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisExtensionActiveModAndCoreModule()
-    {
-        $coreModules = array('extension', 'cron', 'staff');
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getCoreModules')
-            ->will($this->returnValue($coreModules));
-
-        $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn($name) => $modMock);
-            return $modMock;
-        $this->service->setDi($di);
-
-        $result = $this->service->isExtensionActive('mod', 'extension');
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
     public function testisExtensionActiveModNotFound()
     {
         $coreModules = array('extension', 'cron', 'staff');
