@@ -256,7 +256,7 @@ Order our services at {{ "order"|link }}
         $client_id = $this->_getTestClientId();
         [$ps, $pc] = $this->getService()->getParsed($model, $client_id);
 
-        $recipients    = [];
+        $recipients = [];
         $getRecipients = $data['include_recipients'] ?? false;
         $clients = $this->getService()->getMessageReceivers($model, $data);
 
@@ -266,22 +266,20 @@ Order our services at {{ "order"|link }}
                 $clientInfo = $clientService->get(['id' => $client['id']]);
                 $recipients[] = [
                     'email' => $clientInfo->email,
-                    'name'  => $clientInfo->first_name . ' ' . $clientInfo->last_name,
+                    'name' => $clientInfo->first_name . ' ' . $clientInfo->last_name,
                 ];
             }
         }
 
         return [
-            'subject'    => $ps,
-            'content'    => $pc,
+            'subject' => $ps,
+            'content' => $pc,
             'recipients' => $recipients,
         ];
     }
 
     /**
-     * Returns the email associated with the test client
-     * 
-     * @return string 
+     * Returns the email associated with the test client.
      */
     public function get_test_client(): string
     {

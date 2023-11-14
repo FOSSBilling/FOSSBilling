@@ -178,7 +178,7 @@ class Service implements InjectionAwareInterface
          */
         $adapter = new Adapter\ArrayAdapter($this->getTempMailDomainDB());
         try {
-            list($local, $domain) = Utilities::parseEmailAddress($email);
+            [$local, $domain] = Utilities::parseEmailAddress($email);
         } catch (\Exception) {
             // Just to be on the safe side, assume the email is valid if there was an error.
             return false;
@@ -220,9 +220,7 @@ class Service implements InjectionAwareInterface
                 return [];
             }
 
-            return array_filter($database, function ($domain) {
-                return filter_var($domain, FILTER_VALIDATE_DOMAIN);
-            });
+            return array_filter($database, fn($domain) => filter_var($domain, FILTER_VALIDATE_DOMAIN));
         });
     }
 }

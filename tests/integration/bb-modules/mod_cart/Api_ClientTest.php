@@ -77,7 +77,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
     }
     
     /**
-     * Test if promo code can be applied only once per client 
+     * Test if promo code can be applied only once per client
      */
     public function testPromoOncePerClient()
     {

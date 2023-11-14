@@ -420,8 +420,8 @@ class Admin extends \Api_Abstract
                 'subject' => $item['subject'] ?? '',
                 'content' => $item['content'] ?? '',
                 'to_name' => $item['to_name'] ?? '',
-                'status'  => $item['status'] ?? '',
-                'tries'   => $item['tries'] ?? '',
+                'status' => $item['status'] ?? '',
+                'tries' => $item['tries'] ?? '',
                 'created_at' => $item['created_at'] ?? '',
                 'updated_at' => $item['updated_at'] ?? '',
             ];

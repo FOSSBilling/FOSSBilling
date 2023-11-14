@@ -40,7 +40,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_index');
     }
 
-    public function get_client_confirmation(\Box_App $app, $hash)
+    public function get_client_confirmation(\Box_App $app, $hash): never
     {
         $service = $this->di['mod_service']('client');
         $service->approveClientEmailByHash($hash);
@@ -49,7 +49,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->redirect('/');
     }
 
-    public function get_client_logout(\Box_App $app)
+    public function get_client_logout(\Box_App $app): never
     {
         $api = $this->di['api_client'];
         $api->profile_logout();
