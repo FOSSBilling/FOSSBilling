@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -830,7 +831,11 @@ class Service implements InjectionAwareInterface
         $model->max_park = $data['max_park'] ?? $model->max_park;
 
         /* add new config value to hosting plan */
-        $config = json_decode($model->config, 1);
+        if ($model->config) {
+            $config = json_decode($model->config, 1);
+        } else {
+            $config = [];
+        }
 
         $inConfig = $data['config'] ?? null;
 

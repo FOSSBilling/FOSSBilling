@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -128,7 +129,11 @@ class ServicePayGateway implements InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $result['supports_one_time_payments'] = $single;
             $result['supports_subscriptions'] = $recurrent;
-            $result['config'] = json_decode($model->config, 1);
+            if ($model->config) {
+                $result['config'] = json_decode($model->config, 1);
+            } else {
+                $result['config'] = [];
+            }
             $result['form'] = $this->getFormElements($model);
             $result['description'] = $this->getDescription($model);
             $result['enabled'] = $model->enabled;
