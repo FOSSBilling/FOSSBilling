@@ -29,6 +29,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'can_always_access' => true,
             'manage_settings' => []
         ];
     }

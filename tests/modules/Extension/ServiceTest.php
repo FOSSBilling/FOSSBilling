@@ -70,6 +70,7 @@ class ServiceTest extends \BBTestCase
             return $modMock;
         $this->service->setDi($di);
 
+        $result = $this->service->isExtensionActive('mod', 'extension');
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
