@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -329,7 +330,11 @@ class Service implements InjectionAwareInterface
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        $config = json_decode($model->config, true);
+        if ($model->config) {
+            $config = json_decode($model->config, true);
+        } else {
+            $config = [];
+        }
 
         if (isset($data['config']) && is_array($data['config'])) {
             $config = array_intersect_key((array) $config, $data['config']);

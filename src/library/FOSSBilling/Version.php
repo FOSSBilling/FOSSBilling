@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -42,6 +44,11 @@ final class Version
      */
     public static function getUpdateType(string $new, ?string $current = null): int
     {
+        // Report patch as a dummy value as we can't properly compare version numbers when the current version is a preview build
+        if (self::isPreviewVersion()) {
+            return self::PATCH;
+        }
+
         $current = explode('.', $current ?? self::VERSION);
         $new = explode('.', $new);
 
