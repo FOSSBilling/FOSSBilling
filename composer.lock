@@ -2771,16 +2771,16 @@
         },
         {
             "name": "sentry/sentry",
-            "version": "4.0.0",
+            "version": "4.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-php.git",
-                "reference": "7e10bf3fd0bee2f2eee6981e509522ab0c523d5e"
+                "reference": "fa41522f1fe5ff77a33a9db749c0ca7ec332f50a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/7e10bf3fd0bee2f2eee6981e509522ab0c523d5e",
-                "reference": "7e10bf3fd0bee2f2eee6981e509522ab0c523d5e",
+                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/fa41522f1fe5ff77a33a9db749c0ca7ec332f50a",
+                "reference": "fa41522f1fe5ff77a33a9db749c0ca7ec332f50a",
                 "shasum": ""
             },
             "require": {
@@ -2842,7 +2842,7 @@
             ],
             "support": {
                 "issues": "https://github.com/getsentry/sentry-php/issues",
-                "source": "https://github.com/getsentry/sentry-php/tree/4.0.0"
+                "source": "https://github.com/getsentry/sentry-php/tree/4.0.1"
             },
             "funding": [
                 {
@@ -2854,7 +2854,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2023-11-06T10:16:08+00:00"
+            "time": "2023-11-13T13:00:41+00:00"
         },
         {
             "name": "stripe/stripe-php",
