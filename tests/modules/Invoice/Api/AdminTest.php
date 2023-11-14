@@ -1322,25 +1322,6 @@ class AdminTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-
-    public function testtax_setup_eu()
-    {
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
-        $taxService->expects($this->atLeastOnce())
-            ->method('setupEUTaxes')
-            ->will($this->returnValue(true));
-
-
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $taxService);
-
-        $this->api->setDi($di);
-
-        $result = $this->api->tax_setup_eu(array());
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
     public function testBatch_delete()
     {
         $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Api\Admin::class)->onlyMethods(array('delete'))->getMock();
