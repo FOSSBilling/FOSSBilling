@@ -12,6 +12,7 @@
 namespace Box\Mod\Theme;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Path;
 
 class Service implements InjectionAwareInterface
 {
@@ -201,7 +202,7 @@ class Service implements InjectionAwareInterface
 
     public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin)
     {
-        $assets = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
+        $assets = Path::normalize($theme->getPathAssets() . '/');
 
         $css_files = glob($assets . '*.css.html.twig');
         $js_files = glob($assets . '*.js.html.twig');
@@ -232,11 +233,11 @@ class Service implements InjectionAwareInterface
                ';
         $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
-        $path = PATH_THEMES . DIRECTORY_SEPARATOR;
+        $path = Path::normalize(PATH_THEMES . '/');
         if ($theme == null || !file_exists($path . $theme)) {
             $theme = $default;
         }
-        $url = SYSTEM_URL . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
+        $url = SYSTEM_URL . 'themes' . '/' . $theme . '/';
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -358,7 +359,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
+            $p = Path::normalize(PATH_MODS . '/' . ucfirst($mod) . '/');
             $p .= $client ? 'html_client' : 'html_admin';
             if (file_exists($p)) {
                 $paths[] = $p;

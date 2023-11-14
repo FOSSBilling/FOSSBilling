@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use AntCMS\AntLoader;
+use Symfony\Component\Filesystem\Path;
 
 class AutoLoader
 {
@@ -33,7 +34,7 @@ class AutoLoader
     {
         $this->AntLoader = new AntLoader([
             'mode' => 'filesystem',
-            'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
+            'path' => Path::normalize(PATH_CACHE . '/classMap.php'),
         ]);
 
         if ($registerFOSSBillingDefaults) {

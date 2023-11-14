@@ -18,6 +18,7 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
@@ -214,7 +215,7 @@ class Update implements InjectionAwareInterface
 
         error_log('Started FOSSBilling auto-update script');
         $latestVersionNum = $this->getLatestVersion();
-        $archiveFile = PATH_CACHE . DIRECTORY_SEPARATOR . $latestVersionNum . '.zip';
+        $archiveFile = Path::normalize(PATH_CACHE . '/' . $latestVersionNum . '.zip');
 
         $releaseInfo = $this->getLatestVersionInfo($updateBranch);
 

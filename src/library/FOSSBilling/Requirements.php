@@ -40,16 +40,87 @@ class Requirements
         'min_version' => '8.2',
     ];
 
-    public array $writable = [
-        'folders' => [
-            PATH_ROOT . '/data/cache',
-            PATH_ROOT . '/data/log',
-            PATH_ROOT . '/data/uploads',
-        ],
-        'files' => [
-            PATH_ROOT . '/config.php',
-        ],
-    ];
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
+
+    private bool $_all_ok = true;
+    private array $_options = array();
+    private Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->_options = array(
+            'php'   =>  array(
+                'extensions' => array(
+                    'pdo_mysql',
+                    'zlib',
+                    'openssl',
+                    'dom',
+                    'xml',
+                 ),
+                'version'       =>  PHP_VERSION,
+                'min_version'   =>  '8.1',
+                'safe_mode'     =>  ini_get('safe_mode'),
+            ),
+            'writable_folders' => [
+                PATH_CACHE,
+                PATH_LOG,
+                PATH_UPLOADS
+            ],
+            'writable_files' => array(
+                PATH_CONFIG,
+            ),
+        );
+
+        $this->filesystem = new Filesystem();
+    }
+
+    public function getOptions(): array
+    {
+        return $this->_options;
+    }
+
+    public function getInfo(): array
+    {
+        $data = array();
+        $data['ip']             = $_SERVER['SERVER_ADDR'] ?? null;
+        $data['PHP_OS']         = PHP_OS;
+        $data['PHP_VERSION']    = PHP_VERSION;
+
+        $data['FOSSBilling']    = array(
+            'locale'        =>  $this->di['config']['i18n']['locale'],
+            'version'       =>  \FOSSBilling\Version::VERSION,
+        );
+
+        $data['ini']    = array(
+            'allow_url_fopen'   =>  ini_get('allow_url_fopen'),
+            'safe_mode'         =>  ini_get('safe_mode'),
+            'memory_limit'      =>  ini_get('memory_limit'),
+        );
+
+        $data['permissions']    = array(
+            PATH_UPLOADS     =>  substr(sprintf('%o', fileperms(PATH_UPLOADS)), -4),
+            PATH_DATA        =>  substr(sprintf('%o', fileperms(PATH_DATA)), -4),
+            PATH_CACHE       =>  substr(sprintf('%o', fileperms(PATH_CACHE)), -4),
+            PATH_LOG         =>  substr(sprintf('%o', fileperms(PATH_LOG)), -4),
+        );
+
+        $data['extensions']    = array(
+            'apc'           => extension_loaded('apc'),
+            'pdo_mysql'     => extension_loaded('pdo_mysql'),
+            'zlib'          => extension_loaded('zlib'),
+            'mbstring'      => extension_loaded('mbstring'),
+            'openssl'        => extension_loaded('openssl'),
+        );
+
+        //determine php username
+        if(function_exists('posix_getpwuid') && function_exists('posix_geteuid')) {
+            $data['posix_getpwuid'] = posix_getpwuid(posix_geteuid());
+        }
+        return $data;
+    }
 
     public function isPhpVersionOk(): bool
     {
@@ -122,7 +193,26 @@ class Requirements
                         'message' => $message,
                     ];
 
-                    continue;
+    /**
+     * Files that must be writable
+     */
+    public function files(): array
+    {
+        $files = $this->_options['writable_files'];
+        $result = array();
+
+        foreach($files as $file) {
+            if ($this->checkPerms($file)) {
+                $result[$file] = true;
+            } else if (is_writable($file)) {
+            	$result[$file] = true;
+            } else if (!$this->filesystem->exists($file)){
+                $written = @file_put_contents($file, 'Test?');
+                if($written){
+                    $result[$file] = true;
+                } else {
+                    $result[$file] = false;
+                    $this->_all_ok = false;
                 }
                 $status = opcache_get_status();
                 $result['suggested_extensions'][$ext] = [

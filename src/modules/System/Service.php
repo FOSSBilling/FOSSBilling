@@ -20,6 +20,8 @@ use Pimple\Container;
 use PrinsFrank\Standards\Country\CountryAlpha2;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
@@ -396,7 +398,7 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if (file_exists($path . DIRECTORY_SEPARATOR . $file)) {
+            if (file_exists(Path::normalize($path . '/' . $file))) {
                 return true;
             }
         }

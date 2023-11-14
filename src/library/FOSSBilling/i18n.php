@@ -115,14 +115,7 @@ class i18n
             return $locales;
         }
         $details = [];
-
-        // Handle when FOSSBilling is running with a dummy locale folder.
-        if (file_exists(Path::normalize(PATH_LANGS . '/locales.php'))) {
-            $array = include Path::normalize(PATH_LANGS . '/locales.php');
-        } else {
-            $array = ['en_US' => 'English'];
-        }
-
+        $array = include Path::normalize(PATH_LANGS . '/locales.php');
         foreach ($locales as $locale) {
             $title = ($array[$locale] ?? $locale) . " ($locale)";
             $details[] = [
@@ -146,12 +139,12 @@ class i18n
      */
     public static function toggleLocale(string $locale): bool
     {
-        $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
+        $basePath = Path::normalize(PATH_LANGS . '/' . $locale);
         if (!is_dir($basePath)) {
             throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
-        $disablePath = $basePath . DIRECTORY_SEPARATOR . '.disabled';
+        $disablePath = Path::normalize($basePath . '/.disabled');
 
         // Reverse the status of the locale
         if (file_exists($disablePath)) {
