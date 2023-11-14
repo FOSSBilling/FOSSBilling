@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -323,31 +324,22 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }
-        $settings = $this->di['mod_config']('email');
-
-        $mail = new \FOSSBilling\Mail($email->sender, $email->recipients, $email->sender, $email->content_html, $settings['mailer'] ?? 'sendmail', $settings['custom_dsn'] ?? null);
 
         if (Environment::isTesting()) {
             if (DEBUG) {
                 error_log('Skipping email sending in test environment');
             }
-
             return true;
         }
 
-        try {
-            $mod = $this->di['mod']('email');
-            $settings = $mod->getConfig();
+        $clientService = $this->di['mod_service']('client');
+        $customer = $clientService->get(['id' => $email->client_id]);
+        $customer = $clientService->toApiArray($customer);
 
-            if (isset($settings['log_enabled']) && $settings['log_enabled']) {
-                $activityService = $this->di['mod_service']('activity');
-                $activityService->logEmail($email->subject, $email->client_id, $email->sender, $email->recipients, $email->content_html, $email->content_text);
-            }
+        $systemService = $this->di['mod_service']('system');
+        $from_name = $systemService->getParamValue('company_name');
 
-            $mail->send($settings);
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-        }
+        $this->sendMail($email->recipients, $email->sender, $email->subject, $email->content_html, $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->client_id);
 
         $this->di['logger']->info('Resent email #%s', $email->id);
 
