@@ -325,6 +325,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return false;
         }
 
+        if (Environment::isTesting()) {
+            if (DEBUG) {
+                error_log('Skipping email sending in test environment');
+            }
+            return true;
+        }
+
         $clientService = $this->di['mod_service']('client');
         $customer = $clientService->get(['id' => $email->client_id]);
         $customer = $clientService->toApiArray($customer);
