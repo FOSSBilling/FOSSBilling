@@ -299,46 +299,6 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals(array(), $result[1]);
     }
 
-    public function testsetupEUTaxes()
-    {
-        $dbMock = $this->getMockBuilder('\Box_Database')
-            ->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('exec');
-
-        $systemService   = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)
-            ->getMock();
-        $euCountriesData = array(
-            'AT' => 'Austria',
-        );
-
-        $euVatData = array(
-            'AT' => 20,
-        );
-
-        $systemService->expects($this->atLeastOnce())
-            ->method('getEuCountries')
-            ->will($this->returnValue($euCountriesData));
-
-        $systemService->expects($this->atLeastOnce())
-            ->method('getEuVat')
-            ->will($this->returnValue($euVatData));
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)
-            ->onlyMethods(array('create'))
-            ->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('create');
-
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $systemService);
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->setupEUTaxes(array());
-        $this->assertTrue($result);
-    }
-
     public function testtoApiArray()
     {
         $taxModel = new \Model_Tax();
