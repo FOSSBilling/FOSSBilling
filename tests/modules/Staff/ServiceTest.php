@@ -157,7 +157,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPermissions');
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
@@ -187,7 +187,7 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->will($this->returnValue(array('cart' => array(), 'client' => array())));
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
@@ -217,7 +217,7 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->will($this->returnValue(array('example' => array(), 'client' => array())));
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Order\Extension')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(array('getSpecificModulePermissions'))->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
