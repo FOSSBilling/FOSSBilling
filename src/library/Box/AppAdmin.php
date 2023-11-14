@@ -13,6 +13,7 @@ use DebugBar\Bridge\NamespacedTwigProfileCollector;
 use FOSSBilling\TwigExtensions\DebugBar;
 use Twig\Extension\ProfilerExtension;
 use Twig\Profiler\Profile;
+use Symfony\Component\Filesystem\Path;
 
 class Box_AppAdmin extends Box_App
 {
@@ -47,7 +48,7 @@ class Box_AppAdmin extends Box_App
         $loader = new Box_TwigLoader(
             [
                 'mods' => PATH_MODS,
-                'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . $theme['code'],
+                'theme' => Path::normalize(PATH_THEMES . '/' . $theme['code']),
                 'type' => 'admin',
             ]
         );

@@ -10,6 +10,8 @@
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Filesystem;
+
 class Requirements implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -25,8 +27,8 @@ class Requirements implements InjectionAwareInterface
     }
 
     private bool $_all_ok = true;
-    private string $_app_path = PATH_ROOT;
     private array $_options = array();
+    private Filesystem $filesystem;
 
     public function __construct()
     {
@@ -40,18 +42,20 @@ class Requirements implements InjectionAwareInterface
                     'xml',
                  ),
                 'version'       =>  PHP_VERSION,
-                'min_version'   =>  '8.0',
+                'min_version'   =>  '8.1',
                 'safe_mode'     =>  ini_get('safe_mode'),
             ),
-            'writable_folders' => array(
-                $this->_app_path . '/data/cache',
-                $this->_app_path . '/data/log',
-                $this->_app_path . '/data/uploads',
-            ),
+            'writable_folders' => [
+                PATH_CACHE,
+                PATH_LOG,
+                PATH_UPLOADS
+            ],
             'writable_files' => array(
-                $this->_app_path . '/config.php',
+                PATH_CONFIG,
             ),
         );
+
+        $this->filesystem = new Filesystem();
     }
 
     public function getOptions(): array
@@ -139,7 +143,7 @@ class Requirements implements InjectionAwareInterface
                 $result[$file] = true;
             } else if (is_writable($file)) {
             	$result[$file] = true;
-            } else if (!file_exists($file)){
+            } else if (!$this->filesystem->exists($file)){
                 $written = @file_put_contents($file, 'Test?');
                 if($written){
                     $result[$file] = true;

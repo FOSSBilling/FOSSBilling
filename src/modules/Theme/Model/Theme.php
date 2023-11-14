@@ -10,6 +10,9 @@
 
 namespace Box\Mod\Theme\Model;
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Theme
 {
     public function __construct(private $name)
@@ -52,7 +55,7 @@ class Theme
         $files = $this->getSettingsPageFiles();
         $uploaded = [];
         foreach ($files as $file) {
-            if (file_exists($assets_folder . DIRECTORY_SEPARATOR . $file)) {
+            if (file_exists(Path::normalize($assets_folder . '/' . $file))) {
                 $uploaded[] = [
                     'name' => $file,
                     'url' => $this->getUrl() . '/assets/' . $file,
@@ -87,7 +90,7 @@ class Theme
      */
     public function getSettingsPageHtml()
     {
-        $spp = $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings.html';
+        $spp = Path::normalize($this->getPathConfig() . '/settings.html');
         if (!file_exists($spp)) {
             error_log('Theme ' . $this->getName() . ' does not have settings page');
 
@@ -150,27 +153,27 @@ class Theme
 
     public function getPath()
     {
-        return PATH_THEMES . DIRECTORY_SEPARATOR . $this->name;
+        return Path::normalize(PATH_THEMES . '/' . $this->name);
     }
 
     public function getPathConfig()
     {
-        return $this->getPath() . DIRECTORY_SEPARATOR . 'config';
+        return Path::normalize($this->getPath() . '/config');
     }
 
     public function getPathAssets()
     {
-        return $this->getPath() . DIRECTORY_SEPARATOR . 'assets';
+        return Path::normalize($this->getPath() . '/assets');
     }
 
     public function getPathHtml()
     {
-        return $this->getPath() . DIRECTORY_SEPARATOR . 'html';
+        return Path::normalize($this->getPath() . '/html');
     }
 
     public function getPathSettingsDataFile()
     {
-        return $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings_data.json';
+        return Path::normalize($this->getPathConfig() . '/settings_data.json');
     }
 
     /**
