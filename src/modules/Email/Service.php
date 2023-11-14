@@ -571,8 +571,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * Sends emails from queue, respecting the configured time limit and emails per cron limit.
      * If an email fails to be sent, it will be skipped and retried on the next cron run until the retry limit is reached.
-     * 
-     * @return void 
+     *
+     * @return void
      */
     public function batchSend()
     {
@@ -587,7 +587,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $query = 'ORDER BY created_at ASC';
         if ($sendPerCron) {
-            $query .= ' LIMIT '  . intval($sendPerCron);
+            $query .= ' LIMIT ' . intval($sendPerCron);
             $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
         } else {
             $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);

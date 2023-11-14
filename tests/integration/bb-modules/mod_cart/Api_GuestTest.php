@@ -360,7 +360,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->api_admin->currency_set_default(array('code'=>'USD'));
         $this->api_guest->cart_reset();
         $this->api_guest->cart_set_currency(array('currency'=>'USD'));
-        
+
         // test custom products
         $data = array(
             'id'       =>  13,
@@ -368,26 +368,26 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         );
         $bool = $this->api_guest->cart_add_item($data);
         $this->assertTrue($bool);
-        
+
         $cart_before_promo = $this->api_guest->cart_get();
         $this->assertNull($cart_before_promo['promocode']);
-        
+
         $data = array('promocode'=>'FREE_SETUP');
         $bool = $this->api_guest->cart_apply_promo($data);
         $this->assertTrue($bool);
-        
+
         $cart_after_promo = $this->api_guest->cart_get();
         $this->assertNotNull($cart_after_promo['promocode']);
         $this->assertEquals(0, $cart_after_promo['items'][0]['discount_price']);
         $this->assertEquals(20, $cart_after_promo['items'][0]['discount_setup']);
         $this->assertEquals(20, $cart_after_promo['items'][0]['discount']);
-        
+
         $result = $this->api_client->cart_checkout();
         $order = $this->api_client->order_get(array('id'=>$result['order_id']));
         $this->assertEquals(2, $order['promo_id']);
-        
+
         $invoice = $this->api_client->invoice_get(array('hash'=>$result['invoice_hash']));
-        
+
         $this->assertEquals(50, $invoice['total']); // normal price
         $this->assertEquals(50, $invoice['lines'][0]['price']); // normal price
         $this->assertEquals(0, $invoice['lines'][1]['price']); // setup price
