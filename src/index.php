@@ -17,7 +17,7 @@ $debugBar['request']->useHtmlVarDumper();
 $debugBar['messages']->useHtmlVarDumper();
 
 $config = $di['config'];
-$config['salt'] = '********';
+$config['info']['salt'] = '********';
 $config['db'] = array_fill_keys(array_keys($config['db']), '********');
 
 $configCollector = new \DebugBar\DataCollector\ConfigCollector($config);
