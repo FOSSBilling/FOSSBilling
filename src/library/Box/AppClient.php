@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -7,6 +8,11 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+
+use DebugBar\Bridge\NamespacedTwigProfileCollector;
+use FOSSBilling\TwigExtensions\DebugBar;
+use Twig\Extension\ProfilerExtension;
+use Twig\Profiler\Profile;
 
 class Box_AppClient extends Box_App
 {
@@ -107,6 +113,12 @@ class Box_AppClient extends Box_App
 
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
+
+        $profile = new Profile();
+        $twig->addExtension(new ProfilerExtension($profile));
+        $this->debugBar->addCollector(new NamespacedTwigProfileCollector($profile));
+
+        $twig->addExtension(new DebugBar($this->getDebugBar()));
 
         if ($this->di['auth']->isClientLoggedIn()) {
             $twig->addGlobal('client', $this->di['api_client']);
