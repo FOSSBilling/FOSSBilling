@@ -343,6 +343,20 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function createPleskSession(\Model_ClientOrder $order, \Model_ServiceHosting $model)
+    {
+        if ($this->_performOnService($order)) {
+            [$adapter, $account] = $this->_getAM($model);
+            $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server from order configuration was not found');
+            $url = $adapter->createPleskSession($account, $server);
+            $this->di['logger']->info('SSO Login created for account %s', $model->id);
+
+            return $url;
+        }
+
+        return false;
+    }
+
     public function sync(\Model_ClientOrder $order, \Model_ServiceHosting $model)
     {
         [$adapter, $account] = $this->_getAM($model);

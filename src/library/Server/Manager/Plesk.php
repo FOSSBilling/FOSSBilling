@@ -49,7 +49,7 @@ class Server_Manager_Plesk extends Server_Manager
 
         return true;
     }
-    
+
     public function synchronizeAccount(Server_Account $a): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
@@ -113,7 +113,7 @@ class Server_Manager_Plesk extends Server_Manager
     // ??
     public function createServicePlan(Server_Account $a)
     {
-        
+
     }
 
     public function updateSubscription(Server_Account $a)
@@ -126,7 +126,7 @@ class Server_Manager_Plesk extends Server_Manager
     public function deleteSubscription(Server_Account $a)
     {
         $result = $this->_client->webspace()->delete('name', $a->getDomain());
-        
+
         return $result;
     }
 
@@ -197,11 +197,20 @@ class Server_Manager_Plesk extends Server_Manager
     	return $result;
     }
 
+    public function createPleskSession(Server_Account $account, Model_ServiceHostingServer $server)
+    {
+        $this->getLog()->info('Creating session for ' . $account->getUsername());
+
+        $sessionId = $this->_client->session()->create($account->getUsername(), $_SERVER['REMOTE_ADDR']);
+        return 'https://' . $server->hostname . ':8443/enterprise/rsession_init.php?PHPSESSID=' . $sessionId;
+    }
+
+
     public function changeAccountUsername(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
     }
-    
+
     public function changeAccountDomain(Server_Account $a, $new)
     {
         $this->getLog()->info('Updating domain for account ' . $a->getUsername());
@@ -233,7 +242,7 @@ class Server_Manager_Plesk extends Server_Manager
     	$response = $this->_client->ip()->get();
 
 		$ips = array('shared' => array(), 'exclusive' => array());
-		
+
         foreach($response as $ip) {
             $ips[(string)$ip->type][] = array(
 				'ip'		=>	(string)$ip->ipAddress,
@@ -407,7 +416,7 @@ class Server_Manager_Plesk extends Server_Manager
                                 'name'	=>	'max_site',
                                 'value'	=>	$p->getMaxDomains() ?: 0,
                             ),
-                        ), 
+                        ),
                     ),
                     'permissions'	=>	array(
                         'permission'	=>	array(

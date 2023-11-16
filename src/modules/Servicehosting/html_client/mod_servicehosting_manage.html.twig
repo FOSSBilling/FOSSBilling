@@ -66,7 +66,7 @@
                             {% if service.domain_order_id %}
                                     <a class="btn btn-primary" href="{{ '/order/service/manage'|link }}/{{ service.domain_order_id }}">{{ 'Manage domain'|trans }}</a>
                             {% endif %}
-                                    <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">{{ 'Jump to cPanel'|trans }}</a>
+                                    <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank" id="plesk-login">{{ 'Jump to Hosting Manager'|trans }}</a>
                             {% if service.reseller %}
                                     <a class="btn btn-primary" href="{{ server.reseller_cpanel_url }}" target="_blank">{{ 'Reseller control panel'|trans }}</a>
                             {% endif %}
@@ -187,6 +187,22 @@ $(function() {
             $(this).serialize(),
             function(result) {
                 bb.msg('Account Password was changed');
+            }
+        );
+
+        return false;
+    });
+
+    $('#plesk-login').on('click', function(event) {
+        event.preventDefault();
+        bb.post(
+            'client/servicehosting/plesk_login',
+            {order_id: "{{ order.id }}", CSRFToken: "{{ CSRFToken }}"},
+            function(result) {
+                if (result === false) {
+                    bb.msg('SSO Login is not supported, please login with username/password: {{ server.cpanel_url }}');
+                }
+                bb.redirect(result);
             }
         );
 

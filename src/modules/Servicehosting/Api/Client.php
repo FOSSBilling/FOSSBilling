@@ -52,6 +52,20 @@ class Client extends \Api_Abstract
     }
 
     /**
+     * Create plesk session.
+     *
+     * @param int    $order_id  - Hosting account order id
+     *
+     * @return bool
+     */
+    public function plesk_login($data)
+    {
+        [$order, $s] = $this->_getService($data);
+
+        return $this->getService()->createPleskSession($order, $s);
+    }
+
+    /**
      * Get hosting plans pairs. Usually for select box.
      *
      * @return array
