@@ -11,8 +11,21 @@
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
+// Setting up the debug bar
 $debugBar = new \DebugBar\StandardDebugBar;
+$debugBar['request']->useHtmlVarDumper();
+$debugBar['messages']->useHtmlVarDumper();
 
+$config = $di['config'];
+$config['salt'] = '********';
+$config['db'] = array_fill_keys(array_keys($config['db']), '********');
+
+$configCollector = new \DebugBar\DataCollector\ConfigCollector($config);
+$configCollector->useHtmlVarDumper();
+
+$debugBar->addCollector($configCollector);
+
+// Now move onto the actual process of setting up the app & routing
 $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 $http_err_code = $_GET['_errcode'] ?? null;
 

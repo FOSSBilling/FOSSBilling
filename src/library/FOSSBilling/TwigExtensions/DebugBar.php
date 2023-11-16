@@ -15,6 +15,7 @@ use DebugBar\JavascriptRenderer;
 use DebugBar\StandardDebugBar;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
+use FOSSBilling\Environment;
 
 class DebugBar extends AbstractExtension
 {
@@ -41,7 +42,7 @@ class DebugBar extends AbstractExtension
 
     public function renderHead(): string
     {
-        if (1 === 1) { // Environment::isDevelopment() once it's merged
+        if (Environment::isDevelopment()) {
             return $this->debugbarRenderer->renderHead();
         } else {
             return '';
@@ -50,7 +51,7 @@ class DebugBar extends AbstractExtension
 
     public function render(): string
     {
-        if (1 === 1) { // Environment::isDevelopment() once it's merged
+        if (Environment::isDevelopment()) {
             return $this->debugbarRenderer->render();
         } else {
             return '';
