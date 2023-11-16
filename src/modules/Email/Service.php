@@ -329,6 +329,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (DEBUG) {
                 error_log('Skipping email sending in test environment');
             }
+
             return true;
         }
 
