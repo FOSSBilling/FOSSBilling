@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -8,13 +9,18 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\TwigExtensions\DebugBar;
+use Twig\Profiler\Profile;
+use Twig\Extension\ProfilerExtension;
+use DebugBar\Bridge\NamespacedTwigProfileCollector;
+
 class Box_AppAdmin extends Box_App
 {
     public function init()
     {
         $m = $this->di['mod']($this->mod);
         $controller = $m->getAdminController();
-        if(!is_null($controller)){
+        if (!is_null($controller)) {
             $controller->register($this);
         }
     }
@@ -38,7 +44,8 @@ class Box_AppAdmin extends Box_App
         $service = $this->di['mod_service']('theme');
         $theme = $service->getCurrentAdminAreaTheme();
 
-        $loader = new Box_TwigLoader([
+        $loader = new Box_TwigLoader(
+            [
                 'mods' => PATH_MODS,
                 'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . $theme['code'],
                 'type' => 'admin',
@@ -47,8 +54,13 @@ class Box_AppAdmin extends Box_App
 
         $twig = $this->di['twig'];
         $twig->setLoader($loader);
-
         $twig->addGlobal('theme', $theme);
+
+        $profile = new Profile();
+        $twig->addExtension(new ProfilerExtension($profile));
+        $this->debugBar->addCollector(new NamespacedTwigProfileCollector($profile));
+
+        $twig->addExtension(new DebugBar($this->getDebugBar()));
 
         if ($this->di['auth']->isAdminLoggedIn()) {
             $twig->addGlobal('admin', $this->di['api_admin']);
