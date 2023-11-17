@@ -80,8 +80,8 @@ class Client implements InjectionAwareInterface
         try {
             $this->_apiCall($role, $call, $p);
         } catch (\Exception $exc) {
-            // Let Sentry capture the exception and then send it
-            \FOSSBilling\SentryHelper::captureException($exc);
+            // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
+            \Sentry\captureException($exc);
             $this->renderJson(null, $exc);
         }
     }
