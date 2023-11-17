@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -175,7 +176,12 @@ class Service implements InjectionAwareInterface
         move_uploaded_file($file->getRealPath(), $productService->getSavePath($file->getName()));
         // End upload
 
-        $config = json_decode($productModel->config, 1);
+        if ($productModel->config) {
+            $config = json_decode($productModel->config, 1);
+        } else {
+            $config = [];
+        }
+
         $productService->removeOldFile($config);
 
         // Check if update_orders is true and update all orders

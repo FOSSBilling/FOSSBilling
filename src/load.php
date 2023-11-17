@@ -144,14 +144,9 @@ function errorHandler(int $number, string $message, string $file, int $line)
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
     }
 
-    // Now we can handle the error appropriately.
+    // If it's an exception, handle it. Otherwise we don't need to do anything as PHP will log it for us.
     if ($number === E_RECOVERABLE_ERROR) {
         exceptionHandler(new ErrorException($message, $number, 0, $file, $line));
-    } else {
-        $errorType = FOSSBilling\SentryHelper::getErrorType($number);
-        $completedMessage = ($errorType . " ($number): " . $message . ' in ' . $file . ' on line ' . $line);
-
-        \Sentry\captureMessage($completedMessage, FOSSBilling\SentryHelper::getSeverityLevel($errorType));
     }
 
     return false;
@@ -160,17 +155,14 @@ function errorHandler(int $number, string $message, string $file, int $line)
 /*
  * Exception handler.
  */
-function exceptionHandler($e)
+function exceptionHandler(\Exception|\Error $e)
 {
-    // Let Sentry capture the exception and then send it
-    \FOSSBilling\SentryHelper::captureException($e);
-
     if (getenv('APP_ENV') === 'test') {
         echo $e->getMessage() . PHP_EOL;
 
         return;
     } else {
-        error_log($e->getMessage());
+        error_log($e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
     }
 
     $message = htmlspecialchars($e->getMessage());

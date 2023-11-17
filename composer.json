@@ -32,6 +32,7 @@
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
         "mattketmo/email-checker": "^2.2",
+        "maximebf/debugbar": "^1.19",
         "monolog/monolog": "^3.5",
         "nelexa/zip": "^4.0.2",
         "php-http/message-factory": "*",
