@@ -154,7 +154,7 @@ class SentryHelper
         } else if (stripos(strtolower($serverSoftware), 'litespeed') !== false) {
             return 'Litespeed';
         } else if (stripos(strtolower($serverSoftware), 'nginx') !== false) {
-            return 'NGINK';
+            return 'NGINX';
         } else {
             return 'Unknown';
         }
