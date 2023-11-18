@@ -63,6 +63,16 @@ class Server_Manager_Hestia extends Server_Manager
         return 'https://' . $this->_config['host'] . ':' . $this->_getPort() . '/';
     }
 
+    public function ssoSupport(): bool
+    {
+        return false;
+    }
+
+    public function generateSsoLink(Server_Account $account)
+    {
+        return null;
+    }
+
     /**
      * Returns link to reseller account management.
      *

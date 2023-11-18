@@ -58,11 +58,11 @@ class Client extends \Api_Abstract
      *
      * @return bool
      */
-    public function plesk_login($data)
+    public function create_sso_link($data)
     {
         [$order, $s] = $this->_getService($data);
 
-        return $this->getService()->createPleskSession($order, $s);
+        return $this->getService()->createSsoLink($order, $s);
     }
 
     /**

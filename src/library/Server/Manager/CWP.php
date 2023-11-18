@@ -64,6 +64,16 @@ class Server_Manager_CWP extends Server_Manager
 		return 'https://' . $host . ':2083';
 	}
 
+    public function ssoSupport(): bool
+    {
+        return false;
+    }
+
+    public function generateSsoLink(Server_Account $account)
+    {
+        return null;
+    }
+
 	public function getResellerLoginUrl()
 	{
 		$host = $this->_config['host'];

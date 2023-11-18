@@ -39,6 +39,19 @@ class Server_Manager_Plesk extends Server_Manager
         return $this->getLoginUrl();
     }
 
+    public function ssoSupport(): bool
+    {
+        return true;
+    }
+
+    public function generateSsoLink(Server_Account $account)
+    {
+        $protocol = $this->_config['secure'] ? 'https' : 'http';
+        $sessionId = $this->_client->session()->create($account->getUsername(), $_SERVER['REMOTE_ADDR']);
+
+        return $protocol . "://" . $this->_config['host'] . ':' . $this->_config['port'] . '/enterprise/rsession_init.php?PHPSESSID=' . $sessionId;
+    }
+
     public function testConnection()
     {
         $stats = $this->_client->server()->getStatistics();
@@ -196,15 +209,6 @@ class Server_Manager_Plesk extends Server_Manager
 
     	return $result;
     }
-
-    public function createPleskSession(Server_Account $account, Model_ServiceHostingServer $server)
-    {
-        $this->getLog()->info('Creating session for ' . $account->getUsername());
-
-        $sessionId = $this->_client->session()->create($account->getUsername(), $_SERVER['REMOTE_ADDR']);
-        return 'https://' . $server->hostname . ':8443/enterprise/rsession_init.php?PHPSESSID=' . $sessionId;
-    }
-
 
     public function changeAccountUsername(Server_Account $a, $new): never
     {

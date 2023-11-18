@@ -31,7 +31,7 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         // If port not set, use WHM default.
-        $this->_config['port'] = empty($this->_config['port']) ? '2087' : $this->_config['port'];  
+        $this->_config['port'] = empty($this->_config['port']) ? '2087' : $this->_config['port'];
 	}
 
     public function getLoginUrl()
@@ -40,12 +40,22 @@ class Server_Manager_Whm extends Server_Manager
         return 'http://'.$host.'/cpanel';
     }
 
+    public function ssoSupport(): bool
+    {
+        return false;
+    }
+
+    public function generateSsoLink(Server_Account $account)
+    {
+        return null;
+    }
+
     public function getResellerLoginUrl()
     {
         $host = $this->_config['host'];
         return 'http://'.$host.'/whm';
     }
-    
+
     public static function getForm()
     {
         return array(
@@ -100,7 +110,7 @@ class Server_Manager_Whm extends Server_Manager
         $new->setDomain($acc->domain);
         $new->setUsername($acc->user);
         $new->setIp($acc->ip);
-        
+
         return $new;
     }
 
@@ -122,11 +132,11 @@ class Server_Manager_Whm extends Server_Manager
 			'plan'			=> $this->_getPackageName($package),
         	'useregns'		=> 0,
         );
-            
+
         if($a->getReseller()) {
             $var_hash['reseller'] = 1;
         }
-        
+
         $json = $this->_request($action, $var_hash);
         $result = ($json->result[0]->status == 1);
 
@@ -194,7 +204,7 @@ class Server_Manager_Whm extends Server_Manager
     {
         $this->getLog()->info('Changing account '.$a->getUsername().' package');
         $this->_checkPackageExists($p, true);
-        
+
 		$var_hash = array(
 			'user'              => $a->getUsername(),
 			'pkg'               => $this->_getPackageName($p),
@@ -226,7 +236,7 @@ class Server_Manager_Whm extends Server_Manager
     public function changeAccountUsername(Server_Account $a, $new)
     {
         $this->getLog()->info('Changing account '.$a->getUsername().' username');
-        
+
         $action = 'modifyacct';
 		$var_hash = array(
             'user'      => $a->getUsername(),
@@ -236,7 +246,7 @@ class Server_Manager_Whm extends Server_Manager
 		$this->_request($action, $var_hash);
         return true;
     }
-    
+
     public function changeAccountDomain(Server_Account $a, $new)
     {
         $this->getLog()->info('Changing account '.$a->getUsername().' domain');
@@ -299,7 +309,7 @@ class Server_Manager_Whm extends Server_Manager
 			$var_hash['maxftp']			= $package->getMaxFtp();
 			$var_hash['maxsql']			= $package->getMaxSql();
 			$var_hash['maxpop']			= $package->getMaxPop();
-            
+
 			$var_hash['cgi']			= $package->getCustomValue('cgi');
             $var_hash['cpmod']			= $package->getCustomValue('cpmod');
 			$var_hash['maxlst']			= $package->getCustomValue('maxlst');
@@ -315,7 +325,7 @@ class Server_Manager_Whm extends Server_Manager
     {
         $name = $package->getName();
         $name = $this->_config['username'].'_'.$name;
-        
+
         return $name;
     }
 
@@ -396,11 +406,11 @@ class Server_Manager_Whm extends Server_Manager
         $username = $this->_config['username'];
         $accesshash = $this->_config['accesshash'];
         $password = $this->_config['password'];
-        $authstr = (!empty($accesshash)) ? 'WHM ' . $username . ':' . $accesshash  
+        $authstr = (!empty($accesshash)) ? 'WHM ' . $username . ':' . $accesshash
                                          : 'Basic ' . $username .':'. $password;
 
         $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
-        
+
         try  {
             $response = $client->request('POST', $url, [
                 'headers'   => [ 'Authorization' => $authstr ],

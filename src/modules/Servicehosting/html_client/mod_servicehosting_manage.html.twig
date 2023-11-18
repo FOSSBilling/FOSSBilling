@@ -66,9 +66,13 @@
                             {% if service.domain_order_id %}
                                     <a class="btn btn-primary" href="{{ '/order/service/manage'|link }}/{{ service.domain_order_id }}">{{ 'Manage domain'|trans }}</a>
                             {% endif %}
-                                    <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank" id="plesk-login">{{ 'Jump to Hosting Manager'|trans }}</a>
+                                    <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">{{ 'Jump to Hosting Manager'|trans }}</a>
                             {% if service.reseller %}
                                     <a class="btn btn-primary" href="{{ server.reseller_cpanel_url }}" target="_blank">{{ 'Reseller control panel'|trans }}</a>
+                            {% endif %}
+
+                            {% if server.ssoSupport %}
+                                <a class="btn btn-info" target="_blank" id="sso-login">{{ 'SSO Login'|trans }}</a>
                             {% endif %}
                             </div>
                         </div>
@@ -193,10 +197,10 @@ $(function() {
         return false;
     });
 
-    $('#plesk-login').on('click', function(event) {
+    $('#sso-login').on('click', function(event) {
         event.preventDefault();
         bb.post(
-            'client/servicehosting/plesk_login',
+            'client/servicehosting/create_sso_link',
             {order_id: "{{ order.id }}", CSRFToken: "{{ CSRFToken }}"},
             function(result) {
                 if (result === false) {

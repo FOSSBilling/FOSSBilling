@@ -63,6 +63,16 @@ class Server_Manager_Directadmin extends Server_Manager
         return $protocol . $this->_config['host'] . ':'. $this -> _getPort();
     }
 
+    public function ssoSupport(): bool
+    {
+        return false;
+    }
+
+    public function generateSsoLink(Server_Account $account)
+    {
+        return null;
+    }
+
     public function getResellerLoginUrl()
     {
         return $this->getLoginUrl();

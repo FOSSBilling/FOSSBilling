@@ -343,12 +343,12 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createPleskSession(\Model_ClientOrder $order, \Model_ServiceHosting $model)
+    public function createSsoLink(\Model_ClientOrder $order, \Model_ServiceHosting $model)
     {
         if ($this->_performOnService($order)) {
             [$adapter, $account] = $this->_getAM($model);
             $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server from order configuration was not found');
-            $url = $adapter->createPleskSession($account, $server);
+            $url = $adapter->generateSsoLink($account, $server);
             $this->di['logger']->info('SSO Login created for account %s', $model->id);
 
             return $url;
@@ -486,7 +486,7 @@ class Service implements InjectionAwareInterface
 
     public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
     {
-        [$cpanel_url, $whm_url] = $this->getMangerUrls($model);
+        [$cpanel_url, $whm_url, $ssoSupport] = $this->getManagerUrls($model);
         $result = [
             'name' => $model->name,
             'hostname' => $model->hostname,
@@ -497,6 +497,7 @@ class Service implements InjectionAwareInterface
             'ns4' => $model->ns4,
             'cpanel_url' => $cpanel_url,
             'reseller_cpanel_url' => $whm_url,
+            'ssoSupport' => $ssoSupport
         ];
 
         if ($identity instanceof \Model_Admin) {
@@ -937,12 +938,11 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function getMangerUrls(\Model_ServiceHostingServer $model)
+    public function getManagerUrls(\Model_ServiceHostingServer $model)
     {
         try {
             $m = $this->getServerManager($model);
-
-            return [$m->getLoginUrl(), $m->getResellerLoginUrl()];
+            return [$m->getLoginUrl(), $m->getResellerLoginUrl(), $m->ssoSupport()];
         } catch (\Exception $e) {
             error_log('Error while retrieving cPanel url: ' . $e->getMessage());
         }
