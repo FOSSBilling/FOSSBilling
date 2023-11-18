@@ -367,7 +367,8 @@
         "valuenow",
         "valuemin",
         "valuemax",
-        "concat"
+        "concat",
+        "debugbar"
     ],
     "ignorePaths": [
         "tests/**",

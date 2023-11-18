@@ -14,8 +14,6 @@ namespace FOSSBilling;
 
 use \Sentry\Event;
 use \Sentry\EventHint;
-use \Sentry\State\Scope;
-use \Sentry\Severity;
 use \Sentry\HttpClient\HttpClientInterface;
 use \Sentry\HttpClient\Request;
 use \Sentry\HttpClient\Response;
@@ -78,11 +76,24 @@ class SentryHelper
                 if ($hint) {
                     $errorInfo = ErrorPage::getCodeInfo($hint->exception->getCode());
 
+                    // Skip any errors that aren't supposed to be reported
                     if (!$errorInfo['report']) {
                         return null;
                     }
+
+                    // Tag the event with the exception's category.
+                    $event->setTag('exception.category', $errorInfo['category']);
+
+                    // Tag the event with the correct module / library
+                    $exceptionPath = $hint->exception->getFile();
+                    if (str_starts_with($exceptionPath, PATH_MODS)) {
+                        $event->setTag('module.name', self::getModule($exceptionPath));
+                    } else if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
+                        $event->setTag('library.class', self::getLibrary($exceptionPath));
+                    }
                 }
 
+                $event->setTag('webserver.used', self::estimateWebServer());
                 return $event;
             },
 
@@ -94,8 +105,8 @@ class SentryHelper
             // This option is disabled by default, but we set it to false here to be explicit & ensure it can never change unexpectedly.
             'send_default_pii' => false,
 
-            // Stack traces are always sent for Exceptions, but if debug mode is enabled we will send them for errors too.
-            'attach_stacktrace' => (bool)DEBUG,
+            // Stack traces aren't that much data to send and are valuable for us, so let's always send them.
+            'attach_stacktrace' => true,
         ];
 
         /**
@@ -111,101 +122,41 @@ class SentryHelper
         \Sentry\init($options);
     }
 
-    /**
-     * Captures an exception and sends it to Sentry, adding additional information that we'd find useful.
-     *
-     * @param \Exception|\Error $e
-     */
-    public static function captureException(\Exception|\Error $e)
+    private static function getModule(string $exceptionPath)
     {
-        \Sentry\withScope(function (Scope $scope) use ($e): void {
-            $errorInfo = ErrorPage::getCodeInfo($e->getCode());
-            $exceptionPath = $e->getFile();
+        $strippedPath = str_replace(PATH_MODS, '', $exceptionPath);
+        $level = 0;
+        $module = 'Unknown';
 
-            // Tag the event with the exception's category.
-            $scope->setTag('exception.category', $errorInfo['category']);
-
-            // If we can, tag the event with the module or library that threw the exception.
-            if (str_starts_with($exceptionPath, PATH_MODS)) {
-                $strippedPath = str_replace(PATH_MODS, '', $exceptionPath);
-                $level = 0;
-                $module = 'Unknown';
-
-                while ($level <= 10) {
-                    if (dirname($strippedPath, ($level + 1)) === DIRECTORY_SEPARATOR) {
-                        $module = trim(dirname($strippedPath, $level), DIRECTORY_SEPARATOR);
-                        break;
-                    }
-                    $level++;
-                }
-                $scope->setTag('module.name', $module);
-            } else if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
-                $scope->setTag('library.class', pathinfo($exceptionPath, PATHINFO_FILENAME));
+        while ($level <= 10) {
+            if (dirname($strippedPath, ($level + 1)) === DIRECTORY_SEPARATOR) {
+                $module = trim(dirname($strippedPath, $level), DIRECTORY_SEPARATOR);
+                break;
             }
-
-            // Finally tag the event with what is probably the webserver in use, then send the event to Sentry.
-            self::estimateWebServer($scope);
-            \Sentry\captureException($e);
-        });
+            $level++;
+        }
+        return $module;
     }
 
-    /**
-     * Accepts a PHP error's number and returns what type of error it is.
-     */
-    public static function getErrorType(int $number): string
+    private static function getLibrary(string $exceptionPath)
     {
-        return match ($number) {
-            E_ERROR => 'Error',
-            E_WARNING => 'Warning',
-            E_PARSE => 'Parse error',
-            E_NOTICE => 'Runtime notice',
-            E_CORE_ERROR => 'Fatal PHP startup error',
-            E_CORE_WARNING => 'PHP startup warning',
-            E_COMPILE_ERROR => 'Zend compile error',
-            E_COMPILE_WARNING => 'Zend compile warning',
-            E_USER_ERROR => 'User-generated error',
-            E_USER_WARNING => 'User-generated warning',
-            E_USER_NOTICE => 'User-generated notice',
-            E_STRICT => 'PHP Strict code checking',
-            E_RECOVERABLE_ERROR => 'Recoverable error',
-            E_DEPRECATED => 'PHP deprecation warning',
-            E_USER_DEPRECATED => 'User-generated deprecation warning',
-            default => 'Unknown error',
-        };
-    }
-
-    /**
-     * Returns the appropriate Sentry severity level for a given error type.
-     */
-    public static function getSeverityLevel(string $type): Severity
-    {
-        if (stripos($type, 'fatal') !== false) {
-            return Severity::fatal();
-        }
-        // We check for deprecation before warning because the message for them also includes 'warning'
-        if (stripos($type, 'deprecation') !== false) {
-            return Severity::info();
-        }
-        if (stripos($type, 'warning') !== false) {
-            return Severity::warning();
-        }
-
-        // Default to error
-        return Severity::error();
+        return pathinfo($exceptionPath, PATHINFO_FILENAME);
     }
 
     /**
      * Tries to guess what type of webserver is being used and tags the Sentry event with it.
      */
-    private static function estimateWebServer(Scope $scope): void
+    private static function estimateWebServer(): string
     {
         $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
         if (function_exists('apache_get_version') || (stripos(strtolower($serverSoftware), 'apache') !== false)) {
-            $scope->setTag('webserver.used', 'Apache');
+            return 'Apache';
         } else if (stripos(strtolower($serverSoftware), 'litespeed') !== false) {
-            $scope->setTag('webserver.used', 'Litespeed');
+            return 'Litespeed';
         } else if (stripos(strtolower($serverSoftware), 'nginx') !== false) {
-            $scope->setTag('webserver.used', 'NGINX');
+            return 'NGINX';
+        } else {
+            return 'Unknown';
         }
     }
 }
