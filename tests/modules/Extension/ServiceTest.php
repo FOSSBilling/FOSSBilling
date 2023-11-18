@@ -643,7 +643,7 @@ class ServiceTest extends \BBTestCase {
         $di['crypt'] = $cryptMock;
         $di['tools'] = $toolsMock;
         $di['config'] = array('salt' => '');
-        $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+        $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
         $this->service->setDi($di);
 
@@ -673,7 +673,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+        $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
         $this->service->setDi($di);
         $result = $this->service->getConfig($data['ext']);
@@ -718,7 +718,7 @@ class ServiceTest extends \BBTestCase {
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['config'] = array('salt' => '');
-        $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+        $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
         $serviceMock->setDi($di);
         $result = $serviceMock->setConfig($data);
