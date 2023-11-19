@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
@@ -28,13 +29,6 @@ class UpdatePatcher implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
-    }
-
-    public function isOutdated(): bool
-    {
-        $patchLevel = $this->getPatchLevel();
-        $patches = $this->getPatches($patchLevel);
-        return count($patches) !== 0;
     }
 
     /**
@@ -95,6 +89,10 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {
             unset($newConfig[$key][$subkey]);
+        }
+
+        if ($currentConfig === $newConfig) {
+            return;
         }
 
         $output = '<?php ' . PHP_EOL;
@@ -318,7 +316,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $ext_service = $this->di['mod_service']('extension');
                 if ($ext_service->isExtensionActive('mod', 'kb')) {
                     $support_ext_config = $ext_service->getConfig('mod_support');
-                    $support_ext_config['kb_enable'] ?: 'on';
+                    $support_ext_config['kb_enable'] = 'on';
                     $ext_service->setConfig($support_ext_config);
                 }
 
