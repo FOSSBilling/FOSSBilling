@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use AntCMS\AntLoader;
+use Symfony\Component\Filesystem\Path;
 
 class AutoLoader
 {
@@ -25,14 +26,14 @@ class AutoLoader
     /**
      * Creates a new instance of AntLoader and then loads the classmap.
      * The instance is configured for filesystem caching within the FOSSBilling cache directory.
-     * 
+     *
      * @param bool $registerFOSSBillingDefaults (optional) Set to true if you want the autoloader to be shipped with the default paths and namespaces for FOSSBilling. Defaults to true.
      */
     public function __construct(bool $registerFOSSBillingDefaults = true)
     {
         $this->AntLoader = new AntLoader([
             'mode' => 'filesystem',
-            'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'classMap.php',
+            'path' => Path::normalize(PATH_CACHE . '/classMap.php'),
         ]);
 
         if ($registerFOSSBillingDefaults) {
@@ -45,7 +46,7 @@ class AutoLoader
 
     /**
      * Registers the autoloader with PHP.
-     * 
+     *
      * @param bool $prepend (optional) Set to true to have this autoloader be placed before others currently registered, meaning it will be checked first. Defaults to true.
      */
     public function register(bool $prepend = true): void

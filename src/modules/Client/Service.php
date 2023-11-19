@@ -42,7 +42,8 @@ class Service implements InjectionAwareInterface
 
     public function generateEmailConfirmationLink($client_id)
     {
-        $hash = strtolower($this->di['tools']->generatePassword(50));
+        $password = new \Box_Password;
+        $hash = strtolower($password->generate(50));
         $db = $this->di['db'];
 
         $meta = $db->dispense('ExtensionMeta');
@@ -54,7 +55,7 @@ class Service implements InjectionAwareInterface
         $meta->updated_at = date('Y-m-d H:i:s');
         $db->store($meta);
 
-        return $this->di['tools']->url('/client/confirm-email/' . $hash);
+        return $this->di['url']->link('/client/confirm-email/' . $hash);
     }
 
     public static function onAfterClientSignUp(\Box_Event $event)
@@ -480,6 +481,8 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data)
     {
+        $box_passwd = new \Box_Password;
+
         $password = $data['password'] ?? uniqid();
 
         $client = $this->di['db']->dispense('Client');
@@ -487,7 +490,7 @@ class Service implements InjectionAwareInterface
         $client->auth_type = $data['auth_type'] ?? null;
         $client->email = strtolower(trim($data['email'] ?? null));
         $client->first_name = ucwords($data['first_name'] ?? null);
-        $client->pass = $this->di['password']->hashIt($password);
+        $client->pass = $box_passwd->hashIt($password);
 
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {

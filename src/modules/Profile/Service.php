@@ -33,7 +33,9 @@ class Service implements InjectionAwareInterface
         $event_params['id'] = $admin->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params]);
 
-        $admin->pass = $this->di['password']->hashIt($new_password);
+        $box_passwd = new \Box_Password;
+
+        $admin->pass = $box_passwd->hashIt($new_password);
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
@@ -52,7 +54,9 @@ class Service implements InjectionAwareInterface
         $event_params['id'] = $admin->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffApiKeyChange', 'params' => $event_params]);
 
-        $admin->api_token = $this->di['tools']->generatePassword(32);
+        $password = new \Box_Password;
+
+        $admin->api_token = $password->generate(32);
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
@@ -118,7 +122,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($email)) {
-            $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
@@ -182,7 +186,9 @@ class Service implements InjectionAwareInterface
 
     public function resetApiKey(\Model_Client $client)
     {
-        $client->api_token = $this->di['tools']->generatePassword(32);
+        $password = new \Box_Password;
+
+        $client->api_token = $password->generate(32);
         $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
@@ -199,7 +205,9 @@ class Service implements InjectionAwareInterface
         $event_params['id'] = $client->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordChange', 'params' => $event_params]);
 
-        $client->pass = $this->di['password']->hashIt($new_password);
+        $box_passwd = new \Box_Password;
+
+        $client->pass = $box_passwd->hashIt($new_password);
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordChange', 'params' => ['id' => $client->id]]);

@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,28 +11,18 @@
 
 namespace FOSSBilling;
 
-class Requirements implements InjectionAwareInterface
+use Symfony\Component\Filesystem\Filesystem;
+
+class Requirements
 {
-    protected ?\Pimple\Container $di = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
     private bool $_all_ok = true;
-    private string $_app_path = PATH_ROOT;
     private array $_options = array();
+    private Filesystem $filesystem;
 
     public function __construct()
     {
-        $this->_options = array(
-            'php'   =>  array(
+        $this->_options = [
+            'php'   =>  [
                 'extensions' => array(
                     'pdo_mysql',
                     'zlib',
@@ -40,18 +31,20 @@ class Requirements implements InjectionAwareInterface
                     'xml',
                  ),
                 'version'       =>  PHP_VERSION,
-                'min_version'   =>  '8.0',
+                'min_version'   =>  '8.1',
                 'safe_mode'     =>  ini_get('safe_mode'),
-            ),
-            'writable_folders' => array(
-                $this->_app_path . '/data/cache',
-                $this->_app_path . '/data/log',
-                $this->_app_path . '/data/uploads',
-            ),
+            ],
+            'writable_folders' => [
+                PATH_CACHE,
+                PATH_LOG,
+                PATH_UPLOADS
+            ],
             'writable_files' => array(
-                $this->_app_path . '/config.php',
+                PATH_CONFIG,
             ),
-        );
+        ];
+
+        $this->filesystem = new Filesystem();
     }
 
     public function getOptions(): array
@@ -61,13 +54,15 @@ class Requirements implements InjectionAwareInterface
 
     public function getInfo(): array
     {
+        $config = include PATH_CONFIG;
+
         $data = array();
         $data['ip']             = $_SERVER['SERVER_ADDR'] ?? null;
         $data['PHP_OS']         = PHP_OS;
         $data['PHP_VERSION']    = PHP_VERSION;
 
         $data['FOSSBilling']    = array(
-            'locale'        =>  $this->di['config']['i18n']['locale'],
+            'locale'        =>  $config['i18n']['locale'],
             'version'       =>  \FOSSBilling\Version::VERSION,
         );
 
@@ -139,7 +134,7 @@ class Requirements implements InjectionAwareInterface
                 $result[$file] = true;
             } else if (is_writable($file)) {
             	$result[$file] = true;
-            } else if (!file_exists($file)){
+            } else if (!$this->filesystem->exists($file)){
                 $written = @file_put_contents($file, 'Test?');
                 if($written){
                     $result[$file] = true;

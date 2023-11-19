@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,6 +15,7 @@ use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
+use Symfony\Component\Filesystem\Path;
 
 class Monolog
 {
@@ -36,7 +38,7 @@ class Monolog
 
         foreach ($channels as $channel) {
 
-            $path = PATH_LOG . DIRECTORY_SEPARATOR . $channel . '.log';
+            $path = Path::normalize(PATH_LOG . '' . $channel . '.log');
 
             $this->logger[$channel] = new Logger($channel);
             $stream = new StreamHandler($path, Level::Debug);

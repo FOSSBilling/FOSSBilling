@@ -11,6 +11,8 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
             'required' => array(),
         ));
 
+        $box_passwd = new \Box_Password;
+
         $e = random_int(5, 56666).'@gmail.com';
         $pass = 'testA1sssss';
 
@@ -33,7 +35,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         $client = $this->di['db']->load('Client', $id);
 
         $this->assertNotEquals($data['password'], $client->pass);
-        $this->assertTrue($this->di['password']->verify($data['password'], $client->pass));
+        $this->assertTrue($box_passwd->verify($data['password'], $client->pass));
     }
 
     /**
@@ -82,7 +84,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         $bool = $this->api_guest->client_is_vat($data);
         //$this->assertTrue($bool);
     }
-    
+
     public function testClientLogin()
     {
         $data = array(
@@ -95,7 +97,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
 
         $bool = $this->api_client->client_logout($data);
         $this->assertNull($this->session->get('client_id'));
-                
+
         $this->assertTrue($bool);
         $this->assertNull($this->session->get('admin'));
     }

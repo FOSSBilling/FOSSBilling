@@ -68,7 +68,7 @@ class Client extends \Api_Abstract
     public function update($data)
     {
         if (!is_null($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateClient($this->getIdentity(), $data);
@@ -115,7 +115,9 @@ class Client extends \Api_Abstract
 
         $client = $this->getIdentity();
 
-        if (!$this->di['password']->verify($data['current_password'], $client->pass)) {
+        $box_passwd = new \Box_Password;
+
+        if (!$box_passwd->verify($data['current_password'], $client->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 

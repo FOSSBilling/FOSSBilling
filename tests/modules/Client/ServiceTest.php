@@ -65,12 +65,15 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(1));
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('url')
+
+        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
+        $urlMock->expects($this->atLeastOnce())->method('link')
             ->will($this->returnValue('fossbilling.org/index.php/client/confirm-email/'));
 
         $di = new \Pimple\Container();
         $di['db'] = $database;
         $di['tools'] = $toolsMock;
+        $di['url'] = $urlMock;
 
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
@@ -871,17 +874,10 @@ class ServiceTest extends \BBTestCase {
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -919,18 +915,11 @@ class ServiceTest extends \BBTestCase {
             ->method('getClientAddress')
             ->will($this->returnValue($ip));
 
-
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['request'] = $requestMock;
-        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);

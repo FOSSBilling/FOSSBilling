@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -26,7 +27,6 @@ class CentralAlerts implements InjectionAwareInterface
     {
         $this->di = $di;
     }
-
     public function getDi(): ?Container
     {
         return $this->di;
@@ -67,13 +67,14 @@ class CentralAlerts implements InjectionAwareInterface
     public function filterAlerts(array $type = [], string $version = Version::VERSION): array
     {
         $alerts = $this->getAlerts();
+        $config = include PATH_CONFIG;
 
         if (is_array($type) && !empty($type)) {
             $alerts = array_filter($alerts, fn($alert) => in_array($alert['type'], $type));
         }
 
         if ($version) {
-            if ($this->di['config']['update_branch'] === 'preview') {
+            if ($config['update_branch'] === 'preview') {
                 $alerts = array_filter($alerts, fn($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function($alert) use ($version) {

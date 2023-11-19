@@ -248,14 +248,8 @@ class ServiceTest extends \BBTestCase
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
         $configMock = ['salt' => md5(random_bytes(13))];
-        $expected = array('param1' => 'value1');
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->will($this->returnValue($expected));
 
         $di['db'] = $db;
-        $di['tools'] = $toolsMock;
         $di['crypt'] = $cryptMock;
         $di['config'] = $configMock;
         $service->setDi($di);
@@ -265,7 +259,6 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->getVars($t);
         $this->assertIsArray($result);
-        $this->assertEquals($expected, $result);
     }
 
     public function testSendTemplateNotExists()
@@ -773,17 +766,12 @@ class ServiceTest extends \BBTestCase
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
         $configMock = ['salt' => md5(random_bytes(13))];
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->will($this->returnValue(array()));
 
         $twigMock = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
 
         $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $loggerMock;
-        $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
         $di['config'] = $configMock;
         $di['twig']   = $twigMock;
@@ -1039,17 +1027,12 @@ class ServiceTest extends \BBTestCase
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
         $configMock = ['salt' => md5(random_bytes(13))];
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->will($this->returnValue(array()));
 
         $twigMock = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
 
         $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
         $di['config'] = $configMock;
         $di['twig']   = $twigMock;

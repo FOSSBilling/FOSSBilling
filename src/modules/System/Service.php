@@ -11,11 +11,16 @@
 namespace Box\Mod\System;
 
 use FOSSBilling\Environment;
+use FOSSBilling\Requirements;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Version;
 use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Exception\IOException;
+
 
 class Service
 {
@@ -362,7 +367,7 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if (file_exists($path . DIRECTORY_SEPARATOR . $file)) {
+            if (file_exists(Path::normalize($path . '/' . $file))) {
                 return true;
             }
         }
@@ -428,7 +433,15 @@ class Service
 
     public function clearCache()
     {
-        $this->di['tools']->emptyFolder(PATH_CACHE);
+        // Clear cache.
+        try {
+            $filesystem = new Filesystem();
+            $filesystem->remove([PATH_CACHE]);
+            $filesystem->mkdir(PATH_CACHE, 0777);
+        } catch (IOException $e) {
+            error_log($e->getMessage());
+            throw new \Exception("Unable to clear cache and/or remove install folder. Further details are available in the error log.");
+        }
 
         return true;
     }
@@ -448,7 +461,7 @@ class Service
             }
         }
 
-        $r = $this->di['requirements'];
+        $r = new Requirements;
         $data = $r->getInfo();
         $data['last_patch'] = $this->getParamValue('last_patch');
 

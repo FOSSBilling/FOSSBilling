@@ -86,11 +86,11 @@ class ClientTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['password'] = new \Box_Password();
+        $box_passwd = new \Box_Password;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $model->pass = $di['password']->hashIt('oldpw');
+        $model->pass = $box_passwd->hashIt('oldpw');
 
         $this->clientApi->setDi($di);
         $this->clientApi->setService($service);

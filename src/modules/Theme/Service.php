@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,8 @@
 namespace Box\Mod\Theme;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 class Service implements InjectionAwareInterface
 {
@@ -155,7 +158,7 @@ class Service implements InjectionAwareInterface
             ['theme' => $theme->getName(), 'preset' => $preset]
         );
         if ($meta) {
-            return json_decode($meta->meta_value, 1);
+            return json_decode($meta->meta_value, true);
         } else {
             return $theme->getPresetFromSettingsDataFile($preset);
         }
@@ -195,14 +198,15 @@ class Service implements InjectionAwareInterface
         $settings['current'] = $this->getCurrentThemePreset($theme);
         $data_file = $theme->getPathSettingsDataFile();
 
-        $this->di['tools']->file_put_contents(json_encode($settings), $data_file);
+        $filesystem = new Filesystem();
+        $filesystem->dumpFile($data_file, json_encode($settings));
 
         return true;
     }
 
     public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin)
     {
-        $assets = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
+        $assets = Path::normalize($theme->getPathAssets() . '/');
 
         $css_files = glob($assets . '*.css.html.twig');
         $js_files = glob($assets . '*.js.html.twig');
@@ -219,7 +223,8 @@ class Service implements InjectionAwareInterface
             $systemService = $this->di['mod_service']('system');
             $data = $systemService->renderString($vars['_tpl'], false, $vars);
 
-            $this->di['tools']->file_put_contents($data, $real_file);
+            $filesystem = new Filesystem();
+            $filesystem->dumpFile($real_file, $data);
         }
 
         return true;
@@ -233,11 +238,11 @@ class Service implements InjectionAwareInterface
                ';
         $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
-        $path = PATH_THEMES . DIRECTORY_SEPARATOR;
+        $path = Path::normalize(PATH_THEMES . '/');
         if ($theme == null || !file_exists($path . $theme)) {
             $theme = $default;
         }
-        $url = SYSTEM_URL . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
+        $url = SYSTEM_URL . 'themes' . '/' . $theme . '/';
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -356,7 +361,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
+            $p = Path::normalize(PATH_MODS . '/' . ucfirst($mod) . '/');
             $p .= $client ? 'html_client' : 'html_admin';
             if (file_exists($p)) {
                 $paths[] = $p;

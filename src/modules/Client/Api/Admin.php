@@ -142,7 +142,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $validator = $this->di['validator'];
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $validator->validateAndSanitizeEmail($data['email']);
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
@@ -234,7 +234,7 @@ class Admin extends \Api_Abstract
 
         if (!is_null($data['email'] ?? null)) {
             $email = $data['email'];
-            $email = $this->di['tools']->validateAndSanitizeEmail($email);
+            $email = $this->di['validator']->validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
                 throw new \FOSSBilling\InformationException('Can not change email. It is already registered.');
             }
@@ -312,6 +312,8 @@ class Admin extends \Api_Abstract
      */
     public function change_password($data)
     {
+        $box_passwd = new \Box_Password;
+
         $required = [
             'id' => 'ID required',
             'password' => 'Password required',
@@ -329,7 +331,7 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $data]);
 
-        $client->pass = $this->di['password']->hashIt($data['password']);
+        $client->pass = $box_passwd->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 

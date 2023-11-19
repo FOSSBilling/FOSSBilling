@@ -381,7 +381,7 @@ class Service implements InjectionAwareInterface
 
     public function isPromoAvailableForClientGroup(\Model_Promo $promo)
     {
-        $clientGroups = $this->di['tools']->decodeJ($promo->client_groups);
+        $clientGroups = json_decode($promo->client_groups, true) ?: [];
 
         if (empty($clientGroups)) {
             return true;
@@ -744,7 +744,7 @@ class Service implements InjectionAwareInterface
 
     public function getItemConfig(\Model_CartProduct $model)
     {
-        return $this->di['tools']->decodeJ($model->config);
+        return json_decode($model->config, true) ?: [];
     }
 
     public function cartProductToApiArray(\Model_CartProduct $model)

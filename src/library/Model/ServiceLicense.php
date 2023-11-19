@@ -10,34 +10,32 @@
 
 class Model_ServiceLicense extends \RedBeanPHP\SimpleModel
 {
-    private function _decodeJson($j)
-    {
-        if(isset($j)){
-            $config = json_decode($j, true);
-            return is_array($config) ? $config : array();
-        } else {
-            return array();
-        }
-    }
-
     public function getAllowedIps()
     {
-        return $this->_decodeJson($this->ips);
+        $allowedIps = json_decode($this->ips, true);
+
+        return is_array($allowedIps) ? $allowedIps : [];
     }
 
     public function getAllowedVersions()
     {
-        return $this->_decodeJson($this->versions);
+        $allowedVersions = json_decode($this->versions, true);
+
+        return is_array($allowedVersions) ? $allowedVersions : [];
     }
 
     public function getAllowedHosts()
     {
-        return $this->_decodeJson($this->hosts);
+        $allowedHosts = json_decode($this->hosts, true);
+
+        return is_array($allowedHosts) ? $allowedHosts : [];
     }
 
     public function getAllowedPaths()
     {
-        return $this->_decodeJson($this->paths);
+        $allowedPaths = json_decode($this->paths, true);
+
+        return is_array($allowedPaths) ? $allowedPaths : [];
     }
 
 }
