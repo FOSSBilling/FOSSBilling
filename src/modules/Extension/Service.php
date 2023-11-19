@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,7 @@
 namespace Box\Mod\Extension;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -587,28 +589,33 @@ class Service implements InjectionAwareInterface
 
     public function getConfig($ext)
     {
-        $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
-        if (is_null($c)) {
-            $c = $this->di['db']->dispense('ExtensionMeta');
-            $c->extension = $ext;
-            $c->meta_key = 'config';
-            $c->meta_value = null;
-            $c->created_at = date('Y-m-d H:i:s');
-            $c->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($c);
-            $config = [];
-        } else {
-            $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-            $config = $this->di['tools']->decodeJ($config);
-        }
+        return $this->di['cache']->get("config_$ext", function (ItemInterface $item) use ($ext) {
+            $item->expiresAfter(60 * 60);
 
-        return $config;
+            $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
+            if (is_null($c)) {
+                $c = $this->di['db']->dispense('ExtensionMeta');
+                $c->extension = $ext;
+                $c->meta_key = 'config';
+                $c->meta_value = null;
+                $c->created_at = date('Y-m-d H:i:s');
+                $c->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($c);
+                $config = [];
+            } else {
+                $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
+                $config = $this->di['tools']->decodeJ($config);
+            }
+
+            return $config;
+        });
     }
 
     public function setConfig($data)
     {
         $this->hasManagePermission($data['ext']);
-        $this->getConfig($data['ext']); // Creates new config if it does not exist in DB
+        $ext = $data['ext'];
+        $this->getConfig($ext); // Creates new config if it does not exist in DB
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
         $sql = "
@@ -623,12 +630,13 @@ class Service implements InjectionAwareInterface
         $config = $this->di['crypt']->encrypt($config, $this->_getSalt());
 
         $params = [
-            'ext' => $data['ext'],
+            'ext' => $ext,
             'config' => $config,
         ];
         $this->di['db']->exec($sql, $params);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminExtensionConfigSave', 'params' => $data]);
-        $this->di['logger']->info('Updated extension "%s" configuration', $data['ext']);
+        $this->di['logger']->info('Updated extension "%s" configuration', $ext);
+        $this->di['cache']->delete("config_$ext");
 
         return true;
     }
