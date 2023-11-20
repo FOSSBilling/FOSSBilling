@@ -54,7 +54,7 @@ class Client extends \Api_Abstract
     /**
      * Create plesk session.
      *
-     * @param int    $order_id  - Hosting account order id
+     * @param int    $data  - Hosting account order id
      *
      * @return bool
      */
