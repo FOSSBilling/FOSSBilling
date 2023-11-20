@@ -33,16 +33,12 @@ if ($url === '/run-patcher') {
     $patcher = new FOSSBilling\UpdatePatcher();
     $patcher->setDi($di);
 
-    if (!$patcher->isOutdated()) {
-        exit('There are no patches to apply');
-    }
-
     try {
         $patcher->applyConfigPatches();
         $patcher->applyCorePatches();
         $di['tools']->emptyFolder(PATH_CACHE);
 
-        exit('Patches have been applied');
+        exit('Any missing config migrations or database patches have been applied and the cache has been cleared');
     } catch (\Exception $e) {
         exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
     }
