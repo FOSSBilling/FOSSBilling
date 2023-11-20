@@ -21,7 +21,7 @@
   "devDependencies": {
     "@symfony/webpack-encore": "^4.5.0",
     "autoprefixer": "^10.4.16",
-    "core-js": "^3.33.2",
+    "core-js": "^3.33.3",
     "cypress": "^13.5.1",
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",
