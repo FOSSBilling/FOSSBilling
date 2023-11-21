@@ -1,6 +1,6 @@
 {% extends "layout_public.html.twig" %}
 
-{% block meta_title %}{{ 'Sign in'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Login'|trans }}{% endblock %}
 
 {% block body_class %}page-login{% endblock %}
 {% block body %}
@@ -17,7 +17,7 @@
             {% endif %}
             <div class="card">
                 <div class="card-body">
-                    <h5 class="text-center m-4">{{ 'Signin to your account'|trans }}</h5>
+                    <h5 class="text-center m-4">{{ 'Login to your account'|trans }}</h5>
                     <form method="post" action="" id="client-login" class="auth">
                         <div class="mb-3">
                             <label class="form-label" for="email">{{ 'Email'|trans }}</label>
@@ -27,16 +27,19 @@
                             <label class="form-label" for="password">{{ 'Password'|trans }}</label>
                             <input class="form-control" id="password" type="password" placeholder="{{ 'Enter your password'|trans }}" name="password" required="required" value="{{ request.password }}">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 mb-3">{{ 'Sign in'|trans }}</button>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">{{ 'Login'|trans }}</button>
                     </form>
                     {% if settings.show_password_reset_link or settings.show_signup_link %}
                         <div class="row justify-content-center">
+                            <div class="col-1"></div>
                             {% if settings.show_signup_link %}
-                                <a class="btn btn-link btn-sm" href="{{ 'signup'|link }}">{{ 'Create account'|trans }}</a>
+                                <a class="btn btn-secondary btn-sm col" href="{{ 'signup'|link }}">{{ 'Create account'|trans }}</a>
                             {% endif %}
+                            <div class="col-1"></div>
                             {% if settings.show_password_reset_link %}
-                                <a class="btn btn-link btn-sm" href="{{ 'password-reset'|link }}">{{ 'Forgot password?'|trans }}</a>
+                                <a class="btn btn-secondary btn-sm col" href="{{ 'password-reset'|link }}">{{ 'Forgot password?'|trans }}</a>
                             {% endif %}
+                            <div class="col-1"></div>
                         </div>
                     {% endif %}
                 </div>

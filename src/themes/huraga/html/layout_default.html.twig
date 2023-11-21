@@ -98,7 +98,7 @@
                         {% if settings.top_menu_profile %}
                             <li class="nav-item">
                                 {% if not client %}
-                                    <a class="nav-link" href="{{ 'login'|link }}">{{ 'Sign in'|trans }}</a>
+                                    <a class="nav-link" href="{{ 'login'|link }}">{{ 'Login'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
@@ -107,22 +107,15 @@
                             <li class="nav-item">
                                 {% if client %}
                                     <div class="dropdown">
-                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                                aria-expanded="false">
-                                            <img class="img-fluid rounded-circle"
-                                                 alt="{{ profile.first_name }} {{ profile.last_name }} gravatar"
-                                                 src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
+                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"aria-expanded="false">
+                                            <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
+                                            {% if profile.company %}
+                                                <span>{{ profile.first_name }} {{ profile.last_name }}|{{ profile.company }}</span>
+                                            {% else %}
+                                                <span>{{ profile.first_name }} {{ profile.last_name }}</span>
+                                            {% endif %}
                                         </button>
                                         <ul class="dropdown-menu">
-                                            {% if settings.show_client_details and client %}
-                                                <li class=" px-3 pt-1 pb-2 border-bottom mb-2">
-                                                    <div class="d-flex col">
-                                                        <span
-                                                            class="font-weight-bold">{{ profile.first_name }} {{ profile.last_name }}</span>
-                                                        <span class="font-italic">{{ profile.company }}</span>
-                                                    </div>
-                                                </li>
-                                            {% endif %}
                                             <li><a class="dropdown-item"
                                                    href="{{ 'client/profile'|link }}">{{ 'Profile'|trans }}</a></li>
                                             <li><a class="dropdown-item"
