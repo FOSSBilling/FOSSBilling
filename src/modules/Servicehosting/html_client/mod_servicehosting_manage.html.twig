@@ -1,26 +1,26 @@
 {% if order.status == 'active' %}
-<div class="card ms-0 ms-md-3 w-100 mt-2">
+<div class="card mb-4">
     <div class="card-header">
         <h2>{{ 'Manage hosting account'|trans }}</h2>
     </div>
     <div class="card-body">
-        <ul class="nav nav-tabs">
+        <ul class="nav nav-tabs mb-1">
             <li class="nav-item">
-                <a class="nav-link active" data-toggle="tab" href="#details">{{ 'Details'|trans }}</a>
+                <a class="nav-link active" data-bs-toggle="tab" href="#details">{{ 'Details'|trans }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-toggle="tab" href="#password">{{ 'Password'|trans }}</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#password">{{ 'Password'|trans }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-toggle="tab" href="#domain">{{ 'Domain'|trans }}</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#domain">{{ 'Domain'|trans }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-toggle="tab" href="#username">{{ 'Username'|trans }}</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#username">{{ 'Username'|trans }}</a>
             </li>
         </ul>
         <div class="tab-content">
             {# Hosting details #}
-            <div class="tab-pane container active" id="details">
+            <div class="tab-pane fade active show" role="tabpanel" id="details">
                 <h3>{{ 'Details'|trans }}</h3>
                 {% set server = service.server %}
                 {% set hp = service.hosting_plan %}
@@ -82,7 +82,7 @@
                 </div>
             </div>
             {# Hosting password #}
-            <div class="tab-pane container active" id="password">
+            <div class="tab-pane fade" role="tabpanel" id="password">
                 <h3>{{ 'Change your FTP/cPanel/SSH password.'|trans }}</h3>
                 <form action="" method="post" id="change-password">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
@@ -101,7 +101,7 @@
                         </div>
 
                         <input type="hidden" name="order_id" value="{{ order.id }}">
-                        <div class="control-group">
+                        <div class="control-group mt-1">
                             <div class="controls">
                                 <button class="btn btn-primary" type="submit" value="{{ 'Change password'|trans }}">{{ 'Change password'|trans }}</button>
                             </div>
@@ -110,20 +110,20 @@
                 </form>
             </div>
             {# Hosting domain #}
-            <div class="tab-pane container active" id="domain">
+            <div class="tab-pane fade" role="tabpanel" id="domain">
                 <h3>{{ 'Change domain'|trans }}</h3>
                 <form action="" method="post" id="change-domain">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <fieldset>
                         <div class="control-group">
                             <label class="col-form-label" >{{ 'New domain'|trans }}: </label>
-                            <div class="controls">
-                                <input class="form-control" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required="required" class="span2">
-                                <input class="form-control" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required="required" class="span1">
+                            <div class="controls row">
+                                <input class="form-control w-50 ms-2" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required="required" class="span2">
+                                <input class="form-control w-25" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required="required" class="span1">
                             </div>
                         </div>
                         <input type="hidden" name="order_id" value="{{ order.id }}">
-                        <div class="control-group">
+                        <div class="control-group mt-1">
                             <div class="controls">
                                 <button class="btn btn-primary" type="submit" value="{{ 'Change domain'|trans }}">{{ 'Change domain'|trans }}</button>
                             </div>
@@ -132,7 +132,7 @@
                 </form>
             </div>
             {# Hosting username #}
-            <div class="tab-pane container active" id="username">
+            <div class="tab-pane fade" role="tabpanel" id="username">
                 <h3>{{ 'Change username'|trans }}</h3>
                 <form action="" method="post" id="change-username">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
@@ -145,7 +145,7 @@
                     </div>
 
                         <input type="hidden" name="order_id" value="{{ order.id }}">
-                        <div class="control-group">
+                        <div class="control-group mt-1">
                             <div class="controls">
                                 <button class="btn btn-primary" type="submit" value="{{ 'Change username'|trans }}">{{ 'Change username'|trans }}</button>
                             </div>
