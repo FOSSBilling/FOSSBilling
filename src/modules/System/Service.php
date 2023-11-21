@@ -449,7 +449,7 @@ class Service
         }
 
         $r = $this->di['requirements'];
-        $data = $r->getInfo();
+        $data = $r->checkCompat();
         $data['last_patch'] = $this->getParamValue('last_patch');
 
         return $data;

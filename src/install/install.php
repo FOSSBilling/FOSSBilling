@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -79,7 +80,6 @@ final class FOSSBilling_Installer
 {
     private readonly Session $session;
     private PDO $pdo;
-    private \FOSSBilling\Requirements $requirements;
 
     public function __construct()
     {
@@ -167,21 +167,15 @@ final class FOSSBilling_Installer
                 break;
             case 'index':
             default:
-                $this->requirements = new \FOSSBilling\Requirements();
-                $options = $this->requirements->getOptions();
+                $requirements = new \FOSSBilling\Requirements();
+                $compatibility = $requirements->checkCompat();
                 $vars = [
-                    'folders' => $this->requirements->folders(),
-                    'files' => $this->requirements->files(),
+                    'compatibility' => $compatibility,
                     'os' => PHP_OS,
                     'os_ok' => (str_starts_with(strtoupper(PHP_OS), 'WIN')) ? false : true,
                     'is_subfolder' => $this->isSubfolder(),
                     'fossbilling_ver' => \FOSSBilling\Version::VERSION,
-                    'php_ver' => $options['php']['version'],
-                    'php_ver_req' => $options['php']['min_version'],
-                    'php_safe_mode' => $options['php']['safe_mode'],
-                    'php_ver_ok' => $this->requirements->isPhpVersionOk(),
-                    'extensions' => $this->requirements->extensions(),
-                    'canInstall' => $this->canInstall(),
+                    'canInstall' => !$this->isSubfolder() && $compatibility['can_install'],
                     'alreadyInstalled' => $this->isAlreadyInstalled(),
                     'database_hostname' => $this->session->get('database_hostname'),
                     'database_name' => $this->session->get('database_name'),
@@ -311,17 +305,6 @@ final class FOSSBilling_Installer
     private function isSubfolder(): bool
     {
         return substr_count(URL_INSTALL, '/') > 4 ? true : false;
-    }
-
-    /**
-     * Wrapper for additional checks not supported by the primary requirements class.
-     *
-     * @return boolean
-     */
-    private function canInstall(): bool
-    {
-        // Validate FOSSBilling isn't placed under a sub-folder and check the other requirements
-        return !$this->isSubfolder() && $this->requirements->canInstall();
     }
 
     /**
