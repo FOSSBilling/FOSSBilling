@@ -12,7 +12,7 @@ require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
 // Setting up the debug bar
-$debugBar = new \DebugBar\StandardDebugBar;
+$debugBar = new \DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
 $debugBar['messages']->useHtmlVarDumper();
 
@@ -51,7 +51,6 @@ if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $appUrl = $url;
     $app = new Box_AppClient([], $debugBar);
 }
-
 
 $app->setUrl($appUrl);
 $app->setDi($di);
