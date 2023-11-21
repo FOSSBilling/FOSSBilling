@@ -5,10 +5,10 @@
 {% block body_class %}kb-article{% endblock %}
 {% block breadcrumb %}
 <li class="breadcrumb-item">
-    <a href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
+    <a href="{{ 'support/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
 </li>
 <li class="breadcrumb-item">
-    <a href="{{ '/kb'|link }}/{{ article.category.slug }}">{{ article.category.title }}</a>
+    <a href="{{ 'support/kb'|link }}/{{ article.category.slug }}">{{ article.category.title }}</a>
 </li>
 <li class="breadcrumb-item active" aria-current="page">{{ article.title }}</li>
 {% endblock %}
@@ -39,9 +39,9 @@
 
                 <div class="collapse" id="similar">
                     <div class="card card-body">
-                        {% for i, kbarticle in guest.kb_article_get_list({ "kb_article_category_id": article.kb_article_category_id, "per_page": 5 }).list %}
+                        {% for i, kbarticle in guest.support_kb_article_get_list({ "kb_article_category_id": article.kb_article_category_id, "per_page": 5 }).list %}
                             <li>
-                                <a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ kbarticle.slug }}">{{ kbarticle.title|truncate(45) }}</a>
+                                <a href="{{ 'support/kb'|link }}/{{ article.category.slug }}/{{ kbarticle.slug }}">{{ kbarticle.title|truncate(45) }}</a>
                             </li>
                         {% endfor %}
                     </div>
@@ -49,9 +49,9 @@
 
                 <div class="collapse" id="categories">
                     <div class="card card-body">
-                        {% for i, category in guest.kb_category_get_list({ "per_page": 5 }).list %}
+                        {% for i, category in guest.support_kb_category_get_list({ "per_page": 5 }).list %}
                             <li>
-                                <a href="{{ '/kb'|link }}#category-{{ category.id }}">{{ category.title }}</a>
+                                <a href="{{ 'support/kb'|link }}#category-{{ category.id }}">{{ category.title }}</a>
                             </li>
                         {% endfor %}
                     </div>

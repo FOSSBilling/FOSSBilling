@@ -244,14 +244,14 @@
                 </div>
             {% endif %}
 
-            {% if guest.extension_is_on({"mod":"kb"}) %}
+            {% if guest.support_kb_enabled() %}
                 <div class="col-md-6">
                     <div class="card mb-4 bg-white">
                         <div class="card-header bg-white h6 py-3">{{ 'Knowledge base'|trans }}</div>
                         <div class="card-body">
                             <p>{{ 'Browse our KB for answers and FAQ' | trans }}</p>
                             <div class="d-flex gap-2">
-                                <a class="btn btn-sm btn-dark" href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
+                                <a class="btn btn-sm btn-dark" href="{{ '/support/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
                             </div>
                         </div>
                     </div>
