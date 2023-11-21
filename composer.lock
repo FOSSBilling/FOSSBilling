@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "antcms/antloader",
-            "version": "2.0.2",
+            "version": "2.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AntCMS-org/AntLoader.git",
-                "reference": "ce5aeeb28544b85150382989d463b8dc71efec87"
+                "reference": "fcf0f55980af0090788ee5eb8ff39eb36ddc40d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/ce5aeeb28544b85150382989d463b8dc71efec87",
-                "reference": "ce5aeeb28544b85150382989d463b8dc71efec87",
+                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/fcf0f55980af0090788ee5eb8ff39eb36ddc40d3",
+                "reference": "fcf0f55980af0090788ee5eb8ff39eb36ddc40d3",
                 "shasum": ""
             },
             "require": {
@@ -47,9 +47,9 @@
             "description": "A small and simple autoloader for PHP applications",
             "support": {
                 "issues": "https://github.com/AntCMS-org/AntLoader/issues",
-                "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.2"
+                "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.3"
             },
-            "time": "2023-10-03T13:13:17+00:00"
+            "time": "2023-11-20T19:35:21+00:00"
         },
         {
             "name": "brick/math",
@@ -3380,7 +3380,7 @@
         },
         {
             "name": "symfony/deprecation-contracts",
-            "version": "v3.3.0",
+            "version": "v3.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/deprecation-contracts.git",
@@ -3427,7 +3427,7 @@
             "description": "A generic function and convention to trigger deprecation notices",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/deprecation-contracts/tree/v3.3.0"
+                "source": "https://github.com/symfony/deprecation-contracts/tree/v3.4.0"
             },
             "funding": [
                 {
