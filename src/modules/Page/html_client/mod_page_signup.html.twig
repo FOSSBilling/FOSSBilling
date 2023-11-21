@@ -188,7 +188,7 @@
                 e.preventDefault();
                 API.guest.post('client/create',
                     new FormData(signupForm).serializeObject(),
-                    () => bb.redirect('{{ constant('BB_URL') }}'),
+                    () => bb.redirect('{{ constant('SYSTEM_URL') }}'),
                     (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'),
                 )
                 return false;
