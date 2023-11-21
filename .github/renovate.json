@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "schedule:daily",
+    ":automergeBranch",
+    ":automergeDigest",
+    ":automergeLinters",
+    ":automergePatch",
+    ":automergeRequireAllStatusChecks",
+    ":automergeTesters",
+    ":maintainLockFilesWeekly",
+    ":rebaseStalePrs"
+  ],
+  "automergeSchedule": ["at any time"],
+  "automergeStrategy": "squash",
+  "packageRules": [
+    {
+      "groupName": "CKEditor",
+      "matchPackagePrefixes": ["@ckeditor/"],
+      "rangeStrategy": "auto"
+    }
+  ]
+}
