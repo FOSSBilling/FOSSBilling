@@ -78,6 +78,9 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
         $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
+        if (!class_exists('Uuid')) {
+            $this->registerFallbackAutoloader();
+        }
         $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
@@ -353,5 +356,16 @@ class UpdatePatcher implements InjectionAwareInterface
         ksort($patches, SORT_NATURAL);
 
         return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+    }
+
+    private function registerFallbackAutoloader()
+    {
+        $loader = new \AntCMS\AntLoader([
+            'mode' => 'filesystem',
+            'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'fallbackClassMap.php',
+        ]);
+        $loader->addNamespace('', PATH_VENDOR);
+        $loader->checkClassMap();
+        $loader->register(true);
     }
 }
