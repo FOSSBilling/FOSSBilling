@@ -355,7 +355,9 @@
         "ordermodel",
         "TINYINT",
         "hostings",
-        "rulesets"
+        "rulesets",
+        "describedby",
+        "offcanvas"
     ],
     "ignorePaths": [
         "tests/**",

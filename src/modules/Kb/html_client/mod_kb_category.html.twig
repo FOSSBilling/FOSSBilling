@@ -10,20 +10,23 @@
 
 {% block content %}
 <div class="row">
-    <div class="card ml-0 ml-md-3 w-100">
-        <div class="card-header">
-            <h1>{{ category.title }}</h1>
-            <p>{{ category.description }}</p>
-        </div>
-        <div class="card-body">
-            <div class="list-group ml-2">
-                {% for i, article in category.articles %}
-                    <a class="list-group-item list-group-item-action" href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a>
-                {% endfor %}
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header py-3 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ category.title }}</h5>
+                        <span class="small text-muted">{{ category.description }}</span>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="card-footer">
-            <a class="btn btn-primary" href="{{ 'kb'|link }}">{{ 'Back to list'|trans }}</a>
+            <div class="card-body">
+                <div class="list-group ml-2">
+                    {% for i, article in category.articles %}
+                        <a class="list-group-item list-group-item-action" href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

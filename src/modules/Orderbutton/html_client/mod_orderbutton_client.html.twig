@@ -1,215 +1,254 @@
 {% import "macro_functions.html.twig" as mf %}
-<div class="accordion-group" id="register-or-login">
-<div class="accordion-heading">
-    <a class="accordion-toggle" href="#register" data-parent="#accordion1" data-toggle="collapse">
-        <span class="awe-user"></span> {{ 'Login or Register'|trans }} </a>
-</div>
-<div id="register" class="accordion-body collapse {% if request.checkout and not client %}in{% endif %}">
 
-<div class="accordion-inner">
-<div class="tab-content">
-    <div class="tab-pane active" id="login-tab">
-        <form method="post" action="" id="client-login">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            <fieldset>
-                <div class="control-group">
-                    <label class="col-form-label" for="email">{{ 'Email Address'|trans }}</label>
-                    <div class="controls">
-                        <input id="icon" type="email" class="span6" placeholder="{{ 'Your email address'|trans }}" name="email" value="{{ request.email }}" required="required" data-validation-required-message="{{ 'You must fill in your email.'|trans }}">
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button{% if not request.checkout %} collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#register" aria-controls="register">
+            <svg class="svg-icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                    d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,6A2,2 0 0,0 10,8A2,2 0 0,0 12,10A2,2 0 0,0 14,8A2,2 0 0,0 12,6M12,13C14.67,13 20,14.33 20,17V20H4V17C4,14.33 9.33,13 12,13M12,14.9C9.03,14.9 5.9,16.36 5.9,17V18.1H18.1V17C18.1,16.36 14.97,14.9 12,14.9Z"/>
+            </svg>
+            <span>{{ 'Sign in or Sign up'|trans }}</span>
+        </button>
+    </h2>
+    <div id="register" class="accordion-collapse collapse{% if request.checkout and not client %} show{% endif %}"
+         data-bs-parent="#orderManager">
+        <div class="accordion-body">
+            <div role="tablist">
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane show active" id="sign-in" role="tabpanel" aria-labelledby="in-tab"
+                         tabindex="0">
+                        <form method="post" action="" id="client-login">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="email" class="visually-hidden">{{ 'Email Address'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="email" name="email" id="email"
+                                           required="required"
+                                           value="{{ request.email }}"
+                                           placeholder="{{ 'Email Address'|trans }}"
+                                           data-validation-required-message="{{ 'You must fill in your email.'|trans }}">
+                                </div>
+                                <div class="col-md-7 mb-3">
+                                    <label for="password" class="visually-hidden">{{ 'Password'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="password" name="password" id="password"
+                                           required="required"
+                                           value="{{ request.password }}"
+                                           placeholder="{{ 'Password'|trans }}"
+                                           data-validation-required-message="{{ 'You must fill in your password.'|trans }}">
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary" type="submit">
+                                    {{ 'Sign in'|trans }}
+                                </button>
+                                <button class="btn btn-sm btn-link" id="up-tab" data-bs-toggle="tab" data-bs-target="#sign-up"
+                                        type="button" role="tab" aria-controls="sign-up"
+                                        aria-selected="false">{{ 'Create account'|trans }}</button>
+                            </div>
+                        </form>
                     </div>
-                </div>
-                <div class="control-group">
-                    <label class="col-form-label" for="password">{{ 'Password'|trans }}</label>
-                    <div class="controls">
-                        <input id="password" type="password" class="span6" placeholder="{{ 'Password'|trans }}" name="password" required="required" value="{{ request.password }}" data-validation-required-message="{{ 'You must fill in your password.'|trans }}">
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <div class="controls">
-                        <button class="btn btn-large btn-primary  span5" type="submit"><span class="awe-signin"></span> {{ 'Log in'|trans }}</button>
-                        <div class="dropdown-divider"></div>
-                        <button class="btn btn-dark offset1" type="button" style="position:relative; top:10px" onclick="$('#register-tab').show();$('#login-tab').hide();"><span class="awe-user"> </span> {{ 'Or register'|trans }}</button>
-                    </div>
-                </div>
-            </fieldset>
-        </form>
-    </div>
-    <div class="tab-pane" id="register-tab">
-        <form action="" method="post" id="create-profile">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            {% set r = guest.client_required %}
-            <fieldset>
-                <div class="control-group">
-                    <label class="col-form-label" for="reg-email">{{ 'Email Address'|trans }}</label>
-                    <div class="controls">
-                        <input type="email" name="email" class="span6" value="{{ request.email }}" required="required" id="reg-email">
-                    </div>
-                </div>
+                    <div class="tab-pane" id="sign-up" role="tabpanel" aria-labelledby="up-tab" tabindex="0">
+                        <form action="" method="post" id="create-profile">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                            {% set r = guest.client_required %}
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="reg-email" class="visually-hidden">{{ 'Email Address'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="email" name="email" id="reg-email"
+                                           required="required"
+                                           value="{{ request.email }}"
+                                           placeholder="{{ 'Email Address'|trans }}">
+                                </div>
+                            </div>
 
-                <div class="control-group">
-                    <label class="col-form-label" for="first-name">{{ 'First Name'|trans }}</label>
-                    <div class="controls">
-                        <input type="text" name="first_name" class="span6" id="first-name" value="{{ request.first_name }}" required="required">
-                    </div>
-                </div>
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="first-name" class="visually-hidden">{{ 'First Name'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="text" name="first_name" id="first-name"
+                                           required="required"
+                                           value="{{ request.first_name }}"
+                                           placeholder="{{ 'First Name'|trans }}">
+                                </div>
+                            </div>
 
-                {% if 'last_name' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="last_name">{{ 'Last Name'|trans }}</label>
-                    <div class="controls">
-                        <input type="text" name="last_name" class="span6" id="last_name" value="{{ request.last_name }}" required="required">
-                    </div>
-                </div>
-                {% endif %}
+                            {% if 'last_name' in r %}
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="last_name" class="visually-hidden">{{ 'Last Name'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="text" name="last_name" id="last_name"
+                                           required="required"
+                                           value="{{ request.last_name }}"
+                                           placeholder="{{ 'Last Name'|trans }}">
+                                </div>
+                            </div>
+                            {% endif %}
 
+                            {% if 'company' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="company" class="visually-hidden">{{ 'Company'|trans }}</label>
+                                        <input class="form-control form-control-sm" type="text" name="company" id="company"
+                                               required="required"
+                                               value="{{ request.last_name }}"
+                                               placeholder="{{ 'Company'|trans }}">
+                                    </div>
+                                </div>
+                            {% endif %}
 
-                {% if 'company' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="company">{{ 'Company'|trans }}</label>
-                    <div class="controls">
-                        <input type="text" name="company" class="span6" id="company" value="{{ request.company }}" required="required">
-                    </div>
-                </div>
-                {% endif %}
+                            {% if 'birthday' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="birthday" class="visually-hidden">{{ 'Birthday'|trans }}</label>
+                                        <input class="form-control form-control-sm" type="date" name="birthday" id="birthday"
+                                               placeholder="{{ 'Birthday'|trans }}">
+                                    </div>
+                                </div>
+                            {% endif %}
 
-                {% if 'birthday' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="birthday">{{ 'Birthday'|trans }}</label>
-                    <div class="controls">
-                        <input type="date"  class="span6" name="birthday" id="birthday" value="">
-                    </div>
-                </div>
-                {% endif %}
+                            {% if 'gender' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="gender" class="visually-hidden">{{ 'You are'|trans }}</label>
+                                        <select class="form-select form-select-sm" name="gender" id="gender">
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="nonbinary">Non-binary</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            {% endif %}
 
-                {% if 'gender' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="gender">{{ 'You are'|trans }}</label>
-                    <div class="controls">
-                        <select name="gender"  class="span6" id="gender">
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="nonbinary">Non-binary</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                </div>
-                {% endif %}
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="reg-password" class="visually-hidden">{{ 'Password'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="password" name="password" id="reg-password"
+                                           required="required"
+                                           placeholder="{{ 'Password'|trans }}">
+                                </div>
+                            </div>
 
-                <div class="control-group">
-                    <label class="col-form-label" for="reg-password">{{ 'Password'|trans }}</label>
-                    <div class="controls">
-                        <input type="password" name="password" class="span6" value="" required="required" id="reg-password">
-                    </div>
-                </div>
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="password-confirm" class="visually-hidden">{{ 'Confirm password'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="password" name="password-confirm" id="password-confirm"
+                                           required="required"
+                                           placeholder="{{ 'Confirm password'|trans }}">
+                                </div>
+                            </div>
 
-                <div class="control-group">
-                    <label class="col-form-label" for="password-confirm">{{ 'Password confirm'|trans }}</label>
-                    <div class="controls">
-                        <input type="password" name="password_confirm" class="span6" name="password-confirm" value="" required="required">
-                    </div>
-                </div>
+                            {% if 'address_1' in r %}
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="address_1" class="visually-hidden">{{ 'Address'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="text" name="address_1" id="address_1"
+                                           value="{{ request.address_1 }}"
+                                           placeholder="{{ 'Address'|trans }}">
+                                </div>
+                            </div>
+                            {% endif %}
 
+                            {% if 'address_2' in r %}
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label for="address_2" class="visually-hidden">{{ 'Address 2'|trans }}</label>
+                                    <input class="form-control form-control-sm" type="text" name="address_2" id="address_2"
+                                           value="{{ request.address_1 }}"
+                                           placeholder="{{ 'Address 2'|trans }}">
+                                </div>
+                            </div>
+                            {% endif %}
 
+                            {% if 'city' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="city" class="visually-hidden">{{ 'City'|trans }}</label>
+                                        <input class="form-control form-control-sm" type="text" name="city" id="city"
+                                               value="{{ request.city }}"
+                                               placeholder="{{ 'City'|trans }}">
+                                    </div>
+                                </div>
+                            {% endif %}
 
-                {% if 'address_1' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="address_1">{{ 'Address'|trans }}</label>
-                    <div class="controls">
-                        <input type="text" name="address_1" class="span6" id="address_1" value="{{ request.address_1 }}">
-                    </div>
-                </div>
-                {% endif %}
+                            {% if 'country' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="country" class="visually-hidden">{{ 'Country'|trans }}</label>
+                                        <select class="form-select form-select-sm" name="country" id="country"
+                                                required="required">
+                                            <option value="">{{ '-- Select country --'|trans }}</option>
+                                            {% for val,label in guest.system_countries %}
+                                                <option value="{{ val }}" label="{{ label|e }}">{{ label|e }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            {% endif %}
 
-                {% if 'address_2' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="address_2">{{ 'Address 2'|trans }}</label>
-                    <div class="controls">
-                        <input type="text" name="address_2" class="span6" id="address_2" value="{{ request.address_2 }}">
-                    </div>
-                </div>
-                {% endif %}
+                            {% if 'state' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="state" class="visually-hidden">{{ 'State'|trans }}</label>
+                                        <input class="form-control form-control-sm" type="text" name="state" id="state"
+                                               value="{{ request.state }}"
+                                               placeholder="{{ 'State'|trans }}">
+                                    </div>
+                                </div>
+                            {% endif %}
 
-                {% if 'city' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="city">{{ 'City'|trans }}</label>
-                    <div class="controls">
-                        <input type="text" name="city" class="span6" id="city" value="{{ request.city }}">
-                    </div>
-                </div>
-                {% endif %}
+                            {% if 'postcode' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="postcode" class="visually-hidden">{{ 'Zip/Postal Code'|trans }}</label>
+                                        <input class="form-control form-control-sm" type="text" name="postcode" id="postcode"
+                                               value="{{ request.postcode }}"
+                                               placeholder="{{ 'Zip/Postal Code'|trans }}">
+                                    </div>
+                                </div>
+                            {% endif %}
 
-                {% if 'country' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="country">{{ 'Country'|trans }}</label>
-                    <div class="controls">
-                        <select name="country" class="span6" required="required">
-                            <option value="">{{ '-- Select country --'|trans }}</option>
-                            {% for val,label in guest.system_countries %}
-                            <option value="{{ val }}" label="{{ label|e }}">{{ label|e }}</option>
+                            {% if 'phone' in r %}
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="phone" class="visually-hidden">{{ 'Phone Number'|trans }}</label>
+                                        <label for="phone_cc" class="visually-hidden">{{ 'Phone Code'|trans }}</label>
+                                        <div class="input-group">
+                                            <input class="form-control form-control-sm w-25" type="text" name="phone_cc" id="phone_cc"
+                                                   placeholder="{{ 'Phone Code'|trans }}">
+                                            <input class="form-control form-control-sm w-50" type="text" name="phone" id="phone"
+                                                   placeholder="{{ 'Phone Number'|trans }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% set custom_fields = guest.client_custom_fields %}
+                            {% for field_name, field in custom_fields %}
+                                {% if field.active %}
+                                    <div class="row">
+                                        <div class="col-md-7 mb-3">
+                                            <label class="visually-hidden" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+                                            <input class="form-control form-control-sm" type="text" name="{{ field_name }}" id="{{ field_name }}"
+                                                   value="{{ attribute(request, field_name) }}"
+                                                   {% if field.required %}required="required"{% endif %}
+                                                   placeholder="{{ field_name | capitalize }}">
+                                        </div>
+                                    </div>
+                                {% endif %}
                             {% endfor %}
-                        </select>
+                            {{ mf.recaptcha }}
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary" type="submit">{{ 'Sign up'|trans }}</button>
+                                <button class="btn btn-sm btn-link active" id="in-tab" data-bs-toggle="tab"
+                                        data-bs-target="#sign-in" type="button" role="tab"
+                                        aria-controls="sign-in"
+                                        aria-selected="true">{{ 'Already a user?'|trans }}</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-                {% endif %}
-
-                {% if 'state' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="state">{{ 'State'|trans }}</label>
-                    <div class="controls">
-                        {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
-                        <input type="text" name="state" class="span6" id="state" value="{{ request.state }}" />
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if 'postcode' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
-                    <div class="controls">
-                        <input type="text" name="postcode" class="span6" id="postcode" value="{{ request.postcode }}">
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if 'phone' in r %}
-                <div class="control-group">
-                    <label class="col-form-label" for="phone_cc">{{ 'Phone Number'|trans }}</label>
-                    <div class="controls controls-row">
-                        <input type="text" name="phone_cc" value="{{ request.phone_cc }}" style="width:20%">
-                        <input type="phone" name="phone" value="{{ request.phone }}" style="width: 70%">
-                    </div>
-                </div>
-                {% endif %}
-
-                {% set custom_fields = guest.client_custom_fields %}
-                {% for field_name, field in custom_fields %}
-                {% if field.active %}
-                <div class="control-group">
-                    <label class="col-form-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
-                    <div class="controls">
-                        <input type="text" name="{{ field_name }}" id="{{ field_name }}" value="{{ attribute(request, field_name) }}" {% if field.required %}required="required"{% endif %}>
-                    </div>
-                </div>
-                {% endif %}
-                {% endfor %}
-
-                {{ mf.recaptcha }}
-
-                <div class="form-actions">
-
-                    <div class="controls">
-                        <button class="btn btn-large btn-primary  span5" type="submit">
-                            <span class="awe-user"></span> {{ 'Register'|trans }}</button>
-                        <div class="dropdown-divider"></div>
-                        <button class="btn btn-dark offset1" type="button" style="position:relative; top:10px" onclick="$('#register-tab').hide();$('#login-tab').show();">
-                            <span class="awe-signin"> </span> {{ 'Or Login'|trans }}
-                        </button>
-                    </div>
-                </div>
-            </fieldset>
-        </form>
+            </div>
+        </div>
     </div>
-</div>
-</div>
-</div>
 </div>
