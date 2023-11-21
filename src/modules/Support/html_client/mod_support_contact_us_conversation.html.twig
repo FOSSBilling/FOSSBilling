@@ -13,7 +13,7 @@
 
 {% block content %}
 <div class="row">
-    <div class="card ml-0 ml-md-3 w-100">
+    <div class="card ms-0 ms-md-3 w-100">
         <div class="card-header">
             <h2>{{ 'Ticket information'|trans }}</h2>
             <table class="table table-striped table-bordered table-sm">
@@ -48,8 +48,8 @@
             </table>
             <hr>
             <div class="row">
-                <button class="btn btn-primary btn-small ml-3" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
-                <a class="btn btn-info btn-small ml-2" href="#reply-to">{{ 'Reply'|trans }}</a>
+                <button class="btn btn-primary btn-small ms-3" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
+                <a class="btn btn-info btn-small ms-2" href="#reply-to">{{ 'Reply'|trans }}</a>
             </div>
         </div>
         <div class="card-body">
@@ -65,7 +65,7 @@
                     <div class="col-10">
                         <header>#{{ i+1 }} | {{ message.created_at|format_date }}
                             {% if ticket.status != 'closed' %}
-                            <div class="float-right">
+                            <div class="float-end">
                                 <a href="#" class="btn btn-dark reply-to-message" message-quote="{{ mf.markdown_quote(message.content) }}">{{ 'Reply'|trans }}</a>
                             </div>
                             {% endif %}

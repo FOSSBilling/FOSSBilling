@@ -48,9 +48,9 @@
                 {% for i, category in kbcategories.list %}
                     <div class="card-body">
                         <div class="h5 pb-3 pt-1">
-                            <a href="{{ 'kb'|link }}/{{ category.slug }}">{{ category.title }}</a>
+                            <a href="{{ 'support/kb'|link }}/{{ category.slug }}">{{ category.title }}</a>
                         </div>
-                        <div class="list-group ml-2">
+                        <div class="list-group ms-2">
                             {% for i, article in category.articles %}
                                 <a class="list-group-item list-group-item-action"
                                    href="{{ 'support/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}">{{ article.title }}</a>

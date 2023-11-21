@@ -21,7 +21,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="list-group ml-2">
+                <div class="list-group ms-2">
                     {% for i, article in category.articles %}
                         <a class="list-group-item list-group-item-action" href="{{ 'support/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a>
                     {% endfor %}
