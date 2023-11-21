@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -69,7 +70,7 @@ class Admin extends \Api_Abstract
 
         if (isset($data['from_name'])) {
             if (empty($data['from_name'])) {
-                throw new \Box_Exception('Message from name can not be empty');
+                throw new \FOSSBilling\InformationException('Message from name can not be empty');
             }
             $model->from_name = $data['from_name'];
         }
@@ -146,14 +147,15 @@ Order our services at {{ "order"|link }}
      */
     public function send_test($data)
     {
+        /** @var \Model_MassmailerMessage $model */
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
 
         if (empty($model->content)) {
-            throw new \Box_Exception('Add some content before sending message');
+            throw new \FOSSBilling\InformationException('Add some content before sending message');
         }
 
-        $this->getService()->sendMessage($model, $client_id);
+        $this->getService()->sendMessage($model, $client_id, true);
 
         $this->di['logger']->info('Sent test mail message #%s to client ', $model->id);
 
@@ -167,28 +169,16 @@ Order our services at {{ "order"|link }}
      */
     public function send($data)
     {
+        /** @var \Model_MassmailerMessage $model */
         $model = $this->_getMessage($data);
 
         if (empty($model->content)) {
-            throw new \Box_Exception('Add some content before sending message');
+            throw new \FOSSBilling\InformationException('Add some content before sending message');
         }
-
-        $mod = $this->di['mod']('massmailer');
-        $c = $mod->getConfig();
-        $interval = isset($c['interval']) ? (int) $c['interval'] : 30;
-        $max = isset($c['limit']) ? (int) $c['limit'] : 25;
 
         $clients = $this->getService()->getMessageReceivers($model, $data);
         foreach ($clients as $c) {
-            $d = [
-                'queue' => 'massmailer',
-                'mod' => 'massmailer',
-                'handler' => 'sendMail',
-                'max' => $max,
-                'interval' => $interval,
-                'params' => ['msg_id' => $model->id, 'client_id' => $c['id']],
-            ];
-            $this->di['api_admin']->queue_message_add($d);
+            $this->getService()->sendMessage($model, $c['id']);
         }
 
         $model->status = 'sent';
@@ -266,10 +256,40 @@ Order our services at {{ "order"|link }}
         $client_id = $this->_getTestClientId();
         [$ps, $pc] = $this->getService()->getParsed($model, $client_id);
 
+        $recipients = [];
+        $getRecipients = $data['include_recipients'] ?? false;
+        $clients = $this->getService()->getMessageReceivers($model, $data);
+
+        if ($getRecipients) {
+            $clientService = $this->di['mod_service']('client');
+            foreach ($clients as $client) {
+                $clientInfo = $clientService->get(['id' => $client['id']]);
+                $recipients[] = [
+                    'email' => $clientInfo->email,
+                    'name' => $clientInfo->first_name . ' ' . $clientInfo->last_name,
+                ];
+            }
+        }
+
         return [
             'subject' => $ps,
             'content' => $pc,
+            'recipients' => $recipients,
         ];
+    }
+
+    /**
+     * Returns the email associated with the test client.
+     */
+    public function get_test_client(): string
+    {
+        try {
+            $client = $this->di['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
+        } catch (\Exception) {
+            return 'Unknown';
+        }
+
+        return $client->email;
     }
 
     private function _getTestClientId()

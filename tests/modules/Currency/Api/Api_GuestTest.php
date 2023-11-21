@@ -13,7 +13,7 @@ class Api_GuestTest extends \BBTestCase
             'USD' => 'US Dollar'
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getPairs')
             ->will($this->returnValue($willReturn));
@@ -27,8 +27,10 @@ class Api_GuestTest extends \BBTestCase
         $this->assertArrayHasKey('USD', $result);
     }
 
-    public function getProvider()
+    public static function getProvider()
     {
+        $self = new Api_GuestTest('Api_GuestTest');
+
         $model = new \Model_Currency();
 
         return array(
@@ -37,22 +39,20 @@ class Api_GuestTest extends \BBTestCase
                     'code' => 'EUR'
                 ),
                 $model,
-                $this->atLeastOnce(),
-                $this->never()
+                $self->atLeastOnce(),
+                $self->never()
             ),
             array(
                 array(),
                 $model,
-                $this->never(),
-                $this->atLeastOnce()
+                $self->never(),
+                $self->atLeastOnce()
             )
         );
     }
 
-    /**
-     *
-     * @dataProvider getProvider
-     */
+    
+    #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
     public function testGet($data, $model, $expectsGetByCode, $expectsGetDefault)
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
@@ -66,7 +66,7 @@ class Api_GuestTest extends \BBTestCase
             'default'         => 1,
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($expectsGetByCode)
             ->method('getByCode')
             ->will($this->returnValue($model));
@@ -99,7 +99,7 @@ class Api_GuestTest extends \BBTestCase
             'default'         => 1,
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->never())
             ->method('getByCode')
             ->will($this->returnValue(null));
@@ -109,11 +109,11 @@ class Api_GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $guestApi->setService($service);
-        $this->expectException(\Box_Exception::class);
-        $result = $guestApi->get(array()); //Expecting \Box_Exception
+        $this->expectException(\FOSSBilling\Exception::class);
+        $result = $guestApi->get(array()); //Expecting \FOSSBilling\Exception
     }
 
-    public function formatPriceFormatProvider()
+    public static function formatPriceFormatProvider()
     {
         return array(
             array(
@@ -139,9 +139,7 @@ class Api_GuestTest extends \BBTestCase
         );
     }
 
-    /**
-     * @dataProvider formatPriceFormatProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('formatPriceFormatProvider')]
     public function testFormatPriceFormat($price_format, $expectedResult)
     {
 
@@ -159,12 +157,12 @@ class Api_GuestTest extends \BBTestCase
             'price'            => 100000,
             'without_currency' => false,
         );
-        $guestApi = $this->getMockBuilder('\Box\Mod\Currency\Api\Guest')->setMethods(array('get'))->getMock();
+        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(array('get'))->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->will($this->returnValue($willReturn));
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
 
         $di = new \Pimple\Container();
 
@@ -175,7 +173,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 
-    public function formatProvider()
+    public static function formatProvider()
     {
         return array(
             array(
@@ -203,9 +201,7 @@ class Api_GuestTest extends \BBTestCase
         );
     }
 
-    /**
-     * @dataProvider formatProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('formatProvider')]
     public function testFormat($data, $expectedResult)
     {
 
@@ -219,12 +215,12 @@ class Api_GuestTest extends \BBTestCase
         );
 
 
-        $guestApi = $this->getMockBuilder('\Box\Mod\Currency\Api\Guest')->setMethods(array('get'))->getMock();
+        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(array('get'))->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->will($this->returnValue($willReturn));
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
 
         $di = new \Pimple\Container();
 
@@ -235,4 +231,3 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 }
- 

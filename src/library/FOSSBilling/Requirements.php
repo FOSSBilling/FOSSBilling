@@ -67,7 +67,7 @@ class Requirements implements InjectionAwareInterface
         $data['PHP_VERSION']    = PHP_VERSION;
 
         $data['FOSSBilling']    = array(
-            'BB_LOCALE'     =>  $this->di['config']['i18n']['locale'],
+            'locale'        =>  $this->di['config']['i18n']['locale'],
             'version'       =>  \FOSSBilling\Version::VERSION,
         );
 
@@ -106,11 +106,6 @@ class Requirements implements InjectionAwareInterface
         return version_compare($current, $required, '>=');
     }
 
-    public function isFOSSBillingVersionOk(): bool
-    {
-        return \FOSSBilling\Version::VERSION !== '0.0.1';
-    }
-
     /**
      * What extensions must be loaded for FOSSBilling to function correctly
      */
@@ -144,6 +139,15 @@ class Requirements implements InjectionAwareInterface
                 $result[$file] = true;
             } else if (is_writable($file)) {
             	$result[$file] = true;
+            } else if (!file_exists($file)){
+                $written = @file_put_contents($file, 'Test?');
+                if($written){
+                    $result[$file] = true;
+                } else {
+                    $result[$file] = false;
+                    $this->_all_ok = false;
+                }
+                @unlink($file);
             } else {
                 $result[$file] = false;
                 $this->_all_ok = false;

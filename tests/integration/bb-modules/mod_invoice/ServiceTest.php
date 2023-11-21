@@ -1,12 +1,10 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 {
     protected $_mod = 'invoice';
     protected $_initialSeedFile = 'mod_invoice.xml';
-    
+
     public function testEvents()
     {
         $service = new \Box\Mod\Invoice\Service();
@@ -18,7 +16,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
         $event->setDi($this->di);
         $bool = $service->onAfterAdminInvoicePaymentReceived($event);
         $this->assertTrue($bool);
-        
+
         $params = array(
             'id' => 1,
         );
@@ -101,7 +99,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
-            ->setMethods(array('getDi'))
+            ->onlyMethods(array('getDi'))
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')

@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         if (!isset($_FILES['file_data'])) {
-            throw new \Box_Exception('File was not uploaded');
+            throw new \FOSSBilling\Exception('File was not uploaded');
         }
 
         $service = $this->getService();
@@ -61,7 +61,7 @@ class Admin extends \Api_Abstract
         $orderService = $this->di['mod_service']('order');
         $serviceDownloadable = $orderService->getOrderService($order);
         if (!$serviceDownloadable instanceof \Model_ServiceDownloadable) {
-            throw new \Box_Exception('Order is not activated');
+            throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         $service = $this->getService();

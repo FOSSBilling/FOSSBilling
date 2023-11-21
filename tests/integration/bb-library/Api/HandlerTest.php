@@ -2,7 +2,7 @@
 class HandlerTest extends BBDbApiTestCase
 {
 
-    public function api_roles()
+    public static function api_roles()
     {
         return array(
             array('api_guest'),
@@ -11,9 +11,7 @@ class HandlerTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider api_roles
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('api_roles')]
     public function testInstances($apiName)
     {
         $api = $this->di[$apiName];
@@ -32,7 +30,7 @@ class HandlerTest extends BBDbApiTestCase
     {
         $api = $this->di['api_guest'];
         $method = 'methodWithoutUnderscore';
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(710);
         $api->$method();
     }
@@ -41,7 +39,7 @@ class HandlerTest extends BBDbApiTestCase
     {
         $api = $this->di['api_guest'];
         $moduleName = '__';
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(714);
         $version = $api->$moduleName();
     }
@@ -50,7 +48,7 @@ class HandlerTest extends BBDbApiTestCase
     {
         $api = $this->di['api_guest'];
         $moduleName = 'notActiveModule_version';
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(715);
         $version = $api->$moduleName();
     }

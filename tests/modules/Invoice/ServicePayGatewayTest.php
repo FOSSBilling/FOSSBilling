@@ -100,8 +100,8 @@ class ServicePayGatewayTest extends \BBTestCase {
     {
         $code = 'PP';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getAvailable'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->onlyMethods(array('getAvailable'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAvailable')
@@ -131,14 +131,14 @@ class ServicePayGatewayTest extends \BBTestCase {
     {
         $code = 'PP';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getAvailable'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->onlyMethods(array('getAvailable'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAvailable')
             ->will($this->returnValue(array()));
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Payment gateway is not available for installation.');
         $serviceMock->install($code);
     }
@@ -148,8 +148,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array(
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->onlyMethods(array(
                 'getAdapterConfig', 'getAcceptedCurrencies', 'getFormElements',
                 'getDescription'))
             ->getMock();
@@ -163,7 +163,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getDescription');
 
-        $url = 'http://fossbilling.vm/';
+        $url = 'http://localhost/';
         $expected = array(
             'id'                         => null,
             'code'                       => null,
@@ -173,7 +173,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             'accepted_currencies'        => null,
             'supports_one_time_payments' => false,
             'supports_subscriptions'     => false,
-            'config'                     => null,
+            'config'                     => [],
             'form'                       => null,
             'description'                => null,
             'enabled'                    => null,
@@ -304,14 +304,15 @@ class ServicePayGatewayTest extends \BBTestCase {
         $invoiceModel->loadBean(new \DummyBean());
         $expected = 'Payment_Adapter_Custom';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getConfig', 'getAdapterClassName'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->addMethods(['getConfig'])
+            ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
             ->will($this->returnValue($expected));
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(array());
@@ -340,14 +341,15 @@ class ServicePayGatewayTest extends \BBTestCase {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getConfig', 'getAdapterClassName'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->addMethods(['getConfig'])
+            ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
             ->will($this->returnValue(null));
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(array());
@@ -362,7 +364,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Payment gateway  was not found');
         $serviceMock->getPaymentAdapter($payGatewayModel, $invoiceModel);
     }
@@ -374,8 +376,9 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->gateway = 'Custom';
 
         $expected = '\Payment_Adapter_Custom';
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getConfig', 'getAdapterClassName'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->addMethods(['getConfig'])
+            ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
@@ -392,14 +395,15 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->gateway = 'Custom';
 
         $expected = 'Payment_Adapter_ClassDoesNotExists';
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getConfig', 'getAdapterClassName'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->addMethods(['getConfig'])
+            ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
             ->will($this->returnValue($expected));
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf("Payment gateway class %s was not found", $expected));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }
@@ -410,13 +414,14 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->gateway = 'Unknown';
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getConfig', 'getAdapterClassName'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->addMethods(['getConfig'])
+            ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName');
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf("Payment gateway %s was not found", $payGatewayModel->gateway));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }
@@ -449,8 +454,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->onlyMethods(array('getAdapterConfig'))
             ->getMock();
         $config = array('form' => array());
         $serviceMock->expects($this->atLeastOnce())
@@ -466,8 +471,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->onlyMethods(array('getAdapterConfig'))
             ->getMock();
         $config = array();
         $serviceMock->expects($this->atLeastOnce())
@@ -485,8 +490,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->onlyMethods(array('getAdapterConfig'))
             ->getMock();
         $config = array('description' => '');
         $serviceMock->expects($this->atLeastOnce())
@@ -502,8 +507,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
-            ->setMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+            ->onlyMethods(array('getAdapterConfig'))
             ->getMock();
         $config = array();
         $serviceMock->expects($this->atLeastOnce())

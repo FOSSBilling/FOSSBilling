@@ -20,8 +20,7 @@ globalThis.$ = globalThis.jQuery = $;
 init();
 coloris({
   el: '#coloris-picker',
-  alpha: false,
-  themeMode: localStorage.getItem('theme')
+  alpha: false
 });
 
 

@@ -48,9 +48,6 @@ class Admin extends \Api_Abstract
      * Get sent email details.
      *
      * @return array
-     *
-     * @throws \Box_Exception
-     * @throws LogicException
      */
     public function email_get($data)
     {
@@ -71,8 +68,6 @@ class Admin extends \Api_Abstract
      * @optional int $client_id - log this message to client history
      *
      * @return bool
-     *
-     * @throws \Box_Exception
      */
     public function send($data = [])
     {
@@ -104,8 +99,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function email_resend($data)
     {
@@ -117,7 +111,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         return $this->getService()->resend($model);
@@ -128,8 +122,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function email_delete($data)
     {
@@ -141,7 +134,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         $id = $model->id;
@@ -182,8 +175,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function template_get($data)
     {
@@ -202,8 +194,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function template_delete($data)
     {
@@ -215,7 +206,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_EmailTemplate) {
-            throw new \Box_Exception('Email template not found');
+            throw new \FOSSBilling\Exception('Email template not found');
         }
 
         $id = $model->id;
@@ -232,7 +223,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - newly created template id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function template_create($data)
     {
@@ -256,9 +247,8 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
-     * @throws LogicException
-     */
+     * @throws \FOSSBilling\Exception
+     * =     */
     public function template_update($data)
     {
         $required = [
@@ -339,17 +329,20 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Sends test email to admins.
-     *
-     * @param type $data
-     *
-     * @return bool
+     * Sends the test email to the currently authenticated admin / staff member.
      */
-    public function send_test($data)
+    public function send_test(array $data): bool
     {
-        $email = [];
-        $email['to_staff'] = true;
-        $email['code'] = 'mod_email_test';
+        $currentUser = $this->di['loggedin_admin'];
+
+        $email = [
+            'code' => 'mod_email_test',
+            'to' => $currentUser->email,
+            'to_name' => $currentUser->name,
+            'send_now' => true,
+            'throw_exceptions' => true,
+            'staff_member_name' => $currentUser->name,
+        ];
 
         return $this->getService()->sendTemplate($email);
     }
@@ -389,7 +382,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
-            throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff parameter');
+            throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
 
         return $this->getService()->sendTemplate($data);
@@ -412,5 +405,28 @@ class Admin extends \Api_Abstract
         }
 
         return true;
+    }
+
+    public function get_queue(array $data)
+    {
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
+        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+
+        foreach ($pager['list'] as $key => $item) {
+            $pager['list'][$key] = [
+                'id' => $item['id'] ?? '',
+                'recipient' => $item['recipient'] ?? '',
+                'subject' => $item['subject'] ?? '',
+                'content' => $item['content'] ?? '',
+                'to_name' => $item['to_name'] ?? '',
+                'status' => $item['status'] ?? '',
+                'tries' => $item['tries'] ?? '',
+                'created_at' => $item['created_at'] ?? '',
+                'updated_at' => $item['updated_at'] ?? '',
+            ];
+        }
+
+        return $pager;
     }
 }

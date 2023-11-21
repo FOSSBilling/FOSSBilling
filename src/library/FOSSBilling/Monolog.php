@@ -10,11 +10,12 @@
 
 namespace FOSSBilling;
 
+use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 
-class Monolog implements InjectionAwareInterface
+class Monolog
 {
     protected $logger = null;
     public string $dateFormat = "d-M-Y H:i:s e";
@@ -29,25 +30,16 @@ class Monolog implements InjectionAwareInterface
         "event"
     ];
 
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
-    public function __construct(protected ?\Pimple\Container $di)
+    public function __construct()
     {
         $channels = $this->channels;
 
         foreach ($channels as $channel) {
-            $path = $di['config']['path_data'] . '/log/' . $channel . '.log';
+
+            $path = PATH_LOG . DIRECTORY_SEPARATOR . $channel . '.log';
 
             $this->logger[$channel] = new Logger($channel);
-            $stream = new StreamHandler($path, Logger::DEBUG);
+            $stream = new StreamHandler($path, Level::Debug);
             $this->logger[$channel]->pushHandler($stream);
 
             $formatter = new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true);
@@ -72,17 +64,17 @@ class Monolog implements InjectionAwareInterface
     {
         // Map numeric priority to Monolog priority
         $map = [
-            \Box_Log::EMERG => Logger::EMERGENCY,
-            \Box_Log::ALERT => Logger::ALERT,
-            \Box_Log::CRIT => Logger::CRITICAL,
-            \Box_Log::ERR => Logger::ERROR,
-            \Box_Log::WARN => Logger::WARNING,
-            \Box_Log::NOTICE => Logger::NOTICE,
-            \Box_Log::INFO => Logger::INFO,
-            \Box_Log::DEBUG => Logger::DEBUG,
+            \Box_Log::EMERG => Level::Emergency->value,
+            \Box_Log::ALERT => Level::Alert->value,
+            \Box_Log::CRIT => Level::Critical->value,
+            \Box_Log::ERR => Level::Error->value,
+            \Box_Log::WARN => Level::Warning->value,
+            \Box_Log::NOTICE => Level::Notice->value,
+            \Box_Log::INFO => Level::Info->value,
+            \Box_Log::DEBUG => Level::Debug->value,
         ];
 
-        return $map[$priority] ?? Logger::DEBUG;
+        return $map[$priority] ?? Level::Debug->value;
     }
 
     public function write(array $event, string $channel = 'application'): void

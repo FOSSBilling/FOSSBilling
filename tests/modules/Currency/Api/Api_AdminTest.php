@@ -201,7 +201,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getAvailableCurrencies')
             ->will($this->returnValue($this->availableCurrencies));
@@ -218,7 +218,7 @@ class Api_AdminTest extends \BBTestCase
         $model    = new \Model_Currency();
         $model->loadBean(new \DummyBean());
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue($model));
@@ -226,7 +226,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -263,7 +263,7 @@ class Api_AdminTest extends \BBTestCase
             'default'         => $model->is_default,
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getDefault')
             ->will($this->returnValue($model));
@@ -288,8 +288,10 @@ class Api_AdminTest extends \BBTestCase
 
     }
 
-    public function CreateExceptionProvider()
+    public static function CreateExceptionProvider()
     {
+        $self = new Api_AdminTest('Api_AdminTest');
+
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
@@ -300,9 +302,9 @@ class Api_AdminTest extends \BBTestCase
                     'code'   => 'EUR',
                     'format' => '€{{price}}'
                 ),
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
                 $model, //currency exists already
-                $this->never(),
+                $self->never(),
 
             ),
             array(
@@ -310,22 +312,20 @@ class Api_AdminTest extends \BBTestCase
                     'code'   => 'NON', //Non existing currency
                     'format' => '€{{price}}'
                 ),
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
                 null,
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
 
             ),
         );
     }
 
-    /**
-     * @dataProvider CreateExceptionProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('CreateExceptionProvider')]
     public function testCreateException($data, $getByCodeCalled, $getByCodeReturn, $getAvailableCurrenciesCalled)
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($getByCodeCalled)
             ->method('getByCode')
             ->will($this->returnValue($getByCodeReturn));
@@ -334,7 +334,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getAvailableCurrencies')
             ->will($this->returnValue($this->availableCurrencies));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di              = new \Pimple\Container();
@@ -342,8 +342,8 @@ class Api_AdminTest extends \BBTestCase
 
         $adminApi->setService($service);
         $adminApi->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $adminApi->create($data); //Expecting \Box_Exception every time
+        $this->expectException(\FOSSBilling\Exception::class);
+        $adminApi->create($data); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testCreate()
@@ -355,7 +355,7 @@ class Api_AdminTest extends \BBTestCase
             'format' => '€{{price}}'
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue(null));
@@ -366,7 +366,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('createCurrency')
             ->will($this->returnValue($data['code']));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di              = new \Pimple\Container();
@@ -395,12 +395,12 @@ class Api_AdminTest extends \BBTestCase
             'conversion_rate' => 0.6,
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('updateCurrency')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -418,28 +418,28 @@ class Api_AdminTest extends \BBTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testDeleteException()
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->never())
             ->method('getByCode')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')->willThrowException(new \Box_Exception(''));
+            ->method('checkRequiredParamsForArray')->willThrowException(new \FOSSBilling\Exception(''));
 
         $di              = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
         $adminApi->setService($service);
-        $this->expectException(\Box_Exception::class);
-        $adminApi->delete(array()); //Expecting \Box_Exception every time
+        $this->expectException(\FOSSBilling\Exception::class);
+        $adminApi->delete(array()); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testDelete()
@@ -455,12 +455,12 @@ class Api_AdminTest extends \BBTestCase
             'format' => '€{{price}}'
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('deleteCurrencyByCode'))->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(array('deleteCurrencyByCode'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('deleteCurrencyByCode')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -476,8 +476,10 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function SetDefaultExceptionProvider()
+    public static function SetDefaultExceptionProvider()
     {
+        $self = new Api_AdminTest('Api_AdminTest');
+
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
@@ -487,26 +489,26 @@ class Api_AdminTest extends \BBTestCase
                 array(
                     'code' => 'EUR' //model is not instance of \Model_Currency
                 ),
-                $this->atLeastOnce(),
+                $self->atLeastOnce(),
                 null,
             ),
         );
     }
 
     /**
-     * @expectedException \Box_Exception
-     * @dataProvider SetDefaultExceptionProvider
+     * @expectedException \FOSSBilling\Exception
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('SetDefaultExceptionProvider')]
     public function testSetDefaultException($data, $getByCodeCalled, $getByCodeReturn)
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($getByCodeCalled)
             ->method('getByCode')
             ->will($this->returnValue($getByCodeReturn));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -516,8 +518,8 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $adminApi->setService($service);
-        $this->expectException(\Box_Exception::class);
-        $adminApi->set_default($data); //Expecting \Box_Exception every time
+        $this->expectException(\FOSSBilling\Exception::class);
+        $adminApi->set_default($data); //Expecting \FOSSBilling\Exception every time
     }
 
     public function testSetDefault()
@@ -533,7 +535,7 @@ class Api_AdminTest extends \BBTestCase
             'format' => '€{{price}}'
         );
 
-        $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue($model));
@@ -541,7 +543,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('setAsDefault')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,6 +10,8 @@
  */
 
 namespace Box\Mod\Email;
+
+use FOSSBilling\Environment;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -106,7 +109,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function setVars($t, $vars)
     {
-        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), 'v8JoWZph12DYSY4aq8zpvWdzC');
+        $config = $this->di['config'];
+        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), $config['info']['salt']);
         $this->di['db']->store($t);
 
         return true;
@@ -117,7 +121,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getVars($t)
     {
-        $json = $this->di['crypt']->decrypt($t->vars, 'v8JoWZph12DYSY4aq8zpvWdzC');
+        $config = $this->di['config'];
+        $json = $this->di['crypt']->decrypt($t->vars, $config['info']['salt']);
 
         return $this->di['tools']->decodeJ($json);
     }
@@ -130,11 +135,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client']) && !isset($data['to_admin'])) {
-            throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
+            throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
         }
         $vars = $data;
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
-        unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code']);
+        unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code'], $vars['send_now'], $vars['throw_exceptions']);
+
+        $send_now = $data['send_now'] ?? false;
+        $throw_exceptions = $data['throw_exceptions'] ?? false;
 
         // add additional variables to template
         if (isset($data['to_staff']) && $data['to_staff']) {
@@ -172,7 +180,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $db->store($t);
         }
 
-        // update template vars with latest variables
         $this->setVars($t, $vars);
 
         // do not send inactive template
@@ -187,36 +194,39 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $sent = false;
 
         if (!$from) {
-            throw new \Box_Exception('From email address can not be empty');
+            throw new \FOSSBilling\InformationException('From email address can not be empty');
         }
 
         if (isset($staff)) {
             foreach ($staff['list'] as $staff) {
                 $to = $staff['email'];
                 $to_name = $staff['name'];
-                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id']);
+                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions);
             }
         } elseif (isset($oneStaff)) {
             $to = $oneStaff->email;
             $to_name = $oneStaff->name;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff->id);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff->id, null, $send_now, $throw_exceptions);
         } elseif (isset($customer)) {
             $to = $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id']);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions);
         } else {
             $to = $data['to'];
             $to_name = $data['to_name'] ?? null;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions);
         }
 
         return $sent;
     }
 
-    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
+    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false)
     {
+        // Add the email to the queue
         $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
-        $this->_sendFromQueue($email);
+        if ($send_now) {
+            $this->_sendFromQueue($email, $throw_exceptions);
+        }
 
         return true;
     }
@@ -233,7 +243,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $matches = [];
         preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches);
         $mod = $matches[1];
-        $path = PATH_MODS . '/' . ucfirst($mod) . '/html_email/' . $code . '.html.twig';
+        $path = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR . 'html_email' . DIRECTORY_SEPARATOR . $code . '.html.twig';
 
         if (file_exists($path)) {
             $tpl = file_get_contents($path);
@@ -314,31 +324,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }
-        $settings = $this->di['mod_config']('email');
 
-        $mail = new \FOSSBilling\Mail($email->sender, $email->recipients, $email->sender, $email->content_html, $settings['mailer'] ?? 'sendmail', $settings['custom_dsn'] ?? null);
-
-        if (APPLICATION_ENV == 'testing') {
-            if (BB_DEBUG) {
+        if (Environment::isTesting()) {
+            if (DEBUG) {
                 error_log('Skipping email sending in test environment');
             }
 
             return true;
         }
 
-        try {
-            $mod = $this->di['mod']('email');
-            $settings = $mod->getConfig();
+        $clientService = $this->di['mod_service']('client');
+        $customer = $clientService->get(['id' => $email->client_id]);
+        $customer = $clientService->toApiArray($customer);
 
-            if (isset($settings['log_enabled']) && $settings['log_enabled']) {
-                $activityService = $this->di['mod_service']('activity');
-                $activityService->logEmail($email->subject, $email->client_id, $email->sender, $email->recipients, $email->content_html, $email->content_text);
-            }
+        $systemService = $this->di['mod_service']('system');
+        $from_name = $systemService->getParamValue('company_name');
 
-            $mail->send($settings);
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-        }
+        $this->sendMail($email->recipients, $email->sender, $email->subject, $email->content_html, $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->client_id);
 
         $this->di['logger']->info('Resent email #%s', $email->id);
 
@@ -376,6 +378,35 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $query .= ' ORDER BY category ASC';
+
+        return [$query, $bindings];
+    }
+
+    public function queueGetSearchQuery($data)
+    {
+        $query = 'SELECT * FROM mod_email_queue';
+
+        $search = $data['search'] ?? null;
+
+        $where = [];
+        $bindings = [];
+
+        if ($search) {
+            $search = "%$search%";
+
+            $where[] = '(recipient LIKE :recipient OR subject LIKE :subject OR content LIKE :content OR to_name LIKE :to_name)';
+
+            $bindings[':recipient'] = $search;
+            $bindings[':subject'] = $search;
+            $bindings[':content'] = $search;
+            $bindings[':to_name'] = $search;
+        }
+
+        if (!empty($where)) {
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $query .= ' ORDER BY updated_at DESC';
 
         return [$query, $bindings];
     }
@@ -439,7 +470,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $t = $this->di['db']->findOne('EmailTemplate', 'action_code = :action', [':action' => $code]);
 
         if (!$t instanceof \Model_EmailTemplate) {
-            throw new \Box_Exception('Email template :code was not found', [':code' => $code]);
+            throw new \FOSSBilling\Exception('Email template :code was not found', [':code' => $code]);
         }
 
         $d = ['code' => $code];
@@ -454,7 +485,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$id]);
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         return $model;
@@ -530,26 +561,43 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Sends emails from queue, respecting the configured time limit and emails per cron limit.
+     * If an email fails to be sent, it will be skipped and retried on the next cron run until the retry limit is reached.
+     *
+     * @return void
+     */
     public function batchSend()
     {
         $mod = $this->di['mod']('email');
         $settings = $mod->getConfig();
-        $tries = 0;
+
         $time_limit = ($settings['time_limit'] ?? 5) * 60;
+        $sendPerCron = $settings['queue_once'] ?? 0;
+
+        $sent = 0;
         $start = time();
-        while ($email = $this->di['db']->findOne('ModEmailQueue', ' status = \'unsent\' ORDER BY updated_at ')) {
-            $this->_sendFromQueue($email);
-            ++$tries;
-            if (isset($settings['queue_once']) && $settings['queue_once'] && $settings['queue_once'] <= $tries) {
-                break;
-            }
+
+        $query = 'ORDER BY created_at ASC';
+        if ($sendPerCron) {
+            $query .= ' LIMIT ' . intval($sendPerCron);
+            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
+        } else {
+            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
+        }
+
+        foreach ($mailQueue as $email) {
+            $mailModel = new \Model_ModEmailQueue();
+            $mailModel->loadBean($email);
+            $this->_sendFromQueue($mailModel);
+            ++$sent;
             if ($time_limit && time() - $start > $time_limit) {
                 break;
             }
         }
     }
 
-    private function _sendFromQueue(\Model_ModEmailQueue $queue)
+    private function _sendFromQueue(\Model_ModEmailQueue $queue, bool $throw_exceptions = false)
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -583,8 +631,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->subject, $queue->content, $transport, $settings['custom_dsn'] ?? null);
 
-            if (APPLICATION_ENV != 'production') {
-                error_log('Skip email sending. Application ENV: ' . APPLICATION_ENV);
+            if (!Environment::isProduction()) {
+                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
 
                 return true;
             }
@@ -600,17 +648,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $message = $e->getMessage();
             error_log($message);
 
-            // Prevent mass retries of emails if one of them is "invalid"
-            if (str_contains($message, 'Invalid address:')) {
-                try {
-                    $this->di['db']->trash($queue);
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                }
-
-                return true;
-            }
-
             if ($queue->priority) {
                 --$queue->priority;
             }
@@ -622,6 +659,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $maxTries = $settings['cancel_after'] ?? 5;
             if ($queue->tries > $maxTries) {
                 $this->di['db']->trash($queue);
+            }
+
+            if ($throw_exceptions) {
+                // If the error message is long, truncate it and inform the user the rest is in the error log.
+                $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message, 0, 350) . '...' : $message;
+
+                throw new \FOSSBilling\Exception($truncated);
             }
         }
 

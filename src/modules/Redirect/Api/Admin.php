@@ -128,7 +128,7 @@ class Admin extends \Api_Abstract
         $bean = $this->di['db']->findOne('extension_meta', $sql, $values);
 
         if (!$bean) {
-            throw new \Box_Exception('Redirect not found');
+            throw new \FOSSBilling\Exception('Redirect not found');
         }
 
         return $bean;

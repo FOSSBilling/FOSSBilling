@@ -15,7 +15,7 @@ class BBModTestCase extends BBDbApiTestCase
 
         try {
             $this->api_admin->extension_activate(array('id'=>$this->_mod,'type'=>'mod'));
-        } catch(Exception $e) {
+        } catch(Exception) {
             
         }
     }

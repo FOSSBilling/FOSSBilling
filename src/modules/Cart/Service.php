@@ -69,7 +69,7 @@ class Service implements InjectionAwareInterface
 
     public function addItem(\Model_Cart $cart, \Model_Product $product, array $data)
     {
-        $event_params = array_merge($data, ['cart_id' => $cart->id, 'product_id' => $product->id]);
+        $event_params = [...$data, 'cart_id' => $cart->id, 'product_id' => $product->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeProductAddedToCart', 'params' => $event_params]);
 
         $productService = $product->getService();
@@ -81,14 +81,14 @@ class Service implements InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$this->isPeriodEnabledForProduct($product, $data['period'])) {
-                throw new \Box_Exception('Selected billing period is invalid');
+                throw new \FOSSBilling\InformationException('Selected billing period is invalid');
             }
         }
 
         $qty = $data['quantity'] ?? 1;
         // check stock
         if (!$this->isStockAvailable($product, $qty)) {
-            throw new \Box_Exception('This item is currently out of stock');
+            throw new \FOSSBilling\InformationException('This item is currently out of stock');
         }
 
         $addons = $data['addons'] ?? [];
@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
                         $this->di['validator']->checkRequiredParamsForArray($required, $ac);
 
                         if (!$this->isPeriodEnabledForProduct($addon, $ac['period'])) {
-                            throw new \Box_Exception('Selected billing period is invalid for the selected addon');
+                            throw new \FOSSBilling\InformationException('Selected billing period is invalid for the selected addon');
                         }
                     }
                     $ac['parent_id'] = $product->id;
@@ -215,7 +215,7 @@ class Service implements InjectionAwareInterface
 
         $cartProduct = $this->di['db']->findOne('CartProduct', 'id = :id AND cart_id = :cart_id', $bindings);
         if (!$cartProduct instanceof \Model_CartProduct) {
-            throw new \Box_Exception('Product not found');
+            throw new \FOSSBilling\Exception('Product not found');
         }
 
         if ($removeAddons) {
@@ -277,7 +277,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($this->isEmptyCart($cart)) {
-            throw new \Box_Exception('Add products to cart before applying promo code');
+            throw new \FOSSBilling\InformationException('Add products to cart before applying promo code');
         }
 
         $cart->promo_id = $promo->id;
@@ -422,15 +422,15 @@ class Service implements InjectionAwareInterface
         if ($cart->promo_id) {
             $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');
             if (!$this->isClientAbleToUsePromo($client, $promo)) {
-                throw new \Box_Exception('You have already used this promo code. Please remove promo code and checkout again.', null, 9874);
+                throw new \FOSSBilling\InformationException('You have already used this promo code. Please remove promo code and checkout again.', null, 9874);
             }
 
             if (!$promo instanceof \Model_Promo) {
-                throw new \Box_Exception('Promo code is expired or does not exist');
+                throw new \FOSSBilling\InformationException('Promo code is expired or does not exist');
             }
 
             if (!$this->isPromoAvailableForClientGroup($promo)) {
-                throw new \Box_Exception('Promo can not be applied to your account');
+                throw new \FOSSBilling\InformationException('Promo can not be applied to your account');
             }
         }
 
@@ -482,7 +482,7 @@ class Service implements InjectionAwareInterface
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
         if ((is_countable($ca['items']) ? count($ca['items']) : 0) == 0) {
-            throw new \Box_Exception('Can not checkout an empty cart');
+            throw new \FOSSBilling\InformationException('Can not checkout an empty cart');
         }
 
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
@@ -494,7 +494,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($client->currency != $currency->code) {
-            throw new \Box_Exception('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currency->code, ':code' => $client->currency]);
+            throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currency->code, ':code' => $client->currency]);
         }
 
         $clientService = $this->di['mod_service']('client');
@@ -510,7 +510,7 @@ class Service implements InjectionAwareInterface
 
             $product = $this->di['db']->getExistingModelById('Product', $item['product_id']);
             if (is_null($product) || $product->status !== 'enabled') {
-                throw new \Box_Exception('Unable to complete order. One or more of the selected products are invalid.');
+                throw new \FOSSBilling\InformationException('Unable to complete order. One or more of the selected products are invalid.');
             }
 
             /*

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Validate composer.json and composer.lock
       uses: php-actions/composer@v6
@@ -38,7 +38,9 @@ jobs:
         php-version: '8.2'
 
     - name: Run Reactor
-      run: php src/vendor/bin/rector
+      run: |
+        php src/vendor/bin/rector
+        php src/vendor/bin/rector --config=rectorTests.php
 
     - name: Run PHP CS Fixer
       run: php src/vendor/bin/php-cs-fixer fix

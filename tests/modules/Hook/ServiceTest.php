@@ -27,12 +27,12 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetSearchQuery()
     {
-        list ($sql, $params) = $this->service->getSearchQuery(array());
+        [$sql, $params] = $this->service->getSearchQuery(array());
 
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(strpos($sql, 'SELECT id, rel_type, rel_id, meta_value as event, created_at, updated_at') !== false);
+        $this->assertTrue(str_contains($sql, 'SELECT id, rel_type, rel_id, meta_value as event, created_at, updated_at'));
         $this->assertEquals($params, array());
 
     }
@@ -51,7 +51,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $eventMock = $this->getMockBuilder('\Box_Event')
-            ->setMethods(array('getParameters', 'getDi'))
+            ->onlyMethods(array('getParameters', 'getDi'))
             ->disableOriginalConstructor()
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
@@ -69,13 +69,13 @@ class ServiceTest extends \BBTestCase {
             ->method('load')
             ->will($this->returnValue($model));
 
-        $hookService = $this->getMockBuilder('\Box\Mod\Hook\Service')->getMock();
+        $hookService = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
         $hookService->expects($this->atLeastOnce())
             ->method('batchConnect');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($name) use($hookService){ return $hookService;});
+        $di['mod_service'] = $di->protect(fn($name) => $hookService);
 
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -92,7 +92,7 @@ class ServiceTest extends \BBTestCase {
         $eventParams = array();
 
         $eventMock = $this->getMockBuilder('\Box_Event')
-            ->setMethods(array('getParameters'))
+            ->onlyMethods(array('getParameters'))
             ->disableOriginalConstructor()
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
@@ -112,7 +112,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $eventMock = $this->getMockBuilder('\Box_Event')
-            ->setMethods(array('getParameters', 'getDi'))
+            ->onlyMethods(array('getParameters', 'getDi'))
             ->disableOriginalConstructor()
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
@@ -172,7 +172,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($returnArr));
 
 
-        $activityServiceMock = $this->getMockBuilder('\Box\Mod\Activity\Service')->getMock();
+        $activityServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
 
         $boxModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $boxModMock->expects($this->atLeastOnce())
@@ -185,23 +185,20 @@ class ServiceTest extends \BBTestCase {
             ->method('getName')
             ->will($this->returnValue('activity'));
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $extensionServiceMock->expects(($this->atLeastOnce()))
             ->method('isCoreModule')
             ->will($this->returnValue(false));
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod'] = $di->protect(function () use($boxModMock) {
-            return $boxModMock;
-
-        });
+        $di['mod'] = $di->protect(fn() => $boxModMock);
         $di['mod_service'] = $di->protect(function ($name) use($extensionServiceMock){
             if ($name == 'extension'){
                 return $extensionServiceMock;
             }
         });
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

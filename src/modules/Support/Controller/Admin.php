@@ -26,7 +26,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function fetchNavigation()
     {
-        return [
+        $nav = [
             'group' => [
                 'location' => 'support',
                 'index' => 500,
@@ -37,34 +37,47 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'support',
-                    'label' => __trans('Client tickets'),
+                    'label' => __trans('Client Tickets'),
                     'uri' => $this->di['url']->adminLink('support', ['status' => 'open']),
                     'index' => 100,
                     'class' => '',
                 ],
                 [
                     'location' => 'support',
-                    'label' => __trans('Advanced ticket search'),
-                    'uri' => $this->di['url']->adminLink('support', ['show_filter' => 1]),
+                    'label' => __trans('Public Tickets'),
+                    'uri' => $this->di['url']->adminLink('support/public-tickets', ['status' => 'open']),
                     'index' => 200,
                     'class' => '',
                 ],
                 [
                     'location' => 'support',
-                    'label' => __trans('Public tickets'),
-                    'uri' => $this->di['url']->adminLink('support/public-tickets', ['status' => 'open']),
+                    'label' => __trans('Advanced Ticket Search'),
+                    'uri' => $this->di['url']->adminLink('support', ['show_filter' => 1]),
                     'index' => 300,
                     'class' => '',
                 ],
                 [
                     'location' => 'support',
-                    'label' => __trans('Canned responses'),
+                    'label' => __trans('Canned Responses'),
                     'uri' => $this->di['url']->adminLink('support/canned-responses'),
                     'index' => 400,
                     'class' => '',
                 ],
             ],
         ];
+
+        if ($this->di['mod']('support')->getService()->kbEnabled()) {
+            $nav['subpages'][] =
+                [
+                    'location' => 'support',
+                    'index' => 500,
+                    'label' => __trans('Knowledge Base'),
+                    'uri' => $this->di['url']->adminLink('support/kb'),
+                    'class' => '',
+                ];
+        }
+
+        return $nav;
     }
 
     public function register(\Box_App &$app)
@@ -81,6 +94,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/support/canned-responses', 'get_canned_list', [], static::class);
         $app->get('/support/canned/:id', 'get_canned', ['id' => '[0-9]+'], static::class);
         $app->get('/support/canned-category/:id', 'get_canned_cat', ['id' => '[0-9]+'], static::class);
+
+        if ($this->di['mod']('support')->getService()->kbEnabled()) {
+            $app->get('/support/kb', 'get_kb_index', [], static::class);
+            $app->get('/support/kb/article/:id', 'get_kb_article', ['id' => '[0-9]+'], static::class);
+            $app->get('/support/kb/category/:id', 'get_kb_category', ['id' => '[0-9]+'], static::class);
+        }
     }
 
     public function get_index(\Box_App $app)
@@ -168,5 +187,31 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $c = $api->support_canned_category_get(['id' => $id]);
 
         return $app->render('mod_support_canned_category', ['category' => $c]);
+    }
+
+    /*
+    * Support Knowledge Base.
+    */
+    public function get_kb_index(\Box_App $app)
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_support_kb_index');
+    }
+
+    public function get_kb_article(\Box_App $app, $id)
+    {
+        $api = $this->di['api_admin'];
+        $post = $api->support_kb_article_get(['id' => $id]);
+
+        return $app->render('mod_support_kb_article', ['post' => $post]);
+    }
+
+    public function get_kb_category(\Box_App $app, $id)
+    {
+        $api = $this->di['api_admin'];
+        $cat = $api->support_kb_category_get(['id' => $id]);
+
+        return $app->render('mod_support_kb_category', ['category' => $cat]);
     }
 }

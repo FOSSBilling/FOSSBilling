@@ -42,7 +42,7 @@ class CentralAlerts implements InjectionAwareInterface
      * The alerts are **never** displayed to the clients.
      *
      * @return array The alerts
-     * @throws \Box_Exception
+     * @throws Exception
      */
     public function getAlerts(): array
     {
@@ -62,7 +62,7 @@ class CentralAlerts implements InjectionAwareInterface
      * @param string $version The version to filter by (e.g. 0.4.2) - defaults to the current version of FOSSBilling
      *
      * @return array The filtered alerts
-     * @throws \Box_Exception
+     * @throws Exception
      */
     public function filterAlerts(array $type = [], string $version = Version::VERSION): array
     {
@@ -95,7 +95,7 @@ class CentralAlerts implements InjectionAwareInterface
      * @param array $params The array of parameters to pass to the API endpoint
      *
      * @return array The API response
-     * @throws \Box_Exception
+     * @throws Exception
      */
     public function makeRequest(string $endpoint, array $params = []): array
     {
@@ -104,22 +104,20 @@ class CentralAlerts implements InjectionAwareInterface
             $httpClient = HttpClient::create();
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
-                'query' => array_merge($params, [
-                    'fossbilling_version' => Version::VERSION,
-                ]),
+                'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
             $json = $response->toArray();
         } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
             error_log($e->getMessage());
-            throw new \Box_Exception('Unable to fetch alerts from Central Alerts System. See error log for more information.', null);
+            throw new Exception('Unable to fetch alerts from Central Alerts System. See error log for more information.', null);
         }
 
         if (isset($json['error']) && is_array($json['error'])) {
-            throw new \Box_Exception($json['error']['message'], null);
+            throw new Exception($json['error']['message'], null);
         }
 
         if (!isset($json['result']) || !is_array($json['result'])) {
-            throw new \Box_Exception('Invalid response from the FOSSBilling Central Alerts System.', null);
+            throw new Exception('Invalid response from the FOSSBilling Central Alerts System.', null);
         }
 
         return $json['result'];

@@ -42,7 +42,7 @@ class AdminTest extends \BBTestCase {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('get')
-            ->with('/activity', 'get_index', array(), 'Box\Mod\Activity\Controller\Admin');
+            ->with('/activity', 'get_index', array(), \Box\Mod\Activity\Controller\Admin::class);
 
         $controllerAdmin = new \Box\Mod\Activity\Controller\Admin();
         $controllerAdmin->register($boxAppMock);

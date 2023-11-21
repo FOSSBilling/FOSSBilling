@@ -28,6 +28,7 @@ class Box_EventDispatcher
     }
 
     /**
+     * TODO: Unsused?
      * Disconnects a listener for a given event name.
      *
      * @param string $name     An event name
@@ -46,9 +47,11 @@ class Box_EventDispatcher
                 unset($this->listeners[$name][$i]);
             }
         }
+        return null;
     }
 
     /**
+     * TODO: Unsused?
      * Disconnects all listeners for a given event name.
      *
      * @param string $name An event name
@@ -64,6 +67,7 @@ class Box_EventDispatcher
         foreach ($this->listeners[$name] as $i => $callable) {
             unset($this->listeners[$name][$i]);
         }
+        return null;
     }
 
     /**

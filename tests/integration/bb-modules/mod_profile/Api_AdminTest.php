@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ProfileTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'admins.xml';

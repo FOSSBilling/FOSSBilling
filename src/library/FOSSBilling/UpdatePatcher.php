@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
@@ -14,6 +15,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Ramsey\Uuid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
@@ -29,13 +31,6 @@ class UpdatePatcher implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function isOutdated(): bool
-    {
-        $patchLevel = $this->getPatchLevel();
-        $patches = $this->getPatches($patchLevel);
-        return count($patches) !== 0;
-    }
-
     /**
      * Apply configuration file patches.
      *
@@ -45,24 +40,23 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $filesystem = new Filesystem();
 
-        $configPath = PATH_ROOT . '/config.php';
-        $currentConfig = include $configPath;
+        $currentConfig = include PATH_CONFIG;
 
         if (!is_array($currentConfig)) {
-            throw new \Box_Exception('Unable to load existing configuration');
+            throw new Exception('Unable to load existing configuration');
         }
 
         // Create backup of current configuration.
         try {
-            $filesystem->copy($configPath, substr($configPath, 0, -4) . '.old.php');
+            $filesystem->copy(PATH_CONFIG, substr(PATH_CONFIG, 0, -4) . '.old.php');
         } catch (FileNotFoundException | IOException) {
-            throw new \Box_Exception('Unable to create backup of configuration file');
+            throw new Exception('Unable to create backup of configuration file');
         }
 
         $newConfig = $currentConfig;
         $newConfig['security']['mode'] ??= 'strict';
         $newConfig['security']['force_https'] ??= true;
-        $newConfig['security']['cookie_lifespan'] ??= 7200;
+        $newConfig['security']['session_lifespan'] ??= $newConfig['security']['cookie_lifespan'] ?? 7200;
         $newConfig['update_branch'] ??= 'release';
         $newConfig['log_stacktrace'] ??= true;
         $newConfig['stacktrace_length'] ??= 25;
@@ -80,13 +74,28 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
+        $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['report_errors'] ??= false;
+        if (!class_exists('Uuid')) {
+            $this->registerFallbackAutoloader();
+        }
+        $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
+        $newConfig['info']['salt'] ??= $newConfig['salt'];
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls'];
-        $depreciatedConfigSubkeys = [];
+        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs'];
+        $depreciatedConfigSubkeys = [
+            'security' => 'cookie_lifespan',
+        ];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {
             unset($newConfig[$key][$subkey]);
+        }
+
+        if ($currentConfig === $newConfig) {
+            return;
         }
 
         $output = '<?php ' . PHP_EOL;
@@ -94,9 +103,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
         // Write updated configuration file.
         try {
-            $filesystem->dumpFile($configPath, $output);
+            $filesystem->dumpFile(PATH_CONFIG, $output);
         } catch (IOException) {
-            throw new \Box_Exception('Error when writing updated configuration file.');
+            throw new Exception('Error when writing updated configuration file.');
         }
     }
 
@@ -154,8 +163,10 @@ class UpdatePatcher implements InjectionAwareInterface
         $statement = $this->di['pdo']->prepare($sql);
         try {
             $statement->execute();
-        } catch (\Box_Exception $e) {
+        } catch (\Exception $e) {
+            // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
+            throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
     }
 
@@ -176,14 +187,14 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Set the current patch level of FOSSBilling.
      *
-     * @param int
+     * @param int $patchLevel The last executed patch level
      *
      * @return void
      */
     private function setPatchLevel(int $patchLevel): void
     {
         if (is_null($this->getPatchLevel())) {
-            $sql = 'INSERT INTO setting (last_patch, value, public, updated_at, created_at) VALUES (:value, 1, :u, :c)';
+            $sql = 'INSERT INTO setting (param, value, public, updated_at, created_at) VALUES ("last_patch", :value, 1, :u, :c)';
             $sqlStatement = $this->di['pdo']->prepare($sql);
             $sqlStatement->execute(['value' => $patchLevel, 'c' => date('Y-m-d H:i:s'), 'u' => date('Y-m-d H:i:s')]);
         } else {
@@ -213,7 +224,7 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             26 => function () {
                 // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-                $q = "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
+                $q = "INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES ('company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
                 $this->executeSql($q);
             },
             27 => function () {
@@ -240,7 +251,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old guzzlehttp package, as we no longer
                 // use it. Also serves as an example for how to perform file action.
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'guzzlehttp' => 'unlink',
+                    PATH_VENDOR . DIRECTORY_SEPARATOR . 'guzzlehttp' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -248,8 +259,8 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old htaccess.txt file, and any old config.php backup.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'htaccess.txt' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'config.php.old' => 'unlink',
+                    PATH_ROOT . DIRECTORY_SEPARATOR . 'htaccess.txt' => 'unlink',
+                    PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php.old' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -259,22 +270,22 @@ class UpdatePatcher implements InjectionAwareInterface
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1091
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1063
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'phpmailer' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'images' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'bb-deprecated.scss' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'dataTable-deprecated.scss' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'main-deprecated.scss' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Mail.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Ftp.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'FileCacheExcption.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Zip.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Requirements.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Version.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Extension.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Cookie.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'ExceptionAuth.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Response.php' => 'unlink',
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Config.php' => 'unlink',
+                    PATH_VENDOR . DIRECTORY_SEPARATOR . 'phpmailer' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'images' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'bb-deprecated.scss' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'dataTable-deprecated.scss' => 'unlink',
+                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'main-deprecated.scss' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Mail.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Ftp.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'FileCacheExcption.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Zip.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Requirements.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Version.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Extension.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Cookie.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'ExceptionAuth.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Response.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Config.php' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -282,7 +293,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old FileCache class that was replaced with Symfony's Cache component.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
                 $fileActions = [
-                    __DIR__ . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'FileCache.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FileCache.php' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -291,10 +302,70 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "ALTER TABLE session ADD fingerprint TEXT;";
                 $this->executeSql($q);
             },
+            35 => function () {
+                // Adds the new "created_at" to the session table, to ensure sessions are destroyed after they reach their maximum age.
+                $q = "ALTER TABLE session ADD created_at int(11);";
+                $this->executeSql($q);
+            },
+            36 => function () {
+                // Patch to complete merging the Kb and Support modules.
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
 
+                // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
+                $q = "RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;";
+                $this->executeSql($q);
+
+                // If the Kb extension is currently active, set enabled in Support settings.
+                $ext_service = $this->di['mod_service']('extension');
+                if ($ext_service->isExtensionActive('mod', 'kb')) {
+                    $support_ext_config = $ext_service->getConfig('mod_support');
+                    $support_ext_config['kb_enable'] = 'on';
+                    $ext_service->setConfig($support_ext_config);
+                }
+
+                // If the Kb extension exists, uninstall it.
+                $kb_ext = $ext_service->findExtension('mod', 'kb');
+                if ($kb_ext instanceof \Model_Extension) {
+                    $ext_service->uninstall($kb_ext);
+                }
+
+                // Finally, remove old Kb extension files/folders.
+                $fileActions = [
+                    PATH_MODS . DIRECTORY_SEPARATOR . 'Kb' => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
+            },
+            37 => function () {
+                // Patch to complete remove the outdated queue module.
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
+
+                $ext_service = $this->di['mod_service']('extension');
+                // If the queue extension exists, uninstall it.
+                $queue_ext = $ext_service->findExtension('mod', 'queue');
+                if ($queue_ext instanceof \Model_Extension) {
+                    $ext_service->uninstall($queue_ext);
+                }
+
+                // Finally, remove old queue module from the disk.
+                $fileActions = [
+                    PATH_MODS . DIRECTORY_SEPARATOR . 'Queue' => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+    }
+
+    private function registerFallbackAutoloader()
+    {
+        $loader = new \AntCMS\AntLoader([
+            'mode' => 'filesystem',
+            'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'fallbackClassMap.php',
+        ]);
+        $loader->addNamespace('', PATH_VENDOR);
+        $loader->checkClassMap();
+        $loader->register(true);
     }
 }

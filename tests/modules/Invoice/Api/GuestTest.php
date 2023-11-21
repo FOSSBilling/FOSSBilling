@@ -25,12 +25,12 @@ class GuestTest extends \BBTestCase {
 
     public function testget()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -56,7 +56,7 @@ class GuestTest extends \BBTestCase {
 
     public function testgetInvoiceNotFound()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -75,19 +75,19 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->get($data);
     }
 
     public function testupdate()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -114,7 +114,7 @@ class GuestTest extends \BBTestCase {
 
     public function testupdateInvoiceNotFound()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -133,14 +133,14 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->update($data);
     }
 
     public function testupdateInvoiceIsPaid()
     {
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -160,20 +160,20 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Paid Invoice can not be modified');
         $this->api->update($data);
     }
 
     public function testgateways()
     {
-        $gatewayServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')->getMock();
+        $gatewayServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
         $gatewayServiceMock->expects($this->atLeastOnce())
             ->method('getActive')
             ->will($this->returnValue(array()));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use($gatewayServiceMock) {return $gatewayServiceMock;});
+        $di['mod_service'] = $di->protect(fn() => $gatewayServiceMock);
 
         $this->api->setDi($di);
 
@@ -187,7 +187,7 @@ class GuestTest extends \BBTestCase {
             'hash' => '',
             'gateway_id' => '',
         );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processInvoice')
             ->will($this->returnValue(array()));
@@ -204,7 +204,7 @@ class GuestTest extends \BBTestCase {
             'gateway_id' => '',
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(810);
         $this->expectExceptionMessage('Invoice hash not passed. Missing param hash');
         $this->api->payment($data);
@@ -216,7 +216,7 @@ class GuestTest extends \BBTestCase {
             'hash' => '',
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(811);
         $this->expectExceptionMessage('Payment method not found. Missing param gateway_id');
         $this->api->payment($data);
@@ -227,11 +227,11 @@ class GuestTest extends \BBTestCase {
         $data = array(
             'hash' => '',
         );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

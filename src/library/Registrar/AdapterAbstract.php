@@ -20,6 +20,11 @@ abstract class Registrar_AdapterAbstract
     protected $_testMode = false;
 
     /**
+    * Related order
+     */
+    protected ?\Model_ClientOrder $_order = null;
+
+    /**
      * Return array with configuration
      * 
      * Must be overriden in adapter class
@@ -223,14 +228,12 @@ abstract class Registrar_AdapterAbstract
     }
 
     /**
-     * Gets a new HttpClient object.
-     *
-     * @return Symfony\Component\HttpClient\HttpClient The HttpClient object.
+     * Creates and returns an interface for the Symfony HTTP client.
      */
-    public function getHttpClient()
+    public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
         return \Symfony\Component\HttpClient\HttpClient::create();
-    }  
+    }
 
     /**
      * Enables test mode for the adapter.
@@ -240,6 +243,16 @@ abstract class Registrar_AdapterAbstract
     public function enableTestMode()
     {
         $this->_testMode = true;
+        return $this;
+    }
+
+    /**
+     * Sets the order related to the domain.
+     */
+    public function setOrder(\Model_ClientOrder $order): static
+    {
+        $this->_order = $order;
+
         return $this;
     }
 }

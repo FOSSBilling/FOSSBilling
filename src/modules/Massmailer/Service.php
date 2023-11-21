@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,6 +10,8 @@
  */
 
 namespace Box\Mod\Massmailer;
+
+use FOSSBilling\Environment;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -81,7 +84,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $row = $this->toApiArray($model);
         $filter = $row['filter'];
 
-        $sql = 'SELECT c.id, c.first_name, c.last_name
+        $sql = 'SELECT DISTINCT c.id
             FROM client c
             LEFT JOIN client_order co ON (co.client_id = c.id)
             WHERE 1
@@ -136,7 +139,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$ps, $pc];
     }
 
-    public function sendMessage($model, $client_id)
+    public function sendMessage($model, $client_id, bool $sendNow = false)
     {
         [$ps, $pc] = $this->getParsed($model, $client_id);
 
@@ -156,35 +159,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
-            throw new \Box_Exception('Disabled for security reasons (Demo mode enabled)');
+            throw new \FOSSBilling\InformationException('Disabled for security reasons (Demo mode enabled)');
         }
 
-        $mail = $this->di['mail'];
-        $mail->setSubject($data['subject']);
-        $mail->setBodyHtml($data['content']);
-        $mail->setFrom($data['from'], $data['from_name']);
-        $mail->addTo($data['to'], $data['to_name']);
-
-        if (APPLICATION_ENV != 'production') {
-            if ($this->di['config']['debug']) {
-                error_log('Skip email sending. Application ENV: ' . APPLICATION_ENV);
+        if (!Environment::isProduction()) {
+            if (DEBUG) {
+                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
 
             return true;
         }
 
-        $mod = $this->di['mod']('email');
-        $settings = $mod->getConfig();
-
-        if (isset($settings['log_enabled']) && $settings['log_enabled']) {
-            $activityService = $this->di['mod_service']('activity');
-            $activityService->logEmail($data['subject'], $client_id, $data['from'], $data['to'], $data['content']);
-        }
-
-        $emailSettings = $this->di['mod_config']('email');
-        $transport = $data['mailer'] ?? 'sendmail';
-
-        $mail->send($transport, $emailSettings);
+        $emailService = $this->di['mod_service']('email');
+        $emailService->sendMail($data['to'], $data['from'], $data['subject'], $data['content'], $data['to_name'], $data['from_name'], $data['client_id'], null, $sendNow);
 
         return true;
     }
@@ -202,16 +189,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $row;
-    }
-
-    public static function onAfterAdminCronRun(\Box_Event $event)
-    {
-        try {
-            $di = $event->getDi();
-            $di['api_admin']->queue_execute(['queue' => 'massmailer']);
-        } catch (\Exception $e) {
-            error_log('Error executing massmailer queue: ' . $e->getMessage());
-        }
     }
 
     public function sendMail($params)

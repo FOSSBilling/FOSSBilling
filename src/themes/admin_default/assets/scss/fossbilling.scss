@@ -1,5 +1,6 @@
 @import "~@tabler/core/src/scss/tabler";
 @import "~@tabler/core/src/scss/vendor/_litepicker.scss";
+@import "~@tabler/core/src/scss/vendor/_coloris.scss";
 @import "flags";
 @import "~tom-select/dist/css/tom-select.bootstrap5.css";
 @import "theme_settings";
@@ -71,15 +72,7 @@
     }
 }
 
-.clr-field {
-    display: flex;
-    width: 100%;
-    button {
-        border-radius: 0 4px 4px 0;
-    }
-}
-
-#script-code {
+#script-code, #html-code, #html-code2 {
     resize: none;
 }
 

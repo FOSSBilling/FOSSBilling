@@ -21,7 +21,7 @@ class Guest extends \Api_Abstract
      *
      * @optional bool $show_hidden - also get hidden products. Default false
      *
-     * @return type
+     * @return array
      */
     public function get_list($data)
     {
@@ -60,12 +60,12 @@ class Guest extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \Box_Exception('Product ID or slug is missing');
+            throw new \FOSSBilling\Exception('Product ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -79,7 +79,7 @@ class Guest extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_Product) {
-            throw new \Box_Exception('Product not found');
+            throw new \FOSSBilling\Exception('Product not found');
         }
 
         return $service->toApiArray($model);

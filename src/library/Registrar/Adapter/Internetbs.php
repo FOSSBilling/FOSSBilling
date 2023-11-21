@@ -15,14 +15,14 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $this->config['apikey'] = $options['apikey'];
             unset($options['apikey']);
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API key']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API key'], 3001);
         }
 
         if(isset($options['password']) && !empty($options['password'])) {
             $this->config['password'] = $options['password'];
             unset($options['password']);
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API password']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Internetbs', ':missing' => 'Internetbs API password'], 3001);
         }
     }
 
@@ -71,7 +71,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         return ($result['status'] == 'AVAILABLE');
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('checking domain transferability')]);
     }
@@ -163,11 +163,15 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
         $result = $this->_process('/Domain/Info', $params);
 
-        if ($result['status'] == 'SUCCESS')
+        if ($result['status'] == 'SUCCESS'){
             return $this->_createDomainObj($result, $domain);
+        } else {
+            $placeholders = ['action' => __trans('get domain details'), 'type' => 'Internetbs'];
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
+        }
     }
 
-    public function deleteDomain(Registrar_Domain $domain)
+    public function deleteDomain(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('deleting domains')]);
     }

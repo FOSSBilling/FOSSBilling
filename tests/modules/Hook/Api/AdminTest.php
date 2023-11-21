@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_list()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Hook\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
@@ -52,7 +52,7 @@ class AdminTest extends \BBTestCase {
     {
         $data['event'] = 'testEvent';
 
-        $configMock = array('debug' => true);
+        $configMock = array('debug_and_monitoring' => ['debug' => true]);
 
         $logMock = $this->getMockBuilder('\Box_log')->getMock();
 
@@ -83,7 +83,7 @@ class AdminTest extends \BBTestCase {
 
     public function testbatch_connect()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Hook\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchConnect')

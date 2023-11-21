@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
     {
         $f_rate = $this->getRateByCode($foreign_code);
         if ($f_rate == 0) {
-            throw new \Box_Exception('Currency conversion rate can not be zero');
+            throw new \FOSSBilling\InformationException('Currency conversion rate can not be zero');
         }
 
         return 1 / $f_rate;
@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($currency->code === null || empty($currency->code)) {
-            throw new \Box_Exception('Currency code not provided');
+            throw new \FOSSBilling\Exception('Currency code not provided');
         }
 
         $sql1 = 'UPDATE currency SET is_default = 0 WHERE 1';
@@ -149,7 +149,7 @@ class Service implements InjectionAwareInterface
     /**
      * Returns a list of available currencies.
      *
-     * @return string List of currencies in the "[short code] - [name]" format
+     * @return array List of currencies in the "[short code] - [name]" format
      */
     public function getAvailableCurrencies()
     {
@@ -319,11 +319,11 @@ class Service implements InjectionAwareInterface
     public function rm(\Model_Currency $model)
     {
         if ($model->is_default) {
-            throw new \Box_Exception('Can not remove default currency');
+            throw new \FOSSBilling\InformationException('Can not remove default currency');
         }
 
         if ($model->code === null || empty($model->code)) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         $sql = 'DELETE FROM currency WHERE code = :code';
@@ -391,12 +391,8 @@ class Service implements InjectionAwareInterface
 
     /**
      * Enable or disable updating exchange rates whenever the CRON jobs are run.
-     *
-     * @since 4.22.0
-     *
-     * @var int
      */
-    public function setCron($data)
+    public function setCron($data): void
     {
         $sql = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
 
@@ -457,8 +453,8 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
 
         $model = $this->getByCode($code);
-        if (!$model instanceof \Model_currency) {
-            throw new \Box_Exception('Currency not found');
+        if (!$model instanceof \Model_Currency) {
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         if (isset($title)) {
@@ -476,7 +472,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($conversionRate)) {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
-                throw new \Box_Exception('Currency rate is invalid', null, 151);
+                throw new \FOSSBilling\InformationException('Currency rate is invalid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
         }
@@ -523,8 +519,8 @@ class Service implements InjectionAwareInterface
      *
      * @todo use HTTPClient instead of simplexml_load_file()
      *
-     * @var string Short code for the base currency
-     * @var string Short code for the target currency
+     * @param string $from Short code for the base currency
+     * @param string $to   Short code for the target currency
      *
      * @return float Exchange rate
      */
@@ -541,7 +537,7 @@ class Service implements InjectionAwareInterface
                 }
             }
 
-            throw new \Box_Exception('Failed to get currency rates for :currency from the European Central Bank API', [':currency' => $to_Currency]);
+            throw new \FOSSBilling\Exception('Failed to get currency rates for :currency from the European Central Bank API', [':currency' => $to_Currency]);
         } else {
             $client = HttpClient::create();
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
@@ -557,7 +553,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
+                throw new \FOSSBilling\Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
             } else {
                 return (float) $array['quotes'][$from_Currency . $to_Currency];
             }
@@ -568,8 +564,8 @@ class Service implements InjectionAwareInterface
     {
         $model = $this->getByCode($code);
 
-        if (!$model instanceof \Model_currency) {
-            throw new \Box_Exception('Currency not found');
+        if (!$model instanceof \Model_Currency) {
+            throw new \FOSSBilling\Exception('Currency not found');
         }
         $code = $model->code;
 

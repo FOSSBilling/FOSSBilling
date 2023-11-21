@@ -212,10 +212,15 @@ class Service implements InjectionAwareInterface
             'company' => !empty($row['seller_company']) ? $row['seller_company'] : $c['name'],
             'company_vat' => $row['seller_company_vat'],
             'company_number' => $row['seller_company_number'],
-            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'] . ' ' . $c['address_2'] . ' ' . $c['address_2']),
+            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'] . ' ' . $c['address_2'] . ' ' . $c['address_3']),
+            'address_1' => !empty($row['seller_address_1']) ? $row['seller_address_1'] : $c['address_1'],
+            'address_2' => !empty($row['seller_address_2']) ? $row['seller_address_2'] : $c['address_2'],
+            'address_3' => !empty($row['seller_address_3']) ? $row['seller_address_3'] : $c['address_3'],
             'phone' => !empty($row['seller_phone']) ? $row['seller_phone'] : $c['tel'],
             'email' => !empty($row['seller_email']) ? $row['seller_email'] : $c['email'],
             'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
+            'bank_name' => !empty($c['bank_name']) ? $c['bank_name'] : null,
+            'bic' => !empty($c['bic']) ? $c['bic'] : null,
         ];
 
         /**
@@ -409,11 +414,12 @@ class Service implements InjectionAwareInterface
             if ($r instanceof \Model_Invoice && is_numeric($r->nr)) {
                 $next_nr = intval($r->nr) + 1;
             } else {
-                throw new \Box_Exception("Unable to determine the next invoice number");
+                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
             }
         }
 
         $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
+
         return $next_nr;
     }
 
@@ -553,7 +559,7 @@ class Service implements InjectionAwareInterface
         $epsilon = 0.05;
 
         if (abs($balance - $required) < $epsilon) {
-            if ($this->di['config']['debug']) {
+            if (DEBUG) {
                 error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
@@ -562,14 +568,14 @@ class Service implements InjectionAwareInterface
         }
 
         if ($balance - $required > 0.00001) {
-            if ($this->di['config']['debug']) {
+            if (DEBUG) {
                 error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
 
             return true;
         }
-        if ($this->di['config']['debug']) {
+        if (DEBUG) {
             error_log(sprintf('Invoice %s could not be paid with credits. Money in balance %s Required: %s', $invoice->id, $balance, $required));
         }
     }
@@ -622,7 +628,7 @@ class Service implements InjectionAwareInterface
             case 'negative_invoice':
                 $total = $this->getTotalWithTax($invoice);
                 if ($total <= 0) {
-                    throw new \Box_Exception('Can not refund invoice with negative amount');
+                    throw new \FOSSBilling\InformationException('Can not refund invoice with negative amount');
                 }
 
                 $new = $this->di['db']->dispense('Invoice');
@@ -702,7 +708,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case 'manual':
-                if ($this->di['config']['debug']) {
+                if (DEBUG) {
                     error_log('Refunds are managed manually. No actions performed');
                 }
 
@@ -837,7 +843,7 @@ class Service implements InjectionAwareInterface
         $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
         foreach ($invoiceItem as $item) {
             if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
-                throw new \Box_Exception('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
+                throw new \FOSSBilling\InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
             }
         }
 
@@ -870,7 +876,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id']);
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
-                if ($this->di['config']['debug']) {
+                if (DEBUG) {
                     error_log($e->getMessage());
                 }
             }
@@ -904,7 +910,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->price <= 0) {
-            throw new \Box_Exception('Invoices are not generated for 0 amount orders');
+            throw new \FOSSBilling\InformationException('Invoices are not generated for 0 amount orders');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
@@ -1072,7 +1078,7 @@ class Service implements InjectionAwareInterface
     public function generateFundsInvoice(\Model_Client $client, $amount)
     {
         if (!$client->currency) {
-            throw new \Box_Exception('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+            throw new \FOSSBilling\InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
         $systemService = $this->di['mod_service']('system');
@@ -1081,11 +1087,11 @@ class Service implements InjectionAwareInterface
         $max_amount = $systemService->getParamValue('funds_max_amount', null);
 
         if ($min_amount && $amount < $min_amount) {
-            throw new \Box_Exception('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
+            throw new \FOSSBilling\InformationException('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
         }
 
         if ($max_amount && $amount > $max_amount) {
-            throw new \Box_Exception('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
+            throw new \FOSSBilling\InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
         $proforma = $this->di['db']->dispense('Invoice');
@@ -1107,25 +1113,26 @@ class Service implements InjectionAwareInterface
 
     public function processInvoice(array $data)
     {
+        $allowSubscribe = $data['allow_subscription'] ?? true;
         $subscribe = false;
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = ?', [$data['hash']]);
         if (!$invoice instanceof \Model_Invoice) {
-            throw new \Box_Exception('Invoice not found', null, 812);
+            throw new \FOSSBilling\Exception('Invoice not found', null, 812);
         }
 
         $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
         if (!$gtw instanceof \Model_PayGateway) {
-            throw new \Box_Exception('Payment method not found', null, 813);
+            throw new \FOSSBilling\Exception('Payment method not found', null, 813);
         }
 
         if (!$gtw->enabled) {
-            throw new \Box_Exception('Payment method not enabled', null, 814);
+            throw new \FOSSBilling\Exception('Payment method not enabled', null, 814);
         }
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        if ($subscribeService->isSubscribable($invoice->id) && $payGatewayService->canPerformRecurrentPayment($gtw)) {
+        if ($subscribeService->isSubscribable($invoice->id) && $payGatewayService->canPerformRecurrentPayment($gtw) && $allowSubscribe) {
             $subscribe = true;
         }
 
@@ -1173,9 +1180,13 @@ class Service implements InjectionAwareInterface
 
     public function generatePDF($hash, $identity)
     {
+        $systemService = $this->di['mod_service']('system');
+        $c = $systemService->getCompany();
+        $document_format = $systemService->getParamValue('invoice_document_format', 'Letter');
+
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
         if (!$invoice instanceof \Model_Invoice) {
-            throw new \Box_Exception('Invoice not found');
+            throw new \FOSSBilling\Exception('Invoice not found');
         }
 
         if (isset($invoice->currency)) {
@@ -1191,6 +1202,7 @@ class Service implements InjectionAwareInterface
         $CSS = $this->getPdfCss();
 
         $pdf = new Dompdf();
+        $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
 
@@ -1209,6 +1221,7 @@ class Service implements InjectionAwareInterface
             'logo_source' => $logoSource,
             'seller' => $this->getSellerData($invoice, $sellerLines),
             'seller_lines' => $sellerLines,
+            'footer' => $this->getFooterInfo($c),
             'buyer' => $this->getBuyerData($invoice, $buyerLines),
             'buyer_lines' => $buyerLines,
             'invoice' => $invoice,
@@ -1482,9 +1495,9 @@ class Service implements InjectionAwareInterface
     {
         $sourceData = [
             'Name' => $invoice['seller']['company'],
-            'Address' => $invoice['seller']['address'],
-            'Company Vat' => $invoice['seller']['company_vat'],
-            'Company Number' => $invoice['seller']['company_number'],
+            'Address 1' => $invoice['seller']['address_1'],
+            'Address 2' => $invoice['seller']['address_2'],
+            'Address 3' => $invoice['seller']['address_3'],
             'Phone' => $invoice['seller']['phone'],
             'Email' => $invoice['seller']['email'],
         ];
@@ -1503,8 +1516,8 @@ class Service implements InjectionAwareInterface
     private function getBuyerData(array $invoice, int &$lines)
     {
         $sourceData = [
-            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
             'Company' => $invoice['buyer']['company'],
+            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
             'Address' => $invoice['buyer']['address'],
             'Phone' => $invoice['buyer']['phone'],
         ];
@@ -1519,5 +1532,34 @@ class Service implements InjectionAwareInterface
 
         return $sourceData;
     }
+
+    private function getFooterInfo(array $company)
+    {
+        $sourceData = [
+            'company_name' => $company['name'],
+            'bank_name' => $company['bank_name'],
+            'account_number' => $company['account_number'],
+            'bic' => $company['bic'],
+            'display_bank_info' => $company['display_bank_info'],
+            'company_vat' => $company['vat_number'],
+            'company_number' => $company['number'],
+            'www' => $company['www'],
+            'email' => $company['email'],
+            'phone' => $company['tel'],
+            'signature' => $company['signature'],
+            'address_1' => $company['address_1'],
+            'address_2' => $company['address_2'],
+            'address_3' => $company['address_3'],
+        ];
+
+        foreach ($sourceData as $label => $data) {
+            if (empty(trim($data))) {
+                unset($sourceData[$label]);
+            }
+        }
+
+        return $sourceData;
+    }
+
     // End of PDF related functions
 }

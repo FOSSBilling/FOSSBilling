@@ -2,7 +2,23 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}Public tickets{% endblock %}
+{% block meta_title %}Public Tickets{% endblock %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Public Tickets'|trans }}</li>
+    </ul>
+{% endblock %}
 
 {% set active_menu = 'support' %}
 
@@ -69,7 +85,7 @@
 
     <div class="card">
         <div class="card-body">
-            <h3>{{ 'Public tickets'|trans }}</h3>
+            <h3>{{ 'Public Tickets'|trans }}</h3>
         </div>
 
         {% include 'partial_search.html.twig' %}

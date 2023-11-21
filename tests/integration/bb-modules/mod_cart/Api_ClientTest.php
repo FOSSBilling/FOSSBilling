@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_cart.xml';
@@ -45,7 +43,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
             'quantity'  =>  2,
         );
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not checkout empty cart.');
 
         $this->api_client->cart_checkout();
@@ -79,7 +77,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
     }
     
     /**
-     * Test if promo code can be applied only once per client 
+     * Test if promo code can be applied only once per client
      */
     public function testPromoOncePerClient()
     {

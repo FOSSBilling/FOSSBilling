@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Extension_ServiceTest extends BBDbApiTestCase
 {
     public function testEvents()

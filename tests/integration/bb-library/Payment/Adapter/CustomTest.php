@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Payment_Adapter_CustomTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'gateway_Custom.xml';

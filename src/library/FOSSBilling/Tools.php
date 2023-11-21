@@ -10,6 +10,11 @@
 
 namespace FOSSBilling;
 
+use Egulias\EmailValidator\EmailValidator;
+use Egulias\EmailValidator\Validation\DNSCheckValidation;
+use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
+use Egulias\EmailValidator\Validation\RFCValidation;
+
 class Tools
 {
     protected ?\Pimple\Container $di = null;
@@ -55,7 +60,7 @@ class Tools
     public function url($link = null)
     {
         $link = trim($link, '/');
-        return BB_URL . $link;
+        return SYSTEM_URL . $link;
     }
 
     public function hasService($type)
@@ -69,7 +74,7 @@ class Tools
         $class = 'Box_Mod_' . ucfirst($type) . '_Service';
         $file = PATH_MODS . '/mod_' . $type . '/Service.php';
         if (!file_exists($file)) {
-            throw new \Box_Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
+            throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
         }
         require_once $file;
         return new $class();
@@ -198,14 +203,14 @@ class Tools
         if ($capitalize_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = fn($c) => strtoupper($c[1]);
+        $func = fn ($c) => strtoupper($c[1]);
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
 
     public function from_camel_case($str)
     {
         $str[0] = strtolower($str[0]);
-        $func = fn($c) => "-" . strtolower($c[1]);
+        $func = fn ($c) => "-" . strtolower($c[1]);
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
@@ -246,7 +251,7 @@ class Tools
         $class = 'Model_' . ucfirst($type) . 'Table';
         $file = PATH_LIBRARY . '/Model/' . $type . 'Table.php';
         if (!file_exists($file)) {
-            throw new \Box_Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
+            throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
         }
         require_once $file;
         return new $class();
@@ -270,19 +275,42 @@ class Tools
         return $result;
     }
 
-    public function validateAndSanitizeEmail($email, $throw = true)
+    /**
+     * Checks if a given email address is valid.
+     * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
+     * In a testing / development environment it will only check the RFC standards.
+     */
+    public function validateAndSanitizeEmail(string $email, bool $throw = true)
     {
         $email = htmlspecialchars($email);
 
-        if (!filter_var(idn_to_ascii($email), FILTER_VALIDATE_EMAIL)) {
+        $validator = new EmailValidator();
+        if (Environment::isProduction()) {
+            $validations = new MultipleValidationWithAnd([
+                new RFCValidation(),
+                new DNSCheckValidation()
+            ]);
+        } else {
+            $validations = new RFCValidation();
+        }
+
+        if (!$validator->isValid($email, $validations)) {
             if ($throw) {
                 $friendlyName = ucfirst(__trans('Email address'));
-                throw new \Box_Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+                throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
             } else {
                 return false;
             }
         }
 
         return $email;
+    }
+
+    public static function isHTTPS(): bool
+    {
+        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
+
+        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the other to will be set to `https`, so either one means we are connected via HTTPS.
+        return (strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0);
     }
 }

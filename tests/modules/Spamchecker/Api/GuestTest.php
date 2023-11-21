@@ -23,7 +23,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function datarecaptchaConfig()
+    public static function datarecaptchaConfig()
     {
         return array(
             array(
@@ -73,17 +73,13 @@ class GuestTest extends \BBTestCase
         );
     }
 
-    /**
-     * @dataProvider datarecaptchaConfig
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('datarecaptchaConfig')]
     public function testrecaptcha($config, $expected)
     {
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function () use ($config){
-            return $config;
-        });
+        $di['mod_config'] = $di->protect(fn() => $config);
 
-        
+
         $this->api->setDi($di);
         $result = $this->api->recaptcha(array());
 

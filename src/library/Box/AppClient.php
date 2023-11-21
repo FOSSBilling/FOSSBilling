@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -8,6 +9,11 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\TwigExtensions\DebugBar;
+use Twig\Profiler\Profile;
+use Twig\Extension\ProfilerExtension;
+use DebugBar\Bridge\NamespacedTwigProfileCollector;
+
 class Box_AppClient extends Box_App
 {
     protected function init()
@@ -16,7 +22,11 @@ class Box_AppClient extends Box_App
         $m->registerClientRoutes($this);
 
         if ('api' == $this->mod) {
-            define('BB_MODE_API', true);
+            define('API_MODE', true);
+
+            // Prevent errors from being displayed in API mode as it can cause invalid JSON to be returned.
+            ini_set('display_errors', '0');
+            ini_set('display_startup_errors', '0');
         } else {
             $extensionService = $this->di['mod_service']('extension');
             if ($extensionService->isExtensionActive('mod', 'redirect')) {
@@ -51,11 +61,11 @@ class Box_AppClient extends Box_App
         try {
             return $this->render($tpl, ['post' => $_POST], $ext);
         } catch (Exception $e) {
-            if (BB_DEBUG) {
+            if (DEBUG) {
                 error_log($e);
             }
         }
-        $e = new \Box_Exception('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         error_log($e->getMessage());
         http_response_code(404);
@@ -73,7 +83,7 @@ class Box_AppClient extends Box_App
         } catch (Twig\Error\LoaderError $e) {
             error_log($e->getMessage());
             http_response_code(404);
-            throw new \Box_Exception('Page not found', null, 404);
+            throw new \FOSSBilling\InformationException('Page not found', null, 404);
         }
 
         if ($fileName . '.' . $ext == 'mod_page_sitemap.xml') {
@@ -103,6 +113,12 @@ class Box_AppClient extends Box_App
 
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
+
+        $profile = new Profile();
+        $twig->addExtension(new ProfilerExtension($profile));
+        $this->debugBar->addCollector(new NamespacedTwigProfileCollector($profile));
+
+        $twig->addExtension(new DebugBar($this->getDebugBar()));
 
         if ($this->di['auth']->isClientLoggedIn()) {
             $twig->addGlobal('client', $this->di['api_client']);

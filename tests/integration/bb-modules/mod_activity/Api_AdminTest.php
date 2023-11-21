@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'settings.xml';
@@ -23,14 +21,14 @@ class Api_AdminTest extends BBDbApiTestCase
 
     public function testLogDeleteIdNotSetException()
     {
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
 
         $this->api_admin->activity_log_delete(array());
     }
 
     public function testLogNotFoundException()
     {
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->api_admin->activity_log_delete(array('id' => 100));
     }
 

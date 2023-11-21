@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_StaffTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'admins.xml';
@@ -13,7 +11,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
 
         $data = array(
             'admin_group_id' => 1,
-            'email' =>  rand(5, 8787878).'_test@admin.com',
+            'email' =>  random_int(5, 8_787_878).'_test@admin.com',
             'password' =>  'dem2123123AAo',
             'name' =>  'John Doe',
             'signature' =>  'this is test sig',
@@ -46,11 +44,11 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $staffModel = $this->di['db']->load('Admin', $id);
-        $this->isNull($staffModel);
+        $this->isNull();
     }
 
     public function testChangePasswordException(){
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
 
         $data = array(
             'id' => 1,

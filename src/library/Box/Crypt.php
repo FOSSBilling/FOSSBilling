@@ -12,12 +12,12 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public const METHOD = 'aes-256-cbc';
+    final public const METHOD = 'aes-256-cbc';
 
     public function __construct()
     {
         if (!extension_loaded('openssl')) {
-            throw new Box_Exception('The PHP openssl extension must be enabled on your server');
+            throw new FOSSBilling\Exception('The PHP openssl extension must be enabled on your server');
         }
     }
 
@@ -78,7 +78,7 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
     private function _getSalt($pass = null)
     {
         if (null == $pass) {
-            $pass = $this->di['config']['salt'];
+            $pass = $this->di['config']['info']['salt'];
         }
         return pack('H*', hash('md5', $pass));
     }

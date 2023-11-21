@@ -10,18 +10,18 @@
 
 class Box_Period
 {
-    public const UNIT_DAY          = 'D';
-    public const UNIT_WEEK         = 'W';
-    public const UNIT_MONTH        = 'M';
-    public const UNIT_YEAR         = 'Y';
+    final public const UNIT_DAY          = 'D';
+    final public const UNIT_WEEK         = 'W';
+    final public const UNIT_MONTH        = 'M';
+    final public const UNIT_YEAR         = 'Y';
 
-    public const PERIOD_WEEK       = '1W';
-    public const PERIOD_MONTH      = '1M';
-    public const PERIOD_QUARTER    = '3M';
-    public const PERIOD_BIANNUAL   = '6M';
-    public const PERIOD_ANNUAL     = '1Y';
-    public const PERIOD_BIENNIAL    = '2Y';
-    public const PERIOD_TRIENNIAL    = '3Y';
+    final public const PERIOD_WEEK       = '1W';
+    final public const PERIOD_MONTH      = '1M';
+    final public const PERIOD_QUARTER    = '3M';
+    final public const PERIOD_BIANNUAL   = '6M';
+    final public const PERIOD_ANNUAL     = '1Y';
+    final public const PERIOD_BIENNIAL    = '2Y';
+    final public const PERIOD_TRIENNIAL    = '3Y';
 
     /**
      * Predefined periods
@@ -35,13 +35,13 @@ class Box_Period
         self::PERIOD_TRIENNIAL    =>    36,
     );
 
-    private string $unit;
+    private readonly string $unit;
     private int $qty;
 
     public function __construct($code)
     {
         if (strlen($code) != 2) {
-            throw new \Box_Exception("Invalid period code. Period definition must be 2 chars length");
+            throw new \FOSSBilling\Exception("Invalid period code. Period definition must be 2 chars length");
         }
 
         [$qty, $unit] = str_split($code);
@@ -50,7 +50,7 @@ class Box_Period
         $qty = (int)$qty;
         $unit = strtoupper($unit);
         if (!array_key_exists($unit, $units)) {
-            throw new \Box_Exception("Period Error. Unit :unit is not defined", array(':unit' => $unit));
+            throw new \FOSSBilling\Exception("Period Error. Unit :unit is not defined", array(':unit' => $unit));
         }
 
         if ($qty < $units[$unit][0] || $qty > $units[$unit][1]) {
@@ -60,7 +60,7 @@ class Box_Period
                 ':from'  =>  $units[$unit][0],
                 ':to'  =>  $units[$unit][1],
             );
-            throw new \Box_Exception("Invalid period quantity :qty for unit :unit. Allowed range is from :from to :to", $d);
+            throw new \FOSSBilling\Exception("Invalid period quantity :qty for unit :unit. Allowed range is from :from to :to", $d);
         }
 
         $this->unit = $unit;
@@ -124,7 +124,7 @@ class Box_Period
             self::UNIT_WEEK => __pluralTrans('Every :number week', 'Every :number weeks', $qty, $placeholders),
             self::UNIT_MONTH => __pluralTrans('Every :number month', 'Every :number months', $qty, $placeholders),
             self::UNIT_YEAR => __pluralTrans('Every :number year', 'Every :number years', $qty, $placeholders),
-            default => throw new \Box_Exception('Unit not defined'),
+            default => throw new \FOSSBilling\Exception('Unit not defined'),
         };
 
         return $shift;
@@ -149,7 +149,7 @@ class Box_Period
             self::UNIT_WEEK => $this->qty / 4,
             self::UNIT_MONTH => $this->qty,
             self::UNIT_YEAR => $this->qty * 12,
-            default => throw new \Box_Exception('Unable to get the number of months for :unit',[':unit' => $this->unit]),
+            default => throw new \FOSSBilling\Exception('Unable to get the number of months for :unit',[':unit' => $this->unit]),
         };
 
         return $qty;
@@ -166,7 +166,7 @@ class Box_Period
             self::UNIT_WEEK => 'weeks',
             self::UNIT_MONTH => 'months',
             self::UNIT_YEAR => 'years',
-            default => throw new \Box_Exception('Unit not defined'),
+            default => throw new \FOSSBilling\Exception('Unit not defined'),
         };
         return strtotime("+$this->qty $shift", $now);
     }

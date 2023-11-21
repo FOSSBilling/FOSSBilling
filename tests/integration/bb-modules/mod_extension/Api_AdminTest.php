@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ExtensionTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extensions.xml';
@@ -16,7 +14,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             //do not allow install core extension
             $bool = $this->api_admin->extension_mod_install($data);
             $this->fail('Core extension can not be installed');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
             $this->assertTrue(TRUE);
         }
 
@@ -24,7 +22,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             //do not allow uninstall core extension
             $bool = $this->api_admin->extension_mod_uninstall($data);
             $this->fail('Core extension can not be uninstalled');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
             $this->assertTrue(TRUE);
         }
     }
@@ -49,7 +47,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $extension =  new Model_Extension();
         $extension->loadBean(new \RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->setMethods(array('update', 'findExtension'))->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->onlyMethods(array('update', 'findExtension'))->getMock();
         $serviceMock->expects($this->any())
             ->method('update')
             ->will($this->returnValue($versions));
@@ -149,7 +147,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $extension =  new Model_Extension();
         $extension->loadBean(new \RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->setMethods(array('downloadAndExtract'))->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->onlyMethods(array('downloadAndExtract'))->getMock();
         $serviceMock->expects($this->any())
             ->method('downloadAndExtract')
             ->will($this->returnValue(true));

@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Support settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Support Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,33 +18,31 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Support settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Support'|trans }}</li>
     </ol>
 {% endblock %}
 
 {% block content %}
     <div class="card-tabs">
-
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Settings'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'General'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-helpdesks" data-bs-toggle="tab" role="tab">{{ 'Help desks'|trans }}</a>
+                <a class="nav-link" href="#tab-helpdesks" data-bs-toggle="tab" role="tab">{{ 'Helpdesks'|trans }}</a>
             </li>
         </ul>
 
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration Updated'|trans }}">
+                        {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Auto responder settings'|trans }}</h3>
-
-                            {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
+                            <h3 class="card-title">{{ 'Auto Responder'|trans }}</h3>
                             <div class="mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Enable auto responder'|trans }}</label>
+                                <label class="col-md-3 form-label">{{ 'Enable Auto Responder'|trans }}</label>
                                 <div class="col-md-6">
                                     <label class="form-check form-switch">
                                         <input class="form-check-input" name="autorespond_enable" type="checkbox" {% if params.autorespond_enable %} checked="checked"{% endif %}>
@@ -53,7 +51,7 @@
                             </div>
                             <div id="autorespond_enable"{% if not params.autorespond_enable %} style="display:none;"{% endif %}>
                                 <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'Auto respond message'|trans }}</label>
+                                    <label class="col-md-3 col-form-label">{{ 'Auto Response Message'|trans }}</label>
                                     <div class="col-md-6">
                                         <select class="form-select" name="autorespond_message_id">
                                             {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
@@ -65,25 +63,25 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Delay message'|trans }}</h3>
-                            <p class="card-subtitle">{{ 'Selected canned response message will be added to default reply message.'|trans }}</p>
+                            <h3 class="card-title">{{ 'Ticket Delay'|trans }}</h3>
                             <div class="mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Enable delay message'|trans }}</label>
+                                <label class="col-md-3 form-label">{{ 'Enable Delay Message'|trans }}</label>
                                 <div class="col-md-6">
                                     <label class="form-check form-switch">
                                         <input class="form-check-input" name="delay_enable" type="checkbox" {% if params.delay_enable %} checked="checked"{% endif %}>
                                     </label>
+                                    <small class="form-hint">{{ 'If enabled, the selected canned response will be added to default reply message.'|trans }}</small>
                                 </div>
                             </div>
                             <div id="delay_enable"{% if not params.delay_enable %} style="display:none;"{% endif %}>
                                 <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'Delay hours'|trans }}</label>
+                                    <label class="col-md-3 col-form-label">{{ 'Delay (in hours)'|trans }}</label>
                                     <div class="col-md-6">
-                                        <input class="form-control" type="text" name="delay_hours" value="{{ params.delay_hours|default(24) }}" placeholder="24">
+                                        <input class="form-control" type="text" size="3" name="delay_hours" value="{{ params.delay_hours|default(24) }}" placeholder="24">
                                     </div>
                                 </div>
                                 <div class="form-group mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'Delay reply'|trans }}</label>
+                                    <label class="col-md-3 col-form-label">{{ 'Delay Message'|trans }}</label>
                                     <div class="col-md-6">
                                         <select class="form-select" name="delay_message_id">
                                             {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
@@ -94,13 +92,24 @@
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Wait time in hours'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Wait Time (in hours)'|trans }}</label>
                                 <div class="col-md-6">
-                                    <input class="form-control" type="text" name="wait_hours"  value="{{ params.wait_hours }}">
-                                    <small class="form-hint">{{ 'Wait time - how many hours user needs to wait until consequent ticket submission.'|trans }}</small>
+                                    <input class="form-control" type="text" size="3" name="wait_hours" value="{{ params.wait_hours }}">
+                                    <small class="form-hint">{{ 'If set, the time in hour(s) the user must wait between consequent ticket submission.'|trans }}</small>
                                 </div>
                             </div>
                             <input type="hidden" name="ext" value="mod_support">
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">{{ 'Knowledge Base'|trans }}</h3>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 form-label">{{ 'Enable Knowledge Base'|trans }}</label>
+                                <div class="col-md-6">
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" name="kb_enable" type="checkbox" {% if params.kb_enable %} checked="checked"{% endif %}>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-footer text-end">
                             <input type="submit" class="btn btn-primary" value="{{ 'Update'|trans }}">
@@ -115,7 +124,7 @@
                                     <svg class="icon me-2">
                                         <use xlink:href="#plus" />
                                     </svg>
-                                    {{ 'New helpdesk'|trans }}
+                                    {{ 'New Helpdesk'|trans }}
                                 </a>
                             </div>
                             {% include 'partial_search.html.twig' %}
@@ -126,7 +135,7 @@
                             <th class="w-1">#</th>
                             <th>{{ 'Title'|trans }}</th>
                             <th>{{ 'Email'|trans }}</th>
-                            <th>{{ 'Close tickets after'|trans }}</th>
+                            <th>{{ 'Close Tickets After'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
                         </thead>
@@ -177,7 +186,6 @@
 {% block js %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-
         let autoRespondToggle = document.querySelector('input[name=autorespond_enable]');
         autoRespondToggle.addEventListener('click', (e) => {
             if (e.target.checked) {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,7 @@
 namespace Box\Mod\Extension;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -195,7 +197,7 @@ class Service implements InjectionAwareInterface
             $iconPath = 'assets/icons/cog.svg';
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
-                $iconPath = $this->di['config']['url'] . $icon_url;
+                $iconPath = SYSTEM_URL . $icon_url;
             }
             $result[$key]['icon_url'] = $iconPath;
         }
@@ -315,9 +317,9 @@ class Service implements InjectionAwareInterface
         return $extension;
     }
 
-    public function update(\Model_Extension $model)
+    public function update(\Model_Extension $model): never
     {
-        throw new \Box_Exception('Visit the extension directory for more information on updating this extension.', null, 252);
+        throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
     public function activate(\Model_Extension $ext)
@@ -366,13 +368,13 @@ class Service implements InjectionAwareInterface
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $ext->name;
                 if ($this->isCoreModule($mod)) {
-                    throw new \Box_Exception('FOSSBilling core modules can not be managed');
+                    throw new \FOSSBilling\InformationException('FOSSBilling core modules can not be managed');
                 }
 
                 try {
                     $mm = $this->di['mod']($mod);
                     $mm->uninstall();
-                } catch (\Box_Exception $e) {
+                } catch (\FOSSBilling\Exception $e) {
                     if ($e->getCode() != 408) {
                         throw $e;
                     }
@@ -418,8 +420,8 @@ class Service implements InjectionAwareInterface
             throw new \Exception('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 
-        $extractedPath = PATH_CACHE . '/' . md5(uniqid());
-        $zipPath = PATH_CACHE . '/' . md5(uniqid()) . '.zip';
+        $extractedPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid());
+        $zipPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid()) . '.zip';
 
         // Create a temporary directory to extract the extension
         mkdir($extractedPath, 0755, true);
@@ -431,7 +433,7 @@ class Service implements InjectionAwareInterface
 
         $code = $response->getStatusCode();
         if ($code !== 200) {
-            throw new \Box_Exception('Failed to download the extension with error :code', [':code' => $code]);
+            throw new \FOSSBilling\Exception('Failed to download the extension with error :code', [':code' => $code]);
         }
 
         foreach ($client->stream($response) as $chunk) {
@@ -448,12 +450,12 @@ class Service implements InjectionAwareInterface
         } catch (\PhpZip\Exception\ZipException $e) {
             error_log($e->getMessage());
 
-            throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+            throw new \FOSSBilling\Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
         switch ($type) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $destination = PATH_MODS . DIRECTORY_SEPARATOR . $id;
+                $destination = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($id);
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_THEME:
@@ -465,20 +467,20 @@ class Service implements InjectionAwareInterface
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_PG:
-                $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . $id;
+                $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . ucfirst($id);
 
                 break;
         }
 
         if (isset($destination)) {
             if (file_exists($destination)) {
-                throw new \Box_Exception('Extension :id seems to be already installed.', [':id' => $id], 436);
+                throw new \FOSSBilling\Exception('Extension :id seems to be already installed.', [':id' => $id], 436);
             }
             if (!rename($extractedPath, $destination)) {
-                throw new \Box_Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
+                throw new \FOSSBilling\Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
             }
         } else {
-            throw new \Box_Exception('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
+            throw new \FOSSBilling\InformationException('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
         }
 
         if (file_exists($zipPath)) {
@@ -509,12 +511,12 @@ class Service implements InjectionAwareInterface
         $mod = $this->di['mod']($ext->name);
 
         if ($mod->isCore()) {
-            throw new \Box_Exception('FOSSBilling core modules can not be installed or removed');
+            throw new \FOSSBilling\InformationException('FOSSBilling core modules can not be installed or removed');
         }
 
         $info = $mod->getManifest();
         if (isset($info['minimum_boxbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_boxbilling_version']) > 0) {
-            throw new \Box_Exception('Module can not be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
+            throw new \FOSSBilling\InformationException('Module can not be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
         }
 
         // Allow install module even if no installer exists
@@ -522,7 +524,7 @@ class Service implements InjectionAwareInterface
         // perform install script if available
         try {
             $mod->install();
-        } catch (\Box_Exception $e) {
+        } catch (\FOSSBilling\Exception $e) {
             if ($e->getCode() != 408) {
                 throw $e;
             }
@@ -564,27 +566,32 @@ class Service implements InjectionAwareInterface
 
     public function getConfig($ext)
     {
-        $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
-        if (is_null($c)) {
-            $c = $this->di['db']->dispense('ExtensionMeta');
-            $c->extension = $ext;
-            $c->meta_key = 'config';
-            $c->meta_value = null;
-            $c->created_at = date('Y-m-d H:i:s');
-            $c->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($c);
-            $config = [];
-        } else {
-            $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-            $config = $this->di['tools']->decodeJ($config);
-        }
+        return $this->di['cache']->get("config_$ext", function (ItemInterface $item) use ($ext) {
+            $item->expiresAfter(60 * 60);
 
-        return $config;
+            $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
+            if (is_null($c)) {
+                $c = $this->di['db']->dispense('ExtensionMeta');
+                $c->extension = $ext;
+                $c->meta_key = 'config';
+                $c->meta_value = null;
+                $c->created_at = date('Y-m-d H:i:s');
+                $c->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($c);
+                $config = [];
+            } else {
+                $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
+                $config = $this->di['tools']->decodeJ($config);
+            }
+
+            return $config;
+        });
     }
 
     public function setConfig($data)
     {
-        $this->getConfig($data['ext']); // Creates new config if it does not exist in DB
+        $ext = $data['ext'];
+        $this->getConfig($ext); // Creates new config if it does not exist in DB
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
         $sql = "
@@ -599,19 +606,20 @@ class Service implements InjectionAwareInterface
         $config = $this->di['crypt']->encrypt($config, $this->_getSalt());
 
         $params = [
-            'ext' => $data['ext'],
+            'ext' => $ext,
             'config' => $config,
         ];
         $this->di['db']->exec($sql, $params);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminExtensionConfigSave', 'params' => $data]);
-        $this->di['logger']->info('Updated extension "%s" configuration', $data['ext']);
+        $this->di['logger']->info('Updated extension "%s" configuration', $ext);
+        $this->di['cache']->delete("config_$ext");
 
         return true;
     }
 
     private function _getSalt()
     {
-        return $this->di['config']['salt'];
+        return $this->di['config']['info']['salt'];
     }
 
     public function getCoreAndActiveModules()

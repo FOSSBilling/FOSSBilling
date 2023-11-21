@@ -43,7 +43,7 @@ class Admin extends \Api_Abstract
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \Box_Exception('ID or slug is missing');
+            throw new \FOSSBilling\Exception('ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -59,7 +59,7 @@ class Admin extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_Post) {
-            throw new \Box_Exception('News item not found');
+            throw new \FOSSBilling\Exception('News item not found');
         }
 
         return $this->getService()->toApiArray($model, 'admin');

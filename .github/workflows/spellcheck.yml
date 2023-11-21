@@ -10,8 +10,8 @@ jobs:
   spellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: streetsidesoftware/cspell-action@v2
+      - uses: actions/checkout@v4
+      - uses: streetsidesoftware/cspell-action@v5
         with:
           incremental_files_only: true
 

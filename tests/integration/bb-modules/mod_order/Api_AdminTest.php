@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_OrderTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
@@ -46,9 +44,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider orders
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('orders')]
     public function testOrdersStatuses($id)
     {
         $data['id'] = $id;
@@ -155,7 +151,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         try {
             $this->api_admin->order_get(array('id'=>$addon_id));
             $this->fail('Order addon should be removed');
-        } catch(Exception $e) {
+        } catch(Exception) {
         }
     }
 
@@ -271,9 +267,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider products
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('products')]
     public function testCreate($pid, $config)
     {
         $data['client_id']      = 1;

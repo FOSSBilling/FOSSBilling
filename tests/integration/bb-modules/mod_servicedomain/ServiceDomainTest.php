@@ -14,9 +14,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider orders
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('orders')]
     public function testDomain($id)
     {
         $this->api_admin->order_renew(array('id'=>$id));

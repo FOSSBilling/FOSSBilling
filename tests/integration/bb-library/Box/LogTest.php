@@ -1,11 +1,9 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class LogTest extends BBDbApiTestCase
 {
-    public function logWithoutParamsProvider()
+    public static function logWithoutParamsProvider()
     {
         return array(
             array('Test message'),
@@ -13,9 +11,7 @@ class LogTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider logWithoutParamsProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('logWithoutParamsProvider')]
     public function testLogWithoutParams($msg)
     {
         $msg = 'Test message';
@@ -31,7 +27,7 @@ class LogTest extends BBDbApiTestCase
 
     public function testLogProvider()
     {
-        $rand = rand(1, 100);
+        $rand = random_int(1, 100);
         $msg1 = 'No params in message, param passed';
         $msg2 = 'Test message with param %s';
 
@@ -43,9 +39,7 @@ class LogTest extends BBDbApiTestCase
         );
     }
 
-    /**
-     * @dataProvider testLogProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('testLogProvider')]
     public function testLogWithSingleParam($msg, $param, $expected)
     {
         $this->di['logger']->info($msg, $param);
@@ -60,7 +54,7 @@ class LogTest extends BBDbApiTestCase
     public function testLogMultipleVariables()
     {
         $msg  = '%sMultiple params in message, one param passed%s';
-        $rand = rand(1, 100);
+        $rand = random_int(1, 100);
         $this->di['logger']->info($msg, $rand, $rand);
         $array   = $this->api_admin->activity_log_get_list();
         $log     = $array['list'][0]; //by default sorting by ID descending order so newest will always be first array item

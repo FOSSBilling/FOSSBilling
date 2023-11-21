@@ -14,14 +14,14 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest]
 
-        php-versions: ["8.0"]
+        php-versions: ["8.1"]
 
 
     name: Create a downloadable preview build
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install PHP
         uses: shivammathur/setup-php@v2
@@ -29,22 +29,29 @@ jobs:
           php-version: ${{ matrix.php-versions }}
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
 
       - name: Check PHP Version
         run: php -v
 
-      - name: Clone and update the locale submodule.
-        run: git submodule update --init --remote --recursive
+      - name: Remove placeholder locale files
+        run: rm -rf *
         working-directory: ./src/locale
 
-      - name: Remove unneeded files from the locale folder
+      - name: Download the latest translations
+        uses: robinraju/release-downloader@v1.8
+        with:
+          repository: "FOSSBilling/locale"
+          fileName: "translations.zip"
+          out-file-path: "./src/locale"
+          latest: true
+
+      - name: Extract the translations
         run: |
-          find -name '*.po' -delete
-          rm -rf .github
-          rm -f crowdin.yml messages.pot .git
+          unzip translations.zip
+          rm -f translations.zip
         working-directory: ./src/locale
 
       - name: Validate composer.json and composer.lock
@@ -78,6 +85,15 @@ jobs:
           sed s/0.0.1/${GITHUB_SHA::7}/ Version.php > Version2.php
           mv Version2.php Version.php
         working-directory: ./build/source/library/FOSSBilling
+
+      - name: Add in the Sentry DSN
+        if: ${{ vars.SENTRY_DSN }}
+        run: |
+          d=$'\03'
+          sed -i "s${d}--replace--this--during--release--process--${d}$SENTRY_DSN$d" SentryHelper.php
+        working-directory: ./build/source/library/FOSSBilling
+        env:
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
 
       - name: Upload the Final Artifact to GitHub
         uses: actions/upload-artifact@v3

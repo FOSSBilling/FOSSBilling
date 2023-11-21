@@ -39,9 +39,9 @@ class Client extends \Api_Abstract
     /**
      * Get invoice details.
      *
-     * @return type
+     * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function get($data)
     {
@@ -52,7 +52,7 @@ class Client extends \Api_Abstract
 
         $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
-            throw new \Box_Exception('Invoice was not found');
+            throw new \FOSSBilling\Exception('Invoice was not found');
         }
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
@@ -65,7 +65,7 @@ class Client extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update($data)
     {
@@ -76,10 +76,10 @@ class Client extends \Api_Abstract
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$invoice) {
-            throw new \Box_Exception('Invoice was not found');
+            throw new \FOSSBilling\Exception('Invoice was not found');
         }
         if ($invoice->status == 'paid') {
-            throw new \Box_Exception('Paid Invoice can not be modified');
+            throw new \FOSSBilling\InformationException('Paid Invoice can not be modified');
         }
 
         $updateParams = [];
@@ -95,8 +95,7 @@ class Client extends \Api_Abstract
      *
      * @return string - invoice hash
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function renewal_invoice($data)
     {
@@ -108,10 +107,10 @@ class Client extends \Api_Abstract
 
         $model = $this->di['db']->findOne('ClientOrder', 'client_id = ? and id = ?', [$this->getIdentity()->id, $data['order_id']]);
         if (!$model instanceof \Model_ClientOrder) {
-            throw new \Box_Exception('Order not found');
+            throw new \FOSSBilling\Exception('Order not found');
         }
         if ($model->price <= 0) {
-            throw new \Box_Exception('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
+            throw new \FOSSBilling\InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
         }
         $service = $this->getService();
         $invoice = $service->generateForOrder($model);
@@ -136,7 +135,7 @@ class Client extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!is_numeric($data['amount'])) {
-            throw new \Box_Exception('You need to enter numeric value');
+            throw new \FOSSBilling\InformationException('You need to enter numeric value');
         }
 
         $service = $this->getService();
@@ -152,7 +151,7 @@ class Client extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function delete($data)
     {
@@ -163,7 +162,7 @@ class Client extends \Api_Abstract
 
         $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
-            throw new \Box_Exception('Invoice was not found');
+            throw new \FOSSBilling\Exception('Invoice was not found');
         }
 
         return $this->getService()->deleteInvoiceByClient($model);
@@ -179,7 +178,7 @@ class Client extends \Api_Abstract
      * @optional string $date_from - filter transactions by date
      * @optional string $date_to - filter transactions by date
      *
-     * @return type
+     * @return array
      */
     public function transaction_get_list($data)
     {

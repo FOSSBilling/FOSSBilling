@@ -1,14 +1,12 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_ServiceDownloadableTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
     public function testServiceDownload()
     {
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
 
         $data = array(
             'order_id'    =>  1,

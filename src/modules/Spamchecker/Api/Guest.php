@@ -17,9 +17,9 @@ namespace Box\Mod\Spamchecker\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Returns recaptcha public key.
+     * Returns recaptcha configuration info
      *
-     * @return string
+     * @return array
      */
     public function recaptcha($data)
     {

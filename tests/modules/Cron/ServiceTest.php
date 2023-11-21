@@ -17,11 +17,11 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetCronInfo()
     {
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function ($name) use($systemServiceMock) {return $systemServiceMock;});
+        $di['mod_service'] = $di->protect(fn($name) => $systemServiceMock);
         $service = new \Box\Mod\Cron\Service();
         $service->setDi($di);
 
@@ -32,36 +32,42 @@ class ServiceTest extends \BBTestCase {
     public function testrunCrons()
     {
         $apiSystem = new \Api_Handler(new \Model_Admin());
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Cron\Service')
-            ->setMethods(array('_exec'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)
+            ->onlyMethods(array('_exec'))
             ->getMock();
 
         $serviceMock->expects($this->exactly(13))
             ->method('_exec')
-            ->withConsecutive(
-                array($this->equalTo($apiSystem), $this->equalTo('hook_batch_connect')),
-                array($this->equalTo($apiSystem), $this->equalTo('invoice_batch_pay_with_credits')),
-                array($this->equalTo($apiSystem), $this->equalTo('invoice_batch_activate_paid')),
-                array($this->equalTo($apiSystem), $this->equalTo('invoice_batch_send_reminders')),
-                array($this->equalTo($apiSystem), $this->equalTo('invoice_batch_generate')),
-                array($this->equalTo($apiSystem), $this->equalTo('invoice_batch_invoke_due_event')),
-                array($this->equalTo($apiSystem), $this->equalTo('order_batch_suspend_expired')),
-                array($this->equalTo($apiSystem), $this->equalTo('order_batch_cancel_suspended')),
-                array($this->equalTo($apiSystem), $this->equalTo('support_batch_ticket_auto_close')),
-                array($this->equalTo($apiSystem), $this->equalTo('support_batch_public_ticket_auto_close')),
-                array($this->equalTo($apiSystem), $this->equalTo('client_batch_expire_password_reminders')),
-                array($this->equalTo($apiSystem), $this->equalTo('cart_batch_expire')),
-                array($this->equalTo($apiSystem), $this->equalTo('email_batch_sendmail'))
-            );
+            ->willReturnCallback(function (...$args) use ($apiSystem) {
+                $series = [
+                    [[$apiSystem], 'hook_batch_connect'],
+                    [[$apiSystem], 'invoice_batch_pay_with_credits'],
+                    [[$apiSystem], 'invoice_batch_activate_paid'],
+                    [[$apiSystem], 'invoice_batch_send_reminders'],
+                    [[$apiSystem], 'invoice_batch_generate'],
+                    [[$apiSystem], 'invoice_batch_invoke_due_event'],
+                    [[$apiSystem], 'order_batch_suspend_expired'],
+                    [[$apiSystem], 'order_batch_cancel_suspended'],
+                    [[$apiSystem], 'support_batch_ticket_auto_close'],
+                    [[$apiSystem], 'support_batch_public_ticket_auto_close'],
+                    [[$apiSystem], 'client_batch_expire_password_reminders'],
+                    [[$apiSystem], 'cart_batch_expire'],
+                    [[$apiSystem], 'email_batch_sendmail']
+                ];
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+                [$expectedApiSystem, $expectedMethod] = array_shift($series);
+                $this->equalTo($expectedApiSystem);
+                $this->equalTo($expectedMethod);
+            });
+
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue');
 
         $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
-        
+
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
@@ -70,9 +76,10 @@ class ServiceTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventsMock;
         $di['api_system'] = $apiSystem;
-        $di['mod_service'] = $di->protect(function() use($systemServiceMock) {return $systemServiceMock;});
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
         $serviceMock->setDi($di);
         $di['db'] = $dbMock;
+        $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
         $di['config'] = [
             'security' => [
                 'mode' => 'strict',
@@ -87,13 +94,13 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetLastExecutionTime()
     {
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->returnValue('2012-12-12 12:12:12'));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function ($name) use($systemServiceMock) {return $systemServiceMock;});
+        $di['mod_service'] = $di->protect(fn($name) => $systemServiceMock);
         $service = new \Box\Mod\Cron\Service();
         $service->setDi($di);
 
@@ -103,8 +110,8 @@ class ServiceTest extends \BBTestCase {
 
     public function testisLate()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Cron\Service')
-            ->setMethods(array('getLastExecutionTime'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)
+            ->onlyMethods(array('getLastExecutionTime'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -116,4 +123,3 @@ class ServiceTest extends \BBTestCase {
         $this->assertFalse($result);
     }
 }
- 

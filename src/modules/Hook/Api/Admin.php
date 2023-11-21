@@ -47,7 +47,7 @@ class Admin extends \Api_Abstract
 
         $event = $data['event'];
         $params = $data['params'] ?? null;
-        if ($this->di['config']['debug']) {
+        if (DEBUG) {
             try {
                 $this->di['logger']->info($event . ': ' . var_export($params, 1));
             } catch (\Exception $e) {

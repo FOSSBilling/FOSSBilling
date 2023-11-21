@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -8,7 +9,8 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
+use DebugBar\StandardDebugBar;
 
 class Box_App
 {
@@ -21,12 +23,19 @@ class Box_App
     protected $ext = 'html.twig';
     protected $mod = 'index';
     protected $url = '/';
+    protected StandardDebugBar $debugBar;
 
     public $uri = null;
 
-    public function __construct($options = [])
+    public function __construct($options = [], null|StandardDebugBar $debugBar = null)
     {
         $this->options = new ArrayObject($options);
+
+        if (!$debugBar) {
+            $this->debugBar = new \DebugBar\StandardDebugBar;
+        } else {
+            $this->debugBar = $debugBar;
+        }
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -37,6 +46,11 @@ class Box_App
     public function setUrl($url)
     {
         $this->url = $url;
+    }
+
+    public function getDebugBar(): StandardDebugBar
+    {
+        return $this->debugBar;
     }
 
     protected function registerModule()
@@ -147,8 +161,13 @@ class Box_App
 
     public function run()
     {
+        $this->debugBar['time']->startMeasure('registerModule', 'Registering module routes');
         $this->registerModule();
+        $this->debugBar['time']->stopMeasure('registerModule');
+
+        $this->debugBar['time']->startMeasure('init', 'Initializing the app');
         $this->init();
+        $this->debugBar['time']->stopMeasure('init');
 
         return $this->processRequest();
     }
@@ -156,7 +175,7 @@ class Box_App
     /**
      * @param string $path
      */
-    public function redirect($path)
+    public function redirect($path): never
     {
         $location = $this->di['url']->link($path);
         header("Location: $location");
@@ -193,6 +212,7 @@ class Box_App
 
     protected function executeShared($classname, $methodName, $params)
     {
+        $this->debugBar['time']->startMeasure('executeShared', 'Reflecting module controller (shared mapping)');
         $class = new $classname();
         if ($class instanceof InjectionAwareInterface) {
             $class->setDi($this->di);
@@ -208,12 +228,14 @@ class Box_App
                 $args[$param->name] = $param->getDefaultValue();
             }
         }
+        $this->debugBar['time']->stopMeasure('executeShared');
 
         return $reflection->invokeArgs($class, $args);
     }
 
     protected function execute($methodName, $params, $classname = null)
     {
+        $this->debugBar['time']->startMeasure('execute', 'Reflecting module controller');
         $return = $this->run_filter($this->before_filters, $methodName);
         if (!is_null($return)) {
             return $return;
@@ -229,6 +251,8 @@ class Box_App
                 $args[$param->name] = $param->getDefaultValue();
             }
         }
+
+        $this->debugBar['time']->stopMeasure('execute');
 
         $response = $reflection->invokeArgs($this, $args);
 
@@ -263,7 +287,6 @@ class Box_App
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
 
         $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
-        $rootUrl = $this->di['config']['url'];
 
         // Allow access to the staff panel all the time
         $adminApiPrefixes = [
@@ -274,7 +297,7 @@ class Box_App
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix) {
-            $realAdminApiUrl = '/' === $rootUrl[-1] ? substr($rootUrl, 0, -1) . $adminApiPrefix : $rootUrl . $adminApiPrefix;
+            $realAdminApiUrl = '/' === SYSTEM_URL[-1] ? substr(SYSTEM_URL, 0, -1) . $adminApiPrefix : SYSTEM_URL . $adminApiPrefix;
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
         }
         foreach ($allowedURLs as $url) {
@@ -304,7 +327,7 @@ class Box_App
             [$network, $netmask] = explode('/', $network, 2);
             $network_decimal = ip2long($network);
             $ip_decimal = ip2long($visitorIP);
-            $wildcard_decimal = 2 ** (32 - $netmask) - 1;
+            $wildcard_decimal = 2 ** (32 - (int)$netmask) - 1;
             $netmask_decimal = ~$wildcard_decimal;
             if (($ip_decimal & $netmask_decimal) == ($network_decimal & $netmask_decimal)) {
                 return false;
@@ -322,10 +345,8 @@ class Box_App
     protected function checkAdminPrefix()
     {
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
-        $adminPrefix = $this->di['config']['admin_area_prefix'];
-        $rootUrl = $this->di['config']['url'];
 
-        $realAdminUrl = '/' === $rootUrl[-1] ? substr($rootUrl, 0, -1) . $adminPrefix : $rootUrl . $adminPrefix;
+        $realAdminUrl = '/' === SYSTEM_URL[-1] ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 
         if (0 !== preg_match('/^' . str_replace('/', '\/', $realAdminPath) . '(.*)/', $REQUEST_URI)) {
@@ -341,7 +362,7 @@ class Box_App
          * Block requests if the system is undergoing maintenance.
          * It will respect any URL/IP whitelisting under the configuration file.
          */
-        $maintmode = isset($this->di['config']['maintenance_mode']) ? $this->di['config']['maintenance_mode']['enabled'] : false;
+        $maintmode = $this->di['config']['maintenance_mode']['enabled'] ?? false;
         if ($maintmode) {
             // Check the allowlists
             if ($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
@@ -349,7 +370,7 @@ class Box_App
                 header('HTTP/1.0 503 Service Unavailable');
 
                 if ('api' == $this->mod) {
-                    $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later', [], 503);
+                    $exc = new \FOSSBilling\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
                     $apiController = new \Box\Mod\Api\Controller\Client;
                     $apiController->setDi($this->di);
                     return $apiController->renderJson(null, $exc);
@@ -359,26 +380,32 @@ class Box_App
             }
         }
 
+        $this->debugBar['time']->startMeasure('sharedMapping', 'Checking shared mappings');
         $sharedCount = count($this->shared);
         for ($i = 0; $i < $sharedCount; ++$i) {
             $mapping = $this->shared[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
+                $this->debugBar['time']->stopMeasure('sharedMapping');
                 return $this->executeShared($mapping[4], $mapping[2], $url->params);
             }
         }
+        $this->debugBar['time']->stopMeasure('sharedMapping');
 
         // this class mappings
+        $this->debugBar['time']->startMeasure('mapping', 'Checking mappings');
         $mappingsCount = count($this->mappings);
         for ($i = 0; $i < $mappingsCount; ++$i) {
             $mapping = $this->mappings[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
+                $this->debugBar['time']->stopMeasure('mapping');
                 return $this->execute($mapping[2], $url->params);
             }
         }
+        $this->debugBar['time']->stopMeasure('mapping');
 
-        $e = new \Box_Exception('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         return $this->show404($e);
     }

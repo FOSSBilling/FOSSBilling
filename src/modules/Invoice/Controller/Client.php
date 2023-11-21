@@ -51,6 +51,13 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             'hash' => $hash,
         ];
         $invoice = $api->invoice_get($data);
+        $systemService = $this->di['mod_service']('system');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '1');
+
+        // If hash_access is not 0 or if a client is logged in, get the logged-in client
+        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
+            $this->redirectIfNotInvoiceBuyer($app, $invoice);
+        }
 
         return $app->render('mod_invoice_invoice', ['invoice' => $invoice]);
     }
@@ -62,6 +69,13 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             'hash' => $hash,
         ];
         $invoice = $api->invoice_get($data);
+        $systemService = $this->di['mod_service']('system');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '1');
+
+        // If hash_access is not 0 or if a client is logged in, get the logged-in client
+        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
+            $this->redirectIfNotInvoiceBuyer($app, $invoice);
+        }
 
         return $app->render('mod_invoice_print', ['invoice' => $invoice]);
     }
@@ -81,7 +95,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $data = [
-            'subscription' => $_GET['subscription'] ?? null,
+            'allow_subscription' => $_GET['allow_subscription'] ?? true,
             'hash' => $hash,
             'gateway_id' => $id,
             'auto_redirect' => true,
@@ -100,7 +114,23 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             'hash' => $hash,
         ];
         $invoice = $api->invoice_pdf($data);
+        $systemService = $this->di['mod_service']('system');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '1');
+
+        // If hash_access is not 0 or if a client is logged in, get the logged-in client
+        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
+            $this->redirectIfNotInvoiceBuyer($app, $invoice);
+        }
 
         return $app->render('mod_invoice_pdf', ['invoice' => $invoice]);
+    }
+
+    public function redirectIfNotInvoiceBuyer($app, $invoice)
+    {
+        $client = $this->di['loggedin_client'];
+        if ($invoice['client']['id'] != $client->id) {
+            // redirect to client invoices/invoice'));
+            return $app->redirect('/invoice');
+        }
     }
 }

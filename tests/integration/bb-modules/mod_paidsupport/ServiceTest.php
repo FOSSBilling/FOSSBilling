@@ -168,7 +168,7 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
 
         $supportTickets = $this->di['db']->find('SupportTicket');
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($errorMessage);
         $this->api_client->support_ticket_create($data);
 

@@ -1,10 +1,8 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Mode_ThemeTest extends PHPUnit\Framework\TestCase
 {
-    private $model;
+    private \Box\Mod\Theme\Model\Theme $model;
 
     public function setup(): void
     {

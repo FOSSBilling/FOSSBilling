@@ -17,12 +17,13 @@
     ],
     "homepage": "https://fossbilling.org",
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.1",
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
-        "antcms/antloader": "^2.0",
+        "antcms/antloader": "^2.0.2",
         "dompdf/dompdf": "^2.0.1",
+        "egulias/email-validator": "^4.0",
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
         "geoip2/geoip2": "^2.10.0",
@@ -30,13 +31,18 @@
         "lcharette/webpack-encore-twig": "^1.1.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
-        "monolog/monolog": "^2.9",
+        "mattketmo/email-checker": "^2.2",
+        "maximebf/debugbar": "^1.19",
+        "monolog/monolog": "^3.5",
         "nelexa/zip": "^4.0.2",
+        "php-http/message-factory": "*",
         "phpmyadmin/motranslator": "^5.3.0",
         "pimple/pimple": "^3.3",
         "plesk/api-php-lib": "^2.0.0",
         "psr/log": "^3.0.0",
-        "stripe/stripe-php": "^10.3.0",
+        "ramsey/uuid": "^4.7",
+        "sentry/sentry": "^4",
+        "stripe/stripe-php": "^13.0.0",
         "symfony/cache": "^6.0",
         "symfony/filesystem": "^6.0",
         "symfony/http-client": "^6.0",
@@ -54,8 +60,8 @@
         "friendsofphp/php-cs-fixer": "^3.8",
         "phpstan/extension-installer": "^1.2",
         "phpstan/phpstan-deprecation-rules": "^1.1",
-        "phpunit/phpunit": "^9.6",
-        "rector/rector": "^0.17.0",
+        "phpunit/phpunit": "^10.4",
+        "rector/rector": "^0.18.0",
         "symfony/deprecation-contracts": "^3.0.0",
         "symfony/phpunit-bridge": "^6.2"
     },
@@ -67,8 +73,15 @@
     "config": {
         "sort-packages": true,
         "allow-plugins": {
-            "phpstan/extension-installer": true
+            "phpstan/extension-installer": true,
+            "php-http/discovery": true
         },
         "vendor-dir": "src/vendor"
+    },
+    "replace": {
+        "php-http/message-factory": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php80": "*",
+        "symfony/polyfill-php81": "*"
     }
 }

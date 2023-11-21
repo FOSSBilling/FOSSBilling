@@ -58,7 +58,7 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
                 '3Y'  => 'tria'
             };
         } catch (\UnhandledMatchError) {
-            throw new Box_Exception('Unknown period selected ' . $code);
+            throw new FOSSBilling\Exception('Unknown period selected ' . $code);
         }
     }
 
@@ -70,7 +70,7 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
             return $service->toProductPaymentApiArray($productPayment);
         }
 
-        throw new \Box_Exception('Product pricing could not be determined. ' . static::class);
+        throw new \FOSSBilling\Exception('Product pricing could not be determined. ' . static::class);
     }
 
     /**
@@ -102,7 +102,7 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
             return $price;
         }
 
-        throw new \Box_Exception('Unknown period selected for setup price');
+        throw new \FOSSBilling\Exception('Unknown period selected for setup price');
     }
 
     /**
@@ -126,7 +126,7 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
 
         if ($pp->type == Model_ProductPayment::RECURRENT) {
             if (!isset($config['period'])) {
-                throw new \Box_Exception('Product :id payment type is recurrent, but period was not selected', array(':id' => $product->id));
+                throw new \FOSSBilling\Exception('Product :id payment type is recurrent, but period was not selected', array(':id' => $product->id));
             }
 
             $period = new Box_Period($config['period']);
@@ -138,6 +138,6 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
             return $price;
         }
 
-        throw new \Box_Exception('Unknown Period selected for price');
+        throw new \FOSSBilling\Exception('Unknown Period selected for price');
     }
 }

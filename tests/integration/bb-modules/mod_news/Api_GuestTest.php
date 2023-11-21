@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_NewsTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extension_news.xml';

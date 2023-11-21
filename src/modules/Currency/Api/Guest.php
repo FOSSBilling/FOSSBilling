@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -43,7 +44,7 @@ class Guest extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_Currency) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         return $service->toApiArray($model);
@@ -74,7 +75,7 @@ class Guest extends \Api_Abstract
 
         $p ??= 0;
 
-        $p = match ($c['price_format']) {
+        $p = match (intval($c['price_format'])) {
             2 => number_format($p, 2, '.', ','),
             3 => number_format($p, 2, ',', '.'),
             4 => number_format($p, 0, '', ','),
@@ -87,7 +88,7 @@ class Guest extends \Api_Abstract
         }
 
         $c['format'] = ($p >= 0) ? $c['format'] : '-' . $c['format'];
-        $p = $p >= 0 ? $p : -$p;
+        $p = $p >= 0 ? $p : '-' . $p;
 
         return str_replace('{{price}}', $p, $c['format']);
     }

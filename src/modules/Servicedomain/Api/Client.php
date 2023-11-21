@@ -113,18 +113,18 @@ class Client extends \Api_Abstract
     protected function _getService($data)
     {
         if (!isset($data['order_id'])) {
-            throw new \Box_Exception('Order id is required');
+            throw new \FOSSBilling\Exception('Order id is required');
         }
         $orderService = $this->di['mod_service']('order');
 
         $order = $orderService->findForClientById($this->getIdentity(), $data['order_id']);
         if (!$order instanceof \Model_ClientOrder) {
-            throw new \Box_Exception('Order not found');
+            throw new \FOSSBilling\Exception('Order not found');
         }
 
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceDomain) {
-            throw new \Box_Exception('Order is not activated');
+            throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         return $s;

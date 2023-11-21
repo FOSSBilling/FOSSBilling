@@ -2,7 +2,7 @@
   "id": "spamchecker",
   "type": "mod",
   "name": "SpamChecker",
-  "description": "Uses stopforumspam.com and reCAPTCHA to stop spam",
+  "description": "Used to prevent spam using reCAPTCHA, stopforumspam.com, and a database of disposable email domains.",
   "icon_url": "icon.svg",
   "project_url": "https://fossbilling.org/",
   "homepage_url": "https://fossbilling.org/",

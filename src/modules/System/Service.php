@@ -10,8 +10,12 @@
 
 namespace Box\Mod\System;
 
+use FOSSBilling\Environment;
+use FOSSBilling\SentryHelper;
+use FOSSBilling\Version;
 use Pimple\Container;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
@@ -29,7 +33,7 @@ class Service
     public function getParamValue($param, $default = null)
     {
         if (empty($param)) {
-            throw new \Box_Exception('Parameter key is missing');
+            throw new \FOSSBilling\Exception('Parameter key is missing');
         }
 
         $query = 'SELECT value
@@ -93,7 +97,7 @@ class Service
         }
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', $param)) {
-                throw new \Box_Exception('Invalid parameter name, received: param_', ['param_' => $param]);
+                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
             }
         }
         $query = "SELECT param, value
@@ -123,7 +127,9 @@ class Service
             'company_address_1',
             'company_address_2',
             'company_address_3',
-
+            'company_bank_name',
+            'company_bic',
+            'company_display_bank_info',
             'company_account_number',
             'company_number',
             'company_note',
@@ -133,25 +139,24 @@ class Service
         ];
         $results = $this->_getMultipleParams($c);
 
-        $baseUrl = $this->di['config']['url'];
         $logoUrl = $results['company_logo'] ?? null;
         if ($logoUrl !== null && !str_contains($logoUrl, 'http')) {
-            $logoUrl = $baseUrl . $logoUrl;
+            $logoUrl = SYSTEM_URL . $logoUrl;
         }
 
         $logoUrlDark = $results['company_logo_dark'] ?? null;
         if ($logoUrlDark !== null && !str_contains($logoUrlDark, 'http')) {
-            $logoUrlDark = $baseUrl . $logoUrlDark;
+            $logoUrlDark = SYSTEM_URL . $logoUrlDark;
         }
         $logoUrlDark ??= $logoUrl;
 
         $faviconUrl = $results['company_favicon'] ?? null;
         if ($faviconUrl !== null && !str_contains($faviconUrl, 'http')) {
-            $faviconUrl = $baseUrl . $faviconUrl;
+            $faviconUrl = SYSTEM_URL . $faviconUrl;
         }
 
         return [
-            'www' => $baseUrl,
+            'www' => SYSTEM_URL,
             'name' => isset($results['company_name']) ? htmlspecialchars($results['company_name'], ENT_QUOTES, 'UTF-8') : null,
             'email' => isset($results['company_email']) ? htmlspecialchars($results['company_email'], ENT_QUOTES, 'UTF-8') : null,
             'tel' => isset($results['company_tel']) ? htmlspecialchars($results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
@@ -163,6 +168,10 @@ class Service
             'address_2' => isset($results['company_address_2']) ? htmlspecialchars($results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
             'address_3' => isset($results['company_address_3']) ? htmlspecialchars($results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
             'account_number' => $results['company_account_number'] ?? null,
+            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars($results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
+            'bic' => isset($results['company_bic']) ? htmlspecialchars($results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
+            'display_bank_info' => $results['company_display_bank_info'] ?? null,
+            'bank_info_pagebottom' => $results['company_bank_info_pagebottom'] ?? null,
             'number' => isset($results['company_number']) ? htmlspecialchars($results['company_number'], ENT_QUOTES, 'UTF-8') : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
@@ -209,10 +218,11 @@ class Service
         return true;
     }
 
-    public function getMessages($type, $runFromTest = false)
+    public function getMessages($type)
     {
         $msgs = [];
 
+        // Check if there's an update available
         try {
             $updater = $this->di['updater'];
             if ($updater->isUpdateAvailable()) {
@@ -226,26 +236,84 @@ class Service
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
+
         $last_exec = $this->getParamValue('last_cron_exec');
         $disableAutoCron = $this->di['config']['disable_auto_cron'] ?? false;
-        if ($runFromTest === false && $disableAutoCron === false) {
-            if (!$last_exec) {
-                $msgs['info'][] = [
-                    'text' => 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.',
-                ];
-                $cronService = $this->di['mod_service']('cron');
-                $cronService->runCrons();
-            } else {
-                $minSinceLastExec = (time() - strtotime($last_exec)) / 60;
-                if ($minSinceLastExec >= 15) {
-                    $minSinceLastExec = round($minSinceLastExec, 2);
-                    $msgs['info'][] = [
-                        'text' => 'Cron hasn\'t been executed in ' . $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup the cron job.',
-                    ];
-                    $cronService = $this->di['mod_service']('cron');
+
+        /*
+         * Here we check if cron has been run at all or within a recent timeframe.
+         * No matter what, a message will be displayed within the dashboard and by default cron will also be performed to ensure functionality, however this can be disabled.
+         * Results are cached so even if `getMessages` is called multiple times it will still display correctly & so it won't go away before it's noticed.
+         */
+        if (Environment::isProduction()) {
+            $cronService = $this->di['mod_service']('cron');
+
+            $result = $this->di['cache']->get('cron_issue', function (ItemInterface $item) use ($cronService, $last_exec, $disableAutoCron) {
+                $item->expiresAfter(15 * 60);
+                $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
+
+                // Perform the fallback behavior if enabled
+                if (!$disableAutoCron && (!$last_exec || (time() - strtotime($last_exec)) / 60 >= 15)) {
                     $cronService->runCrons();
-                    error_log("Cron hasn't been run in $minSinceLastExec minutes. Manually executing.");
                 }
+
+                // And now return the correctly message for the given situation
+                if (!$last_exec) {
+                    return [
+                        'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly. (Message will remain for 15 minutes)',
+                        'url' => $cronUrl,
+                    ];
+                } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
+                    return [
+                        'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes. (Message will remain for 15 minutes)',
+                        'url' => $cronUrl,
+                    ];
+                } else {
+                    return [];
+                }
+            });
+
+            if ($result) {
+                $msgs['danger'][] = $result;
+            }
+        }
+
+        /*
+         * The below logic is to help ensure that we nudge the user when needed about error reporting.
+         */
+        if (Environment::isProduction()) {
+            // Get the last time we've nudged the user about error reporting
+            $lastErrorReportingNudge = $this->getParamValue('last_error_reporting_nudge');
+
+            $result = $this->di['cache']->get('error_reporting_nudge', function (ItemInterface $item) use ($lastErrorReportingNudge) {
+                $item->expiresAfter(15 * 60);
+                $url = $this->di['url']->adminLink('extension/settings/system');
+                $this->setParamValue('last_error_reporting_nudge', Version::VERSION);
+
+                if (!$lastErrorReportingNudge) {
+                    // The user upgraded from a version that didn't have error reporting functionality, so let's nudge them about it now.
+                    return [
+                        'text' => 'We\'d apreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
+                        'url' => $url,
+                    ];
+                } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && $this->di['config']['debug_and_monitoring']['report_errors'] && !Version::isPreviewVersion()) {
+                    /*
+                     * The installation already had error reporting enabled, but something has changed so we should nudge the user to review the changes.
+                     * This message is cached for a full 24 hours to help ensure it is seen.
+                     */
+                    $item->expiresAfter(60 * 60 * 24);
+
+                    return [
+                        'text' => 'Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what\'s been changed. (This message will remain for 24 hours)',
+                        'url' => $url,
+                    ];
+                } else {
+                    return [];
+                }
+            });
+
+            if ($result) {
+                $msgs['info'][] = $result;
             }
         }
 
@@ -253,12 +321,6 @@ class Service
         if (file_exists(PATH_ROOT . '/install')) {
             $msgs['danger'][] = [
                 'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install),
-            ];
-        }
-
-        if ($this->getVersion() == '0.0.1') {
-            $msgs['warning'][] = [
-                'text' => 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.',
             ];
         }
 
@@ -280,7 +342,7 @@ class Service
     {
         try {
             return $this->di['central_alerts']->filterAlerts();
-        } catch (\Box_Exception $e) {
+        } catch (\FOSSBilling\Exception $e) {
             return [
                 [
                     'type' => 'warning',
@@ -324,7 +386,9 @@ class Service
         } else {
             // attempt adding admin api to twig
             try {
-                $twig->addGlobal('admin', $this->di['api_admin']);
+                if ($this->di['auth']->isAdminLoggedIn()) {
+                    $twig->addGlobal('admin', $this->di['api_admin']);
+                }
             } catch (\Exception) {
                 // skip if admin is not logged in
             }
@@ -437,7 +501,7 @@ class Service
         $stmt->execute(['param' => $param]);
         $results = $stmt->fetchColumn();
         if ($results === false) {
-            throw new \Box_Exception('Parameter :param does not exist', [':param' => $param]);
+            throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
         return $results;
@@ -992,39 +1056,6 @@ class Service
         return $res;
     }
 
-    public function getEuVat()
-    {
-        return [
-            'AT' => 20, // Austria
-            'BE' => 21, // Belgium
-            'BG' => 20, // Bulgaria
-            'HR' => 25, // Croatia
-            'CY' => 19, // Cyprus
-            'CZ' => 21, // Czech Republic
-            'DK' => 25, // Denmark
-            'EE' => 20, // Estonia
-            'FI' => 24, // Finland
-            'FR' => 20, // France
-            'DE' => 19, // Germany
-            'GR' => 24, // Greece
-            'HU' => 27, // Hungary
-            'IE' => 23, // Ireland
-            'IT' => 22, // Italy
-            'LV' => 21, // Latvia
-            'LT' => 21, // Lithuania
-            'LU' => 17, // Luxembourg
-            'MT' => 18, // Malta
-            'NL' => 21, // Netherlands
-            'PL' => 23, // Poland
-            'PT' => 23, // Portugal
-            'RO' => 19, // Romania
-            'SK' => 20, // Slovakia
-            'SI' => 22, // Slovenia
-            'ES' => 21, // Spain
-            'SE' => 25, // Sweden
-        ];
-    }
-
     public function getStates()
     {
         return [
@@ -1330,7 +1361,7 @@ class Service
             if (array_key_exists($data['country'], $codes)) {
                 return $codes[$data['country']];
             } else {
-                throw new \Box_Exception('Country :code phone code is not registered', [':code' => $data['country']]);
+                throw new \FOSSBilling\InformationException('Country :code phone code is not registered', [':code' => $data['country']]);
             }
         }
 
@@ -1630,6 +1661,27 @@ class Service
     public function clearPendingMessages()
     {
         $this->di['session']->delete('pending_messages');
+
+        return true;
+    }
+
+    public static function onBeforeAdminCronRun(\Box_Event $event)
+    {
+        $di = $event->getDi();
+
+        try {
+            // Prune the classmap to remove classes which are no logner on the disk or that have moved.
+            $loader = new \FOSSBilling\AutoLoader();
+            $loader->getAntLoader()->pruneClassmap();
+
+            // Prune the FS cache
+            $cache = $di['cache'];
+            if ($cache->prune()) {
+                $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
+            }
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
 
         return true;
     }

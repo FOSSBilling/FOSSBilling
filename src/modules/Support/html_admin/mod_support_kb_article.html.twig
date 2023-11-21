@@ -1,0 +1,98 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ post.title }}{% endblock %}
+
+{% set active_menu = 'support' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/kb'|alink }}">{{ 'Knowledge Base'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/kb'|alink }}#tab-index">{{ 'Articles'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" action="{{ 'api/admin/support/kb_article_update'|link }}" class="api-form" data-api-msg="{{ 'Article Updated'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="card-body">
+            <h3>{{ post.title }}</h3>
+
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
+                <div class="col">
+                    {{ mf.selectbox('kb_article_category_id', admin.support_kb_category_get_pairs, post.kb_article_category_id, 1) }}
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ post.title }}" required="required">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
+                <div class="col">
+                    <textarea name="content" rows="10" class="bb-textarea">{{ post.content }}</textarea>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Slug'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="slug" value="{{ post.slug }}" required="required">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Views'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="views" value="{{ post.views }}" required>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft"{% if post.status == 'draft' %} checked{% endif %}>
+                        <label class="form-check-label" for="radioStatusDraft">{{ 'Draft'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if post.status == 'active' %} checked{% endif %}>
+                        <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="id" value="{{ post.id }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'support/kb'|alink }}" class="btn btn-secondary w-25">
+                <svg class="icon">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go Back'|trans }}
+            </a>
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

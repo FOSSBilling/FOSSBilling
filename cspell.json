@@ -33,7 +33,10 @@
         "EMERG",
         "exploitability",
         "birthdate",
-        "Birthdate"
+        "Birthdate",
+        "jhurliman",
+        "jambroseclarke",
+        "Egulias"
     ],
 
     "ignoreWords": [
@@ -357,7 +360,18 @@
         "hostings",
         "rulesets",
         "describedby",
-        "offcanvas"
+        "offcanvas",
+        "newtx",
+        "pwreset",
+        "pagebottom",
+        "forceable",
+        "phpstan",
+        "progressbar",
+        "valuenow",
+        "valuemin",
+        "valuemax",
+        "concat",
+        "debugbar"
     ],
     "ignorePaths": [
         "tests/**",
@@ -396,6 +410,7 @@
         "src/modules/Wysiwyg/src/ckeditor.js",
         ".github/**",
         ".gitignore",
-        "src/.htaccess"
+        "src/.htaccess",
+        "phpstan-baseline.neon"
     ]
 }

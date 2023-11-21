@@ -37,14 +37,14 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $this->config['userid'] = $options['userid'];
             unset($options['userid']);
         } else {
-            throw new Registrar_Exception('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub Reseller ID" at "Configuration -> Domain registration".');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'ResellerClub', ':missing' => 'ResellerClub Reseller ID'], 3001);
         }
 
         if(isset($options['api-key']) && !empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
             unset($options['api-key']);
         } else {
-            throw new Registrar_Exception('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub API Key" at "Configuration -> Domain registration".');
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'ResellerClub', ':missing' => 'ResellerClub API Key'], 3001);
         }
     }
     
@@ -170,7 +170,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'state'             =>  $c->getState(),
         );
 
-        $params = array_merge($optional_params, $required_params);
+        $params = [...$optional_params, ...$required_params];
         $result = $this->_makeRequest('contacts/modify', $params, 'POST');
         return ($result['status'] == 'Success');
     }
@@ -476,7 +476,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'mobile'                         =>  '',
         );
 
-        $params = array_merge($optional_params, $params);
+        $params = [...$optional_params, ...$params];
         $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
         return $customer_id;
     }
@@ -653,10 +653,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      */
     public function includeAuthorizationParams(array $params)
     {
-        return array_merge($params, array(
-            'auth-userid' => $this->config['userid'],
-            'api-key' => $this->config['api-key'],
-        ));
+        return [...$params, 'auth-userid' => $this->config['userid'], 'api-key' => $this->config['api-key']];
     }
 
     /**

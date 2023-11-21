@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -31,7 +32,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
         $result = $db->getRow('SELECT id, client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email" AND meta_value = :hash', [':hash' => $hash]);
         if (!$result) {
-            throw new \Box_Exception('Invalid email confirmation link');
+            throw new \FOSSBilling\InformationException('Invalid email confirmation link');
         }
         $db->exec('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
         $db->exec('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
@@ -83,7 +84,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getSearchQuery($data, $selectStmt = 'SELECT c.*')
+    public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
     {
         $sql = $selectStmt;
         $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
@@ -170,7 +171,7 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
-        $sql = $sql . ' ORDER BY c.created_at desc';
+        $sql .= ' ORDER BY c.created_at desc';
 
         return [$sql, $params];
     }
@@ -179,10 +180,10 @@ class Service implements InjectionAwareInterface
     {
         $limit = $data['per_page'] ?? 30;
         if (!is_numeric($limit) || $limit < 1) {
-            throw new \Box_Exception('Invalid per page number');
+            throw new \FOSSBilling\InformationException('Invalid per page number');
         }
 
-        [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, CONCAT_WS('', c.first_name,  ' ', c.last_name) as full_name");
+        [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, IF(c.company <> '', CONCAT(c.first_name, ' ', c.last_name, ' (', c.company, ')'), CONCAT(c.first_name, ' ', c.last_name)) as client");
         $sql .= sprintf(' LIMIT %u', $limit);
 
         return $this->di['db']->getAssoc($sql, $params);
@@ -221,12 +222,12 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->di['db']->findOne('Invoice', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($invoice instanceof \Model_Invoice) {
-            throw new \Box_Exception('Currency can not be changed. Client already have invoices issued.');
+            throw new \FOSSBilling\InformationException('Currency can not be changed. Client already have invoices issued.');
         }
 
         $order = $this->di['db']->findOne('ClientOrder', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($order instanceof \Model_ClientOrder) {
-            throw new \Box_Exception('Currency can not be changed. Client already have orders.');
+            throw new \FOSSBilling\InformationException('Currency can not be changed. Client already have orders.');
         }
 
         return true;
@@ -235,15 +236,15 @@ class Service implements InjectionAwareInterface
     public function addFunds(\Model_Client $client, $amount, $description, array $data = [])
     {
         if (!$client->currency) {
-            throw new \Box_Exception('Define clients currency before adding funds.');
+            throw new \FOSSBilling\InformationException('Define clients currency before adding funds.');
         }
 
         if (!is_numeric($amount)) {
-            throw new \Box_Exception('Funds amount is invalid');
+            throw new \FOSSBilling\InformationException('Funds amount is invalid');
         }
 
         if (empty($description)) {
-            throw new \Box_Exception('Funds description is invalid');
+            throw new \FOSSBilling\InformationException('Funds description is invalid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');
@@ -411,7 +412,7 @@ class Service implements InjectionAwareInterface
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['email'])) {
-            throw new \Box_Exception('Client ID or email is required');
+            throw new \FOSSBilling\InformationException('Client ID or email is required');
         }
 
         $db = $this->di['db'];
@@ -425,7 +426,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$client instanceof \Model_Client) {
-            throw new \Box_Exception('Client not found');
+            throw new \FOSSBilling\Exception('Client not found');
         }
 
         return $client;
@@ -468,7 +469,7 @@ class Service implements InjectionAwareInterface
     {
         $client = $this->di['db']->findOne('Client', 'client_group_id = ?', [$model->id]);
         if ($client) {
-            throw new \Box_Exception('Can not remove group with clients');
+            throw new \FOSSBilling\Exception('Can not remove group with clients');
         }
 
         $this->di['db']->trash($model);
@@ -628,7 +629,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \Box_Exception('Email can not be changed');
+            throw new \FOSSBilling\InformationException('Email can not be changed');
         }
 
         return true;
@@ -642,7 +643,7 @@ class Service implements InjectionAwareInterface
             if (!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
 
-                throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
+                throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
             }
         }
     }
@@ -658,7 +659,7 @@ class Service implements InjectionAwareInterface
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
                     $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
 
-                    throw new \Box_Exception('Field :field cannot be empty', [':field' => $name]);
+                    throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
                 }
             }
         }
@@ -679,5 +680,52 @@ class Service implements InjectionAwareInterface
         }
 
         return $this->di['table_export_csv']('client', 'clients.csv', $headers);
+    }
+
+    /**
+     * Confirm password reset action.
+     *
+     * @return bool|int
+     *
+     * @throws \FOSSBilling\InformationException
+     */
+    public function password_reset_valid($data)
+    {
+        $required = [
+            'hash' => 'Hash required',
+        ];
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
+        if (!$reset instanceof \Model_ClientPasswordReset) {
+            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+        }
+
+        $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
+        // Return the client ID if the reset request is valid (from within the last 15 minutes), otherwise return false
+        if (strtotime($reset->created_at) - time() + 900 < 0) {
+            return false;
+        } else {
+            return $c->id;
+        }
+    }
+
+    /*
+     * Prunes the `client_password_reset` table of reset requests older than 15 minutes
+     *
+     * @return void
+     */
+    public static function onBeforeAdminCronRun(\Box_Event $event)
+    {
+        $di = $event->getDi();
+        $sql = 'DELETE FROM client_password_reset WHERE UNIX_TIMESTAMP() - 900 > UNIX_TIMESTAMP(created_at);';
+
+        try {
+            $db = $di['db'];
+            $db->exec($sql);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
     }
 }

@@ -196,7 +196,7 @@
                                 <td>
                                     <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ order.id }}">
                                 </td>
-                                <td>{{ order.id }}</td>
+                                <td><a href="{{ '/order/manage'|alink }}/{{ order.id }}">#{{ order.id }}</a></td>
                                 <td>
                                     <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">
                                         <span class="avatar avatar-xs" style="background-image: url({{ order.client.email|gravatar }}&size=24)"></span>

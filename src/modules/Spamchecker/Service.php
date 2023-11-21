@@ -10,7 +10,10 @@
 
 namespace Box\Mod\Spamchecker;
 
-use \FOSSBilling\InjectionAwareInterface;
+use EmailChecker\Adapter;
+use EmailChecker\Utilities;
+use FOSSBilling\InjectionAwareInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Service implements InjectionAwareInterface
@@ -33,6 +36,7 @@ class Service implements InjectionAwareInterface
         $spamCheckerService = $di['mod_service']('Spamchecker');
         $spamCheckerService->isBlockedIp($event);
         $spamCheckerService->isSpam($event);
+        $spamCheckerService->isTemp($event);
     }
 
     public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
@@ -41,6 +45,7 @@ class Service implements InjectionAwareInterface
         $spamCheckerService = $di['mod_service']('Spamchecker');
         $spamCheckerService->isBlockedIp($event);
         $spamCheckerService->isSpam($event);
+        $spamCheckerService->isTemp($event);
     }
 
     /**
@@ -54,7 +59,7 @@ class Service implements InjectionAwareInterface
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map('trim', $blocked_ips);
             if (in_array($di['request']->getClientAddress(), $blocked_ips)) {
-                throw new \Box_Exception('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
+                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
             }
         }
     }
@@ -75,11 +80,11 @@ class Service implements InjectionAwareInterface
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             if (isset($config['captcha_version']) && 2 == $config['captcha_version']) {
                 if (!isset($config['captcha_recaptcha_privatekey']) || '' == $config['captcha_recaptcha_privatekey']) {
-                    throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
+                    throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
 
                 if (!isset($params['g-recaptcha-response']) || '' == $params['g-recaptcha-response']) {
-                    throw new \Box_Exception('You have to complete the CAPTCHA to continue');
+                    throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
                 }
 
                 $client = HttpClient::create();
@@ -93,16 +98,31 @@ class Service implements InjectionAwareInterface
                 $content = $response->toArray();
 
                 if (!$content['success']) {
-                    throw new \Box_Exception('reCAPTCHA verification failed.');
+                    throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                 }
             } else {
-                throw new \Box_Exception('reCAPTCHA verification failed.');
+                throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
             }
         }
 
         if (isset($config['sfs']) && $config['sfs']) {
             $spamCheckerService = $di['mod_service']('Spamchecker');
             $spamCheckerService->isInStopForumSpamDatabase($data);
+        }
+    }
+
+    public function isTemp(\Box_Event $event)
+    {
+        $di = $event->getDi();
+        $config = $di['mod_config']('Spamchecker');
+
+        $check = $config['check_temp_emails'] ?? false;
+        if ($check) {
+            $spamCheckerService = $di['mod_service']('Spamchecker');
+            $params = $event->getParameters();
+            $email = $params['email'] ?? '';
+
+            $spamCheckerService->isATempEmail($email, true);
         }
     }
 
@@ -127,15 +147,80 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($json->username->appears) && $json->username->appears) {
-            throw new \Box_Exception('Your username is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\InformationException('Your username is blacklisted in the Stop Forum Spam database');
         }
         if (isset($json->email->appears) && $json->email->appears) {
-            throw new \Box_Exception('Your e-mail is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\InformationException('Your e-mail is blacklisted in the Stop Forum Spam database');
         }
         if (isset($json->ip->appears) && $json->ip->appears) {
-            throw new \Box_Exception('Your IP address is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\InformationException('Your IP address is blacklisted in the Stop Forum Spam database');
         }
 
         return false;
+    }
+
+    /**
+     * Checks if a provided email address is using a disposable email service.
+     * 
+     * @param string $email The email address to check.
+     * @param bool $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
+     * 
+     * @return bool true if the email address is disposable, false if it isn't.
+     */
+    public function isATempEmail(string $email, bool $throw = true): bool
+    {
+        /* 
+         * The EmailChecker package utilizes PHP's email verification which does not correctly validate international email addresses.
+         * We are already using a proper validation package that does validate these as it should, so below is actually a workaround for the limitation.
+         * @see https://github.com/MattKetmo/EmailChecker/issues/92
+         * 
+         * Without this workaround, FOSSBilling would be unable to accept international email addresses when disposable email checking is enabled.
+         */
+        $adapter = new Adapter\ArrayAdapter($this->getTempMailDomainDB());
+        try {
+            [$local, $domain] = Utilities::parseEmailAddress($email);
+        } catch (\Exception) {
+            // Just to be on the safe side, assume the email is valid if there was an error.
+            return false;
+        }
+        $invalid = $adapter->isThrowawayDomain($domain);
+
+        if ($invalid && $throw) {
+            throw new \FOSSBilling\InformationException('Disposable email addresses are not allowed');
+        }
+
+        return $invalid;
+    }
+
+    /**
+     * Fetches the most recent list of disposable email addresses, parses them to remove blanks or invalid domains, and then returns it as an array.
+     * The database is from here: https://github.com/disposable-email-domains/disposable-email-domains
+     * Results are cached for 1 week.
+     * 
+     * @return array 
+     */
+    private function getTempMailDomainDB(): array
+    {
+        return $this->di['cache']->get('CentralAlerts.getAlerts', function (ItemInterface $item) {
+            $item->expiresAfter(604800); // Retain the DB cache for one week and then fetch the list again
+
+            $client = HttpClient::create();
+            $response = $client->request('GET', 'https://raw.githubusercontent.com/disposable-email-domains/disposable-email-domains/master/disposable_email_blocklist.conf');
+            $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tempEmailDB.txt';
+
+            if ($response->getStatusCode() === 200) {
+                file_put_contents($dbPath, $response->getContent());
+            } else {
+                return [];
+            }
+
+            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            @unlink($dbPath);
+            if (!$database) {
+                return [];
+            }
+
+            return array_filter($database, fn($domain) => filter_var($domain, FILTER_VALIDATE_DOMAIN));
+        });
     }
 }

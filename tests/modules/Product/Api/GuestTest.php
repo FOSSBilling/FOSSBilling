@@ -26,7 +26,7 @@ class GuestTest extends \BBTestCase {
 
     public function testget_list()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSearchQuery')
             ->will($this->returnValue(array('sqlString', array())));
@@ -49,7 +49,7 @@ class GuestTest extends \BBTestCase {
 
     public function testget_pairs()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPairs')
@@ -64,7 +64,7 @@ class GuestTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Product ID or slug is missing');
         $this->api->get($data);
     }
@@ -77,7 +77,7 @@ class GuestTest extends \BBTestCase {
 
         $model = new \Model_Product();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveById')
             ->will($this->returnValue($model ));
@@ -101,7 +101,7 @@ class GuestTest extends \BBTestCase {
 
         $model = new \Model_Product();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->will($this->returnValue($model ));
@@ -125,7 +125,7 @@ class GuestTest extends \BBTestCase {
 
         $model = null;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->will($this->returnValue($model ));
@@ -134,14 +134,14 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Product not found');
         $this->api->get($data);
     }
 
     public function testcategory_get_list()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategorySearchQuery')
             ->will($this->returnValue(array('sqlString', array())));
@@ -180,7 +180,7 @@ class GuestTest extends \BBTestCase {
 
     public function testcategory_get_pairs()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategoryPairs')
             ->will($this->returnValue(array()));
@@ -229,7 +229,7 @@ class GuestTest extends \BBTestCase {
             'pricing'       => '1W',
             'config'        => array(),
         );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue($arr));
@@ -261,7 +261,7 @@ class GuestTest extends \BBTestCase {
             'config'        => array(),
 
         );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue($arr));

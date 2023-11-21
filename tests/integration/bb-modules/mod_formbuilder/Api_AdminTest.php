@@ -14,25 +14,25 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         try {
             $this->api_admin->formbuilder_get_form(array('id' => 10000));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_create_form(array('name' => null));
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_create_form(array('title' => "Form title", "style" => "not existing style"));
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_add_field(array('id' => 1, 'type' => 'type'));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
-            $this->api_admin->formbuilder_add_field(array('id' => 1000000000));
+            $this->api_admin->formbuilder_add_field(array('id' => 1_000_000_000));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_add_field(array(
@@ -41,48 +41,48 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
                 'type' => 'unexisting type'
             ));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_get_form(array('id' => 10000));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_get_form_fields(array('id' => 1));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
 
         try {
-            $this->api_admin->formbuilder_get_field(array('id' => 1000000));
+            $this->api_admin->formbuilder_get_field(array('id' => 1_000_000));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
 
         try {
             $this->api_admin->formbuilder_delete_form(array('id' => 1));
             $this->api_admin->formbuilder_get_form(array('id' => 1));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_delete_field(array('id' => 1));
             $this->api_admin->formbuilder_get_field(array('id' => 1));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $this->api_admin->formbuilder_delete_field(array('id' => 1));
             $this->api_admin->formbuilder_get_field(array('id' => 1));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
 
         try {
             $this->api_admin->formbuilder_update_field(array('id' => 3, 'description' => 'This is very awesome description.', 'name' => ""));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $test = $this->api_admin->formbuilder_add_field(array(
@@ -108,13 +108,13 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             ));
             $this->api_admin->formbuilder_update_field($test);
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
 
         try {
             $this->api_admin->formbuilder_get_orders_count(array());
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
         try {
             $test = $this->api_admin->formbuilder_update_form_settings(array(
@@ -124,7 +124,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
                 'show_title' => 'Second'
             ));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
 
 
@@ -133,7 +133,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
                 'form_id' => 2
             ));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
 
         try {
@@ -141,13 +141,13 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
                 'form_id' => "non-existing-form",
                 'name' => ''
             ));
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
 
         try {
             $this->api_admin->formbuilder_update_form_name(array('form_id' => 2));
             $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception $e) {
+        } catch (Box_Exception) {
         }
     }
 

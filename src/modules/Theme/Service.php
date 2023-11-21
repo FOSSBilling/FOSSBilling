@@ -237,7 +237,7 @@ class Service implements InjectionAwareInterface
         if ($theme == null || !file_exists($path . $theme)) {
             $theme = $default;
         }
-        $url = $this->di['config']['url'] . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
+        $url = SYSTEM_URL . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -251,11 +251,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentClientAreaThemeCode()
     {
-        if (defined('BB_THEME_CLIENT')) {
-            $theme = BB_THEME_CLIENT;
-        } else {
-            $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
-        }
+        $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
 
         return !empty($theme) ? $theme : 'huraga';
     }
@@ -319,7 +315,7 @@ class Service implements InjectionAwareInterface
         $theme_path = $this->getThemesPath() . $theme;
 
         if (!file_exists($theme_path)) {
-            throw new \Box_Exception('Theme was not found in path :path', [':path' => $theme_path]);
+            throw new \FOSSBilling\Exception('Theme was not found in path :path', [':path' => $theme_path]);
         }
         $manifest = $theme_path . '/manifest.json';
 
@@ -336,7 +332,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_array($config)) {
-            throw new \Box_Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
+            throw new \FOSSBilling\Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
         }
 
         $paths = [$theme_path . '/html'];
@@ -345,10 +341,10 @@ class Service implements InjectionAwareInterface
             $ext = trim($config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
-            $config['url'] = BB_URL . 'themes/' . $ext . '/';
+            $config['url'] = SYSTEM_URL . 'themes/' . $ext . '/';
             $paths[] = $this->getThemesPath() . $ext . '/html';
         } else {
-            $config['url'] = BB_URL . 'themes/' . $theme . '/';
+            $config['url'] = SYSTEM_URL . 'themes/' . $theme . '/';
         }
 
         // add installed modules paths

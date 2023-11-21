@@ -148,7 +148,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function tld_get($data)
     {
@@ -164,7 +164,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->getService()->tldFindOneByTld($tld);
         if (!$model instanceof \Model_Tld) {
-            throw new \Box_Exception('TLD not found');
+            throw new \FOSSBilling\Exception('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model);
@@ -175,7 +175,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function tld_get_id($data)
     {
@@ -186,7 +186,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->getService()->tldFindOneById($data['id']);
         if (!$model instanceof \Model_Tld) {
-            throw new \Box_Exception('ID not found');
+            throw new \FOSSBilling\Exception('ID not found');
         }
 
         return $this->getService()->tldToApiArray($model);
@@ -197,7 +197,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function tld_delete($data)
     {
@@ -209,13 +209,13 @@ class Admin extends \Api_Abstract
         $model = $this->getService()->tldFindOneByTld($data['tld']);
 
         if (!$model instanceof \Model_Tld) {
-            throw new \Box_Exception('TLD not found');
+            throw new \FOSSBilling\Exception('TLD not found');
         }
         // check if tld is used by any domain
         $service_domains = $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $model->tld]);
         $count = is_countable($service_domains) ? count($service_domains) : 0;
         if ($count > 0) {
-            throw new \Box_Exception('TLD is used by :count: domains', [':count:' => $count], 707);
+            throw new \FOSSBilling\InformationException('TLD is used by :count: domains', [':count:' => $count], 707);
         }
 
         return $this->getService()->tldRm($model);
@@ -226,7 +226,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function tld_create($data)
     {
@@ -240,7 +240,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
-            throw new \Box_Exception('Tld already registered');
+            throw new \FOSSBilling\InformationException('Tld already registered');
         }
 
         return $this->getService()->tldCreate($data);
@@ -256,7 +256,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function tld_update($data)
     {
@@ -267,7 +267,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
-            throw new \Box_Exception('TLD not found');
+            throw new \FOSSBilling\Exception('TLD not found');
         }
 
         return $this->getService()->tldUpdate($model, $data);
@@ -309,7 +309,7 @@ class Admin extends \Api_Abstract
     /**
      * Get available registrars for install.
      *
-     * @return type
+     * @return array
      */
     public function registrar_get_available($data)
     {
@@ -330,7 +330,7 @@ class Admin extends \Api_Abstract
 
         $code = $data['code'];
         if (!in_array($code, $this->getService()->registrarGetAvailable())) {
-            throw new \Box_Exception('Registrar is not available for installation.');
+            throw new \FOSSBilling\Exception('Registrar is not available for installation.');
         }
 
         return $this->getService()->registrarCreate($data['code']);
@@ -357,7 +357,7 @@ class Admin extends \Api_Abstract
         $count = is_array($service_domains) ? count($service_domains) : 0; // Handle the case where $service_domains might be null
 
         if ($count > 0) {
-            throw new \Box_Exception('Registrar is used by :count: domains', [':count:' => $count], 707);
+            throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
         return $this->getService()->registrarRm($model);
@@ -443,7 +443,7 @@ class Admin extends \Api_Abstract
         $s = $orderService->getOrderService($order);
 
         if (!$s instanceof \Model_ServiceDomain) {
-            throw new \Box_Exception('Domain order is not activated');
+            throw new \FOSSBilling\Exception('Domain order is not activated');
         }
 
         return $s;

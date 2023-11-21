@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Environment;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
@@ -26,16 +27,16 @@ use Twig\Extra\Intl\IntlExtension;
 $di = new \Pimple\Container();
 
 /*
- * Returns the current FOSSBilling config from config.php
+ * Returns the current FOSSBilling config.
  *
  * @param void
  *
  * @return array
  */
 $di['config'] = function () {
-    $array = include PATH_ROOT . '/config.php';
+    $config = include PATH_CONFIG;
 
-    return $array;
+    return $config;
 };
 
 /*
@@ -65,7 +66,7 @@ $di['logger'] = function () use ($di) {
 
         $log->addWriter($writer2);
     } else {
-        $monolog = new \FOSSBilling\Monolog($di);
+        $monolog = new \FOSSBilling\Monolog();
         $log->addWriter($monolog);
     }
 
@@ -175,7 +176,7 @@ $di['pager'] = function () use ($di) {
 $di['url'] = function () use ($di) {
     $url = new Box_Url();
     $url->setDi($di);
-    $url->setBaseUri(BB_URL);
+    $url->setBaseUri(SYSTEM_URL);
 
     return $url;
 };
@@ -234,10 +235,12 @@ $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
 
     $mode = $di['config']['security']['mode'] ?? 'strict';
-    $lifespan = $di['config']['security']['cookie_lifespan'] ?? 7200;
-    $secure = $di['config']['security']['force_https'] ?? true;
 
-    $session = new \FOSSBilling\Session($handler, $mode, $lifespan, $secure);
+    // Mark the cookie as secure either if force HTTPS is enabled or if we can detect that HTTPS is being used.
+    $forceSSL = $di['config']['security']['force_https'] ?? true;
+    $secure = ($forceSSL || FOSSBilling\Tools::isHTTPS());
+
+    $session = new \FOSSBilling\Session($handler, $mode, $secure);
     $session->setDi($di);
     $session->setupSession();
 
@@ -263,8 +266,8 @@ $di['request'] = function () use ($di) {
  * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
 $di['cache'] = fn () =>
-    // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
-    new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+// Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
 /*
  *
@@ -324,7 +327,7 @@ $di['twig'] = $di->factory(function () use ($di) {
         if (($config['i18n']['locale'] ?? 'en_US') == 'en_US') {
             $dateFormatter = new \IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
-            throw new \Box_Exception('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);
+            throw new \FOSSBilling\InformationException('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);
         }
     }
 
@@ -371,6 +374,7 @@ $di['is_client_logged'] = function () use ($di) {
             throw new Exception('Client is not logged in');
         } else {
             // Redirect to login page if browser request
+            $di['set_return_uri'];
             $login_url = $di['url']->link('login');
             header("Location: $login_url");
         }
@@ -387,8 +391,6 @@ $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
     $config = $di['mod_config']('client');
     if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
         return (bool) $model->email_approved;
-    } else {
-        return true;
     }
 
     return true;
@@ -406,17 +408,16 @@ $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
  */
 $di['is_admin_logged'] = function () use ($di) {
     if (!$di['auth']->isAdminLoggedIn()) {
-        $api_str = '/api/';
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 
-        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
-            // Throw Exception if api request
+        if (str_starts_with($url, '/api/')) {
             throw new Exception('Admin is not logged in');
-        } else {
-            // Redirect to login page if browser request
-            $login_url = $di['url']->adminLink('staff/login');
-            header("Location: $login_url");
         }
+
+        $di['set_return_uri'];
+
+        header(sprintf('Location: %s', $di['url']->adminLink('staff/login')));
+        exit;
     }
 
     return true;
@@ -461,10 +462,10 @@ $di['loggedin_client'] = function () use ($di) {
  *
  * @return \Model_Admin|null The existing logged-in admin model object, or null if no admin is logged in.
  *
- * @throws \Box_Exception If the script is running in CLI or CGI mode and there is no cron admin available.
+ * @throws \FOSSBilling\Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
-    if (php_sapi_name() === 'cli' || !http_response_code()) {
+    if (Environment::isCLI()) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
@@ -490,6 +491,18 @@ $di['loggedin_admin'] = function () use ($di) {
             exit;
         }
     }
+};
+
+$di['set_return_uri'] = function () use ($di) {
+    $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+    unset($_GET['_url']);
+
+    if (str_starts_with($url, ADMIN_PREFIX)) {
+        $url = substr($url, strlen(ADMIN_PREFIX));
+    }
+    $redirectUri = $url . '?' . http_build_query($_GET);
+
+    $di['session']->set('redirect_uri', $redirectUri);
 };
 
 /*
@@ -519,7 +532,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
             if (strncasecmp($url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp($url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
                 throw new Exception('Please check your mailbox and confirm email address.');
             }
-        } elseif (strncasecmp($url, '/client/profile', strlen('/client/profile')) !== 0) {
+        } elseif (strncasecmp($url, '/client', strlen('/client')) !== 0) {
             // If they aren't attempting to access their profile, redirect them to it.
             $login_url = $di['url']->link('client/profile');
             header("Location: $login_url");
@@ -831,6 +844,20 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
 
     // Prevent further output from being added to the end of the CSV
     exit;
+});
+
+/*
+ * Converts markdown into HTML and returns the result.
+ *
+ * @param string|null $content The content to convert
+ *
+ * @return string
+ */
+$di['parse_markdown'] = $di->protect(function (?string $content) {
+    $parser = new League\CommonMark\GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
+    $content ??= '';
+
+    return $parser->convert($content);
 });
 
 return $di;

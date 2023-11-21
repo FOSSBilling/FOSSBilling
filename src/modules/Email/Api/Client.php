@@ -51,8 +51,7 @@ class Client extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function get($data)
     {
@@ -64,7 +63,7 @@ class Client extends \Api_Abstract
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         return $this->getService()->toApiArray($model);
@@ -73,10 +72,9 @@ class Client extends \Api_Abstract
     /**
      * Resend email to client once again.
      *
-     * @return type
+     * @return bool
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function resend($data)
     {
@@ -87,7 +85,7 @@ class Client extends \Api_Abstract
 
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         return $this->getService()->resend($model);
@@ -96,10 +94,9 @@ class Client extends \Api_Abstract
     /**
      * Remove email from system.
      *
-     * @return type
+     * @return bool
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function delete($data)
     {
@@ -110,7 +107,7 @@ class Client extends \Api_Abstract
 
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
         if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \Box_Exception('Email not found');
+            throw new \FOSSBilling\Exception('Email not found');
         }
 
         return $this->getService()->rm($model);

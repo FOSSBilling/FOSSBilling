@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_ClientTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'initial.xml';
@@ -13,7 +11,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
             'required' => array(),
         ));
 
-        $e = rand(5, 56666).'@gmail.com';
+        $e = random_int(5, 56666).'@gmail.com';
         $pass = 'testA1sssss';
 
         $data = array(
@@ -39,7 +37,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testRequiredFields()
     {
@@ -125,7 +123,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         ));
 
 
-        $e    = rand(5, 56666) . '@gmail.com';
+        $e    = random_int(5, 56666) . '@gmail.com';
         $pass = 'testA1sssss';
 
         $data = array(
@@ -152,7 +150,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testCreateWithCustomRequiredException()
     {
@@ -170,7 +168,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
             )
         ));
 
-        $e    = rand(5, 56666) . '@gmail.com';
+        $e    = random_int(5, 56666) . '@gmail.com';
         $pass = 'testA1sssss';
 
         $data = array(

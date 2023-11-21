@@ -114,7 +114,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \Box_Exception('Email can not be changed');
+            throw new \FOSSBilling\InformationException('Email can not be changed');
         }
 
         if (!empty($email)) {
@@ -122,7 +122,7 @@ class Service implements InjectionAwareInterface
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
-                throw new \Box_Exception('Can not change email. It is already registered.');
+                throw new \FOSSBilling\InformationException('Can not change email. It is already registered.');
             }
 
             $client->email = $email;
@@ -134,7 +134,7 @@ class Service implements InjectionAwareInterface
 
         $birthday = $data['birthday'] ?? null;
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
-            throw new \Box_Exception('Invalid birthdate value');
+            throw new \FOSSBilling\InformationException('Invalid birthdate value');
         }
         $client->birthday = $birthday;
 
@@ -170,12 +170,6 @@ class Service implements InjectionAwareInterface
         $client->custom_10 = $data['custom_10'] ?? $client->custom_10;
 
         $client->updated_at = date('Y-m-d H:i:s');
-
-        foreach ($client as $key => $value) {
-            if (empty($value)) {
-                $client->$key = null;
-            }
-        }
 
         $this->di['db']->store($client);
 
@@ -232,7 +226,7 @@ class Service implements InjectionAwareInterface
             } elseif ($auth->isClientLoggedIn()) {
                 $type = 'client';
             } else {
-                throw new \Box_Exception('Unable to invalidate sessions, nobody is logged in');
+                throw new \FOSSBilling\Exception('Unable to invalidate sessions, nobody is logged in');
             }
         }
 
@@ -251,7 +245,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($type !== 'admin' && $type !== 'client') {
-            throw new \Box_Exception('Unable to invalidate sessions, an invalid type was used');
+            throw new \FOSSBilling\Exception('Unable to invalidate sessions, an invalid type was used');
         }
 
         $sessions = $this->getSessions();

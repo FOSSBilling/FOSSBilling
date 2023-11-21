@@ -613,12 +613,12 @@ CREATE TABLE `invoice_item` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `kb_article`
+-- Table structure for table `support_kb_article`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `kb_article` (
+CREATE TABLE `support_kb_article` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `kb_article_category_id` bigint(20) DEFAULT NULL,
   `views` int(11) DEFAULT '0',
@@ -635,12 +635,12 @@ CREATE TABLE `kb_article` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `kb_article_category`
+-- Table structure for table `support_kb_article_category`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `kb_article_category` (
+CREATE TABLE `support_kb_article_category` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `title` varchar(100) DEFAULT NULL,
   `description` text,
@@ -1144,6 +1144,7 @@ CREATE TABLE `service_membership` (
 CREATE TABLE `session` (
   `id` varchar(32) NOT NULL DEFAULT '',
   `modified_at` int(11) DEFAULT NULL,
+  `created_at` int(11) DEFAULT NULL,
   `content` text,
   `fingerprint` text,
   UNIQUE KEY `unique_id` (`id`)

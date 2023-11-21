@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase {
 
     public function testinfo()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Cron\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getCronInfo')->will($this->returnValue(array()));
 
         $api_admin = new \Box\Mod\Cron\Api\Admin();
@@ -29,7 +29,7 @@ class AdminTest extends \BBTestCase {
 
     public function testrun()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Cron\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('runCrons')->will($this->returnValue(true));
 
         $api_admin = new \Box\Mod\Cron\Api\Admin();

@@ -40,7 +40,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertEquals($expected, $result);
     }
 
-    public function typeValidationData()
+    public static function typeValidationData()
     {
         return array(
             array('select', true),
@@ -48,16 +48,14 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider typeValidationData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('typeValidationData')]
     public function testtypeValidation($type, $expected)
     {
         $result = $this->service->typeValidation($type);
         $this->assertEquals($expected, $result);
     }
 
-    public function isArrayUniqueData()
+    public static function isArrayUniqueData()
     {
         return array(
             array(array('sameValue', 'sameValue'), false),
@@ -66,9 +64,7 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider isArrayUniqueData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('isArrayUniqueData')]
     public function testisArrayUnique($data, $expected)
     {
         $result = $this->service->isArrayUnique($data);
@@ -144,7 +140,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertEquals($newFieldId, $result);
     }
 
-    public function updateFieldTypeData()
+    public static function updateFieldTypeData()
     {
         return array(
             array('select'),
@@ -152,9 +148,7 @@ class ServiceTest extends \BBTestCase {
         );
     }
 
-    /**
-     * @dataProvider updateFieldTypeData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('updateFieldTypeData')]
     public function testupdateField($fieldType)
     {
         $updateFIeldId = 2;
@@ -201,7 +195,7 @@ class ServiceTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
 
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -223,8 +217,8 @@ class ServiceTest extends \BBTestCase {
             'type' => 'select',
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -234,7 +228,7 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(7628);
         $this->expectExceptionMessage('Unfortunately field with this name exists in this form already. Form must have different field names.');
         $serviceMock->updateField($data);
@@ -252,8 +246,8 @@ class ServiceTest extends \BBTestCase {
             'name' => 'testFIeld',
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -263,7 +257,7 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(1597);
         $this->expectExceptionMessage(ucfirst($data['type']).' values must be unique');
         $serviceMock->updateField($data);
@@ -281,8 +275,8 @@ class ServiceTest extends \BBTestCase {
             'name' => 'testFIeld',
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -292,7 +286,7 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(1598);
         $this->expectExceptionMessage(ucfirst($data['type']).' labels must be unique');
         $serviceMock->updateField($data);
@@ -312,8 +306,8 @@ class ServiceTest extends \BBTestCase {
             'textarea_option' => array(''), //textarea_size & textarea_option should have an equal number of elements
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('formFieldNameExists', 'getField'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)
+            ->onlyMethods(array('formFieldNameExists', 'getField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -323,7 +317,7 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(3510);
         $this->expectExceptionMessage('Textarea size options must be integer values');
         $serviceMock->updateField($data);
@@ -413,7 +407,7 @@ class ServiceTest extends \BBTestCase {
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
-        $result = $this->service->getFormPairs($formId);
+        $result = $this->service->getFormPairs();
         $this->assertIsArray($result);
     }
 
@@ -440,7 +434,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($modelArray));
 
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -525,7 +519,7 @@ class ServiceTest extends \BBTestCase {
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
-        $result = $this->service->getForms(array());
+        $result = $this->service->getForms();
         $this->assertIsArray($result);
     }
 
@@ -542,8 +536,8 @@ class ServiceTest extends \BBTestCase {
             'options' => array(),
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
-            ->setMethods(array('getFormFields', 'addNewForm', 'addNewField'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)
+            ->onlyMethods(array('getFormFields', 'addNewForm', 'addNewField'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())

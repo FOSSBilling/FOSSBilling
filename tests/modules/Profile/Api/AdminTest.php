@@ -41,7 +41,7 @@ class AdminTest extends \BBTestCase
 
     public function testLogout()
     {
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -59,7 +59,7 @@ class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Profile\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('updateAdmin')
@@ -76,7 +76,7 @@ class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Profile\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('generateNewApiKey')
@@ -89,7 +89,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePasswordExceptions()
+    public function testChangePasswordExceptions(): never
     {
         $di = new \Pimple\Container();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -97,7 +97,7 @@ class AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Profile\Api\Admin();
         $adminApi->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $adminApi->change_password(array());
         $this->fail('password should be passed');
 
@@ -117,7 +117,7 @@ class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->pass = $di['password']->hashIt('oldpw');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Profile\Service')
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('changeAdminPassword')

@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2 ]
+        php: [ 8.1, 8.2 ]
 
     name: PHP ${{ matrix.php }} - Build and Archive
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Validate composer.json and composer.lock
         uses: php-actions/composer@v6
@@ -45,7 +45,6 @@ jobs:
           echo > ./src/data/log/license.log
           echo > ./src/data/log/application.log
           echo > ./src/data/log/php_error.log
-          rm -rf ./src/install
           mkdir /tmp/builds/ && tar -cvf /tmp/builds/build.tar ./
 
       - name: Upload Build Archive for Tests
@@ -60,9 +59,9 @@ jobs:
     needs: [ composer ]
     strategy:
       matrix:
-        php: [ 8.0 ]
+        php: [ 8.1 ]
 
-    name: PHPStan
+    name: PHP ${{ matrix.php }} - PHPStan
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -85,7 +84,7 @@ jobs:
     needs: [ composer, phpstan ]
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2 ]
+        php: [ 8.1, 8.2 ]
 
     name: PHP ${{ matrix.php }} - PHPUnit
     steps:
@@ -100,6 +99,8 @@ jobs:
       - name: Run PHPUnit Tests
         uses: php-actions/phpunit@v3
         with:
-          version: 9
+          version: 10
           php_version: ${{ matrix.php }}
           configuration: phpunit.xml.dist
+        env:
+          APP_ENV: test

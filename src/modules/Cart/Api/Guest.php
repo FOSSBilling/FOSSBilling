@@ -54,7 +54,7 @@ class Guest extends \Api_Abstract
         $currencyService = $this->di['mod_service']('currency');
         $currency = $currencyService->getByCode($data['currency']);
         if (!$currency instanceof \Model_Currency) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
         $cart = $this->getService()->getSessionCart();
 
@@ -93,15 +93,15 @@ class Guest extends \Api_Abstract
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof \Model_Promo) {
-            throw new \Box_Exception('Promo code is expired or does not exist');
+            throw new \FOSSBilling\InformationException('Promo code is expired or does not exist');
         }
 
         if (!$this->getService()->isPromoAvailableForClientGroup($promo)) {
-            throw new \Box_Exception('Promo can not be applied to your account');
+            throw new \FOSSBilling\InformationException('Promo can not be applied to your account');
         }
 
         if (!$this->getService()->promoCanBeApplied($promo)) {
-            throw new \Box_Exception('Promo code is expired or does not exist');
+            throw new \FOSSBilling\InformationException('Promo code is expired or does not exist');
         }
 
         $cart = $this->getService()->getSessionCart();
@@ -158,7 +158,7 @@ class Guest extends \Api_Abstract
         $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         if ($product->is_addon) {
-            throw new \Box_Exception('Addon products cannot be added separately.');
+            throw new \FOSSBilling\InformationException('Addon products cannot be added separately.');
         }
 
         if (is_array($data['addons'] ?? '')) {
@@ -172,7 +172,7 @@ class Guest extends \Api_Abstract
                     $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
 
                     if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
-                        throw new \Box_Exception('One or more of your selected addons are invalid for the associated product.');
+                        throw new \FOSSBilling\InformationException('One or more of your selected addons are invalid for the associated product.');
                     }
                 }
             }

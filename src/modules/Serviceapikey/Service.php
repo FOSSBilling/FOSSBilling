@@ -8,13 +8,6 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-/**
- * This file is a delegate for module. Class does not extend any other class.
- *
- * All methods provided in this example are optional, but function names are
- * still reserved.
- */
-
 namespace Box\Mod\Serviceapikey;
 
 use FOSSBilling\InjectionAwareInterface;
@@ -58,7 +51,7 @@ class Service implements InjectionAwareInterface
     {
         $config = json_decode($order->config, 1);
         if (!is_object($model)) {
-            throw new \Box_Exception('Order does not exist.');
+            throw new \FOSSBilling\Exception('Order does not exist.');
         }
 
         $model->api_key = $this->generateKey($config);
@@ -120,12 +113,12 @@ class Service implements InjectionAwareInterface
     public function isValid(array $data): bool
     {
         if (empty($data['key'])) {
-            throw new \Box_Exception('You must provide an API key to check it\'s validity.');
+            throw new \FOSSBilling\Exception('You must provide an API key to check it\'s validity.');
         }
 
         $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
-            throw new \Box_Exception('API key does not exist');
+            throw new \FOSSBilling\Exception('API key does not exist');
         }
 
         return $this->isActive($model);
@@ -139,12 +132,12 @@ class Service implements InjectionAwareInterface
     public function getInfo(array $data): array
     {
         if (empty($data['key'])) {
-            throw new \Box_Exception('You must provide an API key to check it\'s validity.');
+            throw new \FOSSBilling\Exception('You must provide an API key to check it\'s validity.');
         }
 
         $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
-            throw new \Box_Exception('API key does not exist');
+            throw new \FOSSBilling\Exception('API key does not exist');
         }
 
         // Load the stored JSON config from the DB
@@ -184,7 +177,7 @@ class Service implements InjectionAwareInterface
     public function resetApiKey(array $data): bool
     {
         if (empty($data['key']) && empty($data['order_id'])) {
-            throw new \Box_Exception('You must provide either the API key or API key order ID in order to reset it.');
+            throw new \FOSSBilling\Exception('You must provide either the API key or API key order ID in order to reset it.');
         } elseif (!empty($data['order_id'])) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
             $orderService = $this->di['mod_service']('order');
@@ -194,7 +187,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (is_null($model)) {
-            throw new \Box_Exception('API key does not exist');
+            throw new \FOSSBilling\Exception('API key does not exist');
         }
 
         try {
@@ -205,7 +198,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_null($client) && $client->id !== $model->client_id) {
-            throw new \Box_Exception('API key does not exist');
+            throw new \FOSSBilling\Exception('API key does not exist');
         }
 
         $config = json_decode($model->config, true);
@@ -227,7 +220,7 @@ class Service implements InjectionAwareInterface
     public function updateApiKey(array $data): bool
     {
         if (empty($data['order_id'])) {
-            throw new \Box_Exception('You must provide the API key order ID in order to update it.');
+            throw new \FOSSBilling\Exception('You must provide the API key order ID in order to update it.');
         }
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
@@ -235,11 +228,11 @@ class Service implements InjectionAwareInterface
         $model = $orderService->getOrderService($order);
 
         if (is_null($model)) {
-            throw new \Box_Exception('API key does not exist');
+            throw new \FOSSBilling\Exception('API key does not exist');
         }
 
         if (isset($data['api_key']) && $model->api_key !== $data['api_key']) {
-            throw new \Box_Exception('To change the API key, please use the reset function rather than updating it.');
+            throw new \FOSSBilling\Exception('To change the API key, please use the reset function rather than updating it.');
         }
 
         $config = !empty($data['config']) ? json_encode($data['config']) : $model->config;
@@ -302,7 +295,7 @@ class Service implements InjectionAwareInterface
         do {
             // Try 10 times to generate a unique API key. Fail if we are unable to.
             if ($i++ >= 10) {
-                throw new \Box_Exception('Maximum number of iterations reached while generating API key');
+                throw new \FOSSBilling\Exception('Maximum number of iterations reached while generating API key');
             }
 
             // Generate random bytes half the length of the configured length, as the length will doubled when converted to a hex string.
@@ -337,7 +330,7 @@ class Service implements InjectionAwareInterface
 
                     break;
                 default:
-                    throw new \Box_Exception("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
+                    throw new \FOSSBilling\Exception("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
             }
         } while ($this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $apiKey]) !== null);
 
@@ -348,7 +341,7 @@ class Service implements InjectionAwareInterface
     {
         $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $model->id]);
         if (is_null($order)) {
-            throw new \Box_Exception('API key does not exist');
+            throw new \FOSSBilling\Exception('API key does not exist');
         }
 
         return $order->status === 'active';

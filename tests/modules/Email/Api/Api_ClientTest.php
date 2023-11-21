@@ -30,7 +30,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client     = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get_list(array());
@@ -47,7 +47,7 @@ class Api_ClientTest extends \BBTestCase
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'toApiArray'))->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('findOneForClientById', 'toApiArray'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue($model));
@@ -56,7 +56,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $clientApi->setService($service);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -67,7 +67,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client     = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = rand(1, 100);
+        $client->id = random_int(1, 100);
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get(array('id' => 1));
@@ -79,7 +79,7 @@ class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById'))->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('findOneForClientById'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue(false));
@@ -89,7 +89,7 @@ class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -100,7 +100,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $clientApi->get(array('id' => 1));
         $this->assertIsArray($result);
 
@@ -113,7 +113,7 @@ class Api_ClientTest extends \BBTestCase
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'resend'))->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('findOneForClientById', 'resend'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue($model));
@@ -126,7 +126,7 @@ class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -146,7 +146,7 @@ class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById'))->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('findOneForClientById'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue(false));
@@ -157,7 +157,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -168,7 +168,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $clientApi->resend(array('id' => 1));
         $this->assertIsArray($result);
 
@@ -182,7 +182,7 @@ class Api_ClientTest extends \BBTestCase
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'rm'))->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('findOneForClientById', 'rm'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue($model));
@@ -195,7 +195,7 @@ class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -213,7 +213,7 @@ class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById'))->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('findOneForClientById'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->will($this->returnValue(false));
@@ -224,7 +224,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
@@ -235,7 +235,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $clientApi->delete(array('id' => 1));
         $this->assertIsArray($result);
 

@@ -4,7 +4,8 @@ namespace Box\Mod\System;
 
 use Twig\Environment;
 
-class ServiceTest extends \BBTestCase {
+class ServiceTest extends \BBTestCase
+{
     /**
      * @var \Box\Mod\System\Service
      */
@@ -12,13 +13,13 @@ class ServiceTest extends \BBTestCase {
 
     public function setup(): void
     {
-        $this->service= new \Box\Mod\System\Service();
+        $this->service = new \Box\Mod\System\Service();
     }
 
     public function testgetParamValueMissingKeyParam()
     {
         $param = array();
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Parameter key is missing');
 
         $this->service->getParamValue($param);
@@ -28,23 +29,27 @@ class ServiceTest extends \BBTestCase {
     {
         $config = array('url' => 'www.fossbilling.org');
         $expected = array(
-            'www'               => $config['url'],
-            'name'              => 'Inc. Test',
-            'email'             => 'work@example.eu',
-            'tel'               =>   NULL,
-            'signature'         =>   NULL,
-            'logo_url'          =>   NULL,
-            'logo_url_dark'     =>   NULL,
-            'address_1'         =>   NULL,
-            'address_2'         =>   NULL,
-            'address_3'         =>   NULL,
-            'account_number'    =>   NULL,
-            'number'            =>   NULL,
-            'note'              =>   NULL,
-            'privacy_policy'    =>   NULL,
-            'tos'               =>   NULL,
-            'vat_number'        =>   NULL,
-            'favicon_url'       =>   NULL,
+            'www'                   => 'http://localhost/',
+            'name'                  => 'Inc. Test',
+            'email'                 => 'work@example.eu',
+            'tel'                   =>   NULL,
+            'signature'             =>   NULL,
+            'logo_url'              =>   NULL,
+            'logo_url_dark'         =>   NULL,
+            'favicon_url'           =>   NULL,
+            'address_1'             =>   NULL,
+            'address_2'             =>   NULL,
+            'address_3'             =>   NULL,
+            'account_number'        =>   NULL,
+            'bank_name'             =>   NULL,
+            'bic'    =>   NULL,
+            'display_bank_info'     =>   NULL,
+            'bank_info_pagebottom'  =>   NULL,
+            'number'                =>   NULL,
+            'note'                  =>   NULL,
+            'privacy_policy'        =>   NULL,
+            'tos'                   =>   NULL,
+            'vat_number'            =>   NULL,
         );
 
         $multParamsResults = array(
@@ -122,7 +127,7 @@ class ServiceTest extends \BBTestCase {
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('setParamValue'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->onlyMethods(array('setParamValue'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->will($this->returnValue(true));
@@ -142,12 +147,12 @@ class ServiceTest extends \BBTestCase {
         $latestVersion = '1.0.0';
         $type = 'info';
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('getParamValue'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->onlyMethods(['getParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->returnValue(false));
 
-        $updaterMock = $this->getMockBuilder('\FOSSBilling\Update')->getMock();
+        $updaterMock = $this->getMockBuilder('\\' . \FOSSBilling\Update::class)->getMock();
         $updaterMock->expects($this->atLeastOnce())
             ->method('isUpdateAvailable')
             ->will($this->returnValue(true));
@@ -157,26 +162,24 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['updater'] = $updaterMock;
-        $di['mod_service'] = $di->protect(function () use($systemServiceMock) {return $systemServiceMock;});
-        $di['tools'] = $toolsMock;
-
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
 
         $systemServiceMock->setDi($di);
 
-        $result = $systemServiceMock->getMessages($type, true);
+        $result = $systemServiceMock->getMessages($type);
         $this->assertIsArray($result);
     }
 
     public function testtemplateExistsEmptyPaths()
     {
         $getThemeResults = array('paths' => array());
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('getThemeConfig'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->addMethods(array('getThemeConfig'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getThemeConfig')
             ->will($this->returnValue($getThemeResults));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use($systemServiceMock) {return $systemServiceMock;});
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
         $this->service->setDi($di);
 
         $result = $this->service->templateExists('defaultFile.cp');
@@ -192,16 +195,16 @@ class ServiceTest extends \BBTestCase {
 
 
         $this
-        ->getMockBuilder('Drupal\Core\Template\TwigEnvironment')
-        ->disableOriginalConstructor()
-        ->getMock();
+            ->getMockBuilder('Drupal\Core\Template\TwigEnvironment')
+            ->disableOriginalConstructor()
+            ->getMock();
 
 
-        $twigMock = $this->getMockBuilder('\Twig\Environment')->disableOriginalConstructor()->getMock();
+        $twigMock = $this->getMockBuilder('\\' . \Twig\Environment::class)->disableOriginalConstructor()->getMock();
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
         $twigMock->method('createTemplate')
-                 ->will($this->throwException(new \Error('Error')));
+            ->will($this->throwException(new \Error('Error')));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -254,7 +257,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testclearCache()
     {
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('emptyFolder')
             ->will($this->returnValue(true));
@@ -288,7 +291,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(array('countries' => 'US')));
 
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(function () use($modMock) {return $modMock;});
+        $di['mod'] = $di->protect(fn() => $modMock);
 
         $this->service->setDi($di);
         $result = $this->service->getCountries();
@@ -303,7 +306,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(array('countries' => 'US')));
 
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(function () use($modMock) {return $modMock;});
+        $di['mod'] = $di->protect(fn() => $modMock);
 
         $this->service->setDi($di);
         $result = $this->service->getEuCountries();
@@ -334,7 +337,7 @@ class ServiceTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -351,7 +354,7 @@ class ServiceTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -366,8 +369,8 @@ class ServiceTest extends \BBTestCase {
 
     public function testsetPendingMessage()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')
-            ->setMethods(array('getPendingMessages'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)
+            ->onlyMethods(array('getPendingMessages'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPendingMessages')
@@ -375,7 +378,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('set')
             ->with('pending_messages');
@@ -393,7 +396,7 @@ class ServiceTest extends \BBTestCase {
     {
         $di = new \Pimple\Container();
 
-        $sessionMock = $this->getMockBuilder('\FOSSBilling\Session')->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('delete')
             ->with('pending_messages');

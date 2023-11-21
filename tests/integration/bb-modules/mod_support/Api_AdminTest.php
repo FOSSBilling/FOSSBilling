@@ -1,16 +1,14 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_SupportTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_support.xml';
-    
+
     public function testCanned()
     {
         $array = $this->api_admin->support_canned_pairs();
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->support_canned_get_list();
         $this->assertIsArray($array);
         $list = $array['list'];
@@ -67,7 +65,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
     {
         $array = $this->api_admin->support_public_ticket_get_statuses();
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->support_public_ticket_get_list();
         $this->assertIsArray($array);
         $list = $array['list'];
@@ -88,7 +86,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $data['id'] = $id;
         $array = $this->api_admin->support_public_ticket_get($data);
         $this->assertIsArray($array);
-        
+
         $data['subject'] = 'new subject';
         $data['status'] = 'closed';
         $bool = $this->api_admin->support_public_ticket_update($data);
@@ -97,7 +95,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $data['content'] = 'new message';
         $id = $this->api_admin->support_public_ticket_reply($data);
         $this->assertTrue(is_numeric($id));
-        
+
         $id = $this->api_admin->support_public_ticket_reply($data);
         $this->assertTrue(is_numeric($id));
 
@@ -112,7 +110,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
     {
         $bool = $this->api_admin->support_batch_ticket_auto_close();
         $this->assertTrue($bool);
-        
+
         $array = $this->api_admin->support_ticket_get_statuses(array());
         $this->assertIsArray($array);
 
@@ -132,7 +130,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $data['content'] = 'other message';
         $mid = $this->api_admin->support_ticket_reply($data);
         $this->assertTrue(is_numeric($mid));
-        
+
         $mid = $this->api_admin->support_ticket_reply($data);
         $this->assertTrue(is_numeric($mid));
 
@@ -184,7 +182,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
         $bool = $this->api_admin->support_helpdesk_delete($data);
         $this->assertTrue($bool);
-        
+
         $array = $this->api_admin->support_helpdesk_get_list($data);
         $this->assertIsArray($array);
 
@@ -201,7 +199,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
             'message'  =>  'test@test.com',
         );
         $hash = $this->api_guest->support_ticket_create($data);
-        
+
         $ticket = $this->api_guest->support_ticket_get(array('hash'=>$hash));
 
         $model = $this->di['db']->load('SupportPTicket',$ticket['id']);
@@ -210,7 +208,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->di['db']->store($model);
 
         $bool = $this->api_admin->support_batch_public_ticket_auto_close();
-        
+
         $array = $this->api_admin->support_public_ticket_get_list(array('status'=>'on_hold'));
         $this->assertIsArray($array);
         $this->assertTrue(empty($array['list']));
@@ -232,7 +230,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $data = array(
             'id' => $id,
         );
-        
+
         $bool = $this->api_admin->support_task_complete($data);
         $this->assertTrue($bool);
     }
@@ -317,5 +315,119 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
+    }
+
+    public function testKbCategory()
+    {
+        $array = $this->api_admin->support_kb_category_get_list();
+        $this->assertIsArray($array);
+
+        $array = $this->api_admin->support_kb_category_get_pairs();
+        $this->assertIsArray($array);
+
+        $data = array(
+            'title'    =>      'test',
+        );
+        $id = $this->api_admin->support_kb_category_create($data);
+        $this->assertTrue(is_numeric($id));
+
+        $data = array(
+            'id'    =>$id,
+        );
+        $array = $this->api_admin->support_kb_category_get($data);
+        $this->assertIsArray($array);
+
+        $data['id'] = $id;
+        $data['title'] = 'new';
+        $bool = $this->api_admin->support_kb_category_update($data);
+        $this->assertTrue($bool);
+
+        $bool = $this->api_admin->support_kb_category_delete($data);
+        $this->assertTrue($bool);
+    }
+
+    public function testKbArticle()
+    {
+        $array = $this->api_admin->support_kb_article_get_list();
+        $this->assertIsArray($array);
+
+        $data = array(
+            'id'    =>  1,
+        );
+        $array = $this->api_admin->support_kb_article_get($data);
+        $this->assertIsArray($array);
+
+        $data = array(
+            'kb_article_category_id'    =>      1,
+            'title'                     =>      'test',
+        );
+        $id = $this->api_admin->support_kb_article_create($data);
+        $this->assertTrue(is_numeric($id));
+
+        $data['id'] = $id;
+        $data['title'] = 'new';
+        $bool = $this->api_admin->support_kb_article_update($data);
+        $this->assertTrue($bool);
+
+        $bool = $this->api_admin->support_kb_article_delete($data);
+        $this->assertTrue($bool);
+    }
+
+    public function testKbArticleGetList()
+    {
+        $array = $this->api_admin->support_kb_article_get_list();
+        $this->assertIsArray($array);
+
+        $this->assertArrayHasKey('list', $array);
+        $list = $array['list'];
+        $this->assertIsArray($list);
+
+        if (count($list)) {
+            $item = $list[0];
+            $this->assertArrayHasKey('id', $item);
+            $this->assertArrayHasKey('slug', $item);
+            $this->assertArrayHasKey('title', $item);
+            $this->assertArrayHasKey('views', $item);
+            $this->assertArrayHasKey('created_at', $item);
+            $this->assertArrayHasKey('updated_at', $item);
+            $this->assertArrayHasKey('category', $item);
+
+            $category = $item['category'];
+            $this->assertIsArray($category);
+            $this->assertArrayHasKey('id', $category);
+            $this->assertArrayHasKey('slug', $category);
+            $this->assertArrayHasKey('title', $category);
+        }
+    }
+
+    public function testKbCategoryGetList()
+    {
+        $array = $this->api_admin->support_kb_category_get_list();
+        $this->assertIsArray($array);
+
+        $this->assertArrayHasKey('list', $array);
+        $list = $array['list'];
+        $this->assertIsArray($list);
+
+        if (count($list)) {
+            $item = $list[0];
+            $this->assertArrayHasKey('id', $item);
+            $this->assertArrayHasKey('title', $item);
+            $this->assertArrayHasKey('description', $item);
+            $this->assertArrayHasKey('slug', $item);
+            $this->assertArrayHasKey('created_at', $item);
+            $this->assertArrayHasKey('updated_at', $item);
+            $this->assertArrayHasKey('articles', $item);
+
+            $articles = $item['articles'];
+            if (count($articles)){
+                $article = $articles[0];
+                $this->assertIsArray($article);
+                $this->assertArrayHasKey('id', $article);
+                $this->assertArrayHasKey('slug', $article);
+                $this->assertArrayHasKey('title', $article);
+            }
+
+        }
     }
 }

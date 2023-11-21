@@ -525,7 +525,7 @@
                     {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
                     {% for invoice in invoices.list %}
                     <tr>
-                        <td>{{ invoice.id }}</td>
+                        <td><a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">#{{ invoice.id }}</a></td>
                         <td>{{ mf.currency_format( invoice.total, invoice.currency, 1) }}</td>
                         <td>{{ invoice.created_at|format_date }}</td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>

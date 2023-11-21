@@ -50,7 +50,7 @@ class Server_Manager_Plesk extends Server_Manager
         return true;
     }
     
-    public function synchronizeAccount(Server_Account $a)
+    public function synchronizeAccount(Server_Account $a): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
     }
@@ -70,7 +70,7 @@ class Server_Manager_Plesk extends Server_Manager
             /*
     		if (count($ips['exclusive']) == 0) {
     			// Disabled. Resellers can also use shared IP addresses.
-                // throw new Server_Exception('Out of free IP adresses');
+                // throw new Server_Exception('Out of free IP addresses');
             }
             */
             if ((is_countable($ips['exclusive']) ? count($ips['exclusive']) : 0) > 0) {
@@ -189,15 +189,15 @@ class Server_Manager_Plesk extends Server_Manager
     	$this->getLog()->info('Changing password for account ' . $a->getUsername());
 
     	if ($a->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['passwd' => $a->getPassword()]);
+            $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['passwd' => $new]);
     	} else {
-            $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['passwd' => $a->getPassword()]);
+            $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['passwd' => $new]);
     	}
 
     	return $result;
     }
 
-    public function changeAccountUsername(Server_Account $a, $new)
+    public function changeAccountUsername(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
     }
@@ -221,10 +221,10 @@ class Server_Manager_Plesk extends Server_Manager
             ]
         ];
 
-        $this->_client->webspace()->request($params);   
+        $this->_client->webspace()->request($params);
     }
 
-    public function changeAccountIp(Server_Account $a, $new)
+    public function changeAccountIp(Server_Account $a, $new): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('changing the account IP')]);
     }
@@ -403,6 +403,10 @@ class Server_Manager_Plesk extends Server_Manager
                                 'name'	=>	'max_subftp_users',
                                 'value'	=>	$p->getMaxFtp() ?: 0,
                             ),
+                            array(
+                                'name'	=>	'max_site',
+                                'value'	=>	$p->getMaxDomains() ?: 0,
+                            ),
                         ), 
                     ),
                     'permissions'	=>	array(
@@ -489,9 +493,6 @@ class Server_Manager_Plesk extends Server_Manager
             'description'       =>  "Created using FOSSBilling.",
         ];
 
-        // We don't want to send these data if they are empty. Plesk will throw an error.
-        $client->getCountry() ? $props['country'] = $client->getCountry() : null;
-
     	if ($a->getReseller()) {
     		$result = $this->_client->reseller()->create($props);
     	} else {
@@ -516,9 +517,6 @@ class Server_Manager_Plesk extends Server_Manager
     		'city'				=>	$client->getCity(),
     		'state'				=>	$client->getState(),
         ];
-
-        // Sending the country name blank causes an error. So we won't assign it to our request if it's blank.
-        $client->getCountry() ? $props['country'] = $client->getCountry() : null;
 
         return $props;
     }

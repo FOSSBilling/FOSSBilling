@@ -26,13 +26,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if (!empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'API Key']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'API Key'], 3001);
         }
 
         if (!empty($options['username'])) {
             $this->config['username'] = $options['username'];
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'Username']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'Username'], 3001);
         }
 
         if (empty($options['api-user-id'])) {
@@ -44,7 +44,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if (!empty($options['ip'])) {
             $this->config['ip'] = $options['ip'];
         } else {
-            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'server IP address']);
+            throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Namecheap', ':missing' => 'server IP address'], 3001);
         }
     }
 
@@ -220,12 +220,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      */
     public function includeAuthorizationParams(array $params)
     {
-        return array_merge(array(
-            'ApiUser' => $this->config['api-user-id'],
-            'ApiKey' => $this->config['api-key'],
-            'UserName' => $this->config['username'],
-            'ClientIp' => $this->config['ip'],
-        ), $params);
+        return ['ApiUser' => $this->config['api-user-id'], 'ApiKey' => $this->config['api-key'], 'UserName' => $this->config['username'], 'ClientIp' => $this->config['ip'], ...$params];
     }
 
 
@@ -426,10 +421,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     /**
      * Should return domain transfer code
      *
-     * @return string
      * @throws Registrar_Exception
      */
-    public function getEpp(Registrar_Domain $domain)
+    public function getEpp(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Namecheap', ':action:' => __trans('retrieving the transfer code')]);
     }
@@ -568,7 +562,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      * 
      * @throws Registrar_Exception
      */
-    public function deleteDomain(Registrar_Domain $domain)
+    public function deleteDomain(Registrar_Domain $domain): never
     {
         throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Namecheap', ':action:' => __trans('deleting domains')]);
     }

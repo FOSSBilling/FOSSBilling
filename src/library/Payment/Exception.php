@@ -8,15 +8,14 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-class Payment_Exception extends Box_Exception
+class Payment_Exception extends FOSSBilling\Exception
 {
 	/**
-	 * Creates a new translated exception, using the Box_Exception class.
+	 * Creates a new translated exception, using the FOSSBilling\Exception class.
 	 *
-	 * @param   string   error message
-	 * @param   array|null    translation variables
-	 * @param   int 	 The exception code.
-	 * @param 	bool 	 If the variables in this should be considered protect, if so, disable stacktracing abilities.
+	 * @param string $message error message
+	 * @param array|null $variables translation variables
+	 * @param int $code The exception code.
 	 */
     public function __construct(string $message, array $variables = NULL, int $code = 0)
     {

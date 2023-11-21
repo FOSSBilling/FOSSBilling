@@ -31,7 +31,7 @@
                 <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company details'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
+                <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company legal'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
@@ -41,6 +41,9 @@
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error reporting'|trans }}</a>
             </li>
         </ul>
 
@@ -107,9 +110,47 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Bank Name'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="text" name="company_bank_name" value="{{ params.company_bank_name }}">
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'BIC / SWIFT Code' |trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="text" name="company_bic" value="{{ params.company_bic }}">
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Bank Account number'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="company_account_number" value="{{ params.company_account_number }}">
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Display bank account information on documents?'|trans }}</label>
+                                <div class="col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_yes" value="1" {% if params.company_display_bank_info == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="display_bank_info_yes">{{ 'Yes'|trans }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_no" value="0" {% if params.company_display_bank_info == "0" %}checked{% endif %}>
+                                        <label class="form-check-label" for="display_bank_info_no">{{ 'No'|trans }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Display bank account information on the bottom of every page?'|trans }}</label>
+                                <div class="col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_bank_info_pagebottom" id="company_bank_info_pagebottom_yes" value="1" {% if params.company_bank_info_pagebottom == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="company_bank_info_pagebottom_yes">{{ 'Yes'|trans }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="company_bank_info_pagebottom" id="company_bank_info_pagebottom_no" value="0" {% if params.company_bank_info_pagebottom == "0" %}checked{% endif %}>
+                                        <label class="form-check-label" for="company_bank_info_pagebottom_no">{{ 'No'|trans }}</label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
@@ -474,18 +515,53 @@ ZW=Zimbabwe
                     <div class="card-body">
                         <div class="datagrid">
                             <div class="datagrid-item">
-                                <div class="datagrid-title">FOSSBilling version</div>
+                                <div class="datagrid-title">{{ 'FOSSBilling version'|trans }}</div>
                                 <div class="datagrid-content">{{ FOSSBillingVersion }}</div>
                             </div>
                             <div class="datagrid-item">
-                                <div class="datagrid-title">PHP version</div>
+                                <div class="datagrid-title">{{ 'PHP version'|trans }}</div>
                                 <div class="datagrid-content">{{ constant('PHP_VERSION') }}</div>
                             </div>
                             <div class="datagrid-item">
-                                <div class="datagrid-title">License</div>
+                                <div class="datagrid-title">{{ 'Instance ID'|trans }}</div>
+                                <div class="datagrid-content">{{ admin.system_instance_id }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">{{ 'License'|trans }}</div>
                                 <div class="datagrid-content"><a href="https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE">Apache 2.0</a></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-reporting" role="tabpanel">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ 'Error reporting'|trans }}</h3>
+                    </div>
+                    <div class="card-body">
+                        {% set last_change = admin.system_last_error_reporting_change %}
+                        {% if admin.system_error_reporting_enabled %}
+                            <div class="alert alert-success" role="alert">
+                                <p>{{ 'Error reporting is enabled.'|trans}}</p>
+                                <p>{{ 'This FOSSBilling instance is automatically sending errors which allows us to more easily improve the software and keep it stable. Thanks!'|trans }}</p>
+                                <a class="btn btn-danger api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now disabled.'|trans }}">{{'Disable error reporting'|trans}}</a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger" role="alert">
+                                <p>{{ 'Error reporting is disabled.'|trans}}</p>
+                                <p>{{ 'Please consider enabling error reporting. Doing so allows us to provide you with better technical support and helps us to proactively improve FOSSBilling.'|trans }}</p>
+                                <a class="btn btn-success api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now enabled.'|trans }}">{{'Enable error reporting'|trans}}</a>
+                            </div>
+                        {% endif %}
+                        <p>{{ 'FOSSBilling optionally includes automated error reporting to help aid the project\'s development and stability. To find the most up-to-date information about it, you should review the links and information below.'|trans }}</p>
+                        <ul>
+                            <li><a href="https://fossbilling.org/docs/faq/error-reporting" target="_blank">{{ 'Learn more about error reporting'|trans }}</a></li>
+                            <li>
+                                <a href="https://fossbilling.org/docs/faq/error-reporting#error-reporting-changelog" target="_blank">{{ 'Error reporting changelog'|trans }}</a>
+                                <span class="text-muted">({{ 'Last applicable behavior change change: '|trans }} {{ last_change }})</span>
+                            </li>
+                        </ul>
+                        <span class="text-muted">{{ 'The last applicable behavior change represents the most recent FOSSBilling version that changed error reporting which also applies to this current version. There may have been more recent changes than what\'s listed.'|trans }}</span>
                     </div>
                 </div>
 

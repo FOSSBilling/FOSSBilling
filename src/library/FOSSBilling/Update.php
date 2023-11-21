@@ -66,12 +66,23 @@ class Update implements InjectionAwareInterface
     }
 
     /**
+     * Gets what type of update is available (Major, minor, or patch)
+     *
+     * @return int And int from 0-2 representing the patch type
+     */
+    public function getUpdateType(): int
+    {
+        $updateBranch = $this->getUpdateBranch();
+        return $this->getLatestVersionInfo($updateBranch)['update_type'];
+    }
+
+    /**
      * Returns information about the latest version of the specified branch.
      *
      * @param string $branch The branch to return the latest information for;
      *                       valid values are: 'preview' or 'release'.
      *
-     * @throws \Box_Exception if there is an error downloading the latest
+     * @throws Exception if there is an error downloading the latest
      *                        version information.
      *
      * @return array
@@ -89,6 +100,7 @@ class Update implements InjectionAwareInterface
                 'version' => Version::VERSION,
                 'download_url' => $downloadUrl,
                 'release_notes' => "Release notes are not available for the preview branch. You can check the latest changes on our [GitHub]($compareLink) repository.",
+                'update_type' => 0,
             ];
         } else {
             return $this->di['cache']->get("Update.latest_{$branch}_version_info", function (ItemInterface $item) {
@@ -101,7 +113,7 @@ class Update implements InjectionAwareInterface
                     $releaseInfo = $response->toArray();
                 } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
                     error_log($e->getMessage());
-                    throw new \Box_Exception('Failed to download the latest version information. Further details are available in the error log.');
+                    throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
                 }
 
                 return [
@@ -109,23 +121,9 @@ class Update implements InjectionAwareInterface
                     'download_url' => $releaseInfo['assets'][0]['browser_download_url'],
                     'release_date' => $releaseInfo['published_at'],
                     'release_notes' => $releaseInfo['body'] ?: '**Error: Release notes unavailable.**',
+                    'update_type' => Version::getUpdateType($releaseInfo['tag_name'] ?: Version::VERSION),
                 ];
             });
-        }
-    }
-
-    /**
-     * Checks if current FOSSBilling version is a preview.
-     *
-     * @return bool True if preview, false if not.
-     */
-    private function isPreviewVersion(): bool
-    {
-        $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
-        if (preg_match($reg, $this->getLatestVersion())) {
-            return false;
-        } else {
-            return true;
         }
     }
 
@@ -138,7 +136,7 @@ class Update implements InjectionAwareInterface
     {
         $version = $this->getLatestVersion();
         $result = Version::compareVersion($version);
-        $result = ($this->isPreviewVersion() && $this->getUpdateBranch() === "release") ? 1 : $result;
+        $result = (Version::isPreviewVersion() && $this->getUpdateBranch() === "release") ? 1 : $result;
         return ($result > 0);
     }
 
@@ -159,9 +157,9 @@ class Update implements InjectionAwareInterface
     /**
      * Perform system update.
      *
-     * @throws \Box_Exception if latest version already installed.
-     * @throws \Box_Exception if unable to download the update archive.
-     * @throws \Box_Exception if unable to extract the update archive.
+     * @throws InformationException if latest version already installed.
+     * @throws Exception if unable to download the update archive.
+     * @throws Exception if unable to extract the update archive.
      *
      * @return void
      */
@@ -169,7 +167,7 @@ class Update implements InjectionAwareInterface
     {
         $updateBranch = $this->getUpdateBranch();
         if ($updateBranch !== 'preview' && !$this->isUpdateAvailable()) {
-            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.');
+            throw new InformationException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         error_log('Started FOSSBilling auto-update script');
@@ -191,7 +189,7 @@ class Update implements InjectionAwareInterface
             fclose($fileHandler);
         } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
             error_log($e->getMessage());
-            throw new \Box_Exception('Failed to download the update archive. Further details are available in the error log.');
+            throw new Exception('Failed to download the update archive. Further details are available in the error log.');
         }
 
         // @TODO - Validate downloaded file hash.
@@ -204,7 +202,7 @@ class Update implements InjectionAwareInterface
             $zip->close();
         } catch (ZipException $e) {
             error_log($e->getMessage());
-            throw new \Box_Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+            throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
         // Apply system patches and migrate configuration file.
@@ -222,7 +220,7 @@ class Update implements InjectionAwareInterface
             $filesystem->mkdir(PATH_CACHE, 0777);
         } catch (IOException $e) {
             error_log($e->getMessage());
-            throw new \Box_Exception("Unable to clear cache and/or remove install folder. Further details are available in the error log.");
+            throw new Exception("Unable to clear cache and/or remove install folder. Further details are available in the error log.");
         }
 
         // Log off the current user and destroy the session.

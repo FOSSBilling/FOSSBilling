@@ -63,8 +63,8 @@ class ServiceTest extends \BBTestCase
 
     public function testtoApiArray()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array(
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array(
                              'getStartingFromPrice',
                              'getUpgradablePairs',
                              'toProductPaymentApiArray',))
@@ -101,7 +101,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->onConsecutiveCalls($modelProductPayment, $modelProductCategory));
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array()));
@@ -109,7 +109,7 @@ class ServiceTest extends \BBTestCase
         $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
         $di['tools']       = $toolsMock;
-        $di['mod_service'] = $di->protect(function () use ($serviceMock) { return $serviceMock; });
+        $di['mod_service'] = $di->protect(fn() => $serviceMock);
 
         $model->setDi($di);
         $serviceMock->setDi($di);
@@ -135,14 +135,14 @@ class ServiceTest extends \BBTestCase
         $expectedArray['customtest'] = 'Customtest';
 
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getInstalledMods')
             ->will($this->returnValue($modArray));
 
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) { return $extensionServiceMock; });
+        $di['mod_service'] = $di->protect(fn() => $extensionServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->getTypes();
@@ -183,7 +183,7 @@ class ServiceTest extends \BBTestCase
 
     public function testcreateProduct()
     {
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -208,12 +208,12 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($newProductId));
 
-        $toolMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) { return $systemServiceMock; });
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
         $di['db']          = $dbMock;
         $di['tools']       = $toolMock;
         $di['logger']      = new \Box_Log();
@@ -227,8 +227,8 @@ class ServiceTest extends \BBTestCase
 
     public function testupdateProductMissngPricingType()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getPaymentTypes'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array('getPaymentTypes'))
             ->getMock();
 
         $typesArr = array(
@@ -247,7 +247,7 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Pricing type is required');
         $serviceMock->updateProduct($modelProduct, $data);
     }
@@ -257,8 +257,8 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getPaymentTypes'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array('getPaymentTypes'))
             ->getMock();
 
         $typesArr = array(
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue(1));
 
-        $toolMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array()));
@@ -441,7 +441,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
 
-        $toolMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
@@ -461,17 +461,17 @@ class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Product();
 
-        $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('productHasOrders')
             ->will($this->returnValue(true));
 
         $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove product which has active orders.');
         $this->service->deleteProduct($model);
     }
@@ -529,7 +529,7 @@ class ServiceTest extends \BBTestCase
     {
         $newCategoryId = 1;
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -547,7 +547,7 @@ class ServiceTest extends \BBTestCase
 
         $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) { return $systemServiceMock; });
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
         $di['logger']      = new \Box_Log();
 
         $this->service->setDi($di);
@@ -576,7 +576,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove product category with products');
         $this->service->removeProductCategory($modelProductCategory);
 
@@ -620,7 +620,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        list($sql, $params) = $this->service->getPromoSearchQuery($data);
+        [$sql, $params] = $this->service->getPromoSearchQuery($data);
 
         $this->assertIsString($sql);
         $this->assertIsArray($params);
@@ -628,7 +628,7 @@ class ServiceTest extends \BBTestCase
 
     public function testcreatePromo()
     {
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -647,7 +647,7 @@ class ServiceTest extends \BBTestCase
 
         $di                = new \Pimple\Container();
         $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) { return $systemServiceMock; });
+        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
         $di['logger']      = new \Box_Log();
 
         $this->service->setDi($di);
@@ -670,7 +670,7 @@ class ServiceTest extends \BBTestCase
 
         $di          = new \Pimple\Container();
         $di['db']    = $dbMock;
-        $di['tools'] = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();;
+        $di['tools'] = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();;
 
         $this->service->setDi($di);
 
@@ -748,7 +748,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        list($sql, $params) = $this->service->getProductSearchQuery($data);
+        [$sql, $params] = $this->service->getProductSearchQuery($data);
 
         $this->assertIsString($sql);
         $this->assertIsArray($params);
@@ -766,8 +766,8 @@ class ServiceTest extends \BBTestCase
             $modelProduct
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getCategoryProducts', 'toApiArray'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array('getCategoryProducts', 'toApiArray'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -810,8 +810,8 @@ class ServiceTest extends \BBTestCase
             $modelProduct,
         );
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getCategoryProducts', 'toApiArray'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array('getCategoryProducts', 'toApiArray'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -888,7 +888,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetProductCategorySearchQuery()
     {
-        list($sql, $params) = $this->service->getProductCategorySearchQuery(array());
+        [$sql, $params] = $this->service->getProductCategorySearchQuery(array());
 
         $this->assertIsString($sql);
         $this->assertIsArray($params);
@@ -939,8 +939,8 @@ class ServiceTest extends \BBTestCase
         $productModel->product_payment_id = 1;
 
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getStartingDomainPrice', 'getStartingPrice'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array('getStartingDomainPrice', 'getStartingPrice'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getStartingDomainPrice')
@@ -1062,7 +1062,7 @@ class ServiceTest extends \BBTestCase
     {
         $filename = 'cfg.file';
         $config   = array('path_data' => '/home');
-        $expected = $config['path_data'] . '/uploads/' . md5($filename);
+        $expected = PATH_DATA . '/uploads/' . md5($filename);
 
         $di           = new \Pimple\Container();
         $di['config'] = $config;
@@ -1076,8 +1076,8 @@ class ServiceTest extends \BBTestCase
 
     public function testcanUpgradeTo_returnsTrue()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getUpgradablePairs'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array('getUpgradablePairs'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')
@@ -1097,8 +1097,8 @@ class ServiceTest extends \BBTestCase
 
     public function testcanUpgradeTo_upgradeIsImposible()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
-            ->setMethods(array('getUpgradablePairs'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
+            ->onlyMethods(array('getUpgradablePairs'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')

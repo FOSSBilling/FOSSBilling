@@ -1,7 +1,5 @@
 <?php
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ThemeTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_theme.xml';
@@ -25,7 +23,7 @@ class Api_Admin_ThemeTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
+     * @expectedException \FOSSBilling\Exception
      */
     public function testThemeNotFound()
     {

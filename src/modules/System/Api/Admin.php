@@ -14,6 +14,8 @@
 
 namespace Box\Mod\System\Api;
 
+use Symfony\Component\Filesystem\Filesystem;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -117,7 +119,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function is_allowed($data)
     {
@@ -155,17 +157,29 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Gets the update type.
+     *
+     * @return int
+     */
+    public function update_type()
+    {
+        $updater = $this->di['updater'];
+
+        return $updater->getUpdateType();
+    }
+
+    /**
      * Update FOSSBilling core.
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update_core($data)
     {
         $updater = $this->di['updater'];
         if ($updater->getUpdateBranch() !== 'preview' && !$updater->isUpdateAvailable()) {
-            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.');
+            throw new \FOSSBilling\InformationException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
         $new_version = $updater->getLatestVersion();
@@ -183,7 +197,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function manual_update()
     {
@@ -194,5 +208,50 @@ class Admin extends \Api_Abstract
         $this->di['logger']->info('Updated FOSSBilling - applied patches and updated configuration file.');
 
         return true;
+    }
+
+    /**
+     * Returns the unique instance ID for this FOSSBilling installation.
+     */
+    public function instance_id(): string
+    {
+        return INSTANCE_ID;
+    }
+
+    /**
+     * Returns if error reporting is enabled or not on this FOSSBilling instance.
+     */
+    public function error_reporting_enabled(): bool
+    {
+        return (bool) $this->di['config']['debug_and_monitoring']['report_errors'];
+    }
+
+    /**
+     * Toggles error reporting on this FOSSBilling instance.
+     */
+    public function toggle_error_reporting(): bool
+    {
+        $filesystem = new Filesystem();
+        $config = include PATH_CONFIG;
+
+        // Invert the current config value
+        $config['debug_and_monitoring']['report_errors'] = !$config['debug_and_monitoring']['report_errors'];
+
+        // Create the output file
+        $output = '<?php ' . PHP_EOL;
+        $output .= 'return ' . var_export($config, true) . ';';
+
+        // Finally write it to the disk and then return bool if no exceptions were thrown.
+        $filesystem->dumpFile(PATH_CONFIG, $output);
+
+        return true;
+    }
+
+    /**
+     * Returns the last FOSSBilling version number that changed error reporting behavior.
+     */
+    public function last_error_reporting_change(): string
+    {
+        return \FOSSBilling\SentryHelper::last_change;
     }
 }

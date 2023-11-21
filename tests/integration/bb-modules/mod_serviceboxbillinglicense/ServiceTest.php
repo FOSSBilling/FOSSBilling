@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @group Core
- */
+#[\PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
     public function testService()
@@ -32,10 +30,10 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $order = $this->di['db']->load('ClientOrder', 1);
 
         $model = $service->create($order);
-        $this->assertInstanceOf('\RedBeanPHP\OODBBean', $model);
+        $this->assertInstanceOf('\\' . \RedBeanPHP\OODBBean::class, $model);
 
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(7456);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->activate($order, null);
@@ -44,7 +42,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $this->assertTrue($result);
 
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(7456);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->suspend($order, null);
@@ -53,7 +51,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $this->assertTrue($result);
 
 
-        $this->expectException(\Box_Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(7456);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->unsuspend($order, null);

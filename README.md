@@ -22,7 +22,6 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/FOSSBilling/FOSSBilling/badge)](https://www.codefactor.io/repository/github/fossbilling/fossbilling)
 [![Financial Contributors](https://opencollective.com/FOSSBilling/tiers/badge.svg?color=brightgreen)](https://opencollective.com/fossbilling)
 [![Crowdin](https://badges.crowdin.net/e/c70c78b4ab1e71424ce53dcf6bca9b12/localized.svg)](https://fossbilling.crowdin.com/FOSSBilling)
-[![huntr](https://cdn.huntr.dev/huntr_security_badge_mono.svg)](https://huntr.dev/repos/fossbilling/fossbilling/)
 
 </div>
 
@@ -49,19 +48,7 @@ FOSSBilling is designed to be extensible and to integrate easily with your favor
 
 ## Requirements
 
-The following environment is highly recommended for running FOSSBilling. It *may* be possible to install and run the software in other environments, but it will be untested and unsupported.
-
-- A suitable web server (Apache/nginx/LSWS)
-- PHP 8.0, 8.1 or 8.2
-- MySQL 8 (or higher), or MariaDB 10.3 (or higher) *Other direct MySQL compatible DBs should also work but are not supported.*
-- The Following PHP extensions:
-  - curl (optional, but recommended)
-  - intl
-  - mbstring (optional, but recommended)
-  - openssl
-  - pdo_mysql
-  - xml
-  - zlib
+To find the most up-to-date system requirements for FOSSBilling, please go to the [system requirements](https://fossbilling.org/docs/getting-started/requirements) on our website.
 
 ## Installation
 

@@ -50,7 +50,7 @@ class Box_Mod
     public function __construct($mod)
     {
         if(!preg_match('#[a-zA-Z]#', $mod)) {
-            throw new \Box_Exception('Invalid module name');
+            throw new \FOSSBilling\Exception('Invalid module name');
         }
 
         $this->mod = strtolower($mod);
@@ -69,12 +69,12 @@ class Box_Mod
     public function getManifest()
     {
         if(!$this->hasManifest()) {
-            throw new \Box_Exception('Module :mod manifest file is missing', array(':mod'=>$this->mod), 5897);
+            throw new \FOSSBilling\Exception('Module :mod manifest file is missing', array(':mod'=>$this->mod), 5897);
         }
         $file = $this->_getModPath() . 'manifest.json';
         $json = json_decode(file_get_contents($file), true);
         if(empty ($json)) {
-            throw new \Box_Exception('Module :mod manifest file is invalid. Check file syntax and permissions.', array(':mod'=>$this->mod));
+            throw new \FOSSBilling\Exception('Module :mod manifest file is invalid. Check file syntax and permissions.', array(':mod'=>$this->mod));
         }
 
         //default module info if some fields are missing
@@ -115,7 +115,7 @@ class Box_Mod
     public function getService($sub = '')
     {
         if(!$this->hasService($sub)) {
-            throw new \Box_Exception('Module :mod does not have service class', array(':mod'=>$this->mod), 5898);
+            throw new \FOSSBilling\Exception('Module :mod does not have service class', array(':mod'=>$this->mod), 5898);
         }
         $class = 'Box\\Mod\\'.ucfirst($this->mod).'\\Service'.ucfirst($sub);
     	$service = new $class();
@@ -133,7 +133,7 @@ class Box_Mod
     public function getClientController()
     {
         if(!$this->hasClientController()) {
-            throw new \Box_Exception('Module :mod Client controller class was not found', array(':mod'=>$this->mod));
+            throw new \FOSSBilling\Exception('Module :mod Client controller class was not found', array(':mod'=>$this->mod));
         }
 
         $class = 'Box\\Mod\\'.ucfirst($this->mod).'\\Controller\\Client';
@@ -203,7 +203,7 @@ class Box_Mod
     public function update()
     {
         if($this->isCore()) {
-            throw new \Box_Exception('Core module can not be updated');
+            throw new \FOSSBilling\InformationException('Core module can not be updated');
         }
 
         if($this->hasService()) {
@@ -236,7 +236,7 @@ class Box_Mod
         $modName = 'mod_'.strtolower($this->mod);
         $c = $db->findOne('extension_meta', 'extension = :ext AND meta_key = :key', array(':ext'=>$modName, ':key'=>'config'));
         if($c) {
-            $config = $this->di['crypt']->decrypt($c->meta_value, $bb_config['salt']);
+            $config = $this->di['crypt']->decrypt($c->meta_value, $bb_config['info']['salt']);
             $config = $this->di['tools']->decodeJ($config);
         }
         return $config;

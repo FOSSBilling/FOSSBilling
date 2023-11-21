@@ -63,9 +63,33 @@ class Admin extends \Api_Abstract
         if (isset($data['execute']) && $data['execute']) {
             $execute = true;
         }
-        $model = $this->_getInvoice($data);
+        $invoice = $this->_getInvoice($data);
+        $gateway_id = ['id' => $invoice->gateway_id];
+        $payGateway = $this->gateway_get($gateway_id);
+        $charge = false;
 
-        return $this->getService()->markAsPaid($model, false, $execute);
+        // Check if the payment type is "Custom Payment", Add the transaction and process it.
+        if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
+            // create transaction
+            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+            $newtx = $transactionService->create([
+                'invoice_id' => $invoice->id,
+                'bb_invoice_id' => $invoice->id,
+                'gateway_id' => $invoice->gateway_id,
+                'bb_gateway_id' => $invoice->gateway_id,
+                'currency' => $invoice->currency,
+                'status' => 'received',
+                'txn_id' => $data['transactionId'],
+            ]);
+
+            try {
+                return $transactionService->processTransaction($newtx);
+            } catch (\Exception $e) {
+                $this->di['logger']->info('Error processing transaction: ' . $e->getMessage());
+            }
+        }
+
+        return $this->getService()->markAsPaid($invoice, $charge, $execute);
     }
 
     /**
@@ -206,8 +230,7 @@ class Admin extends \Api_Abstract
      *
      * @return string - invoice id
      *
-     * @throws \Box_Exception
-     * @throws LogicException
+     * @throws \FOSSBilling\Exception
      */
     public function renewal_invoice($data)
     {
@@ -219,7 +242,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
         if ($model->price <= 0) {
-            throw new \Box_Exception('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
+            throw new \FOSSBilling\InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
         }
 
         return $this->getService()->renewInvoice($model, $data);
@@ -333,10 +356,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Process selected transaction.
-     *
-     * @return transaction output or true;
      */
-    public function transaction_process($data)
+    public function transaction_process($data): bool
     {
         $required = [
             'id' => 'Transaction id is missing',
@@ -554,11 +575,9 @@ class Admin extends \Api_Abstract
     /**
      * Return existing module but not activated.
      *
-     * @param none
-     *
      * @return array
      */
-    public function gateway_get_available($data)
+    public function gateway_get_available(array $data)
     {
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
@@ -568,11 +587,9 @@ class Admin extends \Api_Abstract
     /**
      * Install available payment gateway.
      *
-     * @param code - available payment gateway code
-     *
      * @return true
      */
-    public function gateway_install($data)
+    public function gateway_install(array $data)
     {
         $required = [
             'code' => 'Payment gateway code is missing',
@@ -589,7 +606,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_get($data)
     {
@@ -608,9 +625,7 @@ class Admin extends \Api_Abstract
     /**
      * Copy gateway from existing one.
      *
-     * @return int - new id of gateway
-     *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_copy($data)
     {
@@ -637,7 +652,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_update($data)
     {
@@ -657,7 +672,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function gateway_delete($data)
     {
@@ -703,7 +718,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - id
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function subscription_create($data)
     {
@@ -718,7 +733,7 @@ class Admin extends \Api_Abstract
         $payGateway = $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
 
         if ($client->currency != $data['currency']) {
-            throw new \Box_Exception('Client currency must match subscription currency. Check if clients currency is defined.');
+            throw new \FOSSBilling\InformationException('Client currency must match subscription currency. Check if clients currency is defined.');
         }
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
 
@@ -736,7 +751,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function subscription_update($data)
     {
@@ -756,7 +771,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function subscription_get($data)
     {
@@ -777,7 +792,7 @@ class Admin extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_Subscription) {
-            throw new \Box_Exception('Subscription not found');
+            throw new \FOSSBilling\Exception('Subscription not found');
         }
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -790,7 +805,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function subscription_delete($data)
     {
@@ -810,7 +825,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function tax_delete($data)
     {
@@ -903,7 +918,7 @@ class Admin extends \Api_Abstract
      * This action will delete any existing tax rules and configure the VAT rates
      * for all EU countries.
      *
-     * @return type
+     * @return bool
      */
     public function tax_setup_eu($data)
     {

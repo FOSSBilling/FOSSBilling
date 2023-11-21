@@ -495,7 +495,7 @@ class Service implements InjectionAwareInterface
             $currency = $currencyService->getDefault();
         }
         if (!$currency instanceof \Model_Currency) {
-            throw new \Box_Exception('Currency could not be determined for order');
+            throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $product->type]);
@@ -511,19 +511,19 @@ class Service implements InjectionAwareInterface
         $cartService = $this->di['mod_service']('cart');
         // check stock
         if (!$cartService->isStockAvailable($product, $qty)) {
-            throw new \Box_Exception('Product :id is out of stock.', [':id' => $product->id], 831);
+            throw new \FOSSBilling\InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
         }
 
         // Addons must have defined master order
         $parent_order = false;
         if ($product->is_addon && empty($group_id)) {
-            throw new \Box_Exception('Group ID parameter is missing for addon product order', null, 832);
+            throw new \FOSSBilling\Exception('Group ID parameter is missing for addon product order', null, 832);
         }
 
         if (!empty($group_id)) {
             $parent_order = $this->getMasterOrderForClient($client, $group_id);
             if (!$parent_order instanceof \Model_ClientOrder) {
-                throw new \Box_Exception('Parent order :group_id was not found', [':group_id' => $group_id]);
+                throw new \FOSSBilling\Exception('Parent order :group_id was not found', [':group_id' => $group_id]);
             }
         }
 
@@ -673,7 +673,7 @@ class Service implements InjectionAwareInterface
         ];
         if (!in_array($order->status, $statues)) {
             if (!isset($data['force']) || !$data['force']) {
-                throw new \Box_Exception('Only pending setup or failed orders can be activated');
+                throw new \FOSSBilling\Exception('Only pending setup or failed orders can be activated');
             }
         }
 
@@ -681,7 +681,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => $event_params]);
         $result = $this->createFromOrder($order);
         if (is_array($result)) {
-            $event_params = array_merge($event_params, $result);
+            $event_params = [...$event_params, ...$result];
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => $event_params]);
 
@@ -701,7 +701,7 @@ class Service implements InjectionAwareInterface
             if (method_exists($s, 'create') || method_exists($s, 'action_create')) {
                 $service = $this->_callOnService($order, \Model_ClientOrder::ACTION_CREATE);
                 if (!is_object($service)) {
-                    throw new \Box_Exception('Error creating ' . $order->service_type . ' service for order ' . $order->id);
+                    throw new \FOSSBilling\Exception('Error creating ' . $order->service_type . ' service for order ' . $order->id);
                 }
 
                 $order->service_id = $service->id;
@@ -770,7 +770,7 @@ class Service implements InjectionAwareInterface
         if (in_array($order->service_type, $core_services)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
-                throw new \Box_Exception('Service ' . $order->service_type . ' do not support ' . $m);
+                throw new \FOSSBilling\Exception('Service ' . $order->service_type . ' do not support ' . $m);
             }
 
             return $repo->$m($order);
@@ -798,7 +798,7 @@ class Service implements InjectionAwareInterface
     public function stockSale(\Model_Product $product, $qty)
     {
         if ($product->stock_control) {
-            $product->quantity_in_stock = $product->quantity_in_stock - $qty;
+            $product->quantity_in_stock -= $qty;
             $product->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($product);
         }
@@ -975,7 +975,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->status != \Model_ClientOrder::STATUS_ACTIVE) {
-            throw new \Box_Exception('Only active orders can be suspended');
+            throw new \FOSSBilling\InformationException('Only active orders can be suspended');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_SUSPEND);
@@ -1027,7 +1027,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
-            throw new \Box_Exception('Can not cancel ' . $order->status . ' order');
+            throw new \FOSSBilling\Exception('Can not cancel ' . $order->status . ' order');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -43,23 +44,23 @@ class Service implements InjectionAwareInterface
     public function validateOrderData(array &$data)
     {
         if (!isset($data['server_id'])) {
-            throw new \Box_Exception('Hosting product is not configured completely. Configure server for hosting product.', null, 701);
+            throw new \FOSSBilling\InformationException('Hosting product is not configured completely. Configure server for hosting product.', null, 701);
         }
         if (!isset($data['hosting_plan_id'])) {
-            throw new \Box_Exception('Hosting product is not configured completely. Configure hosting plan for hosting product.', null, 702);
+            throw new \FOSSBilling\InformationException('Hosting product is not configured completely. Configure hosting plan for hosting product.', null, 702);
         }
         if (!isset($data['sld']) || empty($data['sld'])) {
-            throw new \Box_Exception('Domain name is invalid.', null, 703);
+            throw new \FOSSBilling\InformationException('Domain name is invalid.', null, 703);
         }
         if (!isset($data['tld']) || empty($data['tld'])) {
-            throw new \Box_Exception('Domain extension is invalid.', null, 704);
+            throw new \FOSSBilling\InformationException('Domain extension is invalid.', null, 704);
         }
     }
 
     /**
      * @todo
      *
-     * @return void
+     * @return \Model_ServiceHosting
      */
     public function action_create(\Model_ClientOrder $order)
     {
@@ -91,7 +92,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
         $pass = $this->di['tools']->generatePassword(10, 4);
@@ -136,7 +137,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
         // @todo ?
 
@@ -154,7 +155,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
         $adapter->suspendAccount($account);
@@ -173,7 +174,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
         $adapter->unsuspendAccount($account);
@@ -192,7 +193,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
         $adapter->cancelAccount($account);
@@ -252,7 +253,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['username']) || empty($data['username'])) {
-            throw new \Box_Exception('Account username is missing or is invalid');
+            throw new \FOSSBilling\InformationException('Account username is missing or is invalid');
         }
 
         $u = strtolower($data['username']);
@@ -274,7 +275,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
-            throw new \Box_Exception('Account ip is missing or is invalid');
+            throw new \FOSSBilling\InformationException('Account ip is missing or is invalid');
         }
 
         $ip = $data['ip'];
@@ -298,7 +299,7 @@ class Service implements InjectionAwareInterface
             !isset($data['tld']) || empty($data['tld'])
             || !isset($data['sld']) || empty($data['sld'])
         ) {
-            throw new \Box_Exception('Domain sld or tld is missing');
+            throw new \FOSSBilling\InformationException('Domain sld or tld is missing');
         }
 
         $sld = $data['sld'];
@@ -324,7 +325,7 @@ class Service implements InjectionAwareInterface
             !isset($data['password']) || !isset($data['password_confirm'])
             || $data['password'] != $data['password_confirm']
         ) {
-            throw new \Box_Exception('Account password is missing or is invalid');
+            throw new \FOSSBilling\InformationException('Account password is missing or is invalid');
         }
 
         $newPassword = $data['password'];
@@ -722,7 +723,7 @@ class Service implements InjectionAwareInterface
     public function getServerManager(\Model_ServiceHostingServer $model)
     {
         if (empty($model->manager)) {
-            throw new \Box_Exception('Invalid server manager. Server was not configured properly.', null, 654);
+            throw new \FOSSBilling\Exception('Invalid server manager. Server was not configured properly.', null, 654);
         }
 
         $config = [];
@@ -742,7 +743,7 @@ class Service implements InjectionAwareInterface
         $manager = $this->di['server_manager']($model->manager, $config);
 
         if (!$manager instanceof \Server_Manager) {
-            throw new \Box_Exception('Server manager :adapter is invalid', [':adapter' => $model->manager]);
+            throw new \FOSSBilling\Exception('Server manager :adapter is invalid', [':adapter' => $model->manager]);
         }
 
         return $manager;
@@ -782,7 +783,7 @@ class Service implements InjectionAwareInterface
         $id = $model->id;
         $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
         if ($serviceHosting) {
-            throw new \Box_Exception('Can not remove hosting plan which has active accounts');
+            throw new \FOSSBilling\InformationException('Can not remove hosting plan which has active accounts');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted hosting plan %s', $id);
@@ -830,7 +831,11 @@ class Service implements InjectionAwareInterface
         $model->max_park = $data['max_park'] ?? $model->max_park;
 
         /* add new config value to hosting plan */
-        $config = json_decode($model->config, 1);
+        if ($model->config) {
+            $config = json_decode($model->config, 1);
+        } else {
+            $config = [];
+        }
 
         $inConfig = $data['config'] ?? null;
 
@@ -967,7 +972,7 @@ class Service implements InjectionAwareInterface
         $table = $this->di['mod_service']('product');
         $d = $table->getMainDomainProduct();
         if (!$d instanceof \Model_Product) {
-            throw new \Box_Exception('Could not find main domain product');
+            throw new \FOSSBilling\Exception('Could not find main domain product');
         }
 
         return ['product' => $d, 'config' => $dc];

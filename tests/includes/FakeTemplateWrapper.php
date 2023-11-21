@@ -16,21 +16,18 @@
 class FakeTemplateWrapper
 {
     /**
-     * Body text to return from the render() method.
-     *
-     * @var string
-     */
-    protected $body;
-
-    /**
      * Constructor.
      *
      * @param string $body
      * Body text to return from the render() method.
      */
-    public function __construct($body)
+    public function __construct(
+        /**
+         * Body text to return from the render() method.
+         */
+        protected $body
+    )
     {
-        $this->body = $body;
     }
     
     /**

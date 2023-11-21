@@ -51,7 +51,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function get($data)
     {
@@ -64,7 +64,7 @@ class Admin extends \Api_Abstract
         $model = $service->getByCode($data['code']);
 
         if (!$model instanceof \Model_Currency) {
-            throw new \Box_Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         return $service->toApiArray($model);
@@ -90,7 +90,7 @@ class Admin extends \Api_Abstract
      *
      * @return string - currency code
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function create($data = [])
     {
@@ -103,11 +103,11 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
 
         if ($service->getByCode($data['code'] ?? null)) {
-            throw new \Box_Exception('Currency already registered');
+            throw new \FOSSBilling\Exception('Currency already registered');
         }
 
         if (!array_key_exists($data['code'] ?? null, $service->getAvailableCurrencies())) {
-            throw new \Box_Exception('Currency code is invalid');
+            throw new \FOSSBilling\Exception('Currency code is invalid');
         }
 
         $title = $data['title'] ?? null;
@@ -125,7 +125,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function update($data)
     {
@@ -205,7 +205,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function delete($data)
     {
@@ -223,7 +223,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function set_default($data)
     {
@@ -234,8 +234,8 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
         $model = $service->getByCode($data['code']);
-        if (!$model instanceof \Model_currency) {
-            throw new \Box_Exception('Currency not found');
+        if (!$model instanceof \Model_Currency) {
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         return $service->setAsDefault($model);

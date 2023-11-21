@@ -77,13 +77,13 @@ class PhpConsole {
 	CLIENT
 	 **************************************************************/
 
-	const clientProtocolCookie = 'phpcslc';
-	const serverProtocolCookie = 'phpcsls';
-	const serverProtocol = 4;
-	const messagesCookiePrefix = 'phpcsl_';
-	const cookiesLimit = 50;
-	const cookieSizeLimit = 4000;
-	const messageLengthLimit = 2500;
+	final public const clientProtocolCookie = 'phpcslc';
+	final public const serverProtocolCookie = 'phpcsls';
+	final public const serverProtocol = 4;
+	final public const messagesCookiePrefix = 'phpcsl_';
+	final public const cookiesLimit = 50;
+	final public const cookieSizeLimit = 4000;
+	final public const messageLengthLimit = 2500;
 
 	protected static $isEnabledOnClient;
 	protected static $isDisabled;
@@ -118,7 +118,7 @@ class PhpConsole {
 			return;
 		}
 		$message = array();
-		$message['type'] = strpos($event->tags, 'error,') === 0 ? 'error' : 'debug';
+		$message['type'] = str_starts_with($event->tags, 'error,') ? 'error' : 'debug';
 		$message['subject'] = $event->type;
 		$message['text'] = substr($event->message, 0, self::messageLengthLimit);
 
@@ -142,7 +142,7 @@ class PhpConsole {
 	protected function convertTraceToArray($traceData, $eventFile = null, $eventLine = null) {
 		$trace = array();
 		foreach($traceData as $call) {
-			if((isset($call['class']) && $call['class'] == __CLASS__) || (!$trace && isset($call['file']) && $call['file'] == $eventFile && $call['line'] == $eventLine)) {
+			if((isset($call['class']) && $call['class'] == self::class) || (!$trace && isset($call['file']) && $call['file'] == $eventFile && $call['line'] == $eventLine)) {
 				$trace = array();
 				continue;
 			}
@@ -150,7 +150,7 @@ class PhpConsole {
 			if(isset($call['args'])) {
 				foreach($call['args'] as $arg) {
 					if(is_object($arg)) {
-						$args[] = get_class($arg);
+						$args[] = $arg::class;
 					}
 					elseif(is_array($arg)) {
 						$args[] = 'Array';
@@ -205,7 +205,7 @@ class PhpConsole {
 		if(headers_sent($file, $line)) {
 			die('PhpConsole ERROR: setcookie() failed because haders are sent (' . $file . ':' . $line . '). Try to use ob_start()');
 		}
-		setcookie($name, $value, null, '/');
+		setcookie($name, $value, ['expires' => null, 'path' => '/']);
 	}
 
 	protected static function sendMessages($messages) {
@@ -234,7 +234,7 @@ class PhpConsole {
 			}
 		}
 
-		$this->oldErrorHandler = set_error_handler(array($this, 'handleError'));
+		$this->oldErrorHandler = set_error_handler($this->handleError(...));
 		register_shutdown_function(array($this, 'checkFatalError'));
 	}
 
@@ -254,9 +254,9 @@ class PhpConsole {
 		}
 
 		$event = new PhpConsoleEvent();
-		$event->tags = 'error,' . (isset($this->codesTags[$code]) ? $this->codesTags[$code] : 'warning');
+		$event->tags = 'error,' . ($this->codesTags[$code] ?? 'warning');
 		$event->message = $message;
-		$event->type = isset($this->codesNames[$code]) ? $this->codesNames[$code] : $code;
+		$event->type = $this->codesNames[$code] ?? $code;
 		$event->file = $file;
 		$event->line = $line;
 		$event->trace = debug_backtrace();
@@ -275,14 +275,14 @@ class PhpConsole {
 	protected $oldExceptionsHandler;
 
 	protected function initExceptionsHandler() {
-		$this->oldExceptionsHandler = set_exception_handler(array($this, 'handleException'));
+		$this->oldExceptionsHandler = set_exception_handler($this->handleException(...));
 	}
 
-	public function handleException(Exception $exception) {
+	public function handleException(\Throwable $exception) {
 		$event = new PhpConsoleEvent();
 		$event->message = $exception->getMessage();
-		$event->tags = 'error,fatal,exception,' . get_class($exception);
-		$event->type = get_class($exception);
+		$event->tags = 'error,fatal,exception,' . $exception::class;
+		$event->type = $exception::class;
 		$event->file = $exception->getFile();
 		$event->line = $exception->getLine();
 		$event->trace = $exception->getTrace();

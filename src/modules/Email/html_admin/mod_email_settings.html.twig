@@ -21,6 +21,7 @@
 
 {% set active_menu = 'system' %}
 {% block content %}
+    {% set params = admin.extension_config_get({ 'ext': 'mod_email' }) %}
     <div class="card-tabs">
 
         <ul class="nav nav-tabs" role="tablist">
@@ -36,15 +37,39 @@
                 </a>
             </li>
             <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-queue" data-bs-toggle="tab">{{ 'Email queue'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-email" data-bs-toggle="tab">{{ 'Email settings'|trans }}</a>
             </li>
         </ul>
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+
+                    <div class="card-footer text-center">
+                        <a href="{{ 'api/admin/email/batch_template_generate'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
+                            <svg class="icon icon-tabler" width="24" height="24">
+                                <use xlink:href="#mail" />
+                            </svg>
+                            <span>Regenerate templates</span>
+                        </a>
+                        <a href="{{ 'api/admin/email/batch_template_enable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="All email templates enabled">
+                            <svg class="icon icon-tabler" width="24" height="24">
+                                <use xlink:href="#play" />
+                            </svg>
+                            <span>Enable all</span>
+                        </a>
+                        <a href="{{ 'api/admin/email/batch_template_disable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="All email templates disabled">
+                            <svg class="icon icon-tabler" width="24" height="24">
+                                <use xlink:href="#close" />
+                            </svg>
+                            <span>Disable all</span>
+                        </a>
+                    </div>
                     {% include 'partial_search.html.twig' %}
                     <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                             <thead>
                             <tr>
                                 <th class="w-1">{{ 'Subject'|trans }}</th>
@@ -71,7 +96,8 @@
                                         {% if template.enabled == 0 %}
                                             <span class="badge bg-danger me-1"></span>
                                         {% endif %}
-                                        {{ mf.q(template.enabled) }}</td>
+                                        {{ mf.q(template.enabled) }}
+                                    </td>
                                     <td>
                                         <a class="btn btn-icon" href="{{ '/email/template'|alink }}/{{ template.id }}"
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
@@ -100,26 +126,6 @@
                             {% endfor %}
                             </tbody>
                         </table>
-                    </div>
-                    <div class="card-footer text-center">
-                        <a href="{{ 'api/admin/email/batch_template_generate'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
-                            <svg class="icon icon-tabler" width="24" height="24">
-                                <use xlink:href="#mail" />
-                            </svg>
-                            <span>Generate templates</span>
-                        </a>
-                        <a href="{{ 'api/admin/email/batch_template_enable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="All email templates enabled">
-                            <svg class="icon icon-tabler" width="24" height="24">
-                                <use xlink:href="#play" />
-                            </svg>
-                            <span>Enable all</span>
-                        </a>
-                        <a href="{{ 'api/admin/email/batch_template_disable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="All email templates disabled">
-                            <svg class="icon icon-tabler" width="24" height="24">
-                                <use xlink:href="#close" />
-                            </svg>
-                            <span>Disable all</span>
-                        </a>
                     </div>
                 </div>
 
@@ -174,7 +180,64 @@
                     </form>
                 </div>
 
-                {% set params = admin.extension_config_get({ 'ext': 'mod_email' }) %}
+                <div class="tab-pane fade show" id="tab-queue" role="tabpanel">
+                    {% include 'partial_search.html.twig' %}
+                    <div class="table-responsive">
+                        <p>{{ 'FOSSBilling queues emails to have them be sent via cron in the background. Here you may find the list of queued emails and how many times the system has tried to send them.'|trans }}</p>
+                        <p>{{ 'Emails that have been sent or that failed to be sent will not be listed here.'|trans }}</p>
+                        <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                            <thead>
+                            <tr>
+                                <th class="w-1">{{ 'Subject'|trans }}</th>
+                                <th>{{ 'To'|trans }}</th>
+                                <th>{{ 'To (Email)'|trans }}</th>
+                                <th>{{ 'Status'|trans }}</th>
+                                <th>{{ 'Tries'|trans }}</th>
+                                <th>{{ 'Created at'|trans }}</th>
+                                <th>{{ 'Updated at'|trans }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% set queue = admin.email_get_queue({ 'per_page': 100, 'page': request.page }|merge(request)) %}
+                            {% for i, queuedEmail in queue.list %}
+                                <tr>
+                                    <td>
+                                        {{ queuedEmail.subject }}
+                                    </td>
+                                    <td>
+                                        {{ queuedEmail.to_name }}
+                                    </td>
+                                    <td>
+                                        <a href="mailto:{{ queuedEmail.recipient }}"> {{ queuedEmail.recipient }}</a>
+                                    </td>
+                                    <td>
+                                        {% if queuedEmail.status == 'unsent' %}
+                                            <span class="badge bg-danger me-1"></span>
+                                        {% else %}
+                                            <span class="badge bg-success me-1"></span>
+                                        {% endif %}
+                                        <span class="text-capitalize">{{ queuedEmail.status }}</span>
+                                    </td>
+                                    <td>
+                                        {{ queuedEmail.tries }} / {{ params.cancel_after|default('5') }}
+                                    </td>
+                                    <td>
+                                        {{ queuedEmail.created_at|format_date }}
+                                    </td>
+                                    <td>
+                                        {{ queuedEmail.updated_at|format_date }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="5">{{ 'The list is empty.'|trans }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="tab-pane fade" id="tab-email" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Email settings updated'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
@@ -187,15 +250,15 @@
                                 <div class="col-md-6">
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Send emails per cron run (0 = unlimited)'|trans }}</small>
-                                        <input class="form-control" type="text" name="queue_once" placeholder="0" value="{{ params.queue_once }}">
+                                        <input class="form-control" type="text" name="queue_once" placeholder="0" value="{{ params.queue_once|default('0') }}">
                                     </div>
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Max email sending time in minutes (0 = unlimited, default 5 min.)'|trans }}</small>
-                                        <input class="form-control" type="text" name="time_limit" placeholder="5" value="{% if params.time_limit %}{{ params.time_limit }}{% else %}5{% endif %}">
+                                        <input class="form-control" type="text" name="time_limit" placeholder="5" value="{{ params.time_limit|default('5') }}">
                                     </div>
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Cancel sending email after unsuccessful tries (0 = do not cancel)'|trans }}</small>
-                                        <input class="form-control" type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after }}">
+                                        <input class="form-control" type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after|default('5') }}">
                                     </div>
                                 </div>
                             </div>
@@ -289,7 +352,7 @@
                                 <svg class="icon">
                                     <use xlink:href="#wifi" />
                                 </svg>
-                                {{ 'Send test email to staff members'|trans }}
+                                {{ 'Send a test email to yourself'|trans }}
                             </button>
                             <input type="submit" value="{{ 'Update email settings'|trans }}" class="btn btn-primary">
                         </div>
@@ -306,6 +369,9 @@ $(function() {
     $('#emailTest').on('click', function() {
         API.admin.post('email/send_test', {}, function(result) {
             FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
+        },
+        function(result){
+            FOSSBilling.message(result.message, 'error');
         });
 
         return false;

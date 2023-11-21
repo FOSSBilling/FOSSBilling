@@ -18,10 +18,37 @@ return [
     'security' => [
         'mode' => 'strict',
         'force_https' => true,
-        'cookie_lifespan' => 7200,
+        'session_lifespan' => 7200,
     ],
 
-    'salt' => '',
+    'debug_and_monitoring' => [
+        /*
+         * Enable or disable displaying advanced debugging messages.
+         * You should keep this disabled unless you're making tests as it can reveal some information about your server.
+         */
+        'debug' => false,
+        /*
+         * Enable or disable stacktraces when an exception is thrown (also requires debug to be enabled).
+         */
+        'log_stacktrace' => true,
+        /*
+         * How long the stacktrace should be.
+         */
+        'stacktrace_length' => 25,
+
+        /*
+         * Enables automated error, stability, and performance reporting.
+         * Private information is scrubbed from any info before being sent.
+         * FOSSBilling uses Sentry.io for error reporting which has a full writeup on their security and privacy practices here: https://sentry.io/security/.
+         * Enabling error reporting will help us proactively identify and fix bugs in FOSSBilling as well as provide better technical support.
+         */
+        'report_errors' => false,
+    ],
+
+    'info' => [
+        'salt' => '',
+        'instance_id' => 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX',
+    ],
 
     /*
      * Full URL where FOSSBilling is installed with trailing slash.
@@ -34,25 +61,10 @@ return [
     'admin_area_prefix' => '/admin',
 
     /*
-     * Enable or disable displaying advanced debugging messages.
-     * You should keep this disabled unless you're making tests as it can reveal some information about your server.
-     */
-    'debug' => false,
-
-    /*
      * Configure the update branch for the automatic updater.
      * Currently acceptable options are "release" or "preview".
      */
     'update_branch' => 'release',
-
-    /*
-     * Enable or disable stacktraces when an exception is thrown (also requires debug to be enabled).
-     */
-    'log_stacktrace' => true,
-    /*
-     * How long the stacktrace should be.
-     */
-    'stacktrace_length' => 25,
 
     'maintenance_mode' => [
         /*
@@ -102,8 +114,6 @@ return [
      */
     'path_data' => __DIR__ . '/data',
 
-    'path_logs' => __DIR__ . '/data/log/application.log',
-
     'log_to_db' => true,
 
     'db' => [
@@ -140,7 +150,7 @@ return [
 
     'twig' => [
         'debug' => false,
-        'auto_reload' => false,
+        'auto_reload' => true,
         'cache' => __DIR__ . '/data/cache',
     ],
 
@@ -158,12 +168,12 @@ return [
         'rate_limit' => 1000,
 
         /**
-          * Note about rate-limiting login attempts:
-          * When the limit is reached, a default delay of 2 seconds is added to the request.
-          * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
-          * When calculating, ensure the rate-limited traffic can still make enough requests to stay rate limited
-          * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled.
-          */
+         * Note about rate-limiting login attempts:
+         * When the limit is reached, a default delay of 2 seconds is added to the request.
+         * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
+         * When calculating, ensure the rate-limited traffic can still make enough requests to stay rate limited
+         * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled.
+         */
         'throttle_delay' => 2,
 
         // Time span login for limit in seconds
@@ -171,7 +181,7 @@ return [
 
         // How many login requests allowed per time span
         'rate_limit_login' => 20,
-        
+
         /*
         * This enables the usage of a token to protect the system from CSRF attacks.
         * Disabling this is highly discouraged and opens your instance to a known vulnerability.

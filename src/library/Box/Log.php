@@ -20,14 +20,14 @@
  */
 class Box_Log implements \FOSSBilling\InjectionAwareInterface
 {
-    public const EMERG = 0;  // Emergency: system is unusable
-    public const ALERT = 1;  // Alert: action must be taken immediately
-    public const CRIT = 2;  // Critical: critical conditions
-    public const ERR = 3;  // Error: error conditions
-    public const WARN = 4;  // Warning: warning conditions
-    public const NOTICE = 5;  // Notice: normal but significant condition
-    public const INFO = 6;  // Informational: informational messages
-    public const DEBUG = 7;  // Debug: debug messages
+    final public const EMERG = 0;  // Emergency: system is unusable
+    final public const ALERT = 1;  // Alert: action must be taken immediately
+    final public const CRIT = 2;  // Critical: critical conditions
+    final public const ERR = 3;  // Error: error conditions
+    final public const WARN = 4;  // Warning: warning conditions
+    final public const NOTICE = 5;  // Notice: normal but significant condition
+    final public const INFO = 6;  // Informational: informational messages
+    final public const DEBUG = 7;  // Debug: debug messages
 
     protected array $_priorities = [
         self::EMERG => 'EMERG',
@@ -61,7 +61,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
      * @param $method
      * @param $params
      * @return void
-     * @throws Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function __call($method, $params): void
     {
@@ -69,7 +69,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
             switch (is_countable($params) ? count($params) : 0) {
                 case 0:
-                    throw new \Box_Exception('Missing log message');
+                    throw new \FOSSBilling\Exception('Missing log message');
                 case 1:
                     $message = array_shift($params);
                     $extras = null;
@@ -84,7 +84,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
             }
             $this->log($message, $priority, $params);
         } else {
-            throw new \Box_Exception('Bad log priority');
+            throw new \FOSSBilling\Exception('Bad log priority');
         }
     }
 
@@ -93,7 +93,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
      * @param $priority
      * @param $extras
      * @return void
-     * @throws Box_Exception
+     * @throws \FOSSBilling\Exception
      */
     public function log($message, $priority, $extras = null): void
     {
@@ -103,7 +103,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!isset($this->_priorities[$priority])) {
-            throw new \Box_Exception('Bad log priority');
+            throw new \FOSSBilling\Exception('Bad log priority');
         }
 
         if ($this->_min_priority && $priority > $this->_min_priority) {
@@ -132,7 +132,7 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
         }
 
         //do not log debug level messages if debug is OFF
-        if ($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
+        if (!DEBUG && $event['priority'] > self::INFO) {
             return;
         }
 
@@ -144,18 +144,11 @@ class Box_Log implements \FOSSBilling\InjectionAwareInterface
 
     protected function _packEvent($message, $priority)
     {
-        return array_merge([
-            'timestamp' => date('Y-m-d H:i:s'),
-            'message' => $message,
-            'priority' => $priority,
-            'priorityName' => $this->_priorities[$priority],
-        ],
-            $this->_extras
-        );
+        return ['timestamp' => date('Y-m-d H:i:s'), 'message' => $message, 'priority' => $priority, 'priorityName' => $this->_priorities[$priority], ...$this->_extras];
     }
 
     /**
-     * @param Box_LogDb|FOSSBilling_Monolog $writer
+     * @param Box_LogDb|FOSSBilling\Monolog $writer
      * @return $this The Box_Log instance
      */
     public function addWriter($writer): static

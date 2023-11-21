@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>{% block meta_title %}{{ settings.meta_title }}{% endblock %}</title>
 
-    <meta property="bb:url" content="{{ constant('BB_URL') }}">
+    <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}">
     <meta property="bb:client_area" content="{{ '/'|link }}">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
@@ -25,6 +25,8 @@
     <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
     {{ "Api/API.js" | library_url | script_tag }}
     {{ encore_entry_script_tags('huraga') }}
+
+    {{ DebugBar_renderHead() }}
 
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}

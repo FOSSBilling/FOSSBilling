@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,18 +15,18 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    public const CUSTOM = 'custom';
-    public const LICENSE = 'license';
-    public const ADDON = 'addon';
-    public const DOMAIN = 'domain';
-    public const DOWNLOADABLE = 'downloadable';
-    public const HOSTING = 'hosting';
-    public const MEMBERSHIP = 'membership';
-    public const VPS = 'vps';
+    final public const CUSTOM = 'custom';
+    final public const LICENSE = 'license';
+    final public const ADDON = 'addon';
+    final public const DOMAIN = 'domain';
+    final public const DOWNLOADABLE = 'downloadable';
+    final public const HOSTING = 'hosting';
+    final public const MEMBERSHIP = 'membership';
+    final public const VPS = 'vps';
 
-    public const SETUP_AFTER_ORDER = 'after_order';
-    public const SETUP_AFTER_PAYMENT = 'after_payment';
-    public const SETUP_MANUAL = 'manual';
+    final public const SETUP_AFTER_ORDER = 'after_order';
+    final public const SETUP_AFTER_PAYMENT = 'after_payment';
+    final public const SETUP_MANUAL = 'manual';
 
     protected ?\Pimple\Container $di = null;
 
@@ -203,7 +204,7 @@ class Service implements InjectionAwareInterface
             $types = $this->getPaymentTypes();
 
             if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
-                throw new \Box_Exception('Pricing type is required');
+                throw new \FOSSBilling\InformationException('Pricing type is required');
             }
             $productPayment = $this->di['db']->getExistingModelById('ProductPayment', $model->product_payment_id, 'Product payment not found');
 
@@ -329,7 +330,11 @@ class Service implements InjectionAwareInterface
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        $config = json_decode($model->config, true);
+        if ($model->config) {
+            $config = json_decode($model->config, true);
+        } else {
+            $config = [];
+        }
 
         if (isset($data['config']) && is_array($data['config'])) {
             $config = array_intersect_key((array) $config, $data['config']);
@@ -414,7 +419,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         if ($orderService->productHasOrders($product)) {
-            throw new \Box_Exception('Can not remove product which has active orders.');
+            throw new \FOSSBilling\InformationException('Can not remove product which has active orders.');
         }
         $id = $product->id;
         $this->di['db']->trash($product);
@@ -473,7 +478,7 @@ class Service implements InjectionAwareInterface
     {
         $model = $this->di['db']->findOne('Product', 'product_category_id = :category_id', [':category_id' => $category->id]);
         if ($model instanceof \Model_Product) {
-            throw new \Box_Exception('Can not remove product category with products');
+            throw new \FOSSBilling\InformationException('Can not remove product category with products');
         }
         $id = $category->id;
         $this->di['db']->trash($category);
@@ -740,7 +745,7 @@ class Service implements InjectionAwareInterface
 
     public function getSavePath($filename = null)
     {
-        $path = $this->di['config']['path_data'] . '/uploads/';
+        $path = PATH_DATA . '/uploads/';
         if ($filename !== null) {
             $path .= md5($filename);
         }
@@ -877,7 +882,7 @@ class Service implements InjectionAwareInterface
     public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data)
     {
         if ($this->di['db']->findOne('Promo', 'code = :code', [':code' => $code])) {
-            throw new \Box_Exception('This promotion code already exists.');
+            throw new \FOSSBilling\InformationException('This promotion code already exists.');
         }
 
         $systemService = $this->di['mod_service']('system');

@@ -24,12 +24,12 @@ class GuestTest extends \BBTestCase {
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getForm')
             ->will($this->returnValue(array()));
 
-        $validatorMock = $this->getMockBuilder('\FOSSBilling\Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));

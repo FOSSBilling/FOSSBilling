@@ -3,18 +3,44 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#theme-settings fieldset').forEach((el, index) => {
     let show = '', collapsed = '';
     index === 0 ? show = 'show' : collapsed = 'collapsed';
-    let heading = el.querySelector('legend').innerText;
-    let accordionBtn = `<button class="accordion-button ${collapsed}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-body-${index}" aria-expanded="true" aria-controls="collapse-${index}">${heading}</button>`;
-    let accordionContent = `<div id="collapse-body-${index}" class="accordion-collapse collapse ${show}"><div class="accordion-body pt-0">${el.innerHTML}</div></div>`;
+    let heading = el.querySelector('legend').textContent; // use textContent
+  
+    // Create accordion-button
+    let accordionBtn = document.createElement('button');
+    accordionBtn.className = `accordion-button ${collapsed}`;
+    accordionBtn.type = 'button';
+    accordionBtn.setAttribute('data-bs-toggle', 'collapse');
+    accordionBtn.setAttribute('data-bs-target', `#collapse-body-${index}`);
+    accordionBtn.setAttribute('aria-expanded', 'true');
+    accordionBtn.setAttribute('aria-controls', `collapse-${index}`);
+    accordionBtn.textContent = heading; // set the text content
+  
+    // Create accordion-collapse and its child accordion-body
+    let accordionContent = document.createElement('div');
+    accordionContent.id = `collapse-body-${index}`;
+    accordionContent.className = `accordion-collapse collapse ${show}`;
+  
+    let accordionBody = document.createElement('div');
+    accordionBody.className = 'accordion-body pt-0';
+    accordionBody.innerHTML = el.innerHTML; // This is okay since el.innerHTML is from the DOM already
+    accordionContent.appendChild(accordionBody);
+  
+    // Create wrap button with accordion-header class
     let wrapBtn = document.createElement('h2');
     wrapBtn.classList.add('accordion-header');
-    wrapBtn.innerHTML = accordionBtn;
+    wrapBtn.appendChild(accordionBtn); // append the button
+  
+    // Create accordion-item and combine all parts
     let accordionItem = document.createElement('div');
     accordionItem.classList.add('accordion-item');
-    accordionItem.innerHTML = wrapBtn.outerHTML + accordionContent;
+    accordionItem.appendChild(wrapBtn);
+    accordionItem.appendChild(accordionContent);
+  
+    // Replace the original element with the new structure
     el.after(accordionItem);
     el.remove();
   });
+  
 
   document.querySelectorAll('#theme-settings table').forEach((el) => {
     el.classList.add('w-100');

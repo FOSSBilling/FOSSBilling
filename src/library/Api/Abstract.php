@@ -22,13 +22,11 @@ class Api_Abstract implements InjectionAwareInterface
      */
     protected $mod  = null;
 
-    /**
-     * @var \Box\Mod\X\Service
-     */
+    // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
     protected $service  = null;
 
     /**
-     * @var Model_Admin | Model_Client | Model_Guest
+     * @var Model_Admin|Model_Client|Model_Guest
      */
     protected $identity = null;
 
@@ -45,7 +43,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @param null $mod
+     * @param Box_Mod $mod
      */
     public function setMod($mod)
     {
@@ -57,14 +55,14 @@ class Api_Abstract implements InjectionAwareInterface
      */
     public function getMod()
     {
-        if(!$this->mod) {
-            throw new Box_Exception('Mod object is not set for the service');
+        if (!$this->mod) {
+            throw new FOSSBilling\Exception('Mod object is not set for the service');
         }
         return $this->mod;
     }
 
     /**
-     * @param null $identity
+     * @param Model_Admin|Model_Client|Model_Guest $identity
      */
     public function setIdentity($identity)
     {
@@ -79,24 +77,20 @@ class Api_Abstract implements InjectionAwareInterface
         return $this->identity;
     }
 
-    /**
-     * @param null $service
-     */
+    // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
     public function setService($service)
     {
         $this->service = $service;
     }
 
-    /**
-     * @return
-     */
+    // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
     public function getService()
     {
         return $this->service;
     }
 
     /**
-     * @param null $ip
+     * @param string $ip
      */
     public function setIp($ip)
     {

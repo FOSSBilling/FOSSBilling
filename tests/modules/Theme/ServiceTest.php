@@ -27,14 +27,14 @@ class ServiceTest extends \BBTestCase {
     public function testgetTheme()
     {
         $result = $this->service->getTheme('huraga');
-        $this->assertInstanceOf('\Box\Mod\Theme\Model\Theme', $result);
+        $this->assertInstanceOf('\\' . \Box\Mod\Theme\Model\Theme::class, $result);
     }
 
     public function testgetCurrentThemePreset()
     {
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('setCurrentThemePreset'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)
+            ->onlyMethods(array('setCurrentThemePreset'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('setCurrentThemePreset');
@@ -44,14 +44,14 @@ class ServiceTest extends \BBTestCase {
             ->method('getCell')
             ->will($this->returnValue(array()));
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getCurrentPreset')
             ->will($this->returnValue('CurrentPresetString'));
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
+        $di['theme'] = $di->protect(fn() => $themeMock);
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -65,14 +65,14 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getName')
             ->will($this->returnValue('default'));
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
+        $di['theme'] = $di->protect(fn() => $themeMock);
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -87,14 +87,14 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getName')
             ->will($this->returnValue('default'));
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
+        $di['theme'] = $di->protect(fn() => $themeMock);
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -105,8 +105,8 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetThemePresets()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('updateSettings'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)
+            ->onlyMethods(array('updateSettings'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateSettings');
@@ -115,7 +115,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getName')
             ->will($this->returnValue('default'));
@@ -130,7 +130,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
+        $di['theme'] = $di->protect(fn() => $themeMock);
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -150,7 +150,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getName')
             ->will($this->returnValue('default'));
@@ -161,11 +161,11 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(function () use($themeMock) { return $themeMock; });
+        $di['theme'] = $di->protect(fn() => $themeMock);
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
-        $result = $this->service->getThemePresets($themeMock, 'dark_blue');
+        $result = $this->service->getThemePresets($themeMock);
         $this->assertIsArray($result);
 
         $expected= array(
@@ -185,7 +185,7 @@ class ServiceTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue($extensionMetaModel));
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getName')
             ->will($this->returnValue('default'));
@@ -201,8 +201,8 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetThemeSettingsWithEmptyPresets()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('getCurrentThemePreset'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)
+            ->onlyMethods(array('getCurrentThemePreset'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCurrentThemePreset')
@@ -213,7 +213,7 @@ class ServiceTest extends \BBTestCase {
             ->method('findOne')
             ->will($this->returnValue(null));
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getName')
             ->will($this->returnValue('default'));
@@ -246,7 +246,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getName')
             ->will($this->returnValue('default'));
@@ -264,8 +264,8 @@ class ServiceTest extends \BBTestCase {
 
     public function testregenerateThemeSettingsDataFile()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('getThemePresets', 'getThemeSettings', 'getCurrentThemePreset'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)
+            ->onlyMethods(array('getThemePresets', 'getThemeSettings', 'getCurrentThemePreset'))
             ->getMock();
 
         $presets = array(
@@ -285,12 +285,12 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue('default'));
 
 
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getPathSettingsDataFile')
             ->will($this->returnValue('location/Of/Assets/file'));
 
-        $toolsMock = $this->getMockBuilder('\FOSSBilling\Tools')->getMock();
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('file_put_contents');
 
@@ -306,13 +306,12 @@ class ServiceTest extends \BBTestCase {
 
     public function testregenerateThemeCssAndJsFiles_EmptyFiles()
     {
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getPathAssets')
             ->will($this->returnValue('location/Of/'));
 
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $result = $this->service->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
@@ -342,10 +341,10 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetCurrentClientAreaTheme()
     {
-        $themeMock = $this->getMockBuilder('\Box\Mod\Theme\Model\Theme')->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Theme\Service')
-            ->setMethods(array('getCurrentClientAreaThemeCode', 'getTheme'))
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)
+            ->onlyMethods(array('getCurrentClientAreaThemeCode', 'getTheme'))
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -356,7 +355,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($themeMock));
 
         $result = $serviceMock->getCurrentClientAreaTheme();
-        $this->assertInstanceOf('\Box\Mod\Theme\Model\Theme', $result);
+        $this->assertInstanceOf('\\' . \Box\Mod\Theme\Model\Theme::class, $result);
     }
 
     public function testgetCurrentClientAreaThemeCode()

@@ -67,7 +67,7 @@
 <script>
     $(function() {
         $('#domain-checker').on('submit', function(event) {
-            $.post("{{ constant('BB_URL_API') }}guest/servicedomain/check",
+            $.post("{{ constant('SYSTEM_URL') }}api/guest/servicedomain/check",
             $(this).serialize(),
             function(json) {
                 if (json.error) {

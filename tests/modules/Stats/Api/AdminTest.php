@@ -25,7 +25,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_summary()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummary')
             ->will($this->returnValue(array()));
@@ -38,7 +38,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_summary_income()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummaryIncome')
             ->will($this->returnValue(array()));
@@ -51,7 +51,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_orders_statuses()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrdersStatuses')
             ->will($this->returnValue(array()));
@@ -65,7 +65,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_product_summary()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSummary')
             ->will($this->returnValue(array()));
@@ -79,7 +79,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_product_sales()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSales')
             ->will($this->returnValue(array()));
@@ -93,7 +93,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_income_vs_refunds()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('incomeAndRefundStats')
             ->will($this->returnValue(array()));
@@ -107,7 +107,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_refunds()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRefunds')
             ->will($this->returnValue(array()));
@@ -121,7 +121,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_income()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getIncome')
             ->will($this->returnValue(array()));
@@ -135,7 +135,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_orders()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->will($this->returnValue(array()));
@@ -149,7 +149,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_clients()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->will($this->returnValue(array()));
@@ -163,7 +163,7 @@ class AdminTest extends \BBTestCase {
 
     public function testclient_countries()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientCountries')
             ->will($this->returnValue(array()));
@@ -177,7 +177,7 @@ class AdminTest extends \BBTestCase {
 
     public function testsales_countries()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSalesByCountry')
             ->will($this->returnValue(array()));
@@ -191,7 +191,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_invoices()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->will($this->returnValue(array()));
@@ -205,7 +205,7 @@ class AdminTest extends \BBTestCase {
 
     public function testget_tickets()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Stats\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->will($this->returnValue(array()));

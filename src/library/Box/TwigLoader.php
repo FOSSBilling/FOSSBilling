@@ -15,21 +15,21 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
     /**
      * Constructor.
      *
-     * @param string|array $options A path or an array of options and paths
+     * @param array $options A path or an array of options and paths
      */
     public function __construct(array $options)
     {
         parent::__construct();
         if (!isset($options['mods'])) {
-            throw new \Box_Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'mods']);
+            throw new \FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'mods']);
         }
 
         if (!isset($options['theme'])) {
-            throw new \Box_Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'theme']);
+            throw new \FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'theme']);
         }
 
         if (!isset($options['type'])) {
-            throw new \Box_Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'type']);
+            throw new \FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'type']);
         }
 
         $this->options = $options;

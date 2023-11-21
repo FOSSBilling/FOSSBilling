@@ -22,7 +22,7 @@ class ClientTest extends \BBTestCase {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->will($this->returnValue(array('sql', array())));
@@ -46,7 +46,7 @@ class ClientTest extends \BBTestCase {
             ->will($this->returnValue($model));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function ($name) use($serviceMock) {return $serviceMock;});
+        $di['mod_service'] = $di->protect(fn($name) => $serviceMock);
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
@@ -66,13 +66,13 @@ class ClientTest extends \BBTestCase {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->will($this->returnValue($balanceAmount));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function ($name, $sub) use($serviceMock) {return $serviceMock;});
+        $di['mod_service'] = $di->protect(fn($name, $sub) => $serviceMock);
 
         $api = new \Box\Mod\Client\Api\Client();
         $api->setDi($di);
@@ -89,7 +89,7 @@ class ClientTest extends \BBTestCase {
     {
         $clientIsTaxable = true;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
             ->willReturn($clientIsTaxable);
