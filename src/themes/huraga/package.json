@@ -7,7 +7,6 @@
     "build": "encore production --progress"
   },
   "dependencies": {
-    "github-markdown-css": "^5.2.0",
-    "inter-ui": "^3.19.3"
+    "github-markdown-css": "^5.2.0"
   }
 }
