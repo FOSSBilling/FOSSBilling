@@ -198,7 +198,12 @@
                     <footer id="footer" class="small text-muted mt-2 mb-3">
                         <div class="d-flex flex-column">
                             <div class="d-flex justify-content-center">
-                                <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}</span>
+                                <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}
+                                    {% if company.bank_info_pagebottom == 1 %}
+                                        <br/>
+                                        <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}
+                                    {% endif %}
+                                </span>
                             </div>
                             <div class="d-flex justify-content-center">
                                 {% if settings.footer_link_1_enabled %}
@@ -278,5 +283,6 @@
         {% include 'mod_cookieconsent_index.html.twig' ignore missing %}
     {% endif %}
 </div>
+{{ DebugBar_render() }}
 </body>
 </html>

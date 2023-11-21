@@ -80,8 +80,16 @@
                                     <dt class="col-sm-6">{{ 'Email'|trans }}:</dt>
                                     <dd class="col-sm-6">{{ seller.email }}</dd>
                                 {% endif %}
+                                {% if seller.bank_name %}
+                                    <dt class="col-sm-6">{{ 'Bank Name'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{seller.bank_name}}</dd>
+                                {% endif %}
+                                {% if seller.bic %}
+                                    <dt class="col-sm-6">{{ 'BIC / SWIFT Code'|trans }}:</dt>
+                                    <dd class="col-sm-6">{{seller.bic}}</dd>
+                                {% endif %}
                                 {% if seller.account_number %}
-                                    <dt class="col-sm-6">{{ 'Account'|trans }}:</dt>
+                                    <dt class="col-sm-6">{{ 'Bank Account'|trans }}:</dt>
                                     <dd class="col-sm-6">{{ seller.account_number }}</dd>
                                 {% endif %}
                                 {% if seller.note %}
