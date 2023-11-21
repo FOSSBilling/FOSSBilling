@@ -368,7 +368,8 @@
         "valuemin",
         "valuemax",
         "concat",
-        "debugbar"
+        "debugbar",
+        "reqs"
     ],
     "ignorePaths": [
         "tests/**",
