@@ -84,8 +84,15 @@
 
             {% if settings.sidebar_balance_enabled and client %}
                 <li class="pt-3 ps-3">
-                    <span class="text-secondary d-block pb-1">{{ 'Account balance'|trans }}</span>
+                    <h5 class="text-secondary d-block pb-1">{{ 'Account balance'|trans }}</h5>
                     <h4><strong>{{ profile.balance | money(profile.currency) }}</strong></h4>
+                </li>
+            {% endif %}
+
+            {% if settings.sidebar_note_enabled %}
+                <li class="pt-3 ps-3">
+                    <h5 class="text-secondary d-block pb-1">{{ settings.sidebar_note_title }}</h5>
+                    <span>{{ settings.sidebar_note_content }}</span>
                 </li>
             {% endif %}
         </ul>

@@ -141,18 +141,6 @@
             <div class="col-12 col-md-9">
                 <div id="wrapper">
                     <section role="main">
-                        <div class="navigation-block">
-                            {% if settings.sidebar_note_enabled %}
-                                <section class="side-note">
-                                    <div class="side-note-container">
-                                        <h2>{{ settings.sidebar_note_title }}</h2>
-                                        <p>{{ settings.sidebar_note_content }}</p>
-                                    </div>
-                                    <div class="side-note-bottom"></div>
-                                </section>
-                            {% endif %}
-                        </div>
-
                         {% block content_before %}{% endblock %}
                         <div class="content-block" role="main">
                             {% if settings.show_breadcrumb %}
