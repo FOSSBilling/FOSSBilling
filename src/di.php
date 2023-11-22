@@ -693,10 +693,8 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
  *
  * @return \FOSSBilling\Requirements
  */
-$di['requirements'] = function () use ($di) {
+$di['requirements'] = function () {
     $r = new \FOSSBilling\Requirements();
-    $r->setDi($di);
-
     return $r;
 };
 

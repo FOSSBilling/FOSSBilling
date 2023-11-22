@@ -68,24 +68,26 @@
                     </tr>
                     <tr>
                         <td>PHP version</td>
-                        <td class="{{ php_ver_ok ? 'green' : 'red'}}">{{ php_ver }}</td>
-                        <td>{% if not php_ver_ok %}Required PHP version >{{ php_ver_req }}{% endif %}</td>
+                        <td class="{{ compatibility.php_version.isOk ? 'green' : 'red'}}">{{ compatibility.php_version.version }}</td>
+                        <td>{% if not compatibility.php_version.isOk %} Required PHP version >={{ compatibility.php_version.min_version }}{% endif %}</td>
                     </tr>
-                    {% if php_safe_mode %}
-                        <tr>
-                            <td>PHP safe mode</td>
-                            <td class="red">ON</td>
-                            <td>PHP safe mode should be OFF</td>
-                        </tr>
-                    {% endif %}
-                    {% for ext, loaded in extensions %}
+                    {% for ext, loaded in compatibility.required_extensions %}
                         <tr>
                             <td>PHP extension: <strong>{{ ext }}</strong></td>
                             <td class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'OK' : 'FAIL'}}</td>
-                            <td>{% if not loaded %}Contact your server administrator to enable <strong>PHP {{ ext }} extension</strong>{% endif %}</td>
+                            <td>{% if not loaded %}Contact your server administrator to enable <strong>{{ ext }}</strong> PHP extension{% endif %}</td>
                         </tr>
                     {% endfor %}
-                    {% for file, writable in files %}
+                    {% for ext, loaded in compatibility.suggested_extensions %}
+                        {% if not loaded %}
+                            <tr>
+                                <td>PHP extension: <strong>{{ ext }}</strong></td>
+                                <td class="{{ loaded ? 'green' : 'orange'}}">{{ loaded ? 'OK' : 'WARN'}}</td>
+                                <td>{% if not loaded %}We recommend enabling the <strong>{{ ext }}</strong> PHP extension for improved performance / compatibility{% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {% for file, writable in compatibility.files %}
                         {% if not writable %}
                             <tr>
                                 <td>{{ file }}</td>
@@ -94,7 +96,7 @@
                             </tr>
                         {% endif %}
                     {% endfor %}
-                    {% for folder, writable in folders %}
+                    {% for folder, writable in compatibility.folders %}
                         {% if not writable %}
                             <tr>
                                 <td>{{ folder }}</td>
