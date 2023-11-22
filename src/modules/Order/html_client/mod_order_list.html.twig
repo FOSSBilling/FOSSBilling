@@ -21,10 +21,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0 table-responsive">
                     {% set orders = client.order_get_list({"per_page":10, "page":request.page, "hide_addons":1}) %}
                     {% if orders.list %}
-                        <table class="table table-bordered table-hover table-responsive">
+                        <table class="table table-bordered table-hover">
                             <thead>
                             <tr class="border-top-0">
                                 <th>{{ 'Product/Service'|trans }}</th>
