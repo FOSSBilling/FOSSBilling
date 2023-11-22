@@ -128,12 +128,21 @@ class AdminTest extends \BBTestCase {
         $databaseMock->expects($this->atLeastOnce())->
             method('trash');
 
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->onlyMethods(array('hasPermission'))->getMock();
+            $serviceMock->expects($this->atLeastOnce())
+                ->method('hasPermission')
+                ->willReturn(true);
+
         $di['db'] = $databaseMock;
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
+
+        $di['mod_service'] = $di->protect(function () use ($serviceMock) {
+            return $serviceMock;
+        });
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);

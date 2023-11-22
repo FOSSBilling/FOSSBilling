@@ -115,6 +115,8 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ActivitySystem', $data['id'], 'Event not found');
 
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'delete_activity');
+
         $this->di['db']->trash($model);
 
         return true;

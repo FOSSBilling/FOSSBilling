@@ -116,7 +116,10 @@ class Box_AppClient extends Box_App
 
         $profile = new Profile();
         $twig->addExtension(new ProfilerExtension($profile));
-        $this->debugBar->addCollector(new NamespacedTwigProfileCollector($profile));
+        $collector = new NamespacedTwigProfileCollector($profile);
+        if (!$this->debugBar->hasCollector($collector->getName())) {
+            $this->debugBar->addCollector($collector);
+        }
 
         $twig->addExtension(new DebugBar($this->getDebugBar()));
 

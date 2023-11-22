@@ -27,6 +27,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'can_always_access' => true,
+            'manage_settings' => []
+        ];
+    }
+
     public function getSearchQuery($data)
     {
         $query = 'SELECT * FROM activity_client_email';

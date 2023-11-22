@@ -8,9 +8,11 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Branding;
+namespace Box\Mod\Wysiwyg;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+use FOSSBilling\InjectionAwareInterface;
+
+class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -27,12 +29,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'hide_permissions' => true,
+            'can_always_access' => true,
+            'manage_settings' => [],
         ];
-    }
-
-    public function uninstall()
-    {
-        return true;
     }
 }

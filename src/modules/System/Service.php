@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -24,6 +25,34 @@ class Service
     public function setDi(Container $di): void
     {
         $this->di = $di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'can_always_access' => true,
+            'manage_settings' => [],
+            'manage_company_details' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage company details'),
+                'description' => __trans('Allows the staff member to update company details as set under the system module.'),
+            ],
+            'manage_company_legal' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage company legal'),
+                'description' => __trans('Allows the staff member to update company legal as set under the system module.'),
+            ],
+            'invalidate_cache' => [
+                'type' => 'bool',
+                'display_name' => __trans('Invalidate cache'),
+                'description' => __trans('Allows the staff member to invalidate the FOSSBilling cache from within the system settings.'),
+            ],
+            'system_update' => [
+                'type' => 'bool',
+                'display_name' => __trans('Update FOSSBilling'),
+                'description' => __trans('Allows the staff member to update FOSSBilling.'),
+            ],
+        ];
     }
 
     /**
@@ -53,6 +82,11 @@ class Service
 
     public function setParamValue($param, $value, $createIfNotExists = true)
     {
+        // Skip this param if the user isn't permitted to update it.
+        if (!$this->canUpdateParam($param)) {
+            return true;
+        }
+
         $pdo = $this->di['pdo'];
         if ($this->paramExists($param)) {
             $query = 'UPDATE setting SET value = :value WHERE param = :param';
@@ -449,7 +483,7 @@ class Service
         }
 
         $r = $this->di['requirements'];
-        $data = $r->getInfo();
+        $data = $r->checkCompat();
         $data['last_patch'] = $this->getParamValue('last_patch');
 
         return $data;
@@ -1681,6 +1715,26 @@ class Service
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
+        }
+    }
+
+    private function canUpdateParam(string $param): bool
+    {
+        $company = [
+            'company_name', 'company_email', 'company_tel', 'company_address_1',
+            'company_address_2', 'company_address_3', 'company_logo', 'company_logo_dark',
+            'company_favicon', 'company_number', 'company_vat_number', 'company_account_number',
+            'hide_version_public', 'hide_company_public', 'company_signature'
+        ];
+        $comaony_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
+
+        $staff_service = $this->di['mod_service']('Staff');
+        if (in_array($param, $company) && !$staff_service->hasPermission(null, 'system', 'manage_company_details')) {
+            return false;
+        }
+
+        if (in_array($param, $comaony_legal) && !$staff_service->hasPermission(null, 'system', 'manage_company_legal')) {
+            return false;
         }
 
         return true;

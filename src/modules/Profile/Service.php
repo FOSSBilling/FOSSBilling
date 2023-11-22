@@ -16,6 +16,14 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
+    public function getModulePermissions(): array
+    {
+        return[
+            'can_always_access' => true,
+            'hide_permissions' => true,
+        ];
+    }
+
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;

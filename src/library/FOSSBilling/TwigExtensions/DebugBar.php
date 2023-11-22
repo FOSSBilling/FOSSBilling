@@ -19,8 +19,8 @@ use FOSSBilling\Environment;
 
 class DebugBar extends AbstractExtension
 {
-    protected ?\Pimple\Container $di;
-    private JavascriptRenderer $debugbarRenderer;
+    protected ?\Pimple\Container $di = null;
+    private readonly JavascriptRenderer $debugbarRenderer;
 
     public function __construct(StandardDebugBar $debugBar)
     {
@@ -30,8 +30,8 @@ class DebugBar extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('DebugBar_renderHead', [$this, 'renderHead'], ['is_safe' => ['html']]),
-            new TwigFunction('DebugBar_render', [$this, 'render'], ['is_safe' => ['html']])
+            new TwigFunction('DebugBar_renderHead', $this->renderHead(...), ['is_safe' => ['html']]),
+            new TwigFunction('DebugBar_render', $this->render(...), ['is_safe' => ['html']])
         ];
     }
 

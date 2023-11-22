@@ -24,6 +24,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'hide_permissions' => true,
+        ];
+    }
+
     /**
      * @return int - 1
      */
