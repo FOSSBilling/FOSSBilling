@@ -141,6 +141,8 @@ class Admin extends \Api_Abstract
      */
     public function clear_cache()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'invalidate_cache');
+
         return $this->getService()->clearCache();
     }
 
@@ -182,6 +184,8 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\InformationException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
         $new_version = $updater->getLatestVersion();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
@@ -201,6 +205,8 @@ class Admin extends \Api_Abstract
      */
     public function manual_update()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
         $updater = $this->di['updater'];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);
         $updater->performManualUpdate();

@@ -28,6 +28,18 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'can_always_access' => true,
+            'manage_extensions' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage extensions'),
+                'description' => __trans('Allows the staff member to install, update, or remove extensions.'),
+            ],
+        ];
+    }
+
     public function isCoreModule($mod)
     {
         $core = $this->di['mod']('extension')->getCoreModules();
@@ -319,11 +331,14 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_Extension $model): never
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
         throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
     public function activate(\Model_Extension $ext)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $result = [
             'id' => $ext->name,
             'type' => $ext->type,
@@ -355,6 +370,8 @@ class Service implements InjectionAwareInterface
 
     public function deactivate(\Model_Extension $ext)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         switch ($ext->type) {
             case \FOSSBilling\ExtensionManager::TYPE_HOOK:
                 $file = ucfirst($ext->name) . '.php';
@@ -393,6 +410,8 @@ class Service implements InjectionAwareInterface
 
     public function uninstall(\Model_Extension $ext)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $this->deactivate($ext);
 
         switch ($ext->type) {
@@ -410,6 +429,8 @@ class Service implements InjectionAwareInterface
 
     public function downloadAndExtract($type, $id)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $latest = $this->di['extension_manager']->getLatestExtensionRelease($id);
 
         if (!isset($latest['download_url'])) {
@@ -508,6 +529,8 @@ class Service implements InjectionAwareInterface
 
     private function installModule(\Model_Extension $ext)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $mod = $this->di['mod']($ext->name);
 
         if ($mod->isCore()) {
@@ -590,6 +613,7 @@ class Service implements InjectionAwareInterface
 
     public function setConfig($data)
     {
+        $this->hasManagePermission($data['ext']);
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 
@@ -642,9 +666,97 @@ class Service implements InjectionAwareInterface
         $extensionMod = $this->di['mod']('extension');
         $mods = $extensionMod->getCoreModules();
 
-        $result = array_merge($mods, $list);
-        sort($result);
+        $modules = array_merge($mods, $list);
+        sort($modules);
 
-        return $result;
+        return $modules;
+    }
+
+    public function getCoreAndActiveModulesAndPermissions(): array
+    {
+        $enabledModules = $this->getCoreAndActiveModules();
+        $modules = [];
+
+        foreach ($enabledModules as $module) {
+            if ($module == 'index' || $module == 'dashboard') {
+                continue;
+            }
+
+            // If getSpecificModulePermissions returns false, we need to skip that module and not include it in the permissions list
+            $permissions = $this->getSpecificModulePermissions($module, true);
+            if ($permissions === false) {
+                continue;
+            } else {
+                $modules[$module]['permissions'] = $permissions;
+            }
+        }
+
+        return $modules;
+    }
+
+    public function getSpecificModulePermissions(string $module, bool $buildingCompleteList = false): array|false
+    {
+        $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
+        if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
+            $moduleService = new $class;
+            if (method_exists($moduleService, 'setDi')) {
+                $moduleService->setDi($this->di);
+            }
+            $permissions = $moduleService->getModulePermissions();
+
+            if (isset($permissions['hide_permissions']) && $permissions['hide_permissions']) {
+                return ($buildingCompleteList ? false : []);
+            } else {
+                unset($permissions['hide_permissions']);
+
+                // Fill in the manage_settings permission as it will always be the same
+                if (isset($permissions['manage_settings'])) {
+                    $permissions['manage_settings'] = [
+                        'type' => 'bool',
+                        'display_name' => __trans('Manage settings'),
+                        'description' => __trans('Allows the staff member to edit settings for this module.'),
+                    ];
+                }
+                return $permissions;
+            }
+        }
+        return [];
+    }
+
+    // Checks if the current user has permission to edit a module's settings
+    public function hasManagePermission(string $module, \Box_App|null $app = null): void
+    {
+        $staff_service = $this->di['mod_service']('Staff');
+
+        // The module isn't active or has no permissions if this is the case, so continue as normal 
+        if (!$this->isExtensionActive('mod', $module)) {
+            return;
+        }
+
+        // First check if any access is allowed to the module for this person
+        if (!$staff_service->hasPermission(null, $module)) {
+            http_response_code(403);
+            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
+            if (!is_null($app)) {
+                echo $app->render('error', ['exception' => $e]);
+                exit;
+            } else {
+                throw $e;
+            }
+        }
+
+        $module_permissions = $this->getSpecificModulePermissions($module);
+
+        // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
+        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
+            http_response_code(403);
+            $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+            if (!is_null($app)) {
+                echo $app->render('error', ['exception' => $e]);
+                exit;
+            } else {
+                throw $e;
+            }
+        }
     }
 }

@@ -26,6 +26,14 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'can_always_access' => true,
+            'hide_permissions' => true,
+        ];
+    }
+
     public function getPairs()
     {
         $themeService = $this->di['mod_service']('theme');

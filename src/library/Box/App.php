@@ -81,6 +81,10 @@ class Box_App
     {
     }
 
+    protected function checkPermission(){
+
+    }
+
     public function show404(Exception $e)
     {
         error_log($e->getMessage());
@@ -168,6 +172,10 @@ class Box_App
         $this->debugBar['time']->startMeasure('init', 'Initializing the app');
         $this->init();
         $this->debugBar['time']->stopMeasure('init');
+      
+        $this->debugBar['time']->startMeasure('checkperm', 'Checking access to module');
+        $this->checkPermission();
+        $this->debugBar['time']->stopMeasure('checkperm');
 
         return $this->processRequest();
     }

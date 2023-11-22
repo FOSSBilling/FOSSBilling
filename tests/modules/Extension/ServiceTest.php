@@ -7,14 +7,19 @@ use \Symfony\Component\HttpClient\MockHttpClient;
 
 class PdoMock extends \PDO
 {
-    public function __construct (){}
+    public function __construct()
+    {
+    }
 }
 class PdoStatmentsMock extends \PDOStatement
 {
-    public function __construct (){}
+    public function __construct()
+    {
+    }
 }
 
-class ServiceTest extends \BBTestCase {
+class ServiceTest extends \BBTestCase
+{
 
     /**
      * @var \Box\Mod\Extension\Service
@@ -44,26 +49,10 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(fn($name) => $modMock);
+
         $this->service->setDi($di);
 
         $result = $this->service->isCoreModule('extension');
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testisExtensionActiveModAndCoreModule()
-    {
-        $coreModules = array('extension', 'cron', 'staff');
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getCoreModules')
-            ->will($this->returnValue($coreModules));
-
-        $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn($name) => $modMock);
-        $this->service->setDi($di);
-
-        $result = $this->service->isExtensionActive('mod', 'extension');
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -84,6 +73,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
+
         $this->service->setDi($di);
 
         $result = $this->service->isExtensionActive('mod', 'ModDoesNotExists');
@@ -109,6 +99,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
+
         $this->service->setDi($di);
 
         $result = $this->service->removeNotExistingModules();
@@ -188,7 +179,6 @@ class ServiceTest extends \BBTestCase {
 
         $result = $this->service->getExtensionsList($data);
         $this->assertIsArray($result);
-
     }
 
     public function testgetExtensionsListOnlyInstalled()
@@ -268,7 +258,7 @@ class ServiceTest extends \BBTestCase {
         $di['url'] = $urlMock;
 
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(function ($name) use($di) {
+        $di['mod'] = $di->protect(function ($name) use ($di) {
             $mod = new \Box_Mod($name);
             $mod->setDi($di);
             return $mod;
@@ -313,12 +303,17 @@ class ServiceTest extends \BBTestCase {
         $model->type = 'mod';
         $model->name = 'testExtension';
         $model->version = '2';
-        $newversion = '3';
 
         $extensionMock = $this->getMockBuilder('\\' . \FOSSBilling\ExtensionManager::class)->getMock();
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -341,6 +336,9 @@ class ServiceTest extends \BBTestCase {
             'has_settings'  => true,
         );
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')
@@ -362,6 +360,9 @@ class ServiceTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
         $result = $this->service->activate($ext);
@@ -389,9 +390,16 @@ class ServiceTest extends \BBTestCase {
             ->method('uninstall')
             ->will($this->returnValue(true));
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
+
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
 
@@ -411,8 +419,15 @@ class ServiceTest extends \BBTestCase {
             ->method('getCoreModules')
             ->will($this->returnValue(array($ext->name)));
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(fn($name) => $modMock);
+
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
 
@@ -439,8 +454,15 @@ class ServiceTest extends \BBTestCase {
             ->method('uninstall')
             ->willThrowException(new \FOSSBilling\Exception($exceptionMessage));
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(fn($name) => $modMock);
+
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
 
@@ -460,8 +482,14 @@ class ServiceTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
         $result = $this->service->deactivate($ext);
@@ -488,15 +516,22 @@ class ServiceTest extends \BBTestCase {
             ->method('uninstall')
             ->will($this->returnValue(true));
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
+
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
 
         $result = $this->service->deactivate($ext);
         $this->assertTrue($result);
-       }
+    }
 
     public function testdownloadAndExtractDownloadUrlMissing()
     {
@@ -506,8 +541,14 @@ class ServiceTest extends \BBTestCase {
             ->method('getLatestExtensionRelease')
             ->will($this->returnValue(array()));
 
+        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->will($this->returnValue(true));
+
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
+        $di['mod_service'] = $di->protect(function () use ($staffService) {
+            return $staffService;
+        });
 
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
@@ -568,8 +609,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(1));
 
         $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -603,8 +643,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->throwException(new \Exception()));
 
         $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
@@ -688,7 +727,7 @@ class ServiceTest extends \BBTestCase {
             'ext' => 'extensionName',
         );
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getConfig'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getConfig', 'getCoreAndActiveModulesAndPermissions'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array()));
@@ -708,8 +747,12 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
         $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
+
+        $staffMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+
+        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())->method('getCoreModules')->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -718,6 +761,12 @@ class ServiceTest extends \BBTestCase {
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['config'] = array('salt' => '');
+        $di['mod'] = $di->protect(function () use ($modMock) {
+            return $modMock;
+        });
+        $di['mod_service'] = $di->protect(function () use ($staffMock) {
+            return $staffMock;
+        });
         $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
         $serviceMock->setDi($di);
@@ -725,5 +774,4 @@ class ServiceTest extends \BBTestCase {
 
         $this->assertTrue($result);
     }
-
 }
