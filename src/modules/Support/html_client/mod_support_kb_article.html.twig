@@ -29,33 +29,9 @@
                 </div>
             </div>
             <div class="card-footer">
-                <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#similar" aria-expanded="false" aria-controls="similar">
-                    {{ 'Similar articles'|trans }}
-                </button>
+                <a href="{{ 'support/kb'|link }}" class="btn btn-primary btn-sm" type="button">{{ 'Back to all knowedge base articles'|trans }}</a>
 
-                <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#categories" aria-expanded="false" aria-controls="categories">
-                    {{ 'Knowledge base categories'|trans }}
-                </button>
-
-                <div class="collapse" id="similar">
-                    <div class="card card-body">
-                        {% for i, kbarticle in guest.support_kb_article_get_list({ "kb_article_category_id": article.kb_article_category_id, "per_page": 5 }).list %}
-                            <li>
-                                <a href="{{ 'support/kb'|link }}/{{ article.category.slug }}/{{ kbarticle.slug }}">{{ kbarticle.title|truncate(45) }}</a>
-                            </li>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="collapse" id="categories">
-                    <div class="card card-body">
-                        {% for i, category in guest.support_kb_category_get_list({ "per_page": 5 }).list %}
-                            <li>
-                                <a href="{{ 'support/kb'|link }}#category-{{ category.id }}">{{ category.title }}</a>
-                            </li>
-                        {% endfor %}
-                    </div>
-                </div>
+                <a href="{{ 'support/kb'|link }}/{{ article.category.slug }}" class="btn btn-primary btn-sm" type="button">{{ 'Similar articles'|trans }}</a>
             </div>
         </div>
     </div>
