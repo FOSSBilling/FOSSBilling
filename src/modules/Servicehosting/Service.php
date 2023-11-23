@@ -31,7 +31,6 @@ class Service implements InjectionAwareInterface
     {
         try {
             [$sld, $tld] = $this->_getDomainTuple($data);
-
             return __trans(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld . $tld]);
         } catch (\Exception $e) {
             // should never occur, but in case
@@ -527,9 +526,20 @@ class Service implements InjectionAwareInterface
 
         [$sld, $tld] = [null, null];
 
+        // When handling own domains, accept FQDN and parse out TLD.
         if ($data['domain']['action'] == 'owndomain') {
-            $sld = $data['domain']['owndomain_sld'];
-            $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+            $required = [
+                'owndomain' => 'Hosting product must have a defined owndomain parameter.'
+            ];
+            $this->di['validator']->checkRequiredParamsForArray($required, $data['domain']);
+
+            $domain = $data['domain']['owndomain'];
+            $tldSepPos = strrpos($domain, '.');
+            if ($tldSepPos === false) {
+                throw new \Box_Exception('Hosting product domain name, :domain, invalid', [':domain' => $domain]);
+            }
+            $tld = substr($domain, $tldSepPos); // TLD includes leading period (e.g. .com).
+            $sld = substr($domain, 0, strlen($domain) - strlen($tld)); // SLD is everything before TLD.
         }
 
         if ($data['domain']['action'] == 'register') {
@@ -936,7 +946,7 @@ class Service implements InjectionAwareInterface
         return [false, false];
     }
 
-    public function prependOrderConfig(\Model_Product $product, array $data)
+    public function attachOrderConfig(\Model_Product $product, array $data)
     {
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
@@ -948,7 +958,7 @@ class Service implements InjectionAwareInterface
 
     public function getDomainProductFromConfig(\Model_Product $product, array &$data)
     {
-        $data = $this->prependOrderConfig($product, $data);
+        $data = $this->attachOrderConfig($product, $data);
         $product->getService()->validateOrderData($data);
         $c = $this->di['tools']->decodeJ($product->config);
 

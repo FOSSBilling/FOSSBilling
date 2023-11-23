@@ -69,8 +69,7 @@ class ServiceTest extends \BBTestCase
             array(
                 array(
                     'action'        => 'owndomain',
-                    'owndomain_sld' => 'example',
-                    'owndomain_tld' => '.com'
+                    'owndomain' => 'example.com'
                 ),
                 $self->never(),
                 $self->never(),
@@ -161,9 +160,9 @@ class ServiceTest extends \BBTestCase
 
         return array(
             array(
-                array( //"owndomain_sld" is missing
+                array( //owndomain SLD is missing
                     'action'        => 'owndomain',
-                    'owndomain_tld' => '.com'
+                    'owndomain' => '.com'
                 ),
                 $self->never(),
                 true,
@@ -172,8 +171,7 @@ class ServiceTest extends \BBTestCase
             array(
                 array(
                     'action'        => 'owndomain',
-                    'owndomain_sld' => 'example',
-                    'owndomain_tld' => '.com'
+                    'owndomain' => 'example.com'
                 ),
                 $self->atLeastOnce(),
                 false ////"isSldValid" returns false

@@ -531,13 +531,7 @@ class Service implements InjectionAwareInterface
         if ($period) {
             $config['period'] = $period;
         }
-        $se = $this->di['mod_service']('service' . $product->type);
-        // @deprecated logic
-        if (method_exists($se, 'prependOrderConfig')) {
-            $config = $se->prependOrderConfig($product, $config);
-        }
 
-        // @migration script
         $se = $this->di['mod_service']('service' . $product->type);
         if (method_exists($se, 'attachOrderConfig')) {
             $config = $se->attachOrderConfig($product, $config);

@@ -115,8 +115,6 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
             'period'    =>  '6M',
             'domain' => array(
                 'action' => "register",
-                'owndomain_sld' =>"",
-                'owndomain_tld' =>".com",
                 'register_sld' =>"newdomainregister",
                 'register_tld' =>".com",
                 'register_years' => "1",
@@ -154,8 +152,6 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
             'period'    =>  '6M',
             'domain' => array(
                 'action' => "register",
-                'owndomain_sld' =>"",
-                'owndomain_tld' =>".com",
                 'register_sld' =>"newdomainregister2",
                 'register_tld' =>".com",
                 'register_years' => "1",
