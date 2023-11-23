@@ -32,7 +32,13 @@
                 </div>
             </div>
             <div class="card-body">
-                {{ email.content_html | raw }}
+                <iframe class="ratio ratio-1x1 email" id="email-content" src="about:blank" style="height: 30em"></iframe>
+                <script>
+                    (function () {
+                        frame = document.getElementById("email-content");
+                        frame.srcdoc = `{{ email.content_html|raw }}`;
+                    })();
+                </script>
             </div>
         </div>
 </div>

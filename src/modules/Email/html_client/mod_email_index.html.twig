@@ -32,7 +32,7 @@
                                     <a class="list-group-item list-group-item-action mt-0{% if loop.first %} active{% endif %}"
                                        href="#mail-{{ loop.index }}" data-bs-toggle="list" role="tab">
                                         <div class="flex-column py-1">
-                                            <p class="m-0">{{ email.subject | slice(0, 50) }}{% if email.subject | length > 50 %}...{% endif %}</p>
+                                            <p class="m-0">{{ email.subject | truncate }}</p>
                                             <span class="text-muted small">{{ email.created_at|format_datetime }}</span>
                                         </div>
                                     </a>
@@ -45,7 +45,7 @@
                                 <div class="tab-pane fade{% if loop.first %} show active{% endif %}"
                                      id="mail-{{ loop.index }}" role="tabpanel">
                                     <div class="card-body">
-                                        <h5 class="mb-0">{{ email.subject }}</h5>
+                                        <h6 class="mb-0">{{ email.subject }}</h6>
                                         <div class="card-header px-0">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="d-flex flex-column gap-1">
@@ -69,7 +69,14 @@
                                             </div>
                                         </div>
                                         <div class="card-body">
-                                            {{ email.content_html | raw }}
+                                            {# Workaround: email styling can effect the style of this page, so instead we use JS to insert the email contents into an iframe #}
+                                            <iframe class="ratio ratio-1x1 email" id="email-content-{{ i }}" src="about:blank"></iframe>
+                                            <script>
+                                                (function () {
+                                                    frame = document.getElementById("email-content-{{ i }}");
+                                                    frame.srcdoc = `{{ email.content_html|raw }}`;
+                                                })();
+                                            </script>
                                         </div>
                                     </div>
                                 </div>
@@ -145,7 +152,29 @@
                         loader.style.display = 'none';
                     }
                 }
+
+                {# Resizing the email ifames proved to be tempermental. The below code does it automatically using events. We can't do it all at once as the hidden tabs end up with a height of 0 #}
+                function setEmailHeights(){
+                    const emails = document.querySelectorAll('.email');
+                    emails.forEach(email => {
+                        var body = email.contentDocument.body;
+                        var html = email.contentDocument.documentElement;
+                        var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+                        email.height = height;
+                    });
+                };
+
+                window.addEventListener("DOMContentLoaded", setEmailHeights());
+
+                var tabElms = document.querySelectorAll('a[data-bs-toggle="list"]');
+                
+                tabElms.forEach(element => {
+                    element.addEventListener('shown.bs.tab', function() {
+                        setEmailHeights()
+                    });
+                });
             });
         </script>
     {% endautoescape %}
 {% endblock %}
+
