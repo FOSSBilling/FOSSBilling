@@ -377,7 +377,7 @@ class ServiceTest extends \BBTestCase
         $di['crypt']       = $cryptMock;
         $di['config'] = $configMock;
         $di['twig']        = $twig;
-        $di['mod_service'] = $di->protect(fn() => $systemService);
+        $di['mod_service'] = $di->protect(fn () => $systemService);
         $di['tools'] = new \FOSSBilling\Tools();
 
         $serviceMock->setDi($di);
@@ -557,8 +557,8 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($isExtensionActiveReturn));
 
         $config = array();
-        $di['mod_config']  = $di->protect(fn($modName) => $config);
-        $di['mod_service'] = $di->protect(fn() => $extension);
+        $di['mod_config']  = $di->protect(fn ($modName) => $config);
+        $di['mod_service'] = $di->protect(fn () => $extension);
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $service->setDi($di);
@@ -790,7 +790,7 @@ class ServiceTest extends \BBTestCase
 
         $systemServiceMock = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
 
-        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
 
         $emailServiceMock->setDi($di);
 
@@ -912,7 +912,7 @@ class ServiceTest extends \BBTestCase
         $di                = new \Pimple\Container();
         $di['db']          = $db;
         $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn() => $extension);
+        $di['mod_service'] = $di->protect(fn () => $extension);
 
         $service->setDi($di);
 
@@ -984,11 +984,6 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
 
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->onlyMethods(array('logEmail'))->getMock();
-        $activityMock->expects($this->atLeastOnce())
-            ->method('logEmail')
-            ->will($this->returnValue(true));
-
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
@@ -1005,14 +1000,12 @@ class ServiceTest extends \BBTestCase
         $di           = new \Pimple\Container();
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(function ($name) use ($extension, $activityMock) {
-            if ($name == 'activity') {
-                return $activityMock;
-            } elseif ($name == 'extension') {
+        $di['mod_service'] = $di->protect(function ($name) use ($extension) {
+            if ($name == 'extension') {
                 return $extension;
             }
         });
-        $di['mod'] = $di->protect(fn() => $modMock);
+        $di['mod'] = $di->protect(fn () => $modMock);
 
         $service->setDi($di);
 
@@ -1056,7 +1049,7 @@ class ServiceTest extends \BBTestCase
 
         $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
 
-        $di['mod_service'] = $di->protect(fn() => $systemService);
+        $di['mod_service'] = $di->protect(fn () => $systemService);
 
         $service->setDi($di);
 
@@ -1100,7 +1093,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod'] = $di->protect(fn() => $modMock);
+        $di['mod'] = $di->protect(fn () => $modMock);
         $di['mod_service'] = $di->protect(function ($name) use ($systemService, $extension) {
             if ($name == 'system') {
                 $systemService;
