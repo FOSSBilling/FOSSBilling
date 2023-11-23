@@ -373,7 +373,8 @@
         "concat",
         "debugbar",
         "reqs",
-        "srcdoc"
+        "srcdoc",
+        "iframes"
     ],
     "ignorePaths": [
         "tests/**",
