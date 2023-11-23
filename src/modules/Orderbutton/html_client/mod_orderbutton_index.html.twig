@@ -159,15 +159,13 @@
                             gateway_id: result.gateway_id,
                             auto_redirect: true
                         }, function (r) {
-                            let checkoutEl = document.getElementById('#checkout');
-                            let paymentHtmlEl = document.getElementById('#payment-html');
+                            let checkoutEl = document.getElementById('checkout');
+                            let paymentHtmlEl = document.getElementById('payment-html');
                             if (r.iframe) {
                                 $('#payment-html-inner').html(r.result);
                                 bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                                $('#checkout').on('hidden', function () {
-                                    $('#checkout').remove();
-                                    bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
-                                });
+                                $('#checkout').remove();
+                                bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                             } else {
                                 var link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
                                 $('#payment-html-inner').html('<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
