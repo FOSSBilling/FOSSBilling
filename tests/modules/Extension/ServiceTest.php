@@ -311,9 +311,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -360,9 +358,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
         $result = $this->service->activate($ext);
@@ -397,9 +393,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
 
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
 
@@ -425,9 +419,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(fn($name) => $modMock);
 
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
 
@@ -460,9 +452,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(fn($name) => $modMock);
 
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
 
@@ -487,9 +477,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
         $result = $this->service->deactivate($ext);
@@ -523,9 +511,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn($name) => $modMock);
 
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
 
@@ -546,9 +532,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
-        $di['mod_service'] = $di->protect(function () use ($staffService) {
-            return $staffService;
-        });
+        $di['mod_service'] = $di->protect(fn() => $staffService);
 
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
@@ -761,12 +745,8 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['config'] = array('salt' => '');
-        $di['mod'] = $di->protect(function () use ($modMock) {
-            return $modMock;
-        });
-        $di['mod_service'] = $di->protect(function () use ($staffMock) {
-            return $staffMock;
-        });
+        $di['mod'] = $di->protect(fn() => $modMock);
+        $di['mod_service'] = $di->protect(fn() => $staffMock);
         $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
         $serviceMock->setDi($di);

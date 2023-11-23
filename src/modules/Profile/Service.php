@@ -18,7 +18,7 @@ class Service implements InjectionAwareInterface
 
     public function getModulePermissions(): array
     {
-        return[
+        return [
             'can_always_access' => true,
             'hide_permissions' => true,
         ];
