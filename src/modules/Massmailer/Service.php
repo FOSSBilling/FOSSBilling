@@ -30,7 +30,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function install()
     {
         $extensionService = $this->di['mod_service']('extension');
-        $extensionService->activateExistingExtension(['id' => 'queue', 'type' => 'mod']);
 
         $sql = '
         CREATE TABLE IF NOT EXISTS `mod_massmailer` (
