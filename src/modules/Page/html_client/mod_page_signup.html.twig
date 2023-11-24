@@ -20,7 +20,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="text-center m-4">{{ 'Create a new account'|trans }}</h5>
-                        <form method="post" action="" id="client-signup" class="auth">
+                        <form class="api-form auth" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-redirect="{{ '/'|link }}">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% set r = guest.client_required %}
 
@@ -179,21 +179,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
-
-{% block js %}
-    <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", () => {
-            let signupForm = document.getElementById('client-signup');
-            signupForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                API.guest.post('client/create',
-                    new FormData(signupForm).serializeObject(),
-                    () => bb.redirect('{{ constant('SYSTEM_URL') }}'),
-                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'),
-                )
-                return false;
-            });
-        });
-    </script>
 {% endblock %}

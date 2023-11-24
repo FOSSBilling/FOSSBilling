@@ -18,7 +18,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="text-center m-4">{{ 'Login to your account'|trans }}</h5>
-                    <form method="post" action="" id="client-login" class="auth">
+                    <form class="api-form auth" action="{{ 'api/guest/client/login'|link }}" method="post" data-api-redirect="{{ '/'|link }}">
                         <div class="mb-3">
                             <label class="form-label" for="email">{{ 'Email'|trans }}</label>
                             <input class="form-control" id="email" type="text" placeholder="{{ 'Enter your email address'|trans }}" name="email" value="{{ request.email }}" required="required" autofocus>
@@ -47,24 +47,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block js %}
-    <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", () => {
-            let loginForm = document.getElementById('client-login');
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                API.guest.post('client/login',
-                    new FormData(loginForm).serializeObject(),
-                    () => bb.redirect('{{ constant('SYSTEM_URL') }}'),
-                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'),
-                )
-                return false;
-            });
-            {% if request.al %}
-            loginForm.submit();
-            {% endif %}
-        });
-    </script>
 {% endblock %}
