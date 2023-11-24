@@ -30,12 +30,12 @@ jobs:
       if: steps.composer-cache.outputs.cache-hit != 'true'
       uses: php-actions/composer@v6
       with:
-        php_version: 8.2
+        php_version: 8.3
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
+        php-version: '8.3'
 
     - name: Run Reactor
       run: |

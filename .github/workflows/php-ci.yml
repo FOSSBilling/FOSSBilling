@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [ 8.1, 8.2 ]
+        php: [ 8.1, 8.2, 8.3 ]
 
     name: PHP ${{ matrix.php }} - Build and Archive
     steps:
@@ -84,7 +84,7 @@ jobs:
     needs: [ composer, phpstan ]
     strategy:
       matrix:
-        php: [ 8.1, 8.2 ]
+        php: [ 8.1, 8.2, 8.3 ]
 
     name: PHP ${{ matrix.php }} - PHPUnit
     steps:
