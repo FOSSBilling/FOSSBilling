@@ -67,7 +67,7 @@ function checkInstaller()
     }
 
     // If the config file exists and not install.php, but the install folder does, perform some cleanup.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install')) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install') && !DEBUG) {
         $filesystem->remove('install');
     }
 }
