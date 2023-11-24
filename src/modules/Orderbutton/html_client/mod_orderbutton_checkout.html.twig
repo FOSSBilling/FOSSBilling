@@ -107,7 +107,7 @@
             <div class="row-fluid">
                 <div class="span6">
                     {% if not cart.promocode %}
-                    <a href="#" id="show-promo-field">{{ 'Have coupon code?'|trans }}</a>
+                    <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                     {% endif %}
 
                     <form action="guest/cart/apply_promo" method="post" class="well" id="apply-promo" data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %}>
