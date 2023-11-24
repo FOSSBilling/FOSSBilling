@@ -2,20 +2,21 @@
 
 {% block meta_title %}{{ 'Processing payment ...'|trans }}{% endblock %}
 
+    {% block breadcrumb %}
+        <li class="breadcrumb-item"><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Payment</li>
+    {% endblock %}
+
 {% block content %}
 
-{#
-<pre>{% debug invoice %}</pre>
-<pre>{% debug payment %}</pre>
-#}
 <div class="row">
-    <article class="span12 data-block">
-        <div class="data-container">
-            <header>
-                <h1>{{ 'Processing payment ...'|trans }}</h1>
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>{{ 'Processing payment ...'|trans }}</h5>
                 <p>{{ 'Thank you for your patience.'|trans }}</p>
-            </header>
-            <section>
+            </div>
+            <div class="card-body">
                 {% if payment.type == 'html' %}
                     {{ payment.result|raw }}
                 {% endif %}
@@ -36,8 +37,8 @@
                     });
                 </script>
                 {% endif %}
-            </section>
+            </div>
         </div>
-    </article>
+    </div>
 </div>
 {% endblock %}

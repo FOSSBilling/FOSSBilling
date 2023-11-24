@@ -348,6 +348,7 @@
         "samesite",
         "IPCOUNTRY",
         "Serviceapikey",
+        "haspopup",
         "oldconfig",
         "ordermodel",
         "homoglyph",
@@ -358,6 +359,8 @@
         "TINYINT",
         "hostings",
         "rulesets",
+        "describedby",
+        "offcanvas",
         "newtx",
         "pwreset",
         "pagebottom",
@@ -369,7 +372,9 @@
         "valuemax",
         "concat",
         "debugbar",
-        "reqs"
+        "reqs",
+        "srcdoc",
+        "iframes"
     ],
     "ignorePaths": [
         "tests/**",

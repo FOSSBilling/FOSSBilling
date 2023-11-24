@@ -82,7 +82,7 @@
                                 <label>{{ 'Enter the words above'|trans }}</label>
                                 <br/>
                                 <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" style="width: 245px"/>
-                                <a class="bb-button" href="javascript:Recaptcha.reload()" style="float: right">
+                                <a class="btn btn-primary" href="javascript:Recaptcha.reload()" style="float: right">
                                     <span class="dark-icon i-reload"></span>
                                 </a>
                            </p>
@@ -99,7 +99,7 @@
                 {% endif %}
             {% endif %}
 
-            <input class="bb-button bb-button-submit" type="submit" value="{{ 'Send'|trans }}" style="width: auto;"/>
+            <input class="btn btn-primary" type="submit" value="{{ 'Send'|trans }}" style="width: auto;"/>
         </fieldset>
 
         <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>

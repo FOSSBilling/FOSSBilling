@@ -4,30 +4,30 @@
 
 {% block body_class %}kb-category{% endblock %}
 {% block breadcrumb %}
-<li><a href="{{ 'support/kb'|link }}">{{ 'Knowledge Base'|trans }}</a> <span class="divider">/</span></li>
-<li class="active">{{ category.title }}</li>
+<li class="breadcrumb-item"><a href="{{ 'support/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
+<li class="breadcrumb-item active" aria-current="page">{{ category.title }}</li>
 {% endblock %}
 
 {% block content %}
-<div class="content-block" role="main">
-    <div class="row">
-        <article class=" span12 data-block">
-            <div class="data-container">
-                <header>
-                    <h1>{{ category.title }}</h1>
-                    <p class="meta">{{ category.description }}</p>
-                </header>
-                <section>
-                    <ul>
-                        {% for i, article in category.articles %}
-                        <li><a href="{{ 'support/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}">{{ article.title }}</a></li>
-                        <hr/>
-                        {% endfor %}
-                    </ul>
-                    <a class="btn btn-small" href="{{ 'support/kb'|link }}">{{ 'Back to List'|trans }}</a>
-                </section>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header py-3 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ category.title }}</h5>
+                        <span class="small text-muted">{{ category.description }}</span>
+                    </div>
+                </div>
             </div>
-        </article>
+            <div class="card-body">
+                <div class="list-group ms-2">
+                    {% for i, article in category.articles %}
+                        <a class="list-group-item list-group-item-action" href="{{ 'support/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

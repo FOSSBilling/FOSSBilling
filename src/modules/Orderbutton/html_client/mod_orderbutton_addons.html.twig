@@ -6,14 +6,14 @@
     </header>
 </section>
 <div class="row-fluid">
-        <table class="table table-condensed">
+        <table class="table table-sm">
             <tbody>
             {% for addon in product.addons %}
             <label for="addon_{{ addon.id }}">
             <tr>
                 <td>
                     <input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
-                    <input type="checkbox" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
+                    <input type="form-check-input" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
                 </td>
 
                 <td {% if not addon.icon_url%}style="display: none"{% endif %}>
@@ -29,7 +29,7 @@
                     <label for="addon_{{ addon.id }}">
                     {% if addon.pricing.type is same as('recurrent') %}
                         {% set periods = guest.system_periods %}
-                        <select name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
+                        <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
                         {% for code,prices in addon.pricing.recurrent %}
                         {% if prices.enabled %}
                         <option value="{{code}}">{{ periods[code] }} {{ prices.price | money_convert }} {% if prices.setup != '0.00' %}{{ 'Setup:'|trans }} {{prices.setup | money_convert}}{% endif %}</option>

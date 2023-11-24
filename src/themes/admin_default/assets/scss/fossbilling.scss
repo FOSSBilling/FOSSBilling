@@ -6,6 +6,10 @@
 @import "theme_settings";
 @import 'sortable-tablesort/sortable-base.css';
 
+body {
+    font-family: Verdana, sans-serif;
+}
+
 .page {
     min-height: calc(100vh - 2px);
 }

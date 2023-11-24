@@ -706,10 +706,10 @@
         <h2 class="dark-icon i-services">{{ 'Actions'|trans }}</h2>
     </div>
     <div class="block">
-        <button class="bb-button" type="button" onclick="window.print()">
+        <button class="btn btn-primary" type="button" onclick="window.print()">
             <span class="dark-icon i-print"></span> {{ 'Print'|trans }}</button>
         {% if invoice.status == 'unpaid' %}
-        <a class="bb-button api-link" href="{{ 'api/client/invoice/delete'|link({ 'hash': invoice.hash, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+        <a class="btn btn-primary api-link" href="{{ 'api/client/invoice/delete'|link({ 'hash': invoice.hash, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
             <span class="dark-icon i-bin"></span> {{ 'Delete'|trans }}</a>
         {% endif %}
     </div>

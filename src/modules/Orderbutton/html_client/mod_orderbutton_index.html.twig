@@ -1,10 +1,4 @@
-{% if settings.color_scheme %}
-    {% set theme_color = 'css/huraga-'~settings.color_scheme~'.css' %}
-{% else %}
-    {% set theme_color = 'css/huraga-green.css' %}
-{% endif %}
-
-{% set loader_nr = request.loader | default("8")%}
+{% set loader_nr = request.loader | default("8") %}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 <!DOCTYPE html>
 <html>
@@ -15,106 +9,98 @@
     <meta charset="utf-8">
     <title>Order</title>
     {{ 'css/font-awesome.css' | asset_url | stylesheet_tag }}
-    {{ 'css/huraga-main.css' | asset_url | stylesheet_tag }}
-    {{ theme_color | asset_url | stylesheet_tag }}
+
     {{ 'css/plugins/jquery.jgrowl.css' | asset_url | stylesheet_tag }}
+    {{ encore_entry_link_tags('huraga') }}
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
-    <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url }}"></script>
     <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
-    <style type="text/css">
-        body{
-            background:none transparent;
-            background-color:transparent;
-            padding-left: 0px;
-            padding-right: 0px;
-            height: auto;
-        }
-        .accordion-body form {
-            border: 0px;
-            margin-bottom: 0;
-            border-radius: 0;
-            -webkit-box-shadow: none;
-            -moz-box-shadow: none;
-            box-shadow: none;
-            background-color: #ffffff;
-        }
-    </style>
-
+    {{ encore_entry_script_tags('huraga') }}
 </head>
 
-<body>
-<article class="data-block decent" id="orderbutton" style="margin-bottom: 0">
-    <div class="data-container">
-        {#
-        <header>
-            <h2>{{ 'Order Form'|trans }}</h2>
-        </header>
-        #}
-        <section>
-            <div id="accordion1" class="accordion">
+<body class="bg-white overflow-hidden">
+<div class="row">
+    <div class="col-md-12">
+        <div class="card border-0" id="orderbutton" style="margin-bottom: 0">
+            <div class="card-body p-1">
+                <div id="orderManager" class="accordion">
 
-                {% include 'mod_orderbutton_choose_product.html.twig' %}
+                    {% include 'mod_orderbutton_choose_product.html.twig' %}
 
-                {% include 'mod_orderbutton_product_configuration.html.twig' %}
+                    {% include 'mod_orderbutton_product_configuration.html.twig' %}
 
-                {% if not client %}
-                    {% include 'mod_orderbutton_client.html.twig' %}
+                    {% if not client %}
+                        {% include 'mod_orderbutton_client.html.twig' %}
+                    {% endif %}
+
+                    {% include 'mod_orderbutton_checkout.html.twig' %}
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#payment-html" aria-expanded="false" aria-controls="payment-html">
+                                <svg class="svg-icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path
+                                        d="M20,8H4V6H20M20,18H4V12H20M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"/>
+                                </svg>
+                                {{ 'Payment'|trans }}
+                            </button>
+                        </h2>
+                        <div id="payment-html" class="accordion-collapse collapse" data-bs-parent="#orderManager">
+                            <div class="accordion-body">
+                                <div class="accordion-inner" id="payment-html-inner"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                {% include 'mod_orderbutton_currency.html.twig' %}
+                {% if guest.extension_is_on({"mod":'branding'}) %}
+                    <div class="d-flex justify-content-center small text-muted pt-3 pb-2">
+                        <span>{{ 'Powered by'|trans }}</span>&nbsp;<a href="https://fossbilling.org"
+                                                                      title="Billing Software" target="_blank">FOSSBilling
+                            Community</a>
+                    </div>
                 {% endif %}
 
-                {% include 'mod_orderbutton_checkout.html.twig' %}
-
-
-                <div class="accordion-group" id="payment-html-outer">
-                    <div class="accordion-heading">
-                        <a class="accordion-toggle" href="#payment-html" data-parent="#accordion1"><span class="awe-list"></span> {{ 'Payment'|trans }}</a>
-                    </div>
-                    <div id="payment-html" class="accordion-body collapse" >
-                        <div class="accordion-inner" id="payment-html-inner"></div>
-                    </div>
-                </div>
-
             </div>
-        </section>
-        {% include 'mod_orderbutton_currency.html.twig' %}
-        {% if guest.extension_is_on({"mod":'branding'}) %}
-        <div style="text-align: center">
-            <a href="https://fossbilling.org" title="Billing Software" target="_blank">{{ 'Powered by FOSSBilling'|trans }}</a>
         </div>
-        {% endif %}
-
     </div>
-</article>
-<div class="loading" style="display: none; background: rgba(0,0,0,.5) no-repeat; width:100%; height:100%; position:fixed; top:0; left:0; z-index:999;">
-    <img src="{{ loader_url | mod_asset_url('orderbutton')}}" style="display: block; margin-left: auto; margin-right: auto;position: relative; top : 50%">
+</div>
+<div class="loading"
+     style="display: none; background: rgba(0,0,0,.5) no-repeat; width:100%; height:100%; position:fixed; top:0; left:0; z-index:999;">
+    <img src="{{ loader_url | mod_asset_url('orderbutton') }}"
+         style="display: block; margin-left: auto; margin-right: auto;position: relative; top : 50%">
 </div>
 
 <script>
-    $(function(){
-        $('.accordion-body').on('shown', function() {
+    $(function () {
+        $('.accordion-body').on('shown', function () {
             $('#popup-iframe').height($('body').height());
         });
 
-        $('#client-login').on('submit', function(event) {
+        $('#client-login').on('submit', function (event) {
             bb.post(
                 'guest/client/login',
                 $(this).serialize(),
-                function(result) {
+                function (result) {
                     bb.msg("{{ 'You logged in successfully'|trans }}");
-                    $('#register-or-login').hide(1000, function(){
-                        $('#register-or-login').remove();
-                        bb.reload();
-                    });
+                    let registerEl = document.getElementById('register');
+                    new bootstrap.Collapse('#register').hide();
+                    setTimeout(() => {
+                        registerEl.parentElement.remove();
+                        new bootstrap.Collapse('#checkout').show();
+                    }, 500);
 
                 }
             );
             return false;
         });
-        $('#create-profile').on('submit', function(event) {
+        $('#create-profile').on('submit', function (event) {
             bb.post(
                 'guest/client/create',
                 $(this).serialize(),
-                function(result) {
+                function (result) {
                     //login after registration
                     var login_details = {
                         email: $('#reg-email').val(),
@@ -123,75 +109,81 @@
                     bb.post(
                         'guest/client/login',
                         login_details,
-                        function(result) {
+                        function (result) {
                             bb.msg("{{ 'You logged in successfully'|trans }}");
-                            $('#register-or-login').hide(1000, function() {
-                                $('#register-or-login').remove();
-                                bb.reload();
-                            });
+                            let registerEl = document.getElementById('register');
+                            new bootstrap.Collapse('#register').hide();
+                            setTimeout(() => {
+                                registerEl.parentElement.remove();
+                                new bootstrap.Collapse('#checkout').show();
+                            }, 500);
                         }
                     );
                 }
             );
             return false;
         });
-        $('#add-to-cart').on('submit', function(event) {
+        $('#add-to-cart').on('submit', function (event) {
             bb.post(
                 'guest/cart/add_item',
                 $(this).serialize(),
-                function(result) {
+                function (result) {
                     bb.msg("{{ 'Product was added to shopping cart'|trans }}");
-                    bb.redirect("{{ 'orderbutton'|link({ 'checkout' : 1 }) }}"+"{% if request.show_custom_form_values%}&show_custom_form_values=1{% endif %}");
+                    bb.redirect("{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}");
                 }
             );
 
             return false;
         });
-        $('#apply-promo').on('submit', function(event) {
+        $('#apply-promo').on('submit', function (event) {
             bb.post(
                 'guest/cart/apply_promo',
                 $(this).serialize(),
-                function(result) {
+                function (result) {
                     bb.msg("{{ 'Promo code was applied for your order'|trans }}");
-                    location.reload(false);
+                    location.reload(0);
                 }
             );
 
             return false;
         });
 
-        $('#checkout-form').on('submit', function(event) {
+        $('#checkout-form').on('submit', function (event) {
             bb.post(
                 'client/cart/checkout',
                 $(this).serialize(),
-                function(result) {
-                    if(result.invoice_hash) {
-                        bb.post('guest/invoice/payment', {hash:result.invoice_hash, gateway_id:result.gateway_id,auto_redirect:true }, function(r) {
-                            if(r.iframe) {
-                            $('#payment-html-inner').html(r.result);
-                                $('#checkout').collapse('hide');
-                                $('#checkout').on('hidden', function(){
-                                    $('#checkout').remove();
-                                    $('#payment-html').collapse('show');
-                                });
+                function (result) {
+                    if (result.invoice_hash) {
+                        bb.post('guest/invoice/payment', {
+                            hash: result.invoice_hash,
+                            gateway_id: result.gateway_id,
+                            auto_redirect: true
+                        }, function (r) {
+                            let checkoutEl = document.getElementById('checkout');
+                            let paymentHtmlEl = document.getElementById('payment-html');
+                            if (r.iframe) {
+                                $('#payment-html-inner').html(r.result);
+                                bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
+                                $('#checkout').remove();
+                                bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                             } else {
-                                var link = '{{"invoice/banklink"|link}}' + '/' + result.invoice_hash + '/' + result.gateway_id;
-                                $('#payment-html-inner').html('<a href="'+link+'" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
-                                $('#checkout').collapse('hide');
+                                var link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
+                                $('#payment-html-inner').html('<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
+                                bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
                                 $('#checkout-inner').remove();
-                                $('#payment-html').collapse('show');
+                                bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                                 $('#redirect-to-gateway')[0].click();
                             }
                         });
                     } else {
-                        window.top.location.href = ('{{"order/service/manage"|link}}' + '/' + result.order_id );
+                        window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
                     }
                 }
             );
             return false;
         });
 
-        $('#show-promo-field').on('click', function(event) {
+        $('#show-promo-field').on('click', function (event) {
             $('#apply-promo').show();
             $(this).hide();
             $('#promocode').focus();
