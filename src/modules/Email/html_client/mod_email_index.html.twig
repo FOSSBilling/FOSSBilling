@@ -32,8 +32,8 @@
                                     <a class="list-group-item list-group-item-action mt-0{% if loop.first %} active{% endif %}"
                                        href="#mail-{{ loop.index }}" data-bs-toggle="list" role="tab">
                                         <div class="flex-column py-1">
-                                            <p class="m-0">{{ email.subject | truncate }}</p>
-                                            <span class="text-muted small">{{ email.created_at|format_datetime }}</span>
+                                            <p class="m-0" style="font-size: 80%;">{{ email.subject | truncate }}</p>
+                                            <span class="text-muted small" style="font-size: 80%;">{{ email.created_at|format_datetime }}</span>
                                         </div>
                                     </a>
                                 {% endfor %}
@@ -69,8 +69,8 @@
                                             </div>
                                         </div>
                                         <div class="card-body">
-                                            {# Workaround: email styling can effect the style of this page, so instead we use JS to insert the email contents into an iframe #}
-                                            <iframe class="ratio ratio-1x1 email" id="email-content-{{ i }}" src="about:blank"></iframe>
+                                            {# Workaround: email styling can effect the style of this page, so instead we use JS to insert the email contents into an iframe. A default height is set incase of errors #}
+                                            <iframe class="ratio ratio-1x1 email" id="email-content-{{ i }}" src="about:blank" style="height: 30em"></iframe>
                                             <script>
                                                 (function () {
                                                     frame = document.getElementById("email-content-{{ i }}");
@@ -159,7 +159,13 @@
                     emails.forEach(email => {
                         var body = email.contentDocument.body;
                         var html = email.contentDocument.documentElement;
-                        var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+                        if(body){
+                            var height = Math.max(body.scrollHeight, body.offsetHeight);
+                        } else if (html) {
+                            var height = Math.max(html.clientHeight, html.scrollHeight, html.offsetHeight);
+                        } else {
+                            return;
+                        }
                         email.height = height;
                     });
                 };
@@ -177,4 +183,3 @@
         </script>
     {% endautoescape %}
 {% endblock %}
-

@@ -25,11 +25,12 @@
                         </div>
                         <div class="">
                             <div class="d-flex gap-2">
-                                {% if ticket.status != 'closed' %}
+                                {% if (ticket.status != 'closed') or (ticket.helpdesk.can_reopen) %}
                                     <button class="btn btn-info btn-sm" id="reply-to-btn">{{ 'Reply'|trans }}</button>
                                 {% endif %}
-                                <button class="btn btn-secondary btn-sm" type="button"
-                                        id="ticket-close">{{ 'Close ticket'|trans }}</button>
+                                {% if ticket.status != 'closed' %}
+                                    <button class="btn btn-secondary btn-sm" type="button" id="ticket-close">{{ 'Close ticket'|trans }}</button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -45,7 +46,7 @@
                         <tr>
                             <td>{{ 'Status'|trans }}</td>
                             <td>
-                                <div class="badge {% if ticket.status=='open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% endif %}">{{ mf.status_name(ticket.status) }}</div>
+                                <div class="badge {% if ticket.status=='open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% else %}bg-danger{% endif %}">{{ mf.status_name(ticket.status) }}</div>
                             </td>
                         </tr>
 
@@ -92,7 +93,7 @@
                                     </div>
                                     <span class="text-muted fs-7">on {{ message.created_at|format_date }}</span>
                                 </div>
-                                {% if ticket.status != 'closed' %}
+                                {% if (ticket.status != 'closed') or (ticket.helpdesk.can_reopen) %}
                                     <div class="d-flex gap-3 align-items-center">
                                         <span class="text-muted fs-7">#{{ message.id }}</span>
                                         <button class="btn btn-outline-secondary btn-quote-reply"
@@ -123,7 +124,10 @@
         <div>
             <div class="row">
                 <div class="col-md-12">
-                    {% if ticket.status != 'closed' %}
+                    {% if ticket.status == 'closed' and not ticket.helpdesk.can_reopen %}
+                        <div class="mt-3 alert alert-secondary text-center">{{ 'Ticket was closed and cannot be reopened.'|trans }}</div>
+                    {% else %}
+                        <div class="mt-3 alert alert-secondary text-center">{{ 'This ticket was closed, but you can still reopen it by replying.'|trans }}</div>
                         <div class="card mt-3" id="reply-to">
                             <div class="card-body">
                                 <form id="ticket-reply-form">
@@ -137,8 +141,6 @@
                                 </form>
                             </div>
                         </div>
-                    {% elseif ticket.status == 'closed' %}
-                        <div class="mt-3 alert alert-secondary text-center">{{ 'Ticket was closed and cannot be reopened.'|trans }}</div>
                     {% endif %}
                 </div>
             </div>

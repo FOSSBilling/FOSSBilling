@@ -196,7 +196,7 @@
                                 <th>{{ '#'|trans }}</th>
                                 <th>{{ 'Title'|trans }}</th>
                                 <th>{{ 'Price'|trans }}</th>
-                                <th>{{ 'Total'|trans }}</th>
+                                <th class="text-end">{{ 'Total'|trans }}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -214,7 +214,7 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ item.price|money(invoice.currency) }}</td>
-                                    <td>{{ item.total|money(invoice.currency) }}</td>
+                                    <td class="text-end">{{ item.total|money(invoice.currency) }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -224,18 +224,18 @@
                             <div class="col-md-4 offset-md-8">
                                 <table class="table table-striped">
                                     {% if invoice.tax > 0 %}
-                                        <tr>
+                                        <tr class="text-end">
                                             <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
                                             <td>{{ invoice.tax | money(invoice.currency) }}</td>
                                         </tr>
                                     {% endif %}
                                     {% if invoice.discount > 0 %}
-                                        <tr>
+                                        <tr class="text-end">
                                             <td>{{ 'Discount'|trans }}</td>
                                             <td>{{ invoice.discount | money(invoice.currency) }}</td>
                                         </tr>
                                     {% endif %}
-                                    <tr>
+                                    <tr class="text-end">
                                         <td><strong>{{ 'Total'|trans }}</strong></td>
                                         <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
                                     </tr>

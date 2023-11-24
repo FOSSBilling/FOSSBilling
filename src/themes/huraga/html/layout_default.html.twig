@@ -158,14 +158,6 @@
                             {% endif %}
 
                             {% block content %}{% endblock %}
-                            {% if settings.show_page_header %}
-                                {# block page_header %}
-                                <article>
-                                    <h1>{{ block('meta_title') }}</h1>
-                                    <p>{{ block('meta_description') }}</p>
-                                </article>
-                            {% endblock #}
-                            {% endif %}
 
                             {% include "partial_message.html.twig" %}
 
@@ -250,9 +242,7 @@
         <div class="spinner-border"
              style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
     </div>
-    <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's
-        preference settings.
-    </noscript>
+    <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 
     {% endblock %}
 

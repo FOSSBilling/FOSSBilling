@@ -26,7 +26,8 @@
                     {% if orders.list %}
                         <table class="table table-striped table-bordered table-hover">
                             <thead>
-                            <tr class="border-top-0">
+                            <tr>
+                                <th>{{ 'Order ID'|trans }}</th>
                                 <th>{{ 'Product/Service'|trans }}</th>
                                 <th>{{ 'Price'|trans }}</th>
                                 <th>{{ 'Next due date'|trans }}</th>
@@ -37,8 +38,9 @@
                             <tbody>
                             {% for i, order in orders.list %}
                                 <tr>
+                                    <td><a href="{{ '/order/service/manage'|link }}/{{ order.id }}">#{{ order.id }}</a></td>
                                     <td>
-                                        <span><strong>#{{ order.id }} </strong>{{ order.title }}</span>
+                                        <span>{{ order.title }}</span>
                                     </td>
                                     <td>{{ order.total | money(order.currency) }} {% if order.period %}{{ order.period | period_title }}{% endif %}</td>
                                     <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
