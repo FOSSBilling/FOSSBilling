@@ -51,15 +51,24 @@ function checkConfig()
  */
 function checkInstaller()
 {
+    if (!Environment::isProduction()) {
+        return;
+    }
+
     $filesystem = new Filesystem();
 
     // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php') && Environment::isProduction()) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install/install.php')) {
         // Throw exception only if debug mode is NOT enabled.
         $config = require PATH_CONFIG;
         if (!$config['debug_and_monitoring']['debug']) {
             throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
         }
+    }
+
+    // If the config file exists and not install.php, but the install folder does, perform some cleanup.
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists('install')) {
+        $filesystem->remove('install');
     }
 }
 
