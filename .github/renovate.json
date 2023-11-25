@@ -17,7 +17,7 @@
   "packageRules": [
     {
       "groupName": "CKEditor",
-      "matchDepPatterns": ["^@ckeditor/*"]
+      "matchDepPatterns": ["^@ckeditor\/*"]
     }
   ]
 }
