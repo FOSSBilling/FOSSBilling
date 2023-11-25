@@ -695,6 +695,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
  */
 $di['requirements'] = function () {
     $r = new \FOSSBilling\Requirements();
+
     return $r;
 };
 

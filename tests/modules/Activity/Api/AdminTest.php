@@ -140,9 +140,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
 
-        $di['mod_service'] = $di->protect(function () use ($serviceMock) {
-            return $serviceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $serviceMock);
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
