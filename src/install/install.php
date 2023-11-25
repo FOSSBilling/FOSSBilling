@@ -152,7 +152,7 @@ final class FOSSBilling_Installer
                         // Delete install directory only if debug mode is NOT enabled.
                         $config = require PATH_CONFIG;
                         if (!$config['debug_and_monitoring']['debug']) {
-                            $this->removeDirectory('..' . DIRECTORY_SEPARATOR . 'install');
+                            unlink(__DIR__ . DIRECTORY_SEPARATOR . 'install.php');
                         }
                     } catch (Exception) {
                         // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
@@ -442,29 +442,5 @@ final class FOSSBilling_Installer
         $emailService->setDi($di);
 
         return $emailService->templateBatchGenerate();
-    }
-
-    /**
-     * Recursively remove a directory at a specific path.
-     *
-     * @param string $dir
-     * @return void
-     */
-    public function removeDirectory($dir)
-    {
-        if (is_dir($dir)) {
-            $contents = scandir($dir);
-            foreach ($contents as $content) {
-                if ('.' !== $content && '..' !== $content) {
-                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
-                        $this->removeDirectory($dir . DIRECTORY_SEPARATOR . $content);
-                    } else {
-                        unlink($dir . DIRECTORY_SEPARATOR . $content);
-                    }
-                }
-            }
-            reset($contents);
-            rmdir($dir);
-        }
     }
 }
