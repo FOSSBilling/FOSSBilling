@@ -18,7 +18,6 @@
     {
       "groupName": "CKEditor",
       "matchPackagePrefixes": ["@ckeditor/"],
-      "excludeDepNames": ["@melloware/coloris"],
       "rangeStrategy": "auto"
     }
   ]
