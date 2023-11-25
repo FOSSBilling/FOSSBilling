@@ -1724,7 +1724,7 @@ class Service
             'company_name', 'company_email', 'company_tel', 'company_address_1',
             'company_address_2', 'company_address_3', 'company_logo', 'company_logo_dark',
             'company_favicon', 'company_number', 'company_vat_number', 'company_account_number',
-            'hide_version_public', 'hide_company_public', 'company_signature'
+            'hide_version_public', 'hide_company_public', 'company_signature',
         ];
         $comaony_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
 

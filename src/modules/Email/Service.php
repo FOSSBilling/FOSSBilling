@@ -31,7 +31,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             'can_always_access' => true,
-            'manage_settings' => []
+            'manage_settings' => [],
         ];
     }
 

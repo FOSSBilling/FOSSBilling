@@ -332,6 +332,7 @@ class Service implements InjectionAwareInterface
     public function update(\Model_Extension $model): never
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
@@ -698,14 +699,14 @@ class Service implements InjectionAwareInterface
     {
         $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
-            $moduleService = new $class;
+            $moduleService = new $class();
             if (method_exists($moduleService, 'setDi')) {
                 $moduleService->setDi($this->di);
             }
             $permissions = $moduleService->getModulePermissions();
 
             if (isset($permissions['hide_permissions']) && $permissions['hide_permissions']) {
-                return ($buildingCompleteList ? false : []);
+                return $buildingCompleteList ? false : [];
             } else {
                 unset($permissions['hide_permissions']);
 
@@ -717,18 +718,20 @@ class Service implements InjectionAwareInterface
                         'description' => __trans('Allows the staff member to edit settings for this module.'),
                     ];
                 }
+
                 return $permissions;
             }
         }
+
         return [];
     }
 
     // Checks if the current user has permission to edit a module's settings
-    public function hasManagePermission(string $module, \Box_App|null $app = null): void
+    public function hasManagePermission(string $module, \Box_App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
 
-        // The module isn't active or has no permissions if this is the case, so continue as normal 
+        // The module isn't active or has no permissions if this is the case, so continue as normal
         if (!$this->isExtensionActive('mod', $module)) {
             return;
         }

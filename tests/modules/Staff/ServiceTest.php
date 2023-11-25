@@ -163,9 +163,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
-            return $extensionServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $extensionServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -193,9 +191,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
-            return $extensionServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $extensionServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -223,9 +219,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) {
-            return $extensionServiceMock;
-        });
+        $di['mod_service'] = $di->protect(fn() => $extensionServiceMock);
 
         $serviceMock->setDi($di);
 
