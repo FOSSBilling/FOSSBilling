@@ -8,8 +8,6 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use PleskX\Api\Client;
-
 class Server_Manager_Plesk extends Server_Manager
 {
     private ?\PleskX\Api\Client $_client = null;
@@ -28,13 +26,18 @@ class Server_Manager_Plesk extends Server_Manager
         ];
     }
 
-	public function getLoginUrl()
-	{
+    public function getLoginUrl(?Server_Account $account = null): string
+    {
         $protocol = $this->_config['secure'] ? 'https' : 'http';
-        return $protocol . "://" . $this->_config['host'] . ':' . $this->_config['port'];
-	}
+        $url = $protocol . "://" . $this->_config['host'] . ':' . $this->_config['port'];
+        if ($account) {
+            $sessionId = $this->_client->session()->create($account->getUsername(), $_SERVER['REMOTE_ADDR']);
+            $url .= '/enterprise/rsession_init.php?PHPSESSID=' . $sessionId;
+        }
+        return $url;
+    }
 
-    public function getResellerLoginUrl()
+    public function getResellerLoginUrl(?Server_Account $account = null)
     {
         return $this->getLoginUrl();
     }

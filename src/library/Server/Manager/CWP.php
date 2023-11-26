@@ -58,13 +58,13 @@ class Server_Manager_CWP extends Server_Manager
 	/**
 	 * We can actually generate a direct log-in link from CWP, but I'm not sure if that's a secure thing to do here.
 	 */
-	public function getLoginUrl()
+	public function getLoginUrl(?Server_Account $account = null)
 	{
 		$host = $this->_config['host'];
 		return 'https://' . $host . ':2083';
 	}
 
-	public function getResellerLoginUrl()
+	public function getResellerLoginUrl(?Server_Account $account = null)
 	{
 		$host = $this->_config['host'];
 		return 'https://' . $host . ':2031';
