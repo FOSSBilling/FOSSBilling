@@ -923,17 +923,43 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
+    /**
+     * Returns both the standard and reseller login URLs.
+     * Will not generate SSO links.
+     * 
+     * @param \Model_ServiceHostingServer $model
+     * 
+     * @return string[]|false[] 
+     */
     public function getMangerUrls(\Model_ServiceHostingServer $model)
     {
         try {
             $m = $this->getServerManager($model);
 
-            return [$m->getLoginUrl(), $m->getResellerLoginUrl()];
+            return [$m->getLoginUrl(null), $m->getResellerLoginUrl(null)];
         } catch (\Exception $e) {
             error_log('Error while retrieving cPanel url: ' . $e->getMessage());
         }
 
         return [false, false];
+    }
+
+    /**
+     * Generates either a reseller or standard login link for a given order.
+     * If the server manager supports SSO, an SSO link will be returned.
+     * 
+     * @param \Model_ServiceHosting $model
+     * 
+     * @return string 
+     */
+    public function generateLoginUrl(\Model_ServiceHosting $model)
+    {
+        [$adapter, $account] = $this->_getAM($model);
+        if ($model->reseller) {
+            return $adapter->getResellerLoginUrl($account);
+        } else {
+            return $adapter->getLoginUrl($account);
+        }
     }
 
     public function prependOrderConfig(\Model_Product $product, array $data)

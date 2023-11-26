@@ -34,13 +34,13 @@ class Server_Manager_Whm extends Server_Manager
         $this->_config['port'] = empty($this->_config['port']) ? '2087' : $this->_config['port'];  
 	}
 
-    public function getLoginUrl()
+    public function getLoginUrl(?Server_Account $account = null)
     {
         $host = $this->_config['host'];
         return 'http://'.$host.'/cpanel';
     }
 
-    public function getResellerLoginUrl()
+    public function getResellerLoginUrl(?Server_Account $account = null)
     {
         $host = $this->_config['host'];
         return 'http://'.$host.'/whm';

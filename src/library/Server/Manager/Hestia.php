@@ -58,7 +58,7 @@ class Server_Manager_Hestia extends Server_Manager
      *
      * @return string
      */
-    public function getLoginUrl()
+    public function getLoginUrl(?Server_Account $account = null)
     {
         return 'https://' . $this->_config['host'] . ':' . $this->_getPort() . '/';
     }
@@ -68,7 +68,7 @@ class Server_Manager_Hestia extends Server_Manager
      *
      * @return string
      */
-    public function getResellerLoginUrl()
+    public function getResellerLoginUrl(?Server_Account $account = null)
     {
         return $this->getLoginUrl();
     }
