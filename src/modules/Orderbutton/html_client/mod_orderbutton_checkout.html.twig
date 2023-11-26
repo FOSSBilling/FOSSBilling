@@ -41,7 +41,7 @@
                                     {{ (item.total) | money_convert }}
                                 {% endif %}
                             </td>
-                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-mini remove-cart-item" title="{{ 'Remove item'|trans }}"><strong><i class="awe-remove"></i></strong></button></td>
+                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><strong><i class="awe-remove"></i></strong></button></td>
                         </tr>
 
                         {% if request.show_custom_form_values %}
@@ -113,7 +113,8 @@
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
 
-                        <form action="guest/cart/apply_promo" method="post" class="well" id="apply-promo" data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %}>
+                        <form action="{{ 'api/guest/cart/apply_promo'|link }}" method="post" class="api-form well" data-api-msg="{{ 'Promo code was applied for your order'|trans }}"
+                            data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <div class="control-group">
                                 <div class="form-controls">
@@ -160,7 +161,7 @@
 
                         </table>
 
-                        <form method="post" action="client/cart/checkout" id="checkout-form" onsubmit="return false;">
+                        <form class="api-form" method="post" action="{{ 'api/client/cart/checkout'|link }}" data-api-jsonp="onOrderCheckout">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <fieldset>
                                 {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
