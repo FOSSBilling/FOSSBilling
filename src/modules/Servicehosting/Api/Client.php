@@ -64,10 +64,10 @@ class Client extends \Api_Abstract
 
     /**
      * Returns the login URL for a given order ID.
-     * If the assocaited server manager supports SSO, an SSO link will be given.
-     * Will automatically return either a reseller URL or a standard URL depening on the order config.
+     * If the associated server manager supports SSO, an SSO link will be given.
+     * Will automatically return either a reseller URL or a standard URL depending on the order config.
      * 
-     * @param array $data An array containing the API reqest data. Should have a key named `order_id` containing the order's ID.
+     * @param array $data An array containing the API request data. Should have a key named `order_id` containing the order's ID.
      *
      * @return string 
      */
