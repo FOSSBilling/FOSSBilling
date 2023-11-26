@@ -150,16 +150,20 @@ abstract class Server_Manager
     /**
      * Returns the login URL for the server. (ex: panel.example.com)
      * 
+     * @param null|Server_Account $account Either the related `Server_Account` which can be used to generate an SSO link or `null`.
+     * 
      * @return string
      */
-    abstract public function getLoginUrl();
+    abstract public function getLoginUrl(?Server_Account $account);
 
     /**
      * Returns the login URL for the server for reseller accounts.
      * 
+     * @param null|Server_Account $account Either the related `Server_Account` which can be used to generate an SSO link or `null`.
+     * 
      * @return string
      */
-    abstract public function getResellerLoginUrl();
+    abstract public function getResellerLoginUrl(?Server_Account $account);
 
     /**
      * Used to test the connection to the server and verify the server configuration is correct.
