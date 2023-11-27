@@ -111,7 +111,7 @@ $(function() {
         e.preventDefault();
 
         bb.post("guest/support/ticket_close", { hash: '{{ ticket.hash }}', CSRFToken: "{{ CSRFToken }}" }, function(r) {
-            bb.msg("Ticket was closed");
+            FOSSBilling.message("Ticket was closed");
             bb.reload();
         });
     });

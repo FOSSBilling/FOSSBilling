@@ -205,7 +205,7 @@
             var item_id = $(btn).attr('data-cart-item-id');
 
             bb.post("guest/cart/remove_item", { id: item_id, CSRFToken: "{{ CSRFToken }}" }, function(r) {
-                bb.msg("{{ 'Item was removed from cart'|trans }}");
+                FOSSBilling.message("{{ 'Item was removed from cart'|trans }}");
                 location.reload(false);
             });
         }

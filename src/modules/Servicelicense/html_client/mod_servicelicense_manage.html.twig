@@ -91,7 +91,7 @@
 
         if (confirm("{{ 'Are you sure?'|trans }}")) {
             API.client.post('servicelicense/reset', { order_id: {{ order.id }} }, function(result) {
-                bb.msg("{{ 'License was reset'|trans }}");
+                FOSSBilling.message("{{ 'License was reset'|trans }}");
             });
         }
     });

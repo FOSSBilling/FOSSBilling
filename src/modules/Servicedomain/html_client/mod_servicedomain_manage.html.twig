@@ -233,7 +233,7 @@
                         'client/servicedomain/lock',
                         {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
                         function (result) {
-                            bb.msg('Domain locked');
+                            FOSSBilling.message('Domain locked');
                             $('#domain-lock').toggle();
                             $('#domain-unlock').toggle();
                         }
@@ -247,7 +247,7 @@
                         'client/servicedomain/unlock',
                         {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
                         function (result) {
-                            bb.msg('Domain unlocked');
+                            FOSSBilling.message('Domain unlocked');
                             $('#domain-lock').toggle();
                             $('#domain-unlock').toggle();
                         }
@@ -261,7 +261,7 @@
                         'client/servicedomain/enable_privacy_protection',
                         {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
                         function (result) {
-                            bb.msg('Privacy Protection enabled');
+                            FOSSBilling.message('Privacy Protection enabled');
                             $('#domain-enable-pp').toggle();
                             $('#domain-disable-pp').toggle();
                         }
@@ -275,7 +275,7 @@
                         'client/servicedomain/disable_privacy_protection',
                         {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
                         function (result) {
-                            bb.msg('Privacy Protection disabled');
+                            FOSSBilling.message('Privacy Protection disabled');
                             $('#domain-enable-pp').toggle();
                             $('#domain-disable-pp').toggle();
                         }
@@ -288,7 +288,7 @@
                         'client/servicedomain/get_transfer_code',
                         {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
                         function (result) {
-                            bb.msg('Domain transfer code is: ' + result);
+                            FOSSBilling.message('Domain transfer code is: ' + result);
                         }
                     );
                 });
@@ -298,7 +298,7 @@
                         'client/servicedomain/update_nameservers',
                         $(this).serialize(),
                         function (result) {
-                            bb.msg('Nameservers updated');
+                            FOSSBilling.message('Nameservers updated');
                         }
                     );
 
@@ -310,7 +310,7 @@
                         'client/servicedomain/update_contacts',
                         $(this).serialize(),
                         function (result) {
-                            bb.msg('Contact details updated');
+                            FOSSBilling.message('Contact details updated');
                         }
                     );
 

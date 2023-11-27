@@ -107,7 +107,7 @@
     }
 
     function onLogin(result){
-        bb.msg("{{ 'You logged in successfully'|trans }}");
+        FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
         let registerEl = document.getElementById('register');
         new bootstrap.Collapse('#register').hide();
         setTimeout(() => {
@@ -126,7 +126,7 @@
             'guest/client/login',
             login_details,
             function (result) {
-                bb.msg("{{ 'You logged in successfully'|trans }}");
+                FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
                 let registerEl = document.getElementById('register');
                 new bootstrap.Collapse('#register').hide();
                 setTimeout(() => {
