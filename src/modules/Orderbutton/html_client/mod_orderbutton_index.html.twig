@@ -65,51 +65,6 @@
             $('#popup-iframe').height($('body').height());
         });
 
-        $('#client-login').on('submit', function (event) {
-            bb.post(
-                'guest/client/login',
-                $(this).serialize(),
-                function (result) {
-                    bb.msg("{{ 'You logged in successfully'|trans }}");
-                    let registerEl = document.getElementById('register');
-                    new bootstrap.Collapse('#register').hide();
-                    setTimeout(() => {
-                        registerEl.parentElement.remove();
-                        new bootstrap.Collapse('#checkout').show();
-                    }, 500);
-
-                }
-            );
-            return false;
-        });
-        $('#create-profile').on('submit', function (event) {
-            bb.post(
-                'guest/client/create',
-                $(this).serialize(),
-                function (result) {
-                    //login after registration
-                    var login_details = {
-                        email: $('#reg-email').val(),
-                        password: $('#reg-password').val()
-                    };
-                    bb.post(
-                        'guest/client/login',
-                        login_details,
-                        function (result) {
-                            bb.msg("{{ 'You logged in successfully'|trans }}");
-                            let registerEl = document.getElementById('register');
-                            new bootstrap.Collapse('#register').hide();
-                            setTimeout(() => {
-                                registerEl.parentElement.remove();
-                                new bootstrap.Collapse('#checkout').show();
-                            }, 500);
-                        }
-                    );
-                }
-            );
-            return false;
-        });
-
         $('#show-promo-field').on('click', function (event) {
             $('#apply-promo').show();
             $(this).hide();
@@ -149,6 +104,37 @@
         } else {
             window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
         }
+    }
+
+    function onLogin(result){
+        bb.msg("{{ 'You logged in successfully'|trans }}");
+        let registerEl = document.getElementById('register');
+        new bootstrap.Collapse('#register').hide();
+        setTimeout(() => {
+            registerEl.parentElement.remove();
+            new bootstrap.Collapse('#checkout').show();
+        }, 500);
+    }
+
+    function onAccountCreate(result){
+        //login after registration
+        var login_details = {
+            email: $('#reg-email').val(),
+            password: $('#reg-password').val()
+        };
+        bb.post(
+            'guest/client/login',
+            login_details,
+            function (result) {
+                bb.msg("{{ 'You logged in successfully'|trans }}");
+                let registerEl = document.getElementById('register');
+                new bootstrap.Collapse('#register').hide();
+                setTimeout(() => {
+                    registerEl.parentElement.remove();
+                    new bootstrap.Collapse('#checkout').show();
+                    }, 500);
+            }
+        );
     }
 </script>
 {% endblock %}
