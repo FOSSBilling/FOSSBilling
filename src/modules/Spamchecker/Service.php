@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -222,7 +223,7 @@ class Service implements InjectionAwareInterface
                 return [];
             }
 
-            return array_filter($database, fn($domain) => filter_var($domain, FILTER_VALIDATE_DOMAIN));
+            return array_filter($database, fn ($domain) => !str_starts_with($domain, '#') && filter_var($domain, FILTER_VALIDATE_DOMAIN));
         });
     }
 }
