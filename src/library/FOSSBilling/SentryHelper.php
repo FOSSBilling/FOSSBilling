@@ -112,7 +112,7 @@ class SentryHelper
         /**
          * Here we validate that the DSN is correctly set and that error reporting is enabled before passing it off to the Sentry SDK.
          * It may look a bit odd, but the DSN placeholder value here is split into two strings and concatenated so we can easily perform a `sed` replacement of the placeholder without it effecting this check
-         * 
+         *
          * @phpstan-ignore-next-line (The value is replaced during release and the check is written with this in mind.)
          */
         if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this--' . 'during--release--process--' && !empty($sentryDSN)) {
