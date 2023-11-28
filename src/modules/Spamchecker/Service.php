@@ -194,29 +194,31 @@ class Service implements InjectionAwareInterface
 
     /**
      * Fetches the most recent list of disposable email addresses, parses them to remove blanks or invalid domains, and then returns it as an array.
-     * The database is from here: https://github.com/disposable-email-domains/disposable-email-domains
-     * Results are cached for 1 week.
+     * The database is from here: https://github.com/7c/fakefilter
+     * Results are cached for 1 week unless there's an error at which point the list will be retried in a half hour.
      * 
      * @return array 
      */
     private function getTempMailDomainDB(): array
     {
         return $this->di['cache']->get('CentralAlerts.getAlerts', function (ItemInterface $item) {
-            $item->expiresAfter(604800); // Retain the DB cache for one week and then fetch the list again
+            $item->expiresAfter(86400); // The list is updated once every 24 hours, so we will cache it for that long
 
             $client = HttpClient::create();
-            $response = $client->request('GET', 'https://raw.githubusercontent.com/disposable-email-domains/disposable-email-domains/master/disposable_email_blocklist.conf');
+            $response = $client->request('GET', 'https://raw.githubusercontent.com/7c/fakefilter/main/txt/data.txt');
             $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tempEmailDB.txt';
 
             if ($response->getStatusCode() === 200) {
-                file_put_contents($dbPath, $response->getContent());
+                @file_put_contents($dbPath, $response->getContent());
             } else {
+                $item->expiresAfter(3600);
                 return [];
             }
 
             @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             @unlink($dbPath);
             if (!$database) {
+                $item->expiresAfter(3600);
                 return [];
             }
 
