@@ -137,11 +137,7 @@ class Guest extends \Api_Abstract
         $this->di['session']->set('client_id', $client->id);
 
         $this->di['logger']->info('Client #%s logged in', $client->id);
-
-        $redirectUri = $this->di['session']->get('redirect_uri') ?? '';
         $this->di['session']->delete('redirect_uri');
-
-        $result['redirect_uri'] = $redirectUri;
 
         return $result;
     }

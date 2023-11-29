@@ -36,7 +36,7 @@
                 {% else %}
                 {% set params = guest.extension_settings({ 'ext': 'mod_staff' }) %}
                     <h2 class="h2 text-center mb-4">{{ 'Log into your account' | trans }}</h2>
-                    <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ redirect_uri|alink }}">
+                    <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ redirect_uri|default('/')|alink }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3">
                             <label class="form-label" for="inputEmail">{{ 'Email' | trans }}</label>
