@@ -18,7 +18,7 @@
                 <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane show active" id="sign-in" role="tabpanel" aria-labelledby="in-tab"
                          tabindex="0">
-                        <form method="post" action="" id="client-login">
+                        <form method="post" class="api-form" action="{{ 'api/guest/client/login'|link }}" data-api-jsonp="onLogin">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <div class="row">
                                 <div class="col-md-7 mb-3">
@@ -49,7 +49,7 @@
                         </form>
                     </div>
                     <div class="tab-pane" id="sign-up" role="tabpanel" aria-labelledby="up-tab" tabindex="0">
-                        <form action="" method="post" id="create-profile">
+                        <form action="{{ 'api/guest/client/create'|link }}" method="post" data-api-jsonp="onAccountCreate">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% set r = guest.client_required %}
                             <div class="row">

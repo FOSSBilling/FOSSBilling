@@ -81,7 +81,10 @@ class Guest extends \Api_Abstract
             }
         }
 
-        return $this->getService()->login($data['email'], $data['password'], $this->getIp());
+        $result = $this->getService()->login($data['email'], $data['password'], $this->getIp());
+        $this->di['session']->delete('redirect_uri');
+
+        return $result;
     }
 
     public function update_password($data)

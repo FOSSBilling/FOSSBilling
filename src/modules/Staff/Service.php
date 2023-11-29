@@ -64,7 +64,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Manage groups'),
                 'description' => __trans('Allows the staff member to manage staff member groups.'),
             ],
-            'manage_settings' => []
+            'manage_settings' => [],
         ];
     }
 
@@ -138,12 +138,12 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Determines  if a staff member has the required permissions
-     * @param \Model_Admin|null $member The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
-     * @param string $module What module to check permission for.
-     * @param string|null $key The permission key for the associated module.
-     * @param mixed $constraint If the permission key allows for multiple options, specify the one you want to use as a constraint here.
-     * @return bool 
+     * Determines  if a staff member has the required permissions.
+     *
+     * @param \Model_Admin|null $member     The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
+     * @param string            $module     what module to check permission for
+     * @param string|null       $key        the permission key for the associated module
+     * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
      */
     public function hasPermission(\Model_Admin|null $member, string $module, string $key = null, mixed $constraint = null): bool
     {
@@ -184,13 +184,11 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Acts as an alias to `hasPermission`, but it'll also throw an exception stating the staff member doesn't have permission if they don't
-     * 
-     * @param string $module What module to check permission for.
-     * @param string|null $key The permission key for the associated module.
-     * @param mixed $constraint If the permission key allows for multiple options, specify the one you want to use as a constraint here.
-     * 
-     * @return void 
+     * Acts as an alias to `hasPermission`, but it'll also throw an exception stating the staff member doesn't have permission if they don't.
+     *
+     * @param string      $module     what module to check permission for
+     * @param string|null $key        the permission key for the associated module
+     * @param mixed       $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
      */
     public function checkPermissionsAndThrowException(string $module, string $key = null, mixed $constraint = null): void
     {
@@ -483,7 +481,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
-        if($model->role === 'admin'){
+        if ($model->role === 'admin') {
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
         } else {
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
@@ -510,7 +508,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('This administrator account is protected and can not be removed');
         }
 
-        if($model->role === 'admin'){
+        if ($model->role === 'admin') {
             $this->checkPermissionsAndThrowException('staff', 'delete_admin');
         } else {
             $this->checkPermissionsAndThrowException('staff', 'delete_staff');
@@ -530,7 +528,7 @@ class Service implements InjectionAwareInterface
 
     public function changePassword(\Model_Admin $model, $password)
     {
-        if($model->role === 'admin'){
+        if ($model->role === 'admin') {
             $this->checkPermissionsAndThrowException('staff', 'reset_admin_password');
         } else {
             $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');

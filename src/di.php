@@ -345,6 +345,10 @@ $di['twig'] = $di->factory(function () use ($di) {
         $token = hash('md5', session_id());
     }
 
+    if (!empty($_SESSION["redirect_uri"])) {
+        $twig->addGlobal('redirect_uri', $_SESSION["redirect_uri"]);
+    }
+
     $twig->addGlobal('CSRFToken', $token);
     $twig->addGlobal('request', $_GET);
     $twig->addGlobal('guest', $di['api_guest']);
@@ -494,15 +498,18 @@ $di['loggedin_admin'] = function () use ($di) {
 };
 
 $di['set_return_uri'] = function () use ($di) {
-    $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+    $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
     unset($_GET['_url']);
 
     if (str_starts_with($url, ADMIN_PREFIX)) {
         $url = substr($url, strlen(ADMIN_PREFIX));
     }
-    $redirectUri = $url . '?' . http_build_query($_GET);
 
-    $di['session']->set('redirect_uri', $redirectUri);
+    if($_GET){
+        $url .= '?' . http_build_query($_GET);
+    }
+
+    $di['session']->set('redirect_uri', $url);
 };
 
 /*
@@ -695,6 +702,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
  */
 $di['requirements'] = function () {
     $r = new \FOSSBilling\Requirements();
+
     return $r;
 };
 

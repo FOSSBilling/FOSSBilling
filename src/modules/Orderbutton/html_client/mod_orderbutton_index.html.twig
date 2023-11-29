@@ -1,24 +1,9 @@
+{% extends "layout_public.html.twig" %}
 {% set loader_nr = request.loader | default("8") %}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}"/>
-    <meta property="bb:client_area" content="{{ '/'|link }}"/>
+{% block meta_title %}{{ 'Order'|trans }}{% endblock %}
 
-    <meta charset="utf-8">
-    <title>Order</title>
-    {{ 'css/font-awesome.css' | asset_url | stylesheet_tag }}
-
-    {{ 'css/plugins/jquery.jgrowl.css' | asset_url | stylesheet_tag }}
-    {{ encore_entry_link_tags('huraga') }}
-    <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
-    <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
-    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
-    {{ encore_entry_script_tags('huraga') }}
-</head>
-
-<body class="bg-white overflow-hidden">
+{% block body %}
 <div class="row">
     <div class="col-md-12">
         <div class="card border-0" id="orderbutton" style="margin-bottom: 0">
@@ -72,115 +57,12 @@
     <img src="{{ loader_url | mod_asset_url('orderbutton') }}"
          style="display: block; margin-left: auto; margin-right: auto;position: relative; top : 50%">
 </div>
-
+{% endblock %}
+{% block js %}
 <script>
     $(function () {
         $('.accordion-body').on('shown', function () {
             $('#popup-iframe').height($('body').height());
-        });
-
-        $('#client-login').on('submit', function (event) {
-            bb.post(
-                'guest/client/login',
-                $(this).serialize(),
-                function (result) {
-                    bb.msg("{{ 'You logged in successfully'|trans }}");
-                    let registerEl = document.getElementById('register');
-                    new bootstrap.Collapse('#register').hide();
-                    setTimeout(() => {
-                        registerEl.parentElement.remove();
-                        new bootstrap.Collapse('#checkout').show();
-                    }, 500);
-
-                }
-            );
-            return false;
-        });
-        $('#create-profile').on('submit', function (event) {
-            bb.post(
-                'guest/client/create',
-                $(this).serialize(),
-                function (result) {
-                    //login after registration
-                    var login_details = {
-                        email: $('#reg-email').val(),
-                        password: $('#reg-password').val()
-                    };
-                    bb.post(
-                        'guest/client/login',
-                        login_details,
-                        function (result) {
-                            bb.msg("{{ 'You logged in successfully'|trans }}");
-                            let registerEl = document.getElementById('register');
-                            new bootstrap.Collapse('#register').hide();
-                            setTimeout(() => {
-                                registerEl.parentElement.remove();
-                                new bootstrap.Collapse('#checkout').show();
-                            }, 500);
-                        }
-                    );
-                }
-            );
-            return false;
-        });
-        $('#add-to-cart').on('submit', function (event) {
-            bb.post(
-                'guest/cart/add_item',
-                $(this).serialize(),
-                function (result) {
-                    bb.msg("{{ 'Product was added to shopping cart'|trans }}");
-                    bb.redirect("{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}");
-                }
-            );
-
-            return false;
-        });
-        $('#apply-promo').on('submit', function (event) {
-            bb.post(
-                'guest/cart/apply_promo',
-                $(this).serialize(),
-                function (result) {
-                    bb.msg("{{ 'Promo code was applied for your order'|trans }}");
-                    location.reload(0);
-                }
-            );
-
-            return false;
-        });
-
-        $('#checkout-form').on('submit', function (event) {
-            bb.post(
-                'client/cart/checkout',
-                $(this).serialize(),
-                function (result) {
-                    if (result.invoice_hash) {
-                        bb.post('guest/invoice/payment', {
-                            hash: result.invoice_hash,
-                            gateway_id: result.gateway_id,
-                            auto_redirect: true
-                        }, function (r) {
-                            let checkoutEl = document.getElementById('checkout');
-                            let paymentHtmlEl = document.getElementById('payment-html');
-                            if (r.iframe) {
-                                $('#payment-html-inner').html(r.result);
-                                bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                                $('#checkout').remove();
-                                bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
-                            } else {
-                                var link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
-                                $('#payment-html-inner').html('<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
-                                bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                                $('#checkout-inner').remove();
-                                bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
-                                $('#redirect-to-gateway')[0].click();
-                            }
-                        });
-                    } else {
-                        window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
-                    }
-                }
-            );
-            return false;
         });
 
         $('#show-promo-field').on('click', function (event) {
@@ -195,7 +77,64 @@
         });
 
     });
-</script>
-</body>
 
-</html>
+    function onOrderCheckout(result){
+        if (result.invoice_hash) {
+            bb.post('guest/invoice/payment', {
+            hash: result.invoice_hash,
+            gateway_id: result.gateway_id,
+            auto_redirect: true
+            }, function (r) {
+                let checkoutEl = document.getElementById('checkout');
+                let paymentHtmlEl = document.getElementById('payment-html');
+                if (r.iframe) {
+                    $('#payment-html-inner').html(r.result);
+                    bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
+                    $('#checkout').remove();
+                    bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
+                } else {
+                    var link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
+                    $('#payment-html-inner').html('<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
+                    bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
+                    $('#checkout-inner').remove();
+                    bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
+                    $('#redirect-to-gateway')[0].click();
+                }
+            });
+        } else {
+            window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
+        }
+    }
+
+    function onLogin(result){
+        FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
+        let registerEl = document.getElementById('register');
+        new bootstrap.Collapse('#register').hide();
+        setTimeout(() => {
+            registerEl.parentElement.remove();
+            new bootstrap.Collapse('#checkout').show();
+        }, 500);
+    }
+
+    function onAccountCreate(result){
+        //login after registration
+        var login_details = {
+            email: $('#reg-email').val(),
+            password: $('#reg-password').val()
+        };
+        bb.post(
+            'guest/client/login',
+            login_details,
+            function (result) {
+                FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
+                let registerEl = document.getElementById('register');
+                new bootstrap.Collapse('#register').hide();
+                setTimeout(() => {
+                    registerEl.parentElement.remove();
+                    new bootstrap.Collapse('#checkout').show();
+                    }, 500);
+            }
+        );
+    }
+</script>
+{% endblock %}

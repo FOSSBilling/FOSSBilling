@@ -57,13 +57,13 @@ class Server_Manager_Directadmin extends Server_Manager
         return is_numeric($this->_config['port']) ? $this->_config['port'] : '2222';
     }
 
-    public function getLoginUrl() : string
+    public function getLoginUrl(?Server_Account $account = null): string
     {
         $protocol = $this->_config['secure'] ? 'https://' : 'http://';
         return $protocol . $this->_config['host'] . ':'. $this -> _getPort();
     }
 
-    public function getResellerLoginUrl()
+    public function getResellerLoginUrl(?Server_Account $account = null)
     {
         return $this->getLoginUrl();
     }

@@ -35,7 +35,7 @@ class Server_Manager_Custom extends Server_Manager
      * 
      * @return string 
      */
-    public function getLoginUrl()
+    public function getLoginUrl(?Server_Account $account = null)
     {
         return 'http://www.google.com?q=cpanel';
     }
@@ -44,7 +44,7 @@ class Server_Manager_Custom extends Server_Manager
      * Returns link to reseller account management
      * @return string 
      */
-    public function getResellerLoginUrl()
+    public function getResellerLoginUrl(?Server_Account $account = null)
     {
         return 'http://www.google.com?q=whm';
     }

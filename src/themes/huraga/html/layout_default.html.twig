@@ -11,18 +11,14 @@
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="robots" content="{{ settings.meta_robots }}">
     <meta name="author" content="{{ settings.meta_author }}">
-    <meta name="generator" content="FOSSBilling {{ FOSSBillingVersion }}">
+    <meta name="generator" content="FOSSBilling">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     {% block opengraph %}{% endblock %}
-    <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
     {{ encore_entry_link_tags('huraga') }}
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
-    <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
-    <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
-    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
     {{ "Api/API.js" | library_url | script_tag }}
     {{ encore_entry_script_tags('huraga') }}
 
@@ -107,7 +103,7 @@
                             <li class="nav-item">
                                 {% if client %}
                                     <div class="dropdown">
-                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"aria-expanded="false">
+                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
                                             {% if profile.company %}
                                                 <span>{{ profile.first_name }} {{ profile.last_name }}|{{ profile.company }}</span>

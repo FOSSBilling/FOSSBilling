@@ -44,6 +44,8 @@ if ($url === '/run-patcher') {
     }
 }
 
+$di['session'];
+
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
     $app = new Box_AppAdmin([], $debugBar);

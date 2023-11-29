@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -59,6 +60,20 @@ class Client extends \Api_Abstract
     public function hp_get_pairs($data)
     {
         return $this->getService()->getHpPairs();
+    }
+
+    /**
+     * Returns the login URL for a given order ID.
+     * If the associated server manager supports SSO, an SSO link will be given.
+     * Will automatically return either a reseller URL or a standard URL depending on the order config.
+     *
+     * @param array $data An array containing the API request data. Should have a key named `order_id` containing the order's ID.
+     */
+    public function get_login_url(array $data): string
+    {
+        [$order, $s] = $this->_getService($data);
+
+        return $this->getService()->generateLoginUrl($s);
     }
 
     public function _getService($data)

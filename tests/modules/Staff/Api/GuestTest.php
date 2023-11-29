@@ -137,12 +137,17 @@ class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
+        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
+        $di['session'] = $sessionMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
