@@ -42,15 +42,15 @@
         "ramsey/uuid": "^4.7",
         "sentry/sentry": "^4",
         "stripe/stripe-php": "^13.0.0",
-        "symfony/cache": "^6.4",
-        "symfony/filesystem": "^6.4",
-        "symfony/http-client": "^6.4",
-        "symfony/mailer": "^6.4",
+        "symfony/cache": "^7.0",
+        "symfony/filesystem": "^7.0",
+        "symfony/http-client": "^7.0",
+        "symfony/mailer": "^7.0",
         "symfony/polyfill-intl-icu": "^1.27",
         "symfony/polyfill-intl-idn": "*",
-        "symfony/sendgrid-mailer": "^6.4",
-        "symfony/translation": "^6.4",
-        "symfony/twig-bridge": "^6.4",
+        "symfony/sendgrid-mailer": "^7.0",
+        "symfony/translation": "^7.0",
+        "symfony/twig-bridge": "^7.0",
         "symfony/webpack-encore-bundle": "2.1.1 as 1.17.2",
         "twig/intl-extra": "^3.5",
         "twig/twig": "^3.3.9"
@@ -62,7 +62,7 @@
         "phpunit/phpunit": "^10.4",
         "rector/rector": "^0.18.0",
         "symfony/deprecation-contracts": "^3.0.0",
-        "symfony/phpunit-bridge": "^6.4"
+        "symfony/phpunit-bridge": "^7.0"
     },
     "suggest": {
         "ext-curl": "*",
