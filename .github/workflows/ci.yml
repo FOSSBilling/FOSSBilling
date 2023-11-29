@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: 
+      - main
+      - renovate/**
+  pull_request:
+    branches: main
+
+jobs:
+  spellcheck:
+    name: Spellcheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Perform Spellcheck
+        uses: streetsidesoftware/cspell-action@v5
+        with:
+          strict: true
+          incremental_files_only: true
+
+  php-build:
+    name: PHP Build and Archive
+    needs: [ spellcheck ]
+    permissions:
+      contents: read
+    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@main
+    with:
+      cache-deps: true
+      php-versions: '["8.1", "8.2", "8.3"]'
+      upload-artifact: true
+
+  prep-test:
+    name: Prepare Test Environment
+    runs-on: ubuntu-latest
+    needs: [ php-build ]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy Files Required for Tests
+        run: |
+          mkdir /tmp/test_files
+          cp phpstan.neon /tmp/test_files
+          cp phpstan-baseline.neon /tmp/test_files
+          cp phpunit.xml.dist /tmp/test_files
+
+      - name: Create Script to Prepare Test Environment
+        run: |
+          echo "cp ./src/config-sample.php ./src/config.php" > /tmp/test_files/prepare-test.sh
+          echo "mkdir -p ./src/data/cache" >> /tmp/test_files/prepare-test.sh
+          echo "mkdir -p ./src/data/log" >> /tmp/test_files/prepare-test.sh
+          echo "echo > ./src/data/log/license.log" >> /tmp/test_files/prepare-test.sh
+          echo "echo > ./src/data/log/application.log" >> /tmp/test_files/prepare-test.sh
+          echo "echo > ./src/data/log/php_error.log" >> /tmp/test_files/prepare-test.sh
+
+      - name: Create File with Required Test Environment Variables
+        run: |
+          echo "APP_ENV=test" > /tmp/test_files/test.env
+
+      - name: Upload Files Required for Tests
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-files
+          path: /tmp/test_files/*
+          retention-days: 1
+
+  php-test:
+    name: PHP Tests
+    needs: [ php-build, prep-test ]
+    permissions:
+      contents: read
+    uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@main  
+    with:
+      php-versions: '["8.1", "8.2", "8.3"]'
+      download-test-files: true
+      prepare-test-script: 'prepare-test.sh'
+      prepare-test-env: 'test.env'
+      phpstan-php-version: '8.3'
+      phpunit-version: 10
