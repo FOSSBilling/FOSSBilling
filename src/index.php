@@ -11,6 +11,8 @@
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
+$di['session'];
+
 // Setting up the debug bar
 $debugBar = new \DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
