@@ -51,5 +51,9 @@
   },
   "engines": {
     "npm": ">=9"
+  },
+  "overrides": {
+    "@melloware/coloris": "^0.22.0",
+    "imask": "^7.1.3"
   }
 }
