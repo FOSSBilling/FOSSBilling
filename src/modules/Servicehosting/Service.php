@@ -926,10 +926,8 @@ class Service implements InjectionAwareInterface
     /**
      * Returns both the standard and reseller login URLs.
      * Will not generate SSO links.
-     * 
-     * @param \Model_ServiceHostingServer $model
-     * 
-     * @return string[]|false[] 
+     *
+     * @return string[]|false[]
      */
     public function getMangerUrls(\Model_ServiceHostingServer $model)
     {
@@ -947,10 +945,8 @@ class Service implements InjectionAwareInterface
     /**
      * Generates either a reseller or standard login link for a given order.
      * If the server manager supports SSO, an SSO link will be returned.
-     * 
-     * @param \Model_ServiceHosting $model
-     * 
-     * @return string 
+     *
+     * @return string
      */
     public function generateLoginUrl(\Model_ServiceHosting $model)
     {
