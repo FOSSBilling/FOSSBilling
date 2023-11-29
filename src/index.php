@@ -11,8 +11,6 @@
 require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
-$di['session'];
-
 // Setting up the debug bar
 $debugBar = new \DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
@@ -45,6 +43,8 @@ if ($url === '/run-patcher') {
         exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
     }
 }
+
+$di['session'];
 
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
