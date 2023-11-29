@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -8,16 +9,23 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-class Box_UrlHelper {
+class Box_UrlHelper
+{
     public $params = array();
     public $match = false;
 
     /**
      * @param string $requestUri
      */
-    public function __construct(private $method, $url, private $conditions, $requestUri) {
+    public function __construct(private $method, $url, private $conditions, $requestUri)
+    {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];
+
+        // Respond identically to a HEAD request as if it's a GET request
+        if ($requestMethod === 'HEAD') {
+            $requestMethod = 'GET';
+        }
 
         if (strtoupper($method) == $requestMethod) {
 
@@ -30,7 +38,7 @@ class Box_UrlHelper {
             if (preg_match('@^' . $regexedUrl . '$@', $requestUri, $paramValues)) {                            // determine match and get param values
                 array_shift($paramValues);                                                              // remove the complete text match
                 $counted = count($paramNames);
-                for ($i=0; $i < $counted; $i++) {
+                for ($i = 0; $i < $counted; $i++) {
                     $this->params[$paramNames[$i]] = $paramValues[$i];
                 }
                 $this->match = true;
@@ -38,7 +46,8 @@ class Box_UrlHelper {
         }
     }
 
-    private function regexValue($matches) {
+    private function regexValue($matches)
+    {
         $key = str_replace(':', '', $matches[0]);
         if (array_key_exists($key, $this->conditions)) {
             return '(' . $this->conditions[$key] . ')';
@@ -46,5 +55,4 @@ class Box_UrlHelper {
             return '([a-zA-Z0-9_\-]+)';
         }
     }
-
 }
