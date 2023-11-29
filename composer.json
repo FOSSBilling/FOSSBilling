@@ -35,7 +35,6 @@
         "maximebf/debugbar": "^1.19",
         "monolog/monolog": "^3.5",
         "nelexa/zip": "^4.0.2",
-        "php-http/message-factory": "*",
         "phpmyadmin/motranslator": "^5.3.0",
         "pimple/pimple": "^3.3",
         "plesk/api-php-lib": "^2.0.0",
@@ -52,7 +51,7 @@
         "symfony/sendgrid-mailer": "^6.0",
         "symfony/translation": "^6.0",
         "symfony/twig-bridge": "^6.0",
-        "symfony/webpack-encore-bundle": "^1.16",
+        "symfony/webpack-encore-bundle": "2.1.1 as 1.17.2",
         "twig/intl-extra": "^3.5",
         "twig/twig": "^3.3.9"
     },
