@@ -2,15 +2,13 @@ name: CI
 
 on:
   push:
-    branches: 
-      - main
-      - renovate/**
   pull_request:
     branches: main
 
 jobs:
   spellcheck:
     name: Spellcheck
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,6 +23,7 @@ jobs:
 
   php-build:
     name: PHP Build and Archive
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     needs: [ spellcheck ]
     permissions:
       contents: read
@@ -36,6 +35,7 @@ jobs:
 
   prep-test:
     name: Prepare Test Environment
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     needs: [ php-build ]
     permissions:
@@ -72,6 +72,7 @@ jobs:
 
   php-test:
     name: PHP Tests
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     needs: [ php-build, prep-test ]
     permissions:
       contents: read
