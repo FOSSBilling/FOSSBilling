@@ -9,10 +9,11 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\TwigExtensions\DebugBar;
 use Twig\Profiler\Profile;
 use Twig\Extension\ProfilerExtension;
 use DebugBar\Bridge\NamespacedTwigProfileCollector;
+use FOSSBilling\TwigExtensions\DebugBar;
+use FOSSBilling\Environment;
 
 class Box_AppAdmin extends Box_App
 {
@@ -28,8 +29,8 @@ class Box_AppAdmin extends Box_App
     protected function checkPermission()
     {
         $service = $this->di['mod_service']('Staff');
-        
-        if($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)){
+
+        if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
             http_response_code(403);
             $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
             echo $this->render('error', ['exception' => $e]);
@@ -68,11 +69,13 @@ class Box_AppAdmin extends Box_App
         $twig->setLoader($loader);
         $twig->addGlobal('theme', $theme);
 
-        $profile = new Profile();
-        $twig->addExtension(new ProfilerExtension($profile));
-        $collector = new NamespacedTwigProfileCollector($profile);
-        if (!$this->debugBar->hasCollector($collector->getName())) {
-            $this->debugBar->addCollector($collector);
+        if (Environment::isDevelopment()) {
+            $profile = new Profile();
+            $twig->addExtension(new ProfilerExtension($profile));
+            $collector = new NamespacedTwigProfileCollector($profile);
+            if (!$this->debugBar->hasCollector($collector->getName())) {
+                $this->debugBar->addCollector($collector);
+            }
         }
 
         $twig->addExtension(new DebugBar($this->getDebugBar()));
