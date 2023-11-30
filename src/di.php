@@ -345,8 +345,8 @@ $di['twig'] = $di->factory(function () use ($di) {
         $token = hash('md5', session_id());
     }
 
-    if (!empty($_SESSION["redirect_uri"])) {
-        $twig->addGlobal('redirect_uri', $_SESSION["redirect_uri"]);
+    if (!empty($_SESSION['redirect_uri'])) {
+        $twig->addGlobal('redirect_uri', $_SESSION['redirect_uri']);
     }
 
     $twig->addGlobal('CSRFToken', $token);
@@ -505,7 +505,7 @@ $di['set_return_uri'] = function () use ($di) {
         $url = substr($url, strlen(ADMIN_PREFIX));
     }
 
-    if($_GET){
+    if ($_GET) {
         $url .= '?' . http_build_query($_GET);
     }
 
