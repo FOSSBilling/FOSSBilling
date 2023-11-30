@@ -53,7 +53,7 @@
             <a href="{{ 'client'|alink }}" class="card card-sm">
                 <div class="card-body">
                     {% if client_statuses.suspended > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ client_statuses.suspended }}</span>
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ client_statuses.suspended }}</span>
                     {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -75,7 +75,7 @@
             <a href="{{ 'order'|alink }}" class="card card-sm">
                 <div class="card-body">
                     {% if order_statuses.suspended > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ order_statuses.suspended }}</span>
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ order_statuses.suspended }}</span>
                     {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -97,7 +97,7 @@
             <a href="{{ 'invoice'|alink }}" class="card card-sm">
                 <div class="card-body">
                     {% if invoice_statuses.unpaid > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ invoice_statuses.unpaid }}</span>
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ invoice_statuses.unpaid }}</span>
                     {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -119,7 +119,7 @@
             <a href="{{ 'support'|alink }}" class="card card-sm">
                 <div class="card-body">
                     {% if support_statuses.open > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger">{{ support_statuses.open }}</span>
+                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ support_statuses.open }}</span>
                     {% endif %}
                     <div class="row align-items-center">
                         <div class="col-auto">
