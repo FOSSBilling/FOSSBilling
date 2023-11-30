@@ -52,7 +52,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
         $invoice = $api->invoice_get($data);
         $systemService = $this->di['mod_service']('system');
-        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '1');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
 
         // If hash_access is not 0 or if a client is logged in, get the logged-in client
         if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
@@ -70,7 +70,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
         $invoice = $api->invoice_get($data);
         $systemService = $this->di['mod_service']('system');
-        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '1');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
 
         // If hash_access is not 0 or if a client is logged in, get the logged-in client
         if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
@@ -115,7 +115,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
         $invoice = $api->invoice_pdf($data);
         $systemService = $this->di['mod_service']('system');
-        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '1');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
 
         // If hash_access is not 0 or if a client is logged in, get the logged-in client
         if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {

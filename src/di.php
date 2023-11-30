@@ -441,8 +441,8 @@ $di['loggedin_client'] = function () use ($di) {
     try {
         return $di['db']->getExistingModelById('Client', $client_id);
     } catch (Exception) {
-        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
-        $di['session']->destroy('client');
+        // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
+        $di['session']->delete('client_id');
 
         // Then either give an appropriate API response or redirect to the login page.
         $api_str = '/api/';
@@ -479,8 +479,8 @@ $di['loggedin_admin'] = function () use ($di) {
     try {
         return $di['db']->getExistingModelById('Admin', $admin['id']);
     } catch (Exception) {
-        // Either the account was deleted or the session is invalid. Either way, destroy it so they are forced to try and login again.
-        $di['session']->destroy('admin');
+        // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
+        $di['session']->delete('admin');
 
         // Then either give an appropriate API response or redirect to the login page.
         $api_str = '/api/';
