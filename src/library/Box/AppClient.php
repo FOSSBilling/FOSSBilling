@@ -9,10 +9,11 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\TwigExtensions\DebugBar;
 use Twig\Profiler\Profile;
 use Twig\Extension\ProfilerExtension;
 use DebugBar\Bridge\NamespacedTwigProfileCollector;
+use FOSSBilling\TwigExtensions\DebugBar;
+use FOSSBilling\Environment;
 
 class Box_AppClient extends Box_App
 {
@@ -114,11 +115,13 @@ class Box_AppClient extends Box_App
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
 
-        $profile = new Profile();
-        $twig->addExtension(new ProfilerExtension($profile));
-        $collector = new NamespacedTwigProfileCollector($profile);
-        if (!$this->debugBar->hasCollector($collector->getName())) {
-            $this->debugBar->addCollector($collector);
+        if (Environment::isDevelopment()) {
+            $profile = new Profile();
+            $twig->addExtension(new ProfilerExtension($profile));
+            $collector = new NamespacedTwigProfileCollector($profile);
+            if (!$this->debugBar->hasCollector($collector->getName())) {
+                $this->debugBar->addCollector($collector);
+            }
         }
 
         $twig->addExtension(new DebugBar($this->getDebugBar()));
