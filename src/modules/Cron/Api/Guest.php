@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,16 +15,24 @@
 
 namespace Box\Mod\Cron\Api;
 
+use FOSSBilling\InformationException;
+
 class Guest extends \Api_Abstract
 {
     /**
-     * Run cron if is late and web based cron is enabled.
+     * Runs cron if the guest API cron endpoint is enabled via the module's settings
      *
-     * @return bool
+     * @return bool `true` if crons were run, `false` if they aren't yet late
      */
-    public function check()
+    public function run()
     {
-        return false;
+        $config = $this->getMod()->getConfig();
+        $allowGuest = $config['guest_cron'] ?? false;
+        if (!$allowGuest) {
+            throw new InformationException('You do not have permission to perform this action', [], 403);
+        }
+
+        return $this->getService()->runCrons();
     }
 
     /**
