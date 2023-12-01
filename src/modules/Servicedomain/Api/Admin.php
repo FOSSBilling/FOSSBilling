@@ -438,9 +438,4 @@ class Admin extends \Api_Abstract
 
         return $s;
     }
-
-    public function findServiceDomain($tld)
-    {
-        return $this->di['db']->find('ServiceDomain', 'tld = ?', ['tld' => $tld]);
-    }
 }
