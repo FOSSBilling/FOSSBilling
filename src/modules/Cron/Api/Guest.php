@@ -21,10 +21,8 @@ class Guest extends \Api_Abstract
 {
     /**
      * Runs cron if the guest API cron endpoint is enabled via the module's settings
-     *
-     * @return bool `true` if crons were run, `false` if they aren't yet late
      */
-    public function run()
+    public function run(): bool
     {
         $config = $this->getMod()->getConfig();
         $allowGuest = $config['guest_cron'] ?? false;
@@ -37,20 +35,16 @@ class Guest extends \Api_Abstract
 
     /**
      * Get cron settings.
-     *
-     * @return array
      */
-    public function settings()
+    public function settings(): array
     {
         return $this->getMod()->getConfig();
     }
 
     /**
      * Tells if cron is late.
-     *
-     * @return bool
      */
-    public function is_late()
+    public function is_late(): bool
     {
         return $this->getService()->isLate();
     }
