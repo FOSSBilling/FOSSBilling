@@ -7,79 +7,86 @@ on:
 
 jobs:
   spellcheck:
-    name: Spellcheck
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
+    name: 'Spellcheck'
     permissions:
       contents: read
+    runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Perform Spellcheck
+      - name: 'Perform Spellcheck'
         uses: streetsidesoftware/cspell-action@v5
         with:
-          strict: true
           incremental_files_only: true
+          strict: true
+          verbose: true
 
-  php-build:
-    name: PHP Build and Archive
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    needs: [ spellcheck ]
+  php-test-build:
+    name: 'PHP Build (Dev)'
     permissions:
       contents: read
-    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@b34d8a6da3a2f58848ff957befaf546eb9d5090d
+    needs: [ spellcheck ]
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@main
     with:
-      php-versions: '["8.1", "8.2", "8.3"]'
-      upload-artifact: true
+      php_versions: '["8.1", "8.2", "8.3"]'
+      upload_artifact_prefix: 'build-test-php'
 
   prep-test:
-    name: Prepare Test Environment
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    needs: [ php-build ]
+    name: 'Prepare Test Environment'
     permissions:
       contents: read
+    needs: [ php-test-build ]
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copy Files Required for Tests
+      - name: 'Copy Files Required for Tests'
         run: |
           mkdir /tmp/test_files
-          cp phpstan.neon /tmp/test_files
-          cp phpstan-baseline.neon /tmp/test_files
-          cp phpunit.xml.dist /tmp/test_files
+          cp phpstan.* /tmp/test_files
+          cp phpunit.* /tmp/test_files
 
-      - name: Create Script to Prepare Test Environment
+      - name: 'Create Script to Prepare Test Environment'
         run: |
           echo "cp ./src/config-sample.php ./src/config.php" > /tmp/test_files/prepare-test.sh
-          echo "mkdir -p ./src/data/cache" >> /tmp/test_files/prepare-test.sh
-          echo "mkdir -p ./src/data/log" >> /tmp/test_files/prepare-test.sh
-          echo "echo > ./src/data/log/license.log" >> /tmp/test_files/prepare-test.sh
-          echo "echo > ./src/data/log/application.log" >> /tmp/test_files/prepare-test.sh
-          echo "echo > ./src/data/log/php_error.log" >> /tmp/test_files/prepare-test.sh
+          echo "mkdir -p ./src/data/{cache,log}" >> /tmp/test_files/prepare-test.sh
 
-      - name: Create File with Required Test Environment Variables
+      - name: 'Create File with Required Environment Variables'
         run: |
           echo "APP_ENV=test" > /tmp/test_files/test.env
 
-      - name: Upload Files Required for Tests
+      - name: 'Upload Required Test Files'
         uses: actions/upload-artifact@v3
         with:
-          name: test-files
-          path: /tmp/test_files/*
+          name: 'test-files'
+          path: '/tmp/test_files/*'
           retention-days: 1
 
   php-test:
-    name: PHP Tests
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    needs: [ php-build, prep-test ]
+    name: 'PHP Test (Dev)'
     permissions:
       contents: read
-    uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@b34d8a6da3a2f58848ff957befaf546eb9d5090d  
+    needs: [ prep-test ]
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@main
     with:
-      php-versions: '["8.1", "8.2", "8.3"]'
-      download-test-files: true
-      prepare-test-script: 'prepare-test.sh'
-      prepare-test-env: 'test.env'
-      phpstan-php-version: '8.3'
-      phpunit-version: 10
+      download_artifact_prefix: 'build-test-php'
+      download_test_files: true
+      php_versions: '["8.1", "8.2", "8.3"]'
+      phpunit_version: 10
+      prepare_test_script: 'prepare-test.sh'
+      prepare_test_env: 'test.env'
+
+  php-preview-build:
+    name: 'PHP Build (Preview)'
+    permissions: 
+      contents: read
+    needs: [ php-test ]
+    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@main
+    with: 
+      composer_args: '--no-dev --optimize-autoloader'
+      php_versions: '["8.1"]'
+      upload_artifact_prefix: 'build-preview-php'
