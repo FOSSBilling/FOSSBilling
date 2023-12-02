@@ -30,6 +30,14 @@ class Guest extends \Api_Abstract
             throw new InformationException('You do not have permission to perform this action', [], 403);
         }
 
+        $t1 = new \DateTime($this->getService()->getLastExecutionTime());
+        $t2 = new \DateTime('-1min');
+
+        // Ensure this can't be used to run cron more than 1 time every minute.
+        if ($t1 >= $t2) {
+            return false;
+        }
+
         return $this->getService()->runCrons();
     }
 

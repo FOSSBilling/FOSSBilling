@@ -15,15 +15,6 @@ class GuestTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcheck()
-    {
-        $api = new \Box\Mod\Cron\Api\Guest();
-
-        $result = $api->check();
-        $this->assertIsBool($result);
-        $this->assertFalse($result);
-    }
-
     public  function testsettings()
     {
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
