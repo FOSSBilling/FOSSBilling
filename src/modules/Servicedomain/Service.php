@@ -1024,8 +1024,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function registrarRm(\Model_TldRegistrar $model)
     {
         $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
-        if ((is_countable($domains) ? count($domains) : 0) > 0) {
-            throw new \FOSSBilling\InformationException('Can not remove registrar which has domains');
+        $count = is_countable($domains) ? count($domains) : 0;
+
+        if ($count > 0) {
+            throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
         $name = $model->name;
