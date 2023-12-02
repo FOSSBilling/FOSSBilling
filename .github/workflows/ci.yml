@@ -27,7 +27,7 @@ jobs:
     needs: [ spellcheck ]
     permissions:
       contents: read
-    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@main
+    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@b34d8a6da3a2f58848ff957befaf546eb9d5090d
     with:
       php-versions: '["8.1", "8.2", "8.3"]'
       upload-artifact: true
@@ -75,7 +75,7 @@ jobs:
     needs: [ php-build, prep-test ]
     permissions:
       contents: read
-    uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@main  
+    uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@b34d8a6da3a2f58848ff957befaf546eb9d5090d  
     with:
       php-versions: '["8.1", "8.2", "8.3"]'
       download-test-files: true
