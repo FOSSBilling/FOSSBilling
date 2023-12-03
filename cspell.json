@@ -414,6 +414,7 @@
         ".github/**",
         ".gitignore",
         "src/.htaccess",
-        "phpstan-baseline.neon"
+        "phpstan-baseline.neon",
+        "Dockerfile"
     ]
 }
