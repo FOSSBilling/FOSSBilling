@@ -352,6 +352,14 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
+            38 => function () {
+                // We need to remove the old ISPConfig3 and Virtualmin server managers from disk or else the leftover files could prevent the "hosting plans and servers" page from being loaded.
+                $fileActions = [
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Server' . DIRECTORY_SEPARATOR . 'Manager' . DIRECTORY_SEPARATOR . 'Ispconfig3.php' => 'unlink',
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Server' . DIRECTORY_SEPARATOR . 'Manager' . DIRECTORY_SEPARATOR . 'Virtualmin.php' => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
+            }
         ];
         ksort($patches, SORT_NATURAL);
 
