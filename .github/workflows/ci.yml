@@ -210,13 +210,13 @@ jobs:
           tar -xvf /tmp/build.tar -C ./src
 
       - name: 'Create Downloadable Preview'
-        run: zip -r ../FOSSBilling-Preview.zip .
+        run: zip -r ../FOSSBilling-preview.zip .
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'
         run: |
           mkdir ./dist
-          mv ./FOSSBilling-Preview.zip ./dist
+          mv ./FOSSBilling-preview.zip ./dist
 
       - name: 'Upload Downloadable Preview to S3'
         if: ${{ github.ref == 'refs/heads/main' }}
