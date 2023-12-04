@@ -78,7 +78,6 @@ jobs:
       php_versions: '["8.1", "8.2", "8.3"]'
       phpunit_version: 10
       prepare_test_script: 'prepare-test.sh'
-      prepare_test_env: 'test.env'
 
   php-preview-build:
     name: 'PHP Build (Preview)'
