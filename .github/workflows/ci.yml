@@ -22,16 +22,17 @@ jobs:
           strict: true
           verbose: true
 
-  php-test-build:
-    name: 'PHP Build (Dev)'
+  php-build-test:
+    name: 'PHP Build and Test'
     permissions:
       contents: read
     needs: [ spellcheck ]
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@0a5d7aacd57d9ff6bdfd20d2ec75999cf3c416e4
-    with:
-      php_versions: '["8.1", "8.2", "8.3"]'
-      upload_artifact_prefix: 'build-test-php'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: FOSSBilling/.workflows/actions/php-build
 
   prep-test:
     name: 'Prepare Test Environment'
@@ -61,7 +62,7 @@ jobs:
     name: 'PHP Test (Dev)'
     permissions:
       contents: read
-    needs: [ php-test-build, prep-test ]
+    needs: [ php-build-test, prep-test ]
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@0a5d7aacd57d9ff6bdfd20d2ec75999cf3c416e4
     with:
