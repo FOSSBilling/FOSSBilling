@@ -1,0 +1,17 @@
+name: Do Not Merge (Merge Hold)
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, labeled, unlabeled]
+
+jobs:
+  merge-hold:
+    name: Prevent Merging (Merge Hold)
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'merge-hold') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check For merge-hold Label
+        run: |
+          echo "Pull request labeled 'merge-hold'"
+          echo "The pull request cannot be merged until the 'merge-hold' label is removed."
+          exit 1
