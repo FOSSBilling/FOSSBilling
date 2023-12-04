@@ -28,7 +28,7 @@ jobs:
       contents: read
     needs: [ spellcheck ]
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@main
+    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@0a5d7aacd57d9ff6bdfd20d2ec75999cf3c416e4
     with:
       php_versions: '["8.1", "8.2", "8.3"]'
       upload_artifact_prefix: 'build-test-php'
@@ -37,26 +37,18 @@ jobs:
     name: 'Prepare Test Environment'
     permissions:
       contents: read
-    needs: [ php-test-build ]
+    needs: [ spellcheck ]
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: 'Copy Files Required for Tests'
-        run: |
-          mkdir /tmp/test_files
-          cp phpstan.* /tmp/test_files
-          cp phpunit.* /tmp/test_files
-
       - name: 'Create Script to Prepare Test Environment'
         run: |
+          mkdir /tmp/test_files
           echo "cp ./src/config-sample.php ./src/config.php" > /tmp/test_files/prepare-test.sh
           echo "mkdir -p ./src/data/{cache,log}" >> /tmp/test_files/prepare-test.sh
-
-      - name: 'Create File with Required Environment Variables'
-        run: |
-          echo "APP_ENV=test" > /tmp/test_files/test.env
+          echo "echo APP_ENV=test >> $GITHUB_ENV"
 
       - name: 'Upload Required Test Files'
         uses: actions/upload-artifact@v3
@@ -69,13 +61,14 @@ jobs:
     name: 'PHP Test (Dev)'
     permissions:
       contents: read
-    needs: [ prep-test ]
+    needs: [ php-test-build, prep-test ]
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@main
+    uses: FOSSBilling/.workflows/.github/workflows/php-test.yml@0a5d7aacd57d9ff6bdfd20d2ec75999cf3c416e4
     with:
       download_artifact_prefix: 'build-test-php'
       download_test_files: true
       php_versions: '["8.1", "8.2", "8.3"]'
+      phpstan_php_version: '8.3'
       phpunit_version: 10
       prepare_test_script: 'prepare-test.sh'
 
@@ -84,8 +77,163 @@ jobs:
     permissions: 
       contents: read
     needs: [ php-test ]
-    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@main
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    uses: FOSSBilling/.workflows/.github/workflows/php-build.yml@0a5d7aacd57d9ff6bdfd20d2ec75999cf3c416e4
     with: 
-      composer_args: '--no-dev --optimize-autoloader'
+      cache_deps: false
+      composer_args: '--prefer-dist --no-dev --optimize-autoloader'
       php_versions: '["8.1"]'
       upload_artifact_prefix: 'build-preview-php'
+
+  frontend-preview-build:
+    name: 'Frontend Assets Build (Preview)'
+    permissions:
+      contents: read
+    needs: [ php-test ]
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Install Node.js and Enable Caching'
+        uses: actions/setup-node@v4
+        with:
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+          node-version: 20
+
+      - name: 'Install Node.js Dependencies'
+        run: npm ci
+
+      - name: 'Build Frontend Assets'
+        run: npm run build
+
+      - name: 'Create Build Archive'
+        run: |
+          mkdir -p /tmp/build/themes/{admin_default,huraga}/build
+          mkdir -p /tmp/build/modules/Wysiwyg/assets
+          cp -r ./src/themes/admin_default/build/. /tmp/build/themes/admin_default/build/
+          cp -r ./src/themes/huraga/build/. /tmp/build/themes/huraga/build/
+          cp -r ./src/modules/Wysiwyg/assets/. /tmp/build/modules/Wysiwyg/assets/
+          tar -cvf /tmp/build.tar -C /tmp/build/ ./
+
+      - name: 'Upload Build Archive'
+        uses: actions/upload-artifact@v3
+        with:
+          if-no-files-found: 'error'
+          name: 'frontend-preview-build'
+          path: '/tmp/build.tar'
+          retention-days: 1
+
+  preview-build:
+    name: 'Prepare Preview Build'
+    permissions:
+      contents: read
+    needs: [ php-preview-build, frontend-preview-build ]
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Download PHP Build (Preview)'
+        uses: actions/download-artifact@v3
+        with:
+          name: build-preview-php-8.1
+          path: /tmp/php-build
+
+      - name: 'Download Frontend Assets Build (Preview)'
+        uses: 'actions/download-artifact@v3'
+        with:
+          name: frontend-preview-build
+          path: /tmp/frontend-build
+
+      - name: 'Download Latest Translations'
+        uses: robinraju/release-downloader@v1.8
+        with:
+          repository: 'FOSSBilling/locale'
+          latest: true
+          fileName: 'translations.zip'
+          out-file-path: './src/locale'
+          extract: true
+        
+      - name: 'Extract Preview Build Archives'
+        run: |
+          tar -xvf /tmp/php-build/build.tar ./
+          tar -xvf /tmp/frontend-build/build.tar -C ./src
+      
+      - name: 'Copy Required Files and Clean-up'
+        run: |
+          cp README.md ./src/
+          cp LICENSE ./src/
+          cp CHANGELOG.md ./src/
+          rm ./src/locale/translations.zip
+
+      - name: 'Add Short Commit Hash as the Release Vesion'
+        run: sed -i s/0.0.1/${GITHUB_SHA::7}/ Version.php
+        working-directory: ./src/library/FOSSBilling
+          
+      - name: 'Add the Sentry DSN'
+        if: ${{ vars.SENTRY_DSN }}
+        run: |
+          d=$'\03'
+          sed -i "s${d}--replace--this--during--release--process--${d}$SENTRY_DSN$d" SentryHelper.php
+        working-directory: ./src/library/FOSSBilling
+        env:
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+
+      - name: 'Create Preview Build Archive'
+        run: tar -cvf /tmp/build.tar -C ./src/ ./
+
+      - name: 'Upload Preview Build Archive'
+        uses: actions/upload-artifact@v3
+        with:
+          if-no-files-found: 'error'
+          name: preview-build
+          path: /tmp/build.tar
+          retention-days: 1
+          
+  upload-preview:
+    name: 'Upload Downloadable Preview'
+    permissions:
+      contents: read
+    needs: [ preview-build ]
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Download Preview Build Archive'
+        uses: actions/download-artifact@v3
+        with:
+          name: preview-build
+          path: '/tmp'
+
+      - name: 'Extract Preview Build Archive'
+        run: | 
+          mkdir ./src
+          tar -xvf /tmp/build.tar -C ./src
+
+      - name: 'Create Downloadable Preview'
+        run: zip -r ../FOSSBilling-Preview.zip .
+        working-directory: ./src/
+
+      - name: 'Move Downloadable Preview for Upload'
+        run: |
+          mkdir ./dist
+          mv ./FOSSBilling-Preview.zip ./dist
+
+      - name: 'Upload Downloadable Preview to S3'
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
+          SOURCE_DIR: './dist'
+
+      - name: 'Upload Preview Build to GitHub'
+        uses: actions/upload-artifact@v3
+        with:
+          if-no-files-found: 'error'
+          name: 'FOSSBilling Preview'
+          path: ./src/*
+          retention-days: 14
