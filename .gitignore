@@ -6,7 +6,7 @@
 .vagrant*
 src/config.php
 src/data/log/*
-src/data/cache/*
+#src/data/cache/*
 src/vendor/*
 build
 composer.phar
