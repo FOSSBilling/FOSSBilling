@@ -1,41 +1,76 @@
 # General.
 api:
-- any: [ 'src/library/Api/*', 'src/modules/**/Api/*' ]
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/library/Api/*", "src/modules/**/Api/*"]
+
 installer:
-- src/install/**/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/install/**/*"]
+
 library:
-- any: [ 'src/library/**/*', '!src/library/Payment/Adapter/*', '!src/library/Registrar/Adapter/*', '!src/library/Server/Manager/*' ]
+  - any:
+    - changed-files:
+      - all-glob-to-any-file: ["src/library/**/*", "!src/library/Payment/Adapter/*", "!src/library/Registrar/Adapter/*", "!src/library/Server/Manager/*",]
+
 modules:
-- src/modules/**/**/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/modules/**/**/*"]
 
 # Extensions.
 extensions:
-- any: [ 'src/library/Payment/Adapter/*', 'src/library/Registrar/Adapter/*', 'src/library/Server/Manager/*' ]
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/library/Payment/Adapter/*", "src/library/Registrar/Adapter/*", "src/library/Server/Manager/*",]
+
 payment-gateways:
-- src/library/Payment/Adapter/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/library/Payment/Adapter/*"]
+
 domain-registrars:
-- src/library/Registrar/Adapter/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/library/Registrar/Adapter/*"]
+
 server-managers:
-- src/library/Server/Manager/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/library/Server/Manager/*"]
 
 # Front-end/Themes.
-front-end:
-- src/themes/*
+client-area:
+  - any:
+    - changed-files:
+    - all-glob-to-any-file: ["!src/themes/admin_*/**/*", "src/modules/**/html_client/*"]
+    - all-glob-to-any-file: ["!src/themes/admin_*/**/*", "src/themes/**/*"]
+
 admin-panel:
-- src/themes/admin_*/**/*
-huraga:
-- src/themes/huraga/**/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["src/themes/admin_*/**/*", "src/modules/**/html_admin/*"]
 
 # Github Actions/Config.
 github-config:
-- .github/**/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: [".github/**/*"]
 
 # Package Management.
 composer:
-- any: [ 'composer.json', 'composer.lock' ]
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["composer.json", "composer.lock"]
+
 npm:
-- any: [ 'package.json', 'package-lock.json' ]
+  - any:
+     - changed-files:
+      - any-glob-to-any-file: ["package.json", "package-lock.json"]
 
 # Tests/CI.
 tests/CI:
-- tests/**/*
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: ["tests/**/*"]

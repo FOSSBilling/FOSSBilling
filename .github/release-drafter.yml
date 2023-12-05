@@ -21,6 +21,8 @@ categories:
   - title: '📦 Dependencies'
     labels:
       - 'dependencies'
+      - 'composer'
+      - 'npm'
 exclude-labels:
   - 'skip-changelog'
 change-template: '- $TITLE (@$AUTHOR, #$NUMBER)'
