@@ -496,7 +496,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($destination)) {
             if (file_exists($destination)) {
-                throw new \FOSSBilling\Exception('Extension :id seems to be already installed.', [':id' => $id], 436);
+                throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
             }
             if (!rename($extractedPath, $destination)) {
                 throw new \FOSSBilling\Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
