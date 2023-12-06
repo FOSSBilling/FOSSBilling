@@ -23,8 +23,8 @@ final class IPDatabase
     public const IPvUnknown = 0;
 
     /**
-     * FOSSBilling uses databases that are licenced under the public domain (CC0 and PDDL).
-     * This is done to ensure that we have good enough data out of the box that's updated regularly and that can be used without a concern of licencing. 
+     * FOSSBilling uses databases that are licensed under the public domain (CC0 and PDDL).
+     * This is done to ensure that we have good enough data out of the box that's updated regularly and that can be used without a concern of licensing. 
      * Below are the download URLs for both the IPv4 and IPv6 DBs we utilize.
      * Both include ASN and Country information. 
      */
@@ -51,7 +51,6 @@ final class IPDatabase
         }
 
         [$IPv4, $IPv6] = self::getPaths();
-        error_log("$IPv4, $IPv6");
 
         switch ($type) {
             case self::IPv4:

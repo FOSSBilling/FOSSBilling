@@ -199,7 +199,7 @@ return [
 
     /**
      * You may override the default IP address database that FOSSBilling utilizes here if you desire.
-     * The 'included' arrays define what data types are included in that database. For exampple, the default ones for FOSSBilling would be ['country', 'asn']
+     * The 'included' arrays define what data types are included in that database. For example, the default ones for FOSSBilling would be ['country', 'asn']
      */
     'IPDatabase' => [
         'customIPv4' => '',
