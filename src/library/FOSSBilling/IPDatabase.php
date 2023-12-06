@@ -121,8 +121,7 @@ final class IPDatabase
         if (defined('IPv4DB') && !$defaults) {
             $IPv4 = Path::canonicalize(IPv4DB);
         } else {
-            //$IPv4 = Path::normalize(PATH_LIBRARY . '/IPv4.mmdb');
-            $IPv4 = Path::normalize(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
+            $IPv4 = Path::normalize(PATH_LIBRARY . '/IPv4.mmdb');
         }
 
         if (defined('IPv6DB')  && !$defaults) {
