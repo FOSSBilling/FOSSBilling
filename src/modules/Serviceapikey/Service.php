@@ -87,7 +87,7 @@ class Service implements InjectionAwareInterface
         return $this->unsuspend($order, $model);
     }
 
-    public function delete(OODBBean $order, OODBBean $model): void
+    public function delete(?OODBBean $order, ?OODBBean $model): void
     {
         if (is_object($model)) {
             $this->di['db']->trash($model);

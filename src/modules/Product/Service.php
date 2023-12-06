@@ -938,6 +938,7 @@ class Service implements InjectionAwareInterface
         $model->used = $data['used'] ?? $model->used;
         $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
         $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
+        $model->maxuses = (int) $data['maxuses'] ?? $model->maxuses;
 
         if (!is_array($data['products'] ?? null)) {
             $model->products = null;
