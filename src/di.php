@@ -765,11 +765,13 @@ $di['license_server'] = function () use ($di) {
 };
 
 /*
- * @param void
- *
  * @return \GeoIp2\Database\Reader
+ * @deprecated You should instead invoke the IPDatabase class directly.
  */
-$di['geoip'] = fn () => new GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
+$di['geoip'] = function () {
+    error_log("Deprecated 'geoip' function called from the DI");
+    return FOSSBilling\IPDatabase::getReader(4);
+};
 
 /*
  * @param void

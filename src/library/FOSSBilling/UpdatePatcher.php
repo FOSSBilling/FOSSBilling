@@ -82,6 +82,13 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
+        $newConfig['IPDatabase'] ??= [
+            'customIPv4' => '',
+            'includedIPv4' => [],
+            'customIPv6' => '',
+            'includedIPv6' => [],
+        ];
+
         // Remove depreciated config keys/subkeys.
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
         $depreciatedConfigSubkeys = [
