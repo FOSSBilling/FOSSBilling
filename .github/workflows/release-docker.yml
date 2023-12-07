@@ -1,4 +1,4 @@
-name: Build and Push Release to Docker Hub
+name: Upload Release to Docker Hub
 
 on:
   release:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   release-build:
+    name: 'Create Release (${{ github.ref_name }})'
     permissions: 
       contents: read
     uses: ./.github/workflows/release-build.yml
@@ -14,6 +15,8 @@ jobs:
       artifact-name: 'release-build'
       preview: false
 
+  # Latest release is identified by branch/tag SemVer,
+  # not the 'Set as the latest release' GitHub option.
   check-latest:
     name: 'Check if Release is Latest'
     permissions: 
@@ -33,17 +36,18 @@ jobs:
       - name: 'Check if Current Release Version is Latest'
         id: compare-latest
         run: |
-          if [ ${{ github.ref_name }} == ${{ steps.get-latest.outputs.release }} ]; then
+          if [ "${{ github.ref_name }}" = "${{ steps.get-latest.outputs.release }}" ]; then
             echo "is_latest=true" >> $GITHUB_OUTPUT
           else
             echo "is_latest=false" >> $GITHUB_OUTPUT
           fi
 
-  docker-build-push:
+  deploy-release-docker:
+    name: 'Build and Push Release to Docker Hub'
     permissions: 
       contents: read
-    needs: [ check-latest ]
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@f0c0f07cb8b526734b80b81db7c7eba6020c5510
+    needs: [ release-build, check-latest ]
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@fd299987b1bf7ea82885ca0642a25d8546cc3226
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
