@@ -28,7 +28,7 @@
         "gabordemooij/redbean": "^5.7",
         "geoip2/geoip2": "^3.0.0",
         "io-developer/php-whois": "^4.1",
-        "lcharette/webpack-encore-twig": "^1.1.0",
+        "lcharette/webpack-encore-twig": "^1.2.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
         "mattketmo/email-checker": "^2.2",
@@ -51,7 +51,7 @@
         "symfony/sendgrid-mailer": "^6.4",
         "symfony/translation": "^6.4",
         "symfony/twig-bridge": "^6.4",
-        "symfony/webpack-encore-bundle": "2.1.1 as 1.17.2",
+        "symfony/webpack-encore-bundle": "^2.1",
         "twig/intl-extra": "^3.5",
         "twig/twig": "^3.3.9"
     },
