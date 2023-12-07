@@ -1420,16 +1420,16 @@
         },
         {
             "name": "mattketmo/email-checker",
-            "version": "v2.2.0",
+            "version": "v2.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/MattKetmo/EmailChecker.git",
-                "reference": "be575f38ae7f5c4ce18332774479b30fdbc75977"
+                "reference": "062aaa2f8b41f9746a4f91190ac68d35249bab31"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/MattKetmo/EmailChecker/zipball/be575f38ae7f5c4ce18332774479b30fdbc75977",
-                "reference": "be575f38ae7f5c4ce18332774479b30fdbc75977",
+                "url": "https://api.github.com/repos/MattKetmo/EmailChecker/zipball/062aaa2f8b41f9746a4f91190ac68d35249bab31",
+                "reference": "062aaa2f8b41f9746a4f91190ac68d35249bab31",
                 "shasum": ""
             },
             "require": {
@@ -1481,9 +1481,9 @@
             ],
             "support": {
                 "issues": "https://github.com/MattKetmo/EmailChecker/issues",
-                "source": "https://github.com/MattKetmo/EmailChecker/tree/v2.2.0"
+                "source": "https://github.com/MattKetmo/EmailChecker/tree/v2.3.0"
             },
-            "time": "2023-09-01T21:18:03+00:00"
+            "time": "2023-12-07T13:10:23+00:00"
         },
         {
             "name": "maximebf/debugbar",
@@ -8387,5 +8387,5 @@
         "ext-zlib": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }
