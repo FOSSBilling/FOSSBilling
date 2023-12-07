@@ -1,0 +1,54 @@
+name: Build and Push Release to Docker Hub
+
+on:
+  release:
+    types: 
+      - published
+
+jobs:
+  release-build:
+    permissions: 
+      contents: read
+    uses: ./.github/workflows/release-build.yml
+    with:
+      artifact-name: 'release-build'
+      preview: false
+
+  check-latest:
+    name: 'Check if Release is Latest'
+    permissions: 
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      is_latest: ${{ steps.compare-latest.outputs.is_latest }}
+    steps:
+      - name: 'Get Latest Release Version Tag'
+        id: get-latest
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          excludes: 'prerelease,draft'
+          repository: 'FOSSBilling/FOSSBilling'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Check if Current Release Version is Latest'
+        id: compare-latest
+        run: |
+          if [ ${{ github.ref_name }} == ${{ steps.get-latest.outputs.release }} ]; then
+            echo "is_latest=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_latest=false" >> $GITHUB_OUTPUT
+          fi
+
+  docker-build-push:
+    permissions: 
+      contents: read
+    needs: [ check-latest ]
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@f0c0f07cb8b526734b80b81db7c7eba6020c5510
+    secrets:
+      dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+      dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      download-artifact: 'release-build'
+      platforms: '["linux/amd64", "linux/arm64"]'
+      repository-name: 'fossbilling/fossbilling'
+      tag-latest: ${{ needs.check-latest.outputs.is_latest }}
