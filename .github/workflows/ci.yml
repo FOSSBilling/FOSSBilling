@@ -111,3 +111,20 @@ jobs:
           name: 'FOSSBilling Preview'
           path: './src/*'
           retention-days: 14
+
+  deploy-preview-docker:
+    name: 'Build and Push Preview to Docker Hub'
+    permissions:
+      contents: read
+    needs: [ preview-build ]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@fd299987b1bf7ea82885ca0642a25d8546cc3226
+    secrets:
+      dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+      dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      download-artifact: 'preview-build'
+      platforms: '["linux/amd64", "linux/arm64"]'
+      repository-name: 'fossbilling/fossbilling'
+      tag-latest: 'false'
+      tag-raw: 'preview'
