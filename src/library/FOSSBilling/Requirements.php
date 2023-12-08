@@ -115,6 +115,7 @@ class Requirements
             if ($ext === 'opcache') {
                 if (!function_exists('opcache_get_status')) {
                     $result['suggested_extensions'][$ext] = false;
+                    continue;
                 }
                 $status = opcache_get_status();
                 $result['suggested_extensions'][$ext] = is_array($status) && $status['opcache_enabled'];
