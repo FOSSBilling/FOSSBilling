@@ -5995,16 +5995,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.40.2",
+            "version": "v3.41.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "4344562a516b76afe8f2d64b2e52214c30d64ed8"
+                "reference": "7d8d18e19095a939b8a3b8046f57108feaad6134"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/4344562a516b76afe8f2d64b2e52214c30d64ed8",
-                "reference": "4344562a516b76afe8f2d64b2e52214c30d64ed8",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/7d8d18e19095a939b8a3b8046f57108feaad6134",
+                "reference": "7d8d18e19095a939b8a3b8046f57108feaad6134",
                 "shasum": ""
             },
             "require": {
@@ -6034,8 +6034,6 @@
                 "php-cs-fixer/accessible-object": "^1.1",
                 "php-cs-fixer/phpunit-constraint-isidenticalstring": "^1.4",
                 "php-cs-fixer/phpunit-constraint-xmlmatchesxsd": "^1.4",
-                "phpspec/prophecy": "^1.17",
-                "phpspec/prophecy-phpunit": "^2.0",
                 "phpunit/phpunit": "^9.6",
                 "symfony/phpunit-bridge": "^6.3.8 || ^7.0",
                 "symfony/yaml": "^5.4 || ^6.0 || ^7.0"
@@ -6076,7 +6074,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.40.2"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.41.0"
             },
             "funding": [
                 {
@@ -6084,7 +6082,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-12-03T09:21:33+00:00"
+            "time": "2023-12-08T22:54:33+00:00"
         },
         {
             "name": "myclabs/deep-copy",
