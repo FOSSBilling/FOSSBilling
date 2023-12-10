@@ -25,8 +25,11 @@
 
 </div>
 
-> **Warning**
-> FOSSBilling is under active development but is currently very much beta software. This means that there may be stability or security issues and it is not yet recommended for use in active production environments! Also please be aware that we are not currently strictly following SemVer, and there may be breaking changes at any time. Be careful and make sure you read changelogs before updates!
+> [!WARNING]
+> FOSSBilling is under active development but is currently very much beta software. This means that there may be stability or security issues and it is not yet recommended for use in active production environments!
+
+> [!IMPORTANT]
+> Please be aware that we are not currently strictly following SemVer, and there may be breaking changes at any time. Be careful and make sure you read [changelogs](https://fossbilling.org/docs/changelog) before updates!
 
 **FOSSBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether a startup or established, FOSSBilling can help you to automate your invoicing, incoming payments, and client management and communication.
 
@@ -62,7 +65,7 @@ First of all, thank you for your interest, and for taking your time to contribut
 
 FOSSBilling is undergoing a revival and major code update. We are making steps forward day by day but there is still a lot of work to do, and we are happy to welcome new contributors. 
 
-We have a set of guidelines for those wishing to contribute to FOSSBilling, and we encourage you to take a look at them here: **[contributors' guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/master/CONTRIBUTING.md)**.
+We have a set of guidelines for those wishing to contribute to FOSSBilling, and we encourage you to take a look at them here: **[contributors' guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md)**.
 
 Your [pull requests](https://github.com/FOSSBilling/FOSSBilling/pulls) will be highly welcomed. If you're looking for something to start with, you can check the [open issues](https://github.com/FOSSBilling/FOSSBilling/issues) on our GitHub repository.
 
@@ -78,7 +81,7 @@ Don't hesitate to create an [issue](https://github.com/FOSSBilling/FOSSBilling/i
 
 ## Licensing
 
-FOSSBilling is open source software and is released under the Apache v2.0 license. See [LICENSE](https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE) for the full license terms.
+FOSSBilling is open source software and is released under the Apache v2.0 license. See [LICENSE](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE) for the full license terms.
 
 This product includes the following third party work:
 
