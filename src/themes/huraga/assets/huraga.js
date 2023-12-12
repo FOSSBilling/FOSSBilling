@@ -51,5 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
       label.appendChild(asterisk);
     }
   });
+
+  const currencySelector = document.querySelectorAll('select.currency_selector');
+  currencySelector.forEach(function (select) {
+    select.addEventListener('change', function () {
+      API.guest.post('cart/set_currency', {currency: select.value}, function(response) {
+        location.reload()
+      }, function(error) {
+        FOSSBilling.message(error)
+      });
+    });
+  });
 });
 

@@ -1,55 +1,55 @@
 {% if product.addons|length > 0 %}
-<hr/>
-<section>
-    <header>
-        <h2>{{ 'Addons & extras'|trans }}</h2>
-    </header>
-</section>
-<div class="row-fluid">
-        <table class="table table-sm">
-            <tbody>
-            {% for addon in product.addons %}
-            <label for="addon_{{ addon.id }}">
+    <div class="card mt-1 mb-1">
+        <div class="card-header">
+            <h5>{{ 'Addons & extras'|trans }}</h5>
+        </div>
+        <div class="card-body">
+        <table class="table table-sm table-borderless table-striped">
+        <tbody>
+          {% for addon in product.addons %}
             <tr>
-                <td>
-                    <input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
-                    <input type="form-check-input" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
-                </td>
+              <td>
+                <input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
+                <input type="checkbox" class="form-check-input" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
+              </td>
 
-                <td {% if not addon.icon_url%}style="display: none"{% endif %}>
-                    <label for="addon_{{ addon.id }}"><img src="{{ addon.icon_url }}" alt="" width="36"/></label>
-                </td>
+              <td {% if not addon.icon_url %}style="display: none"{% endif %}>
+                <label for="addon_{{ addon.id }}"><img src="{{ addon.icon_url }}" alt="" width="36" /></label>
+              </td>
 
-                <td>
-                    <label for="addon_{{ addon.id }}"><h3>{{ addon.title }}</h3></label>
-                    {{ addon.description|markdown }}
-                </td>
+              <td>
+                <label for="addon_{{ addon.id }}">
+                  <h6>{{ addon.title }}</h6>
+                </label>
+                {{ addon.description|markdown }}
+              </td>
 
-                <td class="currency">
-                    <label for="addon_{{ addon.id }}">
-                    {% if addon.pricing.type is same as('recurrent') %}
-                        {% set periods = guest.system_periods %}
-                        <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
-                        {% for code,prices in addon.pricing.recurrent %}
+              <td class="currency">
+                <label for="addon_{{ addon.id }}">
+                  {% if addon.pricing.type is same as('recurrent') %}
+                    {% set periods = guest.system_periods %}
+                    <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
+                      {% for code, prices in addon.pricing.recurrent %}
                         {% if prices.enabled %}
-                        <option value="{{code}}">{{ periods[code] }} {{ prices.price | money_convert }} {% if prices.setup != '0.00' %}{{ 'Setup:'|trans }} {{prices.setup | money_convert}}{% endif %}</option>
+                          <option value="{{ code }}">{{ periods[code] }} {{ prices.price | money_convert }} {% if prices.setup != '0.00' %}{{ 'Setup:'|trans }} {{ prices.setup | money_convert }}{% endif %}</option>
                         {% endif %}
-                        {% endfor %}
+                      {% endfor %}
                     </select>
-                    {% endif %}
+                  {% endif %}
 
-                    {% if addon.pricing.type is same as('once') %}
+                  {% if addon.pricing.type is same as('once') %}
                     {{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}
-                    {% endif %}
+                  {% endif %}
 
-                    {% if addon.pricing.type is same as('free') %}
+                  {% if addon.pricing.type is same as('free') %}
                     {{ 0 | money_convert }}
-                    {% endif %}
-                    </label>
-                </td>
+                  {% endif %}
+                </label>
+              </td>
             </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 </div>
 {% endif %}
