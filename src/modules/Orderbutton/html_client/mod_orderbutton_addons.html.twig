@@ -1,7 +1,7 @@
 {% if product.addons|length > 0 %}
     <div class="card mt-1 mb-1">
         <div class="card-header">
-            <h4>{{ 'Addons & extras'|trans }}</h4>
+            <h5>{{ 'Addons & extras'|trans }}</h5>
         </div>
         <div class="card-body">
         <table class="table table-sm table-borderless table-striped">
@@ -19,7 +19,7 @@
 
               <td>
                 <label for="addon_{{ addon.id }}">
-                  <h5>{{ addon.title }}</h5>
+                  <h6>{{ addon.title }}</h6>
                 </label>
                 {{ addon.description|markdown }}
               </td>
