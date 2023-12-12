@@ -374,7 +374,8 @@
         "debugbar",
         "reqs",
         "srcdoc",
-        "iframes"
+        "iframes",
+        "borderless"
     ],
     "ignorePaths": [
         "tests/**",
