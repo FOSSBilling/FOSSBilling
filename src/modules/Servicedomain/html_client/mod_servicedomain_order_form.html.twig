@@ -118,6 +118,7 @@
         });
 
         $('#config-next').hide();
+        $( "#config-next" ).prop( "disabled", true );
 
         if ($(".addons").length) {
             $('.order-button').one('click', function () {
@@ -138,6 +139,7 @@
         $('#transfer-check').on('click', function (event) {
             var sld = $('input[name="transfer_sld"]').val();
             var tld = $('select[name="transfer_tld"]').val();
+            $('#domain-action').val('transfer');
             var domain = sld + tld;
 
             bb.post(
@@ -161,6 +163,7 @@
             sld = sld.toLowerCase();
             var tld = $('select[name="register_tld"]').val();
             var domain = sld + tld;
+            $('#domain-action').val('register');
             bb.post(
                 'guest/servicedomain/check',
                 {sld: sld, tld: tld},
@@ -189,6 +192,7 @@
                         s.append(new Option(i + "{{ ' Year/s @ '|trans }}" + price, i));
                     }
                     $('#config-next').show();
+                    $( "#config-next" ).prop( "disabled", false );
                 }
             );
         }
@@ -199,9 +203,9 @@
                 {tld: tld},
                 function (result) {
                     var price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
-
                     $('#transfer-price').text(price);
                     $('#config-next').show();
+                    $( "#config-next" ).prop( "disabled", false );
                 }
             );
         }
