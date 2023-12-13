@@ -359,6 +359,14 @@ class UpdatePatcher implements InjectionAwareInterface
                     PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Server' . DIRECTORY_SEPARATOR . 'Manager' . DIRECTORY_SEPARATOR . 'Virtualmin.php' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
+            },
+            39 => function () {
+                // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
+                // @see https://github.com/FOSSBilling/locale/issues/212 
+                $fileActions = [
+                    PATH_LANGS . DIRECTORY_SEPARATOR . 'srp' => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
             }
         ];
         ksort($patches, SORT_NATURAL);

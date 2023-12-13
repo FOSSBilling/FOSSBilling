@@ -64,7 +64,7 @@ $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url) . '/';
 define('SYSTEM_URL', $root_url);
 const URL_INSTALL = SYSTEM_URL . 'install/';
-const URL_ADMIN = SYSTEM_URL . 'index.php?_url=/admin';
+const URL_ADMIN = SYSTEM_URL . 'admin';
 
 // Load action and initialize the installer
 $action = $_GET['a'] ?? 'index';
