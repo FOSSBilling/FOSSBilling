@@ -14,34 +14,34 @@
 	</head>
 	<body>
 		{% if logo_source is not empty %}
-			<img src='{{ logo_source }}' height='50' class='CompanyLogo'></img>
+			<img src='{{ logo_source }}' height='50' class='CompanyLogo'>
 		{% endif %}
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
-			<p>Invoice number: {{ invoice.serie_nr }}</p>
-			<p>Invoice date: {{ invoice.created_at|format_date }}</p>
-			<p>Due date: {{ invoice.due_at|format_date }}</p>
-			<p>Invoice status: {{ invoice.status|capitalize }}</p>
+			<p>{{ 'Invoice number]'|trans }}: {{ invoice.serie_nr }}</p>
+			<p>{{ 'Invoice date'|trans }}: {{ invoice.created_at|format_date }}</p>
+			<p>{{ 'Due date'|trans }}: {{ invoice.due_at|format_date }}</p>
+			<p>{{ 'Invoice status'|trans }}: {{ invoice.status|capitalize }}</p>
 		</div>
 
-		<h3 class='CompanyInfo'>Company</h3>
+		<h3 class='CompanyInfo'>{{ 'Company'|trans }}</h3>
 		<div class='CompanyInfo'>
 		<p>
 		{% for key, value in seller %}
 		{% if key == 'Name'%}<b>{% endif %}
-		{% if key == 'Phone'%} {{ "Tel"|trans}} :{% endif %}
+		{% if key == 'Phone'%} {{ "Phone"|trans}} :{% endif %}
 				{{ value }}<br>
 		{% if key == 'Name'%}</b>{% endif %}
 		{% endfor %}
 		</p>
 		</div>
 
-		<h3 class='ClientInfo'>Client</h3>
+		<h3 class='ClientInfo'>{{ 'Client'|trans }}</h3>
 		<div class='ClientInfo'>
 		<p>
 		{% for key, value in buyer %}
 		{% if key == 'Company'%}<b>{% endif %}
-		{% if key == 'Phone'%} {{ "Tel"|trans}} :{% endif %}
+		{% if key == 'Phone'%} {{ "Phone"|trans}} :{% endif %}
 				{{ value }}<br>
 		{% if key == 'Company'%}</b>{% endif %}
 		{% endfor %}
@@ -52,9 +52,9 @@
 			<table style='width:100%'>
 				<tr>
 					<th style='text-align: center; width:25px;'>#</th>
-					<th style='text-align: left'>Product</th>
-					<th style='text-align: right'>Quantity & Price</th>
-					<th style='text-align: right'>Total</th>
+					<th style='text-align: left'>{{ 'Product'|trans }}</th>
+					<th style='text-align: right'>{{ 'Quantity & Price'|trans }}</th>
+					<th style='text-align: right'>{{ 'Total'|trans }}</th>
 				</tr>
 				{% set nr = 0 %}
 				{% for item in invoice.lines %}
@@ -78,24 +78,24 @@
 				{% endif %}
 				{% if invoice.discount|default and invoice.discount > 0 %}
 					<tr>
-						<th style='text-align: right' colspan='3'>Discount:</th>
+						<th style='text-align: right' colspan='3'>{{ 'Discount'|trans }}:</th>
 						<th style='text-align: right'>{{ invoice.discount|money_convert }}</th>
 					</tr>
 				{% endif %}
 				<tr>
-					<th style='text-align: right'  colspan='3'>Total:</th>
+					<th style='text-align: right'  colspan='3'>{{ 'Total'|trans }}:</th>
 					<th style='text-align: right'>{{ invoice.total|money_convert }}</th>
 				</tr>
 			</table>
-		<p>{{ footer.signature is defined ? footer.signature : "FOSSBilling.org - Client Management, Invoice and Support Software" }}</p>
+		<p>{{ footer.signature }}</p>
 		</div>
 		<div class='InvoiceFooter'>
 		{% if footer.display_bank_info == 1 %}
-			<b>Payment details:</b><br >
+			<b>{{ 'Payment details'|trans }}:</b><br >
 			<b>{{"Account Owner"|trans}}:</b> {{ footer.company_name }} | <b>{{"Bank"|trans}}:</b> {{ footer.bank_name }} | <b>{{"BIC / SWIFT Code"|trans}}:</b> {{ footer.bic }} | <b>{{"Account number"|trans}}:</b> {{ footer.account_number }}<br><br>
 		{% endif %}
 		<b>{{ footer.company_name }}</b> {{ footer.address_1 }}, {{ footer.address_2 }}, {{ footer.address_3 }} <br ><b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>{{ 'Phone'|trans }}:</b> {{ footer.phone }}<br>
-		<b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | <b>{{ 'Company Reg. No'|trans }}:</b> {{ footer.company_number }} | <b>{{ 'Web'|trans }}: </b>{{ footer.www }}
+		{% if footer.company_vat %}<b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %} {% if footer.company_number %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %} <b>{{ 'Website'|trans }}: </b>{{ footer.www }}
 		</div>
 	</body>
 </html>
