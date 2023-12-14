@@ -10,7 +10,8 @@
 		<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
 		<title>{{ invoice.serie_nr }}</title>
 		<style>
-			{{css}}</style>
+			{{css}}
+		</style>
 	</head>
 	<body>
 		{% if logo_source is not empty %}
@@ -28,10 +29,10 @@
 		<div class='CompanyInfo'>
 		<p>
 		{% for key, value in seller %}
-		{% if key == 'Name'%}<b>{% endif %}
-		{% if key == 'Phone'%} {{ "Phone"|trans}} :{% endif %}
+		{% if key == 'Name' %}<b>{% endif %}
+		{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
 				{{ value }}<br>
-		{% if key == 'Name'%}</b>{% endif %}
+		{% if key == 'Name' %}</b>{% endif %}
 		{% endfor %}
 		</p>
 		</div>
@@ -40,10 +41,10 @@
 		<div class='ClientInfo'>
 		<p>
 		{% for key, value in buyer %}
-		{% if key == 'Company'%}<b>{% endif %}
-		{% if key == 'Phone'%} {{ "Phone"|trans}} :{% endif %}
+		{% if key == 'Company' %}<b>{% endif %}
+		{% if key == 'Phone '%} {{ 'Phone'|trans }} :{% endif %}
 				{{ value }}<br>
-		{% if key == 'Company'%}</b>{% endif %}
+		{% if key == 'Company' %}</b>{% endif %}
 		{% endfor %}
 		</p>
 		</div>
@@ -92,7 +93,7 @@
 		<div class='InvoiceFooter'>
 		{% if footer.display_bank_info == 1 %}
 			<b>{{ 'Payment details'|trans }}:</b><br >
-			<b>{{"Account Owner"|trans}}:</b> {{ footer.company_name }} | <b>{{"Bank"|trans}}:</b> {{ footer.bank_name }} | <b>{{"BIC / SWIFT Code"|trans}}:</b> {{ footer.bic }} | <b>{{"Account number"|trans}}:</b> {{ footer.account_number }}<br><br>
+			<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic }} | <b>{{ 'Account number'|trans }}:</b> {{ footer.account_number }}<br><br>
 		{% endif %}
 		<b>{{ footer.company_name }}</b> {{ footer.address_1 }}, {{ footer.address_2 }}, {{ footer.address_3 }} <br ><b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>{{ 'Phone'|trans }}:</b> {{ footer.phone }}<br>
 		{% if footer.company_vat %}<b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %} {% if footer.company_number %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %} <b>{{ 'Website'|trans }}: </b>{{ footer.www }}
