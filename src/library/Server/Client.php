@@ -12,14 +12,14 @@ class Server_Client
 {
     private $id         = NULL;
     private $email      = NULL;
-    private string $full_name  = 'FOSSBilling Client';
-    private string $company    = 'FOSSBilling';
-    private string $www        = 'www.fossbilling.org';
+    private ?string $full_name  = 'FOSSBilling Client';
+    private ?string $company    = 'FOSSBilling';
+    private ?string $www        = 'www.fossbilling.org';
     private $address_1  = NULL;
     private $address_2  = NULL;
     private $street     = NULL;
-    private string $state      = 'n/a';
-    private string $country    = 'US';
+    private ?string $state      = 'n/a';
+    private ?string $country    = 'US';
     private $city       = NULL;
     private $zip        = NULL;
     private $telephone  = NULL;
