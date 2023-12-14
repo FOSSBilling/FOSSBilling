@@ -1,73 +1,71 @@
 {% set periods = guest.system_periods %}
 {% set pricing = product.pricing %}
 {% set transfer_tlds = guest.serviceDomain_tlds({ "allow_transfer": 1 }) %}
+{% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
 <div class="d-flex mb-3">
     <nav class="nav nav-pills flex-column border-end me-3 gap-2">
-        <a class="nav-link me-3 py-1 px-2 fs-7 active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
-           role="tab" aria-controls="register-tab-pane">Register</a>
+        {% if tlds is not empty %}
+            <a class="nav-link me-3 py-1 px-2 fs-7 active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
+                role="tab" aria-controls="register-tab-pane">Register</a>
+        {% endif %}
         {% if transfer_tlds is not empty %}
-            <a class="nav-link me-3 py-1 px-2 fs-7" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
+        <a class="nav-link me-3 py-1 px-2 fs-7 {% if tlds is empty %} active {% endif %}" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
                role="tab" aria-controls="transfer-tab-pane">Transfer</a>
         {% endif %}
     </nav>
     <div class="tab-content">
-        <div class="tab-pane show active" id="register-tab-pane" role="tabpanel" aria-labelledby="register-tab"
-             tabindex="0">
-            <div class="row">
-                <div class="col-sm-12">
-                    <label class="form-label">{{ 'Register a new domain'|trans }}</label>
-                    <div class="d-flex gap-2">
-                        <div class="input-group">
-                            <input class="form-control form-control-sm w-75" type="text" name="register_sld"
-                                   value="{{ request.register_sld }}"
-                                   placeholder="{{ 'Enter new domain name to register'|trans }}">
-                            {% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
-                            <select class="form-select form-select-sm w-25" name="register_tld">
-                                {% for tld in tlds %}
-                                    <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
-                                {% endfor %}
-                            </select>
+        {% if tlds is not empty %}
+            <div class="tab-pane show active" id="register-tab-pane" role="tabpanel" aria-labelledby="register-tab" tabindex="0">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label class="form-label">{{ 'Register a new domain'|trans }}</label>
+                        <div class="d-flex gap-2">
+                            <div class="input-group">
+                                <input class="form-control form-control-sm w-75" type="text" name="register_sld"
+                                    value="{{ request.register_sld }}"
+                                    placeholder="{{ 'Enter new domain name to register'|trans }}">
+                                <select class="form-select form-select-sm w-25" name="register_tld">
+                                    {% for tld in tlds %}
+                                        <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="btn btn-sm btn-dark" type="button" id="domain-check">{{ 'Check'|trans }}</button>
                         </div>
-                        <button class="btn btn-sm btn-dark" type="button" id="domain-check">{{ 'Check'|trans }}</button>
                     </div>
-                </div>
-                <div class="c">
-                    <div class="onAfterDomainCheck" style="display:none;">
-                        <label class="mt-2">
-                            <select class="form-select form-select-sm" name="register_years" id="registration-years"></select>
-                        </label>
-                        <br/>
-                        <div class="form-check form-switch my-3">
-                            <input class="form-check-input" type="checkbox" role="switch"
-                                   id="nameserversCb">
-                            <label class="form-check-label text-sm" for="nameserversCb">
-                                {{ 'I want to use my nameservers'|trans }}
+                    <div class="c">
+                        <div class="onAfterDomainCheck" style="display:none;">
+                            <label class="mt-2">
+                                <select class="form-select form-select-sm" name="register_years" id="registration-years"></select>
                             </label>
-                        </div>
-                        <div id="nameservers" class="flex-column row" style="display:none;">
-                            <div class="mb-2 col-md-6">
-                                <input class="form-control form-control-sm" type="text" name="ns1" value=""
-                                       placeholder="{{ 'Nameserver 1'|trans }}"/>
+                            <br/>
+                            <div class="form-check form-switch my-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="nameserversCb">
+                                <label class="form-check-label text-sm" for="nameserversCb">
+                                    {{ 'I want to use my nameservers'|trans }}
+                                </label>
                             </div>
-                            <div class="mb-2 col-md-6">
-                                <input class="form-control form-control-sm" type="text" name="ns2" value=""
-                                       placeholder="{{ 'Nameserver 2'|trans }}"/>
-                            </div>
-                            <div class="mb-2 col-md-6">
-                                <input class="form-control form-control-sm" type="text" name="ns3" value=""
-                                       placeholder="{{ 'Nameserver 3'|trans }}"/>
-                            </div>
-                            <div class="mb-2 col-md-6">
-                                <input class="form-control form-control-sm" type="text" name="ns4" value=""
-                                       placeholder="{{ 'Nameserver 4'|trans }}"/>
+                            <div id="nameservers" class="flex-column row" style="display:none;">
+                                <div class="mb-2 col-md-6">
+                                    <input class="form-control form-control-sm" type="text" name="ns1" value="" placeholder="{{ 'Nameserver 1'|trans }}"/>
+                                </div>
+                                <div class="mb-2 col-md-6">
+                                    <input class="form-control form-control-sm" type="text" name="ns2" value="" placeholder="{{ 'Nameserver 2'|trans }}"/>
+                                </div>
+                                <div class="mb-2 col-md-6">
+                                    <input class="form-control form-control-sm" type="text" name="ns3" value="" placeholder="{{ 'Nameserver 3'|trans }}"/>
+                                </div>
+                                <div class="mb-2 col-md-6">
+                                    <input class="form-control form-control-sm" type="text" name="ns4" value="" placeholder="{{ 'Nameserver 4'|trans }}"/>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
         {% if transfer_tlds is not empty %}
-            <div class="tab-pane" id="transfer-tab-pane" role="tabpanel" aria-labelledby="transfer-tab" tabindex="0">
+            <div class="tab-pane {% if tlds is empty %} show active {% endif %}" id="transfer-tab-pane" role="tabpanel" aria-labelledby="transfer-tab" tabindex="0">
                 <div class="row">
                     <div class="col-sm-12">
                         <label class="form-label">{{ 'Transfer a new domain'|trans }}</label>
