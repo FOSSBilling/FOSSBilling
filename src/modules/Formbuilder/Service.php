@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -240,9 +241,18 @@ class Service implements InjectionAwareInterface
     private function fieldsJsonDecode($fields)
     {
         foreach ($fields as $key => $r) {
-            $fields[$key]['options'] = json_decode($r['options'], true);
-            $fields[$key]['default_value'] = (json_decode($r['default_value'])) ? (json_decode($r['default_value'], true)) : $r['default_value'];
-        }
+            if (!empty($r['options'])) {
+                $fields[$key]['options'] = json_decode($r['options'], true);
+            } else {
+                $fields[$key]['options'] = [];
+            }
+
+            if(!empty($r['default_value'])){
+                $fields[$key]['default_value'] = (json_decode($r['default_value'])) ? (json_decode($r['default_value'], true)) : $r['default_value'];
+            } else {
+                $fields[$key]['default_value'] = '';
+            }
+         }
 
         return $fields;
     }
