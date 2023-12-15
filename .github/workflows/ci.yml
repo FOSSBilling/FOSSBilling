@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Download Preview Release Archive'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: preview-build
           path: '/tmp'
@@ -105,7 +105,7 @@ jobs:
           SOURCE_DIR: './dist'
 
       - name: 'Upload Downloadable Preview to GitHub'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           if-no-files-found: 'error'
           name: 'FOSSBilling Preview'
