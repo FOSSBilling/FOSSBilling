@@ -81,7 +81,7 @@ jobs:
         run: tar -cvf /tmp/build.tar -C ./src/ ./
 
       - name: 'Upload Release Build Archive'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           if-no-files-found: 'error'
           name: ${{ inputs.artifact-name }}

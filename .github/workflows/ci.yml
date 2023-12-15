@@ -105,7 +105,7 @@ jobs:
           SOURCE_DIR: './dist'
 
       - name: 'Upload Downloadable Preview to GitHub'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           if-no-files-found: 'error'
           name: 'FOSSBilling Preview'
