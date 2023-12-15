@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -1545,7 +1546,7 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($sourceData as $label => $data) {
-            if (empty(trim($data))) {
+            if ($data !== null && empty(trim($data))) {
                 unset($sourceData[$label]);
             }
         }

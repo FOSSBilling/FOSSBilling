@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -420,7 +421,7 @@ class Service implements InjectionAwareInterface
 
     protected function isRouteAdmin()
     {
-        if (str_starts_with($_SERVER['REQUEST_URI'], ADMIN_PREFIX)) {
+        if (str_starts_with($_SERVER['REQUEST_URI'] ?? $_SERVER['PATH_INFO'], ADMIN_PREFIX)) {
             return true;
         }
 
