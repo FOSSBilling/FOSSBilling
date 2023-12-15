@@ -48,8 +48,8 @@
             </table>
             <hr>
             <div class="row">
-                <button class="btn btn-primary btn-small ms-3" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
-                <a class="btn btn-info btn-small ms-2" href="#reply-to">{{ 'Reply'|trans }}</a>
+                <button class="btn btn-primary btn-small ms-2 w-25" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
+                <a class="btn btn-info btn-small ms-2 w-25" href="#reply-to">{{ 'Reply'|trans }}</a>
             </div>
         </div>
         <div class="card-body">
@@ -85,7 +85,7 @@
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
                     
                     <textarea name="message" cols="5" rows="10" class="form-control" required="required" id="ticket-reply-text"></textarea>
-                    <button class="btn btn-primary btn-large" type="submit" id="submit-support-message" value="{{ 'Post'|trans }}" onclick="">{{ 'Post'|trans }}</button>
+                    <button class="btn btn-primary btn-large mt-1" type="submit" id="submit-support-message" value="{{ 'Post'|trans }}" onclick="">{{ 'Post'|trans }}</button>
                 </form>
             {% elseif ticket.status == 'closed' %}
                 <div class="alert alert-white text-center">{{ 'Ticket was closed and cannot be reopened.'|trans }}</div>
