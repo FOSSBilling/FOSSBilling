@@ -59,7 +59,15 @@ include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
-$url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+// Detect if FOSSBilling is behind a proxy server
+if(!empty($_SERVER['HTTP_X_FORWARDED_HOST'])){
+    $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
+}else{
+    $host = $_SERVER['HTTP_HOST'];
+}
+
+$url = $protocol . '://' . $host . $_SERVER['REQUEST_URI'];
 $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url) . '/';
 define('SYSTEM_URL', $root_url);
