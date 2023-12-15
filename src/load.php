@@ -33,7 +33,7 @@ function checkConfig()
     if (!$filesystem->exists(PATH_CONFIG)) {
         if ($filesystem->exists('install/index.php')) {
             // Build the base URL for the installation, including the protocol and hostname.
-            $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] == 1)) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 's' : '') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+            $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] == 1)) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 's' : '') . '://' . (!empty($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : $_SERVER['HTTP_HOST']);
 
             // Append the directory name to the base URL.
             $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
