@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@fa4a4a4882e1ac5a78980aa2dc852b2879cd9d54
+        uses: FOSSBilling/.workflows/.github/actions/php-build@8cdd61a976263ca52e1d53580c4d421d5f518369
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,7 +45,7 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@fa4a4a4882e1ac5a78980aa2dc852b2879cd9d54
+        uses: FOSSBilling/.workflows/.github/actions/php-test@8cdd61a976263ca52e1d53580c4d421d5f518369
         with:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
