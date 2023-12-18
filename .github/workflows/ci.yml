@@ -116,6 +116,7 @@ jobs:
     name: 'Build and Push Preview to Docker Hub'
     permissions:
       contents: read
+      actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
     uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@8cdd61a976263ca52e1d53580c4d421d5f518369
