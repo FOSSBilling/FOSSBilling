@@ -33,14 +33,14 @@ class Model_ActivityClientHistoryTable implements \FOSSBilling\InjectionAwareInt
 
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
-        $ip = null;
+            $ip = null;
         } else {
-        $ip = $data['ip'];
+            $ip = $data['ip'];
         }
 
         $entry = $this->di['db']->dispense('ActivityClientHistory');
         $entry->client_id       = $data['client_id'];
-        $entry->ip              = $data['ip'];
+        $entry->ip              = $ip;
         $entry->created_at      = date('Y-m-d H:i:s');
         $entry->updated_at      = date('Y-m-d H:i:s');
         $this->di['db']->store($entry);

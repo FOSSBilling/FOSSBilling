@@ -114,8 +114,6 @@ return [
      */
     'path_data' => __DIR__ . '/data',
 
-    'log_to_db' => true,
-
     'db' => [
         /*
          * Database type. Don't change this if in doubt.

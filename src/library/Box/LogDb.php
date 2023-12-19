@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,7 @@
 
 class Box_LogDb
 {
+    private array $ignoredChannels = ['billing', 'routing'];
     /**
      * Class constructor
      *
@@ -27,6 +29,11 @@ class Box_LogDb
      */
     public function write(array $event, string $channel = 'application'): void
     {
+        // TOOD: Temporary! Redo logging stuff in more depth for a major release.
+        if (in_array($channel, $this->ignoredChannels)) {
+            return;
+        }
+
         try {
             if (method_exists($this->service, 'logEvent')) {
                 $this->service->logEvent($event);
@@ -35,5 +42,4 @@ class Box_LogDb
             error_log($e);
         }
     }
-
 }

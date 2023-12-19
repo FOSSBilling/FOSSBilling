@@ -68,7 +68,7 @@ class Box_AppClient extends Box_App
         }
         $e = new \FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
-        error_log($e->getMessage());
+        $this->di['logger']->setChannel('routing')->info($e->getMessage());
         http_response_code(404);
 
         return $this->render('error', ['exception' => $e]);
@@ -82,7 +82,7 @@ class Box_AppClient extends Box_App
         try {
             $template = $this->getTwig()->load($fileName . '.' . $ext);
         } catch (Twig\Error\LoaderError $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->setChannel('routing')->info($e->getMessage());
             http_response_code(404);
             throw new \FOSSBilling\InformationException('Page not found', null, 404);
         }

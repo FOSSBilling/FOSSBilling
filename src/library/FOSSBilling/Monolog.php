@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,21 +15,25 @@ namespace FOSSBilling;
 use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
-use Monolog\Handler\StreamHandler;
+use Monolog\Handler\RotatingFileHandler;
+use Symfony\Component\Filesystem\Path;
 
 class Monolog
 {
     protected $logger = null;
-    public string $dateFormat = "d-M-Y H:i:s e";
+    public string $dateFormat = 'd-M-Y H:i:s e';
     public string $outputFormat = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
 
     public array $channels = [
-        "application",
-        "cron",
-        "database",
-        "license",
-        "mail",
-        "event"
+        'activity',
+        'application',
+        'cron',
+        'database',
+        'license',
+        'mail',
+        'event',
+        'routing',
+        'billing'
     ];
 
     public function __construct()
@@ -36,11 +42,11 @@ class Monolog
 
         foreach ($channels as $channel) {
 
-            $path = PATH_LOG . DIRECTORY_SEPARATOR . $channel . '.log';
+            $path = Path::normalize(PATH_LOG . "/$channel/" . $channel . '.log');
 
             $this->logger[$channel] = new Logger($channel);
-            $stream = new StreamHandler($path, Level::Debug);
-            $this->logger[$channel]->pushHandler($stream);
+            $rotatingHandler = new RotatingFileHandler($path, 90, Level::Debug);
+            $this->logger[$channel]->pushHandler($rotatingHandler);
 
             $formatter = new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true);
             $this->logger[$channel]->getHandlers()[0]->setFormatter($formatter);
@@ -64,14 +70,14 @@ class Monolog
     {
         // Map numeric priority to Monolog priority
         $map = [
-            \Box_Log::EMERG => Level::Emergency->value,
-            \Box_Log::ALERT => Level::Alert->value,
-            \Box_Log::CRIT => Level::Critical->value,
-            \Box_Log::ERR => Level::Error->value,
-            \Box_Log::WARN => Level::Warning->value,
+            \Box_Log::EMERG  => Level::Emergency->value,
+            \Box_Log::ALERT  => Level::Alert->value,
+            \Box_Log::CRIT   => Level::Critical->value,
+            \Box_Log::ERR    => Level::Error->value,
+            \Box_Log::WARN   => Level::Warning->value,
             \Box_Log::NOTICE => Level::Notice->value,
-            \Box_Log::INFO => Level::Info->value,
-            \Box_Log::DEBUG => Level::Debug->value,
+            \Box_Log::INFO   => Level::Info->value,
+            \Box_Log::DEBUG  => Level::Debug->value,
         ];
 
         return $map[$priority] ?? Level::Debug->value;

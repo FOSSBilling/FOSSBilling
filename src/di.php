@@ -50,25 +50,20 @@ $di['logger'] = function () use ($di) {
     $log = new Box_Log();
     $log->setDi($di);
 
-    $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
+    $activity_service = $di['mod_service']('activity');
+    $dbWriter = new Box_LogDb($activity_service);
+    $log->addWriter($dbWriter);
 
-    if ($log_to_db) {
-        $activity_service = $di['mod_service']('activity');
-        $writer2 = new Box_LogDb($activity_service);
-
-        if ($di['auth']->isAdminLoggedIn()) {
-            $admin = $di['loggedin_admin'];
-            $log->setEventItem('admin_id', $admin->id);
-        } elseif ($di['auth']->isClientLoggedIn()) {
-            $client = $di['loggedin_client'];
-            $log->setEventItem('client_id', $client->id);
-        }
-
-        $log->addWriter($writer2);
-    } else {
-        $monolog = new \FOSSBilling\Monolog();
-        $log->addWriter($monolog);
+    if ($di['auth']->isAdminLoggedIn()) {
+        $admin = $di['loggedin_admin'];
+        $log->setEventItem('admin_id', $admin->id);
+    } elseif ($di['auth']->isClientLoggedIn()) {
+        $client = $di['loggedin_client'];
+        $log->setEventItem('client_id', $client->id);
     }
+
+    $monolog = new \FOSSBilling\Monolog();
+    $log->addWriter($monolog);
 
     return $log;
 };
