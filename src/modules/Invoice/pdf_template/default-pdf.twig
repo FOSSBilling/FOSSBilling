@@ -19,7 +19,7 @@
 		{% endif %}
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
-			<p>{{ 'Invoice number]'|trans }}: {{ invoice.serie_nr }}</p>
+			<p>{{ 'Invoice number'|trans }}: {{ invoice.serie_nr }}</p>
 			<p>{{ 'Invoice date'|trans }}: {{ invoice.created_at|format_date }}</p>
 			<p>{{ 'Due date'|trans }}: {{ invoice.due_at|format_date }}</p>
 			<p>{{ 'Invoice status'|trans }}: {{ invoice.status|capitalize }}</p>
