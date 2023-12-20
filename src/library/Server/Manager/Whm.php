@@ -389,7 +389,7 @@ class Server_Manager_Whm extends Server_Manager
         $client = $this->getHttpClient()->withOptions([
             'verify_peer'   => false,
             'verify_host'   => false,
-            'timeout'       => 30
+            'timeout'       => 90 // Account creation can timeout if set too low - see #1086.
         ]);
 
         $url =  ($this->_config['secure'] ? 'https' : 'http') . '://' . $this->_config['host'] . ':' . $this->_config['port'] . '/json-api/' . $action;
