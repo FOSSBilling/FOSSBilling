@@ -49,7 +49,7 @@
                         </form>
                     </div>
                     <div class="tab-pane" id="sign-up" role="tabpanel" aria-labelledby="up-tab" tabindex="0">
-                        <form action="{{ 'api/guest/client/create'|link }}" method="post" data-api-jsonp="onAccountCreate">
+                        <form class="api-form" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-jsonp="onAccountCreate">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% set r = guest.client_required %}
                             <div class="row">
