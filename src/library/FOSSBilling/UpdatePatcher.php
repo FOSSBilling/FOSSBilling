@@ -85,7 +85,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs'];
+        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
         ];

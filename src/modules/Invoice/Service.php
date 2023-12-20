@@ -561,7 +561,7 @@ class Service implements InjectionAwareInterface
 
         if (abs($balance - $required) < $epsilon) {
             if (DEBUG) {
-                error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
+                $this->di['logger']->setChannel('billing')->info(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
 
@@ -570,14 +570,14 @@ class Service implements InjectionAwareInterface
 
         if ($balance - $required > 0.00001) {
             if (DEBUG) {
-                error_log(sprintf('Setting invoice %s as paid with credits', $invoice->id));
+                $this->di['logger']->setChannel('billing')->info(sprintf('Setting invoice %s as paid with credits', $invoice->id));
             }
             $this->markAsPaid($invoice);
 
             return true;
         }
         if (DEBUG) {
-            error_log(sprintf('Invoice %s could not be paid with credits. Money in balance %s Required: %s', $invoice->id, $balance, $required));
+            $this->di['logger']->setChannel('billing')->info(sprintf('Invoice %s could not be paid with credits. Money in balance %s Required: %s', $invoice->id, $balance, $required));
         }
     }
 
