@@ -31,7 +31,7 @@ abstract class Registrar_AdapterAbstract
      * 
      * @return array
      */
-    public static function getConfig()
+    public static function getConfig(): never
     {
         throw new Registrar_Exception('Domain registrar class did not implement configuration options method', 749);
     }

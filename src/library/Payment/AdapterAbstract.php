@@ -85,7 +85,7 @@ abstract class Payment_AdapterAbstract
      *
      * @return array
      */
-    public static function getConfig()
+    public static function getConfig(): never
     {
         throw new Payment_Exception('Payment adapter class did not implement configuration options method', array(), 749);
     }
