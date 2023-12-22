@@ -9,7 +9,7 @@
  */
 
 abstract class Registrar_AdapterAbstract
-{    
+{
     protected $_log = null;
 
     /**
@@ -20,7 +20,7 @@ abstract class Registrar_AdapterAbstract
     protected $_testMode = false;
 
     /**
-    * Related order
+     * Related order
      */
     protected ?\Model_ClientOrder $_order = null;
 
@@ -31,10 +31,7 @@ abstract class Registrar_AdapterAbstract
      * 
      * @return array
      */
-    public static function getConfig(): never
-    {
-        throw new Registrar_Exception('Domain registrar class did not implement configuration options method', 749);
-    }
+    abstract public static function getConfig();
 
     /**
      * Returns an array of top-level domains (TLDs) that the registrar is capable of registering.
