@@ -32,20 +32,42 @@ class App
 
     protected array $mappings = [];
     protected array $shared = [];
-    protected Request $request;
+    protected ArrayObject $options;
+    protected ?Container $di = null;
+    protected string $ext = 'html.twig';
+    protected string $requestPath = '/';
     protected StandardDebugBar $debugBar;
-    protected string $mod = 'index';
-    protected string $url = '/';
-    protected string $path;
 
     protected string $uri;
 
-    public function __construct(null|StandardDebugBar $debugBar = null)
+    /**
+     * Constructor for the App class.
+     *
+     * @param Request $request
+     * @param StandardDebugBar|null $debugBar
+     */
+    public function __construct(Request $request, ?StandardDebugBar $debugBar = null)
     {
-        $this->request = Request::createFromGlobals();
-        $this->path = (!$this->request->getPathInfo()) ? '/' : $this->request->getPathInfo();
-        $this->context = $this->detectContext($this->path);
-        $this->debugBar = (!$debugBar) ? new StandardDebugBar : $debugBar;
+        $this->request = $request;
+
+        // Set the app context based on the request path.
+        $this->requestPath = $request->getPathInfo() ?: '/';
+        if (str_starts_with($this->requestPath, ADMIN_PREFIX)) {
+            define('ADMIN_AREA', true);
+            $this->appContext = 'admin';
+            $this->requestPath = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $this->requestPath)); // ????
+        } elseif (str_starts_with($this->requestPath, '/api/')) {
+            $this->appContext = 'api';
+        } else {
+            $this->appContext = 'client';
+        }
+
+        // TODO: Replace ASAP with a more robust solution rewriting path - workaround for custom pages stored in database.
+        if (str_starts_with($this->requestPath, '/page/')) {
+            $url = substr_replace($this->requestPath, '/custompages/', 0, 6);
+        }
+
+        $this->debugBar = (!$debugBar) ? new StandardDebugBar() : $debugBar;
     }
 
     public function setDi(Container $di): void
@@ -53,110 +75,12 @@ class App
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDebugBar(): StandardDebugBar
     {
-        return $this->di;
+        return $this->debugBar;
     }
 
-    /**
-     * Detect the current application context from given path.
-     *
-     * @param string $path The path requested.
-     *
-     * @return AppContext The detected application context.
-     */
-    protected function detectContext(string $path): AppContext
-    {
-        $adminPrefix = ADMIN_PREFIX;
-        $apiPrefix = '/api';
-        $installPrefix = '/install';
-
-        if (strncasecmp($path, $adminPrefix, strlen($adminPrefix)) === 0) {
-            $this->context = AppContext::ADMIN;
-        } elseif (strncasecmp($path, $apiPrefix, strlen($apiPrefix)) === 0) {
-            $this->context = AppContext::API;
-        } elseif (strncasecmp($path, $installPrefix, strlen($installPrefix)) === 0) {
-            $this->context = AppContext::INSTALL;
-        } else {
-            $this->context = AppContext::CLIENT;
-        }
-
-        return $this->context;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /* OLD FUNCTIONS/TBD BELOW HERE */
-
-    public function setUrl(string $url)
-    {
-        $this->url = $url;
-    }
-
-    protected function init()
-    {
-        $module = $this->di['mod']($this->mod);
-
-        if ($this->context == AppContext::ADMIN) {
-            $controller = $module->getAdminController();
-
-            if (!is_null($controller)) {
-                $controller->register($this);
-            }
-        } else {
-            $module->registerClientRoutes($this);
-
-            if ('api' == $this->mod) {
-                define('API_MODE', true);
-
-                // Prevent errors from being displayed in API mode as it can cause invalid JSON to be returned.
-                ini_set('display_errors', '0');
-                ini_set('display_startup_errors', '0');
-            } else {
-                $extensionService = $this->di['mod_service']('extension');
-                if ($extensionService->isExtensionActive('mod', 'redirect')) {
-                    $module = $this->di['mod']('redirect');
-                    $module->registerClientRoutes($this);
-                }
-
-                // init index module manually
-                $this->get('', 'get_index');
-                $this->get('/', 'get_index');
-
-                // init custom methods for undefined pages
-                $this->get('/:page', 'get_custom_page', ['page' => '[a-z0-9-/.//]+']);
-                $this->post('/:page', 'get_custom_page', ['page' => '[a-z0-9-/.//]+']);
-            }
-        }
-    }
-
-    protected function checkPermission()
-    {
-        if ($this->context == AppContext::ADMIN) {
-            $service = $this->di['mod_service']('Staff');
-
-            if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
-                http_response_code(403);
-                $e = new InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
-                echo $this->render('error', ['exception' => $e]);
-                exit;
-            }
-        }
-    }
-
-    protected function registerModule()
+    protected function registerModule(): void
     {
         // bind module urls and process
         // determine module and bind urls
@@ -634,64 +558,6 @@ class App
             }
         }
 
-        $twig->setLoader($loader);
-        $twig->addExtension(new DebugBar($this->debugBar));
-
-        if ($this->di['auth']->isClientLoggedIn()) {
-            $twig->addGlobal('client', $this->di['api_client']);
-        }
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
-
-        return $twig;
-    }
-
-    public function get_index()
-    {
-        return $this->render('mod_index_dashboard');
-    }
-
-    public function get_custom_page($page)
-    {
-        if (str_contains($page, '.')) {
-            $page = substr($page, 0, strpos($page, '.'));
-        }
-        $page = str_replace('/', '_', $page);
-        $tpl = 'mod_page_' . $page;
-        try {
-            return $this->render($tpl, ['post' => $_POST]);
-        } catch (Exception $e) {
-            if (DEBUG) {
-                error_log($e->getMessage());
-            }
-        }
-        $e = new InformationException('Page :url not found', [':url' => $this->url], 404);
-
-        $this->di['logger']->setChannel('routing')->info($e->getMessage());
-        http_response_code(404);
-
-        return $this->render('error', ['exception' => $e]);
-    }
-
-    public function sendFile($filename, $contentType, $path)
-    {
-        header("Content-type: $contentType");
-        header("Content-Disposition: attachment; filename=$filename");
-
-        return readfile($path);
-    }
-
-    public function sendDownload($filename, $path)
-    {
-        header('Content-Type: application/force-download');
-        header('Content-Type: application/octet-stream');
-        header('Content-Type: application/download');
-        header('Content-Description: File Transfer');
-        header("Content-Disposition: attachment; filename=$filename" . ';');
-        header('Content-Transfer-Encoding: binary');
-
-        return readfile($path);
+        $twig->addExtension(new DebugBar($this->getDebugBar()));
     }
 }

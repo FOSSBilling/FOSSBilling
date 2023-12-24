@@ -41,7 +41,7 @@ class Service implements InjectionAwareInterface
     public function getPairs(): array
     {
         $themeService = $this->di['mod_service']('theme');
-        $code = $themeService->getCurrentClientAreaThemeCode();
+        $code = $themeService->getCurrentClientAreaTheme()->getName();
         $paths = [
             PATH_THEMES . DIRECTORY_SEPARATOR . $code . DIRECTORY_SEPARATOR . 'html' . DIRECTORY_SEPARATOR,
             PATH_MODS . DIRECTORY_SEPARATOR . 'mod_page' . DIRECTORY_SEPARATOR . 'html_client' . DIRECTORY_SEPARATOR,
