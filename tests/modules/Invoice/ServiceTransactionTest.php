@@ -244,44 +244,44 @@ class ServiceTransactionTest extends \BBTestCase
 
     public static function searchQueryData()
     {
-        return array(
-            array(
-                array(), array(), 'SELECT m.*',
-            ),
-            array(
-                array('search' => 'keyword'), array('note' => '%keyword%', 'search__invoice_id' => '%keyword%', 'search_txn_id' => '%keyword%', 'ipn' => '%keyword%'), 'AND m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn',
-            ),
-            array(
-                array('invoice_hash' => 'hashString'), array('hash' => 'hashString'), 'AND i.hash = :hash',
-            ),
-            array(
-                array('invoice_id' => '1'), array('invoice_id' => '1'), 'AND m.invoice_id = :invoice_id',
-            ),
-            array(
-                array('gateway_id' => '2'), array('gateway_id' => '2'), 'AND m.gateway_id = :gateway_id',
-            ),
-            array(
-                array('client_id' => '3'), array('client_id' => '3'), 'AND i.client_id = :client_id',
-            ),
-            array(
-                array('status' => 'active'), array('status' => 'active'), 'AND m.status = :status',
-            ),
-            array(
-                array('currency' => 'Eur'), array('currency' => 'Eur'), 'AND m.currency = :currency',
-            ),
-            array(
-                array('type' => 'payment'), array('type' => 'payment'), 'AND m.type = :type',
-            ),
-            array(
-                array('txn_id' => 'longTxn_id'), array('txn_id' => 'longTxn_id'), 'AND m.txn_id = :txn_id',
-            ),
-            array(
-                array('date_from' => '2012-12-12'), array('date_from' => 1_355_270_400), 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
-            ),
-            array(
-                array('date_to' => '2012-12-12'), array('date_to' => 1_355_270_400), 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
-            ),
-        );
+        return [
+            [
+                [], [], 'SELECT m.*',
+            ],
+            [
+                ['search' => 'keyword'], ['note' => '%keyword%', 'search_invoice_id' => '%keyword%', 'search_txn_id' => '%keyword%', 'ipn' => '%keyword%'], 'AND m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn',
+            ],
+            [
+                ['invoice_hash' => 'hashString'], ['hash' => 'hashString'], 'AND i.hash = :hash',
+            ],
+            [
+                ['invoice_id' => '1'], ['invoice_id' => '1'], 'AND m.invoice_id = :invoice_id',
+            ],
+            [
+                ['gateway_id' => '2'], ['gateway_id' => '2'], 'AND m.gateway_id = :gateway_id',
+            ],
+            [
+                ['client_id' => '3'], ['client_id' => '3'], 'AND i.client_id = :client_id',
+            ],
+            [
+                ['status' => 'active'], ['status' => 'active'], 'AND m.status = :status',
+            ],
+            [
+                ['currency' => 'Eur'], ['currency' => 'Eur'], 'AND m.currency = :currency',
+            ],
+            [
+                ['type' => 'payment'], ['type' => 'payment'], 'AND m.type = :type',
+            ],
+            [
+                ['txn_id' => 'longTxn_id'], ['txn_id' => 'longTxn_id'], 'AND m.txn_id = :txn_id',
+            ],
+            [
+                ['date_from' => '2012-12-12'], ['date_from' => 1_355_270_400], 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
+            ],
+            [
+                ['date_to' => '2012-12-12'], ['date_to' => 1_355_270_400], 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
@@ -300,7 +300,7 @@ class ServiceTransactionTest extends \BBTestCase
 
     public function testcounter()
     {
-        $queryResult = array(array('status' => \Model_Transaction::STATUS_RECEIVED, 'counter' => 1));
+        $queryResult = [['status' => \Model_Transaction::STATUS_RECEIVED, 'counter' => 1]];
         $dbMock      = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
@@ -327,12 +327,12 @@ class ServiceTransactionTest extends \BBTestCase
         $result = $this->service->getStatusPairs();
         $this->assertIsArray($result);
 
-        $expected = array(
+        $expected = [
             'received'  => 'Received',
             'approved'  => 'Approved',
             'processed' => 'Processed',
             'error'     => 'Error'
-        );
+        ];
         $this->assertEquals($expected, $result);
     }
 
