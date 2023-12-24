@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -280,12 +282,12 @@ class Tools
      * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
      * In a testing / development environment it will only check the RFC standards.
      */
-    public function validateAndSanitizeEmail(string $email, bool $throw = true)
+    public function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true)
     {
         $email = htmlspecialchars($email);
 
         $validator = new EmailValidator();
-        if (Environment::isProduction()) {
+        if (Environment::isProduction() && $checkDNS) {
             $validations = new MultipleValidationWithAnd([
                 new RFCValidation(),
                 new DNSCheckValidation()
