@@ -4,6 +4,14 @@
 	{% set top = 325 + (25 * seller_lines) %}
 {% endif %}
 
+{% set address_lines = [] %}
+	{% for line in [footer.address_1, footer.address_2, footer.address_3] %}
+		{% if line|length > 0 %}
+			{% set address_lines = address_lines|merge([line]) %}
+		{% endif %}
+	{% endfor %}
+{% set address = address_lines|join(',') %}
+
 <!DOCTYPE html>
 <html>
 	<head>
@@ -91,12 +99,18 @@
 		<p>{{ footer.signature }}</p>
 		</div>
 		<div class='InvoiceFooter'>
-		{% if footer.display_bank_info == 1 %}
-			<b>{{ 'Payment details'|trans }}:</b><br >
-			<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic }} | <b>{{ 'Account number'|trans }}:</b> {{ footer.account_number }}<br><br>
-		{% endif %}
-		<b>{{ footer.company_name }}</b> {{ footer.address_1 }}, {{ footer.address_2 }}, {{ footer.address_3 }} <br ><b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>{{ 'Phone'|trans }}:</b> {{ footer.phone }}<br>
-		{% if footer.company_vat %}<b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %} {% if footer.company_number %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %} <b>{{ 'Website'|trans }}: </b>{{ footer.www }}
+			{% if footer.display_bank_info == 1 %}
+				<b>{{ 'Payment details'|trans }}:</b><br >
+				<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic }} | <b>{{ 'Account number'|trans }}:</b> {{ footer.account_number }}<br><br>
+			{% endif %}
+
+			<b>{{ footer.company_name }}</b>
+			{% if address %} {{ address }} <br> {% endif %}
+			<b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>
+			{% if footer.phone %} {{ 'Phone'|trans }}:</b> {{ footer.phone }}<br> {% endif %}
+			{% if footer.company_vat %} <b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %}
+			{% if footer.company_number %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %}
+			<b>{{ 'Website'|trans }}: </b>{{ footer.www }}
 		</div>
 	</body>
 </html>
