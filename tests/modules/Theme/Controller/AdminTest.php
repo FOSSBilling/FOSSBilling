@@ -19,7 +19,7 @@ class AdminTest extends \BBTestCase
 
     public function testregister()
     {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock = $this->getMockBuilder('\FOSSBilling\App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->exactly(1))
             ->method('get');
 
@@ -29,7 +29,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetTheme()
     {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock = $this->getMockBuilder('\FOSSBilling\App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_theme_preset')

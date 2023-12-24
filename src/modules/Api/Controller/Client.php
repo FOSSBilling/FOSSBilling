@@ -33,7 +33,7 @@ class Client implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
         $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
@@ -43,21 +43,21 @@ class Client implements InjectionAwareInterface
         $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
-    public function show_error(\Box_App $app, $page)
+    public function show_error(\FOSSBilling\App $app, $page)
     {
         $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
 
         return $this->renderJson(null, $exc);
     }
 
-    public function get_method(\Box_App $app, $role, $class, $method)
+    public function get_method(\FOSSBilling\App $app, $role, $class, $method)
     {
         $call = $class . '_' . $method;
 
         return $this->tryCall($role, $call, $_GET);
     }
 
-    public function post_method(\Box_App $app, $role, $class, $method)
+    public function post_method(\FOSSBilling\App $app, $role, $class, $method)
     {
         $p = $_POST;
 

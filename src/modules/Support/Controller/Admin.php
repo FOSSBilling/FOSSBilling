@@ -80,7 +80,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $nav;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/support', 'get_index', [], static::class);
         $app->get('/support/', 'get_index', [], static::class);
@@ -102,14 +102,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_tickets');
     }
 
-    public function get_ticket(\Box_App $app, $id, $messageid = '')
+    public function get_ticket(\FOSSBilling\App $app, $id, $messageid = '')
     {
         $api = $this->di['api_admin'];
         $ticket = $api->support_ticket_get(['id' => $id]);
@@ -136,14 +136,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_ticket', ['ticket' => $ticket, 'canned_delay_message' => $cdm, 'request_message' => $messageid]);
     }
 
-    public function get_public_tickets(\Box_App $app)
+    public function get_public_tickets(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_public_tickets');
     }
 
-    public function get_public_ticket(\Box_App $app, $id)
+    public function get_public_ticket(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $ticket = $api->support_public_ticket_get(['id' => $id]);
@@ -151,7 +151,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_public_ticket', ['ticket' => $ticket]);
     }
 
-    public function get_helpdesk(\Box_App $app, $id)
+    public function get_helpdesk(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $helpdesk = $api->support_helpdesk_get(['id' => $id]);
@@ -159,21 +159,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_helpdesk', ['helpdesk' => $helpdesk]);
     }
 
-    public function get_helpdesks(\Box_App $app)
+    public function get_helpdesks(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_helpdesks');
     }
 
-    public function get_canned_list(\Box_App $app)
+    public function get_canned_list(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_canned_responses');
     }
 
-    public function get_canned(\Box_App $app, $id)
+    public function get_canned(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $c = $api->support_canned_get(['id' => $id]);
@@ -181,7 +181,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_canned_response', ['response' => $c]);
     }
 
-    public function get_canned_cat(\Box_App $app, $id)
+    public function get_canned_cat(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $c = $api->support_canned_category_get(['id' => $id]);
@@ -192,14 +192,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     /*
     * Support Knowledge Base.
     */
-    public function get_kb_index(\Box_App $app)
+    public function get_kb_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_kb_index');
     }
 
-    public function get_kb_article(\Box_App $app, $id)
+    public function get_kb_article(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $post = $api->support_kb_article_get(['id' => $id]);
@@ -207,7 +207,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_kb_article', ['post' => $post]);
     }
 
-    public function get_kb_category(\Box_App $app, $id)
+    public function get_kb_category(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $cat = $api->support_kb_category_get(['id' => $id]);

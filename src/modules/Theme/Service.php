@@ -245,16 +245,10 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentClientAreaTheme()
     {
-        $code = $this->getCurrentClientAreaThemeCode();
-
-        return $this->getTheme($code);
-    }
-
-    public function getCurrentClientAreaThemeCode()
-    {
         $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
+        !empty($theme) ? $theme : 'huraga';
 
-        return !empty($theme) ? $theme : 'huraga';
+        return new \Box\Mod\Theme\Model\Theme($theme);
     }
 
     public function getThemes($client = true)
@@ -286,7 +280,7 @@ class Service implements InjectionAwareInterface
     {
         if ($client) {
             $default = 'huraga';
-            $theme = $this->getCurrentClientAreaThemeCode();
+            $theme = $this->getCurrentClientAreaTheme()->getName();
         } else {
             $default = 'admin_default';
             $systemService = $this->di['mod_service']('system');

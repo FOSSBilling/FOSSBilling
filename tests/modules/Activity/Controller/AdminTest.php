@@ -37,7 +37,7 @@ class AdminTest extends \BBTestCase
 
     public function testregister()
     {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock = $this->getMockBuilder('\FOSSBilling\App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('/activity', 'get_index', [], \Box\Mod\Activity\Controller\Admin::class);
@@ -48,7 +48,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetIndex()
     {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock = $this->getMockBuilder('\FOSSBilling\App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_activity_index');

@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,33 +9,32 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\StandardDebugBar;
-use FOSSBilling\InjectionAwareInterface;
+namespace FOSSBilling;
 
-class Box_App
+use DebugBar\Bridge\NamespacedTwigProfileCollector;
+use DebugBar\StandardDebugBar;
+use FOSSBilling\Enums\AppContext;
+use FOSSBilling\TwigExtensions\DebugBar;
+use Twig\Profiler\Profile;
+use Twig\Error\LoaderError;
+use Twig\Extension\ProfilerExtension;
+
+class App implements InjectionAwareInterface
 {
-    protected $mappings = [];
-    protected $before_filters = [];
-    protected $after_filters = [];
-    protected $shared = [];
-    protected $options;
     protected ?\Pimple\Container $di = null;
-    protected $ext = 'html.twig';
-    protected $mod = 'index';
-    protected $url = '/';
+    protected AppContext $context;
+    protected array $mappings = [];
+    protected array $shared = [];
     protected StandardDebugBar $debugBar;
+    protected string $mod = 'index';
+    protected string $url = '/';
 
     public $uri;
 
-    public function __construct($options = [], StandardDebugBar $debugBar = null)
+    public function __construct(null|AppContext $context, null|StandardDebugBar $debugBar = null)
     {
-        $this->options = new ArrayObject($options);
-
-        if (!$debugBar) {
-            $this->debugBar = new StandardDebugBar();
-        } else {
-            $this->debugBar = $debugBar;
-        }
+        $this->context = (!$context) ? AppContext::CLIENT : $context;
+        $this->debugBar = (!$debugBar) ? new StandardDebugBar : $debugBar;
     }
 
     public function setDi(Pimple\Container $di): void
@@ -43,9 +42,65 @@ class Box_App
         $this->di = $di;
     }
 
-    public function setUrl($url)
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
+
+    public function setUrl(string $url)
     {
         $this->url = $url;
+    }
+
+    protected function init()
+    {
+        $module = $this->di['mod']($this->mod);
+
+        if ($this->context == AppContext::ADMIN) {
+            $controller = $module->getAdminController();
+
+            if (!is_null($controller)) {
+                $controller->register($this);
+            }
+        } else {
+            $module->registerClientRoutes($this);
+
+            if ('api' == $this->mod) {
+                define('API_MODE', true);
+
+                // Prevent errors from being displayed in API mode as it can cause invalid JSON to be returned.
+                ini_set('display_errors', '0');
+                ini_set('display_startup_errors', '0');
+            } else {
+                $extensionService = $this->di['mod_service']('extension');
+                if ($extensionService->isExtensionActive('mod', 'redirect')) {
+                    $module = $this->di['mod']('redirect');
+                    $module->registerClientRoutes($this);
+                }
+
+                // init index module manually
+                $this->get('', 'get_index');
+                $this->get('/', 'get_index');
+
+                // init custom methods for undefined pages
+                $this->get('/:page', 'get_custom_page', ['page' => '[a-z0-9-/.//]+']);
+                $this->post('/:page', 'get_custom_page', ['page' => '[a-z0-9-/.//]+']);
+            }
+        }
+    }
+
+    protected function checkPermission()
+    {
+        if ($this->context == AppContext::ADMIN) {
+            $service = $this->di['mod_service']('Staff');
+
+            if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
+                http_response_code(403);
+                $e = new InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
+                echo $this->render('error', ['exception' => $e]);
+                exit;
+            }
+        }
     }
 
     public function getDebugBar(): StandardDebugBar
@@ -75,14 +130,6 @@ class Box_App
 
         $this->mod = $mod;
         $this->uri = $requestUri;
-    }
-
-    protected function init()
-    {
-    }
-
-    protected function checkPermission()
-    {
     }
 
     public function show404(Exception $e)
@@ -123,46 +170,6 @@ class Box_App
         $this->event('delete', $url, $methodName, $conditions, $class);
     }
 
-    public function before($methodName, $filterName)
-    {
-        $this->push_filter($this->before_filters, $methodName, $filterName);
-    }
-
-    public function after($methodName, $filterName)
-    {
-        $this->push_filter($this->after_filters, $methodName, $filterName);
-    }
-
-    protected function push_filter(&$arr_filter, $methodName, $filterName)
-    {
-        if (!is_array($methodName)) {
-            $methodName = explode('|', $methodName);
-        }
-
-        $counted = count($methodName);
-        for ($i = 0; $i < $counted; ++$i) {
-            $method = $methodName[$i];
-            if (!isset($arr_filter[$method])) {
-                $arr_filter[$method] = [];
-            }
-            $arr_filter[$method][] = $filterName;
-        }
-    }
-
-    protected function run_filter($arr_filter, $methodName)
-    {
-        if (isset($arr_filter[$methodName])) {
-            $counted = is_countable($arr_filter[$methodName]) ? count($arr_filter[$methodName]) : 0;
-            for ($i = 0; $i < $counted; ++$i) {
-                $return = call_user_func([$this, $arr_filter[$methodName][$i]]);
-
-                if (!is_null($return)) {
-                    return $return;
-                }
-            }
-        }
-    }
-
     public function run()
     {
         $this->debugBar['time']->startMeasure('registerModule', 'Registering module routes');
@@ -185,7 +192,12 @@ class Box_App
      */
     public function redirect($path): never
     {
-        $location = $this->di['url']->link($path);
+        if ($this->context == AppContext::ADMIN) {
+            $location = $this->di['url']->adminLink($path);
+        } else {
+            $location = $this->di['url']->link($path);
+        }
+
         header("Location: $location");
         exit;
     }
@@ -193,29 +205,17 @@ class Box_App
     /**
      * @param string $fileName
      */
-    public function render($fileName, $variableArray = [])
+    public function render(string $fileName, array $variableArray = [])
     {
-        echo 'Rendering ' . $fileName;
-    }
+        try {
+            $template = $this->getTwig()->load($fileName . '.html.twig');
+        } catch (LoaderError $e) {
+            $this->di['logger']->setChannel('routing')->info($e->getMessage());
+            http_response_code(404);
+            throw new InformationException('Page not found', null, 404);
+        }
 
-    public function sendFile($filename, $contentType, $path)
-    {
-        header("Content-type: $contentType");
-        header("Content-Disposition: attachment; filename=$filename");
-
-        return readfile($path);
-    }
-
-    public function sendDownload($filename, $path)
-    {
-        header('Content-Type: application/force-download');
-        header('Content-Type: application/octet-stream');
-        header('Content-Type: application/download');
-        header('Content-Description: File Transfer');
-        header("Content-Disposition: attachment; filename=$filename" . ';');
-        header('Content-Transfer-Encoding: binary');
-
-        return readfile($path);
+        return $template->render($variableArray);
     }
 
     protected function executeShared($classname, $methodName, $params)
@@ -225,7 +225,7 @@ class Box_App
         if ($class instanceof InjectionAwareInterface) {
             $class->setDi($this->di);
         }
-        $reflection = new ReflectionMethod($class::class, $methodName);
+        $reflection = new \ReflectionMethod($class::class, $methodName);
         $args = [];
         $args[] = $this; // first param always app instance
 
@@ -244,12 +244,8 @@ class Box_App
     protected function execute($methodName, $params, $classname = null)
     {
         $this->debugBar['time']->startMeasure('execute', 'Reflecting module controller');
-        $return = $this->run_filter($this->before_filters, $methodName);
-        if (!is_null($return)) {
-            return $return;
-        }
 
-        $reflection = new ReflectionMethod(static::class, $methodName);
+        $reflection = new \ReflectionMethod(static::class, $methodName);
         $args = [];
 
         foreach ($reflection->getParameters() as $param) {
@@ -263,11 +259,6 @@ class Box_App
         $this->debugBar['time']->stopMeasure('execute');
 
         $response = $reflection->invokeArgs($this, $args);
-
-        $return = $this->run_filter($this->after_filters, $methodName);
-        if (!is_null($return)) {
-            return $return;
-        }
 
         return $response;
     }
@@ -377,9 +368,9 @@ class Box_App
                 // Set response code to 503.
                 header('HTTP/1.0 503 Service Unavailable');
 
-                if ($this->mod == 'api') {
-                    $exc = new FOSSBilling\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
-                    $apiController = new Box\Mod\Api\Controller\Client();
+                if ('api' == $this->mod) {
+                    $exc = new InformationException('The system is undergoing maintenance. Please try again later', [], 503);
+                    $apiController = new \Box\Mod\Api\Controller\Client;
                     $apiController->setDi($this->di);
 
                     return $apiController->renderJson(null, $exc);
@@ -393,7 +384,7 @@ class Box_App
         $sharedCount = count($this->shared);
         for ($i = 0; $i < $sharedCount; ++$i) {
             $mapping = $this->shared[$i];
-            $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
+            $url = new \Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
                 $this->debugBar['time']->stopMeasure('sharedMapping');
 
@@ -407,7 +398,7 @@ class Box_App
         $mappingsCount = count($this->mappings);
         for ($i = 0; $i < $mappingsCount; ++$i) {
             $mapping = $this->mappings[$i];
-            $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
+            $url = new \Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
                 $this->debugBar['time']->stopMeasure('mapping');
 
@@ -419,5 +410,106 @@ class Box_App
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         return $this->show404($e);
+    }
+
+    protected function getTwig()
+    {
+        $service = $this->di['mod_service']('theme');
+        $twig = $this->di['twig'];
+
+        if ($this->context == AppContext::ADMIN) {
+            $theme = $service->getCurrentAdminAreaTheme();
+            $loader = new \Box_TwigLoader(
+                [
+                    'mods' => PATH_MODS,
+                    'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . $theme['code'],
+                    'type' => 'admin',
+                ]
+            );
+
+            $twig->addGlobal('theme', $theme);
+        } else {
+            $theme = $service->getCurrentClientAreaTheme();
+            $settings = $service->getThemeSettings($theme);
+            $loader = new \Box_TwigLoader(
+                [
+                    'mods' => PATH_MODS,
+                    'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . $theme->getName(),
+                    'type' => 'client',
+                ]
+            );
+
+            $twig->addGlobal('current_theme', $theme->getName());
+            $twig->addGlobal('settings', $settings);
+        }
+
+        if (Environment::isDevelopment()) {
+            $profile = new Profile();
+            $twig->addExtension(new ProfilerExtension($profile));
+            $collector = new NamespacedTwigProfileCollector($profile);
+            if (!$this->debugBar->hasCollector($collector->getName())) {
+                $this->debugBar->addCollector($collector);
+            }
+        }
+
+        $twig->setLoader($loader);
+        $twig->addExtension(new DebugBar($this->getDebugBar()));
+
+        if ($this->di['auth']->isClientLoggedIn()) {
+            $twig->addGlobal('client', $this->di['api_client']);
+        }
+
+        if ($this->di['auth']->isAdminLoggedIn()) {
+            $twig->addGlobal('admin', $this->di['api_admin']);
+        }
+
+        return $twig;
+    }
+
+    public function get_index()
+    {
+        return $this->render('mod_index_dashboard');
+    }
+
+    public function get_custom_page($page)
+    {
+        if (str_contains($page, '.')) {
+            $page = substr($page, 0, strpos($page, '.'));
+        }
+        $page = str_replace('/', '_', $page);
+        $tpl = 'mod_page_' . $page;
+        try {
+            return $this->render($tpl, ['post' => $_POST]);
+        } catch (Exception $e) {
+            if (DEBUG) {
+                error_log($e->getMessage());
+            }
+        }
+        $e = new InformationException('Page :url not found', [':url' => $this->url], 404);
+
+        $this->di['logger']->setChannel('routing')->info($e->getMessage());
+        http_response_code(404);
+
+        return $this->render('error', ['exception' => $e]);
+    }
+
+    public function sendFile($filename, $contentType, $path)
+    {
+        header("Content-type: $contentType");
+        header("Content-Disposition: attachment; filename=$filename");
+
+        return readfile($path);
+    }
+
+    public function sendDownload($filename, $path)
+    {
+        header('Content-Type: application/force-download');
+        header('Content-Type: application/octet-stream');
+        header('Content-Type: application/download');
+        header('Content-Description: File Transfer');
+        header("Content-Disposition: attachment; filename=$filename" . ';');
+        header('Content-Transfer-Encoding: binary');
+
+        return readfile($path);
     }
 }
