@@ -1,4 +1,6 @@
-{% set product = request.product ? guest.product_get({"id":request.product}) : null %}
+{% if not product %}
+    {% set product = request.product ? guest.product_get({"id":request.product}) : null %}
+{% endif %}
 <div class="accordion-item">
     <h2 class="accordion-header">
         <button class="accordion-button {% if not product %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#order" aria-expanded="true" aria-controls="order">
