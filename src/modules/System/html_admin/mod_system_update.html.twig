@@ -27,24 +27,33 @@
                     
                 {{ update_info['release_notes']|markdown }}
             {% else %}
-                <h2 class="card-title">{{ 'No update available'|trans }}</h2>
+                <h2 class="card-title">{{ 'There is no update available'|trans }}</h2>
+                <p>{{ 'You appear to be running the latest version of FOSSBilling, so no action is needed at the moment. If you think this is a mistake, you may use the button below to check again.'|trans }}</p>
             {% endif %}
         </div>
         <div class="card-footer">
-            <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
-                class="btn btn-primary api-link"
-                data-api-reload="1"
-                data-api-confirm="Proceed with automatic update?"
-                data-api-confirm-btn="Update"
-                data-api-confirm-content="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
-                <svg class="icon">
-                    <use xlink:href="#download" />
-                </svg>
-                {{ 'Update FOSSBilling'|trans }}
-                {% if not admin.system_update_available %}
-                    disabled
-                {% endif %}
-            </a>
+            {% if admin.system_update_available %}
+                <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
+                    class="btn btn-primary api-link"
+                    data-api-reload="1"
+                    data-api-confirm="Proceed with automatic update?"
+                    data-api-confirm-btn="Update"
+                    data-api-confirm-content="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
+                    <svg class="icon">
+                        <use xlink:href="#download" />
+                    </svg>
+                    {{ 'Update FOSSBilling'|trans }}
+                </a>
+            {% else %}
+                <a
+                    class="btn btn-primary disabled"
+                    aria-disabled="true">
+                    <svg class="icon">
+                        <use xlink:href="#download" />
+                    </svg>
+                    {{ 'Update FOSSBilling'|trans }}
+                </a>
+            {% endif %}
             <a href="{{ 'api/admin/system/recheck_update'|link({ 'CSRFToken': CSRFToken }) }}"
                 class="btn btn-primary api-link"
                 data-api-reload="1">
@@ -60,7 +69,7 @@
                 {{ 'Apply Patches & Update Configuration'|trans }}
             </a>
             <br />
-            <span class="text-muted">{{ "Applying patches and updating the configuration should be performed automatically, you don't need to use the button unless you are experiencing issues."|trans }}<br />
+            <span class="text-muted">{{ "Applying patches and updating the configuration should be performed automatically, you don't need to use that button unless you are experiencing issues."|trans }}<br />
             <span class="text-muted">{{ 'Last update check:'|trans }} {{ update_info['last_check']|format_datetime() }}.</span><br />
             <span class="text-muted"> {{ 'Next update check:'|trans }} {{ update_info['next_check']|format_datetime() }}.</span>
         </div>
