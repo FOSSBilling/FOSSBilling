@@ -377,7 +377,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        if ($this->isRouteAdmin()) {
+        if (defined("ADMIN_AREA") && ADMIN_AREA == true) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -417,14 +417,5 @@ class Service implements InjectionAwareInterface
         $config = $this->getThemeConfig();
 
         return $config['use_admin_default_encore'] ?? false;
-    }
-
-    protected function isRouteAdmin()
-    {
-        if (str_starts_with($_SERVER['REQUEST_URI'] ?? $_SERVER['PATH_INFO'], ADMIN_PREFIX)) {
-            return true;
-        }
-
-        return false;
     }
 }
