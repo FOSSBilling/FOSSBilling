@@ -407,6 +407,27 @@ class Service implements InjectionAwareInterface
         return $encoreInfo;
     }
 
+    public function getDefaultMarkdownAttributes(): array
+    {
+        if (defined("ADMIN_AREA") && ADMIN_AREA == true) {
+            $config = $this->getThemeConfig(false);
+        } else {
+            $config = $this->getThemeConfig(true);
+        }
+
+        if (is_array($config['markdown_attributes'])) {
+            $attributes = $config['markdown_attributes'];
+            foreach ($attributes as $class => $defaults) {
+                if (!class_exists($class)) {
+                    unset($attributes[$class]);
+                }
+            }
+            return $attributes;
+        } else {
+            return [];
+        }
+    }
+
     protected function getEncoreJsonPath($filename): string
     {
         return $this->getThemesPath() . $this->getCurrentRouteTheme() . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$filename}.json";

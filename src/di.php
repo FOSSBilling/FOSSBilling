@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 
 use FOSSBilling\Environment;
+use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
@@ -854,9 +855,30 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
  *
  * @return string
  */
-$di['parse_markdown'] = $di->protect(function (?string $content) {
-    $parser = new League\CommonMark\GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
+$di['parse_markdown'] = $di->protect(function (?string $content, bool $addAttributes = true) use ($di) {
     $content ??= '';
+    $defaultAttributes = [];
+
+    // If we are defining the default attributes, build the list and add them to the config
+    if ($addAttributes) {
+        $attributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes();
+        foreach ($attributes as $class => $attributes) {
+            $reflectionClass = new \ReflectionClass($class);
+            $fqcn = $reflectionClass->getName();
+            $defaultAttributes[$fqcn] = $attributes;
+        }
+    }
+
+    $parser = new League\CommonMark\GithubFlavoredMarkdownConverter([
+        'html_input' => 'escape',
+        'allow_unsafe_links' => false,
+        'max_nesting_level' => 50,
+        'default_attributes' => $defaultAttributes,
+    ]);
+
+    if ($addAttributes) {
+        $parser->getEnvironment()->addExtension(new DefaultAttributesExtension);
+    }
 
     return $parser->convert($content);
 });
