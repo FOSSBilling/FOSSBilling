@@ -95,7 +95,7 @@ class Update implements InjectionAwareInterface
      * @param string $branch The branch to return the latest information for;
      *                       valid values are: 'preview' or 'release'.
      *
-     * @param bool $refetch Set to `true` to have FOSSBilling invalidate the update cache and fetch the lastest info
+     * @param bool $refetch Set to `true` to have FOSSBilling invalidate the update cache and fetch the latest info
      * 
      * @throws Exception if there is an error downloading the latest
      *                        version information.
