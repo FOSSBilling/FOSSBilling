@@ -61,9 +61,9 @@ $loader->register();
 $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
 
 // Detect if FOSSBilling is behind a proxy server
-if(!empty($_SERVER['HTTP_X_FORWARDED_HOST'])){
+if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
     $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
-}else{
+} else {
     $host = $_SERVER['HTTP_HOST'];
 }
 
@@ -181,8 +181,9 @@ final class FOSSBilling_Installer
                     'compatibility' => $compatibility,
                     'os' => PHP_OS,
                     'os_ok' => (str_starts_with(strtoupper(PHP_OS), 'WIN')) ? false : true,
+                    'is_subfolder' => $this->isSubfolder(),
                     'fossbilling_ver' => \FOSSBilling\Version::VERSION,
-                    'canInstall' => $compatibility['can_install'],
+                    'canInstall' => !$this->isSubfolder() && $compatibility['can_install'],
                     'alreadyInstalled' => $this->isAlreadyInstalled(),
                     'database_hostname' => $this->session->get('database_hostname'),
                     'database_name' => $this->session->get('database_name'),
@@ -302,6 +303,16 @@ final class FOSSBilling_Installer
         }
 
         return true;
+    }
+
+    /**
+     * Attempt to detect if the application is under a subfolder.
+     *
+     * @return boolean
+     */
+    private function isSubfolder(): bool
+    {
+        return substr_count(URL_INSTALL, '/') > 4 ? true : false;
     }
 
     /**
