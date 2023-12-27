@@ -11,7 +11,7 @@
             <h1 class="card-title">{{ 'Update FOSSBilling'|trans }}</h1>
         </div>
         <div class="card-body">
-            {% if admin.system_update_available %}
+            {% if admin.system_update_available or update_info['branch'] == 'preview' %}
                 <h2 class="card-title">{{ 'Update release notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h2>
                 {% if update_info['update_type'] == 2 %}
                     <div class="alert alert-danger" role="alert">
@@ -32,7 +32,7 @@
             {% endif %}
         </div>
         <div class="card-footer">
-            {% if admin.system_update_available %}
+            {% if admin.system_update_available or update_info['branch'] == 'preview' %}
                 <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
                     class="btn btn-primary api-link"
                     data-api-reload="1"

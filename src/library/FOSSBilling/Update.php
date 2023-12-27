@@ -119,6 +119,7 @@ class Update implements InjectionAwareInterface
                 'update_type'   => 0,
                 'last_check'    => time(),
                 'next_check'    => time() + 3600,
+                'branch'        => 'preview',
             ];
         } else {
             $key = "Update.latest_{$branch}_version_info";
@@ -128,7 +129,7 @@ class Update implements InjectionAwareInterface
                 $this->di['cache']->delete($key);
             }
 
-            return $this->di['cache']->get($key, function (ItemInterface $item) {
+            return $this->di['cache']->get($key, function (ItemInterface $item) use ($branch) {
                 $item->expiresAfter(3600);
 
                 try {
@@ -150,6 +151,7 @@ class Update implements InjectionAwareInterface
                     'update_type'   => Version::getUpdateType($releaseInfo['tag_name'] ?: Version::VERSION),
                     'last_check'    => date('Y-m-d H:i:s'),
                     'next_check'    => date('Y-m-d H:i:s', time() + 3600),
+                    'branch'        => $branch,
                 ];
             });
         }
