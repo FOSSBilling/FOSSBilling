@@ -50,6 +50,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $name_split = explode("_", $name);
 
         $paths = array();
+        $paths[] = $this->options["theme"] . DIRECTORY_SEPARATOR . "html_custom";
         $paths[] = $this->options["theme"] . DIRECTORY_SEPARATOR . "html";
         if (isset($name_split[1])) {
             $paths[] = $this->options["mods"] . DIRECTORY_SEPARATOR . ucfirst($name_split[1]) . DIRECTORY_SEPARATOR . "html_" . $this->options["type"];
