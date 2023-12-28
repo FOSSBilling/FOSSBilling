@@ -377,7 +377,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        if ($this->isRouteAdmin()) {
+        if (defined("ADMIN_AREA") && ADMIN_AREA == true) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -407,6 +407,27 @@ class Service implements InjectionAwareInterface
         return $encoreInfo;
     }
 
+    public function getDefaultMarkdownAttributes(): array
+    {
+        if (defined("ADMIN_AREA") && ADMIN_AREA == true) {
+            $config = $this->getThemeConfig(false);
+        } else {
+            $config = $this->getThemeConfig(true);
+        }
+
+        if (is_array($config['markdown_attributes'])) {
+            $attributes = $config['markdown_attributes'];
+            foreach ($attributes as $class => $defaults) {
+                if (!class_exists($class)) {
+                    unset($attributes[$class]);
+                }
+            }
+            return $attributes;
+        } else {
+            return [];
+        }
+    }
+
     protected function getEncoreJsonPath($filename): string
     {
         return $this->getThemesPath() . $this->getCurrentRouteTheme() . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$filename}.json";
@@ -417,14 +438,5 @@ class Service implements InjectionAwareInterface
         $config = $this->getThemeConfig();
 
         return $config['use_admin_default_encore'] ?? false;
-    }
-
-    protected function isRouteAdmin()
-    {
-        if (str_starts_with($_SERVER['REQUEST_URI'] ?? $_SERVER['PATH_INFO'], ADMIN_PREFIX)) {
-            return true;
-        }
-
-        return false;
     }
 }

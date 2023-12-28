@@ -61,9 +61,9 @@ $loader->register();
 $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
 
 // Detect if FOSSBilling is behind a proxy server
-if(!empty($_SERVER['HTTP_X_FORWARDED_HOST'])){
+if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
     $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
-}else{
+} else {
     $host = $_SERVER['HTTP_HOST'];
 }
 
