@@ -71,8 +71,8 @@
 					<tr>
 						<td style='text-align: center; width:25px;'>{{ nr }}</td>
 						<td style='text-align: left'>{{ item.title }}</td>
-						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|money_convert }}</td>
-						<td style='text-align: right'>{{ item.total|money_convert }}</td>
+						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|money_convert(currency_code) }}</td>
+						<td style='text-align: right'>{{ item.total|money_convert(currency_code) }}</td>
 					</tr>
 				{% endfor %}
 				<tr>
@@ -82,18 +82,18 @@
 					<tr>
 						<th style='text-align: right' colspan='3'>{{ invoice.taxname }}
 							{{ invoice.taxrate }}% Tax:</th>
-						<th style='text-align: right'>{{ invoice.tax|money_convert }}</th>
+						<th style='text-align: right'>{{ invoice.tax|money_convert(currency_code) }}</th>
 					</tr>
 				{% endif %}
 				{% if invoice.discount|default and invoice.discount > 0 %}
 					<tr>
 						<th style='text-align: right' colspan='3'>{{ 'Discount'|trans }}:</th>
-						<th style='text-align: right'>{{ invoice.discount|money_convert }}</th>
+						<th style='text-align: right'>{{ invoice.discount|money_convert(currency_code) }}</th>
 					</tr>
 				{% endif %}
 				<tr>
 					<th style='text-align: right'  colspan='3'>{{ 'Total'|trans }}:</th>
-					<th style='text-align: right'>{{ invoice.total|money_convert }}</th>
+					<th style='text-align: right'>{{ invoice.total|money_convert(currency_code) }}</th>
 				</tr>
 			</table>
 		<p>{{ footer.signature }}</p>
