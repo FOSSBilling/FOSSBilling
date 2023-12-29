@@ -75,21 +75,31 @@ class Guest extends \Api_Abstract
 
         $p ??= 0;
 
-        $p = match (intval($c['price_format'])) {
+        $p = $this->select_format($p, $c['price_format']);
+
+        if ($without_currency) {
+            return $p;
+        }
+
+        if ($p < 0) {
+            // Price is negative, so we get a little creative to move the location of the negative symbol (ensuring -$5.00 instead of $-5.00)
+            $c['format'] = '-' . $c['format'];
+            $p = abs($p);
+            // Reformat the price to ensure it's displayed correctly after getting it's absolute value
+            $p = $this->select_format($p, $c['price_format']);
+        }
+
+        return str_replace('{{price}}', $p, $c['format']);
+    }
+
+    private function select_format($p, $format)
+    {
+        return match (intval($format)) {
             2 => number_format($p, 2, '.', ','),
             3 => number_format($p, 2, ',', '.'),
             4 => number_format($p, 0, '', ','),
             5 => number_format($p, 0, '', ''),
             default => number_format($p, 2, '.', ''),
         };
-
-        if ($without_currency) {
-            return $p;
-        }
-
-        $c['format'] = ($p >= 0) ? $c['format'] : '-' . $c['format'];
-        $p = abs($p);
-
-        return str_replace('{{price}}', $p, $c['format']);
     }
 }
