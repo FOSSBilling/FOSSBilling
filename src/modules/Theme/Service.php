@@ -415,7 +415,7 @@ class Service implements InjectionAwareInterface
             $config = $this->getThemeConfig(true);
         }
 
-        if (is_array($config['markdown_attributes'])) {
+        if (isset($config['markdown_attributes']) && is_array($config['markdown_attributes'])) {
             $attributes = $config['markdown_attributes'];
             foreach ($attributes as $class => $defaults) {
                 if (!class_exists($class)) {
