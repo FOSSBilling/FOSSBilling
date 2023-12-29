@@ -612,6 +612,7 @@ class Service implements InjectionAwareInterface
             $email['code'] = 'mod_client_confirm';
             $email['require_email_confirmation'] = true;
             $email['email_confirmation_link'] = $this->generateEmailConfirmationLink($client->id);
+            $email['send_now'] = true;
 
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
