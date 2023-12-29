@@ -1264,16 +1264,16 @@
         },
         {
             "name": "league/csv",
-            "version": "9.13.0",
+            "version": "9.14.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/csv.git",
-                "reference": "3690cc71bfe8dc3b6daeef356939fac95348f0a8"
+                "reference": "34bf0df7340b60824b9449b5c526fcc3325070d5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/csv/zipball/3690cc71bfe8dc3b6daeef356939fac95348f0a8",
-                "reference": "3690cc71bfe8dc3b6daeef356939fac95348f0a8",
+                "url": "https://api.github.com/repos/thephpleague/csv/zipball/34bf0df7340b60824b9449b5c526fcc3325070d5",
+                "reference": "34bf0df7340b60824b9449b5c526fcc3325070d5",
                 "shasum": ""
             },
             "require": {
@@ -1349,7 +1349,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-12-16T11:03:20+00:00"
+            "time": "2023-12-29T07:34:53+00:00"
         },
         {
             "name": "masterminds/html5",
