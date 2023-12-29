@@ -68,7 +68,7 @@ class Guest extends \Api_Abstract
         $convert = $data['convert'] ?? true;
         $without_currency = (bool) ($data['without_currency'] ?? false);
 
-        $p = $price;
+        $p = floatval($price);
         if ($convert) {
             $p = $price * $c['conversion_rate'];
         }
@@ -88,7 +88,7 @@ class Guest extends \Api_Abstract
         }
 
         $c['format'] = ($p >= 0) ? $c['format'] : '-' . $c['format'];
-        $p = $p >= 0 ? $p : '-' . $p;
+        $p = abs($p);
 
         return str_replace('{{price}}', $p, $c['format']);
     }
