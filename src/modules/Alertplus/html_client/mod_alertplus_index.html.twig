@@ -1,0 +1,21 @@
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" type="text/css" href="https://www.fontstatic.com/f=dubai-medium" />
+<style>
+  .swal2-popup {
+    font-family: 'dubai-medium';
+  }
+</style>
+<script>
+
+if (-1 === document.cookie.indexOf('{{ guest.alertplus_title }}=true')) {
+  // run only if cookie not found (-1 means not found)
+  Swal.fire({
+    icon: '{{ guest.alertplus_type }}',
+    title: '{{ guest.alertplus_title }}',
+    text: '{{ guest.alertplus_message }}'
+  })
+  document.cookie = '{{ guest.alertplus_title }}=true'; // set cookie
+}
+
+</script>
+

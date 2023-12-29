@@ -1,0 +1,12 @@
+{
+  "id": "alertplus",
+  "type": "mod",
+  "name": "Alert Plus",
+  "description": "Show Alert JS message to you'r clients",
+  "icon_url": "icon.svg",
+  "homepage_url": "https://forum.fossbilling.org/u/KhaledAl2mri",
+  "author": "KhaledAl2mri",
+  "author_url": "https://forum.fossbilling.org/u/KhaledAl2mri",
+  "license": "Apache 2.0 - https://www.apache.org/licenses/LICENSE-2.0",
+  "version": "1.0.0"
+}

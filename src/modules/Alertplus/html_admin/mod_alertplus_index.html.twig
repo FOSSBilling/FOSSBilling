@@ -1,0 +1,29 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %} {% import "macro_functions.html.twig" as mf %} {% block meta_title %}Alert Plus settings{% endblock %} {% set active_menu = 'extensions' %} {% block content %} <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">{{ 'Edit Alert message text'|trans }}</h3>
+    </div>
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-10">
+            <p>{{ 'Here you can specify message which will be shown to user. It will be shown until user will click 
+            <strong> Close Button</strong> button, however it will not be intrusive and will not disturb to perform any actions.'|trans|raw }}
+            </p> {% set params = admin.extension_config_get({"ext":"mod_alertplus"}) %} <input type="text" class="form-control" name="title" id="alertplus-title" value="{% if params.title %}{{ params.title }}{% else %}Type a Title{% endif %}">
+            <br> {% set params = admin.extension_config_get({"ext":"mod_alertplus"}) %} <textarea class="form-control" cols="5" rows="10" name="message" id="alertplus-message" placeholder="{{ 'Add note or todo task'|trans }}">{% if params.message %}{{ params.message }}{% else %}This website uses cookies. By continuing to use this website, you consent to our use of these cookies.{% endif %}</textarea>
+            <br> {% set params = admin.extension_config_get({"ext":"mod_alertplus"}) %} <select class="form-control" name="type" id="alertplus-type-message">
+              <option>{% if params.type %}{{ params.type }}{% else %}Select A Type{% endif %}</option>
+              <option value="info">Info Message</option>
+              <option value="danger">Danger Message</option>
+              <option value="warning">Warning Message</option>
+              <option value="success">Success Message</option>
+              <option value="">Blank</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer text-end">
+        <input type="hidden" name="ext" value="mod_alertplus" />
+        <button type="submit" class="btn btn-primary">{{ 'Update'|trans }}</button>
+      </div>
+    </form>
+  </div> {% endblock %}
