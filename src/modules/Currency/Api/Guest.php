@@ -73,8 +73,6 @@ class Guest extends \Api_Abstract
             $p = $price * $c['conversion_rate'];
         }
 
-        $p ??= 0;
-
         $p = $this->select_format($p, $c['price_format']);
 
         if ($without_currency) {
