@@ -73,19 +73,18 @@ class Guest extends \Api_Abstract
             $p = $price * $c['conversion_rate'];
         }
 
-        $p = $this->select_format($p, $c['price_format']);
-
         if ($without_currency) {
-            return $p;
+            return $this->select_format($p, $c['price_format']);;
         }
 
+        // Price is negative, so we place a negative symbol at the start of the format
         if ($p < 0) {
-            // Price is negative, so we get a little creative to move the location of the negative symbol (ensuring -$5.00 instead of $-5.00)
             $c['format'] = '-' . $c['format'];
-            $p = abs($p);
-            // Reformat the price to ensure it's displayed correctly after getting it's absolute value
-            $p = $this->select_format($p, $c['price_format']);
         }
+
+        // Get the absolute value of the price so it displays normally for both positive and negative prices and then properly format it
+        $p = abs($p);
+        $p = $this->select_format($p, $c['price_format']);
 
         return str_replace('{{price}}', $p, $c['format']);
     }
