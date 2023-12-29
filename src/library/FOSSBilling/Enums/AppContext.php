@@ -16,4 +16,5 @@ enum AppContext
     case ADMIN;
     case API;
     case CLIENT;
+    case INSTALL;
 }

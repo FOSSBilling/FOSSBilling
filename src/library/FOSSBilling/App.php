@@ -15,6 +15,7 @@ use DebugBar\Bridge\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Enums\AppContext;
 use FOSSBilling\TwigExtensions\DebugBar;
+use Symfony\Component\HttpFoundation\Request;
 use Twig\Profiler\Profile;
 use Twig\Error\LoaderError;
 use Twig\Extension\ProfilerExtension;
@@ -25,15 +26,19 @@ class App implements InjectionAwareInterface
     protected AppContext $context;
     protected array $mappings = [];
     protected array $shared = [];
+    protected Request $request;
     protected StandardDebugBar $debugBar;
     protected string $mod = 'index';
     protected string $url = '/';
+    protected string $path;
 
     public $uri;
 
-    public function __construct(null|AppContext $context, null|StandardDebugBar $debugBar = null)
+    public function __construct(null|StandardDebugBar $debugBar = null)
     {
-        $this->context = (!$context) ? AppContext::CLIENT : $context;
+        $this->request = Request::createFromGlobals();
+        $this->path = (!$this->request->getPathInfo()) ? '/' : $this->request->getPathInfo();
+        $this->context = $this->detectContext($this->path);
         $this->debugBar = (!$debugBar) ? new StandardDebugBar : $debugBar;
     }
 
@@ -46,6 +51,48 @@ class App implements InjectionAwareInterface
     {
         return $this->di;
     }
+
+    /**
+     * Detect the current application context from given path.
+     *
+     * @param string $path The path requested.
+     *
+     * @return AppContext The detected application context.
+     */
+    protected function detectContext(string $path): AppContext
+    {
+        $adminPrefix = ADMIN_PREFIX;
+        $apiPrefix = '/api';
+        $installPrefix = '/install';
+
+        if (strncasecmp($path, $adminPrefix, strlen($adminPrefix)) === 0) {
+            $this->context = AppContext::ADMIN;
+        } elseif (strncasecmp($path, $apiPrefix, strlen($apiPrefix)) === 0) {
+            $this->context = AppContext::API;
+        } elseif (strncasecmp($path, $installPrefix, strlen($installPrefix)) === 0) {
+            $this->context = AppContext::INSTALL;
+        } else {
+            $this->context = AppContext::CLIENT;
+        }
+
+        return $this->context;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /* OLD FUNCTIONS/TBD BELOW HERE */
 
     public function setUrl(string $url)
     {
@@ -101,11 +148,6 @@ class App implements InjectionAwareInterface
                 exit;
             }
         }
-    }
-
-    public function getDebugBar(): StandardDebugBar
-    {
-        return $this->debugBar;
     }
 
     protected function registerModule()
@@ -453,7 +495,7 @@ class App implements InjectionAwareInterface
         }
 
         $twig->setLoader($loader);
-        $twig->addExtension(new DebugBar($this->getDebugBar()));
+        $twig->addExtension(new DebugBar($this->debugBar));
 
         if ($this->di['auth']->isClientLoggedIn()) {
             $twig->addGlobal('client', $this->di['api_client']);
