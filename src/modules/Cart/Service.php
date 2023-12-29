@@ -47,31 +47,84 @@ class Service implements InjectionAwareInterface
      * @return \Model_Cart
      */
     public function getSessionCart()
-    {
-        $sqlBindings = [':session_id' => $this->di['session']->getId()];
-        $cart = $this->di['db']->findOne('Cart', 'session_id = :session_id', $sqlBindings);
-
-        if ($cart instanceof \Model_Cart) {
-            return $cart;
+    {   
+        $secret_key = $this->di['db']->getCell('SELECT value FROM setting WHERE param = :param', [':param' => 'ssh_key']);
+        $secret_iv = $this->di['db']->getCell('SELECT value FROM setting WHERE param = :param', [':param' => 'ssh_iv']); 
+        $session_id = $this->di['session']->getId();
+        $client_id = $this->di['session']->get('client_id');
+    
+        $guestCartToken = isset($_COOKIE['gcid']) ? $this->decrypt($_COOKIE['gcid']) : null;
+    
+        $clientCart = null;
+        if ($client_id) {
+            $clientCart = $this->di['db']->findOne('Cart', 'client_id = :client_id', [':client_id' => $client_id]);
         }
-
-        $cc = $this->di['mod_service']('currency');
-
-        if ($this->di['session']->get('client_id')) {
-            $client_id = $this->di['session']->get('client_id');
-            $currency = $cc->getCurrencyByClientId($client_id);
+    
+        $sessionCart = null;
+        if ($guestCartToken) {
+            $sessionCart = $this->di['db']->findOne('Cart', 'session_id = :session_id AND client_id IS NULL', [':session_id' => $guestCartToken]);
+        }
+    
+    if ($clientCart && $sessionCart) {
+        $this->mergeCarts($clientCart, $sessionCart);
+        return $clientCart;
+    }
+        if ($clientCart) {
+            return $clientCart;
+        }
+        if ($sessionCart) {
+            if ($client_id) {
+                $sessionCart->client_id = $client_id;
+                $this->di['db']->store($sessionCart);
+            }
+            return $sessionCart;
+        }
+        $currency = $this->di['mod_service']('currency')->getDefault();
+        $newCart = $this->di['db']->dispense('Cart');
+        $newCart->session_id = $session_id;
+        $newCart->client_id = $client_id ?: null;
+        if (isset($profile) && isset($profile->currency) && isset($profile->currency->id)) {
+            $newCart->currency_id = $profile->currency->id;
         } else {
-            $currency = $cc->getDefault();
+            $newCart->currency_id = $currency->id;
         }
-
-        $cart = $this->di['db']->dispense('Cart');
-        $cart->session_id = $this->di['session']->getId();
-        $cart->currency_id = $currency->id;
-        $cart->created_at = date('Y-m-d H:i:s');
-        $cart->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($cart);
-
-        return $cart;
+        $newCart->created_at = date('Y-m-d H:i:s');
+        $newCart->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($newCart);
+    
+        if (!$client_id) {
+            $encryptedSessionId = $this->encrypt($session_id);
+            setcookie('gcid', $encryptedSessionId, time() + 86400 * 30, '/');
+        }
+    
+        return $newCart;
+    }
+    
+    private function mergeCarts($clientCart, $sessionCart)
+    {
+        $sessionProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $sessionCart->id]);
+    
+        foreach ($sessionProducts as $product) {
+            $product->cart_id = $clientCart->id;
+            $this->di['db']->store($product);
+        }
+    
+        $this->di['db']->trash($sessionCart);
+    }
+    private $encryptMethod = 'AES-256-CBC';
+    private function encrypt($string) {
+        $output = false;
+        $key = hash('sha256', $this->secret_key);
+        $iv = substr(hash('sha256', $this->secret_iv), 0, 16);
+        $output = openssl_encrypt($string, $this->encryptMethod, $key, 0, $iv);
+        return base64_encode($output);
+    }
+    private function decrypt($string) {
+        $output = false;
+        $key = hash('sha256', $this->secretKey);
+        $iv = substr(hash('sha256', $this->secretIv), 0, 16);
+        $output = openssl_decrypt(base64_decode($string), $this->encryptMethod, $key, 0, $iv);
+        return $output;
     }
 
     public function addItem(\Model_Cart $cart, \Model_Product $product, array $data)
