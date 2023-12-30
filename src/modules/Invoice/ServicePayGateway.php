@@ -240,7 +240,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
         $defaults['single_page'] = true;
         if ($model instanceof \Model_Invoice) {
-            $defaults['thankyou_url'] = $this->di['tools']->url('/invoice/thank-you/' . $model->hash);
+            $defaults['thankyou_url'] = $this->di['url']->link('/invoice/thank-you/' . $model->hash, ['restore_session' => session_id()]);
             $defaults['invoice_url'] = $this->di['tools']->url('/invoice/' . $model->hash);
         }
 
