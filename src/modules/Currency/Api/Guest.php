@@ -83,8 +83,7 @@ class Guest extends \Api_Abstract
         }
 
         // Get the absolute value of the price so it displays normally for both positive and negative prices and then properly format it
-        $p = abs($p);
-        $p = $this->select_format($p, $c['price_format']);
+        $p = $this->select_format(abs($p), $c['price_format']);
 
         return str_replace('{{price}}', $p, $c['format']);
     }
