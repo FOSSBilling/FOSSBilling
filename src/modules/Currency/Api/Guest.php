@@ -68,28 +68,34 @@ class Guest extends \Api_Abstract
         $convert = $data['convert'] ?? true;
         $without_currency = (bool) ($data['without_currency'] ?? false);
 
-        $p = $price;
+        $p = floatval($price);
         if ($convert) {
             $p = $price * $c['conversion_rate'];
         }
 
-        $p ??= 0;
+        if ($without_currency) {
+            return $this->select_format($p, $c['price_format']);;
+        }
 
-        $p = match (intval($c['price_format'])) {
+        // Price is negative, so we place a negative symbol at the start of the format
+        if ($p < 0) {
+            $c['format'] = '-' . $c['format'];
+        }
+
+        // Get the absolute value of the price so it displays normally for both positive and negative prices and then properly format it
+        $p = $this->select_format(abs($p), $c['price_format']);
+
+        return str_replace('{{price}}', $p, $c['format']);
+    }
+
+    private function select_format($p, $format)
+    {
+        return match (intval($format)) {
             2 => number_format($p, 2, '.', ','),
             3 => number_format($p, 2, ',', '.'),
             4 => number_format($p, 0, '', ','),
             5 => number_format($p, 0, '', ''),
             default => number_format($p, 2, '.', ''),
         };
-
-        if ($without_currency) {
-            return $p;
-        }
-
-        $c['format'] = ($p >= 0) ? $c['format'] : '-' . $c['format'];
-        $p = $p >= 0 ? $p : '-' . $p;
-
-        return str_replace('{{price}}', $p, $c['format']);
     }
 }
