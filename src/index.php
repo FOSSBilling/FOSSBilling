@@ -44,6 +44,14 @@ if ($url === '/run-patcher') {
     }
 }
 
+/**
+ * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
+ * Internally the return and cancel URLs get a restore_session GET parameter attached to them with the proper session ID to restore, so we do so here.
+ */
+if (!empty($_GET['restore_session'])) {
+    session_id($_GET['restore_session']);
+}
+
 $di['session'];
 
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
