@@ -375,7 +375,10 @@
         "reqs",
         "srcdoc",
         "iframes",
-        "borderless"
+        "borderless",
+        "serviceproxmox",
+        "servicegoogleworkspace",
+        "servicemulticraft"
     ],
     "ignorePaths": [
         "tests/**",
