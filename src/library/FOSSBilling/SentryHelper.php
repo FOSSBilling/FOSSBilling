@@ -29,6 +29,19 @@ class SentryHelper
      */
     final public const last_change = '0.6.0';
 
+    // Errors for blacklisted modules are discarded from error reporting
+    private static array $blacklistedModules = [
+        'serviceproxmox', // Remove once it's officially ready for more than just dev work 
+        'forum',
+        'servicegoogleworkspace',
+        'servicemulticraft'
+    ];
+
+    // Array containing instance IDs that are blacklisted from error reporting and a unix timestap of when their blacklist expires.
+    private static array $blacklistedInstances = [
+        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => 1719829175
+    ];
+
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.
      *
@@ -73,6 +86,7 @@ class SentryHelper
             'http_client' => $httpClient,
 
             'before_send' => function (Event $event, ?EventHint $hint): ?Event {
+                $module = null;
                 if ($hint) {
                     $errorInfo = ErrorPage::getCodeInfo($hint->exception->getCode());
 
@@ -87,10 +101,15 @@ class SentryHelper
                     // Tag the event with the correct module / library
                     $exceptionPath = $hint->exception->getFile();
                     if (str_starts_with($exceptionPath, PATH_MODS)) {
-                        $event->setTag('module.name', self::getModule($exceptionPath));
+                        $module = self::getModule($exceptionPath);
+                        $event->setTag('module.name', $module);
                     } else if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
                         $event->setTag('library.class', self::getLibrary($exceptionPath));
                     }
+                }
+
+                if (self::isBlacklisted($module)) {
+                    return null;
                 }
 
                 $event->setTag('webserver.used', self::estimateWebServer());
@@ -160,5 +179,23 @@ class SentryHelper
         } else {
             return 'Unknown';
         }
+    }
+
+    // Checks if either the module producing the error or the instance ID of this installation is blacklisted
+    public static function isBlacklisted(?string $module = null): bool
+    {
+        if (INSTANCE_ID === 'Unknown') {
+            return true;
+        }
+
+        if (in_array(INSTANCE_ID, self::$blacklistedInstances) && self::$blacklistedInstances[INSTANCE_ID] >= time()) {
+            return true;
+        }
+
+        if (is_string($module) && in_array(strtolower($module), self::$blacklistedModules)) {
+            return true;
+        }
+
+        return false;
     }
 }
