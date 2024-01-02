@@ -11,11 +11,11 @@ declare(strict_types=1);
  */
 
 use FOSSBilling\Environment;
-use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
+use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use RedBeanPHP\Facade;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
@@ -877,7 +877,7 @@ $di['parse_markdown'] = $di->protect(function (?string $content, bool $addAttrib
     ]);
 
     if ($addAttributes) {
-        $parser->getEnvironment()->addExtension(new DefaultAttributesExtension);
+        $parser->getEnvironment()->addExtension(new DefaultAttributesExtension());
     }
 
     return $parser->convert($content);

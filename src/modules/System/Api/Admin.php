@@ -158,7 +158,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Returns an array containing the update info
+     * Returns an array containing the update info.
      */
     public function update_info(): array
     {
@@ -174,6 +174,7 @@ class Admin extends \Api_Abstract
     {
         $updater = $this->di['updater'];
         $updater->getLatestVersionInfo(null, true);
+
         return true;
     }
 
