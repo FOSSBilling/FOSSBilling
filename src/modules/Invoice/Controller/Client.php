@@ -88,6 +88,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             'hash' => $hash,
         ];
         $invoice = $api->invoice_get($data);
+
         return $app->render('mod_invoice_thankyou', ['invoice' => $invoice]);
     }
 

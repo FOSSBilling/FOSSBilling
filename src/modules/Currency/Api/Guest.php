@@ -74,7 +74,7 @@ class Guest extends \Api_Abstract
         }
 
         if ($without_currency) {
-            return $this->select_format($p, $c['price_format']);;
+            return $this->select_format($p, $c['price_format']);
         }
 
         // Price is negative, so we place a negative symbol at the start of the format

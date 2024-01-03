@@ -377,7 +377,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        if (defined("ADMIN_AREA") && ADMIN_AREA == true) {
+        if (defined('ADMIN_AREA') && ADMIN_AREA == true) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
 
     public function getDefaultMarkdownAttributes(): array
     {
-        if (defined("ADMIN_AREA") && ADMIN_AREA == true) {
+        if (defined('ADMIN_AREA') && ADMIN_AREA == true) {
             $config = $this->getThemeConfig(false);
         } else {
             $config = $this->getThemeConfig(true);
@@ -422,6 +422,7 @@ class Service implements InjectionAwareInterface
                     unset($attributes[$class]);
                 }
             }
+
             return $attributes;
         } else {
             return [];
