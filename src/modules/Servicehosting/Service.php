@@ -507,7 +507,7 @@ class Service implements InjectionAwareInterface
 
     public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
     {
-        [$cpanel_url, $whm_url] = $this->getMangerUrls($model);
+        [$cpanel_url, $whm_url] = $this->getManagerUrls($model);
         $result = [
             'name' => $model->name,
             'hostname' => $model->hostname,
@@ -970,14 +970,14 @@ class Service implements InjectionAwareInterface
      *
      * @return string[]|false[]
      */
-    public function getMangerUrls(\Model_ServiceHostingServer $model)
+    public function getManagerUrls(\Model_ServiceHostingServer $model)
     {
         try {
             $m = $this->getServerManager($model);
 
             return [$m->getLoginUrl(null), $m->getResellerLoginUrl(null)];
         } catch (\Exception $e) {
-            error_log('Error while retrieving cPanel url: ' . $e->getMessage());
+            error_log('Error while retrieving control panel url: ' . $e->getMessage());
         }
 
         return [false, false];

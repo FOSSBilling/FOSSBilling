@@ -510,7 +510,14 @@ class Server_Manager_Directadmin extends Server_Manager
 
         try {
             // If it's a POST request, include the fields in the request body
-            $request = $http_client->request($post ? 'POST' : 'GET', $url, $post ? ['body' => $fields] : []);
+            if($post) {
+                $request = $httpClient->request('POST', $url, [
+                    'body'  => $fields,
+                ]);
+            } else {
+                $request = $httpClient->request('GET', $url);
+            }
+
             $data = $request->getContent();
         } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface |
                  \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $error) {
@@ -530,8 +537,8 @@ class Server_Manager_Directadmin extends Server_Manager
         $response = $this->_parseResponse($data);
 
         if(isset($response['error']) && $response['error'] == 1) {
-            $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin', ':error:' => $response['text'] . ': ' . $response['details']];
-            throw new Server_Exception('Failed to :action: on the :type: server: :error:', $placeholders);
+            $this->getLog()->err('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
+            throw new Server_Exception('Failed to complete the operation on the DirectAdmin server');
         }
 
         return empty($response) ? array() : $response;
