@@ -113,7 +113,7 @@ function checkRequirements()
 function checkSSL()
 {
     $config = include PATH_CONFIG;
-    if (isset($config['security']['force_https']) && $config['security']['force_https'] && !FOSSBilling\Environment::isCLI()) {
+    if (isset($config['security']['force_https']) && $config['security']['force_https'] && !Environment::isCLI()) {
         if (!FOSSBilling\Tools::isHTTPS()) {
             $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
             header('Location: ' . $url);
@@ -145,11 +145,11 @@ function checkWebServer()
 function errorHandler(int $number, string $message, string $file, int $line)
 {
     // Just some housekeeping to ensure a few things we rely on are loaded.
-    if (!class_exists('\\' . \FOSSBilling\ErrorPage::class)) {
+    if (!class_exists('\\' . FOSSBilling\ErrorPage::class)) {
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
     }
 
-    if (!class_exists('\\' . \FOSSBilling\SentryHelper::class)) {
+    if (!class_exists('\\' . FOSSBilling\SentryHelper::class)) {
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
     }
 
@@ -203,7 +203,7 @@ function exceptionHandler(Exception|Error $e)
 
         echo $whoops->handleException($e);
     } else {
-        $errorPage = new \FOSSBilling\ErrorPage();
+        $errorPage = new FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $message);
     }
 }
@@ -260,7 +260,7 @@ $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
 // Now that the config file is loaded, we can enable Sentry
-\FOSSBilling\SentryHelper::registerSentry($config);
+FOSSBilling\SentryHelper::registerSentry($config);
 
 // Verify the installer was removed.
 checkInstaller();

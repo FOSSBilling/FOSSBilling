@@ -25,7 +25,7 @@ use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
 
-$di = new \Pimple\Container();
+$di = new Pimple\Container();
 
 /*
  * Returns the current FOSSBilling config.
@@ -63,7 +63,7 @@ $di['logger'] = function () use ($di) {
         $log->setEventItem('client_id', $client->id);
     }
 
-    $monolog = new \FOSSBilling\Monolog();
+    $monolog = new FOSSBilling\Monolog();
     $log->addWriter($monolog);
 
     return $log;
@@ -132,10 +132,10 @@ $di['pdo'] = function () use ($di) {
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
-    \RedBeanPHP\R::setup($di['pdo']);
-    \RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
+    RedBeanPHP\R::setup($di['pdo']);
+    RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
-    $helper = new \Box_BeanHelper();
+    $helper = new Box_BeanHelper();
     $helper->setDi($di);
 
     $mapper = new Facade();
@@ -236,7 +236,7 @@ $di['session'] = function () use ($di) {
     $forceSSL = $di['config']['security']['force_https'] ?? true;
     $secure = ($forceSSL || FOSSBilling\Tools::isHTTPS());
 
-    $session = new \FOSSBilling\Session($handler, $mode, $secure);
+    $session = new FOSSBilling\Session($handler, $mode, $secure);
     $session->setDi($di);
     $session->setupSession();
 
@@ -250,7 +250,7 @@ $di['session'] = function () use ($di) {
  * @return \FOSSBilling\Request
  */
 $di['request'] = function () use ($di) {
-    $service = new \FOSSBilling\Request();
+    $service = new FOSSBilling\Request();
     $service->setDi($di);
 
     return $service;
@@ -290,7 +290,7 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     // Get internationalisation settings from config, or use sensible defaults for
     // missing required settings.
-    $locale = \FOSSBilling\i18n::getActiveLocale();
+    $locale = FOSSBilling\i18n::getActiveLocale();
     $timezone = $config['i18n']['timezone'] ?? 'UTC';
     $date_format = !empty($config['i18n']['date_format']) ? strtoupper($config['i18n']['date_format']) : 'MEDIUM';
     $time_format = !empty($config['i18n']['time_format']) ? strtoupper($config['i18n']['time_format']) : 'SHORT';
@@ -318,12 +318,12 @@ $di['twig'] = $di->factory(function () use ($di) {
     $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
 
     try {
-        $dateFormatter = new \IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-    } catch (\Symfony\Polyfill\Intl\Icu\Exception\MethodArgumentValueNotImplementedException) {
+        $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
+    } catch (Symfony\Polyfill\Intl\Icu\Exception\MethodArgumentValueNotImplementedException) {
         if (($config['i18n']['locale'] ?? 'en_US') == 'en_US') {
-            $dateFormatter = new \IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
+            $dateFormatter = new IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
-            throw new \FOSSBilling\InformationException('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);
+            throw new FOSSBilling\InformationException('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);
         }
     }
 
@@ -519,7 +519,7 @@ $di['set_return_uri'] = function () use ($di) {
  */
 $di['api'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
-        'guest' => new \Model_Guest(),
+        'guest' => new Model_Guest(),
         'client' => $di['loggedin_client'],
         'admin' => $di['loggedin_admin'],
         'system' => $di['mod_service']('staff')->getCronAdmin(),
@@ -582,7 +582,7 @@ $di['api_admin'] = fn () => $di['api']('admin');
 $di['api_system'] = fn () => $di['api']('system');
 
 $di['tools'] = function () use ($di) {
-    $service = new \FOSSBilling\Tools();
+    $service = new FOSSBilling\Tools();
     $service->setDi($di);
 
     return $service;
@@ -595,7 +595,7 @@ $di['tools'] = function () use ($di) {
  * @return \FOSSBilling\Validate
  */
 $di['validator'] = function () use ($di) {
-    $validator = new \FOSSBilling\Validate();
+    $validator = new FOSSBilling\Validate();
     $validator->setDi($di);
 
     return $validator;
@@ -608,7 +608,7 @@ $di['validator'] = function () use ($di) {
  * @return \FOSSBilling\CentralAlerts
  */
 $di['central_alerts'] = function () use ($di) {
-    $centralalerts = new \FOSSBilling\CentralAlerts();
+    $centralalerts = new FOSSBilling\CentralAlerts();
     $centralalerts->setDi($di);
 
     return $centralalerts;
@@ -621,7 +621,7 @@ $di['central_alerts'] = function () use ($di) {
  * @return \FOSSBilling\CentralAlerts
  */
 $di['central_alerts'] = function () use ($di) {
-    $centralalerts = new \FOSSBilling\CentralAlerts();
+    $centralalerts = new FOSSBilling\CentralAlerts();
     $centralalerts->setDi($di);
 
     return $centralalerts;
@@ -634,7 +634,7 @@ $di['central_alerts'] = function () use ($di) {
  * @return \FOSSBilling\ExtensionManager
  */
 $di['extension_manager'] = function () use ($di) {
-    $extension = new \FOSSBilling\ExtensionManager();
+    $extension = new FOSSBilling\ExtensionManager();
     $extension->setDi($di);
 
     return $extension;
@@ -647,7 +647,7 @@ $di['extension_manager'] = function () use ($di) {
  * @return \FOSSBilling\Update
  */
 $di['updater'] = function () use ($di) {
-    $updater = new \FOSSBilling\Update();
+    $updater = new FOSSBilling\Update();
     $updater->setDi($di);
 
     return $updater;
@@ -697,7 +697,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
  * @return \FOSSBilling\Requirements
  */
 $di['requirements'] = function () {
-    $r = new \FOSSBilling\Requirements();
+    $r = new FOSSBilling\Requirements();
 
     return $r;
 };
@@ -709,7 +709,7 @@ $di['requirements'] = function () {
  *
  * @return \Box_Period The new period object that was just created.
  */
-$di['period'] = $di->protect(fn ($code) => new \Box_Period($code));
+$di['period'] = $di->protect(fn ($code) => new Box_Period($code));
 
 /*
  * Gets the current client area theme.
@@ -755,7 +755,7 @@ $di['cart'] = function () use ($di) {
  * @return \Box_Table The new table object that was just created.
  */
 $di['table'] = $di->protect(function ($name) use ($di) {
-    $tools = new \FOSSBilling\Tools();
+    $tools = new FOSSBilling\Tools();
     $tools->setDi($di);
     $table = $tools->getTable($name);
     $table->setDi($di);
@@ -769,7 +769,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
  * @return \Box\Mod\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new \Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new Box\Mod\Servicelicense\Server($di['logger']);
     $server->setDi($di);
 
     return $server;
@@ -780,7 +780,7 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \GeoIp2\Database\Reader
  */
-$di['geoip'] = fn () => new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
+$di['geoip'] = fn () => new GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
 
 /*
  * @param void
@@ -803,7 +803,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
         $tr->setDomain($textDomain);
     }
 
-    $locale = \FOSSBilling\i18n::getActiveLocale();
+    $locale = FOSSBilling\i18n::getActiveLocale();
 
     $tr->setDi($di);
     $tr->setLocale($locale);
@@ -863,7 +863,7 @@ $di['parse_markdown'] = $di->protect(function (?string $content, bool $addAttrib
     if ($addAttributes) {
         $attributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes();
         foreach ($attributes as $class => $attributes) {
-            $reflectionClass = new \ReflectionClass($class);
+            $reflectionClass = new ReflectionClass($class);
             $fqcn = $reflectionClass->getName();
             $defaultAttributes[$fqcn] = $attributes;
         }
