@@ -440,7 +440,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $r = $this->_parseResponse($data);
 
         if(isset($r['error']) && $r['error'] == 1) {
-            $placeholders = ['action' => $command, 'type' => 'DirectAdmin'];
+            $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 

@@ -86,7 +86,7 @@ class Server_Manager_Plesk extends Server_Manager
     	$id = $this->_createClient($a);
         $client = $a->getClient();
     	if (!$id) {
-    		$placeholders = ['action' => __trans('create account'), 'type' => 'Plesk'];
+    		$placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	} else {
             $client->setId((string)$id);
