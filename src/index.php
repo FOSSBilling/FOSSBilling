@@ -12,7 +12,7 @@ require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
 // Setting up the debug bar
-$debugBar = new \DebugBar\StandardDebugBar();
+$debugBar = new DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
 $debugBar['messages']->useHtmlVarDumper();
 
@@ -20,7 +20,7 @@ $config = $di['config'];
 $config['info']['salt'] = '********';
 $config['db'] = array_fill_keys(array_keys($config['db']), '********');
 
-$configCollector = new \DebugBar\DataCollector\ConfigCollector($config);
+$configCollector = new DebugBar\DataCollector\ConfigCollector($config);
 $configCollector->useHtmlVarDumper();
 
 $debugBar->addCollector($configCollector);
@@ -39,7 +39,7 @@ if ($url === '/run-patcher') {
         $di['tools']->emptyFolder(PATH_CACHE);
 
         exit('Any missing config migrations or database patches have been applied and the cache has been cleared');
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
     }
 }

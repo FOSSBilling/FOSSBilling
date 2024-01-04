@@ -29,7 +29,7 @@ class Service implements InjectionAwareInterface
 
     public function getTheme($name)
     {
-        $theme = new \Box\Mod\Theme\Model\Theme($name);
+        $theme = new Model\Theme($name);
 
         return $theme;
     }
