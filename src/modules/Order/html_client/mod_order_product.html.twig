@@ -14,9 +14,13 @@
 <div class="row">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header">
-                <h2>{{ 'Select Product'|trans }}</h2>
-                <p>{{ 'Choose products we offer for selling'|trans }}</p>
+            <div class="card-header py-3 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ 'Select Product'|trans }}</h5>
+                        <span class="small text-muted">{{ 'Choose products we offer for selling'|trans }}</span>
+                    </div>
+                </div>
             </div>
             <div class="card-body overflow-hidden">
                 {% include 'mod_orderbutton_index.html.twig' %}
