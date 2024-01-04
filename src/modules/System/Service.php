@@ -1669,7 +1669,7 @@ class Service
 
     public function getVersion()
     {
-        return \FOSSBilling\Version::VERSION;
+        return Version::VERSION;
     }
 
     public function getPendingMessages()
