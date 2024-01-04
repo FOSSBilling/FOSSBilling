@@ -140,7 +140,7 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			$placeholders = ['action' => __trans('create account'), 'type' => 'CWP'];
+			$placeholders = [':action:' => __trans('create account'), ':type:' => 'CWP'];
 			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
@@ -174,7 +174,7 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			$placeholders = ['action' => __trans('unsuspend account'), 'type' => 'CWP'];
+			$placeholders = [':action:' => __trans('unsuspend account'), ':type:' => 'CWP'];
 			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
@@ -194,7 +194,7 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('account', $data)) {
 			return true;
 		} else {
-			$placeholders = ['action' => __trans('cancel account'), 'type' => 'CWP'];
+			$placeholders = [':action:' => __trans('cancel account'), ':type:' => 'CWP'];
 			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
@@ -214,7 +214,7 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('changepack', $data)) {
 			return true;
 		} else {
-			$placeholders = ['action' => __trans('change account package'), 'type' => 'CWP'];
+			$placeholders = [':action:' => __trans('change account package'), ':type:' => 'CWP'];
 			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}
@@ -232,7 +232,7 @@ class Server_Manager_CWP extends Server_Manager
 		if ($this->makeAPIRequest('changepass', $data)) {
 			return true;
 		} else {
-			$placeholders = ['action' => __trans('change account password'), 'type' => 'CWP'];
+			$placeholders = [':action:' => __trans('change account password'), ':type:' => 'CWP'];
 			throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
 		}
 	}

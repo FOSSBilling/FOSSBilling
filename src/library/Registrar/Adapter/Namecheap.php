@@ -167,13 +167,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         if (isset($result['status']) && strtolower($result['status']) == 'error') {
             error_log("Namecheap error: " . PHP_EOL . $result['error']);
-            $placeholders = ['action' => $params['Command'], 'type' => 'Namecheap'];
+            $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($result['status']) && strtolower($result['status']) == 'failed') {
             error_log("Namecheap error: " . PHP_EOL . $result['actionstatusdesc']);
-            $placeholders = ['action' => $params['Command'], 'type' => 'Namecheap'];
+            $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
@@ -244,7 +244,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         // problem here: FOSSBilling doesn't display our error and will display 'nameservers updates' evern when this fails
 
         if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
-            $placeholders = ['action' => __trans('update nameservers'), 'type' => 'Namecheap'];
+            $placeholders = [':action:' => __trans('update nameservers'), ':type:' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         return True;
@@ -341,7 +341,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = $this->_makeRequest($params);
 
         if (!isset($result->CommandResponse->DomainContactsResult)) {
-            $placeholders = ['action' => __trans('retrieve domain details'), 'type' => 'Namecheap'];
+            $placeholders = [':action:' => __trans('retrieve domain details'), ':type:' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
@@ -586,7 +586,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 'id' => (string)$result->CommandResponse->DomainGetInfoResult->Whoisguard->ID
             );
         }
-        $placeholders = ['action' => __trans('retrieve privacy information'), 'type' => 'Namecheap'];
+        $placeholders = [':action:' => __trans('retrieve privacy information'), ':type:' => 'Namecheap'];
         throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
     }
 
@@ -649,7 +649,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         );
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainGetRegistrarLockResult['RegistrarLockStatus'])) {
-            $placeholders = ['action' => __trans('get the domain lock status'), 'type' => 'Namecheap'];
+            $placeholders = [':action:' => __trans('get the domain lock status'), ':type:' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         return $result->CommandResponse->DomainGetRegistrarLockResult['RegistrarLockStatus'] == 'true';
@@ -673,7 +673,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainSetRegistrarLockResult['IsSuccess'])) {
-            $placeholders = ['action' => __trans('set the domain lock status'), 'type' => 'Namecheap'];
+            $placeholders = [':action:' => __trans('set the domain lock status'), ':type:' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
@@ -701,7 +701,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainSetRegistrarLockResult['IsSuccess'])) {
-            $placeholders = ['action' => __trans('set the domain lock status'), 'type' => 'Namecheap'];
+            $placeholders = [':action:' => __trans('set the domain lock status'), ':type:' => 'Namecheap'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
