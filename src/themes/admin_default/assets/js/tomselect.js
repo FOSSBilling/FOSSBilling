@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     });
     localeSelector.on("change", (value) => {
-      bb.cookieCreate("BBLANG", value, 7);
+      bb.cookieCreate("BBLANG", value, 365);
       bb.reload();
     });
   }
