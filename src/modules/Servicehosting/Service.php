@@ -526,6 +526,7 @@ class Service implements InjectionAwareInterface
             $result['password'] = $model->password;
             $result['accesshash'] = $model->accesshash;
             $result['port'] = $model->port;
+            $result['passwordlength'] = $model->passwordlength;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
         }
@@ -597,12 +598,12 @@ class Service implements InjectionAwareInterface
 
     public function getServerManagers()
     {
-        $d = [];
-        foreach ($this->_getServerManagers() as $p) {
-            $d[$p] = $this->getServerManagerConfig($p);
+        $serverManagers = [];
+        foreach ($this->_getServerManagers() as $serverManager) {
+            $serverManagers[$serverManager] = $this->getServerManagerConfig($serverManager);
         }
 
-        return $d;
+        return $serverManagers;
     }
 
     private function _getServerManagers()
@@ -725,7 +726,6 @@ class Service implements InjectionAwareInterface
         $model->ns3 = $data['ns3'] ?? $model->ns3;
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
-        $model->accesshash = $data['accesshash'] ?? $model->accesshash;
         $model->port = $data['port'] ?? $model->port;
         $model->config = json_encode($data['config']) ?? $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
@@ -742,6 +742,9 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getServerManager(\Model_ServiceHostingServer $model)
     {
         if (empty($model->manager)) {
@@ -760,8 +763,8 @@ class Service implements InjectionAwareInterface
         $config['secure'] = $model->secure;
         $config['username'] = $model->username;
         $config['password'] = $model->password;
-        $config['passwordlength'] = $model->passwordlength;
         $config['accesshash'] = $model->accesshash;
+        $config['passwordlength'] = $model->passwordlength;
 
         $manager = $this->di['server_manager']($model->manager, $config);
 

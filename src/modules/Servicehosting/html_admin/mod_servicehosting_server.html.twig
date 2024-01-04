@@ -89,7 +89,7 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Password length'|trans }}:</label>
                 <div class="col">
-                    <input class="form-control" type="text" name="passwordlength" value="" placeholder="{{ 'Generated password length. Use blank to use default (10). Used when creating user accounts'|trans }}">
+                    <input class="form-control" type="text" name="passwordlength" value="{{ server.passwordlength }}" placeholder="{{ 'Generated password length. Use blank to use default (10). Used when creating user accounts'|trans }}">
                 </div>
             </div>
             <div class="mb-3 row">
