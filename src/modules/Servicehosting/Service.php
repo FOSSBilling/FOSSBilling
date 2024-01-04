@@ -134,7 +134,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = '*******';
+        $model->pass = '********';
 
         // Save the service
         $this->di['db']->store($model);
@@ -232,8 +232,23 @@ class Service implements InjectionAwareInterface
         $this->action_create($order);
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
+
+        // Retrieve the server manager for the order
+        $serverManager = $this->_getServerMangerForOrder($model);
+
+        // As we replace the password internally with asterisks, generate a new password
+        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), 4);
+        $model->pass = $pass;
+
+        // Retrieve the adapter and account, then create the account on the server
         [$adapter, $account] = $this->_getAM($model);
         $adapter->createAccount($account);
+
+        // Update the service's password to a placeholder value for security reasons
+        $model->pass = '********';
+
+        // Save the service
+        $this->di['db']->store($model);
 
         return true;
     }
