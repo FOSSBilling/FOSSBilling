@@ -172,8 +172,6 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     public function createAccount(Server_Account $account): bool
     {
-        throw new Server_Exception($account->getPassword());
-
         $ips = $this->getIps();
         if(empty($ips)) {
             throw new Server_Exception('There are no available IPs on this server.');
