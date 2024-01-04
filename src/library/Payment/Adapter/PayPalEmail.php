@@ -312,7 +312,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         $data['no_shipping']        = '1';
         $data['no_note']            = '1'; // Do not prompt payers to include a note with their payments. Allowable values for Subscribe buttons:
         $data['currency_code']      = $invoice['currency'];
-        $data['return']             = $this->config['return_url'];
+        $data['return']             = $this->config['thankyou_url'];
         $data['cancel_return']      = $this->config['cancel_url'];
         $data['notify_url']         = $this->config['notify_url'];
         $data['business']           = $this->config['email'];
@@ -361,7 +361,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements \FO
         $data['no_note']            = '1';
         $data['currency_code']      = $invoice['currency'];
         $data['rm']                 = '2';
-        $data['return']             = $this->config['return_url'];
+        $data['return']             = $this->config['thankyou_url'];
         $data['cancel_return']      = $this->config['cancel_url'];
         $data['notify_url']         = $this->config['notify_url'];
         $data['business']           = $this->config['email'];

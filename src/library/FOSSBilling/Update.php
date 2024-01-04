@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -66,14 +68,25 @@ class Update implements InjectionAwareInterface
     }
 
     /**
-     * Gets what type of update is available (Major, minor, or patch)
-     *
-     * @return int And int from 0-2 representing the patch type
+     * Builds a complete changelog for all updates between the the newest FOSSBilling version and an ending version number
+     * 
+     * @param array $releases The GitHub API release info JSON represented as an array.
+     * @param null|string $end What version number to end on. Defaults to the current version of this installation if `null` is passed.
      */
-    public function getUpdateType(): int
+    private function buildCompleteChangelog(array $releases, ?string $end = null): string
     {
-        $updateBranch = $this->getUpdateBranch();
-        return $this->getLatestVersionInfo($updateBranch)['update_type'];
+        $end ??= Version::VERSION;
+        $completedChangelog = [];
+
+        foreach ($releases as $release) {
+            if (version_compare($release['tag_name'], $end, 'gt')) {
+                $completedChangelog[] = $release['body'];
+            } else {
+                break;
+            }
+        }
+
+        return implode(PHP_EOL, $completedChangelog);
     }
 
     /**
@@ -82,13 +95,16 @@ class Update implements InjectionAwareInterface
      * @param string $branch The branch to return the latest information for;
      *                       valid values are: 'preview' or 'release'.
      *
+     * @param bool $refetch Set to `true` to have FOSSBilling invalidate the update cache and fetch the latest info
+     * 
      * @throws Exception if there is an error downloading the latest
      *                        version information.
      *
      * @return array
      */
-    private function getLatestVersionInfo(string $branch = 'release'): array
+    public function getLatestVersionInfo(?string $branch = null, bool $refetch = false): array
     {
+        $branch ??= $this->getUpdateBranch();
         $branch = (in_array($branch, ['release', 'preview'])) ? $branch : 'release';
 
         if ($branch === 'preview') {
@@ -97,31 +113,45 @@ class Update implements InjectionAwareInterface
             $downloadUrl = 'https://fossbilling.org/downloads/preview/';
 
             return [
-                'version' => Version::VERSION,
-                'download_url' => $downloadUrl,
+                'version'       => Version::VERSION,
+                'download_url'  => $downloadUrl,
                 'release_notes' => "Release notes are not available for the preview branch. You can check the latest changes on our [GitHub]($compareLink) repository.",
-                'update_type' => 0,
+                'update_type'   => 0,
+                'last_check'    => time(),
+                'next_check'    => time() + 3600,
+                'branch'        => 'preview',
             ];
         } else {
-            return $this->di['cache']->get("Update.latest_{$branch}_version_info", function (ItemInterface $item) {
-                $item->expiresAfter(24 * 60 * 60);
+            $key = "Update.latest_{$branch}_version_info";
+
+            // Delete the cached result to force a refetch
+            if ($refetch) {
+                $this->di['cache']->delete($key);
+            }
+
+            return $this->di['cache']->get($key, function (ItemInterface $item) use ($branch) {
+                $item->expiresAfter(3600);
 
                 try {
-                    $releaseInfoUrl = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
+                    $releaseInfoUrl = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases';
                     $httpClient = HttpClient::create();
                     $response = $httpClient->request('GET', $releaseInfoUrl);
-                    $releaseInfo = $response->toArray();
+                    $releases = $response->toArray();
                 } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
                     error_log($e->getMessage());
                     throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
                 }
 
+                $releaseInfo = $releases[0];
                 return [
-                    'version' => $releaseInfo['tag_name'] ?: Version::VERSION,
-                    'download_url' => $releaseInfo['assets'][0]['browser_download_url'],
-                    'release_date' => $releaseInfo['published_at'],
-                    'release_notes' => $releaseInfo['body'] ?: '**Error: Release notes unavailable.**',
-                    'update_type' => Version::getUpdateType($releaseInfo['tag_name'] ?: Version::VERSION),
+                    'version'       => $releaseInfo['tag_name'] ?: Version::VERSION,
+                    'download_url'  => $releaseInfo['assets'][0]['browser_download_url'],
+                    'release_date'  => $releaseInfo['published_at'],
+                    'release_notes' => $this->buildCompleteChangelog($releases) ?: '**Error: Release notes unavailable.**',
+                    'update_type'   => Version::getUpdateType($releaseInfo['tag_name'] ?: Version::VERSION),
+                    'last_check'    => date('Y-m-d H:i:s'),
+                    'next_check'    => date('Y-m-d H:i:s', time() + 3600),
+                    'branch'        => $branch,
                 ];
             });
         }
