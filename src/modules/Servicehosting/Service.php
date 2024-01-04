@@ -12,6 +12,7 @@
 namespace Box\Mod\Servicehosting;
 
 use FOSSBilling\Exception;
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -42,7 +43,7 @@ class Service implements InjectionAwareInterface
         return $product->title;
     }
 
-    public function validateOrderData(array &$data)
+    public function validateOrderData(array &$data): void
     {
         if (!isset($data['server_id'])) {
             throw new \FOSSBilling\InformationException('Hosting product is not configured completely. Configure server for hosting product.', null, 701);
@@ -59,11 +60,12 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @todo
-     *
+     * @param \Model_ClientOrder $order
      * @return \Model_ServiceHosting
+     * @throws InformationException
+     * @todo
      */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(\Model_ClientOrder $order): \Model_ServiceHosting
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -91,7 +93,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_activate(\Model_ClientOrder $order)
+    public function action_activate(\Model_ClientOrder $order): array
     {
         // Retrieve the service associated with the order
         $orderService = $this->di['mod_service']('order');
@@ -147,9 +149,10 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @todo
-     *
+     * @param \Model_ClientOrder $order
      * @return bool
+     * @throws Exception
+     * @todo
      */
     public function action_renew(\Model_ClientOrder $order): bool
     {
@@ -168,9 +171,11 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * @param \Model_ClientOrder $order
      * @return bool
+     * @throws Exception
      */
-    public function action_suspend(\Model_ClientOrder $order)
+    public function action_suspend(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -187,9 +192,11 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * @param \Model_ClientOrder $order
      * @return bool
+     * @throws Exception
      */
-    public function action_unsuspend(\Model_ClientOrder $order)
+    public function action_unsuspend(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -206,9 +213,11 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * @param \Model_ClientOrder $order
      * @return bool
+     * @throws Exception
      */
-    public function action_cancel(\Model_ClientOrder $order)
+    public function action_cancel(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -225,9 +234,11 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * @param \Model_ClientOrder $order
      * @return bool
+     * @throws Exception
      */
-    public function action_uncancel(\Model_ClientOrder $order)
+    public function action_uncancel(\Model_ClientOrder $order): bool
     {
         $this->action_create($order);
         $orderService = $this->di['mod_service']('order');
@@ -428,6 +439,9 @@ class Service implements InjectionAwareInterface
         return !in_array($order->status, $badStatus);
     }
 
+    /**
+     * @throws Exception
+     */
     private function _getServerMangerForOrder($model)
     {
         $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
@@ -435,35 +449,34 @@ class Service implements InjectionAwareInterface
         return $this->getServerManager($server);
     }
 
-    public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null)
+    public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null): array
     {
         if ($hp === null) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
 
         $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
-        $c = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
         $hp_config = $hp->config;
 
-        $client = $this->di['server_client'];
-        $client
-            ->setEmail($c->email)
-            ->setFullName($c->getFullName())
-            ->setCompany($c->company)
-            ->setStreet($c->address_1)
-            ->setZip($c->postcode)
-            ->setCity($c->city)
-            ->setState($c->state)
-            ->setCountry($c->country)
-            ->setTelephone($c->phone);
+        $server_client = $this->di['server_client'];
+        $server_client
+            ->setEmail($client->email)
+            ->setFullName($client->getFullName())
+            ->setCompany($client->company)
+            ->setStreet($client->address_1)
+            ->setZip($client->postcode)
+            ->setCity($client->city)
+            ->setState($client->state)
+            ->setCountry($client->country)
+            ->setTelephone($client->phone);
 
-        $p = $this->getServerPackage($hp);
-
-        $a = $this->di['server_account'];
-        $a
-            ->setClient($client)
-            ->setPackage($p)
+        $package = $this->getServerPackage($hp);
+        $server_account = $this->di['server_account'];
+        $server_account
+            ->setClient($server_client)
+            ->setPackage($package)
             ->setUsername($model->username)
             ->setReseller($model->reseller)
             ->setDomain($model->sld . $model->tld)
@@ -482,7 +495,7 @@ class Service implements InjectionAwareInterface
             $adapter = $this->getServerManager($server);
         }
 
-        return [$adapter, $a];
+        return [$adapter, $server_account];
     }
 
     public function toApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
@@ -505,7 +518,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
+    public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null): array
     {
         [$cpanel_url, $whm_url] = $this->getManagerUrls($model);
         $result = [
@@ -549,7 +562,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    private function _getDomainTuple($data)
+    private function _getDomainTuple($data): array
     {
         $required = [
             'domain' => 'Hosting product must have domain configuration',
@@ -593,7 +606,7 @@ class Service implements InjectionAwareInterface
         return [$sld, $tld];
     }
 
-    public function update(\Model_ServiceHosting $model, array $data)
+    public function update(\Model_ServiceHosting $model, array $data): bool
     {
         if (isset($data['username']) && !empty($data['username'])) {
             $model->username = $data['username'];
@@ -604,6 +617,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
+
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated hosting account %s without sending actions to server', $model->id);
@@ -611,9 +625,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getServerManagers()
+    public function getServerManagers(): array
     {
         $serverManagers = [];
+
         foreach ($this->_getServerManagers() as $serverManager) {
             $serverManagers[$serverManager] = $this->getServerManagerConfig($serverManager);
         }
@@ -621,7 +636,7 @@ class Service implements InjectionAwareInterface
         return $serverManagers;
     }
 
-    private function _getServerManagers()
+    private function _getServerManagers(): array
     {
         $dir = PATH_LIBRARY . '/Server/Manager';
         $files = [];
@@ -652,7 +667,7 @@ class Service implements InjectionAwareInterface
         return call_user_func([$classname, $method]);
     }
 
-    public function getServerPairs()
+    public function getServerPairs(): array
     {
         $sql = 'SELECT id, name
                 FROM service_hosting_server
@@ -667,7 +682,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getServersSearchQuery($data)
+    public function getServersSearchQuery($data): array
     {
         $sql = 'SELECT *
                 FROM service_hosting_server
@@ -710,7 +725,7 @@ class Service implements InjectionAwareInterface
         return $newId;
     }
 
-    public function deleteServer(\Model_ServiceHostingServer $model)
+    public function deleteServer(\Model_ServiceHostingServer $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -719,7 +734,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateServer(\Model_ServiceHostingServer $model, array $data)
+    public function updateServer(\Model_ServiceHostingServer $model, array $data): bool
     {
         $model->name = $data['name'] ?? $model->name;
         $model->ip = $data['ip'] ?? $model->ip;
@@ -790,14 +805,18 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
+    /**
+     * @throws \Server_Exception
+     * @throws Exception
+     */
     public function testConnection(\Model_ServiceHostingServer $model)
     {
-        $m = $this->getServerManager($model);
+        $manager = $this->getServerManager($model);
 
-        return $m->testConnection();
+        return $manager->testConnection();
     }
 
-    public function getHpPairs()
+    public function getHpPairs(): array
     {
         $sql = 'SELECT id, name
                 FROM service_hosting_hp';
@@ -810,7 +829,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getHpSearchQuery($data)
+    public function getHpSearchQuery($data): array
     {
         $sql = 'SELECT *
                 FROM service_hosting_hp
@@ -819,7 +838,10 @@ class Service implements InjectionAwareInterface
         return [$sql, []];
     }
 
-    public function deleteHp(\Model_ServiceHostingHp $model)
+    /**
+     * @throws InformationException
+     */
+    public function deleteHp(\Model_ServiceHostingHp $model): bool
     {
         $id = $model->id;
         $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
@@ -832,11 +854,12 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null)
+    public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null): array
     {
         if (is_null($model->config)) {
             $model->config = '';
         }
+
         $result = [
             'id' => $model->id,
 
@@ -859,7 +882,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function updateHp(\Model_ServiceHostingHp $model, array $data)
+    public function updateHp(\Model_ServiceHostingHp $model, array $data): bool
     {
         $model->name = $data['name'] ?? $model->name;
         $model->bandwidth = $data['bandwidth'] ?? $model->bandwidth;
@@ -953,6 +976,9 @@ class Service implements InjectionAwareInterface
         return $p;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getServerManagerWithLog(\Model_ServiceHostingServer $model, \Model_ClientOrder $order)
     {
         $manager = $this->getServerManager($model);
@@ -970,7 +996,7 @@ class Service implements InjectionAwareInterface
      *
      * @return string[]|false[]
      */
-    public function getManagerUrls(\Model_ServiceHostingServer $model)
+    public function getManagerUrls(\Model_ServiceHostingServer $model): array
     {
         try {
             $m = $this->getServerManager($model);
@@ -989,7 +1015,7 @@ class Service implements InjectionAwareInterface
      *
      * @return string
      */
-    public function generateLoginUrl(\Model_ServiceHosting $model)
+    public function generateLoginUrl(\Model_ServiceHosting $model): string
     {
         [$adapter, $account] = $this->_getAM($model);
         if ($model->reseller) {
@@ -999,7 +1025,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function prependOrderConfig(\Model_Product $product, array $data)
+    public function prependOrderConfig(\Model_Product $product, array $data): array
     {
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
@@ -1009,7 +1035,7 @@ class Service implements InjectionAwareInterface
         return array_merge($c, $data);
     }
 
-    public function getDomainProductFromConfig(\Model_Product $product, array &$data)
+    public function getDomainProductFromConfig(\Model_Product $product, array &$data): bool|array
     {
         $data = $this->prependOrderConfig($product, $data);
         $product->getService()->validateOrderData($data);
@@ -1042,9 +1068,10 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * @param \Model_Product $product
      * @return array
      */
-    public function getFreeTlds(\Model_Product $product)
+    public function getFreeTlds(\Model_Product $product): array
     {
         $config = $this->di['tools']->decodeJ($product->config);
         $freeTlds = $config['free_tlds'] ?? [];
