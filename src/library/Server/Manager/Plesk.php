@@ -52,17 +52,17 @@ class Server_Manager_Plesk extends Server_Manager
 
         return true;
     }
-    
+
     public function synchronizeAccount(Server_Account $a): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
     }
 
-    public function createAccount(Server_Account $a)
+    public function createAccount(Server_Account $account)
     {
-    	$this->getLog()->info('Creating account ' . $a->getUsername());
+    	$this->getLog()->info('Creating account ' . $account->getUsername());
 
-    	if ($a->getReseller()) {
+    	if ($account->getReseller()) {
     		$ips = $this->_getIps();
     		foreach($ips['exclusive'] as $key => $ip) {
 	    		if (!$ip['empty']) {
@@ -79,19 +79,19 @@ class Server_Manager_Plesk extends Server_Manager
             if ((is_countable($ips['exclusive']) ? count($ips['exclusive']) : 0) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
     		    $rand = array_rand($ips['exclusive']);
-    		    $a->setIp($ips['exclusive'][$rand]['ip']);
+    		    $account->setIp($ips['exclusive'][$rand]['ip']);
             }
     	}
 
-    	$id = $this->_createClient($a);
-        $client = $a->getClient();
+    	$id = $this->_createClient($account);
+        $client = $account->getClient();
     	if (!$id) {
     		$placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
     	} else {
             $client->setId((string)$id);
     	}
-        $this->setSubscription($a);
+        $this->setSubscription($account);
 
         // We need to improve the way we handle the IP address before we should enable this.
         /*
@@ -116,7 +116,7 @@ class Server_Manager_Plesk extends Server_Manager
     // ??
     public function createServicePlan(Server_Account $a)
     {
-        
+
     }
 
     public function updateSubscription(Server_Account $a)
@@ -129,7 +129,7 @@ class Server_Manager_Plesk extends Server_Manager
     public function deleteSubscription(Server_Account $a)
     {
         $result = $this->_client->webspace()->delete('name', $a->getDomain());
-        
+
         return $result;
     }
 
@@ -204,7 +204,7 @@ class Server_Manager_Plesk extends Server_Manager
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
     }
-    
+
     public function changeAccountDomain(Server_Account $a, $new)
     {
         $this->getLog()->info('Updating domain for account ' . $a->getUsername());
@@ -236,7 +236,7 @@ class Server_Manager_Plesk extends Server_Manager
     	$response = $this->_client->ip()->get();
 
 		$ips = array('shared' => array(), 'exclusive' => array());
-		
+
         foreach($response as $ip) {
             $ips[(string)$ip->type][] = array(
 				'ip'		=>	(string)$ip->ipAddress,
@@ -410,7 +410,7 @@ class Server_Manager_Plesk extends Server_Manager
                                 'name'	=>	'max_site',
                                 'value'	=>	$p->getMaxDomains() ?: 0,
                             ),
-                        ), 
+                        ),
                     ),
                     'permissions'	=>	array(
                         'permission'	=>	array(

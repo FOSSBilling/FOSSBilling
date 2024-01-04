@@ -362,11 +362,16 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             39 => function () {
                 // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
-                // @see https://github.com/FOSSBilling/locale/issues/212 
+                // @see https://github.com/FOSSBilling/locale/issues/212
                 $fileActions = [
                     PATH_LANGS . DIRECTORY_SEPARATOR . 'srp' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
+            },
+            40 => function () {
+                // Added `passwordlength` field to server managers
+                $q = "ALTER TABLE service_hosting_server ADD COLUMN `passwordlength` TINYINT DEFAULT NULL;";
+                $this->executeSql($q);
             }
         ];
         ksort($patches, SORT_NATURAL);

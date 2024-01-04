@@ -1079,6 +1079,7 @@ CREATE TABLE `service_hosting_server` (
   `username` text,
   `password` text,
   `accesshash` text,
+  `passwordlength` tinyint DEFAULT NULL,
   `port` varchar(20) DEFAULT NULL,
   `config` text,
   `secure` tinyint(1) DEFAULT NULL,

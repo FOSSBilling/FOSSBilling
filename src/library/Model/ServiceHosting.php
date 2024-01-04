@@ -10,4 +10,5 @@
 
 class Model_ServiceHosting extends \RedBeanPHP\SimpleModel
 {
+
 }

@@ -12,16 +12,16 @@ class Server_Manager_Custom extends Server_Manager
 {
     /**
      * Method is called just after obejct contruct is complete.
-     * Add required parameters checks here. 
+     * Add required parameters checks here.
      */
 	public function init()
     {
-        
+
 	}
 
     /**
      * Return server manager parameters.
-     * @return type 
+     * @return type
      */
     public static function getForm()
     {
@@ -32,8 +32,8 @@ class Server_Manager_Custom extends Server_Manager
 
     /**
      * Returns link to account management page
-     * 
-     * @return string 
+     *
+     * @return string
      */
     public function getLoginUrl(?Server_Account $account = null)
     {
@@ -42,7 +42,7 @@ class Server_Manager_Custom extends Server_Manager
 
     /**
      * Returns link to reseller account management
-     * @return string 
+     * @return string
      */
     public function getResellerLoginUrl(?Server_Account $account = null)
     {
@@ -52,8 +52,8 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * This method is called to check if configuration is correct
      * and class can connect to server
-     * 
-     * @return boolean 
+     *
+     * @return boolean
      */
     public function testConnection()
     {
@@ -61,10 +61,10 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * MEthods retrieves information from server, assignes new values to
+     * Methods retrieves information from server, assigns new values to
      * cloned Server_Account object and returns it.
      * @param Server_Account $a
-     * @return Server_Account 
+     * @return Server_Account
      */
     public function synchronizeAccount(Server_Account $a)
     {
@@ -77,12 +77,12 @@ class Server_Manager_Custom extends Server_Manager
 
     /**
      * Create new account on server
-     * 
-     * @param Server_Account $a 
+     *
+     * @param Server_Account $account
      */
-	public function createAccount(Server_Account $a)
+	public function createAccount(Server_Account $account)
     {
-        if($a->getReseller()) {
+        if($account->getReseller()) {
             $this->getLog()->info('Creating reseller hosting account');
         } else {
             $this->getLog()->info('Creating shared hosting account');
@@ -91,7 +91,7 @@ class Server_Manager_Custom extends Server_Manager
 
     /**
      * Suspend account on server
-     * @param Server_Account $a 
+     * @param Server_Account $a
      */
 	public function suspendAccount(Server_Account $a)
     {
@@ -104,7 +104,7 @@ class Server_Manager_Custom extends Server_Manager
 
     /**
      * Unsuspend account on server
-     * @param Server_Account $a 
+     * @param Server_Account $a
      */
 	public function unsuspendAccount(Server_Account $a)
     {
@@ -117,7 +117,7 @@ class Server_Manager_Custom extends Server_Manager
 
     /**
      * Cancel account on server
-     * @param Server_Account $a 
+     * @param Server_Account $a
      */
 	public function cancelAccount(Server_Account $a)
     {
@@ -131,7 +131,7 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Change account package on server
      * @param Server_Account $a
-     * @param Server_Package $p 
+     * @param Server_Package $p
      */
 	public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
@@ -140,7 +140,7 @@ class Server_Manager_Custom extends Server_Manager
         } else {
             $this->getLog()->info('Updating shared hosting account');
         }
-        
+
         $p->getName();
         $p->getQuota();
         $p->getBandwidth();
@@ -150,7 +150,7 @@ class Server_Manager_Custom extends Server_Manager
         $p->getMaxFtp();
         $p->getMaxSql();
         $p->getMaxPop();
-        
+
         $p->getCustomValue('param_name');
 	}
 

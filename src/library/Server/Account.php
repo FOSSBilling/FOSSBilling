@@ -15,9 +15,8 @@ class Server_Account
     private $domain     = NULL;
     private $ip         = NULL;
 
-    private ?\Server_Package $package    = NULL;
-
     private ?\Server_Client $client     = NULL;
+    private ?\Server_Package $package    = NULL;
     private ?bool $reseller   = NULL;
     private ?bool $suspended  = NULL;
     private $ns_1       = NULL;
@@ -25,7 +24,7 @@ class Server_Account
     private $ns_3       = NULL;
     private $ns_4       = NULL;
     private $note       = NULL;
-    
+
     public function setUsername($param)
     {
         $this->username = $param;
@@ -133,7 +132,7 @@ class Server_Account
     {
         return $this->suspended;
     }
-    
+
     public function setNs1($param)
     {
         $this->ns_1 = $param;
@@ -144,7 +143,7 @@ class Server_Account
     {
         return $this->ns_1;
     }
-    
+
     public function setNs2($param)
     {
         $this->ns_2 = $param;

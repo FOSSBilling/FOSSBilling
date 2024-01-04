@@ -162,14 +162,14 @@ class Server_Manager_Hestia extends Server_Manager
     /**
      * Create new account on server.
      *
-     * @param Server_Account $a
+     * @param Server_Account $account
      */
 
-    public function createAccount(Server_Account $a)
+    public function createAccount(Server_Account $account)
     {
-        $p = $a->getPackage();
+        $p = $account->getPackage();
         $packname = $this->_getPackageName($p);
-        $client = $a->getClient();
+        $client = $account->getClient();
         // Server credentials
         $vst_command = 'v-add-user';
         $vst_returncode = 'yes';
@@ -177,8 +177,8 @@ class Server_Manager_Hestia extends Server_Manager
         $postvars = [
             'returncode' => $vst_returncode,
             'cmd' => $vst_command,
-            'arg1' => $a->getUsername(),
-            'arg2' => $a->getPassword(),
+            'arg1' => $account->getUsername(),
+            'arg2' => $account->getPassword(),
             'arg3' => $client->getEmail(),
             'arg4' => $packname,
             'arg5' => trim($client->getFullName()),
@@ -190,8 +190,8 @@ class Server_Manager_Hestia extends Server_Manager
             $postvars2 = [
                 'returncode' => 'yes',
                 'cmd' => 'v-add-domain',
-                'arg1' => $a->getUsername(),
-                'arg2' => $a->getDomain(),
+                'arg1' => $account->getUsername(),
+                'arg2' => $account->getDomain(),
             ];
             $result2 = $this->_makeRequest($postvars2);
         } else {
@@ -202,7 +202,7 @@ class Server_Manager_Hestia extends Server_Manager
             $postvars3 = [
                 'returncode' => 'yes',
                 'cmd' => 'v-delete-user',
-                'arg1' => $a->getUsername(),
+                'arg1' => $account->getUsername(),
             ];
             $result3 = $this->_makeRequest($postvars3);
             if (0 !== intval($result3)) {

@@ -87,7 +87,13 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Use Secure connection'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Password length'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="passwordLength" value="" placeholder="{{ 'Generated password length. Use blank to use default (10). Used when creating user accounts'|trans }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Use secure connection'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioSecureConnectionYes" type="radio" name="secure" value="1"{% if server.secure %} checked{% endif %}>

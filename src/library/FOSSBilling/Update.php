@@ -69,7 +69,7 @@ class Update implements InjectionAwareInterface
 
     /**
      * Builds a complete changelog for all updates between the the newest FOSSBilling version and an ending version number
-     * 
+     *
      * @param array $releases The GitHub API release info JSON represented as an array.
      * @param null|string $end What version number to end on. Defaults to the current version of this installation if `null` is passed.
      */
@@ -96,7 +96,7 @@ class Update implements InjectionAwareInterface
      *                       valid values are: 'preview' or 'release'.
      *
      * @param bool $refetch Set to `true` to have FOSSBilling invalidate the update cache and fetch the latest info
-     * 
+     *
      * @throws Exception if there is an error downloading the latest
      *                        version information.
      *
@@ -174,6 +174,7 @@ class Update implements InjectionAwareInterface
      * Perform manual update - apply patches and update config.
      *
      * @return void
+     * @throws Exception
      */
     public function performManualUpdate(): void
     {

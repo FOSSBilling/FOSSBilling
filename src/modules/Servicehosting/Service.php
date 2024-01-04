@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Servicehosting;
 
+use FOSSBilling\Exception;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -87,39 +88,58 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
+    /**
+     * @throws Exception
+     */
     public function action_activate(\Model_ClientOrder $order)
     {
+        // Retrieve the service associated with the order
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
+
+        // If the service is not found, throw an exception
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
-        $pass = $this->di['tools']->generatePassword(10, 4);
-        $c = $orderService->getConfig($order);
-        if (isset($c['password']) && !empty($c['password'])) {
-            $pass = $c['password'];
+        // Retrieve the order's configuration
+        $config = $orderService->getConfig($order);
+
+        // Retrieve the server manager for the order
+        $serverManager = $this->_getServerMangerForOrder($model);
+
+        // Generate a password for the service
+        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), 4);
+
+        // If a password is already specified in the order's configuration, use that instead
+        if (isset($config['password']) && !empty($config['password'])) {
+            $pass = $config['password'];
         }
 
-        if (isset($c['username']) && !empty($c['username'])) {
-            $username = $c['username'];
+        // Generate a username for the service
+        if (isset($config['username']) && !empty($config['username'])) {
+            $username = $config['username'];
         } else {
-            $serverManager = $this->_getServerMangerForOrder($model);
             $username = $serverManager->generateUsername($model->sld . $model->tld);
         }
 
+        // Update the service's username and password
         $model->username = $username;
         $model->pass = $pass;
 
-        if (!isset($c['import']) || !$c['import']) {
+        // If the order's configuration does not specify that the service should be imported, create an account for the service on the server
+        if (!isset($config['import']) || !$config['import']) {
             [$adapter, $account] = $this->_getAM($model);
             $adapter->createAccount($account);
         }
 
+        // Update the service's password to a placeholder value for security reasons
         $model->pass = '*******';
 
+        // Save the service
         $this->di['db']->store($model);
 
+        // Return the username and password
         return [
             'username' => $username,
             'password' => $pass,
@@ -131,7 +151,7 @@ class Service implements InjectionAwareInterface
      *
      * @return bool
      */
-    public function action_renew(\Model_ClientOrder $order)
+    public function action_renew(\Model_ClientOrder $order): bool
     {
         // move expiration period to future
         $orderService = $this->di['mod_service']('order');
@@ -662,6 +682,7 @@ class Service implements InjectionAwareInterface
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
         $model->port = $data['port'] ?? null;
+        $model->passwordlength = $data['passwordlength'] ?? null;
         $model->secure = $data['secure'] ?? 0;
 
         $model->created_at = date('Y-m-d H:i:s');
@@ -711,8 +732,9 @@ class Service implements InjectionAwareInterface
         $model->username = $data['username'] ?? $model->username;
         $model->password = $data['password'] ?? $model->password;
         $model->accesshash = $data['accesshash'] ?? $model->accesshash;
-
+        $model->passwordlength = $data['passwordlength'] ?? $model->passwordlength;
         $model->updated_at = date('Y-m-d H:i:s');
+
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Update hosting server %s', $model->id);
@@ -738,6 +760,7 @@ class Service implements InjectionAwareInterface
         $config['secure'] = $model->secure;
         $config['username'] = $model->username;
         $config['password'] = $model->password;
+        $config['passwordlength'] = $model->passwordlength;
         $config['accesshash'] = $model->accesshash;
 
         $manager = $this->di['server_manager']($model->manager, $config);

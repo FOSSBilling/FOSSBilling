@@ -113,27 +113,27 @@ class Server_Manager_CWP extends Server_Manager
 	/**
 	 * Package name must match on both CWP and FOSSBilling!
 	 */
-	public function createAccount(Server_Account $a)
+	public function createAccount(Server_Account $account)
 	{
-		$this->getLog()->info('Creating account ' . $a->getUsername());
+		$this->getLog()->info('Creating account ' . $account->getUsername());
 
-		$client = $a->getClient();
-		$package = $a->getPackage()->getName();
+		$client = $account->getClient();
+		$package = $account->getPackage()->getName();
 
 		$ip = $this->_config['ip'];
 
 		$data = [
 			'action'       => 'add',
-			'domain'       => $a->getDomain(),
-			'user'         => $a->getUsername(),
-			'pass'         => base64_encode($a->getPassword()),
+			'domain'       => $account->getDomain(),
+			'user'         => $account->getUsername(),
+			'pass'         => base64_encode($account->getPassword()),
 			'email'        => $client->getEmail(),
 			'package'      => $package,
 			'server_ips'   => $ip,
 			'encodepass'   => true
 		];
 
-		if ($a->getReseller()) {
+		if ($account->getReseller()) {
 			$data['reseller'] = 1;
 		}
 

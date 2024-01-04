@@ -251,6 +251,7 @@ class Admin extends \Api_Abstract
      * @optional string $accesshash - server API login access hash
      * @optional string $userprefix - prefix for created user
      * @optional string $port - server API port
+     * @optional string $passwordlength - password length for generated accounts
      * @optional bool $secure - flag to define whether to use secure connection (https) to server or not (http)
      * @optional bool $active - flag to enable/disable server
      *
