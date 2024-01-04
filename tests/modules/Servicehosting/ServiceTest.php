@@ -1203,7 +1203,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertInstanceOf('\Server_Manager_Custom', $result);
     }
 
-    public function testgetMangerUrls()
+    public function testgetManagerUrls()
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -1224,13 +1224,13 @@ class ServiceTest extends \BBTestCase {
             ->method('getServerManager')
             ->will($this->returnValue($serverManagerMock));
 
-        $result = $serviceMock->getMangerUrls($hostingServerModel);
+        $result = $serviceMock->getManagerUrls($hostingServerModel);
         $this->assertIsArray($result);
         $this->assertIsString($result[0]);
         $this->assertIsString($result[1]);
     }
 
-    public function testgetMangerUrlsException()
+    public function testgetManagerUrlsException()
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -1243,7 +1243,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getServerManager')
             ->will($this->throwException(new \Exception('Controlled unit test exception')));
 
-        $result = $serviceMock->getMangerUrls($hostingServerModel);
+        $result = $serviceMock->getManagerUrls($hostingServerModel);
         $this->assertIsArray($result);
         $this->assertFalse($result[0]);
         $this->assertFalse($result[1]);
