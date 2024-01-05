@@ -756,13 +756,13 @@ class Service implements InjectionAwareInterface
         $model->ns3 = $data['ns3'] ?? $model->ns3;
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
-        $model->port = $data['port'] ?? $model->port;
+        $model->port = is_numeric($data['port']) ? $data['port'] : 0;
         $model->config = json_encode($data['config']) ?? $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
         $model->username = $data['username'] ?? $model->username;
         $model->password = $data['password'] ?? $model->password;
         $model->accesshash = $data['accesshash'] ?? $model->accesshash;
-        $model->passwordlength = $data['passwordlength'] ?? $model->passwordlength;
+        $model->passwordlength = is_numeric($data['passwordlength']) ? $data['passwordlength'] : 10;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -785,10 +785,9 @@ class Service implements InjectionAwareInterface
         $config['ip'] = $model->ip;
         $config['host'] = $model->hostname;
         $config['port'] = $model->port;
+        $config['config'] = [];
         if (!is_null($model->config)) {
             $config['config'] = json_decode($model->config, 1);
-        } else {
-            $config['config'] = [];
         }
         $config['secure'] = $model->secure;
         $config['username'] = $model->username;
