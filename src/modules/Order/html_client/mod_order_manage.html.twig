@@ -56,7 +56,7 @@
                         <tr>
                             <td><label>{{ 'Order status'|trans }}</label></td>
                             <td>
-                                <span class="badge {% if order.status == 'active' %} bg-success {% elseif order.status == 'pending_setup' %} bg-warning {% else %} bg-danger {% endif %}">{{ mf.status_name(order.status) }}</span>
+                                <span class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}bg-danger{% elseif order.status == 'canceled' %}bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
                             </td>
                         </tr>
 
