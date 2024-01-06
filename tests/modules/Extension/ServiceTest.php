@@ -300,7 +300,7 @@ class ServiceTest extends \BBTestCase
         $extensionMock = $this->getMockBuilder('\\' . \FOSSBilling\ExtensionManager::class)->getMock();
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
@@ -328,7 +328,7 @@ class ServiceTest extends \BBTestCase
         ];
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -380,7 +380,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -407,7 +407,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn([$ext->name]);
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(fn ($name) => $modMock);
@@ -440,7 +440,7 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \FOSSBilling\Exception($exceptionMessage));
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(fn ($name) => $modMock);
@@ -466,7 +466,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash');
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -498,7 +498,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -521,7 +521,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException')->willReturn(true);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;

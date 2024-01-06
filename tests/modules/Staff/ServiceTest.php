@@ -47,8 +47,7 @@ class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())
-            ->method('set')
-            ->willReturn(null);
+            ->method('set');
 
         $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
         $authMock->expects($this->atLeastOnce())
