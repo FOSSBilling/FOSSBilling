@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends BBDbApiTestCase
 {
@@ -8,7 +9,7 @@ class Api_AdminTest extends BBDbApiTestCase
     {
         $array = $this->api_system->cron_info();
         $this->assertIsArray($array);
-        
+
         $bool = $this->api_system->cron_run();
         $this->assertTrue($bool);
     }

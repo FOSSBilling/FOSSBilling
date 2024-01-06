@@ -1,8 +1,7 @@
 <?php
 
-
-class Box_PasswordTest extends PHPUnit\Framework\TestCase {
-
+class Box_PasswordTest extends PHPUnit\Framework\TestCase
+{
     public function testsetAlgo()
     {
         $boxPassword = new Box_Password();
@@ -15,9 +14,9 @@ class Box_PasswordTest extends PHPUnit\Framework\TestCase {
     public function testSetOptions()
     {
         $boxPassword = new Box_Password();
-        $options = array(
+        $options = [
             'cost' => 12,
-        );
+        ];
         $boxPassword->setOptions($options);
         $result = $boxPassword->getOptions();
         $this->assertEquals($options, $result);
@@ -48,7 +47,7 @@ class Box_PasswordTest extends PHPUnit\Framework\TestCase {
         $this->assertIsString($hash);
         $this->assertNotEmpty($hash);
 
-        $newOptions = array('cost' => 15);
+        $newOptions = ['cost' => 15];
         $boxPassword->setOptions($newOptions);
 
         $needRehashing = $boxPassword->needsRehash($hash);
@@ -56,4 +55,3 @@ class Box_PasswordTest extends PHPUnit\Framework\TestCase {
         $this->assertTrue($needRehashing);
     }
 }
- 

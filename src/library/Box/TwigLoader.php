@@ -2,15 +2,14 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 {
-    protected $options = array();
+    protected $options = [];
 
     /**
      * Constructor.
@@ -21,22 +20,21 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
     {
         parent::__construct();
         if (!isset($options['mods'])) {
-            throw new \FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'mods']);
+            throw new FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'mods']);
         }
 
         if (!isset($options['theme'])) {
-            throw new \FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'theme']);
+            throw new FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'theme']);
         }
 
         if (!isset($options['type'])) {
-            throw new \FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'type']);
+            throw new FOSSBilling\Exception('Missing :missing: param for Box_TwigLoader', ['missing' => 'type']);
         }
 
         $this->options = $options;
-        $paths_arr = array($options['mods'], $options['theme']);
+        $paths_arr = [$options['mods'], $options['theme']];
         $this->setPaths($paths_arr);
     }
-
 
     protected function findTemplate($name, $throw = true)
     {
@@ -47,13 +45,13 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
             return $this->cache[$name];
         }
 
-        $name_split = explode("_", $name);
+        $name_split = explode('_', $name);
 
-        $paths = array();
-        $paths[] = $this->options["theme"] . DIRECTORY_SEPARATOR . "html_custom";
-        $paths[] = $this->options["theme"] . DIRECTORY_SEPARATOR . "html";
+        $paths = [];
+        $paths[] = $this->options['theme'] . DIRECTORY_SEPARATOR . 'html_custom';
+        $paths[] = $this->options['theme'] . DIRECTORY_SEPARATOR . 'html';
         if (isset($name_split[1])) {
-            $paths[] = $this->options["mods"] . DIRECTORY_SEPARATOR . ucfirst($name_split[1]) . DIRECTORY_SEPARATOR . "html_" . $this->options["type"];
+            $paths[] = $this->options['mods'] . DIRECTORY_SEPARATOR . ucfirst($name_split[1]) . DIRECTORY_SEPARATOR . 'html_' . $this->options['type'];
         }
 
         foreach ($paths as $path) {
@@ -66,6 +64,6 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
             }
         }
 
-        throw new \Twig\Error\LoaderError(sprintf('Unable to find template "%s" (looked into: %s).', $name,  implode(', ', $paths)));
+        throw new Twig\Error\LoaderError(sprintf('Unable to find template "%s" (looked into: %s).', $name, implode(', ', $paths)));
     }
 }

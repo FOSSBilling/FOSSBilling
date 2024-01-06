@@ -1,21 +1,18 @@
 <?php
 
-
 namespace Box\Mod\Product;
-
 
 class ServiceTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Product\Service
+     * @var Service
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Product\Service();
+        $this->service = new Service();
     }
-
 
     public function testgetDi()
     {
@@ -25,33 +22,31 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-
     public function testgetPairs()
     {
-        $data = array(
-            'type'          => 'domain',
+        $data = [
+            'type' => 'domain',
             'products_only' => true,
-            'active_only'   => true
-        );
+            'active_only' => true,
+        ];
 
-        $execArray = array(
-            array(
-                'id'    => 1,
+        $execArray = [
+            [
+                'id' => 1,
                 'title' => 'title4test',
-            ),
-        );
+            ],
+        ];
 
-        $expectArray = array(
+        $expectArray = [
             '1' => 'title4test',
-        );
-
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue($execArray));
+            ->willReturn($execArray);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -63,32 +58,32 @@ class ServiceTest extends \BBTestCase
 
     public function testtoApiArray()
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array(
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods([
                              'getStartingFromPrice',
                              'getUpgradablePairs',
-                             'toProductPaymentApiArray',))
+                             'toProductPaymentApiArray', ])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getStartingFromPrice');
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs');
-        $productPaymentArray = array(
-            'type'                           => 'free',
-            \Model_ProductPayment::FREE      => array('price' => 0, 'setup' => 0),
-            \Model_ProductPayment::ONCE      => array('price' => 1, 'setup' => 10),
-            \Model_ProductPayment::RECURRENT => array(),
-        );
+        $productPaymentArray = [
+            'type' => 'free',
+            \Model_ProductPayment::FREE => ['price' => 0, 'setup' => 0],
+            \Model_ProductPayment::ONCE => ['price' => 1, 'setup' => 10],
+            \Model_ProductPayment::RECURRENT => [],
+        ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('toProductPaymentApiArray')
-            ->will($this->returnValue($productPaymentArray));
+            ->willReturn($productPaymentArray);
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
         $model->product_category_id = 1;
-        $model->product_payment_id  = 2;
-        $model->config              = '{}';
+        $model->product_payment_id = 2;
+        $model->config = '{}';
 
         $modelProductCategory = new \Model_ProductCategory();
         $modelProductCategory->loadBean(new \DummyBean());
@@ -104,12 +99,12 @@ class ServiceTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['tools']       = $toolsMock;
-        $di['mod_service'] = $di->protect(fn() => $serviceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn () => $serviceMock);
 
         $model->setDi($di);
         $serviceMock->setDi($di);
@@ -120,29 +115,27 @@ class ServiceTest extends \BBTestCase
 
     public function testgetTypes()
     {
-        $modArray = array(
-            'servicecustomtest'
-        );
+        $modArray = [
+            'servicecustomtest',
+        ];
 
-        $expectedArray = array(
-            'custom'       => 'Custom',
-            'license'      => 'License',
+        $expectedArray = [
+            'custom' => 'Custom',
+            'license' => 'License',
             'downloadable' => 'Downloadable',
-            'hosting'      => 'Hosting',
-            'domain'       => 'Domain',
-        );
+            'hosting' => 'Hosting',
+            'domain' => 'Domain',
+        ];
 
         $expectedArray['customtest'] = 'Customtest';
-
 
         $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getInstalledMods')
-            ->will($this->returnValue($modArray));
+            ->willReturn($modArray);
 
-
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $extensionServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $extensionServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->getTypes();
@@ -157,9 +150,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -170,11 +163,11 @@ class ServiceTest extends \BBTestCase
 
     public function testgetPaymentTypes()
     {
-        $expected = array(
-            'free'      => 'Free',
-            'once'      => 'One time',
+        $expected = [
+            'free' => 'Free',
+            'once' => 'One time',
             'recurrent' => 'Recurrent',
-        );
+        ];
 
         $result = $this->service->getPaymentTypes();
         $this->assertIsArray($result);
@@ -198,7 +191,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(0));
+            ->willReturn(0);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -206,43 +199,42 @@ class ServiceTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($newProductId));
+            ->willReturn($newProductId);
 
         $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
-        $di['db']          = $dbMock;
-        $di['tools']       = $toolMock;
-        $di['logger']      = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['db'] = $dbMock;
+        $di['tools'] = $toolMock;
+        $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
         $result = $this->service->createProduct('title', 'domain');
         $this->assertIsInt($result);
         $this->assertEquals($newProductId, $result);
-
     }
 
     public function testupdateProductMissngPricingType()
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array('getPaymentTypes'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getPaymentTypes'])
             ->getMock();
 
-        $typesArr = array(
-            'free'      => 'Free',
-            'once'      => 'One time',
+        $typesArr = [
+            'free' => 'Free',
+            'once' => 'One time',
             'recurrent' => 'Recurrent',
-        );
+        ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPaymentTypes')
-            ->will($this->returnValue($typesArr));
+            ->willReturn($typesArr);
 
-        $data = array(
-            'pricing' => array(),
-        );
+        $data = [
+            'pricing' => [],
+        ];
 
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
@@ -257,49 +249,49 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array('getPaymentTypes'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getPaymentTypes'])
             ->getMock();
 
-        $typesArr = array(
-            'free'      => 'Free',
-            'once'      => 'One time',
+        $typesArr = [
+            'free' => 'Free',
+            'once' => 'One time',
             'recurrent' => 'Recurrent',
-        );
+        ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPaymentTypes')
-            ->will($this->returnValue($typesArr));
+            ->willReturn($typesArr);
 
-        $data = array(
-            'pricing'               => array(
-                'type'                           => \Model_ProductPayment::RECURRENT,
-                \Model_ProductPayment::RECURRENT => array(
-                    array(
-                        '1W' => array(
-                            'setup'   => '',
-                            'price'   => '',
+        $data = [
+            'pricing' => [
+                'type' => \Model_ProductPayment::RECURRENT,
+                \Model_ProductPayment::RECURRENT => [
+                    [
+                        '1W' => [
+                            'setup' => '',
+                            'price' => '',
                             'enabled' => true,
-                        )
-                    )
-                )
-            ),
-            'config'                => array(),
-            'product_category_id'   => 1,
-            'form_id'               => 10,
-            'icon_url'              => 'http://www.google.com',
-            'status'                => false,
-            'hidden'                => 0,
-            'slug'                  => 'product/0',
-            'setup'                 => 'test',
-            'upgrades'              => array(),
-            'addons'                => array(),
-            'title'                 => 'new Title',
-            'stock_control'         => false,
+                        ],
+                    ],
+                ],
+            ],
+            'config' => [],
+            'product_category_id' => 1,
+            'form_id' => 10,
+            'icon_url' => 'http://www.google.com',
+            'status' => false,
+            'hidden' => 0,
+            'slug' => 'product/0',
+            'setup' => 'test',
+            'upgrades' => [],
+            'addons' => [],
+            'title' => 'new Title',
+            'stock_control' => false,
             'allow_quantity_select' => false,
-            'quantity_in_stock'     => 0,
-            'description'           => 'Product description',
-            'plugin'                => 'plug in',
-        );
+            'quantity_in_stock' => 0,
+            'description' => 'Product description',
+            'plugin' => 'plug in',
+        ];
 
         $modelProductPayment = new \Model_ProductPayment();
         $modelProductPayment->loadBean(new \DummyBean());
@@ -307,22 +299,21 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($modelProductPayment));
+            ->willReturn($modelProductPayment);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(1));
+            ->willReturn(1);
 
         $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolMock->expects($this->atLeastOnce())
             ->method('decodeJ')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['tools']     = $toolMock;
-        $di['logger']    = new \Box_Log();
-
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['tools'] = $toolMock;
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
 
@@ -332,12 +323,12 @@ class ServiceTest extends \BBTestCase
 
     public function testupdatePriority()
     {
-        $data = array(
-            'priority' => array(
+        $data = [
+            'priority' => [
                 1 => 10,
                 5 => 1,
-            ),
-        );
+            ],
+        ];
 
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
@@ -345,14 +336,13 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue($modelProduct));
+            ->willReturn($modelProduct);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -367,24 +357,22 @@ class ServiceTest extends \BBTestCase
         $modelProduct->loadBean(new \DummyBean());
         $modelProduct->config = '{"settings":5,"max":"10"}';
 
-
-        $data = array(
-            'config'           => array(
+        $data = [
+            'config' => [
                 'settings' => 3,
-                'max'      => '',
-            ),
-            'new_config_name'  => 'newParam',
+                'max' => '',
+            ],
+            'new_config_name' => 'newParam',
             'new_config_value' => 'newValue',
-        );
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -395,25 +383,24 @@ class ServiceTest extends \BBTestCase
 
     public function testgetAddons()
     {
-        $addonsRows = array(
-            array(
-                'id'    => 1,
+        $addonsRows = [
+            [
+                'id' => 1,
                 'title' => 'testTitle',
-            ),
-        );
+            ],
+        ];
 
-        $expected = array(
+        $expected = [
             1 => 'testTitle',
-        );
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue($addonsRows));
+            ->willReturn($addonsRows);
 
-
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -436,7 +423,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($newProductId));
+            ->willReturn($newProductId);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
@@ -445,10 +432,10 @@ class ServiceTest extends \BBTestCase
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['tools']  = $toolMock;
+        $di['tools'] = $toolMock;
 
         $this->service->setDi($di);
 
@@ -464,10 +451,10 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('productHasOrders')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -478,23 +465,23 @@ class ServiceTest extends \BBTestCase
 
     public function testgetProductCategoryPairs()
     {
-        $execArray = array(
-            array(
-                'id'    => 1,
+        $execArray = [
+            [
+                'id' => 1,
                 'title' => 'title4test',
-            ),
-        );
+            ],
+        ];
 
-        $expectArray = array(
+        $expectArray = [
             '1' => 'title4test',
-        );
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue($execArray));
+            ->willReturn($execArray);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -511,10 +498,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(1));
+            ->willReturn(1);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -522,7 +509,6 @@ class ServiceTest extends \BBTestCase
         $result = $this->service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
         $this->assertIsBool($result);
         $this->assertTrue($result);
-
     }
 
     public function testcreateCategory()
@@ -539,16 +525,16 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($newCategoryId));
+            ->willReturn($newCategoryId);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
-        $di['logger']      = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
 
@@ -569,9 +555,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($modelProduct));
+            ->willReturn($modelProduct);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -579,7 +565,6 @@ class ServiceTest extends \BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Can not remove product category with products');
         $this->service->removeProductCategory($modelProductCategory);
-
     }
 
     public function testremoveProductCategory()
@@ -592,13 +577,13 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($modelProduct));
+            ->willReturn($modelProduct);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -610,13 +595,13 @@ class ServiceTest extends \BBTestCase
 
     public function testgetPromoSearchQuery()
     {
-        $data = array(
+        $data = [
             'search' => 'keyword',
-            'id'     => 1,
+            'id' => 1,
             'status' => 'active',
-        );
+        ];
 
-        $di                = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
 
@@ -640,18 +625,18 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($newPromoId));
+            ->willReturn($newPromoId);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
-        $di['logger']      = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
-        $result = $this->service->createPromo('code', 'percentage', 50, array(), array(), array(), array());
+        $result = $this->service->createPromo('code', 'percentage', 50, [], [], [], []);
         $this->assertIsInt($result);
         $this->assertEquals($newPromoId, $result);
     }
@@ -661,16 +646,16 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
         $model->products = '{}';
-        $model->periods  = '{}';
+        $model->periods = '{}';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di          = new \Pimple\Container();
-        $di['db']    = $dbMock;
-        $di['tools'] = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['tools'] = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
 
         $this->service->setDi($di);
 
@@ -683,30 +668,29 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $data = array(
-            'code'            => 'GO',
-            'type'            => 'absolute',
-            'value'           => 10,
-            'active'          => true,
-            'freesetup'       => true,
+        $data = [
+            'code' => 'GO',
+            'type' => 'absolute',
+            'value' => 10,
+            'active' => true,
+            'freesetup' => true,
             'once_per_client' => true,
-            'recurring'       => false,
-            'maxuses'         => '1',
-            'used'            => '0',
-            'start_at'        => '2012-01-01',
-            'end_at'          => '2012-01-02',
-            'products'        => 'domain',
-            'periods'         => array(),
-        );
+            'recurring' => false,
+            'maxuses' => '1',
+            'used' => '0',
+            'start_at' => '2012-01-01',
+            'end_at' => '2012-01-02',
+            'products' => 'domain',
+            'periods' => [],
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['logger']    = new \Box_Log();
-
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
         $result = $this->service->updatePromo($model, $data);
@@ -725,8 +709,8 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -737,14 +721,14 @@ class ServiceTest extends \BBTestCase
 
     public function testgetProductSearchQuery()
     {
-        $data = array(
-            'search'      => 'keyword',
-            'type'        => 'domain',
-            'status'      => 'active',
+        $data = [
+            'search' => 'keyword',
+            'type' => 'domain',
+            'status' => 'active',
             'show_hidden' => true,
-        );
+        ];
 
-        $di                = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
 
@@ -761,32 +745,32 @@ class ServiceTest extends \BBTestCase
 
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->type  = 'custom';
-        $categoryProductsArr = array(
-            $modelProduct
-        );
+        $modelProduct->type = 'custom';
+        $categoryProductsArr = [
+            $modelProduct,
+        ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array('getCategoryProducts', 'toApiArray'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getCategoryProducts', 'toApiArray'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCategoryProducts')
-            ->will($this->returnValue($categoryProductsArr));
+            ->willReturn($categoryProductsArr);
 
-        $apiArrayResult = array(
+        $apiArrayResult = [
             'price_starting_from' => 1,
-        );
+        ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue($apiArrayResult));
+            ->willReturn($apiArrayResult);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -794,55 +778,54 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-
-    public function testtoProductCategoryApiArray_StartingFromValue_NotZero()
+    public function testtoProductCategoryApiArrayStartingFromValueNotZero()
     {
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->type  = 'custom';
-        $categoryProductsArr = array(
+        $modelProduct->type = 'custom';
+        $categoryProductsArr = [
             $modelProduct,
             $modelProduct,
             $modelProduct,
             $modelProduct,
-        );
+        ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array('getCategoryProducts', 'toApiArray'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getCategoryProducts', 'toApiArray'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCategoryProducts')
-            ->will($this->returnValue($categoryProductsArr));
+            ->willReturn($categoryProductsArr);
 
         $min = 1;
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturnOnConsecutiveCalls(
-                    array(
-                    'price_starting_from' => 4,
-                    ),
-                    array(
-                        'price_starting_from' => 5,
-                    ),
-                    array(
-                        'price_starting_from' => 2,
-                    ),
-                    array(
-                        'price_starting_from' => $min,
-                    )
+                [
+                'price_starting_from' => 4,
+                ],
+                [
+                    'price_starting_from' => 5,
+                ],
+                [
+                    'price_starting_from' => 2,
+                ],
+                [
+                    'price_starting_from' => $min,
+                ]
             );
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -858,15 +841,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $result = $this->service->findOneActiveById(1);
         $this->assertInstanceOf('\Model_Product', $result);
-
     }
 
     public function testfindOneActiveBySlug()
@@ -876,9 +858,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -888,11 +870,11 @@ class ServiceTest extends \BBTestCase
 
     public function testgetProductCategorySearchQuery()
     {
-        [$sql, $params] = $this->service->getProductCategorySearchQuery(array());
+        [$sql, $params] = $this->service->getProductCategorySearchQuery([]);
 
         $this->assertIsString($sql);
         $this->assertIsArray($params);
-        $this->assertEquals(array(), $params);
+        $this->assertEquals([], $params);
     }
 
     public function testgetStartingFromPriceTypeFree()
@@ -905,13 +887,12 @@ class ServiceTest extends \BBTestCase
         $productPaymentModel->loadBean(new \DummyBean());
         $productPaymentModel->type = 'free';
 
-
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue($productPaymentModel));
+            ->willReturn($productPaymentModel);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -928,19 +909,18 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->getStartingFromPrice($productModel);
 
-        $this->assertEquals(null, $result);
+        $this->assertNull($result);
     }
 
-    public function testgetStartingFromPrice_DomainType()
+    public function testgetStartingFromPriceDomainType()
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $productModel->type = Service::DOMAIN;
         $productModel->product_payment_id = 1;
 
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array('getStartingDomainPrice', 'getStartingPrice'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getStartingDomainPrice', 'getStartingPrice'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getStartingDomainPrice')
@@ -950,7 +930,6 @@ class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->getStartingFromPrice($productModel);
         $this->assertNotNull($result);
-
     }
 
     public function testgetUpgradablePairs()
@@ -959,7 +938,7 @@ class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->upgrades = '{}';
 
-        $expected = array();
+        $expected = [];
 
         $result = $this->service->getUpgradablePairs($productModel);
         $this->assertIsArray($result);
@@ -968,30 +947,30 @@ class ServiceTest extends \BBTestCase
 
     public function testgetProductTitlesByIds()
     {
-        $ids = array('1', '2');
+        $ids = ['1', '2'];
 
-        $queryArr = array(
-            array(
-                'id'     => '1',
+        $queryArr = [
+            [
+                'id' => '1',
                 'titile' => 'test',
-            ),
-            array(
-                'id'     => '2',
+            ],
+            [
+                'id' => '2',
                 'titile' => 'Another',
-            ),
-        );
+            ],
+        ];
 
-        $expected = array(
+        $expected = [
             '1' => 'test',
             '2' => 'Another',
-        );
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1011,9 +990,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($productModel)));
+            ->willReturn([$productModel]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1038,20 +1017,20 @@ class ServiceTest extends \BBTestCase
 
         $minPrice = 1;
 
-        $productPaymentModel->w_enabled    = true;
-        $productPaymentModel->w_price      = 2;
-        $productPaymentModel->m_enabled    = true;
-        $productPaymentModel->m_price      = 4;
-        $productPaymentModel->q_enabled    = true;
-        $productPaymentModel->q_price      = 8;
-        $productPaymentModel->b_enabled    = true;
-        $productPaymentModel->b_price      = $minPrice;
-        $productPaymentModel->a_enabled    = true;
-        $productPaymentModel->a_price      = 10;
-        $productPaymentModel->bia_enabled  = true;
-        $productPaymentModel->bia_price    = 12;
+        $productPaymentModel->w_enabled = true;
+        $productPaymentModel->w_price = 2;
+        $productPaymentModel->m_enabled = true;
+        $productPaymentModel->m_price = 4;
+        $productPaymentModel->q_enabled = true;
+        $productPaymentModel->q_price = 8;
+        $productPaymentModel->b_enabled = true;
+        $productPaymentModel->b_price = $minPrice;
+        $productPaymentModel->a_enabled = true;
+        $productPaymentModel->a_price = 10;
+        $productPaymentModel->bia_enabled = true;
+        $productPaymentModel->bia_price = 12;
         $productPaymentModel->tria_enabled = true;
-        $productPaymentModel->tria_price   = 14;
+        $productPaymentModel->tria_price = 14;
 
         $result = $this->service->getStartingPrice($productPaymentModel);
         $this->assertIsInt($result);
@@ -1061,10 +1040,10 @@ class ServiceTest extends \BBTestCase
     public function testgetSavePath()
     {
         $filename = 'cfg.file';
-        $config   = array('path_data' => '/home');
+        $config = ['path_data' => '/home'];
         $expected = PATH_DATA . '/uploads/' . md5($filename);
 
-        $di           = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['config'] = $config;
 
         $this->service->setDi($di);
@@ -1074,14 +1053,14 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testcanUpgradeTo_returnsTrue()
+    public function testcanUpgradeToReturnsTrue()
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array('getUpgradablePairs'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getUpgradablePairs'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')
-            ->will($this->returnValue(array('2' => 'Hossting')));
+            ->willReturn(['2' => 'Hossting']);
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -1095,14 +1074,14 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanUpgradeTo_upgradeIsImposible()
+    public function testcanUpgradeToUpgradeIsImposible()
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)
-            ->onlyMethods(array('getUpgradablePairs'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getUpgradablePairs'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')
-            ->will($this->returnValue(array('4' => 'Domain')));
+            ->willReturn(['4' => 'Domain']);
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -1116,7 +1095,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testcanUpgradeTo_SameProducts()
+    public function testcanUpgradeToSameProducts()
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -1150,7 +1129,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($amount, $result);
     }
 
-    public function testgetStartingDomainPrice_noActiveTld()
+    public function testgetStartingDomainPriceNoActiveTld()
     {
         $di = new \Pimple\Container();
 
@@ -1167,6 +1146,6 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $this->service->setDi($di);
         $result = $this->service->getStartingDomainPrice();
-        $this->assertEquals((double) $amount, $result);
+        $this->assertEquals((float) $amount, $result);
     }
 }

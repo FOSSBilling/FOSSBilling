@@ -1,26 +1,27 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_CurrencyTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'currencies.xml';
-    
+
     public function testCurrencies()
     {
         $array = $this->api_admin->currency_get_pairs();
         $this->assertIsArray($array);
 
-        $array = $this->api_admin->currency_get(array('code' => 'USD'));
+        $array = $this->api_admin->currency_get(['code' => 'USD']);
         $this->assertIsArray($array);
         $this->assertEquals('USD', $array['code']);
 
         $array = $this->api_admin->currency_get_default();
         $this->assertIsArray($array);
 
-        $data = array(
-            'code'  =>    'GBP',
-            'title'  =>    'British Pound',
-            'format'  =>    '{{price}}£',
-        );
+        $data = [
+            'code' => 'GBP',
+            'title' => 'British Pound',
+            'format' => '{{price}}£',
+        ];
         $code = $this->api_admin->currency_create($data);
         $this->assertIsString($code);
 
@@ -29,7 +30,7 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
 
         $bool = $this->api_admin->currency_delete($data);
         $this->assertTrue($bool);
-        
+
         $data['code'] = 'EUR';
         $bool = $this->api_admin->currency_set_default($data);
         $this->assertTrue($bool);
@@ -46,7 +47,7 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
         $this->assertIsArray($list);
-        if (count($list)){
+        if (count($list)) {
             $item = $list[0];
             $this->assertArrayHasKey('code', $item);
             $this->assertArrayHasKey('title', $item);

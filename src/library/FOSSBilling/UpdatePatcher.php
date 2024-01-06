@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,10 +12,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
-use Ramsey\Uuid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
@@ -33,8 +33,6 @@ class UpdatePatcher implements InjectionAwareInterface
 
     /**
      * Apply configuration file patches.
-     *
-     * @return void
      */
     public function applyConfigPatches(): void
     {
@@ -49,7 +47,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // Create backup of current configuration.
         try {
             $filesystem->copy(PATH_CONFIG, substr(PATH_CONFIG, 0, -4) . '.old.php');
-        } catch (FileNotFoundException | IOException) {
+        } catch (FileNotFoundException|IOException) {
             throw new Exception('Unable to create backup of configuration file');
         }
 
@@ -111,8 +109,6 @@ class UpdatePatcher implements InjectionAwareInterface
 
     /**
      * Apply all relevant patches to current FOSSBilling instance.
-     *
-     * @return void
      */
     public function applyCorePatches(): void
     {
@@ -131,8 +127,6 @@ class UpdatePatcher implements InjectionAwareInterface
      *
      * @param array $files Array containing files and directories to perform action on and
      *                     the actions to perform. Valid options are 'rename' and 'unlink'.
-     *
-     * @return void
      */
     private function executeFileActions(array $files): void
     {
@@ -154,18 +148,18 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Execute the given SQL statement.
      *
-     * @param $sql The SQL statement to execute.
-     *
-     * @return void
+     * @param $sql The SQL statement to execute
      */
     private function executeSql($sql): void
     {
         $statement = $this->di['pdo']->prepare($sql);
+
         try {
             $statement->execute();
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
+
             throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
     }
@@ -173,7 +167,7 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Get the current patch level of FOSSBilling.
      *
-     * @return int|null The current patch level.
+     * @return int|null the current patch level
      */
     private function getPatchLevel(): int|null
     {
@@ -181,6 +175,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $sqlStatement = $this->di['pdo']->prepare($sql);
         $sqlStatement->execute(['param' => 'last_patch']);
         $result = $sqlStatement->fetchColumn();
+
         return intval($result) ?: null;
     }
 
@@ -188,8 +183,6 @@ class UpdatePatcher implements InjectionAwareInterface
      * Set the current patch level of FOSSBilling.
      *
      * @param int $patchLevel The last executed patch level
-     *
-     * @return void
      */
     private function setPatchLevel(int $patchLevel): void
     {
@@ -207,9 +200,9 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Get patches to be applied.
      *
-     * @param int|null $patchLevel The current patch level of FOSSBilling.
+     * @param int|null $patchLevel the current patch level of FOSSBilling
      *
-     * @return array Array containing the patches to be executed, in order.
+     * @return array array containing the patches to be executed, in order
      */
     private function getPatches($patchLevel = 0): array
     {
@@ -229,7 +222,7 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             27 => function () {
                 // Migration steps to create table to allow admin users to do password reset.
-                $q = "CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+                $q = 'CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
                 $this->executeSql($q);
             },
             28 => function () {
@@ -299,12 +292,12 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             34 => function () {
                 // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
-                $q = "ALTER TABLE session ADD fingerprint TEXT;";
+                $q = 'ALTER TABLE session ADD fingerprint TEXT;';
                 $this->executeSql($q);
             },
             35 => function () {
                 // Adds the new "created_at" to the session table, to ensure sessions are destroyed after they reach their maximum age.
-                $q = "ALTER TABLE session ADD created_at int(11);";
+                $q = 'ALTER TABLE session ADD created_at int(11);';
                 $this->executeSql($q);
             },
             36 => function () {
@@ -312,7 +305,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
 
                 // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
-                $q = "RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;";
+                $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
                 $this->executeSql($q);
 
                 // If the Kb extension is currently active, set enabled in Support settings.
@@ -362,12 +355,12 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             39 => function () {
                 // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
-                // @see https://github.com/FOSSBilling/locale/issues/212 
+                // @see https://github.com/FOSSBilling/locale/issues/212
                 $fileActions = [
                     PATH_LANGS . DIRECTORY_SEPARATOR . 'srp' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
-            }
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

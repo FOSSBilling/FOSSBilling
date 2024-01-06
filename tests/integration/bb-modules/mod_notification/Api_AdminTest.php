@@ -8,12 +8,12 @@ class Box_Mod_Notification_Api_AdminTest extends BBModTestCase
 
     public function testActions()
     {
-        $this->api_admin->extension_activate(array('id' => 'notification', 'type' => 'mod'));
+        $this->api_admin->extension_activate(['id' => 'notification', 'type' => 'mod']);
 
-        $int = $this->api_admin->notification_add(array('message' => 'Test message'));
+        $int = $this->api_admin->notification_add(['message' => 'Test message']);
         $this->assertIsInt($int);
 
-        $array = $this->api_admin->notification_get(array('id' => $int));
+        $array = $this->api_admin->notification_get(['id' => $int]);
         $this->assertIsArray($array);
 
         $array = $this->api_admin->notification_get_list();
@@ -34,10 +34,9 @@ class Box_Mod_Notification_Api_AdminTest extends BBModTestCase
         $this->assertArrayHasKey('created_at', $item);
         $this->assertArrayHasKey('updated_at', $item);
 
-
-        $bool = $this->api_admin->notification_delete(array('id' => $array['list'][0]['id']));
+        $bool = $this->api_admin->notification_delete(['id' => $array['list'][0]['id']]);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->notification_delete_all();
         $this->assertTrue($bool);
     }

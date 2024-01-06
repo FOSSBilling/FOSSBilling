@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Servicelicense\Api;
 
-
-class AdminTest extends \BBTestCase {
+class AdminTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Servicelicense\Api\Admin
+     * @var Admin
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api= new \Box\Mod\Servicelicense\Api\Admin();
+        $this->api = new Admin();
     }
 
     public function testgetDi()
@@ -23,47 +22,47 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testplugin_get_pairs()
+    public function testpluginGetPairs()
     {
         $licensePluginArray[]['filename'] = 'plugin1';
         $licensePluginArray[]['filename'] = 'plugin2';
         $licensePluginArray[]['filename'] = 'plugin3';
 
-        $expected = array(
+        $expected = [
             'plugin1' => 'plugin1',
             'plugin2' => 'plugin2',
             'plugin3' => 'plugin3',
-        );
+        ];
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getLicensePlugins')
-            ->will($this->returnValue($licensePluginArray));
+            ->willReturn($licensePluginArray);
 
         $this->api->setService($serviceMock);
 
-        $result = $this->api->plugin_get_pairs(array());
+        $result = $this->api->plugin_get_pairs([]);
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
     public function testupdate()
     {
-        $data = array(
+        $data = [
             'order_id' => 1,
-        );
+        ];
 
-        $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Api\Admin::class)
-            ->onlyMethods(array('_getService'))
+        $apiMock = $this->getMockBuilder('\\' . Admin::class)
+            ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
-            ->will($this->returnValue(new \Model_ServiceLicense()));
+            ->willReturn(new \Model_ServiceLicense());
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $apiMock->setService($serviceMock);
         $result = $apiMock->update($data);
@@ -74,21 +73,21 @@ class AdminTest extends \BBTestCase {
 
     public function testreset()
     {
-        $data = array(
+        $data = [
             'order_id' => 1,
-        );
+        ];
 
-        $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Api\Admin::class)
-            ->onlyMethods(array('_getService'))
+        $apiMock = $this->getMockBuilder('\\' . Admin::class)
+            ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
-            ->will($this->returnValue(new \Model_ServiceLicense()));
+            ->willReturn(new \Model_ServiceLicense());
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('reset')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $apiMock->setService($serviceMock);
         $result = $apiMock->reset($data);
@@ -97,19 +96,19 @@ class AdminTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
-    public function test_getService()
+    public function testGetService()
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock= $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceLicense()));
+            ->willReturn(new \Model_ServiceLicense());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -118,7 +117,7 @@ class AdminTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->api->setDi($di);
 
@@ -126,19 +125,19 @@ class AdminTest extends \BBTestCase {
         $this->assertInstanceOf('\Model_ServiceLicense', $result);
     }
 
-    public function test_getServiceOrderNotActivated()
+    public function testGetServiceOrderNotActivated()
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock= $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -147,7 +146,7 @@ class AdminTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->api->setDi($di);
 
@@ -155,7 +154,4 @@ class AdminTest extends \BBTestCase {
         $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }
-
-
-
 }

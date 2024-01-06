@@ -1,21 +1,18 @@
 <?php
 
-
 namespace Box\Mod\Hook\Api;
 
-
-class AdminTest extends \BBTestCase {
-
+class AdminTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Hook\Api\Admin
+     * @var Admin
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Hook\Api\Admin();
+        $this->api = new Admin();
     }
-
 
     public function testgetDi()
     {
@@ -25,26 +22,25 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testget_list()
+    public function testgetList()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
-            ->will($this->returnValue(array('SqlString', array())));
+            ->willReturn(['SqlString', []]);
 
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
 
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
-        $result = $this->api->get_list(array());
+        $result = $this->api->get_list([]);
         $this->assertIsArray($result);
     }
 
@@ -52,20 +48,19 @@ class AdminTest extends \BBTestCase {
     {
         $data['event'] = 'testEvent';
 
-        $configMock = array('debug_and_monitoring' => ['debug' => true]);
+        $configMock = ['debug_and_monitoring' => ['debug' => true]];
 
         $logMock = $this->getMockBuilder('\Box_log')->getMock();
 
         $eventManager = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManager->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(1));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['config'] = $configMock;
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
-
 
         $this->api->setDi($di);
         $result = $this->api->call($data);
@@ -81,21 +76,20 @@ class AdminTest extends \BBTestCase {
         $this->assertFalse($result);
     }
 
-    public function testbatch_connect()
+    public function testbatchConnect()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchConnect')
-            ->will($this->returnValue(1));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
 
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
-        $result = $this->api->batch_connect(array());
+        $result = $this->api->batch_connect([]);
         $this->assertNotEmpty($result);
     }
 }
- 

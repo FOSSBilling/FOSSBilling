@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_InvoiceTest extends BBDbApiTestCase
 {
@@ -6,11 +7,11 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
 
     public function testProformaInvoices()
     {
-        //prepare expiring order
-        $data = array(
-            'id'            =>  5,
-            'expires_at'    =>  date('Y-m-d H:i:s', strtotime('+1 day')),
-        );
+        // prepare expiring order
+        $data = [
+            'id' => 5,
+            'expires_at' => date('Y-m-d H:i:s', strtotime('+1 day')),
+        ];
         $bool = $this->api_admin->order_update($data);
         $this->assertTrue($bool);
 
@@ -19,28 +20,28 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
 
         $array = $this->api_client->invoice_get_list();
         $this->assertIsArray($array);
-        
-        $data = array(
-            'hash'    =>  $array['list'][0]['hash'],
-        );
+
+        $data = [
+            'hash' => $array['list'][0]['hash'],
+        ];
         $array = $this->api_client->invoice_get($data);
         $this->assertIsArray($array);
     }
 
     public function testRenewal()
     {
-        $data = array(
-            'order_id'  =>  3,
-        );
+        $data = [
+            'order_id' => 3,
+        ];
         $hash = $this->api_client->invoice_renewal_invoice($data);
         $this->assertIsString($hash);
     }
 
     public function testFunds()
     {
-        $data = array(
-            'amount'  =>  30,
-        );
+        $data = [
+            'amount' => 30,
+        ];
         $hash = $this->api_client->invoice_funds_invoice($data);
         $this->assertIsString($hash);
     }
@@ -51,9 +52,9 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
         $pf = $invoices[1];
         $hash = $pf->hash;
 
-        $data = array(
-            'hash'          =>  $hash,
-        );
+        $data = [
+            'hash' => $hash,
+        ];
         $bool = $this->api_client->invoice_delete($data);
         $this->assertTrue($bool);
     }

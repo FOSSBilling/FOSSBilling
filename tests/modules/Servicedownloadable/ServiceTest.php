@@ -1,19 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Servicedownloadable;
-
 
 class ServiceTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Servicedownloadable\Service
+     * @var Service
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Servicedownloadable\Service();
+        $this->service = new Service();
     }
 
     public function testgetDi()
@@ -30,16 +28,16 @@ class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
-        $data = array();
+        $data = [];
 
         $expected = array_merge(json_decode($productModel->config, 1), $data);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->attachOrderConfig($productModel, $data);
@@ -47,7 +45,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testaction_create()
+    public function testactionCreate()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -59,18 +57,18 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(1));
+            ->willReturn(1);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
@@ -78,22 +76,22 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ServiceDownloadable', $result);
     }
 
-    public function testaction_delete()
+    public function testactionDelete()
     {
-        $clientOrderModel = new \Model_ClientOrder();;
+        $clientOrderModel = new \Model_ClientOrder();
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceDownloadable()));
+            ->willReturn(new \Model_ServiceDownloadable());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);
@@ -108,7 +106,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -121,24 +119,24 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
 
-        $model->filename  = 'config.cfg';
+        $model->filename = 'config.cfg';
         $model->downloads = 1;
 
         $filePath = 'path/to/location' . md5($model->filename);
 
-        $expected = array(
-            'path'      => $filePath,
-            'filename'  => $model->filename,
+        $expected = [
+            'path' => $filePath,
+            'filename' => $model->filename,
             'downloads' => 1,
-        );
+        ];
 
         $productServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $productServiceMock->expects($this->atLeastOnce())
             ->method('getSavePath')
-            ->will($this->returnValue($filePath));
+            ->willReturn($filePath);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $productServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $productServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->toApiArray($model, null, new \Model_Admin());
@@ -148,42 +146,41 @@ class ServiceTest extends \BBTestCase
 
     public function testuploadProductFileErrorUploadingFile()
     {
-        $productModel = new  \Model_Product();
+        $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $successfullyUploadedFileCount = 0;
-        $requestMock                   = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
-            ->will($this->returnValue($successfullyUploadedFileCount));
-        $di            = new \Pimple\Container();
+            ->willReturn($successfullyUploadedFileCount);
+        $di = new \Pimple\Container();
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Error uploading file');
         $this->service->uploadProductFile($productModel);
-
     }
 
     public function testuploadProductFile()
     {
-        $productModel = new  \Model_Product();
+        $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $successfullyUploadedFileCount = 1;
 
-        $file     = array(
-            'name'     => 'test',
+        $file = [
+            'name' => 'test',
             'tmp_name' => '12345',
-        );
+        ];
         $fileMock = new \FOSSBilling\RequestFile($file);
 
         $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
-            ->will($this->returnValue($successfullyUploadedFileCount));
+            ->willReturn($successfullyUploadedFileCount);
         $requestMock->expects($this->atLeastOnce())
             ->method('getUploadedFiles')
-            ->will($this->returnValue(array($fileMock)));
+            ->willReturn([$fileMock]);
 
         $productServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $productServiceMock->expects($this->atLeastOnce())
@@ -195,11 +192,11 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $productServiceMock);
-        $di['db']          = $dbMock;
-        $di['logger']      = new \Box_Log();
-        $di['request']     = $requestMock;
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $productServiceMock);
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $di['request'] = $requestMock;
         $this->service->setDi($di);
 
         $result = $this->service->uploadProductFile($productModel);
@@ -217,19 +214,19 @@ class ServiceTest extends \BBTestCase
 
         $successfullyUploadedFileCount = 1;
 
-        $file     = array(
-            'name'     => 'test',
+        $file = [
+            'name' => 'test',
             'tmp_name' => '12345',
-        );
+        ];
         $fileMock = new \FOSSBilling\RequestFile($file);
 
         $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
-            ->will($this->returnValue($successfullyUploadedFileCount));
+            ->willReturn($successfullyUploadedFileCount);
         $requestMock->expects($this->atLeastOnce())
             ->method('getUploadedFiles')
-            ->will($this->returnValue(array($fileMock)));
+            ->willReturn([$fileMock]);
 
         $productServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $productServiceMock->expects($this->atLeastOnce())
@@ -239,11 +236,11 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $productServiceMock);
-        $di['db']          = $dbMock;
-        $di['logger']      = new \Box_Log();
-        $di['request']     = $requestMock;
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $productServiceMock);
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $di['request'] = $requestMock;
 
         $this->service->setDi($di);
         $result = $this->service->updateProductFile($serviceDownloadableModel, $orderModel);
@@ -260,11 +257,11 @@ class ServiceTest extends \BBTestCase
         $serviceDownloadableModel->loadBean(new \DummyBean());
 
         $successfullyUploadedFileCount = 0;
-        $requestMock                   = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
-            ->will($this->returnValue($successfullyUploadedFileCount));
-        $di            = new \Pimple\Container();
+            ->willReturn($successfullyUploadedFileCount);
+        $di = new \Pimple\Container();
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
@@ -277,7 +274,7 @@ class ServiceTest extends \BBTestCase
     {
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
         $serviceDownloadableModel->loadBean(new \DummyBean());
-        $serviceDownloadableModel->filename  = 'config.cfg';
+        $serviceDownloadableModel->filename = 'config.cfg';
         $serviceDownloadableModel->downloads = 1;
 
         $filePath = 'path/to/location' . md5($serviceDownloadableModel->filename);
@@ -285,11 +282,11 @@ class ServiceTest extends \BBTestCase
         $productServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $productServiceMock->expects($this->atLeastOnce())
             ->method('getSavePath')
-            ->will($this->returnValue($filePath));
+            ->willReturn($filePath);
 
-        $di                = new \Pimple\Container();
-        $di['tools']       = $toolsMock;
-        $di['mod_service'] = $di->protect(fn() => $productServiceMock);
+        $di = new \Pimple\Container();
+        $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn () => $productServiceMock);
 
         $this->service->setDi($di);
 
@@ -298,6 +295,4 @@ class ServiceTest extends \BBTestCase
         $this->expectExceptionMessage('File can not be downloaded at the moment. Please contact support');
         $this->service->sendFile($serviceDownloadableModel);
     }
-
-
 }

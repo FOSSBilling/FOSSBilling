@@ -7,17 +7,17 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 
     public function testserviceboxbillinglicense()
     {
-        $data = array(
+        $data = [
             'order_id' => 16,
-        );
+        ];
 
         $serviceMock = $this->getMockBuilder('Box\Mod\Serviceboxbillinglicense\Service')->getMock();
         $serviceMock->expects($this->any())
             ->method('reset')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new RedBeanPHP\OODBBean());
         $client->id = 1;
 
         $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
@@ -29,55 +29,54 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function test_getServiceMissingOrderId()
+    public function testGetServiceMissingOrderId()
     {
-        $data = array();
+        $data = [];
 
         $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
         $clientApi->setDi($this->di);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order id is required');
 
         $bool = $clientApi->reset($data);
     }
 
-
-    public function test_getServiceOrderNotFound()
+    public function testGetServiceOrderNotFound()
     {
-        $data = array(
+        $data = [
             'order_id' => 160,
-        );
+        ];
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new RedBeanPHP\OODBBean());
         $client->id = 1;
 
         $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
         $clientApi->setDi($this->di);
         $clientApi->setIdentity($client);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionMessage('FOSSBilling license order not found');
 
         $bool = $clientApi->reset($data);
     }
 
-    public function test_getServiceOrderNotActivated()
+    public function testGetServiceOrderNotActivated()
     {
-        $data = array(
+        $data = [
             'order_id' => 17,
-        );
+        ];
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new RedBeanPHP\OODBBean());
         $client->id = 1;
 
         $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
         $clientApi->setDi($this->di);
         $clientApi->setIdentity($client);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
 
         $bool = $clientApi->reset($data);

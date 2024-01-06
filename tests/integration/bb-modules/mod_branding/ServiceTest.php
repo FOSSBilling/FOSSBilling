@@ -1,12 +1,13 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends ApiTestCase
 {
-    private $configLicense = null;
+    private $configLicense;
 
-    public function tearDown() : void
+    public function tearDown(): void
     {
-        if ($this->configLicense){
+        if ($this->configLicense) {
             $this->di['config']['license'] = $this->configLicense;
         }
     }

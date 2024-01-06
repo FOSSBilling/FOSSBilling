@@ -1,5 +1,6 @@
 <?php
-putenv("APP_ENV=test");
+
+putenv('APP_ENV=test');
 define('PATH_TESTS', __DIR__);
 
 require_once __DIR__ . '/../src/load.php';
@@ -13,12 +14,12 @@ define('BB_DB_HOST', $config['db']['host']);
 define('BB_DB_TYPE', $config['db']['type']);
 
 // Add test libraries
-set_include_path(implode(PATH_SEPARATOR, array(
+set_include_path(implode(PATH_SEPARATOR, [
     get_include_path(),
     PATH_TESTS . '/library',
     PATH_TESTS . '/includes',
     PATH_TESTS . '/includes/Vps',
-)));
+]));
 
 require_once 'BBTestCase.php';
 require_once 'BBDatabaseTestCase.php';
@@ -31,9 +32,9 @@ require_once 'DummyBean.php';
 $di = include PATH_ROOT . '/di.php';
 $di['translate']();
 
-//Setup the autoloader
+// Setup the autoloader
 $testsLoader = new AntCMS\AntLoader([
-    'mode' => 'filesystem'
+    'mode' => 'filesystem',
 ]);
 $testsLoader->addNamespace('', DIRECTORY_SEPARATOR . 'library', 'psr0');
 $testsLoader->register();

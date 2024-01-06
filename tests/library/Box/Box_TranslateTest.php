@@ -1,11 +1,12 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_TranslateTest extends PHPUnit\Framework\TestCase
 {
     public function testsetLocale()
     {
         $locale = 'en_US';
-        $translateObj = new \Box_Translate();
+        $translateObj = new Box_Translate();
         $translateObj->setLocale($locale);
         $result = $translateObj->getLocale();
 
@@ -14,16 +15,16 @@ class Box_TranslateTest extends PHPUnit\Framework\TestCase
 
     public function testDi()
     {
-        $di = new \Pimple\Container();
-        $translateObj = new \Box_Translate();
+        $di = new Pimple\Container();
+        $translateObj = new Box_Translate();
         $translateObj->setDi($di);
         $getDi = $translateObj->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testDomain_setterAndGetter()
+    public function testDomainSetterAndGetter()
     {
-        $translateObj = new \Box_Translate();
+        $translateObj = new Box_Translate();
 
         $default = 'messages';
         $result = $translateObj->getDomain();
@@ -41,5 +42,4 @@ class Box_TranslateTest extends PHPUnit\Framework\TestCase
 
         $this->assertEquals($text, $result);
     }
-
 }

@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Invoice\Api;
 
-
-class ClientTest extends \BBTestCase {
+class ClientTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Invoice\Api\Client
+     * @var Client
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Invoice\Api\Client();
+        $this->api = new Client();
     }
 
     public function testgetDi()
@@ -28,7 +27,7 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -39,7 +38,7 @@ class ClientTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -65,7 +64,7 @@ class ClientTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -85,7 +84,7 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -96,7 +95,7 @@ class ClientTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -123,7 +122,7 @@ class ClientTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -150,7 +149,7 @@ class ClientTest extends \BBTestCase {
         $model->status = 'paid';
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -165,7 +164,7 @@ class ClientTest extends \BBTestCase {
         $this->api->update($data);
     }
 
-    public function testrenewal_invoice()
+    public function testrenewalInvoice()
     {
         $generatedHash = 'generatedHashString';
 
@@ -176,7 +175,7 @@ class ClientTest extends \BBTestCase {
         $model->hash = $generatedHash;
         $serviceMock->expects($this->atLeastOnce())
             ->method('generateForOrder')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('approveInvoice');
 
@@ -191,7 +190,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($clientOrder));
+            ->willReturn($clientOrder);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -210,7 +209,7 @@ class ClientTest extends \BBTestCase {
         $this->assertEquals($generatedHash, $result);
     }
 
-    public function testrenewal_invoiceOrderIsFree()
+    public function testrenewalInvoiceOrderIsFree()
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -224,7 +223,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($clientOrder));
+            ->willReturn($clientOrder);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -241,10 +240,9 @@ class ClientTest extends \BBTestCase {
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d is free. No need to generate invoice.', $clientOrder->id));
         $this->api->renewal_invoice($data);
-
     }
 
-    public function testrenewal_invoiceOrderNotFound()
+    public function testrenewalInvoiceOrderNotFound()
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -257,7 +255,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -275,7 +273,7 @@ class ClientTest extends \BBTestCase {
         $this->api->renewal_invoice($data);
     }
 
-    public function testfunds_invoice()
+    public function testfundsInvoice()
     {
         $generatedHash = 'generatedHashString';
 
@@ -290,7 +288,7 @@ class ClientTest extends \BBTestCase {
         $model->hash = $generatedHash;
         $serviceMock->expects($this->atLeastOnce())
             ->method('generateFundsInvoice')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('approveInvoice');
 
@@ -319,7 +317,7 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteInvoiceByClient')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
@@ -327,13 +325,12 @@ class ClientTest extends \BBTestCase {
 
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -347,33 +344,32 @@ class ClientTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
-    public function testtransaction_get_list()
+    public function testtransactionGetList()
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
-            ->will($this->returnValue(array('SqlString', array())));
+            ->willReturn(['SqlString', []]);
 
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue(array('list' => array())));
+            ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn() => $transactionService);
-
+        $di['mod_service'] = $di->protect(fn () => $transactionService);
 
         $this->api->setDi($di);
 
         $identity = new \Model_Client();
         $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
-        $result = $this->api->transaction_get_list(array());
+        $result = $this->api->transaction_get_list([]);
         $this->assertIsArray($result);
     }
 
-    public function testget_tax_rate()
+    public function testgetTaxRate()
     {
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -386,11 +382,10 @@ class ClientTest extends \BBTestCase {
             ->method('getTaxRateForClient')
             ->willReturn($taxRate);
 
-
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(function ($service, $sub) use($invoiceTaxService){
-            if ($service == 'Invoice' && $sub == 'Tax'){
-                return  $invoiceTaxService;
+        $di['mod_service'] = $di->protect(function ($service, $sub) use ($invoiceTaxService) {
+            if ($service == 'Invoice' && $sub == 'Tax') {
+                return $invoiceTaxService;
             }
         });
         $this->api->setDi($di);
@@ -399,7 +394,4 @@ class ClientTest extends \BBTestCase {
         $result = $this->api->get_tax_rate();
         $this->assertEquals($taxRate, $result);
     }
-
-
-
 }

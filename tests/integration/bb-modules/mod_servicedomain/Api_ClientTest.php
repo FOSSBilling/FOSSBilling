@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_ServiceDomainTest extends BBDbApiTestCase
 {
@@ -6,44 +7,44 @@ class Api_Client_ServiceDomainTest extends BBDbApiTestCase
 
     public static function orders()
     {
-        return array(
-            array(3),
-            array(4),
-        );
+        return [
+            [3],
+            [4],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('orders')]
     public function testClientServiceDomain($id)
     {
-        $this->api_admin->order_renew(array('id'=>$id));
+        $this->api_admin->order_renew(['id' => $id]);
 
-        $data = array(
-            'order_id'    =>  $id,
-            'ns1'   =>  'ns1.1freehosting.com',
-            'ns2'   =>  'ns2.1freehosting.com',
-            'ns3'   =>  'ns3.1freehosting.com',
-            'ns4'   =>  'ns4.1freehosting.com',
-        );
+        $data = [
+            'order_id' => $id,
+            'ns1' => 'ns1.1freehosting.com',
+            'ns2' => 'ns2.1freehosting.com',
+            'ns3' => 'ns3.1freehosting.com',
+            'ns4' => 'ns4.1freehosting.com',
+        ];
         $bool = $this->api_client->serviceDomain_update_nameservers($data);
         $this->assertTrue($bool);
 
-        $data = array(
-            'order_id'    =>  $id,
-            'contact' =>  array(
-                'first_name'=>  'John',
-                'last_name' =>  'Does',
-                'email'     =>  'email@example.com  ',
-                'company'   =>  'Company',
-                'address1'  =>  'Adress 1',
-                'address2'  =>  'Adress 2',
-                'country'   =>  'US',
-                'city'      =>  'San Jose',
-                'state'     =>  'n/a',
-                'postcode'  =>  '20506',
-                'phone_cc'     =>  '1408',
-                'phone'       =>  '123456',
-            ),
-        );
+        $data = [
+            'order_id' => $id,
+            'contact' => [
+                'first_name' => 'John',
+                'last_name' => 'Does',
+                'email' => 'email@example.com  ',
+                'company' => 'Company',
+                'address1' => 'Adress 1',
+                'address2' => 'Adress 2',
+                'country' => 'US',
+                'city' => 'San Jose',
+                'state' => 'n/a',
+                'postcode' => '20506',
+                'phone_cc' => '1408',
+                'phone' => '123456',
+            ],
+        ];
         $bool = $this->_callOnService('update_contacts', $data);
         $this->assertTrue($bool, 'Failed updating contacts');
 
@@ -65,7 +66,8 @@ class Api_Client_ServiceDomainTest extends BBDbApiTestCase
 
     protected function _callOnService($method, $data)
     {
-        $m = "serviceDomain_".$method;
+        $m = 'serviceDomain_' . $method;
+
         return $this->api_client->{$m}($data);
     }
 }

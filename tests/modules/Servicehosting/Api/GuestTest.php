@@ -1,29 +1,28 @@
 <?php
+
 namespace Box\Mod\Servicehosting\Api;
 
 class GuestTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Servicehosting\Api\Guest
+     * @var Guest
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Servicehosting\Api\Guest();
+        $this->api = new Guest();
     }
 
-    public function testfree_tlds()
+    public function testfreeTlds()
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di['validator'] = $validatorMock;
-
-
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
@@ -31,7 +30,7 @@ class GuestTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di['db'] = $dbMock;
 
@@ -39,32 +38,30 @@ class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getFreeTlds')
             ->with($model)
-            ->willReturn(array());
+            ->willReturn([]);
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
-        $result = $this->api->free_tlds(array('product_id' => 1));
+        $result = $this->api->free_tlds(['product_id' => 1]);
         $this->assertIsArray($result);
     }
 
-    public function testfree_tlds_ProductTypeIsNotHosting()
+    public function testfreeTldsProductTypeIsNotHosting()
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di['validator'] = $validatorMock;
-
-
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di['db'] = $dbMock;
 
@@ -75,6 +72,6 @@ class GuestTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Product type is invalid');
-        $this->api->free_tlds(array('product_id' => 1));
+        $this->api->free_tlds(['product_id' => 1]);
     }
 }

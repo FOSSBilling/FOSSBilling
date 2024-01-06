@@ -2,13 +2,12 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Registrar_Domain_Contact implements \Stringable
+class Registrar_Domain_Contact implements Stringable
 {
     private $id;
     private $name;
@@ -50,9 +49,9 @@ class Registrar_Domain_Contact implements \Stringable
     public function setCompanyNumber($company_number)
     {
         $this->company_number = $company_number;
+
         return $this;
     }
-
 
     /**
      * @return string
@@ -68,6 +67,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setIdnLanguageCode($idn_language_code)
     {
         $this->idn_language_code = $idn_language_code;
+
         return $this;
     }
 
@@ -85,12 +85,14 @@ class Registrar_Domain_Contact implements \Stringable
     public function setBirthday($birthday)
     {
         $this->birthday = $birthday;
+
         return $this;
     }
 
     public function setId($param)
     {
         $this->id = $param;
+
         return $this;
     }
 
@@ -102,49 +104,59 @@ class Registrar_Domain_Contact implements \Stringable
     public function setName($param)
     {
         $this->name = $param;
+
         return $this;
     }
 
     public function getName()
     {
-    	if ($this->name) return $this->name;
+        if ($this->name) {
+            return $this->name;
+        }
 
-    	return $this->firstname . ' ' . $this->lastname;
+        return $this->firstname . ' ' . $this->lastname;
     }
 
     public function setFirstName($param)
     {
         $this->firstname = $param;
+
         return $this;
     }
 
     public function getFirstName()
     {
-    	if ($this->firstname) return $this->firstname;
-    	
-    	$bits = explode(' ', $this->name);
-    	
-    	return $bits[0] ?? '';
+        if ($this->firstname) {
+            return $this->firstname;
+        }
+
+        $bits = explode(' ', $this->name);
+
+        return $bits[0] ?? '';
     }
 
     public function setLastName($param)
     {
         $this->lastname = $param;
+
         return $this;
     }
 
     public function getLastName()
     {
-    	if ($this->lastname) return $this->lastname;
-    	
-    	$bits = explode(' ', $this->name);
-    	
-    	return isset($bits[1]) ? str_replace($bits[0] . ' ', '', $this->name) : '';
+        if ($this->lastname) {
+            return $this->lastname;
+        }
+
+        $bits = explode(' ', $this->name);
+
+        return isset($bits[1]) ? str_replace($bits[0] . ' ', '', $this->name) : '';
     }
 
     public function setEmail($param)
     {
         $this->email = $param;
+
         return $this;
     }
 
@@ -156,6 +168,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setCity($param)
     {
         $this->city = $param;
+
         return $this;
     }
 
@@ -167,6 +180,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setCountry($param)
     {
         $this->country = $param;
+
         return $this;
     }
 
@@ -178,6 +192,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setState($param)
     {
         $this->state = $param;
+
         return $this;
     }
 
@@ -189,6 +204,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setZip($param)
     {
         $this->zip = $param;
+
         return $this;
     }
 
@@ -200,6 +216,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setTel($param)
     {
         $this->tel = $param;
+
         return $this;
     }
 
@@ -211,6 +228,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setTelCc($param)
     {
         $this->tel_cc = $param;
+
         return $this;
     }
 
@@ -222,6 +240,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setFax($param)
     {
         $this->fax = $param;
+
         return $this;
     }
 
@@ -233,6 +252,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setFaxCc($param)
     {
         $this->fax_cc = $param;
+
         return $this;
     }
 
@@ -244,6 +264,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setCompany($param)
     {
         $this->company = $param;
+
         return $this;
     }
 
@@ -255,6 +276,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setAddress1($param)
     {
         $this->address_1 = $param;
+
         return $this;
     }
 
@@ -266,6 +288,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setAddress2($param)
     {
         $this->address_2 = $param;
+
         return $this;
     }
 
@@ -277,6 +300,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setAddress3($param)
     {
         $this->address_3 = $param;
+
         return $this;
     }
 
@@ -288,6 +312,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setUsername($param)
     {
         $this->username = $param;
+
         return $this;
     }
 
@@ -299,6 +324,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setPassword($param)
     {
         $this->password = $param;
+
         return $this;
     }
 
@@ -310,6 +336,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setDocumentType($param)
     {
         $this->document_type = $param;
+
         return $this;
     }
 
@@ -321,6 +348,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setDocumentNr($param)
     {
         $this->document_nr = $param;
+
         return $this;
     }
 
@@ -332,6 +360,7 @@ class Registrar_Domain_Contact implements \Stringable
     public function setJobTitle($param)
     {
         $this->job_title = $param;
+
         return $this;
     }
 
@@ -342,41 +371,43 @@ class Registrar_Domain_Contact implements \Stringable
 
     public function getAddress()
     {
-        $data = array(
+        $data = [
             $this->getAddress1(),
             $this->getAddress2(),
             $this->getAddress3(),
-        );
+        ];
+
         return implode(' ', $data);
     }
 
     public function __toString(): string
     {
         $c = '';
-        $c .= sprintf("Id: %s", $this->getId()).PHP_EOL;
-        $c .= sprintf("Name: %s", $this->getName()).PHP_EOL;
+        $c .= sprintf('Id: %s', $this->getId()) . PHP_EOL;
+        $c .= sprintf('Name: %s', $this->getName()) . PHP_EOL;
         $c .= PHP_EOL;
-        $c .= sprintf("Email: %s", $this->getEmail()).PHP_EOL;
-        $c .= sprintf("Username: %s", $this->getUsername()).PHP_EOL;
-        $c .= sprintf("Password: %s", $this->getPassword()).PHP_EOL;
+        $c .= sprintf('Email: %s', $this->getEmail()) . PHP_EOL;
+        $c .= sprintf('Username: %s', $this->getUsername()) . PHP_EOL;
+        $c .= sprintf('Password: %s', $this->getPassword()) . PHP_EOL;
         $c .= PHP_EOL;
-        $c .= sprintf("Company: %s", $this->getCompany()).PHP_EOL;
-        $c .= sprintf("Address: %s", $this->getAddress()).PHP_EOL;
-        $c .= sprintf("City: %s", $this->getCity()).PHP_EOL;
-        $c .= sprintf("State: %s", $this->getState()).PHP_EOL;
-        $c .= sprintf("Zip: %s", $this->getZip()).PHP_EOL;
-        $c .= sprintf("Country: %s", $this->getCountry()).PHP_EOL;
+        $c .= sprintf('Company: %s', $this->getCompany()) . PHP_EOL;
+        $c .= sprintf('Address: %s', $this->getAddress()) . PHP_EOL;
+        $c .= sprintf('City: %s', $this->getCity()) . PHP_EOL;
+        $c .= sprintf('State: %s', $this->getState()) . PHP_EOL;
+        $c .= sprintf('Zip: %s', $this->getZip()) . PHP_EOL;
+        $c .= sprintf('Country: %s', $this->getCountry()) . PHP_EOL;
         $c .= PHP_EOL;
-        $c .= sprintf("Tel: %s", $this->getTelCc() . ' '. $this->getTel()).PHP_EOL;
-        $c .= sprintf("Fax: %s", $this->getFaxCc() . ' '. $this->getFax()).PHP_EOL;
+        $c .= sprintf('Tel: %s', $this->getTelCc() . ' ' . $this->getTel()) . PHP_EOL;
+        $c .= sprintf('Fax: %s', $this->getFaxCc() . ' ' . $this->getFax()) . PHP_EOL;
         $c .= PHP_EOL;
-        $c .= sprintf("Document type: %s", $this->getDocumentType()).PHP_EOL;
-        $c .= sprintf("Document nr: %s", $this->getDocumentNr()).PHP_EOL;
+        $c .= sprintf('Document type: %s', $this->getDocumentType()) . PHP_EOL;
+        $c .= sprintf('Document nr: %s', $this->getDocumentNr()) . PHP_EOL;
+
         return $c;
     }
-    
+
     public function toArray()
     {
-    	return get_object_vars($this);
+        return get_object_vars($this);
     }
 }

@@ -2,36 +2,36 @@
 
 namespace Box\Tests\Mod\Activity\Api;
 
-class AdminTest extends \BBTestCase {
-
-    public function test_log_get_list()
+class AdminTest extends \BBTestCase
+{
+    public function testLogGetList()
     {
-        $simpleResultArr = array(
-            'list' => array(
-                array(
+        $simpleResultArr = [
+            'list' => [
+                [
                     'id' => 1,
                     'staff_id' => 1,
                     'staff_name' => 'Joe',
-                    'staff_email' => 'example@example.com'
-                ),
-            ),
-        );
+                    'staff_email' => 'example@example.com',
+                ],
+            ],
+        ];
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
                     ->method('getSimpleResultSet')
-                    ->will($this->returnValue($simpleResultArr));
+                    ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
                 ->method('getSearchQuery')
-                ->will($this->returnValue('String'));
+                ->willReturn('String');
 
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn() => $service);
+        $di['mod_service'] = $di->protect(fn () => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -40,37 +40,37 @@ class AdminTest extends \BBTestCase {
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
         $activity->setService($service);
-        $activity->log_get_list(array());
+        $activity->log_get_list([]);
     }
 
-    public function test_log_get_list_ItemUserClient()
+    public function testLogGetListItemUserClient()
     {
-        $simpleResultArr = array(
-            'list' => array(
-                array(
+        $simpleResultArr = [
+            'list' => [
+                [
                     'id' => 1,
                     'client_id' => 1,
                     'client_name' => 'Joe',
-                    'client_email' => 'example@example.com'
-                ),
-            ),
-        );
+                    'client_email' => 'example@example.com',
+                ],
+            ],
+        ];
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
                     ->method('getSimpleResultSet')
-                    ->will($this->returnValue($simpleResultArr));
+                    ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
                 ->method('getSearchQuery')
-                ->will($this->returnValue('String'));
+                ->willReturn('String');
 
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn() => $service);
+        $di['mod_service'] = $di->protect(fn () => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -79,7 +79,7 @@ class AdminTest extends \BBTestCase {
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
         $activity->setService($service);
-        $activity->log_get_list(array());
+        $activity->log_get_list([]);
     }
 
     public function testlogEmptyMParam()
@@ -88,82 +88,82 @@ class AdminTest extends \BBTestCase {
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
-        $result = $activity->log(array());
-        $this->assertEquals(false, $result, 'Empty array key m');
+        $result = $activity->log([]);
+        $this->assertFalse($result, 'Empty array key m');
     }
 
-    public function testlog_email()
+    public function testlogEmail()
     {
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->onlyMethods(array('logEmail'))->getMock();
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->onlyMethods(['logEmail'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('logEmail')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $di = new \Pimple\Container();
 
         $adminApi = new \Box\Mod\Activity\Api\Admin();
         $adminApi->setService($service);
         $adminApi->setDi($di);
-        $result = $adminApi->log_email(array('subject' => 'Proper subject'));
+        $result = $adminApi->log_email(['subject' => 'Proper subject']);
 
-        $this->assertEquals(true, $result, 'Log_email did not returned true');
+        $this->assertTrue($result, 'Log_email did not returned true');
     }
 
-    public function testlog_email_WithoutSubject()
+    public function testlogEmailWithoutSubject()
     {
         $activity = new \Box\Mod\Activity\Api\Admin();
-        $result = $activity->log_email(array());
-        $this->assertEquals(false, $result);
+        $result = $activity->log_email([]);
+        $this->assertFalse($result);
     }
 
-    public function testlog_delete()
+    public function testlogDelete()
     {
         $di = new \Pimple\Container();
 
         $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
         $databaseMock->expects($this->atLeastOnce())->
             method('getExistingModelById')->
-            will($this->returnValue(new \Model_ActivitySystem()));
+            willReturn(new \Model_ActivitySystem());
 
         $databaseMock->expects($this->atLeastOnce())->
             method('trash');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->onlyMethods(array('hasPermission'))->getMock();
-            $serviceMock->expects($this->atLeastOnce())
-                ->method('hasPermission')
-                ->willReturn(true);
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->onlyMethods(['hasPermission'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')
+            ->willReturn(true);
 
         $di['db'] = $databaseMock;
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $di['validator'] = $validatorMock;
 
-        $di['mod_service'] = $di->protect(fn() => $serviceMock);
+        $di['mod_service'] = $di->protect(fn () => $serviceMock);
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
 
-        $result = $activity->log_delete(array('id' => 1));
-        $this->assertEquals(true, $result);
+        $result = $activity->log_delete(['id' => 1]);
+        $this->assertTrue($result);
     }
 
-    public function testBatch_delete()
+    public function testBatchDelete()
     {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Api\Admin::class)->onlyMethods(array('log_delete'))->getMock();
-        $activityMock->expects($this->atLeastOnce())->method('log_delete')->will($this->returnValue(true));
+        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Api\Admin::class)->onlyMethods(['log_delete'])->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('log_delete')->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
-        $result = $activityMock->batch_delete(array('ids' => array(1, 2, 3)));
-        $this->assertEquals(true, $result);
+        $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
+        $this->assertTrue($result);
     }
 }

@@ -7,63 +7,63 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 
     public static function variations()
     {
-        return array(
+        return [
 //            array(array(
 //                'fail'       =>  '',
 //            ), false),
 
-            array(array(
+            [[
                 'license' => 'BOX-NOT-EXISTS',
-                'host'    => 'tests.com',
-                'path'    => __DIR__,
+                'host' => 'tests.com',
+                'path' => __DIR__,
                 'version' => '0.0.2',
-            ), false, false),
+            ], false, false],
 
-            array(array(
+            [[
                 'license' => 'no_validation',
-                'host'    => 'tests.com',
-                'path'    => __DIR__,
+                'host' => 'tests.com',
+                'path' => __DIR__,
                 'version' => '0.0.2',
-            ), false, false),
-            array(array(
+            ], false, false],
+            [[
                 'license' => 'valid',
-                'host'    => 'www.tests.com',
-                'path'    => __DIR__,
+                'host' => 'www.tests.com',
+                'path' => __DIR__,
                 'version' => '0.0.2',
-            ), true, true),
-        );
+            ], true, true],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('variations')]
     public function testLicenseServer($data, $valid, $validation)
     {
-        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($this->any())
             ->method('isLicenseActive')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         if ($validation) {
             $service->expects($this->atLeastOnce())
                 ->method('isValidIp')
-                ->will($this->returnValue(true));
+                ->willReturn(true);
             $service->expects($this->atLeastOnce())
                 ->method('isValidHost')
-                ->will($this->returnValue(true));
+                ->willReturn(true);
             $service->expects($this->atLeastOnce())
                 ->method('isValidVersion')
-                ->will($this->returnValue(true));
+                ->willReturn(true);
             $service->expects($this->atLeastOnce())
                 ->method('isValidPath')
-                ->will($this->returnValue(true));
+                ->willReturn(true);
         }
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $this->di['db'];
-        $di['logger']      = new Box_Log();
-        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
-        $di['mod_service'] = $di->protect(fn() => $service);
+        $di = new Pimple\Container();
+        $di['db'] = $this->di['db'];
+        $di['logger'] = new Box_Log();
+        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new \Box\Mod\Servicelicense\Server($di['logger']);
+        $server = new Box\Mod\Servicelicense\Server($di['logger']);
         $server->setDi($di);
         $result = $server->handle_deprecated(json_encode($data));
         $this->assertEquals($valid, $result['valid'], print_r($result, 1));
@@ -73,102 +73,101 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
     {
         $this->assertTrue(true);
 
-        return array(
-            array(array(
+        return [
+            [[
                 'license' => 'validation_fail',
-                'host'    => 'tests.com',
-                'path'    => __DIR__,
+                'host' => 'tests.com',
+                'path' => __DIR__,
                 'version' => '0.0.2',
-            ), false),
-            array(array(
+            ], false],
+            [[
                 'license' => 'valid',
-                'host'    => 'www.tests.com',
-                'path'    => __DIR__,
+                'host' => 'www.tests.com',
+                'path' => __DIR__,
                 'version' => '0.0.2',
-            ), true),
-        );
+            ], true],
+        ];
     }
 
     public function testLicenseServerProcess()
     {
-        $data = array(
+        $data = [
             'license' => 'valid',
-            'host'    => 'tests.com',
-            'path'    => __DIR__,
+            'host' => 'tests.com',
+            'path' => __DIR__,
             'version' => '0.0.2',
-        );
+        ];
 
         $valid = true;
 
-        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($this->any())
             ->method('isLicenseActive')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->atLeastOnce())
             ->method('isValidIp')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->atLeastOnce())
             ->method('isValidHost')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->atLeastOnce())
             ->method('isValidVersion')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->atLeastOnce())
             ->method('isValidPath')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $this->di['db'];
-        $di['logger']      = $this->di['logger'];
-        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
-        $di['mod_service'] = $di->protect(fn() => $service);
+        $di = new Pimple\Container();
+        $di['db'] = $this->di['db'];
+        $di['logger'] = $this->di['logger'];
+        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new \Box\Mod\Servicelicense\Server($this->di['logger']);
+        $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
 
         $result = $server->process(json_encode($data));
         $this->assertEquals($valid, $result['valid'], print_r($result, 1));
     }
 
-
     /**
-     * @expectedException LogicException
+     * @expectedException \LogicException
      */
     public function testLicenseServerProcessNotFound()
     {
-        $data = array(
+        $data = [
             'license' => 'non_existing',
-            'host'    => 'tests.com',
-            'path'    => __DIR__,
+            'host' => 'tests.com',
+            'path' => __DIR__,
             'version' => '0.0.2',
-        );
+        ];
 
         $valid = true;
 
-        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($this->never())
             ->method('isLicenseActive')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->never())
             ->method('isValidIp')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->never())
             ->method('isValidHost')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->never())
             ->method('isValidVersion')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $service->expects($this->never())
             ->method('isValidPath')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $this->di['db'];
-        $di['logger']      = $this->di['logger'];
-        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
-        $di['mod_service'] = $di->protect(fn() => $service);
+        $di = new Pimple\Container();
+        $di['db'] = $this->di['db'];
+        $di['logger'] = $this->di['logger'];
+        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new \Box\Mod\Servicelicense\Server($this->di['logger']);
+        $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
 
         $result = $server->process(json_encode($data));
@@ -179,66 +178,64 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
     {
         $this->assertTrue(true);
 
-        return array(
-            array(false, false, false, false, false, array(
-                $this->atLeastOnce(), $this->never(), $this->never(), $this->never(), $this->never()
-            )),
-            array(true, false, false, false, false, array(
-                $this->atLeastOnce(), $this->atLeastOnce(), $this->never(), $this->never(), $this->never()
-            )),
-            array(true, true, false, false, false, array(
-                $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->never(), $this->never()
-            )),
-            array(true, true, true, false, false, array(
-                $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->never()
-            )),
-            array(true, true, true, true, false, array(
-                $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce()
-            )),
-
-        );
+        return [
+            [false, false, false, false, false, [
+                $this->atLeastOnce(), $this->never(), $this->never(), $this->never(), $this->never(),
+            ]],
+            [true, false, false, false, false, [
+                $this->atLeastOnce(), $this->atLeastOnce(), $this->never(), $this->never(), $this->never(),
+            ]],
+            [true, true, false, false, false, [
+                $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->never(), $this->never(),
+            ]],
+            [true, true, true, false, false, [
+                $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->never(),
+            ]],
+            [true, true, true, true, false, [
+                $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(), $this->atLeastOnce(),
+            ]],
+        ];
     }
 
-
     /**
-     * @expectedException LogicException
+     * @expectedException \LogicException
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('testLicenseServerProcessValidationFailProvider')]
     public function testLicenseServerProcessValidationFail($isActive, $validIp, $validHost, $validVersion, $validPath, $called)
     {
-        $data = array(
+        $data = [
             'license' => 'valid',
-            'host'    => 'tests.com',
-            'path'    => __DIR__,
+            'host' => 'tests.com',
+            'path' => __DIR__,
             'version' => '0.0.2',
-        );
+        ];
 
         $valid = true;
 
-        $service = $this->getMockBuilder(\Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($called[0])
             ->method('isLicenseActive')
-            ->will($this->returnValue($isActive));
+            ->willReturn($isActive);
         $service->expects($called[1])
             ->method('isValidIp')
-            ->will($this->returnValue($validIp));
+            ->willReturn($validIp);
         $service->expects($called[2])
             ->method('isValidHost')
-            ->will($this->returnValue($validHost));
+            ->willReturn($validHost);
         $service->expects($called[3])
             ->method('isValidVersion')
-            ->will($this->returnValue($validVersion));
+            ->willReturn($validVersion);
         $service->expects($called[4])
             ->method('isValidPath')
-            ->will($this->returnValue($validPath));
+            ->willReturn($validPath);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $this->di['db'];
-        $di['logger']      = $this->di['logger'];
-        $di['mod']         = $di->protect(fn() => new Box_Mod('servicelicense'));
-        $di['mod_service'] = $di->protect(fn() => $service);
+        $di = new Pimple\Container();
+        $di['db'] = $this->di['db'];
+        $di['logger'] = $this->di['logger'];
+        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new \Box\Mod\Servicelicense\Server($this->di['logger']);
+        $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
 
         $result = $server->process(json_encode($data));

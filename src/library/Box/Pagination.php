@@ -2,25 +2,25 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Box_Pagination implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     protected $per_page = 100;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -33,18 +33,18 @@ class Box_Pagination implements InjectionAwareInterface
         return $this->per_page;
     }
 
-    public function getSimpleResultSet($q, $values, ?int $per_page = 100, ?int $page = null)
+    public function getSimpleResultSet($q, $values, ?int $per_page = 100, int $page = null)
     {
-        if (is_null($page)){
+        if (is_null($page)) {
             $page = $_GET['page'] ?? 1;
         }
         $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
-        if (!is_numeric($page) || $page < 1 ){
-           throw new \FOSSBilling\InformationException('Invalid page number');
+        if (!is_numeric($page) || $page < 1) {
+            throw new FOSSBilling\InformationException('Invalid page number');
         }
-        if (!is_numeric($per_page) || $per_page < 1 ){
-           throw new \FOSSBilling\InformationException('Invalid per page number');
+        if (!is_numeric($per_page) || $per_page < 1) {
+            throw new FOSSBilling\InformationException('Invalid per page number');
         }
 
         $offset = ($page - 1) * $per_page;
@@ -55,16 +55,17 @@ class Box_Pagination implements InjectionAwareInterface
 
         $exploded = explode('FROM', $q);
         $sql = 'SELECT count(1) FROM ' . $exploded[1];
-        $total = $this->di['db']->getCell($sql , $values);
+        $total = $this->di['db']->getCell($sql, $values);
 
-        $pages = ($per_page > 1) ? (int)ceil($total / $per_page) : 1;
-        return array(
-            "pages"             => $pages,
-            "page"              => $page,
-            "per_page"          => $per_page,
-            "total"             => $total,
-            "list"              => $result,
-        );
+        $pages = ($per_page > 1) ? (int) ceil($total / $per_page) : 1;
+
+        return [
+            'pages' => $pages,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total' => $total,
+            'list' => $result,
+        ];
     }
 
     public function getAdvancedResultSet($q, $values, ?int $per_page = 100)
@@ -72,11 +73,11 @@ class Box_Pagination implements InjectionAwareInterface
         $page = $_GET['page'] ?? 1;
         $per_page = $_GET['per_page'] ?? $per_page ?? 100;
 
-        if (!is_numeric($page) || $page < 1 ){
-           throw new \FOSSBilling\InformationException('Invalid page number');
+        if (!is_numeric($page) || $page < 1) {
+            throw new FOSSBilling\InformationException('Invalid page number');
         }
-        if (!is_numeric($per_page) || $per_page < 1 ){
-           throw new \FOSSBilling\InformationException('Invalid per page number');
+        if (!is_numeric($per_page) || $per_page < 1) {
+            throw new FOSSBilling\InformationException('Invalid per page number');
         }
 
         $offset = ($page - 1) * $per_page;
@@ -85,13 +86,14 @@ class Box_Pagination implements InjectionAwareInterface
         $result = $this->di['db']->getAll($q, $values);
         $total = $this->di['db']->getCell('SELECT FOUND_ROWS();');
 
-        $pages = ($per_page > 1) ? (int)ceil($total / $per_page) : 1;
-        return array(
-            "pages"             => $pages,
-            "page"              => $page,
-            "per_page"          => $per_page,
-            "total"             => $total,
-            "list"              => $result,
-        );
+        $pages = ($per_page > 1) ? (int) ceil($total / $per_page) : 1;
+
+        return [
+            'pages' => $pages,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total' => $total,
+            'list' => $result,
+        ];
     }
 }

@@ -1,15 +1,13 @@
 <?php
 
-
 namespace Box\Mod\Cron;
 
-
-class ServiceTest extends \BBTestCase {
-
+class ServiceTest extends \BBTestCase
+{
     public function testgetDi()
     {
         $di = new \Pimple\Container();
-        $service = new \Box\Mod\Cron\Service();
+        $service = new Service();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
@@ -21,8 +19,8 @@ class ServiceTest extends \BBTestCase {
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn($name) => $systemServiceMock);
-        $service = new \Box\Mod\Cron\Service();
+        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+        $service = new Service();
         $service->setDi($di);
 
         $result = $service->getCronInfo();
@@ -32,8 +30,8 @@ class ServiceTest extends \BBTestCase {
     public function testrunCrons()
     {
         $apiSystem = new \Api_Handler(new \Model_Admin());
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)
-            ->onlyMethods(array('_exec'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['_exec'])
             ->getMock();
 
         $serviceMock->expects($this->exactly(13))
@@ -52,7 +50,7 @@ class ServiceTest extends \BBTestCase {
                     [[$apiSystem], 'support_batch_public_ticket_auto_close'],
                     [[$apiSystem], 'client_batch_expire_password_reminders'],
                     [[$apiSystem], 'cart_batch_expire'],
-                    [[$apiSystem], 'email_batch_sendmail']
+                    [[$apiSystem], 'email_batch_sendmail'],
                 ];
 
                 [$expectedApiSystem, $expectedMethod] = array_shift($series);
@@ -76,7 +74,7 @@ class ServiceTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventsMock;
         $di['api_system'] = $apiSystem;
-        $di['mod_service'] = $di->protect(fn() => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
         $serviceMock->setDi($di);
         $di['db'] = $dbMock;
         $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
@@ -97,11 +95,11 @@ class ServiceTest extends \BBTestCase {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->will($this->returnValue('2012-12-12 12:12:12'));
+            ->willReturn('2012-12-12 12:12:12');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn($name) => $systemServiceMock);
-        $service = new \Box\Mod\Cron\Service();
+        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+        $service = new Service();
         $service->setDi($di);
 
         $result = $service->getLastExecutionTime();
@@ -110,13 +108,13 @@ class ServiceTest extends \BBTestCase {
 
     public function testisLate()
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)
-            ->onlyMethods(array('getLastExecutionTime'))
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['getLastExecutionTime'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getLastExecutionTime')
-            ->will($this->returnValue(date('Y-m-d H:i:s')));
+            ->willReturn(date('Y-m-d H:i:s'));
 
         $result = $serviceMock->isLate();
         $this->assertIsBool($result);

@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -11,9 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use FOSSBilling\Environment;
-
-class Session implements \FOSSBilling\InjectionAwareInterface
+class Session implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
@@ -51,16 +50,16 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         }
 
         $currentCookieParams = session_get_cookie_params();
-        $currentCookieParams["httponly"] = true;
-        $currentCookieParams["lifetime"] = 0;
-        $currentCookieParams["secure"] = $this->secure;
+        $currentCookieParams['httponly'] = true;
+        $currentCookieParams['lifetime'] = 0;
+        $currentCookieParams['secure'] = $this->secure;
 
         $cookieParams = [
-            'lifetime' => $currentCookieParams["lifetime"],
-            'path' => $currentCookieParams["path"],
-            'domain' => $currentCookieParams["domain"],
-            'secure' => $currentCookieParams["secure"],
-            'httponly' => $currentCookieParams["httponly"]
+            'lifetime' => $currentCookieParams['lifetime'],
+            'path' => $currentCookieParams['path'],
+            'domain' => $currentCookieParams['domain'],
+            'secure' => $currentCookieParams['secure'],
+            'httponly' => $currentCookieParams['httponly'],
         ];
 
         if ($this->securityMode == 'strict') {
@@ -98,10 +97,12 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         switch ($type) {
             case 'admin':
                 $this->delete('admin');
+
                 break;
             case 'client':
                 $this->delete('client');
                 $this->delete('client_id');
+
                 break;
         }
 
@@ -121,7 +122,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         $sessionID = $_COOKIE['PHPSESSID'];
         $maxAge = time() - $this->di['config']['security']['session_lifespan'];
 
-        $fingerprint = new Fingerprint;
+        $fingerprint = new Fingerprint();
         /** @var \RedBeanPHP\OODBBean $session */
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
 
@@ -129,7 +130,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
             return;
         }
 
-        if(empty($session->created_at)){
+        if (empty($session->created_at)) {
             $session->created_at = time();
             $this->di['db']->store($session);
         }
@@ -150,7 +151,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
 
         // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
         if (!is_null($session)) {
-            $fingerprint = new Fingerprint;
+            $fingerprint = new Fingerprint();
             $session->fingerprint = json_encode($fingerprint->fingerprint());
             $this->di['db']->store($session);
         }

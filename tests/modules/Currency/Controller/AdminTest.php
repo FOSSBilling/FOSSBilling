@@ -1,14 +1,12 @@
 <?php
 
-
 namespace Box\Mod\Currency\Controller;
 
-
-class AdminTest extends \BBTestCase {
-
+class AdminTest extends \BBTestCase
+{
     public function testDi()
     {
-        $controller = new \Box\Mod\Currency\Controller\Admin();
+        $controller = new Admin();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -24,10 +22,9 @@ class AdminTest extends \BBTestCase {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->once())
             ->method('get')
-            ->with('/currency/manage/:code', 'get_manage', array('code'=>'[a-zA-Z]+'), \Box\Mod\Currency\Controller\Admin::class);
+            ->with('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], Admin::class);
 
-        $controllerAdmin = new \Box\Mod\Currency\Controller\Admin();
+        $controllerAdmin = new Admin();
         $controllerAdmin->register($boxAppMock);
     }
 }
- 

@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_ClientTest extends BBDbApiTestCase
 {
@@ -6,11 +7,10 @@ class Api_ClientTest extends BBDbApiTestCase
 
     public function testClient()
     {
-
         $array = $this->api_client->client_get();
         $this->assertIsArray($array);
 
-        $data = array(
+        $data = [
             'email' => 'newEmail@fossbilling.org',
             'first_name' => 'John',
             'last_name' => 'Doe',
@@ -22,33 +22,32 @@ class Api_ClientTest extends BBDbApiTestCase
             'country' => 'USA',
             'currency' => 'USD',
             'postcode' => 123456,
-            'api_token'=> 'phpunit_token'
-        );
+            'api_token' => 'phpunit_token',
+        ];
         $bool = $this->api_client->client_update($data);
         $this->assertTrue($bool);
 
-        $key = $this->api_client->client_api_key_get(array());
+        $key = $this->api_client->client_api_key_get([]);
         $this->assertIsString($key);
 
-        $newKey = $this->api_client->client_api_key_reset(array());
+        $newKey = $this->api_client->client_api_key_reset([]);
         $this->assertIsString($newKey);
         $this->assertNotEquals($key, $newKey);
 
-        $data = array(
+        $data = [
             'password' => 'newPa55word',
-            'password_confirm' => 'newPa55word'
-        );
+            'password_confirm' => 'newPa55word',
+        ];
         $bool = $this->api_client->client_change_password($data);
         $this->assertTrue($bool);
 
         $array = $this->api_client->client_balance_get_list($data);
         $this->assertIsArray($array);
-
     }
 
     public function testClientBalanceGetList()
     {
-        $array = $this->api_client->client_balance_get_list(array());
+        $array = $this->api_client->client_balance_get_list([]);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -61,9 +60,6 @@ class Api_ClientTest extends BBDbApiTestCase
             $this->assertArrayHasKey('amount', $item);
             $this->assertArrayHasKey('currency', $item);
             $this->assertArrayHasKey('created_at', $item);
-
         }
     }
-
-
 }

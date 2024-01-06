@@ -2,17 +2,16 @@
 
 namespace Box\Mod\Spamchecker\Api;
 
-
 class GuestTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Spamchecker\Api\Guest
+     * @var Guest
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Spamchecker\Api\Guest();
+        $this->api = new Guest();
     }
 
     public function testgetDi()
@@ -25,66 +24,62 @@ class GuestTest extends \BBTestCase
 
     public static function datarecaptchaConfig()
     {
-        return array(
-            array(
-                array(
+        return [
+            [
+                [
                     'captcha_recaptcha_publickey' => 1234,
                     'captcha_enabled' => true,
-                ),
-                array(
+                ],
+                [
                     'publickey' => 1234,
                     'enabled' => true,
-                    'version' => null
-                ),
-            ),
-            array(
-                array(
-
+                    'version' => null,
+                ],
+            ],
+            [
+                [
                     'captcha_enabled' => true,
-                ),
-                array(
+                ],
+                [
                     'publickey' => null,
                     'enabled' => true,
-                    'version' => null
-                ),
-            ),
-            array(
-                array(
+                    'version' => null,
+                ],
+            ],
+            [
+                [
                     'captcha_recaptcha_publickey' => 1234,
                     'captcha_enabled' => false,
-                    'captcha_version' => 2
-                ),
-                array(
+                    'captcha_version' => 2,
+                ],
+                [
                     'publickey' => 1234,
                     'enabled' => false,
-                    'version' => 2
-                ),
-            ),
-            array(
-                array(
+                    'version' => 2,
+                ],
+            ],
+            [
+                [
                     'captcha_enabled' => false,
-                ),
-                array(
+                ],
+                [
                     'publickey' => null,
                     'enabled' => false,
-                    'version' => null
-                ),
-            ),
-        );
+                    'version' => null,
+                ],
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('datarecaptchaConfig')]
     public function testrecaptcha($config, $expected)
     {
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn() => $config);
-
+        $di['mod_config'] = $di->protect(fn () => $config);
 
         $this->api->setDi($di);
-        $result = $this->api->recaptcha(array());
+        $result = $this->api->recaptcha([]);
 
         $this->assertEquals($expected, $result);
-
-
     }
 }

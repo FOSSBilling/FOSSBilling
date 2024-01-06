@@ -1,12 +1,9 @@
 <?php
 
-
 namespace Box\Tests\Mod\Branding;
-
 
 class ServiceTest extends \BBTestCase
 {
-
     public function testDi()
     {
         $service = new \Box\Mod\Branding\Service();
@@ -19,6 +16,4 @@ class ServiceTest extends \BBTestCase
         $result = $service->getDi();
         $this->assertEquals($di, $result);
     }
-
 }
- 

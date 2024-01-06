@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -38,13 +39,14 @@ class ExtensionManager implements InjectionAwareInterface
     }
 
     /**
-     * Fetch extension details from the FOSSBilling extension directory
+     * Fetch extension details from the FOSSBilling extension directory.
      *
      * @param string $id The extension identifier (e.g. Example)
      *
      * @return array The extension details
+     *
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response
-     * 
+     *
      * @throws Exception
      */
     public function getExtension(string $id): array
@@ -59,13 +61,14 @@ class ExtensionManager implements InjectionAwareInterface
     }
 
     /**
-     * Fetch the list of releases of an extension from the FOSSBilling extension directory
+     * Fetch the list of releases of an extension from the FOSSBilling extension directory.
      *
      * @param string $id The extension identifier (e.g. Example)
      *
      * @return array The list of releases of the extension
+     *
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the "releases" array)
-     * 
+     *
      * @throws Exception
      */
     public function getExtensionReleases(string $id): array
@@ -80,13 +83,14 @@ class ExtensionManager implements InjectionAwareInterface
     }
 
     /**
-     * Fetch the latest release of an extension from the FOSSBilling extension directory
+     * Fetch the latest release of an extension from the FOSSBilling extension directory.
      *
      * @param string $id The extension identifier (e.g. Example)
      *
      * @return array The latest release of the extension
+     *
      * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the first element in the "releases" array)
-     * 
+     *
      * @throws Exception
      */
     public function getLatestExtensionRelease(string $id): array
@@ -102,11 +106,12 @@ class ExtensionManager implements InjectionAwareInterface
     }
 
     /**
-     * Fetch the list of extensions from the FOSSBilling extension directory
+     * Fetch the list of extensions from the FOSSBilling extension directory.
      *
      * @param string $type The extension type (e.g. mod) - optional
      *
      * @return array The list of extensions
+     *
      * @example https://extensions.fossbilling.org/api/list An example of the API response
      */
     public function getExtensionList($type = null): array
@@ -121,7 +126,7 @@ class ExtensionManager implements InjectionAwareInterface
     }
 
     /**
-     * Check if the latest version of an extension is compatible with the current FOSSBilling version
+     * Check if the latest version of an extension is compatible with the current FOSSBilling version.
      *
      * @param string $extension The extension identifier (e.g. Example)
      *
@@ -141,13 +146,13 @@ class ExtensionManager implements InjectionAwareInterface
     }
 
     /**
-     * Make a request to the FOSSBilling extension directory
+     * Make a request to the FOSSBilling extension directory.
      *
      * @param string $endpoint The API endpoint to call (e.g. list)
-     * @param array $params The array of parameters to pass to the API endpoint
+     * @param array  $params   The array of parameters to pass to the API endpoint
      *
      * @return array The API response
-     * 
+     *
      * @throws Exception
      */
     public function makeRequest(string $endpoint, array $params = []): array
@@ -161,7 +166,7 @@ class ExtensionManager implements InjectionAwareInterface
             $httpClient = \Symfony\Component\HttpClient\HttpClient::create();
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
-                'query' => [...$params, 'fossbilling_version' => \FOSSBilling\Version::VERSION],
+                'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
 
             $json = $response->toArray();

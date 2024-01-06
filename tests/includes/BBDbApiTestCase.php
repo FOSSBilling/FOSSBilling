@@ -1,25 +1,26 @@
 <?php
+
 abstract class BBDbApiTestCase extends BBDatabaseTestCase
 {
     protected ?\Pimple\Container $di;
-    protected $session = NULL;
-    protected $api_guest = NULL;
-    protected $api_client = NULL;
-    protected $api_admin = NULL;
-    protected $api_system = NULL;
+    protected $session;
+    protected $api_guest;
+    protected $api_client;
+    protected $api_admin;
+    protected $api_system;
 
     public function setBoxUpdateMock()
     {
         $updatedMock = $this->getMockBuilder('Box_Update')->getMock();
         $updatedMock->expects($this->any())
             ->method('isUpdateAvailable')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $updatedMock->expects($this->any())
             ->method('getLatestVersion')
-            ->will($this->returnValue('10.20.30'));
+            ->willReturn('10.20.30');
         $updatedMock->expects($this->any())
             ->method('performUpdate')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $this->di['updater'] = $updatedMock;
     }
 
@@ -37,13 +38,13 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
         $this->api_client = $this->di['api_client'];
         $this->api_admin = $this->di['api_admin'];
         $this->api_system = $this->di['api_system'];
-        //$this->api_admin->hook_batch_connect();
+        // $this->api_admin->hook_batch_connect();
     }
 
     protected function tearDown(): void
     {
         parent::tearDown();
-        
+
         $refl = new ReflectionObject($this);
         foreach ($refl->getProperties() as $prop) {
             if (!$prop->isStatic() && !str_starts_with($prop->getDeclaringClass()->getName(), 'PHPUnit_')) {

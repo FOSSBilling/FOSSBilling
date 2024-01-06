@@ -9,7 +9,7 @@ class ServiceTest extends \BBTestCase
     public function testDi()
     {
         $service = new Service();
-        $di      = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
@@ -21,7 +21,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $service = new Service();
-        $result  = $service->getAdminIdentityArray($model);
+        $result = $service->getAdminIdentityArray($model);
         $this->assertIsArray($result);
     }
 
@@ -31,27 +31,27 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db']             = $dbMock;
+        $di['db'] = $dbMock;
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
 
-        $data = array(
+        $data = [
             'signature' => 'new signature',
-            'email'     => 'example@gmail.com',
-            'name'      => 'Admin'
-        );
+            'email' => 'example@gmail.com',
+            'name' => 'Admin',
+        ];
 
         $service = new Service();
         $service->setDi($di);
@@ -65,19 +65,19 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db']             = $dbMock;
-        $di['tools']          = new \FOSSBilling\Tools();
+        $di['db'] = $dbMock;
+        $di['tools'] = new \FOSSBilling\Tools();
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -92,29 +92,28 @@ class ServiceTest extends \BBTestCase
     public function testChangeAdminPassword()
     {
         $password = 'new_pass';
-        $emMock   = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder('\Box_EventManager')
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(true));
-
+            ->willReturn(true);
 
         $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db']             = $dbMock;
-        $di['password']       = $passwordMock;
+        $di['db'] = $dbMock;
+        $di['password'] = $passwordMock;
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -132,73 +131,72 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array(
-                                          'disable_change_email' => 0
-                                      )));
+            ->willReturn([
+                                          'disable_change_email' => 0,
+                                      ]);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->will($this->returnValue(false));
+        method('emailAlreadyRegistered')->willReturn(false);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
-        $di['mod']            = $di->protect(fn() => $modMock);
-        $di['tools']          = $toolsMock;
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
+        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['tools'] = $toolsMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $data            = array(
-            'email'          => 'email@example.com',
-            'first_name'     => 'string',
-            'last_name'      => 'string',
-            'gender'         => 'string',
-            'birthday'       => '1981-01-01',
-            'company'        => 'string',
-            'company_vat'    => 'string',
+        $data = [
+            'email' => 'email@example.com',
+            'first_name' => 'string',
+            'last_name' => 'string',
+            'gender' => 'string',
+            'birthday' => '1981-01-01',
+            'company' => 'string',
+            'company_vat' => 'string',
             'company_number' => 'string',
-            'type'           => 'string',
-            'address_1'      => 'string',
-            'address_2'      => 'string',
-            'phone_cc'       => random_int(10, 300),
-            'phone'          => random_int(10000, 90000),
-            'country'        => 'string',
-            'postcode'       => 'string',
-            'city'           => 'string',
-            'state'          => 'string',
-            'document_type'  => 'string',
-            'document_nr'    => random_int(100000, 900000),
-            'lang'           => 'string',
-            'notes'          => 'string',
-            'custom_1'       => 'string',
-            'custom_2'       => 'string',
-            'custom_3'       => 'string',
-            'custom_4'       => 'string',
-            'custom_5'       => 'string',
-            'custom_6'       => 'string',
-            'custom_7'       => 'string',
-            'custom_8'       => 'string',
-            'custom_9'       => 'string',
-            'custom_10'      => 'string',
-        );
-
+            'type' => 'string',
+            'address_1' => 'string',
+            'address_2' => 'string',
+            'phone_cc' => random_int(10, 300),
+            'phone' => random_int(10000, 90000),
+            'country' => 'string',
+            'postcode' => 'string',
+            'city' => 'string',
+            'state' => 'string',
+            'document_type' => 'string',
+            'document_nr' => random_int(100000, 900000),
+            'lang' => 'string',
+            'notes' => 'string',
+            'custom_1' => 'string',
+            'custom_2' => 'string',
+            'custom_3' => 'string',
+            'custom_4' => 'string',
+            'custom_5' => 'string',
+            'custom_6' => 'string',
+            'custom_7' => 'string',
+            'custom_8' => 'string',
+            'custom_9' => 'string',
+            'custom_10' => 'string',
+        ];
 
         $service = new Service();
         $service->setDi($di);
@@ -212,39 +210,38 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->never())
             ->method('store')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array(
-                                          'disable_change_email' => 1
-                                      )));
+            ->willReturn([
+                                          'disable_change_email' => 1,
+                                      ]);
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->never())->
-        method('emailAlreadyRegistered')->will($this->returnValue(false));
+        method('emailAlreadyRegistered')->willReturn(false);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
-        $di['mod']            = $di->protect(fn() => $modMock);
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
+        $di['mod'] = $di->protect(fn () => $modMock);
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $data            = array(
+        $data = [
             'email' => 'email@example.com',
-        );
-
+        ];
 
         $service = new Service();
         $service->setDi($di);
@@ -259,43 +256,42 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->never())
             ->method('store')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array(
-                                          'disable_change_email' => 0
-                                      )));
+            ->willReturn([
+                                          'disable_change_email' => 0,
+                                      ]);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->will($this->returnValue(true));
+        method('emailAlreadyRegistered')->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
-        $di['mod']            = $di->protect(fn() => $modMock);
-        $di['tools']          = $toolsMock;
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
+        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['tools'] = $toolsMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $data            = array(
+        $data = [
             'email' => 'email@example.com',
-        );
-
+        ];
 
         $service = new Service();
         $service->setDi($di);
@@ -306,18 +302,17 @@ class ServiceTest extends \BBTestCase
 
     public function testResetApiKey()
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di           = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
-        $di['db']     = $dbMock;
-        $di['tools']  = new \FOSSBilling\Tools();
-        $model        = new \Model_Client();
+        $di['db'] = $dbMock;
+        $di['tools'] = new \FOSSBilling\Tools();
+        $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
         $service = new Service();
@@ -333,13 +328,13 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $password = 'new password';
 
@@ -348,12 +343,11 @@ class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($password);
 
-
-        $di                   = new \Pimple\Container();
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db']             = $dbMock;
-        $di['password']       = $passwordMock;
+        $di['db'] = $dbMock;
+        $di['password'] = $passwordMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -371,10 +365,10 @@ class ServiceTest extends \BBTestCase
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
-            ->method("destroy");
+            ->method('destroy');
 
-        $di            = new \Pimple\Container();
-        $di['logger']  = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['session'] = $sessionMock;
 
         $model = new \Model_Client();

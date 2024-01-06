@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
 {
@@ -11,7 +12,7 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
         $this->assertIsArray($list);
-        if (count($list)){
+        if (count($list)) {
             $item = $list[0];
             $this->assertArrayHasKey('promocode', $item);
             $this->assertArrayHasKey('discount', $item);
@@ -20,20 +21,20 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
             $this->assertArrayHasKey('currency', $item);
             $currency = $item['currency'];
             $this->assertIsArray($currency);
-            $this->assertArrayHasKey("code", $currency);
-            $this->assertArrayHasKey("title", $currency);
-            $this->assertArrayHasKey("conversion_rate", $currency);
-            $this->assertArrayHasKey("format", $currency);
-            $this->assertArrayHasKey("price_format", $currency);
-            $this->assertArrayHasKey("default", $currency);
+            $this->assertArrayHasKey('code', $currency);
+            $this->assertArrayHasKey('title', $currency);
+            $this->assertArrayHasKey('conversion_rate', $currency);
+            $this->assertArrayHasKey('format', $currency);
+            $this->assertArrayHasKey('price_format', $currency);
+            $this->assertArrayHasKey('default', $currency);
         }
     }
 
     public function testGet()
     {
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
         $cartArr = $this->api_admin->cart_get($data);
         $this->assertIsArray($cartArr);
     }

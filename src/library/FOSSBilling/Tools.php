@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -38,36 +38,31 @@ class Tools
         if ($fp) {
             $bytes = fwrite($fp, $content);
             fclose($fp);
+
             return $bytes;
         } else {
             $error = error_get_last();
 
-            throw new \RuntimeException(
-                sprintf(
-                    'Could not write to %s: %s',
-                    $target,
-                    substr(
-                        $error['message'],
-                        strpos($error['message'], ':') + 2
-                    )
-                )
-            );
+            throw new \RuntimeException(sprintf('Could not write to %s: %s', $target, substr($error['message'], strpos($error['message'], ':') + 2)));
         }
     }
 
     /**
-     * Return site url
+     * Return site url.
+     *
      * @return string
      */
     public function url($link = null)
     {
         $link = trim($link, '/');
+
         return SYSTEM_URL . $link;
     }
 
     public function hasService($type)
     {
         $file = PATH_MODS . '/mod_' . $type . '/Service.php';
+
         return file_exists($file);
     }
 
@@ -76,9 +71,10 @@ class Tools
         $class = 'Box_Mod_' . ucfirst($type) . '_Service';
         $file = PATH_MODS . '/mod_' . $type . '/Service.php';
         if (!file_exists($file)) {
-            throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
+            throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
         }
         require_once $file;
+
         return new $class();
     }
 
@@ -86,14 +82,15 @@ class Tools
     {
         clearstatcache();
         $configmod = substr(sprintf('%o', fileperms($path)), -4);
-        $int = (int)$configmod;
+        $int = (int) $configmod;
         if ($configmod == $perm) {
             return true;
         }
 
-        if ((int)$configmod < (int)$perm) {
+        if ((int) $configmod < (int) $perm) {
             return true;
         }
+
         return false;
     }
 
@@ -106,15 +103,17 @@ class Tools
             $di = new \RecursiveDirectoryIterator($folder, \FilesystemIterator::SKIP_DOTS);
             $ri = new \RecursiveIteratorIterator($di, \RecursiveIteratorIterator::CHILD_FIRST);
             foreach ($ri as $file) {
-                $file->isDir() ?  rmdir($file->getRealPath()) : unlink($file->getRealPath());
+                $file->isDir() ? rmdir($file->getRealPath()) : unlink($file->getRealPath());
             }
         }
     }
 
     /**
-     * Generates random password
+     * Generates random password.
+     *
      * @param int $length
      * @param int $strength
+     *
      * @return string
      */
     public function generatePassword($length = 8, $strength = 3)
@@ -130,58 +129,64 @@ class Tools
         $symbols = '!@#$%&?()+-_';
 
         switch ($strength) {
-                //lowercase + uppercase + numeric
+            // lowercase + uppercase + numeric
             case 3:
                 $lower = random_int(1, $length - 2);
                 $upper = random_int(1, $length - $lower - 1);
                 $numeric = $length - $lower - $upper;
+
                 break;
-                //lowercase + uppercase + numeric + symbols
+                // lowercase + uppercase + numeric + symbols
             case 4:
             default:
                 $lower = random_int(1, $length - 3);
                 $upper = random_int(1, $length - $lower - 2);
                 $numeric = random_int(1, $length - $lower - $upper - 1);
                 $other = $length - $lower - $upper - $numeric;
+
                 break;
         }
 
-        $passOrder = array();
+        $passOrder = [];
 
-        for ($i = 0; $i < $upper; $i++) {
+        for ($i = 0; $i < $upper; ++$i) {
             $passOrder[] = $upper_letters[random_int(0, mt_getrandmax()) % strlen($upper_letters)];
         }
-        for ($i = 0; $i < $lower; $i++) {
+        for ($i = 0; $i < $lower; ++$i) {
             $passOrder[] = $lower_letters[random_int(0, mt_getrandmax()) % strlen($lower_letters)];
         }
-        for ($i = 0; $i < $numeric; $i++) {
+        for ($i = 0; $i < $numeric; ++$i) {
             $passOrder[] = $numbers[random_int(0, mt_getrandmax()) % strlen($numbers)];
         }
-        for ($i = 0; $i < $other; $i++) {
+        for ($i = 0; $i < $other; ++$i) {
             $passOrder[] = $symbols[random_int(0, mt_getrandmax()) % strlen($symbols)];
         }
 
         shuffle($passOrder);
+
         return implode('', $passOrder);
     }
 
     public function autoLinkText($text)
     {
-        $pattern  = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
+        $pattern = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
         $callback = function ($matches) {
-            $url       = array_shift($matches);
+            $url = array_shift($matches);
             $url_parts = parse_url($url);
-            if (!isset($url_parts["scheme"])) {
-                $url = "http://" . $url;
+            if (!isset($url_parts['scheme'])) {
+                $url = 'http://' . $url;
             }
+
             return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
         };
+
         return preg_replace_callback($pattern, $callback, $text);
     }
 
     public function getResponseCode($theURL)
     {
         $headers = get_headers($theURL);
+
         return substr($headers[0], 9, 3);
     }
 
@@ -189,14 +194,16 @@ class Tools
     {
         $str = strtolower(trim($str));
         $str = preg_replace('/[^a-z0-9-]/', '-', $str);
-        $str = preg_replace('/-+/', "-", $str);
+        $str = preg_replace('/-+/', '-', $str);
         $str = trim($str, '-');
+
         return $str;
     }
 
     public function escape($string)
     {
         $string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+
         return stripslashes($string);
     }
 
@@ -206,13 +213,15 @@ class Tools
             $str[0] = strtoupper($str[0]);
         }
         $func = fn ($c) => strtoupper($c[1]);
+
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
 
     public function from_camel_case($str)
     {
         $str[0] = strtolower($str[0]);
-        $func = fn ($c) => "-" . strtolower($c[1]);
+        $func = fn ($c) => '-' . strtolower($c[1]);
+
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
@@ -220,17 +229,18 @@ class Tools
     {
         if (isset($json_str) && is_string($json_str)) {
             $config = json_decode($json_str, true);
-            return is_array($config) ? $config : array();
+
+            return is_array($config) ? $config : [];
         } else {
-            return array();
+            return [];
         }
     }
 
     public function sortByOneKey(array $array, $key, $asc = true)
     {
-        $result = array();
+        $result = [];
 
-        $values = array();
+        $values = [];
         foreach ($array as $id => $value) {
             $values[$id] = $value[$key] ?? '';
         }
@@ -253,23 +263,24 @@ class Tools
         $class = 'Model_' . ucfirst($type) . 'Table';
         $file = PATH_LIBRARY . '/Model/' . $type . 'Table.php';
         if (!file_exists($file)) {
-            throw new Exception('Service class :class was not found in :path', array(':class' => $class, ':path' => $file));
+            throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
         }
         require_once $file;
+
         return new $class();
     }
 
     public function getPairsForTableByIds($table, $ids)
     {
         if (empty($ids)) {
-            return array();
+            return [];
         }
 
-        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; //same as RedBean genSlots() method
+        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 
-        $result = array();
+        $result = [];
         foreach ($rows as $record) {
             $result[$record['id']] = $record['title'];
         }
@@ -290,7 +301,7 @@ class Tools
         if (Environment::isProduction() && $checkDNS) {
             $validations = new MultipleValidationWithAnd([
                 new RFCValidation(),
-                new DNSCheckValidation()
+                new DNSCheckValidation(),
             ]);
         } else {
             $validations = new RFCValidation();
@@ -299,6 +310,7 @@ class Tools
         if (!$validator->isValid($email, $validations)) {
             if ($throw) {
                 $friendlyName = ucfirst(__trans('Email address'));
+
                 throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
             } else {
                 return false;
@@ -313,6 +325,6 @@ class Tools
         $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
 
         // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the other to will be set to `https`, so either one means we are connected via HTTPS.
-        return (strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0);
+        return strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0;
     }
 }

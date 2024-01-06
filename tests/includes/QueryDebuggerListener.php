@@ -7,7 +7,7 @@ class QueryDebuggerListener extends Doctrine_EventListener
         $query = $event->getQuery();
         $params = $event->getParams();
 
-        //the below makes some naive assumptions about the queries being logged
+        // the below makes some naive assumptions about the queries being logged
         while (sizeof($params) > 0) {
             $param = array_shift($params);
 
@@ -16,7 +16,7 @@ class QueryDebuggerListener extends Doctrine_EventListener
             }
 
             $query = substr_replace($query, $param, strpos($query, '?'), 1);
-            
+
             debug($query);
         }
     }

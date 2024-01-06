@@ -2,18 +2,17 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Box_Password {
-
+class Box_Password
+{
     private string $algo = PASSWORD_DEFAULT;
-    private array $options = array();
+    private array $options = [];
 
-    public function setAlgo ($algo)
+    public function setAlgo($algo)
     {
         $this->algo = $algo;
     }
@@ -23,7 +22,7 @@ class Box_Password {
         return $this->algo;
     }
 
-    public function setOptions($options = array())
+    public function setOptions($options = [])
     {
         $this->options = $options;
     }
@@ -41,7 +40,7 @@ class Box_Password {
         return password_hash($password, $this->algo, $this->options);
     }
 
-    public function verify ($password, $hash)
+    public function verify($password, $hash)
     {
         return password_verify((string) $password, $hash);
     }

@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\System\Api;
 
-
-class AdminTest extends \BBTestCase {
+class AdminTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\System\Api\Admin
+     * @var Admin
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api= new \Box\Mod\System\Api\Admin();
+        $this->api = new Admin();
     }
 
     public function testgetDi()
@@ -23,15 +22,15 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testget_params()
+    public function testgetParams()
     {
-        $data = array(
-        );
+        $data = [
+        ];
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParams')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
@@ -39,15 +38,15 @@ class AdminTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function testupdate_params()
+    public function testupdateParams()
     {
-        $data = array(
-        );
+        $data = [
+        ];
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateParams')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->api->setService($serviceMock);
 
@@ -58,8 +57,8 @@ class AdminTest extends \BBTestCase {
 
     public function testmessages()
     {
-        $data = array(
-        );
+        $data = [
+        ];
 
         $di = new \Pimple\Container();
 
@@ -68,7 +67,7 @@ class AdminTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMessages')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
@@ -76,16 +75,16 @@ class AdminTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function testtemplate_exists()
+    public function testtemplateExists()
     {
-        $data = array(
+        $data = [
             'file' => 'testing.txt',
-        );
+        ];
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('templateExists')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->api->setService($serviceMock);
 
@@ -94,16 +93,16 @@ class AdminTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
-    public function teststring_render()
+    public function teststringRender()
     {
-        $data = array(
-            '_tpl' => 'default'
-        );
+        $data = [
+            '_tpl' => 'default',
+        ];
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('renderString')
-            ->will($this->returnValue('returnStringType'));
+            ->willReturn('returnStringType');
         $di = new \Pimple\Container();
 
         $this->api->setDi($di);
@@ -115,12 +114,12 @@ class AdminTest extends \BBTestCase {
 
     public function testenv()
     {
-        $data = array();
+        $data = [];
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getEnv')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
 
@@ -131,23 +130,23 @@ class AdminTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function testis_allowed()
+    public function testisAllowed()
     {
-        $data = array(
+        $data = [
             'mod' => 'extension',
-        );
+        ];
 
         $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
         $staffServiceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di                = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
             if ($serviceName == 'Staff') {
                 return $staffServiceMock;

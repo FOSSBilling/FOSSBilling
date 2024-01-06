@@ -5,12 +5,12 @@ use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 {
-    public $config = array(
+    public $config = [
         'api-user-id' => null,
         'api-key' => null,
         'username' => null,
         'ip' => null,
-    );
+    ];
 
     public function isKeyValueNotEmpty($array, $key)
     {
@@ -18,6 +18,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if (strlen(trim($value)) == 0) {
             return false;
         }
+
         return true;
     }
 
@@ -50,71 +51,73 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     public static function getConfig()
     {
-        return array(
-            'label' =>  'Manages domains on Namecheap via API. Namecheap requires your server IP in order to work.',
-            'form'  => array(
-                'api-user-id' => array(
-                    'text', array(
+        return [
+            'label' => 'Manages domains on Namecheap via API. Namecheap requires your server IP in order to work.',
+            'form' => [
+                'api-user-id' => [
+                    'text', [
                         'label' => 'Reseller ID',
                         'description' => 'Namecheap Reseller ID. If you don\'t have one, leave this blank.',
                         'required' => false,
-                    ),
-                ),
-                'api-key' => array(
-                    'password', array(
+                    ],
+                ],
+                'api-key' => [
+                    'password', [
                         'label' => 'API Key',
                         'description' => 'You can get this at Namecheap control panel.',
                         'required' => true,
-                    ),
-                ),
-                'username' => array(
-                    'text', array(
+                    ],
+                ],
+                'username' => [
+                    'text', [
                         'label' => 'Namecheap Username',
                         'description' => 'The username you use to login to the Namecheap control panel.',
                         'required' => true,
-                    ),
-                ),
-                'ip' => array(
-                    'text', array(
+                    ],
+                ],
+                'ip' => [
+                    'text', [
                         'label' => 'Server\'s Public IP Address',
                         'description' => 'Public IP address of this server. Ensure that this IP is whitelisted under your NameCheap settings.',
                         'required' => true,
-                    ),
-                ),
-            ),
-        );
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
-     * Tells what TLDs can be registered via this adapter
+     * Tells what TLDs can be registered via this adapter.
+     *
      * @return string[]
      */
     public function getTlds()
     {
-        $params = array(
-            'Command' => 'namecheap.domains.getTldList'
-        );
+        $params = [
+            'Command' => 'namecheap.domains.getTldList',
+        ];
 
         $result = $this->_makeRequest($params);
-        $strTlds = array();
+        $strTlds = [];
         $xmlTlds = $result->CommandResponse->Tlds;
         foreach ($xmlTlds->tld as $tld) {
-            array_push($strTlds, '.' . $tld['Name']);
+            $strTlds[] = '.' . $tld['Name'];
         }
+
         return $strTlds;
     }
 
     public function isDomainAvailable(Registrar_Domain $domain)
     {
-        $params = array(
+        $params = [
             'DomainList' => strtolower($domain->getSld()) . $domain->getTld(),
-            'Command' => 'namecheap.domains.check'
-        );
+            'Command' => 'namecheap.domains.check',
+        ];
 
         $result = $this->_makeRequest($params);
 
         if (isset($result->CommandResponse->DomainCheckResult['IsPremiumName']) && $result->CommandResponse->DomainCheckResult['IsPremiumName'] == 'true') {
-            throw new \Registrar_Exception("Premium domains cannot be registered.");
+            throw new Registrar_Exception('Premium domains cannot be registered.');
         }
 
         if (isset($result->CommandResponse->DomainCheckResult['Available']) && $result->CommandResponse->DomainCheckResult['Available'] == 'true') {
@@ -125,20 +128,23 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * Perform call to Api
-     * @param array $params
+     * Perform call to Api.
+     *
+     * @param array  $params
      * @param string $method
+     *
      * @return object
+     *
      * @throws Registrar_Exception
      */
-    protected function _makeRequest($params = array(), $method = 'GET')
+    protected function _makeRequest($params = [], $method = 'GET')
     {
         $params = $this->includeAuthorizationParams($params);
 
         $client = $this->getHttpClient()->withOptions([
-            'timeout'       => 60,
-            'verify_peer'   => 0,
-            'verify_host'   => 0
+            'timeout' => 60,
+            'verify_peer' => 0,
+            'verify_host' => 0,
         ]);
 
         $callUrl = $this->_getApiUrl();
@@ -146,7 +152,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         try {
             if ($method == 'POST') {
                 $response = $client->request('POST', $callUrl, [
-                    'body'  =>  $this->_formatParams($params),
+                    'body' => $this->_formatParams($params),
                 ]);
                 $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             } else {
@@ -156,6 +162,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
             $this->getLog()->err($e);
+
             throw $e;
         }
 
@@ -166,14 +173,16 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = simplexml_load_string($data);
 
         if (isset($result['status']) && strtolower($result['status']) == 'error') {
-            error_log("Namecheap error: " . PHP_EOL . $result['error']);
+            error_log('Namecheap error: ' . PHP_EOL . $result['error']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
+
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($result['status']) && strtolower($result['status']) == 'failed') {
-            error_log("Namecheap error: " . PHP_EOL . $result['actionstatusdesc']);
+            error_log('Namecheap error: ' . PHP_EOL . $result['actionstatusdesc']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
+
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
@@ -181,9 +190,12 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * Convert params to resellerClub format
+     * Convert params to resellerClub format.
+     *
      * @see http://manage.resellerclub.com/kb/answer/755
+     *
      * @param array $params
+     *
      * @return string
      */
     private function _formatParams($params)
@@ -195,11 +207,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         }
 
         $params = http_build_query($params);
+
         return $params;
     }
 
     /**
-     * Api URL
+     * Api URL.
+     *
      * @return string
      */
     private function _getApiUrl()
@@ -207,6 +221,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         if ($this->isTestEnv()) {
             return 'https://api.sandbox.namecheap.com/xml.response';
         }
+
         return 'https://api.namecheap.com/xml.response';
     }
 
@@ -223,20 +238,20 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         return ['ApiUser' => $this->config['api-user-id'], 'ApiKey' => $this->config['api-key'], 'UserName' => $this->config['username'], 'ClientIp' => $this->config['ip'], ...$params];
     }
 
-
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function modifyNs(Registrar_Domain $domain)
     {
         // get NS info
-        $params = array(
+        $params = [
             'SLD' => $domain->getSld(),
             'TLD' => $domain->getTld($with_dot = false),
             'NameServers' => $domain->getNs1() . ',' . $domain->getNs2() . ',' . $domain->getNs3() . ',' . $domain->getNs4(),
             'Command' => 'namecheap.domains.dns.setCustom',
-        );
+        ];
 
         $result = $this->_makeRequest($params);
 
@@ -245,24 +260,27 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
             $placeholders = [':action:' => __trans('update nameservers'), ':type:' => 'Namecheap'];
+
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
-        return True;
+
+        return true;
     }
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function modifyContact(Registrar_Domain $domain)
     {
-        $params = array(
+        $params = [
             'Command' => 'namecheap.domains.setContacts',
             'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
-        );
+        ];
 
         // Set contact data
-        foreach (array('Registrant', 'Admin', 'Tech', 'AuxBilling') as $contactType) {
+        foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
             if ($contactType == 'Admin' && $domain->getContactAdmin()) {
@@ -277,34 +295,37 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 $c = $domain->getContactBilling();
             }
 
-            $params[$contactType . 'FirstName']        = $c->getFirstName();
-            $params[$contactType . 'LastName']         = $c->getLastName();
-            $params[$contactType . 'EmailAddress']     = $c->getEmail();
-            $params[$contactType . 'Phone']            = '+' . $c->getTelCc() . '.' . $c->getTel();
-            $params[$contactType . 'Address1']         = $c->getAddress1();
-            $params[$contactType . 'Address2']         = $c->getAddress2();
-            $params[$contactType . 'City']             = $c->getCity();
-            $params[$contactType . 'StateProvince']    = $c->getState();
-            $params[$contactType . 'Country']          = $c->getCountry();
-            $params[$contactType . 'PostalCode']       = $c->getZip();
+            $params[$contactType . 'FirstName'] = $c->getFirstName();
+            $params[$contactType . 'LastName'] = $c->getLastName();
+            $params[$contactType . 'EmailAddress'] = $c->getEmail();
+            $params[$contactType . 'Phone'] = '+' . $c->getTelCc() . '.' . $c->getTel();
+            $params[$contactType . 'Address1'] = $c->getAddress1();
+            $params[$contactType . 'Address2'] = $c->getAddress2();
+            $params[$contactType . 'City'] = $c->getCity();
+            $params[$contactType . 'StateProvince'] = $c->getState();
+            $params[$contactType . 'Country'] = $c->getCountry();
+            $params[$contactType . 'PostalCode'] = $c->getZip();
         }
         $result = $this->_makeRequest($params);
+
         return $result->CommandResponse->DomainSetContactResult['IsSuccess'] == 'true';
     }
 
     /**
-     * relying on domain->getEpp() to return user's input for Epp code
+     * relying on domain->getEpp() to return user's input for Epp code.
+     *
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function transferDomain(Registrar_Domain $domain)
     {
-        $params = array(
+        $params = [
             'DomainName' => $domain->getName(),
             'Years' => '1',
             'EPPCode' => $domain->getEpp(),
-            'Command' => 'namecheap.domains.transfer.create'
-        );
+            'Command' => 'namecheap.domains.transfer.create',
+        ];
 
         $result = $this->_makeRequest($params);
         if (isset($result->CommandResponse->DomainTransferCreateResult['Transfer']) && $result->CommandResponse->DomainTransferCreateResult['Transfer'] == 'true') {
@@ -316,37 +337,40 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     /**
      * Should return details of registered domain
-     * If domain is not registered should throw Registrar_Exception
+     * If domain is not registered should throw Registrar_Exception.
+     *
      * @return Registrar_Domain
+     *
      * @throws Registrar_Exception
      */
     public function getDomainDetails(Registrar_Domain $domain)
     {
-        $params = array(
+        $params = [
             'DomainName' => $domain->getName(),
-            'Command' => 'namecheap.domains.getInfo'
-        );
+            'Command' => 'namecheap.domains.getInfo',
+        ];
 
         $result = $this->_makeRequest($params);
 
-        $domain->setRegistrationTime((string)$result->CommandResponse->DomainGetInfoResult->DomainDetails->CreatedDate);
-        $domain->setExpirationTime((string)$result->CommandResponse->DomainGetInfoResult->DomainDetails->ExpiredDate);
-        $domain->setPrivacyEnabled((string)$result->CommandResponse->DomainGetInfoResult->Whoisguard['Enabled']);
+        $domain->setRegistrationTime((string) $result->CommandResponse->DomainGetInfoResult->DomainDetails->CreatedDate);
+        $domain->setExpirationTime((string) $result->CommandResponse->DomainGetInfoResult->DomainDetails->ExpiredDate);
+        $domain->setPrivacyEnabled((string) $result->CommandResponse->DomainGetInfoResult->Whoisguard['Enabled']);
 
-        $params = array(
+        $params = [
             'DomainName' => $domain->getName(),
-            'Command' => 'namecheap.domains.getContacts'
-        );
+            'Command' => 'namecheap.domains.getContacts',
+        ];
 
         $result = $this->_makeRequest($params);
 
         if (!isset($result->CommandResponse->DomainContactsResult)) {
             $placeholders = [':action:' => __trans('retrieve domain details'), ':type:' => 'Namecheap'];
+
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         $contacts = $result->CommandResponse->DomainContactsResult;
-        // create new Domain obj to return 
+        // create new Domain obj to return
         $newDomain = new Registrar_Domain();
 
         // set SLD and TLD
@@ -359,7 +383,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $billingContact = new Registrar_Domain_Contact();
 
         // Set contact data on our Domain obj using info from our API call
-        foreach (array('Registrant', 'Admin', 'Tech', 'AuxBilling') as $contactType) {
+        foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $contactApi = $contacts->Registrant;
             $contact = $registrarContact;
 
@@ -376,16 +400,16 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 $contact = $billingContact;
             }
 
-            $contact->setFirstName((string)$contactApi->FirstName);
-            $contact->setLastName((string)$contactApi->LastName);
-            $contact->setEmail((string)$contactApi->EmailAddress);
-            $contact->setTel((string)$contactApi->Phone);
-            $contact->setAddress1((string)$contactApi->Address1);
-            $contact->setAddress2((string)$contactApi->Address2);
-            $contact->setCity((string)$contactApi->City);
-            $contact->setState((string)$contactApi->StateProvince);
-            $contact->setCountry((string)$contactApi->Country);
-            $contact->setZip((string)$contactApi->PostalCode);
+            $contact->setFirstName((string) $contactApi->FirstName);
+            $contact->setLastName((string) $contactApi->LastName);
+            $contact->setEmail((string) $contactApi->EmailAddress);
+            $contact->setTel((string) $contactApi->Phone);
+            $contact->setAddress1((string) $contactApi->Address1);
+            $contact->setAddress2((string) $contactApi->Address2);
+            $contact->setCity((string) $contactApi->City);
+            $contact->setState((string) $contactApi->StateProvince);
+            $contact->setCountry((string) $contactApi->Country);
+            $contact->setZip((string) $contactApi->PostalCode);
         }
 
         $newDomain->setContactRegistrar($registrarContact);
@@ -394,32 +418,31 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $newDomain->setContactBilling($billingContact);
 
         // get NS info
-        $params = array(
+        $params = [
             'SLD' => $newDomain->getSld(),
             'TLD' => $newDomain->getTld($with_dot = false),
             'Command' => 'namecheap.domains.dns.getList',
-        );
+        ];
 
         $result = $this->_makeRequest($params);
 
-        $NsArr = array();
+        $NsArr = [];
         $xmlNsList = $result->CommandResponse->DomainDNSGetListResult;
         foreach ($xmlNsList->Nameserver as $Nameserver) {
             $NsArr[] = $Nameserver;
         }
 
-        for ($i = 1; $i <= 4; $i++) {
+        for ($i = 1; $i <= 4; ++$i) {
             if (isset($NsArr[$i - 1])) {
-                $newDomain->{'setNs' . $i}((string)$NsArr[$i - 1]);
+                $newDomain->{'setNs' . $i}((string) $NsArr[$i - 1]);
             }
         }
 
         return $newDomain;
     }
 
-
     /**
-     * Should return domain transfer code
+     * Should return domain transfer code.
      *
      * @throws Registrar_Exception
      */
@@ -430,20 +453,20 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function registerDomain(Registrar_Domain $domain)
     {
-
-        $params = array(
+        $params = [
             'Command' => 'namecheap.domains.create',
             'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
             'Years' => $domain->getRegistrationPeriod(),
-        );
+        ];
 
         if ($domain->getNs1()) {
             // Add nameservers
-            $nsList = array();
+            $nsList = [];
             $nsList[] = $domain->getNs1();
             $nsList[] = $domain->getNs2();
             if ($domain->getNs3()) {
@@ -456,7 +479,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         }
 
         // Set contact data
-        foreach (array('Registrant', 'Admin', 'Tech', 'AuxBilling') as $contactType) {
+        foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
             if ($contactType == 'Admin' && $domain->getContactAdmin()) {
@@ -471,16 +494,16 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 $c = $domain->getContactBilling();
             }
 
-            $params[$contactType . 'FirstName']        = $c->getFirstName();
-            $params[$contactType . 'LastName']         = $c->getLastName();
-            $params[$contactType . 'EmailAddress']     = $c->getEmail();
-            $params[$contactType . 'Phone']            = '+' . $c->getTelCc() . '.' . $c->getTel();
-            $params[$contactType . 'Address1']         = $c->getAddress1();
-            $params[$contactType . 'Address2']         = $c->getAddress2();
-            $params[$contactType . 'City']             = $c->getCity();
-            $params[$contactType . 'StateProvince']    = $c->getState();
-            $params[$contactType . 'Country']          = $c->getCountry();
-            $params[$contactType . 'PostalCode']       = $c->getZip();
+            $params[$contactType . 'FirstName'] = $c->getFirstName();
+            $params[$contactType . 'LastName'] = $c->getLastName();
+            $params[$contactType . 'EmailAddress'] = $c->getEmail();
+            $params[$contactType . 'Phone'] = '+' . $c->getTelCc() . '.' . $c->getTel();
+            $params[$contactType . 'Address1'] = $c->getAddress1();
+            $params[$contactType . 'Address2'] = $c->getAddress2();
+            $params[$contactType . 'City'] = $c->getCity();
+            $params[$contactType . 'StateProvince'] = $c->getState();
+            $params[$contactType . 'Country'] = $c->getCountry();
+            $params[$contactType . 'PostalCode'] = $c->getZip();
         }
         $params['AddFreeWhoisguard'] = 'yes';
 
@@ -535,31 +558,32 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
 
-        return (isset($result->CommandResponse->DomainCreateResult['Registered'])
-            && ($result->CommandResponse->DomainCreateResult['Registered'] == 'true'));
+        return isset($result->CommandResponse->DomainCreateResult['Registered'])
+            && ($result->CommandResponse->DomainCreateResult['Registered'] == 'true');
     }
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function renewDomain(Registrar_Domain $domain)
     {
-        $params = array(
+        $params = [
             'Command' => 'namecheap.domains.renew',
             'DomainName' => $domain->getName(),
             'Years' => $domain->getRegistrationPeriod(),
-        );
+        ];
 
         $result = $this->_makeRequest($params);
 
-        return (isset($result->CommandResponse->DomainRenewResult['Renew'])
-            && ($result->CommandResponse->DomainRenewResult['Renew'] == 'true'));
+        return isset($result->CommandResponse->DomainRenewResult['Renew'])
+            && ($result->CommandResponse->DomainRenewResult['Renew'] == 'true');
     }
 
     /**
      * TODO: Implement this correctly.
-     * 
+     *
      * @throws Registrar_Exception
      */
     public function deleteDomain(Registrar_Domain $domain): never
@@ -569,29 +593,32 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     /**
      * @return string[]
+     *
      * @throws Registrar_Exception
      */
     private function getPrivacyInfo(Registrar_Domain $domain)
     {
-        $params = array(
+        $params = [
             'DomainName' => $domain->getName(),
-            'Command' => 'namecheap.domains.getInfo'
-        );
+            'Command' => 'namecheap.domains.getInfo',
+        ];
 
         $result = $this->_makeRequest($params);
 
         if (isset($result->CommandResponse->DomainGetInfoResult->Whoisguard)) {
-            return array(
+            return [
                 'enabled' => $result->CommandResponse->DomainGetInfoResult->Whoisguard['Enabled'] == 'True',
-                'id' => (string)$result->CommandResponse->DomainGetInfoResult->Whoisguard->ID
-            );
+                'id' => (string) $result->CommandResponse->DomainGetInfoResult->Whoisguard->ID,
+            ];
         }
         $placeholders = [':action:' => __trans('retrieve privacy information'), ':type:' => 'Namecheap'];
+
         throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
     }
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function enablePrivacyProtection(Registrar_Domain $domain)
@@ -599,14 +626,14 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $privacyInfo = $this->getPrivacyInfo($domain);
 
         if ($privacyInfo['enabled']) {
-            return True;
+            return true;
         }
 
-        $params = array(
+        $params = [
             'WhoisguardID' => $privacyInfo['id'],
             'ForwardedToEmail' => $domain->getContactRegistrar()->getEmail(),
-            'Command' => 'namecheap.whoisguard.enable'
-        );
+            'Command' => 'namecheap.whoisguard.enable',
+        ];
 
         $result = $this->_makeRequest($params);
 
@@ -616,6 +643,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function disablePrivacyProtection(Registrar_Domain $domain)
@@ -623,13 +651,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $privacyInfo = $this->getPrivacyInfo($domain);
 
         if (!$privacyInfo['enabled']) {
-            return True;
+            return true;
         }
 
-        $params = array(
+        $params = [
             'WhoisguardID' => $privacyInfo['id'],
-            'Command' => 'namecheap.whoisguard.disable'
-        );
+            'Command' => 'namecheap.whoisguard.disable',
+        ];
 
         $result = $this->_makeRequest($params);
 
@@ -639,91 +667,104 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function getLock(Registrar_Domain $domain)
     {
-        $params = array(
+        $params = [
             'DomainName' => $domain->getName(),
-            'Command' => 'namecheap.domains.getRegistrarLock'
-        );
+            'Command' => 'namecheap.domains.getRegistrarLock',
+        ];
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainGetRegistrarLockResult['RegistrarLockStatus'])) {
             $placeholders = [':action:' => __trans('get the domain lock status'), ':type:' => 'Namecheap'];
+
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
+
         return $result->CommandResponse->DomainGetRegistrarLockResult['RegistrarLockStatus'] == 'true';
     }
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function lock(Registrar_Domain $domain)
     {
         if ($this->getLock($domain) == 'true') {
-            return True;
+            return true;
         }
 
-        $params = array(
+        $params = [
             'DomainName' => $domain->getName(),
             'LockAction' => 'LOCK',
-            'Command' => 'namecheap.domains.setRegistrarLock'
-        );
+            'Command' => 'namecheap.domains.setRegistrarLock',
+        ];
 
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainSetRegistrarLockResult['IsSuccess'])) {
             $placeholders = [':action:' => __trans('set the domain lock status'), ':type:' => 'Namecheap'];
+
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
             $domain->setLocked('true');
-            return True;
+
+            return true;
         }
-        return False;
+
+        return false;
     }
 
     /**
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function unlock(Registrar_Domain $domain)
     {
         if ($this->getLock($domain) == 'false') {
-            return True;
+            return true;
         }
 
-        $params = array(
+        $params = [
             'DomainName' => $domain->getName(),
             'LockAction' => 'UNLOCK',
-            'Command' => 'namecheap.domains.setRegistrarLock'
-        );
+            'Command' => 'namecheap.domains.setRegistrarLock',
+        ];
 
         $result = $this->_makeRequest($params);
         if (!isset($result->CommandResponse->DomainSetRegistrarLockResult['IsSuccess'])) {
             $placeholders = [':action:' => __trans('set the domain lock status'), ':type:' => 'Namecheap'];
+
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         if ($result->CommandResponse->DomainGetRegistrarLockResult['IsSuccess'] == 'true') {
             $domain->setLocked('false');
-            return True;
+
+            return true;
         }
-        return False;
+
+        return false;
     }
 
     /**
      * Checks if tld is compatible with namecheaps transfer api and
-     * if the domain is not available for registration (meaning hopefully the client owns it)
+     * if the domain is not available for registration (meaning hopefully the client owns it).
+     *
      * @return bool
+     *
      * @throws Registrar_Exception
      */
     public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
-        return in_array($domain->getTld(), array(
+        return in_array($domain->getTld(), [
             '.biz', '.ca', '.cc', '.co', '.co.uk', '.com', '.com.es',
             '.com.pe', '.es', '.in', '.info', '.me', '.me.uk', '.mobi', '.net', '.net.pe',
-            '.nom.es', '.org', '.org.es', '.org.pe', '.org.uk', '.pe', '.tv', '.us'
-        ))
+            '.nom.es', '.org', '.org.es', '.org.pe', '.org.uk', '.pe', '.tv', '.us',
+        ])
             && !$this->isDomainAvailable($domain);
     }
 }

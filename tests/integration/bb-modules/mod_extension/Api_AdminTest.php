@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ExtensionTest extends BBDbApiTestCase
 {
@@ -6,33 +7,33 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
 
     public function testSetup()
     {
-        $data = array(
+        $data = [
             'code' => 'extension',
-        );
+        ];
 
         try {
-            //do not allow install core extension
+            // do not allow install core extension
             $bool = $this->api_admin->extension_mod_install($data);
             $this->fail('Core extension can not be installed');
         } catch (Box_Exception) {
-            $this->assertTrue(TRUE);
+            $this->assertTrue(true);
         }
 
         try {
-            //do not allow uninstall core extension
+            // do not allow uninstall core extension
             $bool = $this->api_admin->extension_mod_uninstall($data);
             $this->fail('Core extension can not be uninstalled');
         } catch (Box_Exception) {
-            $this->assertTrue(TRUE);
+            $this->assertTrue(true);
         }
     }
 
     public function testUninstall()
     {
-        $data = array(
-            'type'  =>  'mod',
-            'id'    =>  'news',
-        );
+        $data = [
+            'type' => 'mod',
+            'id' => 'news',
+        ];
         $bool = $this->api_admin->extension_uninstall($data);
 
         $this->assertTrue($bool);
@@ -40,28 +41,28 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
 
     public function testUpdate()
     {
-        $versions = array(
+        $versions = [
             'version_old' => '1.1.1',
             'version_new' => '2.2.2',
-        );
-        $extension =  new Model_Extension();
-        $extension->loadBean(new \RedBeanPHP\OODBBean());
+        ];
+        $extension = new Model_Extension();
+        $extension->loadBean(new RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->onlyMethods(array('update', 'findExtension'))->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Extension\Service::class)->onlyMethods(['update', 'findExtension'])->getMock();
         $serviceMock->expects($this->any())
             ->method('update')
-            ->will($this->returnValue($versions));
+            ->willReturn($versions);
         $serviceMock->expects($this->any())
             ->method('findExtension')
-            ->will($this->returnValue($extension));
+            ->willReturn($extension);
 
         $serviceMock->setDi($this->di);
 
-        $data = array(
-            'type'  =>  'mod',
-            'id'    =>  'branding',
-        );
-        $api = new \Box\Mod\Extension\Api\Admin();
+        $data = [
+            'type' => 'mod',
+            'id' => 'branding',
+        ];
+        $api = new Box\Mod\Extension\Api\Admin();
         $api->setDi($this->di);
         $api->setService($serviceMock);
         $arr = $api->update($data);
@@ -70,15 +71,15 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
 
     public function testConfigs()
     {
-        $data = array(
-            'ext'           =>  'mod_email',
-            'mailer'        =>  'mail',
-            'smtp_host'     =>  'hostname',
-            'smtp_port'     =>  55,
-            'smtp_username' =>  'username',
-            'smtp_password' =>  'sasd132423%3@#//',
-            'smtp_security' =>  'yes',
-        );
+        $data = [
+            'ext' => 'mod_email',
+            'mailer' => 'mail',
+            'smtp_host' => 'hostname',
+            'smtp_port' => 55,
+            'smtp_username' => 'username',
+            'smtp_password' => 'sasd132423%3@#//',
+            'smtp_security' => 'yes',
+        ];
 
         $bool = $this->api_admin->extension_config_save($data);
         $this->assertTrue($bool);
@@ -91,10 +92,10 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
 
     public function testActivations()
     {
-        $data = array(
-            'id'    =>  'news',
-            'type'  =>  'mod',
-        );
+        $data = [
+            'id' => 'news',
+            'type' => 'mod',
+        ];
         $array = $this->api_admin->extension_activate($data);
         $this->assertIsArray($array);
         $bool = $this->api_guest->extension_is_on($data);
@@ -108,19 +109,19 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
 
     public function testLists()
     {
-        $data = array(
+        $data = [
             'type' => 'server-manager',
-        );
+        ];
         $array = $this->api_admin->extension_get_list($data);
         $this->assertIsArray($array);
 
-        $array = $this->api_admin->extension_get_list(array('active'=>true, 'type'=>'mod', 'search'=>'f'));
+        $array = $this->api_admin->extension_get_list(['active' => true, 'type' => 'mod', 'search' => 'f']);
         $this->assertIsArray($array);
 
-        $array = $this->api_admin->extension_get_list(array('installed'=>true));
+        $array = $this->api_admin->extension_get_list(['installed' => true]);
         $this->assertIsArray($array);
 
-        $array = $this->api_admin->extension_get_list(array('has_settings'=>true));
+        $array = $this->api_admin->extension_get_list(['has_settings' => true]);
         $this->assertIsArray($array);
 
         $array = $this->api_admin->extension_get_latest();
@@ -136,29 +137,29 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testUpdate_Core()
+    public function testUpdateCore()
     {
         $bool = $this->api_admin->extension_update_core();
         $this->assertTrue($bool);
     }
 
-    public function testInstall(){
+    public function testInstall()
+    {
+        $extension = new Model_Extension();
+        $extension->loadBean(new RedBeanPHP\OODBBean());
 
-        $extension =  new Model_Extension();
-        $extension->loadBean(new \RedBeanPHP\OODBBean());
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->onlyMethods(array('downloadAndExtract'))->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Extension\Service::class)->onlyMethods(['downloadAndExtract'])->getMock();
         $serviceMock->expects($this->any())
             ->method('downloadAndExtract')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $serviceMock->setDi($this->di);
 
-        $data = array(
-            'id'    =>  'branding',
-            'type'  =>  'mod',
-        );
-        $api = new \Box\Mod\Extension\Api\Admin();
+        $data = [
+            'id' => 'branding',
+            'type' => 'mod',
+        ];
+        $api = new Box\Mod\Extension\Api\Admin();
         $api->setService($serviceMock);
         $api->setDi($this->di);
         $arr = $api->install($data);
@@ -167,6 +168,4 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $expected['success'] = true;
         $this->assertEquals($arr, $expected);
     }
-
-
 }

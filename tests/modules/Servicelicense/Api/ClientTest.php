@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Servicelicense\Api;
 
-
-class ClientTest extends \BBTestCase {
+class ClientTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Servicelicense\Api\Client
+     * @var Client
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api= new \Box\Mod\Servicelicense\Api\Client();
+        $this->api = new Client();
     }
 
     public function testgetDi()
@@ -25,21 +24,21 @@ class ClientTest extends \BBTestCase {
 
     public function testreset()
     {
-        $data = array(
+        $data = [
             'order_id' => 1,
-        );
+        ];
 
-        $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Api\Admin::class)
-            ->onlyMethods(array('_getService'))
+        $apiMock = $this->getMockBuilder('\\' . Admin::class)
+            ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
-            ->will($this->returnValue(new \Model_ServiceLicense()));
+            ->willReturn(new \Model_ServiceLicense());
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('reset')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $apiMock->setService($serviceMock);
         $result = $apiMock->reset($data);
@@ -48,20 +47,20 @@ class ClientTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
-    public function test_getService()
+    public function testGetService()
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock= $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceLicense()));
+            ->willReturn(new \Model_ServiceLicense());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -70,7 +69,7 @@ class ClientTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->api->setDi($di);
 
@@ -82,20 +81,20 @@ class ClientTest extends \BBTestCase {
         $this->assertInstanceOf('\Model_ServiceLicense', $result);
     }
 
-    public function test_getServiceOrderNotActivated()
+    public function testGetServiceOrderNotActivated()
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock= $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -104,7 +103,7 @@ class ClientTest extends \BBTestCase {
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->api->setDi($di);
 

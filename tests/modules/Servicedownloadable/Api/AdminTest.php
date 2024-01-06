@@ -1,19 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Servicedownloadable\Api;
-
 
 class AdminTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Servicedownloadable\Api\Admin
+     * @var Admin
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Servicedownloadable\Api\Admin();
+        $this->api = new Admin();
     }
 
     public function testgetDi()
@@ -27,20 +25,20 @@ class AdminTest extends \BBTestCase
     public function testuploadFileNotUploaded()
     {
         $data['id'] = 1;
-        $model      = new \Model_Product();
+        $model = new \Model_Product();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
@@ -52,24 +50,24 @@ class AdminTest extends \BBTestCase
     public function testupload()
     {
         $data['id'] = 1;
-        $model      = new \Model_Product();
+        $model = new \Model_Product();
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('uploadProductFile')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
         $_FILES['file_data'] = 'exits';
@@ -84,12 +82,12 @@ class AdminTest extends \BBTestCase
     public function testupdateOrderNotActivated()
     {
         $data['order_id'] = 1;
-        $model            = new \Model_ClientOrder();
+        $model = new \Model_ClientOrder();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -97,12 +95,12 @@ class AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
-        $di['validator']   = $validatorMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -113,33 +111,33 @@ class AdminTest extends \BBTestCase
     public function testupdate()
     {
         $data['order_id'] = 1;
-        $model            = new \Model_ClientOrder();
+        $model = new \Model_ClientOrder();
 
         $modelDownloadableModel = new \Model_ServiceDownloadable();
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateProductFile')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($modelDownloadableModel));
+            ->willReturn($modelDownloadableModel);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
-        $di['validator']   = $validatorMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);

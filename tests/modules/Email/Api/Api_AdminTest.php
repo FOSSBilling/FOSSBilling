@@ -1,28 +1,27 @@
 <?php
+
 namespace Box\Tests\Mod\Email\Api;
 
 class Api_AdminTest extends \BBTestCase
 {
-
-    public function testEmail_get_list()
+    public function testEmailGetList()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
         $emailService = new \Box\Mod\Email\Service();
 
-        $willReturn = array(
-            "list" => array(
-                'id' => 1
-            ),
-        );
-
+        $willReturn = [
+            'list' => [
+                'id' => 1,
+            ],
+        ];
 
         $pager = $this->getMockBuilder('Box_Pagination')->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue($willReturn));
+            ->willReturn($willReturn);
 
-        $di              = new \Pimple\Container();
-        $di['pager']     = $pager;
+        $di = new \Pimple\Container();
+        $di['pager'] = $pager;
 
         $adminApi->setDi($di);
         $emailService->setDi($di);
@@ -30,68 +29,67 @@ class Api_AdminTest extends \BBTestCase
         $service = $emailService;
         $adminApi->setService($service);
 
-        $result = $adminApi->email_get_list(array());
+        $result = $adminApi->email_get_list([]);
         $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);
         $this->assertIsArray($result['list']);
     }
 
-
-    public function testEmail_get()
+    public function testEmailGet()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data         = array(
-            'id' => 1
-        );
-        $id           = 10;
-        $client_id    = 5;
-        $sender       = 'sender@example.com';
-        $recipients   = 'recipient@example.com';
-        $subject      = 'Subject';
+        $data = [
+            'id' => 1,
+        ];
+        $id = 10;
+        $client_id = 5;
+        $sender = 'sender@example.com';
+        $recipients = 'recipient@example.com';
+        $subject = 'Subject';
         $content_html = 'HTML';
         $content_text = 'TEXT';
-        $created      = date('Y-m-d H:i:s', time() - 86400);
-        $updated      = date('Y-m-d H:i:s');
+        $created = date('Y-m-d H:i:s', time() - 86400);
+        $updated = date('Y-m-d H:i:s');
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
-        $model->id           = $id;
-        $model->client_id    = $client_id;
-        $model->sender       = $sender;
-        $model->recipients   = $recipients;
-        $model->subject      = $subject;
+        $model->id = $id;
+        $model->client_id = $client_id;
+        $model->sender = $sender;
+        $model->recipients = $recipients;
+        $model->subject = $subject;
         $model->content_html = $content_html;
         $model->content_text = $content_text;
-        $model->created_at   = $created;
-        $model->updated_at   = $updated;
+        $model->created_at = $created;
+        $model->updated_at = $updated;
 
-        $expected = array(
-            'id'           => $id,
-            'client_id'    => $client_id,
-            'sender'       => $sender,
-            'recipients'   => $recipients,
-            'subject'      => $subject,
+        $expected = [
+            'id' => $id,
+            'client_id' => $client_id,
+            'sender' => $sender,
+            'recipients' => $recipients,
+            'subject' => $subject,
             'content_html' => $content_html,
             'content_text' => $content_text,
-            'created_at'   => $created,
-            'updated_at'   => $updated,
-        );
+            'created_at' => $created,
+            'updated_at' => $updated,
+        ];
 
-        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('getEmailById', 'toApiArray'))->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailById', 'toApiArray'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getEmailById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $service->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue($expected));
+            ->willReturn($expected);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
@@ -107,27 +105,27 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data = array(
-            'to'        => 'to@example.com',
-            'to_name'   => 'Recipient Name',
-            'from'      => 'from@example.com',
+        $data = [
+            'to' => 'to@example.com',
+            'to_name' => 'Recipient Name',
+            'from' => 'from@example.com',
             'from_name' => 'Sender Name',
-            'subject'   => 'Subject',
-            'content'   => 'Content'
-        );
+            'subject' => 'Subject',
+            'content' => 'Content',
+        ];
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('sendMail'))->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['sendMail'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendMail')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
-        $validatorMock   = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
@@ -143,9 +141,9 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
@@ -154,22 +152,22 @@ class Api_AdminTest extends \BBTestCase
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('resend'))->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['resend'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('resend')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi->setService($emailService);
 
@@ -178,25 +176,25 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testResend_ExceptionEmailNotFound()
+    public function testResendExceptionEmailNotFound()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
@@ -205,27 +203,25 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->email_resend($data);
     }
 
-
-    public function testDelete_ExceptionEmailNotFound()
+    public function testDeleteExceptionEmailNotFound()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-
-        $di              = new \Pimple\Container();
-        $di['db']        = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
@@ -234,15 +230,14 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->email_delete($data);
     }
 
-
-    public function testEmail_delete()
+    public function testEmailDelete()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
         $emailService = new \Box\Mod\Email\Service();
 
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
@@ -251,21 +246,20 @@ class Api_AdminTest extends \BBTestCase
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $db->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-
         $loggerMock = $this->getMockBuilder('Box_Log')->getMock();
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $db;
-        $di['logger']    = $loggerMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
+        $di['logger'] = $loggerMock;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
@@ -276,27 +270,26 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-
-    public function testTemplate_get_list()
+    public function testTemplateGetList()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
         $emailService = new \Box\Mod\Email\Service();
 
-        $willReturn = array(
-            "list" => array(
-                array(
+        $willReturn = [
+            'list' => [
+                [
                 'id' => 1,
-                )
-            ),
-        );
+                ],
+            ],
+        ];
 
         $pager = $this->getMockBuilder('Box_Pagination')->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue($willReturn));
+            ->willReturn($willReturn);
 
-        $di              = new \Pimple\Container();
-        $di['pager']     = $pager;
+        $di = new \Pimple\Container();
+        $di['pager'] = $pager;
 
         $adminApi->setDi($di);
         $emailService->setDi($di);
@@ -304,20 +297,20 @@ class Api_AdminTest extends \BBTestCase
         $service = $emailService;
         $adminApi->setService($service);
 
-        $result = $adminApi->template_get_list(array());
+        $result = $adminApi->template_get_list([]);
         $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);
         $this->assertIsArray($result['list']);
     }
 
-    public function testTemplate_get()
+    public function testTemplateGet()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $model = new \Model_EmailTemplate();
         $model->loadBean(new \DummyBean());
@@ -325,34 +318,34 @@ class Api_AdminTest extends \BBTestCase
         $db = $this->getMockBuilder('\Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('templateToApiArray'))->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateToApiArray'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateToApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $adminApi->setService($emailService);
 
         $result = $adminApi->template_get($data);
         $this->assertIsArray($result);
     }
 
-    public function testTemplate_delete()
+    public function testTemplateDelete()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $model = new \Model_EmailTemplate();
         $model->loadBean(new \DummyBean());
@@ -361,7 +354,7 @@ class Api_AdminTest extends \BBTestCase
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $loggerMock = $this->getMockBuilder('Box_Log')->getMock();
 
@@ -369,35 +362,35 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['validator'] = $validatorMock;
-        $di['logger']    = $loggerMock;
+        $di['logger'] = $loggerMock;
         $adminApi->setDi($di);
 
         $result = $adminApi->template_delete($data);
         $this->assertTrue($result);
     }
 
-    public function testtemplate_delete_TemplateNotFound()
+    public function testtemplateDeleteTemplateNotFound()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
@@ -406,8 +399,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->template_delete($data);
     }
 
-
-    public function testTemplate_create()
+    public function testTemplateCreate()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
@@ -417,22 +409,22 @@ class Api_AdminTest extends \BBTestCase
         $templateModel->loadBean(new \DummyBean());
         $templateModel->id = $modelId;
 
-        $data = array(
+        $data = [
             'action_code' => 'Action_code',
-            'subject'     => 'Subject',
-            'content'     => 'Content'
-        );
+            'subject' => 'Subject',
+            'content' => 'Content',
+        ];
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('templateCreate'))->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateCreate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateCreate')
-            ->will($this->returnValue($templateModel));
+            ->willReturn($templateModel);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
@@ -442,56 +434,56 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $modelId);
     }
 
-    public function testTemplate_sendToNotSetException()
+    public function testTemplateSendToNotSetException()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $adminApi->template_send(array('code' => 'code'));
+        $adminApi->template_send(['code' => 'code']);
     }
 
-    public function testTemplate_update()
+    public function testTemplateUpdate()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $id   = random_int(1, 100);
-        $data = array(
-            'id'          => $id,
-            'enabled'     => '1',
-            'category'    => 'Category',
+        $id = random_int(1, 100);
+        $data = [
+            'id' => $id,
+            'enabled' => '1',
+            'category' => 'Category',
             'action_code' => 'Action_code',
-            'category'    => '',
-            'subject'     => 'Subject',
-            'content'     => 'Content'
-        );
+            'category' => '',
+            'subject' => 'Subject',
+            'content' => 'Content',
+        ];
 
         $emailTemplateModel = new \Model_EmailTemplate();
         $emailTemplateModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($emailTemplateModel));
+            ->willReturn($emailTemplateModel);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('updateTemplate'))->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['updateTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('updateTemplate')
             ->with($emailTemplateModel, $data['enabled'], $data['category'], $data['subject'], $data['content'])
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $adminApi->setService($emailService);
         $adminApi->setDi($di);
 
@@ -499,24 +491,24 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function testTemplate_reset()
+    public function testTemplateReset()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $id   = random_int(1, 100);
-        $data = array(
-            'code' => 'CODE'
-        );
+        $id = random_int(1, 100);
+        $data = [
+            'code' => 'CODE',
+        ];
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('resetTemplateByCode'))->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['resetTemplateByCode'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('resetTemplateByCode')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
         $adminApi->setDi($di);
@@ -526,13 +518,13 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $id);
     }
 
-    public function testBatch_template_generate()
+    public function testBatchTemplateGenerate()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('templateBatchGenerate'))->getMock();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateBatchGenerate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateBatchGenerate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi->setService($emailService);
 
@@ -540,63 +532,63 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatch_template_disable()
+    public function testBatchTemplateDisable()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('templateBatchDisable'))->getMock();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateBatchDisable'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateBatchDisable')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi->setService($emailService);
 
-        $result = $adminApi->batch_template_disable(array());
+        $result = $adminApi->batch_template_disable([]);
         $this->assertTrue($result);
     }
 
-    public function testBatch_template_enable()
+    public function testBatchTemplateEnable()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('templateBatchEnable'))->getMock();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateBatchEnable'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateBatchEnable')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi->setService($emailService);
 
-        $result = $adminApi->batch_template_enable(array());
+        $result = $adminApi->batch_template_enable([]);
         $this->assertTrue($result);
     }
 
-    public function testSend_test()
+    public function testSendTest()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('sendTemplate'))->getMock();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['sendTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi->setService($emailService);
 
-        $result = $adminApi->send_test(array());
+        $result = $adminApi->send_test([]);
         $this->assertTrue($result);
     }
 
-    public function testBatch_sendmail()
+    public function testBatchSendmail()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('batchSend'))->getMock();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['batchSend'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('batchSend')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
-            ->will($this->returnValue($isExtensionActiveReturn));
+            ->willReturn($isExtensionActiveReturn);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $extension);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $extension);
 
         $adminApi->setService($emailService);
         $adminApi->setDi($di);
@@ -605,18 +597,18 @@ class Api_AdminTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testTemplate_send()
+    public function testTemplateSend()
     {
-        $adminApi     = new \Box\Mod\Email\Api\Admin();
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(array('sendTemplate'))->getMock();
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['sendTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -624,61 +616,59 @@ class Api_AdminTest extends \BBTestCase
 
         $adminApi->setService($emailService);
 
-        $data = array(
-            'code'                => 'mod_email_test',
-            'to'                  => 'example@example.com',
-            'default_subject'     => 'SUBJECT',
-            'default_template'    => 'TEMPLATE',
+        $data = [
+            'code' => 'mod_email_test',
+            'to' => 'example@example.com',
+            'default_subject' => 'SUBJECT',
+            'default_template' => 'TEMPLATE',
             'default_description' => 'DESCRIPTION',
-        );
+        ];
 
         $result = $adminApi->template_send($data);
         $this->assertTrue($result);
     }
 
-    public function testTemplate_render()
+    public function testTemplateRender()
     {
-
-        $adminApi = $this->getMockBuilder(\Box\Mod\Email\Api\Admin::class)->onlyMethods(array('template_get'))->getMock();
+        $adminApi = $this->getMockBuilder(\Box\Mod\Email\Api\Admin::class)->onlyMethods(['template_get'])->getMock();
         $adminApi->expects($this->atLeastOnce())
             ->method('template_get')
-            ->will($this->returnValue(array('vars' => array(), 'content' => 'content')));
+            ->willReturn(['vars' => [], 'content' => 'content']);
 
         $loader = new \Twig\Loader\ArrayLoader();
-        $twig = $this->getMockBuilder(\Twig\Environment::class)->setConstructorArgs([$loader,['debug' => false]])->getMock();
+        $twig = $this->getMockBuilder(\Twig\Environment::class)->setConstructorArgs([$loader, ['debug' => false]])->getMock();
 
-        $di         = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['twig'] = $twig;
 
         $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['renderString'])->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('renderString')
-            ->will($this->returnValue('rendered'));
+            ->willReturn('rendered');
 
-        $di['mod_service'] = $di->protect(fn() => $systemService);
+        $di['mod_service'] = $di->protect(fn () => $systemService);
 
         $adminApi->setDi($di);
 
-        $result = $adminApi->template_render(array('id' => 5));
+        $result = $adminApi->template_render(['id' => 5]);
         $this->assertEquals($result, 'rendered');
     }
 
-    public function testBatch_delete()
+    public function testBatchDelete()
     {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Api\Admin::class)->onlyMethods(array('email_delete'))->getMock();
-        $activityMock->expects($this->atLeastOnce())->method('email_delete')->will($this->returnValue(true));
+        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Api\Admin::class)->onlyMethods(['email_delete'])->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('email_delete')->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
-        $result = $activityMock->batch_delete(array('ids' => array(1, 2, 3)));
-        $this->assertEquals(true, $result);
+        $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
+        $this->assertTrue($result);
     }
-
 }

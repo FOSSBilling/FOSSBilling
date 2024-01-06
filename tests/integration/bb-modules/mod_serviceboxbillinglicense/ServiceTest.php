@@ -5,14 +5,14 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
     public function testService()
     {
-        $service = new \Box\Mod\Serviceboxbillinglicense\Service();
+        $service = new Box\Mod\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
         $result = $service->install();
         $this->assertNull($result);
 
-        $data = array(
-            'param' => 'value'
-        );
+        $data = [
+            'param' => 'value',
+        ];
         $result = $service->setModuleConfig($data);
         $this->assertNull($result);
 
@@ -23,17 +23,15 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 
     public function testActions()
     {
-
-        $service = new \Box\Mod\Serviceboxbillinglicense\Service();
+        $service = new Box\Mod\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
 
         $order = $this->di['db']->load('ClientOrder', 1);
 
         $model = $service->create($order);
-        $this->assertInstanceOf('\\' . \RedBeanPHP\OODBBean::class, $model);
+        $this->assertInstanceOf('\\' . RedBeanPHP\OODBBean::class, $model);
 
-
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionCode(7456);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->activate($order, null);
@@ -41,8 +39,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $result = $service->activate($order, $model);
         $this->assertTrue($result);
 
-
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionCode(7456);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->suspend($order, null);
@@ -50,8 +47,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $result = $service->suspend($order, $model);
         $this->assertTrue($result);
 
-
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionCode(7456);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->unsuspend($order, null);
@@ -79,12 +75,11 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 
     public function testUninstall()
     {
-        $service = new \Box\Mod\Serviceboxbillinglicense\Service();
+        $service = new Box\Mod\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
         $result = $service->uninstall();
         $this->assertNull($result);
 
         $service->install();
     }
-
 }

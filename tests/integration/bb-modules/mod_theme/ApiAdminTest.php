@@ -1,25 +1,25 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ThemeTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_theme.xml';
-    
+
     public function testLists()
     {
         $code = 'boxbilling';
-        $array = $this->api_admin->theme_get(array('code'=> $code));
+        $array = $this->api_admin->theme_get(['code' => $code]);
         $this->assertIsArray($array);
         $this->assertEquals($array['code'], $code);
 
         $array = $this->api_admin->theme_get_list();
         $this->assertIsArray($array);
 
-        $bool = $this->api_admin->theme_select(array('code'=>'boxbilling'));
+        $bool = $this->api_admin->theme_select(['code' => 'boxbilling']);
         $this->assertTrue($bool);
-        
-        $array = $this->api_admin->theme_get_list(array('type'=>'admin'));
-        $this->assertIsArray($array);
 
+        $array = $this->api_admin->theme_get_list(['type' => 'admin']);
+        $this->assertIsArray($array);
     }
 
     /**
@@ -27,17 +27,15 @@ class Api_Admin_ThemeTest extends BBDbApiTestCase
      */
     public function testThemeNotFound()
     {
-        $this->api_admin->theme_get(array('code'=> 'non-existing-theme'));
+        $this->api_admin->theme_get(['code' => 'non-existing-theme']);
     }
 
     public function testPresets()
     {
-
-        $bool = $this->api_admin->theme_preset_select(array('code'=>'boxbilling', 'preset'=>'Default'));
+        $bool = $this->api_admin->theme_preset_select(['code' => 'boxbilling', 'preset' => 'Default']);
         $this->assertTrue($bool);
 
-        $bool = $this->api_admin->theme_preset_delete(array('code'=>'boxbilling', 'preset'=>'Default'));
+        $bool = $this->api_admin->theme_preset_delete(['code' => 'boxbilling', 'preset' => 'Default']);
         $this->assertTrue($bool);
-
     }
 }

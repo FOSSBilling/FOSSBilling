@@ -2,12 +2,11 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Payment_Invoice_Item
 {
     private $id;
@@ -20,20 +19,21 @@ class Payment_Invoice_Item
     /**
      * Set the id of the item.
      *
-     * @param int $id The id of the item.
+     * @param int $id the id of the item
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setId($id)
     {
         $this->id = $id;
+
         return $this;
     }
 
     /**
      * Get the id of the item.
      *
-     * @return int The id of the item.
+     * @return int the id of the item
      */
     public function getId()
     {
@@ -43,20 +43,21 @@ class Payment_Invoice_Item
     /**
      * Set the title of the item.
      *
-     * @param string $title The title of the item.
+     * @param string $title the title of the item
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setTitle($title)
     {
         $this->title = $title;
+
         return $this;
     }
 
     /**
      * Get the title of the item.
      *
-     * @return string The title of the item.
+     * @return string the title of the item
      */
     public function getTitle()
     {
@@ -66,20 +67,21 @@ class Payment_Invoice_Item
     /**
      * Set the description of the item.
      *
-     * @param string $description The description of the item.
+     * @param string $description the description of the item
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setDescription($description)
     {
         $this->description = $description;
+
         return $this;
     }
 
     /**
      * Get the description of the item.
      *
-     * @return string The description of the item.
+     * @return string the description of the item
      */
     public function getDescription()
     {
@@ -89,20 +91,21 @@ class Payment_Invoice_Item
     /**
      * Set the price of the item.
      *
-     * @param float $price The price of the item.
+     * @param float $price the price of the item
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setPrice($price)
     {
         $this->price = $price;
+
         return $this;
     }
 
     /**
      * Get the price of the item.
      *
-     * @return float The price of the item.
+     * @return float the price of the item
      */
     public function getPrice()
     {
@@ -112,20 +115,21 @@ class Payment_Invoice_Item
     /**
      * Set the tax amount for the item.
      *
-     * @param float $tax The tax amount for the item.
+     * @param float $tax the tax amount for the item
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setTax($tax)
     {
         $this->tax = $tax;
+
         return $this;
     }
 
     /**
      * Get the tax amount for the item.
      *
-     * @return float The tax amount for the item.
+     * @return float the tax amount for the item
      */
     public function getTax()
     {
@@ -135,20 +139,21 @@ class Payment_Invoice_Item
     /**
      * Set the quantity of the item.
      *
-     * @param int $qty The quantity of the item.
+     * @param int $qty the quantity of the item
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setQuantity($qty)
     {
         $this->qty = $qty;
+
         return $this;
     }
 
     /**
      * Get the quantity of the item.
      *
-     * @return int The quantity of the item.
+     * @return int the quantity of the item
      */
     public function getQuantity()
     {
@@ -158,7 +163,7 @@ class Payment_Invoice_Item
     /**
      * Return the total price for this item.
      *
-     * @return float The total price for this item.
+     * @return float the total price for this item
      */
     public function getTotal()
     {
@@ -168,7 +173,7 @@ class Payment_Invoice_Item
     /**
      * Return the total price for this item including tax.
      *
-     * @return float The total price for this item including tax.
+     * @return float the total price for this item including tax
      */
     public function getTotalWithTax()
     {

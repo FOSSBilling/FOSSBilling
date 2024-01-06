@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -26,9 +27,10 @@ class Request implements InjectionAwareInterface
     }
 
     /**
-     * Gets most possible client IPv4 Address. This method search in $_SERVER[‘REMOTE_ADDR’] and optionally in $_SERVER[‘HTTP_X_FORWARDED_FOR’]
+     * Gets most possible client IPv4 Address. This method search in $_SERVER[‘REMOTE_ADDR’] and optionally in $_SERVER[‘HTTP_X_FORWARDED_FOR’].
+     *
      * @param bool $trustForwardedHeader - No by default because this can be changed to anything extremely easy, making it unreliable for tracking and adding a potential source for external data to be executed.
-     * Please see: https://stackoverflow.com/questions/3003145/how-to-get-the-client-ip-address-in-php
+     *                                   Please see: https://stackoverflow.com/questions/3003145/how-to-get-the-client-ip-address-in-php
      */
     public function getClientAddress(bool $trustForwardedHeader = false): null|string|array
     {
@@ -44,11 +46,13 @@ class Request implements InjectionAwareInterface
                 [$address] = explode(',', $address);
             }
         }
+
         return $address;
     }
 
     /**
-     * Checks whether request includes attached files
+     * Checks whether request includes attached files.
+     *
      * @return int - number of files
      */
     public function hasFiles($onlySuccessful = true)
@@ -56,23 +60,25 @@ class Request implements InjectionAwareInterface
         $number_of_files = 0;
         $number_of_successful_files = 0;
         foreach ($_FILES as $file) {
-            $number_of_files++;
+            ++$number_of_files;
             if (isset($file['error']) && $file['error'] == 0) {
-                $number_of_successful_files++;
+                ++$number_of_successful_files;
             }
         }
-        return ($onlySuccessful)  ? $number_of_successful_files : $number_of_files;
+
+        return ($onlySuccessful) ? $number_of_successful_files : $number_of_files;
     }
 
     /**
-     * Gets attached files as SplFileInfo collection
+     * Gets attached files as SplFileInfo collection.
+     *
      * @return array
      */
     public function getUploadedFiles($onlySuccessful = true)
     {
-        $files = array();
+        $files = [];
         foreach ($_FILES as $file) {
-            $f = new \FOSSBilling\RequestFile($file);
+            $f = new RequestFile($file);
             if ($onlySuccessful) {
                 if ($file['error'] == 0) {
                     $files[] = $f;
@@ -81,6 +87,7 @@ class Request implements InjectionAwareInterface
                 $files[] = $f;
             }
         }
+
         return $files;
     }
 }
