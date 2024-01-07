@@ -554,7 +554,7 @@ class Service implements InjectionAwareInterface
             $result['password'] = $model->password;
             $result['accesshash'] = $model->accesshash;
             $result['port'] = $model->port;
-            $result['passwordlength'] = $model->passwordlength;
+            $result['passwordLength'] = $model->passwordLength;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
         }
@@ -713,7 +713,7 @@ class Service implements InjectionAwareInterface
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
         $model->port = $data['port'] ?? null;
-        $model->passwordlength = $data['passwordlength'] ?? null;
+        $model->passwordLength = $data['passwordLength'] ?? null;
         $model->secure = $data['secure'] ?? 0;
 
         $model->created_at = date('Y-m-d H:i:s');
@@ -762,7 +762,7 @@ class Service implements InjectionAwareInterface
         $model->username = $data['username'] ?? $model->username;
         $model->password = $data['password'] ?? $model->password;
         $model->accesshash = $data['accesshash'] ?? $model->accesshash;
-        $model->passwordlength = is_numeric($data['passwordlength']) ? $data['passwordlength'] : $model->passwordlength;
+        $model->passwordLength = is_numeric($data['passwordLength']) ? $data['passwordLength'] : $model->passwordLength;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -793,7 +793,7 @@ class Service implements InjectionAwareInterface
         $config['username'] = $model->username;
         $config['password'] = $model->password;
         $config['accesshash'] = $model->accesshash;
-        $config['passwordlength'] = $model->passwordlength;
+        $config['passwordLength'] = $model->passwordLength;
 
         $manager = $this->di['server_manager']($model->manager, $config);
 

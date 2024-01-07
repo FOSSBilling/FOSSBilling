@@ -21,7 +21,7 @@ abstract class Server_Manager
         'accesshash' =>  NULL,
         'config'     =>  NULL,
         'port'       =>  NULL,
-        'passwordlength' => NULL,
+        'passwordLength' => NULL,
     );
 
     /**
@@ -37,7 +37,7 @@ abstract class Server_Manager
      *                       - 'accesshash': Access hash for authenticating the connection. (API Key)
      *                       - 'config': Optional configuration for the server manager.
      *                       - 'port': Custom port number for the connection.
-     *                       - 'passwordlength': Password length for accounts.
+     *                       - 'passwordLength': Password length for accounts.
      */
     public function __construct($options)
     {
@@ -65,8 +65,8 @@ abstract class Server_Manager
             $this->_config['accesshash'] = $options['accesshash'];
         }
 
-        if (isset($options['passwordlength'])) {
-            $this->_config['passwordlength'] = $options['passwordlength'];
+        if (isset($options['passwordLength'])) {
+            $this->_config['passwordLength'] = $options['passwordLength'];
         }
 
         if (isset($options['ssl'])) {
@@ -115,7 +115,7 @@ abstract class Server_Manager
      */
     public function getPasswordLength(): int
     {
-        return $this->_config['passwordlength'] ?? 10;
+        return $this->_config['passwordLength'] ?? 10;
     }
 
     /**
