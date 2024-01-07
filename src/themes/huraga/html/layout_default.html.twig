@@ -80,19 +80,19 @@
                         {% endif %}
 
                         {% if settings.top_menu_dashboard %}
-                            <li class="nav-item">
+                            <li class="nav-item d-none d-md-block">
                                 <a class="nav-link" href="{{ ''|link }}">{{ 'Dashboard'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_order %}
-                            <li class="nav-item">
+                            <li class="nav-item d-none d-md-block">
                                 <a class="nav-link" href="{{ '/order'|link }}">{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_profile %}
-                            <li class="nav-item">
+                            <li class="nav-item d-none d-md-block">
                                 {% if not client %}
                                     <a class="nav-link" href="{{ 'login'|link }}">{{ 'Login'|trans }}</a>
                                 {% endif %}
@@ -100,7 +100,7 @@
                         {% endif %}
 
                         {% if settings.top_menu_signout %}
-                            <li class="nav-item">
+                            <li class="nav-item d-none d-md-block">
                                 {% if client %}
                                     <div class="dropdown">
                                         <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -119,11 +119,15 @@
                                         </ul>
                                     </div>
                                 {% else %}
-                                    <a class="ms-2 btn btn-outline-primary"
+                                    <a class="ms-2 btn btn-outline-primary d-none d-md-block"
                                        href="{{ 'signup'|link }}">{{ 'Sign up'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
+
+                        <div class="d-md-none">
+                            {% include 'mobile_menu.html.twig' %}
+                        </div>
                     </div>
                 </div>
             </div>
