@@ -66,7 +66,7 @@ class Guest extends \Api_Abstract
         ];
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
         $config = $this->getMod()->getConfig();
 

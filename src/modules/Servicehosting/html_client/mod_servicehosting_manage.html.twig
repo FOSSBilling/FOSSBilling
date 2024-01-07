@@ -62,7 +62,7 @@
                             <td>{{ 'Bandwidth'|trans }}:</td>
                             <td>{{ hp.bandwidth }} MB / {{ 'per month'|trans }}</td>
                         </tr>
-                        
+
                         <tr>
                             <td>{{ 'Disk quota'|trans }}:</td>
                             <td>{{ hp.quota }} MB</td>
@@ -80,7 +80,7 @@
             </div>
             {# Hosting password #}
             <div class="tab-pane fade" role="tabpanel" id="password">
-                <h3>{{ 'Change your FTP/cPanel/SSH password.'|trans }}</h3>
+                <h3>{{ 'Change your control panel/FTP/SSH password'|trans }}</h3>
                 <form class="api-form" action="{{ 'api/client/servicehosting/change_password'|link }}" method="post" data-api-msg="{{ 'Password changed'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <fieldset>
@@ -91,7 +91,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="col-form-label" >{{ 'Password Confirm'|trans }}: </label>
+                            <label class="col-form-label" >{{ 'Password confirm'|trans }}: </label>
                             <div class="controls">
                                 <input class="form-control" type="password" name="password_confirm" value="{{ request.password_confirm }}" required="required">
                             </div>

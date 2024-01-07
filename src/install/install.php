@@ -36,6 +36,7 @@ const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
 const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR . 'modules';
 const PATH_CACHE = PATH_ROOT . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'cache';
+const PATH_LOG = PATH_ROOT . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'log';
 const HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
 const HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
 const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
@@ -61,9 +62,9 @@ $loader->register();
 $protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
 
 // Detect if FOSSBilling is behind a proxy server
-if(!empty($_SERVER['HTTP_X_FORWARDED_HOST'])){
+if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
     $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
-}else{
+} else {
     $host = $_SERVER['HTTP_HOST'];
 }
 

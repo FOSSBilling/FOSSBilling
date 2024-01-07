@@ -395,7 +395,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         );
         $data = $this->_makeRequest('domains/details', $params);
         if(!isset($data['domsecret'])) {
-            $placeholders = ['action' => __trans('get the transfer code'), 'type' => 'ResellerClub'];
+            $placeholders = [':action:' => __trans('get the transfer code'), ':type:' => 'ResellerClub'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         return $data['domsecret'];
@@ -701,19 +701,19 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if(isset($json['status']) && $json['status'] == 'ERROR') {
             error_log("ResellerClub error: " . $json['message']);
-            $placeholders = ['action' => $url, 'type' => 'ResellerClub'];
+            $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if(isset($json['status']) && $json['status'] == 'error') {
             error_log("ResellerClub error: " . $json['error']);
-            $placeholders = ['action' => $url, 'type' => 'ResellerClub'];
+            $placeholders = [':action"' => $url, ':type:' => 'ResellerClub'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
         
         if(isset($json['status']) && $json['status'] == 'Failed') {
             error_log("ResellerClub error: " . $json['actionstatusdesc']);
-            $placeholders = ['action' => $url, 'type' => 'ResellerClub'];
+            $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 

@@ -82,13 +82,10 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Return gateway configuration options
-     *
+     * 
      * @return array
      */
-    public static function getConfig()
-    {
-        throw new Payment_Exception('Payment adapter class did not implement configuration options method', array(), 749);
-    }
+    abstract public static function getConfig();
 
     /**
      * Return payment gateway type (TYPE_HTML, TYPE_FORM, TYPE_API)

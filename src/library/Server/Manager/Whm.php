@@ -389,7 +389,7 @@ class Server_Manager_Whm extends Server_Manager
         $client = $this->getHttpClient()->withOptions([
             'verify_peer'   => false,
             'verify_host'   => false,
-            'timeout'       => 30
+            'timeout'       => 90 // Account creation can timeout if set too low - see #1086.
         ]);
 
         $url =  ($this->_config['secure'] ? 'https' : 'http') . '://' . $this->_config['host'] . ':' . $this->_config['port'] . '/json-api/' . $action;
@@ -417,7 +417,7 @@ class Server_Manager_Whm extends Server_Manager
             $msg = sprintf('Function call "%s" response is invalid, body: %s', $action, $body);
             $this->getLog()->crit($msg);
 
-            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if(isset($json->cpanelresult) && isset($json->cpanelresult->error)) {
@@ -427,17 +427,17 @@ class Server_Manager_Whm extends Server_Manager
         }
         if(isset($json->data) && isset($json->data->result) && $json->data->result == '0') {
             $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason));
-            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if(isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
             $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"',$action, $json->result[0]->statusmsg));
-            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if(isset($json->status) && $json->status != '1') {
             $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"',$action, $json->statusmsg));
-            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 

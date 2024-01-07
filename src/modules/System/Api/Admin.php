@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -147,27 +148,34 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Gets the latest release notes.
-     *
-     * @return string
+     * Used to check if there's an update available.
      */
-    public function release_notes()
+    public function update_available(): bool
     {
         $updater = $this->di['updater'];
 
-        return $updater->getLatestReleaseNotes();
+        return $updater->isUpdateAvailable();
     }
 
     /**
-     * Gets the update type.
-     *
-     * @return int
+     * Returns an array containing the update info.
      */
-    public function update_type()
+    public function update_info(): array
     {
         $updater = $this->di['updater'];
 
-        return $updater->getUpdateType();
+        return $updater->getLatestVersionInfo();
+    }
+
+    /**
+     * Forces the system to clear out the update cache and re-fetch the latest info.
+     */
+    public function recheck_update(): bool
+    {
+        $updater = $this->di['updater'];
+        $updater->getLatestVersionInfo(null, true);
+
+        return true;
     }
 
     /**

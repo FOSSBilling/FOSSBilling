@@ -247,12 +247,12 @@ class Service implements InjectionAwareInterface
                 $fields[$key]['options'] = [];
             }
 
-            if(!empty($r['default_value'])){
+            if (!empty($r['default_value'])) {
                 $fields[$key]['default_value'] = (json_decode($r['default_value'])) ? (json_decode($r['default_value'], true)) : $r['default_value'];
             } else {
                 $fields[$key]['default_value'] = '';
             }
-         }
+        }
 
         return $fields;
     }

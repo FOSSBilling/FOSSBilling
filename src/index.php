@@ -12,7 +12,7 @@ require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 
 // Setting up the debug bar
-$debugBar = new \DebugBar\StandardDebugBar();
+$debugBar = new DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
 $debugBar['messages']->useHtmlVarDumper();
 
@@ -20,7 +20,7 @@ $config = $di['config'];
 $config['info']['salt'] = '********';
 $config['db'] = array_fill_keys(array_keys($config['db']), '********');
 
-$configCollector = new \DebugBar\DataCollector\ConfigCollector($config);
+$configCollector = new DebugBar\DataCollector\ConfigCollector($config);
 $configCollector->useHtmlVarDumper();
 
 $debugBar->addCollector($configCollector);
@@ -39,17 +39,27 @@ if ($url === '/run-patcher') {
         $di['tools']->emptyFolder(PATH_CACHE);
 
         exit('Any missing config migrations or database patches have been applied and the cache has been cleared');
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
     }
+}
+
+/*
+ * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
+ * Internally the return and cancel URLs get a restore_session GET parameter attached to them with the proper session ID to restore, so we do so here.
+ */
+if (!empty($_GET['restore_session'])) {
+    session_id($_GET['restore_session']);
 }
 
 $di['session'];
 
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
+    define('ADMIN_AREA', true);
     $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
     $app = new Box_AppAdmin([], $debugBar);
 } else {
+    define('ADMIN_AREA', false);
     $appUrl = $url;
     $app = new Box_AppClient([], $debugBar);
 }

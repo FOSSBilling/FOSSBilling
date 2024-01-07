@@ -4,6 +4,14 @@
 	{% set top = 325 + (25 * seller_lines) %}
 {% endif %}
 
+{% set address_lines = [] %}
+	{% for line in [footer.address_1, footer.address_2, footer.address_3] %}
+		{% if line|length > 0 %}
+			{% set address_lines = address_lines|merge([line]) %}
+		{% endif %}
+	{% endfor %}
+{% set address = address_lines|join(',') %}
+
 <!DOCTYPE html>
 <html>
 	<head>
@@ -19,7 +27,7 @@
 		{% endif %}
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
-			<p>{{ 'Invoice number]'|trans }}: {{ invoice.serie_nr }}</p>
+			<p>{{ 'Invoice number'|trans }}: {{ invoice.serie_nr }}</p>
 			<p>{{ 'Invoice date'|trans }}: {{ invoice.created_at|format_date }}</p>
 			<p>{{ 'Due date'|trans }}: {{ invoice.due_at|format_date }}</p>
 			<p>{{ 'Invoice status'|trans }}: {{ invoice.status|capitalize }}</p>
@@ -63,8 +71,8 @@
 					<tr>
 						<td style='text-align: center; width:25px;'>{{ nr }}</td>
 						<td style='text-align: left'>{{ item.title }}</td>
-						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|money_convert }}</td>
-						<td style='text-align: right'>{{ item.total|money_convert }}</td>
+						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|money(currency_code) }}</td>
+						<td style='text-align: right'>{{ item.total|money(currency_code) }}</td>
 					</tr>
 				{% endfor %}
 				<tr>
@@ -74,29 +82,35 @@
 					<tr>
 						<th style='text-align: right' colspan='3'>{{ invoice.taxname }}
 							{{ invoice.taxrate }}% Tax:</th>
-						<th style='text-align: right'>{{ invoice.tax|money_convert }}</th>
+						<th style='text-align: right'>{{ invoice.tax|money(currency_code) }}</th>
 					</tr>
 				{% endif %}
 				{% if invoice.discount|default and invoice.discount > 0 %}
 					<tr>
 						<th style='text-align: right' colspan='3'>{{ 'Discount'|trans }}:</th>
-						<th style='text-align: right'>{{ invoice.discount|money_convert }}</th>
+						<th style='text-align: right'>{{ invoice.discount|money(currency_code) }}</th>
 					</tr>
 				{% endif %}
 				<tr>
 					<th style='text-align: right'  colspan='3'>{{ 'Total'|trans }}:</th>
-					<th style='text-align: right'>{{ invoice.total|money_convert }}</th>
+					<th style='text-align: right'>{{ invoice.total|money(currency_code) }}</th>
 				</tr>
 			</table>
 		<p>{{ footer.signature }}</p>
 		</div>
 		<div class='InvoiceFooter'>
-		{% if footer.display_bank_info == 1 %}
-			<b>{{ 'Payment details'|trans }}:</b><br >
-			<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic }} | <b>{{ 'Account number'|trans }}:</b> {{ footer.account_number }}<br><br>
-		{% endif %}
-		<b>{{ footer.company_name }}</b> {{ footer.address_1 }}, {{ footer.address_2 }}, {{ footer.address_3 }} <br ><b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>{{ 'Phone'|trans }}:</b> {{ footer.phone }}<br>
-		{% if footer.company_vat %}<b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %} {% if footer.company_number %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %} <b>{{ 'Website'|trans }}: </b>{{ footer.www }}
+			{% if footer.display_bank_info == 1 %}
+				<b>{{ 'Payment details'|trans }}:</b><br >
+				<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic }} | <b>{{ 'Account number'|trans }}:</b> {{ footer.account_number }}<br><br>
+			{% endif %}
+
+			<b>{{ footer.company_name }}</b>
+			{% if address %} {{ address }} <br> {% endif %}
+			<b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>
+			{% if footer.phone %} {{ 'Phone'|trans }}:</b> {{ footer.phone }}<br> {% endif %}
+			{% if footer.company_vat %} <b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %}
+			{% if footer.company_number %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %}
+			<b>{{ 'Website'|trans }}: </b>{{ footer.www }}
 		</div>
 	</body>
 </html>

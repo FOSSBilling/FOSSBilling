@@ -35,7 +35,7 @@
                                     <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
                                     <label class="btn" for="{{ gtw.id }}"
                                         style="background: transparent url('{{gtw.logo.logo}}') no-repeat center center; background-size: contain; height:{{gtw.logo.height}}; width:{{gtw.logo.width}};"
-                                        onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, '{{ gtw.title }}')"
+                                        onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, `{{ gtw.title }}`)"
                                         data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"></label>
                                     </div>
                                 {% endif %}
@@ -298,27 +298,27 @@
 
         {% if settings.prompt_subscription %}
             if(supportsSubscription && invoiceSubscribable){
-                document.getElementById('bodyText').textContent = "{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}";
+                document.getElementById('bodyText').textContent = `{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}`;
                 document.getElementById('subscription').hidden = false;
             } else if (!invoiceSubscribable) {
-                document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
+                document.getElementById('bodyText').textContent = `{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}`;
                 document.getElementById('subscription').hidden = true;
             } else {
                 if(canAnyGatewayDoSubs){
-                    document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it. Optionally, you may choose a different payment gateway if you wish to pay using a subscription.'|trans }}";
+                    document.getElementById('bodyText').textContent = `{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it. Optionally, you may choose a different payment gateway if you wish to pay using a subscription.'|trans }}`;
                 } else {
-                    document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
+                    document.getElementById('bodyText').textContent = `{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}`;
                 }
                 document.getElementById('subscription').hidden = true;
             }
         {% else %}
-            document.getElementById('bodyText').textContent = "{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}";
+            document.getElementById('bodyText').textContent = `{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}`;
             document.getElementById('subscription').hidden = true;
             document.getElementById('single').hidden = true;
             document.getElementById('pay-nondescript').hidden = false;
         {% endif %}
 
-        document.getElementById('paymentPromptLabel').textContent = "{{ 'Pay with'|trans }}".concat(" ", title);
+        document.getElementById('paymentPromptLabel').textContent = `{{ 'Pay with'|trans }}`.concat(` `, title);
         document.getElementById('subscription').href = paymentLink;
         document.getElementById('pay-nondescript').href = paymentLink;
         paymentLink.searchParams.append('allow_subscription', 0); 

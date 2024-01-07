@@ -195,7 +195,7 @@ class Server_Manager_Hestia extends Server_Manager
             ];
             $result2 = $this->_makeRequest($postvars2);
         } else {
-            $placeholders = ['action' => __trans('create user'), 'type' => 'HestiaCP'];
+            $placeholders = [':action:' => __trans('create user'), ':type:' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
         if (0 !== intval($result2)) {
@@ -206,10 +206,10 @@ class Server_Manager_Hestia extends Server_Manager
             ];
             $result3 = $this->_makeRequest($postvars3);
             if (0 !== intval($result3)) {
-                $placeholders = ['action1' => __trans('delete domain'), 'action2' => __trans('create domain'), 'type' => 'HestiaCP'];
+                $placeholders = [':action1:' => __trans('delete domain'), ':action2:' => __trans('create domain'), ':type:' => 'HestiaCP'];
                 throw new Server_Exception('Failed to :action1: on the :type: server after failed to :action2:, check the error logs for further details', $placeholders);
             }
-            $placeholders = ['action' => __trans('create domain'), 'type' => 'HestiaCP'];
+            $placeholders = [':action:' => __trans('create domain'), ':type:' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
@@ -236,7 +236,7 @@ class Server_Manager_Hestia extends Server_Manager
             return true;
         }
         if (0 !== intval($result)) {
-            $placeholders = ['action' => __trans('suspend account'), 'type' => 'HestiaCP'];
+            $placeholders = [':action:' => __trans('suspend account'), ':type:' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
@@ -261,7 +261,7 @@ class Server_Manager_Hestia extends Server_Manager
 
         $result = $this->_makeRequest($postvars);
         if (0 !== intval($result)) {
-            $placeholders = ['action' => __trans('unsuspend account'), 'type' => 'HestiaCP'];
+            $placeholders = [':action:' => __trans('unsuspend account'), ':type:' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
@@ -290,7 +290,7 @@ class Server_Manager_Hestia extends Server_Manager
         if ('3' == intval($result)) {
             return true;
         } elseif (0 !== intval($result)) {
-            $placeholders = ['action' => __trans('cancel account'), 'type' => 'HestiaCP'];
+            $placeholders = [':action:' => __trans('cancel account'), ':type:' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
@@ -320,7 +320,7 @@ class Server_Manager_Hestia extends Server_Manager
         // Make request and change package
         $result = $this->_makeRequest($postvars);
         if (0 !== intval($result)) {
-            $placeholders = ['action' => __trans('change account package'), 'type' => 'HestiaCP'];
+            $placeholders = [':action:' => __trans('change account package'), ':type:' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
@@ -363,7 +363,7 @@ class Server_Manager_Hestia extends Server_Manager
         // Make request and change password
         $result = $this->_makeRequest($postvars);
         if (0 !== intval($result)) {
-            $placeholders = ['action' => __trans('change account password'), 'type' => 'HestiaCP'];
+            $placeholders = [':action:' => __trans('change account password'), ':type:' => 'HestiaCP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 

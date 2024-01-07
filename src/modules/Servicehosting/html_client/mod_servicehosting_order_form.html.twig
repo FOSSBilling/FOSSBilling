@@ -18,7 +18,7 @@
                 </div>
             {% endif %}
 
-            <div id="owndomain" class="mt-2 domain_action" style="display: none;">
+            <div id="owndomain" class="mt-2 domain_action" {% if tlds is not empty %} style="display: none;" {% endif %}>
                 <div class="row">
                     <div class="col-md-8">
                         <div class="d-flex gap-2">
