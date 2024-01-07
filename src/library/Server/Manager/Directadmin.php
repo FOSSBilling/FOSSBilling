@@ -498,7 +498,7 @@ class Server_Manager_Directadmin extends Server_Manager
 
         $field_string = http_build_query($fields);
 
-        $this->getHttpClient()->withOptions([
+        $httpClient = $this->getHttpClient()->withOptions([
             'auth_basic'    => [ $this->_config['username'], $this->_config['password'] ],
             'timeout'       => 60,
             'verify_host'   => false,
