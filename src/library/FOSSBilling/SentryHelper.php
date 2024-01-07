@@ -42,8 +42,8 @@ class SentryHelper
         '82766452-ff2f-43ff-953a-3cbe3c3973ea' => 1_719_829_175,
     ];
 
-    private static string $placholderFirstHalf = '--replace--this--';
-    private static string $placholderSecondHalf = 'during--release--process--';
+    private static string $placeholderFirstHalf = '--replace--this--';
+    private static string $placeholderSecondHalf = 'during--release--process--';
 
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.
@@ -137,7 +137,7 @@ class SentryHelper
          *
          * @phpstan-ignore-next-line (The value is replaced during release and the check is written with this in mind.)
          */
-        if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== self::$placholderFirstHalf . self::$placholderSecondHalf && !empty($sentryDSN)) {
+        if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== self::$placeholderFirstHalf . self::$placeholderSecondHalf && !empty($sentryDSN)) {
             // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
             $options['dsn'] = $sentryDSN;
         }
