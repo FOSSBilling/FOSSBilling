@@ -375,8 +375,7 @@
         "reqs",
         "srcdoc",
         "iframes",
-        "borderless",
-        "passwordlength"
+        "borderless"
     ],
     "ignorePaths": [
         "tests/**",
