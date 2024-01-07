@@ -165,14 +165,16 @@
                                 <button class="btn btn-primary w-100" type="submit">{{ 'Sign up'|trans }}</button>
                             </div>
                         </form>
-                        <div class="row justify-content-center">
-                            <div class="col-1"></div>
-                            <a class="btn btn-secondary btn-sm col" href="{{ 'login'|link }}">{{ 'Already a user?'|trans }}</a>
-                            <div class="col-1"></div>
+                        <div class="row">
+                            <div class="col">
+                                <a class="btn btn-outline-primary mb-2 w-100"
+                                   href="{{ 'login'|link }}">{{ 'Already a user?'|trans }}</a>
+                            </div>
                             {% if settings.show_password_reset_link %}
-                                <a class="btn btn-secondary btn-sm col" href="{{ 'password-reset'|link }}">{{ 'Forgot password?'|trans }}</a>
+                                <div class="col">
+                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'password-reset'|link }}">{{ 'Forgot password?'|trans }}</a>
+                                </div>
                             {% endif %}
-                            <div class="col-1"></div>
                         </div>
                     </div>
                 </div>
