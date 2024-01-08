@@ -34,7 +34,8 @@ class Monolog
         'event',
         'routing',
         'billing',
-        'security'
+        'security',
+        'email'
     ];
 
     public function __construct()

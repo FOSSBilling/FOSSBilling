@@ -139,7 +139,7 @@ class Session implements InjectionAwareInterface
             $invalid = true;
             // TODO: Trying to use monolog here causes a 503 error with an empty error log. Would love to find out why and use it instead of error_log
             error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
-            #$this->di['logger']->setChannel('security')->info("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.);
+            #$this->di['logger']->setChannel('security')->info("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
         }
 
         if ($session->created_at <= $maxAge) {
