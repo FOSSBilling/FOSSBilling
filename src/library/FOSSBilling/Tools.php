@@ -311,7 +311,7 @@ class Tools
             if ($throw) {
                 $friendlyName = ucfirst(__trans('Email address'));
 
-                throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+                throw new InformationException(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
             } else {
                 return false;
             }
