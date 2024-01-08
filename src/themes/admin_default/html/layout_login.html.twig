@@ -16,7 +16,15 @@
     {{ encore_entry_script_tags('fossbilling') }}
 </head>
 
-<body class="border-top-wide border-primary d-flex flex-column theme-light">
+<body class="border-top-wide border-primary d-flex flex-column" data-bs-theme="dark">
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'));
+        } else {
+            document.body.removeAttribute("data-bs-theme");
+        }
+    </script>
+
     {% block content %}{% endblock %}
     {% block js %}{% endblock %}
 
