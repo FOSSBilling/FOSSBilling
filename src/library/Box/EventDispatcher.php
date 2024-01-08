@@ -2,12 +2,11 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Box_EventDispatcher
 {
     protected $listeners = [];
@@ -47,6 +46,7 @@ class Box_EventDispatcher
                 unset($this->listeners[$name][$i]);
             }
         }
+
         return null;
     }
 
@@ -67,6 +67,7 @@ class Box_EventDispatcher
         foreach ($this->listeners[$name] as $i => $callable) {
             unset($this->listeners[$name][$i]);
         }
+
         return null;
     }
 
@@ -98,6 +99,7 @@ class Box_EventDispatcher
         foreach ($this->getListeners($event->getName()) as $listener) {
             if (call_user_func($listener, $event)) {
                 $event->setProcessed(true);
+
                 break;
             }
         }

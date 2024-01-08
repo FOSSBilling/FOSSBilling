@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ProfileTest extends BBDbApiTestCase
 {
@@ -12,11 +13,11 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
         $bool = $this->api_admin->profile_logout();
         $this->assertTrue($bool);
 
-        $data = array(
-            'email'     =>  'demo@fossbilling.org',
-            'name'      =>  'Demo Admin',
-            'signature' =>  'New Signature',
-        );
+        $data = [
+            'email' => 'demo@fossbilling.org',
+            'name' => 'Demo Admin',
+            'signature' => 'New Signature',
+        ];
         $bool = $this->api_admin->profile_update($data);
         $this->assertTrue($bool);
 
@@ -26,15 +27,15 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
 
     public function testPassword()
     {
-        $data = array(
-            'password' =>  'demo12313123A',
-            'password_confirm' =>  'demo12313123A',
-        );
+        $data = [
+            'password' => 'demo12313123A',
+            'password_confirm' => 'demo12313123A',
+        ];
         $bool = $this->api_admin->profile_change_password($data);
         $this->assertTrue($bool);
 
         $array = $this->api_admin->profile_get();
-        $password = $this->di['db']->getCell('Select pass from admin where id = ?', array($array['id']));
+        $password = $this->di['db']->getCell('Select pass from admin where id = ?', [$array['id']]);
 
         $this->assertTrue($this->di['password']->verify($data['password'], $password));
     }

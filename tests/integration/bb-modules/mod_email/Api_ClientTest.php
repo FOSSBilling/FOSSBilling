@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_EmailTest extends BBDbApiTestCase
 {
@@ -8,19 +9,19 @@ class Api_Client_EmailTest extends BBDbApiTestCase
     {
         $array = $this->api_client->email_get_list();
         $this->assertIsArray($array);
-        
-        $data = array(
-            'id'    =>  1,
-        );
+
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_client->email_get($data);
         $this->assertIsArray($array);
     }
 
     public function testResend()
     {
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $bool = $this->api_client->email_resend($data);
         $this->assertTrue($bool);
 
@@ -30,10 +31,10 @@ class Api_Client_EmailTest extends BBDbApiTestCase
 
     public function testDelete()
     {
-        $data = array(
-            'id'    =>  1,
-        );
-        
+        $data = [
+            'id' => 1,
+        ];
+
         $bool = $this->api_client->email_delete($data);
         $this->assertTrue($bool);
 

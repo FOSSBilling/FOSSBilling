@@ -1,93 +1,101 @@
 <?php
-/**
- *
- */
+
 class Api_Admin_FormbuilderTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_formbuilder.xml';
 
     /**
-     *  Box_Exception
+     *  Box_Exception.
      */
     public function testFormExceptions()
     {
         try {
-            $this->api_admin->formbuilder_get_form(array('id' => 10000));
+            $this->api_admin->formbuilder_get_form(['id' => 10000]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
+
         try {
-            $this->api_admin->formbuilder_create_form(array('name' => null));
+            $this->api_admin->formbuilder_create_form(['name' => null]);
         } catch (Box_Exception) {
         }
+
         try {
-            $this->api_admin->formbuilder_create_form(array('title' => "Form title", "style" => "not existing style"));
+            $this->api_admin->formbuilder_create_form(['title' => 'Form title', 'style' => 'not existing style']);
         } catch (Box_Exception) {
         }
+
         try {
-            $this->api_admin->formbuilder_add_field(array('id' => 1, 'type' => 'type'));
+            $this->api_admin->formbuilder_add_field(['id' => 1, 'type' => 'type']);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
+
         try {
-            $this->api_admin->formbuilder_add_field(array('id' => 1_000_000_000));
+            $this->api_admin->formbuilder_add_field(['id' => 1_000_000_000]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
+
         try {
-            $this->api_admin->formbuilder_add_field(array(
+            $this->api_admin->formbuilder_add_field([
                 'id' => 1,
                 'form_id' => 1,
-                'type' => 'unexisting type'
-            ));
-            $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception) {
-        }
-        try {
-            $this->api_admin->formbuilder_get_form(array('id' => 10000));
-            $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception) {
-        }
-        try {
-            $this->api_admin->formbuilder_get_form_fields(array('id' => 1));
+                'type' => 'unexisting type',
+            ]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
 
         try {
-            $this->api_admin->formbuilder_get_field(array('id' => 1_000_000));
+            $this->api_admin->formbuilder_get_form(['id' => 10000]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
 
         try {
-            $this->api_admin->formbuilder_delete_form(array('id' => 1));
-            $this->api_admin->formbuilder_get_form(array('id' => 1));
-            $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception) {
-        }
-        try {
-            $this->api_admin->formbuilder_delete_field(array('id' => 1));
-            $this->api_admin->formbuilder_get_field(array('id' => 1));
-            $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception) {
-        }
-        try {
-            $this->api_admin->formbuilder_delete_field(array('id' => 1));
-            $this->api_admin->formbuilder_get_field(array('id' => 1));
+            $this->api_admin->formbuilder_get_form_fields(['id' => 1]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
 
         try {
-            $this->api_admin->formbuilder_update_field(array('id' => 3, 'description' => 'This is very awesome description.', 'name' => ""));
+            $this->api_admin->formbuilder_get_field(['id' => 1_000_000]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
+
         try {
-            $test = $this->api_admin->formbuilder_add_field(array(
+            $this->api_admin->formbuilder_delete_form(['id' => 1]);
+            $this->api_admin->formbuilder_get_form(['id' => 1]);
+            $this->fail('An expected exception has not been raised.');
+        } catch (Box_Exception) {
+        }
+
+        try {
+            $this->api_admin->formbuilder_delete_field(['id' => 1]);
+            $this->api_admin->formbuilder_get_field(['id' => 1]);
+            $this->fail('An expected exception has not been raised.');
+        } catch (Box_Exception) {
+        }
+
+        try {
+            $this->api_admin->formbuilder_delete_field(['id' => 1]);
+            $this->api_admin->formbuilder_get_field(['id' => 1]);
+            $this->fail('An expected exception has not been raised.');
+        } catch (Box_Exception) {
+        }
+
+        try {
+            $this->api_admin->formbuilder_update_field(['id' => 3, 'description' => 'This is very awesome description.', 'name' => '']);
+            $this->fail('An expected exception has not been raised.');
+        } catch (Box_Exception) {
+        }
+
+        try {
+            $test = $this->api_admin->formbuilder_add_field([
                 'description' => 'Form field description',
-                "label" => "Field label",
+                'label' => 'Field label',
                 'id' => 2,
                 'form_id' => 2,
                 'hide_label' => 0,
@@ -97,86 +105,81 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
                 'required' => 0,
                 'hidden' => 1,
                 'readonly' => 0,
-                'options' => array("Key" => "2", "2" => "2"),
+                'options' => ['Key' => '2', '2' => '2'],
                 'show_initial' => 'initial',
                 'show_middle' => 'middle',
                 'show_prefix' => 'prefix',
                 'show_suffix' => 'suffix',
-                'text_size' => 499
-
-
-            ));
+                'text_size' => 499,
+            ]);
             $this->api_admin->formbuilder_update_field($test);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
 
         try {
-            $this->api_admin->formbuilder_get_orders_count(array());
+            $this->api_admin->formbuilder_get_orders_count([]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
+
         try {
-            $test = $this->api_admin->formbuilder_update_form_settings(array(
+            $test = $this->api_admin->formbuilder_update_form_settings([
                 'form_id' => 1,
                 'form_name' => 'Second',
                 'type' => 'non_existing type',
-                'show_title' => 'Second'
-            ));
-            $this->fail('An expected exception has not been raised.');
-        } catch (Box_Exception) {
-        }
-
-
-        try {
-            $this->api_admin->formbuilder_copy_form(array(
-                'form_id' => 2
-            ));
+                'show_title' => 'Second',
+            ]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
 
         try {
-            $this->api_admin->formbuilder_copy_form(array(
-                'form_id' => "non-existing-form",
-                'name' => ''
-            ));
+            $this->api_admin->formbuilder_copy_form([
+                'form_id' => 2,
+            ]);
+            $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
 
         try {
-            $this->api_admin->formbuilder_update_form_name(array('form_id' => 2));
+            $this->api_admin->formbuilder_copy_form([
+                'form_id' => 'non-existing-form',
+                'name' => '',
+            ]);
+        } catch (Box_Exception) {
+        }
+
+        try {
+            $this->api_admin->formbuilder_update_form_name(['form_id' => 2]);
             $this->fail('An expected exception has not been raised.');
         } catch (Box_Exception) {
         }
     }
 
-
     public function testFormCreate()
     {
-        $id = $this->api_admin->formbuilder_create_form(array(
-            'name' => 'New form'
-        ));
+        $id = $this->api_admin->formbuilder_create_form([
+            'name' => 'New form',
+        ]);
         $this->assertIsInt($id);
-        $id2 = $this->api_admin->formbuilder_create_form(array(
+        $id2 = $this->api_admin->formbuilder_create_form([
             'type' => null,
             'name' => 'Form',
-            'fields' => array(
+            'fields' => [
                 'form_id' => $id,
-                'type' => "checkbox"
-
-            )));
+                'type' => 'checkbox',
+            ]]);
         $this->assertIsInt($id2);
-
     }
 
     public function testFieldAdd()
     {
-        $fieldId = $this->api_admin->formbuilder_add_field(array('form_id' => 1, 'type' => 'text'));
+        $fieldId = $this->api_admin->formbuilder_add_field(['form_id' => 1, 'type' => 'text']);
         $this->assertIsInt($fieldId);
-        $test = $this->api_admin->formbuilder_add_field(array(
+        $test = $this->api_admin->formbuilder_add_field([
             'description' => 'Form field description',
-            "label" => "Field label",
+            'label' => 'Field label',
             'form_id' => 2,
             'hide_label' => 0,
             'name' => 'Field name',
@@ -185,52 +188,49 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             'required' => 0,
             'hidden' => 1,
             'readonly' => 0,
-            'options' => array("0" => "First json on create", "2" => "Second json on create"),
+            'options' => ['0' => 'First json on create', '2' => 'Second json on create'],
             'show_initial' => 'initial',
             'show_middle' => 'middle',
             'show_prefix' => 'prefix',
             'show_suffix' => 'suffix',
-            'text_size' => 499
-        ));
+            'text_size' => 499,
+        ]);
         $this->assertIsInt($test);
-        $this->api_admin->formbuilder_get_form(array(
+        $this->api_admin->formbuilder_get_form([
             'id' => 1,
             'form_id' => 1,
             'type' => 'text',
-            'options' => array(
+            'options' => [
                 '1' => '1',
-            )
-        ));
-
+            ],
+        ]);
     }
 
     public function testFormGet()
     {
-        $array = $this->api_admin->formbuilder_get_form(array('id' => 1));
+        $array = $this->api_admin->formbuilder_get_form(['id' => 1]);
         $this->assertIsArray($array);
         $this->assertTrue(isset($array['fields']));
         $this->assertNotEmpty($array['fields']);
     }
 
-
     public function testGetForm()
     {
-        $form = $this->api_admin->formbuilder_get_form(array('id' => 1));
+        $form = $this->api_admin->formbuilder_get_form(['id' => 1]);
         $this->assertIsArray($form);
         $this->assertNotEmpty($form);
-
     }
 
     public function testGetFormFields()
     {
-        $test = $this->api_admin->formbuilder_get_form_fields(array('form_id' => 1));
+        $test = $this->api_admin->formbuilder_get_form_fields(['form_id' => 1]);
         $this->assertIsArray($test);
         $this->assertNotEmpty($test);
     }
 
     public function testGetField()
     {
-        $test = $this->api_admin->formbuilder_get_field(array('id' => 1));
+        $test = $this->api_admin->formbuilder_get_field(['id' => 1]);
         $this->assertIsArray($test);
         $this->assertNotEmpty($test);
     }
@@ -240,39 +240,37 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $arr = $this->api_admin->formbuilder_get_forms();
         $test = $arr[0];
         $this->assertIsArray($test);
-        $this->assertArrayHasKey('product_count',$test);
-        $this->assertArrayHasKey('order_count',$test);
-        $this->assertArrayHasKey('name',$test);
-        $this->assertArrayHasKey('id',$test);
+        $this->assertArrayHasKey('product_count', $test);
+        $this->assertArrayHasKey('order_count', $test);
+        $this->assertArrayHasKey('name', $test);
+        $this->assertArrayHasKey('id', $test);
     }
 
     public function testDeleteForm()
     {
         $forms_before = count($this->api_admin->formbuilder_get_forms());
-        $test = $this->api_admin->formbuilder_delete_form(array('id' => 1));
+        $test = $this->api_admin->formbuilder_delete_form(['id' => 1]);
         $forms_after = count($this->api_admin->formbuilder_get_forms());
-        $this->assertEquals($forms_before, ($forms_after + 1));
+        $this->assertEquals($forms_before, $forms_after + 1);
         $this->assertTrue($test);
     }
-
 
     public function testDeleteField()
     {
-        $fields_before = count($this->api_admin->formbuilder_get_form_fields(array('form_id' => 1)));
-        $test = $this->api_admin->formbuilder_delete_field(array('id' => 1));
-        $fields_after = count($this->api_admin->formbuilder_get_form_fields(array('form_id' => 1)));
-        $this->assertEquals($fields_before, ($fields_after + 1));
+        $fields_before = count($this->api_admin->formbuilder_get_form_fields(['form_id' => 1]));
+        $test = $this->api_admin->formbuilder_delete_field(['id' => 1]);
+        $fields_after = count($this->api_admin->formbuilder_get_form_fields(['form_id' => 1]));
+        $this->assertEquals($fields_before, $fields_after + 1);
         $this->assertTrue($test);
     }
 
-
     public function testUpdateField()
     {
-        $test = $this->api_admin->formbuilder_update_field(array('id' => 3, 'description' => 'This is very awesome description.', 'name' => "Form name"));
+        $test = $this->api_admin->formbuilder_update_field(['id' => 3, 'description' => 'This is very awesome description.', 'name' => 'Form name']);
         $this->assertIsInt($test);
-        $test = $this->api_admin->formbuilder_add_field(array(
+        $test = $this->api_admin->formbuilder_add_field([
             'description' => 'Form field description',
-            "label" => "Form field label",
+            'label' => 'Form field label',
             'id' => 2,
             'form_id' => 2,
             'hide_label' => 0,
@@ -282,16 +280,14 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             'required' => 0,
             'hidden' => 1,
             'readonly' => 0,
-            'options' => array("Key" => "2", "2" => "3"),
+            'options' => ['Key' => '2', '2' => '3'],
             'show_initial' => 'initial',
             'show_middle' => 'middle',
             'show_prefix' => 'prefix',
             'show_suffix' => 'suffix',
-            'text_size' => 499
-
-
-        ));
-        $test = $this->api_admin->formbuilder_update_field(array(
+            'text_size' => 499,
+        ]);
+        $test = $this->api_admin->formbuilder_update_field([
             'id' => 5,
             'form_id' => 1,
             'description' => 'This is field description',
@@ -302,38 +298,34 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             'required' => 1,
             'hidden' => 0,
             'readonly' => 1,
-            'options' => array("1" => "First value", "2" => "second one"),
+            'options' => ['1' => 'First value', '2' => 'second one'],
             'show_initial' => 'aaaaaaa',
             'show_middle' => 'bbbbbbbbb',
             'show_prefix' => 'ccccccccc',
             'show_suffix' => 'ddddd',
-            'text_size' => 500
-
-
-        ));
+            'text_size' => 500,
+        ]);
 
         $this->assertIsInt($test);
-
     }
-
 
     public function testUpdateFormName()
     {
-        $test = $this->api_admin->formbuilder_update_form_settings(array(
+        $test = $this->api_admin->formbuilder_update_form_settings([
             'form_id' => 1,
             'form_name' => 'Second',
             'type' => 'horizontal',
-            'show_title' => '0'
-        ));
+            'show_title' => '0',
+        ]);
         $this->assertIsBool($test);
         $this->assertTrue($test);
     }
 
     public function testCopyForm()
     {
-        $test = $this->api_admin->formbuilder_add_field(array(
+        $test = $this->api_admin->formbuilder_add_field([
             'description' => 'This is awesome description. on create',
-            "label" => "Cre",
+            'label' => 'Cre',
             'form_id' => 2,
             'hide_label' => 0,
             'name' => 'formnameon create',
@@ -342,20 +334,18 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             'required' => 0,
             'hidden' => 1,
             'readonly' => 0,
-            'options' => array("0" => "First oneon create", "2" => "second jsonon create"),
+            'options' => ['0' => 'First oneon create', '2' => 'second jsonon create'],
             'show_initial' => 'a',
             'show_middle' => 'middle',
             'show_prefix' => 'prefix',
             'show_suffix' => 'suffix',
-            'text_size' => 499
-        ));
-        $test = $this->api_admin->formbuilder_copy_form(array(
+            'text_size' => 499,
+        ]);
+        $test = $this->api_admin->formbuilder_copy_form([
             'form_id' => 1,
-            'name' => 'Second'
-        ));
+            'name' => 'Second',
+        ]);
         $this->assertIsInt($test);
-
-
     }
 
     public function testGetPairs()
@@ -363,6 +353,4 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $test = $this->api_admin->formbuilder_get_pairs();
         $this->assertIsArray($test);
     }
-
-
 }

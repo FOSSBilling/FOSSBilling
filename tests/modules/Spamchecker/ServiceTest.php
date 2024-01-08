@@ -1,19 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Spamchecker;
 
-
-class ServiceTest extends \BBTestCase {
-
+class ServiceTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Spamchecker\Service
+     * @var Service
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
-        $this->service= new \Box\Mod\Spamchecker\Service();
+        $this->service = new Service();
     }
 
     public function testgetDi()
@@ -26,14 +24,14 @@ class ServiceTest extends \BBTestCase {
 
     public function testonBeforeClientSignUp()
     {
-        $spamCheckerService = $this->getMockBuilder('\\' . \Box\Mod\Spamchecker\Service::class)->getMock();
+        $spamCheckerService = $this->getMockBuilder('\\' . Service::class)->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $spamCheckerService);
+        $di['mod_service'] = $di->protect(fn () => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -45,14 +43,14 @@ class ServiceTest extends \BBTestCase {
 
     public function testonBeforeGuestPublicTicketOpen()
     {
-        $spamCheckerService = $this->getMockBuilder('\\' . \Box\Mod\Spamchecker\Service::class)->getMock();
+        $spamCheckerService = $this->getMockBuilder('\\' . Service::class)->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $spamCheckerService);
+        $di['mod_service'] = $di->protect(fn () => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -62,14 +60,13 @@ class ServiceTest extends \BBTestCase {
         $this->service->onBeforeGuestPublicTicketOpen($boxEventMock);
     }
 
-    public function testisBlockedIp_IpBlocked()
+    public function testisBlockedIpIpBlocked()
     {
         $clientIp = '1.1.1.1';
-        $modConfig = array(
+        $modConfig = [
             'block_ips' => true,
-            'blocked_ips' => '1.1.1.1'.PHP_EOL.'2.2.2.2',
-        );
-
+            'blocked_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
+        ];
 
         $reqMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $reqMock->expects($this->atLeastOnce())
@@ -77,8 +74,8 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($clientIp);
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function($modName) use ($modConfig ){
-            if ($modName == 'Spamchecker'){
+        $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
+            if ($modName == 'Spamchecker') {
                 return $modConfig;
             }
         });
@@ -91,18 +88,17 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf("Your IP address (%s) is blocked. Please contact our support to lift your block.", $clientIp));
+        $this->expectExceptionMessage(sprintf('Your IP address (%s) is blocked. Please contact our support to lift your block.', $clientIp));
         $this->service->isBlockedIp($boxEventMock);
     }
 
-    public function testisBlockedIp_IpNotBlocked()
+    public function testisBlockedIpIpNotBlocked()
     {
         $clientIp = '214.1.4.99';
-        $modConfig = array(
+        $modConfig = [
             'block_ips' => true,
-            'blocked_ips' => '1.1.1.1'.PHP_EOL.'2.2.2.2',
-        );
-
+            'blocked_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
+        ];
 
         $reqMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $reqMock->expects($this->atLeastOnce())
@@ -110,8 +106,8 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($clientIp);
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function($modName) use ($modConfig ){
-            if ($modName == 'Spamchecker'){
+        $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
+            if ($modName == 'Spamchecker') {
                 return $modConfig;
             }
         });
@@ -126,16 +122,15 @@ class ServiceTest extends \BBTestCase {
         $this->service->isBlockedIp($boxEventMock);
     }
 
-    public function testisBlockedIp_BlockIpsNotEnabled()
+    public function testisBlockedIpBlockIpsNotEnabled()
     {
-        $modConfig = array(
+        $modConfig = [
             'block_ips' => false,
-        );
-
+        ];
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function($modName) use ($modConfig ){
-            if ($modName == 'Spamchecker'){
+        $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
+            if ($modName == 'Spamchecker') {
                 return $modConfig;
             }
         });
@@ -151,16 +146,16 @@ class ServiceTest extends \BBTestCase {
 
     public function dataProviderSpamResponses()
     {
-        return array(
-            array(
-                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your username is blacklisted in the Stop Forum Spam database'
-            ),
-            array(
-                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your e-mail is blacklisted in the Stop Forum Spam database'
-            ),
-            array(
-                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP address is blacklisted in the Stop Forum Spam database'
-            ),
-        );
+        return [
+            [
+                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your username is blacklisted in the Stop Forum Spam database',
+            ],
+            [
+                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your e-mail is blacklisted in the Stop Forum Spam database',
+            ],
+            [
+                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP address is blacklisted in the Stop Forum Spam database',
+            ],
+        ];
     }
 }

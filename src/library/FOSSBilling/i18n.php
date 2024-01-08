@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -17,16 +17,16 @@ class i18n
     /**
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
      *
-     * @param bool $autoDetect Indicates if the user's Accept-Language header should be used to select the correct locale for them.
+     * @param bool $autoDetect indicates if the user's Accept-Language header should be used to select the correct locale for them
      *
-     * @return string The locale code to use for the system.
+     * @return string the locale code to use for the system
      */
     public static function getActiveLocale(bool $autoDetect = true): string
     {
         $config = include PATH_CONFIG;
         $locale = null;
 
-        /**
+        /*
          * If the locale cookie is set and it's one of the enabled locales, use that.
          * Otherwise, fallback to auto-detection when enable.
          */
@@ -47,11 +47,12 @@ class i18n
     /**
      * Retrieves the user's preferred language/locale based on the browser's Accept-Language header.
      *
-     * @return string|null The user's preferred language/locale or null if not found.
+     * @return string|null the user's preferred language/locale or null if not found
      */
     private static function getBrowserLocale(): ?string
     {
         $header = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+
         try {
             $detectedLocale = @\Locale::acceptFromHttp($header);
             $detectedLocale = @\Locale::canonicalize($detectedLocale . '.utf8');
@@ -81,15 +82,16 @@ class i18n
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with($locale, substr($detectedLocale, 0, 2))) {
                     if (!headers_sent()) {
-                        setcookie("BBLANG", $locale, ['expires' => strtotime("+1 month"), 'path' => "/"]);
+                        setcookie('BBLANG', $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
                     }
+
                     return $locale;
                 }
             }
         }
 
         if (!headers_sent()) {
-            setcookie("BBLANG", $matchingLocale, ['expires' => strtotime("+1 month"), 'path' => "/"]);
+            setcookie('BBLANG', $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
         }
 
         return $matchingLocale;
@@ -99,14 +101,13 @@ class i18n
      * Retrieve a list of available locales, optionally including their details.
      *
      * @param bool $includeLocaleDetails (optional) Whether to include locale details or not. Defaults to false.
-     *
-     * @param bool $disabled Set to true if you want it to return a list of the disabled locales, defaults to false which will return the enabled locales.
+     * @param bool $disabled             set to true if you want it to return a list of the disabled locales, defaults to false which will return the enabled locales
      *
      * @return array An array of locales, sorted alphabetically. If `$includeLocaleDetails` is true, the array will contain
      *               subarrays with the following keys: `locale` (string), `title` (string), `name` (string).
      *               If `$includeLocaleDetails` is false, the array will only contain the locale codes (strings).
      */
-    public static function getLocales(bool $includeLocaleDetails  = false, bool $disabled = false): array
+    public static function getLocales(bool $includeLocaleDetails = false, bool $disabled = false): array
     {
         $locales = self::getLocaleList($disabled);
         if (!$includeLocaleDetails) {
@@ -122,6 +123,7 @@ class i18n
                 'name' => $array[$locale] ?? $locale,
             ];
         }
+
         return $details;
     }
 
@@ -148,6 +150,7 @@ class i18n
             return unlink($disablePath);
         } else {
             file_put_contents($disablePath, '');
+
             return file_exists($disablePath);
         }
     }
@@ -158,7 +161,7 @@ class i18n
      *
      * @param string $locale The locale ID (Example: `en_US`)
      *
-     * @return int The percentage complete for the specified locale.
+     * @return int the percentage complete for the specified locale
      */
     public static function getLocaleCompletionPercent(string $locale): int
     {
@@ -172,6 +175,7 @@ class i18n
         }
 
         $completion = include $completionFile;
+
         return intval($completion[$locale] ?? 0);
     }
 
@@ -180,7 +184,7 @@ class i18n
      *
      * @param bool $disabled Set to true to get the list of disabled locales. True returns the list of enabled locales.
      *
-     * @return array The list of locale codes, sorted alphabetically.
+     * @return array the list of locale codes, sorted alphabetically
      */
     private static function getLocaleList(bool $disabled = false): array
     {

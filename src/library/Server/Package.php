@@ -2,49 +2,50 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Server_Package
 {
-    private ?string $name           = 'FOSSBilling';
-    private $quota                  = NULL;
-    private $bandwidth              = NULL;
-    
-    private $maxdomains             = NULL;
-    private $maxsubdomains          = NULL;
-    private $maxparkeddomains       = NULL;
-    private $maxftp                 = NULL;
-    private $maxsql                 = NULL;
-    private $maxpop                 = NULL;
-    
-    private array $custom                 = array();
+    private ?string $name = 'FOSSBilling';
+    private $quota;
+    private $bandwidth;
+
+    private $maxdomains;
+    private $maxsubdomains;
+    private $maxparkeddomains;
+    private $maxftp;
+    private $maxsql;
+    private $maxpop;
+
+    private array $custom = [];
 
     public function __call($name, $arguments)
     {
         if (version_compare(PHP_VERSION, '5.4.0') < 0) {
             $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        }
-        else {
+        } else {
             // Get only the stack frames we need (PHP 5.4 only).
             $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         }
-        error_log(sprintf("Calling %s inaccessible method %s from %s::%d", static::class, $name, $backtrace[1]['file'], $backtrace[1]['line']));
+        error_log(sprintf('Calling %s inaccessible method %s from %s::%d', static::class, $name, $backtrace[1]['file'], $backtrace[1]['line']));
+
         return '';
     }
-    
+
     public function setCustomValues(array $param)
     {
         $this->custom = $param;
+
         return $this;
     }
-    
+
     public function setCustomValue($param, $value)
     {
         $this->custom[$param] = $value;
+
         return $this;
     }
 
@@ -53,12 +54,13 @@ class Server_Package
      */
     public function getCustomValue($param)
     {
-        return $this->custom[$param] ?? NULL;
+        return $this->custom[$param] ?? null;
     }
-    
+
     public function setName($param)
     {
         $this->name = $param;
+
         return $this;
     }
 
@@ -70,6 +72,7 @@ class Server_Package
     public function setQuota($param)
     {
         $this->quota = $param;
+
         return $this;
     }
 
@@ -81,6 +84,7 @@ class Server_Package
     public function setBandwidth($param)
     {
         $this->bandwidth = $param;
+
         return $this;
     }
 
@@ -92,6 +96,7 @@ class Server_Package
     public function setMaxDomains($param)
     {
         $this->maxdomains = $param;
+
         return $this;
     }
 
@@ -99,10 +104,11 @@ class Server_Package
     {
         return $this->maxdomains;
     }
-    
+
     public function setMaxSubdomains($param)
     {
         $this->maxsubdomains = $param;
+
         return $this;
     }
 
@@ -114,6 +120,7 @@ class Server_Package
     public function setMaxParkedDomains($param)
     {
         $this->maxparkeddomains = $param;
+
         return $this;
     }
 
@@ -125,6 +132,7 @@ class Server_Package
     public function setMaxFtp($param)
     {
         $this->maxftp = $param;
+
         return $this;
     }
 
@@ -136,6 +144,7 @@ class Server_Package
     public function setMaxSql($param)
     {
         $this->maxsql = $param;
+
         return $this;
     }
 
@@ -147,6 +156,7 @@ class Server_Package
     public function setMaxPop($param)
     {
         $this->maxpop = $param;
+
         return $this;
     }
 

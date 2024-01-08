@@ -2,13 +2,12 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
+class Box_Crypt implements FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -21,12 +20,12 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -51,7 +50,7 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
 
     public function decrypt($text, $pass = null)
     {
-        if (is_null($text)){
+        if (is_null($text)) {
             return false;
         }
         $key = $this->_getSalt($pass);
@@ -77,9 +76,10 @@ class Box_Crypt implements \FOSSBilling\InjectionAwareInterface
 
     private function _getSalt($pass = null)
     {
-        if (null == $pass) {
+        if ($pass == null) {
             $pass = $this->di['config']['info']['salt'];
         }
+
         return pack('H*', hash('md5', $pass));
     }
 }

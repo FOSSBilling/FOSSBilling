@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends BBDbApiTestCase
 {
@@ -9,40 +10,40 @@ class Api_AdminTest extends BBDbApiTestCase
         $bool = $this->api_admin->email_batch_template_generate();
         $this->assertTrue($bool);
     }
-    
+
     public function testReset()
     {
-        $data = array(
-            'code'    =>  'mod_email_test',
-        );
+        $data = [
+            'code' => 'mod_email_test',
+        ];
         $bool = $this->api_admin->email_template_reset($data);
         $this->assertTrue($bool);
     }
-    
+
     public function testTemplates()
     {
         $array = $this->api_admin->email_template_get_list();
         $this->assertIsArray($array);
-        
-        $data = array(
-            'id'    =>  1,
-        );
+
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->email_template_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'action_code'    =>  'test',
-            'subject'    =>  'test',
-            'enabled'    =>  1,
-            'content'    =>  'test',
-        );
+        $data = [
+            'action_code' => 'test',
+            'subject' => 'test',
+            'enabled' => 1,
+            'content' => 'test',
+        ];
         $id = $this->api_admin->email_template_create($data);
         $this->assertTrue($id > 0);
 
         $data['id'] = $id;
         $bool = $this->api_admin->email_template_update($data);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->email_template_delete($data);
         $this->assertTrue($bool);
     }
@@ -54,42 +55,42 @@ class Api_AdminTest extends BBDbApiTestCase
         $data['subject'] = $subject;
         $bool = $this->api_admin->email_template_update($data);
         $this->assertTrue($bool);
-        
+
         $array = $this->api_admin->email_template_get($data);
         $this->assertEquals($subject, $array['subject']);
     }
-    
+
     public function testEmails()
     {
         $array = $this->api_admin->email_email_get_list();
         $this->assertIsArray($array);
 
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->email_email_get($data);
         $this->assertIsArray($array);
     }
 
     public function testSend()
     {
-        $data = array(
-            'to'    =>  'demo@boxbiling.com',
-            'to_name'    =>  'Client name',
-            'from'    =>  'admin@fossbilling.org',
-            'from_name'    =>  'Admin',
-            'subject'    =>  'This is subject',
-            'content'    =>  'This is message',
-        );
+        $data = [
+            'to' => 'demo@boxbiling.com',
+            'to_name' => 'Client name',
+            'from' => 'admin@fossbilling.org',
+            'from_name' => 'Admin',
+            'subject' => 'This is subject',
+            'content' => 'This is message',
+        ];
         $bool = $this->api_admin->email_send($data);
         $this->assertTrue($bool);
     }
-    
+
     public function testResend()
     {
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $bool = $this->api_admin->email_email_resend($data);
         $this->assertTrue($bool);
 
@@ -99,10 +100,10 @@ class Api_AdminTest extends BBDbApiTestCase
 
     public function testDelete()
     {
-        $data = array(
-            'id'    =>  1,
-        );
-        
+        $data = [
+            'id' => 1,
+        ];
+
         $bool = $this->api_admin->email_email_delete($data);
         $this->assertTrue($bool);
 
@@ -118,44 +119,43 @@ class Api_AdminTest extends BBDbApiTestCase
         $bool = $this->api_admin->email_batch_template_enable();
         $this->assertTrue($bool);
     }
-    
+
     public function testCheck()
     {
         $bool = $this->api_admin->email_send_test();
         $this->assertTrue($bool);
     }
-    
+
     public function testRender()
     {
-        $data = array(
-            'id'    =>  1,
-            '_tpl'    =>  '{{ now|date("Y") }}',
-        );
+        $data = [
+            'id' => 1,
+            '_tpl' => '{{ now|date("Y") }}',
+        ];
         $string = $this->api_admin->email_template_render($data);
         $this->assertEquals(date('Y'), $string);
     }
-    
+
     public function testTemplateGeneralSend()
     {
-        $params = array();
+        $params = [];
         $params['to'] = 'client@fossbilling.org';
         $params['to_name'] = 'Client PHPUnit';
-        
+
         $params['code'] = 'mod_client_signup';
-        
+
         $params['default_template'] = 'Hello, message from {{ admin.client_get({"id":client_id}).first_name }}, {{subject}}';
         $params['default_subject'] = 'My subject for client';
-        
+
         $params['client_id'] = 1;
-        
+
         $bool = $this->api_admin->email_template_send($params);
         $this->assertTrue($bool);
-
     }
 
-    public function testTemplate_populateVariables()
+    public function testTemplatePopulateVariables()
     {
-        $params = array();
+        $params = [];
         $params['to'] = 'client@fossbilling.org';
         $params['to_name'] = 'Client PHPUnit';
 
@@ -175,24 +175,24 @@ class Api_AdminTest extends BBDbApiTestCase
 
         $this->assertTrue(str_contains($emailModel->subject, $clientModel->first_name), 'Template variables were not populated');
     }
-    
+
     public function testSendToClient()
     {
-        $params = array();
+        $params = [];
         $params['to_client'] = 1;
         $params['code'] = 'mod_client_signup';
-        
+
         $bool = $this->api_admin->email_template_send($params);
         $this->assertTrue($bool);
     }
-    
+
     public function testSendToStaff()
     {
-        $params = array();
-        $params['to_staff']     = true;
-        $params['code']         = 'mod_staff_client_signup';
-        $params['client']       = $this->api_admin->client_get(array('id'=>1));
-        
+        $params = [];
+        $params['to_staff'] = true;
+        $params['code'] = 'mod_staff_client_signup';
+        $params['client'] = $this->api_admin->client_get(['id' => 1]);
+
         $bool = $this->api_admin->email_template_send($params);
         $this->assertTrue($bool);
     }
@@ -246,13 +246,13 @@ class Api_AdminTest extends BBDbApiTestCase
 
     public function testBatchDelete()
     {
-        $array = $this->api_admin->email_email_get_list(array());
+        $array = $this->api_admin->email_email_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->email_batch_delete(array('ids' => $ids));
-        $array  = $this->api_admin->email_email_get_list(array());
+        $result = $this->api_admin->email_batch_delete(['ids' => $ids]);
+        $array = $this->api_admin->email_email_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);

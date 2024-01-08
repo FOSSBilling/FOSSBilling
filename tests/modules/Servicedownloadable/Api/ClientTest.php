@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Servicedownloadable\Api;
 
-
-class ClientTest extends \BBTestCase {
+class ClientTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Servicedownloadable\Api\Client
+     * @var Client
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api= new \Box\Mod\Servicedownloadable\Api\Client();
+        $this->api = new Client();
     }
 
     public function testgetDi()
@@ -23,20 +22,20 @@ class ClientTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testsend_fileMissingOrderId()
+    public function testsendFileMissingOrderId()
     {
-        $data = array();
+        $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order id is required');
         $this->api->send_file($data);
     }
 
-    public function testsend_fileOrderNotFound()
+    public function testsendFileOrderNotFound()
     {
-        $data = array(
-            'order_id' => 1
-        );
+        $data = [
+            'order_id' => 1,
+        ];
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -56,11 +55,11 @@ class ClientTest extends \BBTestCase {
         $this->api->send_file($data);
     }
 
-    public function testsend_fileOrderNotActivated()
+    public function testsendFileOrderNotActivated()
     {
-        $data = array(
+        $data = [
             'order_id' => 1,
-        );
+        ];
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -72,11 +71,11 @@ class ClientTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->api->setDi($di);
         $this->api->setIdentity($modelClient);
@@ -86,11 +85,11 @@ class ClientTest extends \BBTestCase {
         $this->api->send_file($data);
     }
 
-    public function testsend_file()
+    public function testsendFile()
     {
-        $data = array(
+        $data = [
             'order_id' => 1,
-        );
+        ];
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -98,25 +97,25 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendFile')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceDownloadable()));
+            ->willReturn(new \Model_ServiceDownloadable());
 
         $mockOrder = new \Model_ClientOrder();
-        $mockOrder->loadBean(New \DummyBean());
-        $mockOrder->status = "active";
+        $mockOrder->loadBean(new \DummyBean());
+        $mockOrder->status = 'active';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($mockOrder));
+            ->willReturn($mockOrder);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->api->setDi($di);
         $this->api->setIdentity($modelClient);
@@ -125,7 +124,5 @@ class ClientTest extends \BBTestCase {
         $result = $this->api->send_file($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
-
     }
 }
- 

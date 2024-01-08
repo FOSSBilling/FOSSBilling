@@ -1,19 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Servicelicense;
-
 
 class ServiceTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Servicelicense\Service
+     * @var Service
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Servicelicense\Service();
+        $this->service = new Service();
     }
 
     public function testgetDi()
@@ -29,11 +27,11 @@ class ServiceTest extends \BBTestCase
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{}';
-        $data                 = array();
+        $data = [];
 
         $result = $this->service->attachOrderConfig($productModel, $data);
         $this->assertIsArray($result);
-        $this->assertEquals(array(), $result);
+        $this->assertEquals([], $result);
     }
 
     public function testattachOrderConfig()
@@ -41,8 +39,8 @@ class ServiceTest extends \BBTestCase
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '["hello", "world"]';
-        $data                 = array('testing' => 'phase');
-        $expected             = array_merge(json_decode($productModel->config, 1), $data);
+        $data = ['testing' => 'phase'];
+        $expected = array_merge(json_decode($productModel->config, 1), $data);
 
         $result = $this->service->attachOrderConfig($productModel, $data);
         $this->assertIsArray($result);
@@ -55,7 +53,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaction_create()
+    public function testactionCreate()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -66,16 +64,16 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($serviceLicenseModel));
+            ->willReturn($serviceLicenseModel);
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -83,7 +81,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ServiceLicense', $result);
     }
 
-    public function testaction_activate()
+    public function testactionActivate()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -95,19 +93,18 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($serviceLicenseModel));
+            ->willReturn($serviceLicenseModel);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
-
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -115,7 +112,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaction_activateLicenseCollision()
+    public function testactionActivateLicenseCollision()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -127,10 +124,10 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array('iterations' =>3)));
+            ->willReturn(['iterations' => 3]);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($serviceLicenseModel));
+            ->willReturn($serviceLicenseModel);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -139,9 +136,9 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->onConsecutiveCalls($serviceLicenseModel, $serviceLicenseModel, null));
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -149,7 +146,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaction_activateLicenseCollisionMaxIterationsException()
+    public function testactionActivateLicenseCollisionMaxIterationsException()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -161,21 +158,21 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($serviceLicenseModel));
+            ->willReturn($serviceLicenseModel);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->never())
             ->method('store');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($serviceLicenseModel));
+            ->willReturn($serviceLicenseModel);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -184,7 +181,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaction_activatePluginNotFound()
+    public function testactionActivatePluginNotFound()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -196,13 +193,13 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($serviceLicenseModel));
+            ->willReturn($serviceLicenseModel);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -211,7 +208,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_activate($clientOrderModel);
     }
 
-    public function testaction_activateOrderActivationException()
+    public function testactionActivateOrderActivationException()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -219,13 +216,13 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -234,7 +231,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_activate($clientOrderModel);
     }
 
-    public function testaction_delete()
+    public function testactionDelete()
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -245,15 +242,15 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($serviceLicenseModel));
+            ->willReturn($serviceLicenseModel);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);
@@ -272,9 +269,9 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -291,14 +288,13 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
-            ->will($this->returnValue($clientOrderModel));
+            ->willReturn($clientOrderModel);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->isLicenseActive($serviceLicenseModel);
@@ -313,10 +309,10 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->isLicenseActive($serviceLicenseModel);
@@ -328,13 +324,13 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips = '{}';
-        $value                    = '1.1.1.1';
+        $value = '1.1.1.1';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -343,18 +339,18 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidIp_test2()
+    public function testisValidIpTest2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips = '["2.2.2.2"]';
-        $value                    = '1.1.1.1';
+        $value = '1.1.1.1';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -363,13 +359,13 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidIp_test3()
+    public function testisValidIpTest3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->ips         = '["2.2.2.2"]';
+        $serviceLicenseModel->ips = '["2.2.2.2"]';
         $serviceLicenseModel->validate_ip = '3.3.3.3';
-        $value                            = '1.1.1.1';
+        $value = '1.1.1.1';
 
         $result = $this->service->isValidIp($serviceLicenseModel, $value);
         $this->assertFalse($result);
@@ -380,13 +376,13 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions = '{}';
-        $value                         = '1.0';
+        $value = '1.0';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -395,18 +391,18 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidVersion_test2()
+    public function testisValidVersionTest2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions = '["2.0"]';
-        $value                         = '1.0';
+        $value = '1.0';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -415,13 +411,13 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidVersion_test3()
+    public function testisValidVersionTest3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->versions         = '["2.0"]';
+        $serviceLicenseModel->versions = '["2.0"]';
         $serviceLicenseModel->validate_version = '3.3.3.3';
-        $value                                 = '1.0';
+        $value = '1.0';
 
         $result = $this->service->isValidVersion($serviceLicenseModel, $value);
         $this->assertFalse($result);
@@ -432,13 +428,13 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths = '{}';
-        $value                      = '/var';
+        $value = '/var';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -447,18 +443,18 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidPath_test2()
+    public function testisValidPathTest2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths = '["/"]';
-        $value                      = '/var';
+        $value = '/var';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -467,13 +463,13 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidPath_test3()
+    public function testisValidPathTest3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->paths         = '["/"]';
+        $serviceLicenseModel->paths = '["/"]';
         $serviceLicenseModel->validate_path = '/user';
-        $value                              = '/var';
+        $value = '/var';
 
         $result = $this->service->isValidPath($serviceLicenseModel, $value);
         $this->assertFalse($result);
@@ -484,13 +480,13 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts = '{}';
-        $value                      = 'site.com';
+        $value = 'site.com';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -499,18 +495,18 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidHost_test2()
+    public function testisValidHostTest2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts = '["fossbilling.org"]';
-        $value                      = 'site.com';
+        $value = 'site.com';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -519,13 +515,13 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidHost_test3()
+    public function testisValidHostTest3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->hosts         = '["fossbilling.org"]';
+        $serviceLicenseModel->hosts = '["fossbilling.org"]';
         $serviceLicenseModel->validate_host = 'example.com';
-        $value                              = 'site.com';
+        $value = 'site.com';
 
         $result = $this->service->isValidHost($serviceLicenseModel, $value);
         $this->assertFalse($result);
@@ -546,7 +542,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->first_name = 'John';
-        $clientModel->last_name  = 'Smith';
+        $clientModel->last_name = 'Smith';
 
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -556,9 +552,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue($clientModel));
+            ->willReturn($clientModel);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -570,7 +566,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetExpirationDate()
     {
-        $expected         = '2004-02-12 15:19:21';
+        $expected = '2004-02-12 15:19:21';
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->expires_at = $expected;
@@ -581,10 +577,10 @@ class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
-            ->will($this->returnValue($clientOrderModel));
+            ->willReturn($clientOrderModel);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -598,19 +594,19 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $expected = array(
-            'license_key'      => '',
-            'validate_ip'      => '',
-            'validate_host'    => '',
+        $expected = [
+            'license_key' => '',
+            'validate_ip' => '',
+            'validate_host' => '',
             'validate_version' => '',
-            'validate_path'    => '',
-            'ips'              => '',
-            'hosts'            => '',
-            'paths'            => '',
-            'versions'         => '',
-            'pinged_at'        => '',
-            'plugin'           => '',
-        );
+            'validate_path' => '',
+            'ips' => '',
+            'hosts' => '',
+            'paths' => '',
+            'versions' => '',
+            'pinged_at' => '',
+            'plugin' => '',
+        ];
 
         $result = $this->service->toApiArray($serviceLicenseModel, false, new \Model_Admin());
         $this->assertIsArray($result);
@@ -619,16 +615,16 @@ class ServiceTest extends \BBTestCase
 
     public function testupdate()
     {
-        $data                = array(
-            'license_key'      => '123456Licence',
-            'validate_ip'      => '1.1.1.1',
-            'validate_host'    => 'fossbilling.org',
+        $data = [
+            'license_key' => '123456Licence',
+            'validate_ip' => '1.1.1.1',
+            'validate_host' => 'fossbilling.org',
             'validate_version' => '1.0',
-            'validate_path'    => '/usr',
-            'ips'              => '2.2.2.2\n',
-            'pinged_at'        => '',
-            'plugin'           => 'Simple',
-        );
+            'validate_path' => '/usr',
+            'ips' => '2.2.2.2\n',
+            'pinged_at' => '',
+            'plugin' => 'Simple',
+        ];
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
@@ -636,9 +632,8 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $result = $this->service->update($serviceLicenseModel, $data);
@@ -653,21 +648,21 @@ class ServiceTest extends \BBTestCase
         $loggerMock->expects($this->atLeastOnce())
             ->method('setChannel');
 
-        $data = array(
+        $data = [
             'format' => 2,
-        );
+        ];
 
-        $licenseServerMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Server::class)
+        $licenseServerMock = $this->getMockBuilder('\\' . Server::class)
             ->disableOriginalConstructor()
             ->getMock();
         $licenseServerMock->expects($this->atLeastOnce())
             ->method('process')
-            ->willReturn(array());
+            ->willReturn([]);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = $loggerMock;
+        $di = new \Pimple\Container();
+        $di['logger'] = $loggerMock;
         $di['license_server'] = $licenseServerMock;
-        $di['config']         = array('debug_and_monitoring' => ['debug' => false]);
+        $di['config'] = ['debug_and_monitoring' => ['debug' => false]];
         $this->service->setDi($di);
 
         $result = $this->service->checkLicenseDetails($data);
@@ -684,19 +679,19 @@ class ServiceTest extends \BBTestCase
         $loggerMock->expects($this->atLeastOnce())
             ->method('setChannel');
 
-        $data = array();
+        $data = [];
 
-        $licenseServerMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Server::class)
+        $licenseServerMock = $this->getMockBuilder('\\' . Server::class)
             ->disableOriginalConstructor()
             ->getMock();
         $licenseServerMock->expects($this->atLeastOnce())
             ->method('process')
-            ->willReturn(array());
+            ->willReturn([]);
 
-        $di                   = new \Pimple\Container();
-        $di['logger']         = $loggerMock;
+        $di = new \Pimple\Container();
+        $di['logger'] = $loggerMock;
         $di['license_server'] = $licenseServerMock;
-        $di['config']         = array('debug_and_monitoring' => ['debug' => false]);
+        $di['config'] = ['debug_and_monitoring' => ['debug' => false]];
         $this->service->setDi($di);
 
         $result = $this->service->checkLicenseDetails($data);

@@ -1,4 +1,5 @@
 <?php
+
 class Box_Mod_Page_Api_AdminTest extends BBModTestCase
 {
     protected $_mod = 'page';

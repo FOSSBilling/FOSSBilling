@@ -1,30 +1,33 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'example.xml';
 
-    public function testUninstall(){
+    public function testUninstall()
+    {
         $service = new Box\Mod\Example\Service();
         $result = $service->uninstall();
         $this->assertTrue($result);
-   }
+    }
 
-    public function testUpdate(){
+    public function testUpdate()
+    {
         $service = new Box\Mod\Example\Service();
-        $result = $service->update(array());
+        $result = $service->update([]);
         $this->assertTrue($result);
-   }
+    }
 
     public function testGetSearchQuery()
     {
         $service = new Box\Mod\Example\Service();
-        $di = new \Pimple\Container();
+        $di = new Pimple\Container();
         $service->setDi($di);
 
-        $data = array(
-            'client_id' => 1
-        );
+        $data = [
+            'client_id' => 1,
+        ];
         [$sql, $params] = $service->getSearchQuery($data);
         $this->assertIsString($sql);
         $this->assertIsArray($params);
@@ -35,20 +38,19 @@ class ServiceTest extends BBDbApiTestCase
     public function testEvents()
     {
         $service = new Box\Mod\Example\Service();
-        $params = array(
+        $params = [
             'ip' => '123.123.123.123',
-        );
+        ];
         $event = new Box_Event(null, 'name', $params, $this->api_admin, $this->api_guest);
         $event->setDi($this->di);
 
         $result = $service->onEventClientLoginFailed($event);
         $this->assertNull($result);
 
-
-        $params = array(
+        $params = [
             'client_id' => 1,
-            'id' => 1
-        );
+            'id' => 1,
+        ];
         $event = new Box_Event(null, 'name', $params, $this->api_admin, $this->api_guest);
         $event->setDi($this->di);
 

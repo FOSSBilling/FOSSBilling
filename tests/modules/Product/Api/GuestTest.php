@@ -1,20 +1,18 @@
 <?php
 
-
 namespace Box\Mod\Product\Api;
 
-
-class GuestTest extends \BBTestCase {
+class GuestTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Product\Api\Guest
+     * @var Guest
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api= new \Box\Mod\Product\Api\Guest();
+        $this->api = new Guest();
     }
-
 
     public function testgetDi()
     {
@@ -24,45 +22,43 @@ class GuestTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testget_list()
+    public function testgetList()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSearchQuery')
-            ->will($this->returnValue(array('sqlString', array())));
-
+            ->willReturn(['sqlString', []]);
 
         $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue(array('list' => array())));
+            ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
 
-
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
-        $result = $this->api->get_list(array());
+        $result = $this->api->get_list([]);
         $this->assertIsArray($result);
     }
 
-    public function testget_pairs()
+    public function testgetPairs()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPairs')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
-        $result = $this->api->get_pairs(array());
+        $result = $this->api->get_pairs([]);
         $this->assertIsArray($result);
     }
 
     public function testgetMissingRequiredParams()
     {
-        $data = array();
+        $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Product ID or slug is missing');
@@ -71,19 +67,19 @@ class GuestTest extends \BBTestCase {
 
     public function testgetWithSetId()
     {
-        $data = array(
-            'id' => 1
-        );
+        $data = [
+            'id' => 1,
+        ];
 
         $model = new \Model_Product();
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveById')
-            ->will($this->returnValue($model ));
+            ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
 
@@ -95,19 +91,19 @@ class GuestTest extends \BBTestCase {
 
     public function testgetWithSetSlug()
     {
-        $data = array(
-            'slug' => 'product/1'
-        );
+        $data = [
+            'slug' => 'product/1',
+        ];
 
         $model = new \Model_Product();
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
-            ->will($this->returnValue($model ));
+            ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
 
@@ -119,16 +115,16 @@ class GuestTest extends \BBTestCase {
 
     public function testgetProductNotFound()
     {
-        $data = array(
-            'slug' => 'product/1'
-        );
+        $data = [
+            'slug' => 'product/1',
+        ];
 
         $model = null;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
-            ->will($this->returnValue($model ));
+            ->willReturn($model);
         $di = new \Pimple\Container();
 
         $this->api->setDi($di);
@@ -139,140 +135,135 @@ class GuestTest extends \BBTestCase {
         $this->api->get($data);
     }
 
-    public function testcategory_get_list()
+    public function testcategoryGetList()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategorySearchQuery')
-            ->will($this->returnValue(array('sqlString', array())));
+            ->willReturn(['sqlString', []]);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toProductCategoryApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-
-        $pager = array(
-            'list' => array(
-                0 => array('id' => 1),
-            ),
-        );
+        $pager = [
+            'list' => [
+                0 => ['id' => 1],
+            ],
+        ];
         $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
-            ->will($this->returnValue($pager));
+            ->willReturn($pager);
 
         $modelProductCategory = new \Model_ProductCategory();
         $modelProductCategory->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($modelProductCategory));
+            ->willReturn($modelProductCategory);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['pager'] = $pagerMock;
 
-
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
-        $result = $this->api->category_get_list(array());
+        $result = $this->api->category_get_list([]);
         $this->assertIsArray($result);
     }
 
-    public function testcategory_get_pairs()
+    public function testcategoryGetPairs()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategoryPairs')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
-        $result = $this->api->category_get_pairs(array());
+        $result = $this->api->category_get_pairs([]);
         $this->assertIsArray($result);
     }
 
-    public function testget_sliderEmptyList()
+    public function testgetSliderEmptyList()
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array()));
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-
-
-        $this->api->setDi($di);
-
-        $result = $this->api->get_slider(array());
-        $this->assertIsArray($result);
-        $this->assertEquals(array(), $result);
-    }
-
-    public function testget_slider()
-    {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->will($this->returnValue(array($productModel)));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
 
-        $arr = array(
-            'id'    => 1,
-            'slug'          => '/',
-            'title'         => 'New Item',
-            'pricing'       => '1W',
-            'config'        => array(),
-        );
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->will($this->returnValue($arr));
-
-        $this->api->setService($serviceMock);
-        $result = $this->api->get_slider(array());
+        $result = $this->api->get_slider([]);
         $this->assertIsArray($result);
+        $this->assertEquals([], $result);
     }
 
-    public function testget_sliderJsonFormat()
+    public function testgetSlider()
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($productModel)));
+            ->willReturn([$productModel]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
 
-        $arr = array(
-            'id'    => 1,
-            'slug'          => '/',
-            'title'         => 'New Item',
-            'pricing'       => '1W',
-            'config'        => array(),
-
-        );
+        $arr = [
+            'id' => 1,
+            'slug' => '/',
+            'title' => 'New Item',
+            'pricing' => '1W',
+            'config' => [],
+        ];
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue($arr));
+            ->willReturn($arr);
 
         $this->api->setService($serviceMock);
-        $result = $this->api->get_slider(array());
+        $result = $this->api->get_slider([]);
+        $this->assertIsArray($result);
+    }
+
+    public function testgetSliderJsonFormat()
+    {
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn([$productModel]);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+
+        $arr = [
+            'id' => 1,
+            'slug' => '/',
+            'title' => 'New Item',
+            'pricing' => '1W',
+            'config' => [],
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn($arr);
+
+        $this->api->setService($serviceMock);
+        $result = $this->api->get_slider([]);
         $this->assertIsArray($result);
 
-        $result = $this->api->get_slider(array('format' => 'json'));
+        $result = $this->api->get_slider(['format' => 'json']);
         $this->assertIsString($result);
         $this->assertIsArray(json_decode($result, 1));
     }
 }
- 

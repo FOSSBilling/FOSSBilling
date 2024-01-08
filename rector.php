@@ -7,6 +7,7 @@ use Rector\Php73\Rector\FuncCall\JsonThrowOnErrorRector;
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Php81\Rector\FuncCall\NullToStrictStringFuncCallArgRector;
+use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->paths([
@@ -21,8 +22,11 @@ return static function (RectorConfig $rectorConfig): void {
         NullToStrictStringFuncCallArgRector::class,
     ]);
 
-    
+
     $rectorConfig->sets([
         LevelSetList::UP_TO_PHP_81,
     ]);
+
+    $rectorConfig->cacheClass(FileCacheStorage::class);
+    $rectorConfig->cacheDirectory('./cache/rector');
 };

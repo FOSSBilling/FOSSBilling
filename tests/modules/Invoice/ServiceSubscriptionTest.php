@@ -1,19 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Invoice;
-
 
 class ServiceSubscriptionTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Invoice\ServiceSubscription
+     * @var ServiceSubscription
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Invoice\ServiceSubscription();
+        $this->service = new ServiceSubscription();
     }
 
     public function testgetDi()
@@ -34,27 +32,27 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($subscriptionModel));
+            ->willReturn($subscriptionModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($newId));
+            ->willReturn($newId);
 
         $eventsMock = $this->getMockBuilder('\Box_EventManager')
             ->getMock();
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventsMock;
 
         $this->service->setDi($di);
 
-        $data = array(
-            'client_id'  => 1,
+        $data = [
+            'client_id' => 1,
             'gateway_id' => 2,
-        );
+        ];
 
         $result = $this->service->create(new \Model_Client(), new \Model_PayGateway(), $data);
         $this->assertIsInt($result);
@@ -65,22 +63,22 @@ class ServiceSubscriptionTest extends \BBTestCase
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
-        $data = array(
-            'status'   => '',
-            'sid'      => '',
-            'period'   => '',
-            'amount'   => '',
+        $data = [
+            'status' => '',
+            'sid' => '',
+            'period' => '',
+            'amount' => '',
             'currency' => '',
-        );
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['logger']    = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
 
@@ -108,15 +106,15 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $payGatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+        $payGatewayService = $this->getMockBuilder('\\' . ServicePayGateway::class)
             ->getMock();
         $payGatewayService->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di                = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($clientServiceMock, $payGatewayService) {
             if ($serviceName == 'Client') {
                 return $clientServiceMock;
@@ -125,21 +123,21 @@ class ServiceSubscriptionTest extends \BBTestCase
                 return $payGatewayService;
             }
         });
-        $di['db']          = $dbMock;
+        $di['db'] = $dbMock;
         $this->service->setDi($di);
 
-        $expected = array(
-            'id'         => '',
-            'sid'        => '',
-            'period'     => '',
-            'amount'     => '',
-            'currency'   => '',
-            'status'     => '',
+        $expected = [
+            'id' => '',
+            'sid' => '',
+            'period' => '',
+            'amount' => '',
+            'currency' => '',
+            'status' => '',
             'created_at' => '',
             'updated_at' => '',
-            'client'     => array(),
-            'gateway'    => array(),
-        );
+            'client' => [],
+            'gateway' => [],
+        ];
 
         $result = $this->service->toApiArray($subscriptionModel);
         $this->assertIsArray($result);
@@ -163,9 +161,9 @@ class ServiceSubscriptionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = new \Box_Log();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventsMock;
         $this->service->setDi($di);
 
@@ -175,44 +173,44 @@ class ServiceSubscriptionTest extends \BBTestCase
 
     public static function searchQueryData()
     {
-        return array(
-            array(
-                array(), 'FROM subscription', array(),
-            ),
-            array(
-                array('status' => 'active'), 'AND status = :status', array(':status' => 'active'),
-            ),
-            array(
-                array('invoice_id' => '1'), 'AND invoice_id = :invoice_id', array('invoice_id' => '1'),
-            ),
-            array(
-                array('gateway_id' => '2'), 'AND gateway_id = :gateway_id', array(':gateway_id' => '2'),
-            ),
-            array(
-                array('client_id' => '3'), 'AND client_id  = :client_id', array(':client_id' => '3'),
-            ),
-            array(
-                array('currency' => 'EUR'), 'AND currency =  :currency', array(':currency' => 'EUR'),
-            ),
-            array(
-                array('date_from' => '1234567'), 'AND UNIX_TIMESTAMP(created_at) >= :date_from', array(':date_from' => '1234567'),
-            ),
-            array(
-                array('date_to' => '1234567'), 'AND UNIX_TIMESTAMP(created_at) <= :date_to', array(':date_to' => '1234567'),
-            ),
-            array(
-                array('id' => '10'), 'AND id = :id', array(':id' => '10'),
-            ),
-            array(
-                array('sid' => '10'), 'AND sid = :sid', array(':sid' => '10'),
-            ),
-        );
+        return [
+            [
+                [], 'FROM subscription', [],
+            ],
+            [
+                ['status' => 'active'], 'AND status = :status', [':status' => 'active'],
+            ],
+            [
+                ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', ['invoice_id' => '1'],
+            ],
+            [
+                ['gateway_id' => '2'], 'AND gateway_id = :gateway_id', [':gateway_id' => '2'],
+            ],
+            [
+                ['client_id' => '3'], 'AND client_id  = :client_id', [':client_id' => '3'],
+            ],
+            [
+                ['currency' => 'EUR'], 'AND currency =  :currency', [':currency' => 'EUR'],
+            ],
+            [
+                ['date_from' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) >= :date_from', [':date_from' => '1234567'],
+            ],
+            [
+                ['date_to' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) <= :date_to', [':date_to' => '1234567'],
+            ],
+            [
+                ['id' => '10'], 'AND id = :id', [':id' => '10'],
+            ],
+            [
+                ['sid' => '10'], 'AND sid = :sid', [':sid' => '10'],
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
     public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams)
     {
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
@@ -231,14 +229,14 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(array('')));
+            ->willReturn(['']);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
         $invoice_id = 2;
-        $result     = $this->service->isSubscribable($invoice_id);
+        $result = $this->service->isSubscribable($invoice_id);
         $this->assertIsBool($result);
         $this->assertFalse($result);
     }
@@ -249,42 +247,42 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $getAllResults = array(
-            0 => array('period' => '1W'),
-        );
+        $getAllResults = [
+            0 => ['period' => '1W'],
+        ];
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue($getAllResults));
+            ->willReturn($getAllResults);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
         $invoice_id = 2;
-        $result     = $this->service->isSubscribable($invoice_id);
+        $result = $this->service->isSubscribable($invoice_id);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
     public function testgetSubscriptionPeriod()
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)
-            ->onlyMethods(array('isSubscribable'))
+        $serviceMock = $this->getMockBuilder('\\' . ServiceSubscription::class)
+            ->onlyMethods(['isSubscribable'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('isSubscribable')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $period = '1W';
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue($period));
+            ->willReturn($period);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -304,11 +302,10 @@ class ServiceSubscriptionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
         $this->service->unsubscribe($subscribtionModel);
     }
-
 }

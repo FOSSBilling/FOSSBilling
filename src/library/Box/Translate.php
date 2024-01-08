@@ -2,13 +2,12 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Box_Translate implements \FOSSBilling\InjectionAwareInterface
+class Box_Translate implements FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -26,20 +25,22 @@ class Box_Translate implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * @param string $locale
+     *
      * @return Box_Translate
      */
     public function setLocale($locale)
     {
         $this->locale = $locale;
+
         return $this;
     }
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -49,12 +50,12 @@ class Box_Translate implements \FOSSBilling\InjectionAwareInterface
         PhpMyAdmin\MoTranslator\Loader::loadFunctions();
 
         $locale = $this->getLocale();
-        if(empty($locale)){
-            //We are using the standard PHP Exception here rather than our custom one as ours requires translations to be setup, which we cannot do without the locale being defined.
-            throw new Exception("Unable to setup FOSSBilling translation functionality, locale was undefined.");
+        if (empty($locale)) {
+            // We are using the standard PHP Exception here rather than our custom one as ours requires translations to be setup, which we cannot do without the locale being defined.
+            throw new Exception('Unable to setup FOSSBilling translation functionality, locale was undefined.');
         }
 
-        $codeset = "UTF-8";
+        $codeset = 'UTF-8';
         @putenv('LANG=' . $locale . '.' . $codeset);
         @putenv('LANGUAGE=' . $locale . '.' . $codeset);
         // set locale
@@ -102,16 +103,16 @@ class Box_Translate implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param $domain
      * @return Box_Translate
      */
     public function setDomain($domain)
     {
         $this->domain = $domain;
+
         return $this;
     }
 
-    public function __($msgid, array $values = NULL)
+    public function __($msgid, array $values = null)
     {
         return __trans($msgid, $values);
     }

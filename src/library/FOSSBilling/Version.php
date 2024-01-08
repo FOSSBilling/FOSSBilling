@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -24,11 +24,11 @@ final class Version
      * Compare the specified FOSSBilling version string $version
      * with the current \FOSSBilling\Version::VERSION of FOSSBilling.
      *
-     * @param   string  $version  A version string (e.g. "0.7.1").
-     * @return  integer           -1 if the $version is older,
-     *                            0 if they are the same,
-     *                            and +1 if $version is newer.
+     * @param string $version A version string (e.g. "0.7.1").
      *
+     * @return int -1 if the $version is older,
+     *             0 if they are the same,
+     *             and +1 if $version is newer
      */
     public static function compareVersion(string $version): int
     {
@@ -37,12 +37,13 @@ final class Version
 
     /**
      * Used to compare two different FOSSBilling versions to determine if updating between them is considered a major, minor, or a patch update.
-     * 
-     * @param string $new The new FOSSBilling version to compare against
-     * @param null|string $current (optional) Defaults to the current version, however you can override it if you wanted / needed
-     * @return int 0-2 to indicate the type of update.
+     *
+     * @param string      $new     The new FOSSBilling version to compare against
+     * @param string|null $current (optional) Defaults to the current version, however you can override it if you wanted / needed
+     *
+     * @return int 0-2 to indicate the type of update
      */
-    public static function getUpdateType(string $new, ?string $current = null): int
+    public static function getUpdateType(string $new, string $current = null): int
     {
         // Report patch as a dummy value as we can't properly compare version numbers when the current version is a preview build
         if (self::isPreviewVersion()) {
@@ -73,6 +74,6 @@ final class Version
 
     public static function isPreviewVersion(): bool
     {
-        return (preg_match(self::semverRegex, \FOSSBilling\Version::VERSION, $matches) !== 0) ? false : true;
+        return (preg_match(self::semverRegex, Version::VERSION, $matches) !== 0) ? false : true;
     }
 }

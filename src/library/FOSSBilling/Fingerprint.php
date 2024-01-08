@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -19,7 +20,7 @@ class Fingerprint
     {
         $agentDetails = $this->extractAgentInfo();
 
-        /**
+        /*
          * Sets up the fingerprint info for the existing request.
          * 'weight' is used to weigh specific parameters.
          *      Example: The agent string has a weight of 2, one failure from it equal as 2 failures of other properties.
@@ -83,7 +84,7 @@ class Fingerprint
     }
 
     /**
-     * Generates a fingerprint for the device that made the request to the server
+     * Generates a fingerprint for the device that made the request to the server.
      */
     public function fingerprint(): array
     {
@@ -104,8 +105,8 @@ class Fingerprint
      *      - Each property can define a weight. For example, if the IP address doesn't match and the weight is set to 3, 3 will be selected from the total.
      *          - This means with a total of 9 properties, the IP address being wrong would effectively be weighted as 3 properties and only two more differing properties will make it fail the check.
      *      - If any property is found in one of the fingerprints and not the other, the baseline is incremented and the final score is decreased by it's weight.
-     * 
-     * @return bool `true` if the fingerprint passes, `false` if it's considered invalid. 
+     *
+     * @return bool `true` if the fingerprint passes, `false` if it's considered invalid
      */
     public function checkFingerprint(array $fingerprint): bool
     {
@@ -117,13 +118,13 @@ class Fingerprint
             $exitsInCurrentFingerprint = !empty($properties['source']);
 
             if ((!$exitsInFingerprint && $exitsInCurrentFingerprint) || ($exitsInFingerprint && !$exitsInCurrentFingerprint)) {
-                //The property exists in one fingerprint and not the other, so we increment the total count and deduct from the score.
-                $itemCount++;
+                // The property exists in one fingerprint and not the other, so we increment the total count and deduct from the score.
+                ++$itemCount;
                 $scoreSubtract += $properties['weight'];
             } elseif (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
                 // Do nothing in this case, as the property isn't in either fingerprint.
             } else {
-                $itemCount++;
+                ++$itemCount;
                 $hashedData = hash('md5', $properties['source']);
 
                 if ($fingerprint[$name] !== $hashedData) {
@@ -135,19 +136,18 @@ class Fingerprint
         /**
          * Here we calculate how confident we are in our ability to fingerprint a device without causing issues for legitimate sessions.
          * The less confident we are, the more wrong the current fingerprint needs to be when compared against the session's before it is invalidated.
-         * 
+         *
          * In the event that less that 70% of the possible values are in the fingerprint, we use the percentage off we are to calculate a higher percentage before failure.
          * For example:
          *  If we have 13 possible fingerprint properties and only 9 are available, that's only 69% of the possible properties and the failure threshold will be calculated as follows.
          *  Negative weight: (1 - 0.69) / 1.25 = `0.24`
          *  Failure threshold: 0.5 + 0.24 = `0.74`
-         *  
+         *
          *  So in this example, the percentage wrong needs to be at or above 74% (nearly 75%) before the session is declared invalid.
          *  If there's only 6 of 13 available that moves to 93% and at 5 of 13 it's 99%.
          *  By doing this, we can effectively give additional headroom in situations where we are less-confident than we'd like to be and effectively completely disable the check in a worst-case situation.
-         *  
+         *
          *  Keep in mind, this method does not prevent changes such as the OS or browser from invalidating a session as those are weighted so heavily to always be considered more than 100% wrong.
-         *  
          */
         $percentOfOverallItems = $itemCount / count($this->fingerprintProperties);
         if ($percentOfOverallItems >= 0.70) {
@@ -159,6 +159,7 @@ class Fingerprint
 
         // Here we calculate the "percentage wrong" (weighted, not a true percent) and return true (indicating no issues) if it's less then the failure threshold.
         $percentageWrong = $scoreSubtract / $itemCount;
+
         return $percentageWrong < $failureThreshold;
     }
 

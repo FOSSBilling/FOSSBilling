@@ -1,8 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -42,6 +44,7 @@ class CentralAlerts implements InjectionAwareInterface
      * The alerts are **never** displayed to the clients.
      *
      * @return array The alerts
+     *
      * @throws Exception
      */
     public function getAlerts(): array
@@ -56,12 +59,13 @@ class CentralAlerts implements InjectionAwareInterface
     }
 
     /**
-     * Filter the cached alerts by type and version
+     * Filter the cached alerts by type and version.
      *
-     * @param array $type The alert types to filter by (e.g. ['info', 'warning']) - defaults to all types
+     * @param array  $type    The alert types to filter by (e.g. ['info', 'warning']) - defaults to all types
      * @param string $version The version to filter by (e.g. 0.4.2) - defaults to the current version of FOSSBilling
      *
      * @return array The filtered alerts
+     *
      * @throws Exception
      */
     public function filterAlerts(array $type = [], string $version = Version::VERSION): array
@@ -69,14 +73,14 @@ class CentralAlerts implements InjectionAwareInterface
         $alerts = $this->getAlerts();
 
         if (is_array($type) && !empty($type)) {
-            $alerts = array_filter($alerts, fn($alert) => in_array($alert['type'], $type));
+            $alerts = array_filter($alerts, fn ($alert) => in_array($alert['type'], $type));
         }
 
         if ($version) {
             if ($this->di['config']['update_branch'] === 'preview') {
-                $alerts = array_filter($alerts, fn($alert) => $alert['include_preview_branch']);
+                $alerts = array_filter($alerts, fn ($alert) => $alert['include_preview_branch']);
             } else {
-                $alerts = array_filter($alerts, function($alert) use ($version) {
+                $alerts = array_filter($alerts, function ($alert) use ($version) {
                     $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');
                     $lessThanTheMaximum = version_compare(strtolower($version), strtolower($alert['max_fossbilling_version']), '<=');
 
@@ -89,17 +93,19 @@ class CentralAlerts implements InjectionAwareInterface
     }
 
     /**
-     * Make a request to the FOSSBilling Central Alerts System API
+     * Make a request to the FOSSBilling Central Alerts System API.
      *
      * @param string $endpoint The API endpoint to call (e.g. list)
-     * @param array $params The array of parameters to pass to the API endpoint
+     * @param array  $params   The array of parameters to pass to the API endpoint
      *
      * @return array The API response
+     *
      * @throws Exception
      */
     public function makeRequest(string $endpoint, array $params = []): array
     {
         $url = $this->_url . $endpoint;
+
         try {
             $httpClient = HttpClient::create();
             $response = $httpClient->request('GET', $url, [
@@ -107,8 +113,9 @@ class CentralAlerts implements InjectionAwareInterface
                 'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
             $json = $response->toArray();
-        } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
+        } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
             error_log($e->getMessage());
+
             throw new Exception('Unable to fetch alerts from Central Alerts System. See error log for more information.', null);
         }
 

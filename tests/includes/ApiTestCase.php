@@ -1,11 +1,12 @@
 <?php
+
 class ApiTestCase extends PHPUnit\Framework\TestCase
 {
     protected ?\Pimple\Container $di;
-    protected $session = NULL;
-    protected $api_guest = NULL;
-    protected $api_client = NULL;
-    protected $api_admin = NULL;
+    protected $session;
+    protected $api_guest;
+    protected $api_client;
+    protected $api_admin;
 
     public function setUp(): void
     {

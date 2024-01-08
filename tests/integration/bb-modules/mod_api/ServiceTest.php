@@ -25,5 +25,4 @@ class ServiceTest extends BBDbApiTestCase
         $result = $service->logRequest();
         $this->assertIsInt($result);
     }
-
 }

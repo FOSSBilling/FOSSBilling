@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -16,8 +16,6 @@ class ErrorPage
 {
     /**
      * Returns the list of error codes and their specialized messages. All Error code parameters are optional.
-     *
-     * @return array
      */
     private static function getCodes(): array
     {
@@ -58,10 +56,10 @@ class ErrorPage
                 'report' => false,
             ],
             '5' => [
-                'title' => "Missing .htaccess file",
-                'message' => "You appear to be running an Apache or LiteSpeed based webserver without a valid <b><em>.htaccess</em></b> file. Please create one using the default FOSSBilling .htaccess file.",
+                'title' => 'Missing .htaccess file',
+                'message' => 'You appear to be running an Apache or LiteSpeed based webserver without a valid <b><em>.htaccess</em></b> file. Please create one using the default FOSSBilling .htaccess file.',
                 'link' => [
-                    'label' => "Check the default .htaccess",
+                    'label' => 'Check the default .htaccess',
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/.htaccess',
                 ],
                 'report' => false,
@@ -77,7 +75,7 @@ class ErrorPage
             // Incomplete payment gateway configuration. Is listed here so it's not forwarded to Sentry.io
             4001 => [
                 'report' => false,
-            ]
+            ],
         ];
     }
 
@@ -95,23 +93,22 @@ class ErrorPage
         ],
         'Server Managers' => [
             'start' => 2000,
-            'end'   => 2999,
+            'end' => 2999,
         ],
         'Domain Registration' => [
             'start' => 3000,
-            'end'   => 3999,
+            'end' => 3999,
         ],
         'Payment Gateway' => [
             'start' => 4000,
-            'end'   => 4999,
-        ]
+            'end' => 4999,
+        ],
     ];
 
     /**
      * Gets info for a specified error code, using placeholders for anything undefined.
      *
      * @param int $code The error code
-     * @return array
      */
     public static function getCodeInfo(int $code): array
     {
@@ -136,6 +133,7 @@ class ErrorPage
         foreach (self::$codeCategories as $categoryName => $categoryRange) {
             if ($code >= $categoryRange['start'] && $code <= $categoryRange['end']) {
                 $errorDetails['category'] = $categoryName;
+
                 break;
             }
         }
@@ -144,9 +142,8 @@ class ErrorPage
     }
 
     /**
-     * @param int $code Error code
+     * @param int    $code    Error code
      * @param string $message The original exception message
-     * @return never
      */
     public function generatePage(int $code, string $message): never
     {
@@ -279,7 +276,7 @@ class ErrorPage
                     <ul class="list-horizontal">
                         <li>' . "Instance ID: $instanceID" . '</li>
                         <li>' . "Error Code: #$code" . '</li>
-                        <li>' . 'Component: '. $error['category'] . '</li>
+                        <li>Component: ' . $error['category'] . '</li>
                     </ul>
 
                     <p class="error-message" id="specialized">' . $error['message'] . '</p>
@@ -322,6 +319,6 @@ class ErrorPage
             </body>
         </html>';
         echo $page;
-        die();
+        exit;
     }
 }

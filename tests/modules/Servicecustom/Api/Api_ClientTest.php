@@ -1,13 +1,13 @@
 <?php
-namespace Box\Tests\Mod\Servicecustom\Api;
 
+namespace Box\Tests\Mod\Servicecustom\Api;
 
 class Api_ClientTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Servicecustom\Api\Client
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
@@ -19,16 +19,16 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
-            ->will($this->returnValue(new \Model_ServiceCustom()));
+            ->willReturn(new \Model_ServiceCustom());
         $serviceMock->expects($this->atLeastOnce())
             ->method('customCall')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $arguments = array(
-            0 => array(
-                'order_id' => random_int(1, 100)
-            ),
-        );
+        $arguments = [
+            0 => [
+                'order_id' => random_int(1, 100),
+            ],
+        ];
 
         $this->api->setService($serviceMock);
 
@@ -40,12 +40,12 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
-            ->will($this->returnValue(new \Model_ServiceCustom()));
+            ->willReturn(new \Model_ServiceCustom());
         $serviceMock->expects($this->never())
             ->method('customCall')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $arguments = array();
+        $arguments = [];
 
         $this->api->setService($serviceMock);
         $this->expectException(\Exception::class);
@@ -57,18 +57,17 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
-            ->will($this->returnValue(new \Model_ServiceCustom()));
+            ->willReturn(new \Model_ServiceCustom());
         $serviceMock->expects($this->never())
             ->method('customCall')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $arguments = array(
-            0 => array(),
-        );
+        $arguments = [
+            0 => [],
+        ];
 
         $this->api->setService($serviceMock);
         $this->expectException(\Exception::class);
         $this->api->__call('delete', $arguments);
     }
 }
- 

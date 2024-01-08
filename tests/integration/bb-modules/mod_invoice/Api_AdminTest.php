@@ -10,24 +10,23 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $array = $this->api_admin->invoice_tax_get_list();
         $this->assertIsArray($array);
 
-        $data = array(
-            'name'    => 'VAT in United Kingdom',
+        $data = [
+            'name' => 'VAT in United Kingdom',
             'taxrate' => 20,
-        );
-        $id   = $this->api_admin->invoice_tax_create($data);
+        ];
+        $id = $this->api_admin->invoice_tax_create($data);
         $this->assertTrue(is_numeric($id));
 
-
-        $data = array(
+        $data = [
             'id' => $id,
-        );
+        ];
         $bool = $this->api_admin->invoice_tax_delete($data);
         $this->assertTrue($bool);
 
-        $data = array(
-            'name'    => 'VAT in United Kingdom',
+        $data = [
+            'name' => 'VAT in United Kingdom',
             'taxrate' => 20,
-        );
+        ];
         $bool = $this->api_admin->invoice_tax_setup_eu($data);
         $this->assertTrue($bool);
     }
@@ -37,29 +36,29 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $array = $this->api_admin->invoice_subscription_get_list();
         $this->assertIsArray($array);
 
-        $data  = array(
+        $data = [
             'id' => 1,
-        );
+        ];
         $array = $this->api_admin->invoice_subscription_get($data);
         $this->assertIsArray($array);
 
         $data['status'] = 'canceled';
-        $bool           = $this->api_admin->invoice_subscription_update($data);
+        $bool = $this->api_admin->invoice_subscription_update($data);
         $this->assertTrue($bool);
 
         $bool = $this->api_admin->invoice_subscription_delete($data);
         $this->assertTrue($bool);
 
-        $sid                = 'TRWEW_@22--2222';
-        $data['sid']        = $sid;
-        $data['client_id']  = 1;
+        $sid = 'TRWEW_@22--2222';
+        $data['sid'] = $sid;
+        $data['client_id'] = 1;
         $data['gateway_id'] = 1;
-        $data['status']     = 'canceled';
-        $data['currency']   = 'USD';
-        $id                 = $this->api_admin->invoice_subscription_create($data);
+        $data['status'] = 'canceled';
+        $data['currency'] = 'USD';
+        $id = $this->api_admin->invoice_subscription_create($data);
         $this->assertTrue(is_numeric($id));
 
-        $array = $this->api_admin->invoice_subscription_get(array('sid' => $sid));
+        $array = $this->api_admin->invoice_subscription_get(['sid' => $sid]);
         $this->assertIsArray($array);
     }
 
@@ -74,36 +73,36 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $bool = $this->api_admin->invoice_batch_pay_with_credits();
         $this->assertTrue($bool);
 
-        $bool = $this->api_admin->invoice_batch_pay_with_credits(array('client_id' => 1));
+        $bool = $this->api_admin->invoice_batch_pay_with_credits(['client_id' => 1]);
         $this->assertTrue($bool);
 
-        $array = $this->api_admin->invoice_get_statuses(array());
+        $array = $this->api_admin->invoice_get_statuses([]);
         $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_get_list();
         $this->assertIsArray($array);
 
-        $data  = array(
+        $data = [
             'id' => 1,
-        );
+        ];
         $array = $this->api_admin->invoice_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'client_id'  => 1,
+        $data = [
+            'client_id' => 1,
             'gateway_id' => 1,
-        );
-        $id   = $this->api_admin->invoice_prepare($data);
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
         $this->assertTrue(is_numeric($id));
 
-        $data['id']    = $id;
+        $data['id'] = $id;
         $data['serie'] = 'new';
-        $bool          = $this->api_admin->invoice_update($data);
+        $bool = $this->api_admin->invoice_update($data);
         $this->assertTrue($bool);
 
-        $data = array(
+        $data = [
             'id' => $id,
-        );
+        ];
         $bool = $this->api_admin->invoice_approve($data);
         $this->assertTrue($bool);
 
@@ -113,28 +112,28 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testItem()
     {
-        $data = array(
+        $data = [
             'client_id' => 1,
-        );
-        $id   = $this->api_admin->invoice_prepare($data);
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
         $this->assertTrue(is_numeric($id));
 
-        $data['id']       = $id;
-        $data['serie']    = 'new';
-        $data['new_item'] = array(
-            'title'  => 'new item',
-            'price'  => 'new item',
-            'taxed'  => true,
+        $data['id'] = $id;
+        $data['serie'] = 'new';
+        $data['new_item'] = [
+            'title' => 'new item',
+            'price' => 'new item',
+            'taxed' => true,
             'period' => '1W',
-        );
-        $bool             = $this->api_admin->invoice_update($data);
+        ];
+        $bool = $this->api_admin->invoice_update($data);
         $this->assertTrue($bool);
 
         $array = $this->api_admin->invoice_get($data);
         $this->assertEquals(1, count($array['lines']));
 
         $line_data['id'] = $array['lines'][0]['id'];
-        $bool            = $this->api_admin->invoice_item_delete($line_data);
+        $bool = $this->api_admin->invoice_item_delete($line_data);
     }
 
     public function testGatewayInstall()
@@ -142,9 +141,9 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $array = $this->api_admin->invoice_gateway_get_available();
         $this->assertIsArray($array);
 
-        $data = array(
+        $data = [
             'code' => $array[0],
-        );
+        ];
         $bool = $this->api_admin->invoice_gateway_install($data);
         $this->assertTrue($bool);
     }
@@ -157,28 +156,28 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $array = $this->api_admin->invoice_gateway_get_pairs();
         $this->assertIsArray($array);
 
-        $data  = array(
+        $data = [
             'id' => 1,
-        );
+        ];
         $array = $this->api_admin->invoice_gateway_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'id'              => 1,
-            'allow_single'    => 1,
+        $data = [
+            'id' => 1,
+            'allow_single' => 1,
             'allow_recurrent' => 1,
-            'enabled'         => 1,
-            'title'           => 'title',
-        );
+            'enabled' => 1,
+            'title' => 'title',
+        ];
         $bool = $this->api_admin->invoice_gateway_update($data);
         $this->assertTrue($bool);
 
         $id = $this->api_admin->invoice_gateway_copy($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
+        $data = [
             'id' => $id,
-        );
+        ];
         $bool = $this->api_admin->invoice_gateway_delete($data);
         $this->assertTrue($bool);
     }
@@ -187,35 +186,35 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     {
         $txn_id = '11--aaa--p';
 
-        $tx    = array(
+        $tx = [
             'skip_validation' => true,
-            'txn_id'          => $txn_id,
-        );
+            'txn_id' => $txn_id,
+        ];
         $tx_id = $this->api_admin->invoice_transaction_create($tx);
-        $list  = $this->api_admin->invoice_transaction_get_list(array('txn_id' => $txn_id));
+        $list = $this->api_admin->invoice_transaction_get_list(['txn_id' => $txn_id]);
         $this->assertEquals(1, count($list['list']));
     }
 
     public function testTransactions()
     {
-        $tx    = array(
+        $tx = [
             'bb_invoice_id' => 1,
             'bb_gateway_id' => 1,
-        );
+        ];
         $tx_id = $this->api_admin->invoice_transaction_create($tx);
 
-        $txu  = array(
-            'id'           => $tx_id,
+        $txu = [
+            'id' => $tx_id,
             'validate_ipn' => '0',
-            'amount'       => 150,
-            'type'         => Payment_Transaction::TXTYPE_PAYMENT,
-            'note'         => 'notes',
-            'gateway_id'   => 1,
-            'currency'     => 'USD',
-            'status'       => Model_Transaction::STATUS_APPROVED,
-            'txn_id'       => uniqid(),
-            'txn_status'   => 'complete',
-        );
+            'amount' => 150,
+            'type' => Payment_Transaction::TXTYPE_PAYMENT,
+            'note' => 'notes',
+            'gateway_id' => 1,
+            'currency' => 'USD',
+            'status' => Model_Transaction::STATUS_APPROVED,
+            'txn_id' => uniqid(),
+            'txn_status' => 'complete',
+        ];
         $bool = $this->api_admin->invoice_transaction_update($txu);
         $this->assertTrue($bool);
 
@@ -249,23 +248,23 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testUpdate()
     {
-        $data = array(
-            'id'     => 1,
+        $data = [
+            'id' => 1,
             'status' => 'unpaid',
-            'notes'  => 'note',
-            'serie'  => 'NEW',
-            'nr'     => 4,
+            'notes' => 'note',
+            'serie' => 'NEW',
+            'nr' => 4,
             'due_at' => date('Y-m-d H:i:s'),
-        );
+        ];
         $bool = $this->api_admin->invoice_update($data);
         $this->assertTrue($bool);
     }
 
     public function testManualPayment()
     {
-        $data = array(
+        $data = [
             'id' => 1,
-        );
+        ];
         $bool = $this->api_admin->invoice_mark_as_paid($data);
         $this->assertTrue($bool);
     }
@@ -276,34 +275,34 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         // date if order has expiation date
 
         $oid = 5;
-        $o   = $this->api_admin->order_get(array('id' => $oid));
+        $o = $this->api_admin->order_get(['id' => $oid]);
         $this->assertEquals('2012-10-10 00:00:00', $o['expires_at']);
-        $id      = $this->api_admin->invoice_renewal_invoice(array('id' => $oid));
-        $invoice = $this->api_admin->invoice_get(array('id' => $id));
+        $id = $this->api_admin->invoice_renewal_invoice(['id' => $oid]);
+        $invoice = $this->api_admin->invoice_get(['id' => $id]);
         $this->assertEquals('2012-10-10 00:00:00', $invoice['due_at']);
 
-        //test event caller
+        // test event caller
         $this->api_admin->invoice_batch_invoke_due_event();
     }
 
     public function testRenewalInvoice()
     {
         $oid = 4;
-        $this->api_admin->order_renew(array('id' => $oid));
+        $this->api_admin->order_renew(['id' => $oid]);
 
-        $o1 = $this->api_admin->order_get(array('id' => $oid));
+        $o1 = $this->api_admin->order_get(['id' => $oid]);
         $this->assertEquals('active', $o1['status']);
 
-        $id      = $this->api_admin->invoice_renewal_invoice(array('id' => $oid));
-        $invoice = $this->api_admin->invoice_get(array('id' => $id));
+        $id = $this->api_admin->invoice_renewal_invoice(['id' => $oid]);
+        $invoice = $this->api_admin->invoice_get(['id' => $id]);
         $this->api_admin->invoice_mark_as_paid($invoice);
 
-        $o2 = $this->api_admin->order_get(array('id' => $oid));
+        $o2 = $this->api_admin->order_get(['id' => $oid]);
         $this->assertEquals('active', $o2['status']);
 
         $this->api_admin->invoice_batch_activate_paid();
 
-        $o3 = $this->api_admin->order_get(array('id' => $oid));
+        $o3 = $this->api_admin->order_get(['id' => $oid]);
         $this->assertEquals('active', $o3['status']);
         $this->assertNotEquals($o2['expires_at'], $o3['expires_at']);
     }
@@ -319,7 +318,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testSendReminder()
     {
-        $data = array('id' => 1);
+        $data = ['id' => 1];
         $bool = $this->api_admin->invoice_send_reminder($data);
         $this->assertTrue($bool);
     }
@@ -330,7 +329,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $bool = $this->api_admin->invoice_transaction_process_all();
             $this->assertTrue($bool);
         } catch (Exception $e) {
-            assertEquals("testProcess failed: ", $e->getMessage());
+            assertEquals('testProcess failed: ', $e->getMessage());
         }
 
         $bool = $this->api_admin->invoice_batch_activate_paid();
@@ -339,82 +338,81 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testNumbering()
     {
-        $data = array(
-            'invoice_series'          => 'UNIT',
-            'invoice_series_paid'     => 'PAID',
+        $data = [
+            'invoice_series' => 'UNIT',
+            'invoice_series_paid' => 'PAID',
             'invoice_starting_number' => 150,
-        );
+        ];
         $this->api_admin->system_update_params($data);
 
-        $data = array(
+        $data = [
             'client_id' => 1,
-        );
-        $id   = $this->api_admin->invoice_prepare($data);
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
+        $data = [
             'id' => $id,
-        );
+        ];
         $this->api_admin->invoice_mark_as_paid($data);
         $array = $this->api_admin->invoice_get($data);
-        $this->assertEquals("150", $array['nr']);
+        $this->assertEquals('150', $array['nr']);
 
-        $data = array(
+        $data = [
             'client_id' => 1,
-        );
-        $id   = $this->api_admin->invoice_prepare($data);
-        $data = array(
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
+        $data = [
             'id' => $id,
-        );
+        ];
         $this->api_admin->invoice_mark_as_paid($data);
         $array = $this->api_admin->invoice_get($data);
-        $this->assertEquals("151", $array['nr']);
+        $this->assertEquals('151', $array['nr']);
 
-        $next = $this->api_admin->system_param(array('key' => 'invoice_starting_number'));
-        $this->assertEquals("152", $next);
+        $next = $this->api_admin->system_param(['key' => 'invoice_starting_number']);
+        $this->assertEquals('152', $next);
     }
 
     public function testRefund()
     {
-        $id   = 3;
-        $data = array(
-            'id'   => $id,
+        $id = 3;
+        $data = [
+            'id' => $id,
             'note' => 'For some reason',
-        );
+        ];
 
-        $bool = $this->api_admin->system_update_params(array('invoice_refund_logic' => 'manual'));
+        $bool = $this->api_admin->system_update_params(['invoice_refund_logic' => 'manual']);
         $null = $this->api_admin->invoice_refund($data);
         $this->assertNull($null);
 
-        $bool                = $this->api_admin->system_update_params(array('invoice_refund_logic' => 'negative_invoice'));
+        $bool = $this->api_admin->system_update_params(['invoice_refund_logic' => 'negative_invoice']);
         $refunded_invoice_id = $this->api_admin->invoice_refund($data);
         $this->assertIsInt($refunded_invoice_id);
 
-        $bool                = $this->api_admin->system_update_params(array('invoice_refund_logic' => 'credit_note'));
+        $bool = $this->api_admin->system_update_params(['invoice_refund_logic' => 'credit_note']);
         $refunded_invoice_id = $this->api_admin->invoice_refund($data);
         $this->assertIsInt($refunded_invoice_id);
 
         try {
-            $this->api_admin->invoice_refund(array('id' => $refunded_invoice_id));
+            $this->api_admin->invoice_refund(['id' => $refunded_invoice_id]);
             $this->fail('Should not refund refunded invoice');
         } catch (Exception) {
-
         }
     }
 
     public function testItemTax()
     {
-        $data = array(
+        $data = [
             'tax_enabled' => 1,
-        );
+        ];
         $this->api_admin->system_update_params($data);
 
-        $data = array(
+        $data = [
             'client_id' => 1,
-        );
-        $id   = $this->api_admin->invoice_prepare($data);
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
 
-        $data['id']                = $id;
+        $data['id'] = $id;
         $data['new_item']['title'] = 'test';
         $data['new_item']['price'] = 40;
         $data['new_item']['taxed'] = 1;
@@ -426,21 +424,21 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     }
 
     /**
-     * Invoice should be marked as paid after adding money to balance
+     * Invoice should be marked as paid after adding money to balance.
      */
     public function testCoverInvoice()
     {
-        $id   = 2;
-        $data = array(
-            'id'          => 1,
-            'amount'      => 100,
+        $id = 2;
+        $data = [
+            'id' => 1,
+            'amount' => 100,
             'description' => 'For invoice payment',
-        );
+        ];
 
         $this->api_admin->client_balance_add_funds($data);
-        $this->api_admin->invoice_pay_with_credits(array('id' => $id));
+        $this->api_admin->invoice_pay_with_credits(['id' => $id]);
 
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        $array = $this->api_admin->invoice_get(['id' => $id]);
         $this->assertEquals('paid', $array['status']);
     }
 
@@ -451,20 +449,19 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     {
         $id = 5;
         $invoiceModel = $this->di['db']->load('Invoice', 5);
-        $this->assertEquals(\Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
-        $invoiceItemModel = $this->di['db']->findOne('InvoiceItem', 'invoice_id = ?', array($invoiceModel->id));
+        $this->assertEquals(Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
+        $invoiceItemModel = $this->di['db']->findOne('InvoiceItem', 'invoice_id = ?', [$invoiceModel->id]);
         $this->assertEquals(Model_InvoiceItem::TYPE_DEPOSIT, $invoiceItemModel->type);
 
         $balanceBefore = $this->api_client->client_balance_get_total();
-        $this->api_admin->invoice_pay_with_credits(array('id' => $id));
+        $this->api_admin->invoice_pay_with_credits(['id' => $id]);
         $balanceAfter = $this->api_client->client_balance_get_total();
 
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        $array = $this->api_admin->invoice_get(['id' => $id]);
 
-        $this->assertEquals(\Model_Invoice::STATUS_PAID, $array['status']);
+        $this->assertEquals(Model_Invoice::STATUS_PAID, $array['status']);
         $this->assertEquals($balanceBefore, $balanceAfter);
     }
-
 
     /**
      * After admin marks as paid deposit invoice account balance should increase.
@@ -473,18 +470,18 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     {
         $id = 5;
         $invoiceModel = $this->di['db']->load('Invoice', 5);
-        $this->assertEquals(\Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
-        $invoiceItemModel = $this->di['db']->findOne('InvoiceItem', 'invoice_id = ?', array($invoiceModel->id));
+        $this->assertEquals(Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
+        $invoiceItemModel = $this->di['db']->findOne('InvoiceItem', 'invoice_id = ?', [$invoiceModel->id]);
         $this->assertEquals(Model_InvoiceItem::TYPE_DEPOSIT, $invoiceItemModel->type);
 
         $balanceBefore = $this->api_client->client_balance_get_total();
-        $this->api_admin->invoice_mark_as_paid(array('id' => $id, 'execute' => 1));
+        $this->api_admin->invoice_mark_as_paid(['id' => $id, 'execute' => 1]);
         $balanceAfter = $this->api_client->client_balance_get_total();
 
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        $array = $this->api_admin->invoice_get(['id' => $id]);
 
-        $this->assertEquals(\Model_Invoice::STATUS_PAID, $array['status']);
-        $this->assertEquals($balanceAfter, $balanceBefore+$invoiceItemModel->price);
+        $this->assertEquals(Model_Invoice::STATUS_PAID, $array['status']);
+        $this->assertEquals($balanceAfter, $balanceBefore + $invoiceItemModel->price);
 
         $accountBalance = $this->di['db']->findOne('ClientBalance', 'order by id desc');
         $this->assertEquals($invoiceItemModel->title, $accountBalance->description);
@@ -492,62 +489,62 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     }
 
     /**
-     * Invoice should be marked as paid after adding money to balance
+     * Invoice should be marked as paid after adding money to balance.
      */
     public function testCredits()
     {
         $id = 2;
         $this->api_admin->invoice_batch_pay_with_credits();
 
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        $array = $this->api_admin->invoice_get(['id' => $id]);
         $this->assertEquals('unpaid', $array['status']);
         $this->assertEmpty($array['credit']);
 
         $this->api_admin->invoice_batch_pay_with_credits();
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        $array = $this->api_admin->invoice_get(['id' => $id]);
         $this->assertEquals('unpaid', $array['status']);
 
-        $data = array(
-            'id'          => 1,
-            'amount'      => 100,
+        $data = [
+            'id' => 1,
+            'amount' => 100,
             'description' => 'For invoice payment',
-        );
+        ];
 
         $this->api_admin->client_balance_add_funds($data);
         $this->api_admin->invoice_batch_pay_with_credits();
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        $array = $this->api_admin->invoice_get(['id' => $id]);
         $this->assertEquals('paid', $array['status']);
     }
 
     public function testPrepareWithoutItems()
     {
-        $data  = array(
+        $data = [
             'client_id' => 1,
-        );
-        $id    = $this->api_admin->invoice_prepare($data);
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
+        $array = $this->api_admin->invoice_get(['id' => $id]);
         $this->assertEquals(0, count($array['lines']));
     }
 
     public function testPrepareWithItems()
     {
-        $data  = array(
+        $data = [
             'client_id' => 1,
-            'items'     => array(
-                array(
-                    'title'    => 'first line test title',
-                    'period'   => '1M',
+            'items' => [
+                [
+                    'title' => 'first line test title',
+                    'period' => '1M',
                     'quantity' => 3,
-                    'price'    => 4.65,
-                ),
-                array(
-                    'title'  => 'second line test title',
-                    'period' => '2M'
-                ),
-            ),
-        );
-        $id    = $this->api_admin->invoice_prepare($data);
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+                    'price' => 4.65,
+                ],
+                [
+                    'title' => 'second line test title',
+                    'period' => '2M',
+                ],
+            ],
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
+        $array = $this->api_admin->invoice_get(['id' => $id]);
 
         $this->assertEquals(2, count($array['lines']));
 
@@ -566,24 +563,24 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testTaskHook()
     {
-        $params = json_encode(array('param' => 'value'));
-        $event  = 'onAfterClientCalledExampleModule';
+        $params = json_encode(['param' => 'value']);
+        $event = 'onAfterClientCalledExampleModule';
 
-        $idata      = array(
+        $idata = [
             'client_id' => 1,
-            'items'     => array(
-                array(
-                    'title'  => 'Test custom item activation',
-                    'price'  => 12.22,
-                    'type'   => 'hook_call',
-                    'task'   => $event,
+            'items' => [
+                [
+                    'title' => 'Test custom item activation',
+                    'price' => 12.22,
+                    'type' => 'hook_call',
+                    'task' => $event,
                     'rel_id' => $params,
-                ),
-            ),
-        );
+                ],
+            ],
+        ];
         $invoice_id = $this->api_admin->invoice_prepare($idata);
-        $this->api_admin->invoice_approve(array('id' => $invoice_id));
-        $invoice = $this->api_admin->invoice_get(array('id' => $invoice_id));
+        $this->api_admin->invoice_approve(['id' => $invoice_id]);
+        $invoice = $this->api_admin->invoice_get(['id' => $invoice_id]);
 
         $line0 = $invoice['lines'][0];
         $this->assertEquals('hook_call', $line0['type']);
@@ -592,18 +589,17 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
         // custom hook executes on payment event
         // event hook inseerts data to database to test
-        $this->api_admin->extension_activate(array('type' => 'mod', 'id' => 'example'));
-        $invoice = $this->api_admin->invoice_mark_as_paid(array('id' => $invoice_id, 'execute' => true));
-        //@todo
-        //$b = R::findOne('extension_meta', "extension = 'mod_example' AND meta_key = 'event_params'");
-        //$this->assertEquals($params, $b->meta_value);
+        $this->api_admin->extension_activate(['type' => 'mod', 'id' => 'example']);
+        $invoice = $this->api_admin->invoice_mark_as_paid(['id' => $invoice_id, 'execute' => true]);
+        // @todo
+        // $b = R::findOne('extension_meta', "extension = 'mod_example' AND meta_key = 'event_params'");
+        // $this->assertEquals($params, $b->meta_value);
     }
 
     public function testInvoiceGetList()
     {
         $array = $this->api_admin->invoice_get_list();
         $this->assertIsArray($array);
-
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -803,13 +799,13 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testInvoiceBatchDelete()
     {
-        $array = $this->api_admin->invoice_get_list(array());
+        $array = $this->api_admin->invoice_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->invoice_batch_delete(array('ids' => $ids));
-        $array  = $this->api_admin->invoice_get_list(array());
+        $result = $this->api_admin->invoice_batch_delete(['ids' => $ids]);
+        $array = $this->api_admin->invoice_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
@@ -817,13 +813,13 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testInvoiceBatchDeleteSubscription()
     {
-        $array = $this->api_admin->invoice_subscription_get_list(array());
+        $array = $this->api_admin->invoice_subscription_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->invoice_batch_delete_subscription(array('ids' => $ids));
-        $array  = $this->api_admin->invoice_subscription_get_list(array());
+        $result = $this->api_admin->invoice_batch_delete_subscription(['ids' => $ids]);
+        $array = $this->api_admin->invoice_subscription_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
@@ -831,13 +827,13 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testInvoiceBatchDeleteTransaction()
     {
-        $array = $this->api_admin->invoice_transaction_get_list(array());
+        $array = $this->api_admin->invoice_transaction_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->invoice_batch_delete_transaction(array('ids' => $ids));
-        $array  = $this->api_admin->invoice_transaction_get_list(array());
+        $result = $this->api_admin->invoice_batch_delete_transaction(['ids' => $ids]);
+        $array = $this->api_admin->invoice_transaction_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
@@ -845,13 +841,13 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testInvoiceBatchDeleteTax()
     {
-        $array = $this->api_admin->invoice_tax_get_list(array());
+        $array = $this->api_admin->invoice_tax_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->invoice_batch_delete_tax(array('ids' => $ids));
-        $array  = $this->api_admin->invoice_tax_get_list(array());
+        $result = $this->api_admin->invoice_batch_delete_tax(['ids' => $ids]);
+        $array = $this->api_admin->invoice_tax_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
@@ -861,25 +857,25 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     {
         $this->assertTrue(true);
 
-        return array(
-            array(100, 100),
-            array('', 1),
-            array(null, 1),
-        );
+        return [
+            [100, 100],
+            ['', 1],
+            [null, 1],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('testPrepareInvoiceDueDateProvider')]
     public function testPrepareInvoiceDueDate($invoice_due_days, $diff)
     {
         if (!is_null($invoice_due_days)) {
-            $this->api_admin->system_update_params(array('invoice_due_days' => $invoice_due_days));
+            $this->api_admin->system_update_params(['invoice_due_days' => $invoice_due_days]);
         }
 
-        $data  = array(
+        $data = [
             'client_id' => 1,
-        );
-        $id    = $this->api_admin->invoice_prepare($data);
-        $array = $this->api_admin->invoice_get(array('id' => $id));
+        ];
+        $id = $this->api_admin->invoice_prepare($data);
+        $array = $this->api_admin->invoice_get(['id' => $id]);
         $this->assertEquals(substr($array['due_at'], 0, 10), date('Y-m-d', strtotime("+ $diff day")));
     }
 
@@ -887,16 +883,15 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     {
         $id = 2;
 
-        $data = array(
+        $data = [
             'id' => $id,
             'name' => 'Updated Tax rule',
             'taxrate' => 99,
-            'country' => 'NL'
-        );
+            'country' => 'NL',
+        ];
         $this->api_admin->invoice_tax_update($data);
 
-
-        $tax = $this->api_admin->invoice_tax_get(array('id' => $id));
+        $tax = $this->api_admin->invoice_tax_get(['id' => $id]);
 
         $this->assertIsArray($tax);
         $this->assertEquals($data['name'], $tax['name']);

@@ -3,15 +3,14 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Box_UrlHelper
 {
-    public $params = array();
+    public $params = [];
     public $match = false;
 
     /**
@@ -19,7 +18,6 @@ class Box_UrlHelper
      */
     public function __construct(private $method, $url, private $conditions, $requestUri)
     {
-
         $requestMethod = $_SERVER['REQUEST_METHOD'];
 
         // Respond identically to a HEAD request as if it's a GET request
@@ -28,9 +26,8 @@ class Box_UrlHelper
         }
 
         if (strtoupper($method) == $requestMethod) {
-
-            $paramNames = array();
-            $paramValues = array();
+            $paramNames = [];
+            $paramValues = [];
 
             preg_match_all('@:([a-zA-Z]+)@', $url, $paramNames, PREG_PATTERN_ORDER);                    // get param names
             $paramNames = $paramNames[1];                                                               // we want the set of matches
@@ -38,7 +35,7 @@ class Box_UrlHelper
             if (preg_match('@^' . $regexedUrl . '$@', $requestUri, $paramValues)) {                            // determine match and get param values
                 array_shift($paramValues);                                                              // remove the complete text match
                 $counted = count($paramNames);
-                for ($i = 0; $i < $counted; $i++) {
+                for ($i = 0; $i < $counted; ++$i) {
                     $this->params[$paramNames[$i]] = $paramValues[$i];
                 }
                 $this->match = true;

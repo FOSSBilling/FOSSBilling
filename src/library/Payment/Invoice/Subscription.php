@@ -2,33 +2,34 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Payment_Invoice_Subscription
 {
     private $id;
     private $amount;
     private $cycle;
     private $unit;
-    
+
     /**
-     * Set id
+     * Set id.
+     *
      * @param int $id
      */
     public function setId($id)
     {
         $this->id = $id;
+
         return $this;
     }
 
     /**
-     * Get id
+     * Get id.
      *
-     * @return integer
+     * @return int
      */
     public function getId()
     {
@@ -36,11 +37,12 @@ class Payment_Invoice_Subscription
     }
 
     /**
-     * @param double $price
+     * @param float $price
      */
     public function setAmount($price)
     {
         $this->amount = $price;
+
         return $this;
     }
 
@@ -52,6 +54,7 @@ class Payment_Invoice_Subscription
     public function setCycle($cycle)
     {
         $this->cycle = $cycle;
+
         return $this;
     }
 
@@ -63,6 +66,7 @@ class Payment_Invoice_Subscription
     public function setUnit($param)
     {
         $this->unit = $param;
+
         return $this;
     }
 

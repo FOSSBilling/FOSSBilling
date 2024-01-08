@@ -24,18 +24,18 @@ class AdminTest extends \BBTestCase
         $adminApi->setIdentity($model);
         $adminApi->setService($service);
         $result = $adminApi->get();
-        $expected = array(
-            'id'    => $model->id,
-            'role'    =>  $model->role,
-            'admin_group_id'    =>  $model->admin_group_id,
-            'email'    =>  $model->email,
-            'name'    =>  $model->name,
-            'signature'    =>  $model->signature,
-            'status'    =>  $model->status,
+        $expected = [
+            'id' => $model->id,
+            'role' => $model->role,
+            'admin_group_id' => $model->admin_group_id,
+            'email' => $model->email,
+            'name' => $model->name,
+            'signature' => $model->signature,
+            'status' => $model->status,
             'api_token' => null,
-            'created_at'    =>  $model->created_at,
-            'updated_at'    =>  $model->updated_at,
-        );
+            'created_at' => $model->created_at,
+            'updated_at' => $model->updated_at,
+        ];
         $this->assertEquals($expected, $result);
     }
 
@@ -63,12 +63,12 @@ class AdminTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('updateAdmin')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi = new \Box\Mod\Profile\Api\Admin();
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
-        $result = $adminApi->update(array('name'=>'Root'));
+        $result = $adminApi->update(['name' => 'Root']);
         $this->assertTrue($result);
     }
 
@@ -80,12 +80,12 @@ class AdminTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('generateNewApiKey')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi = new \Box\Mod\Profile\Api\Admin();
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
-        $result = $adminApi->generate_api_key(array());
+        $result = $adminApi->generate_api_key([]);
         $this->assertTrue($result);
     }
 
@@ -98,13 +98,12 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $adminApi->change_password(array());
+        $adminApi->change_password([]);
         $this->fail('password should be passed');
 
         $this->expectException(\Exception::class);
-        $adminApi->change_password(array('password'=>'new_pass'));
+        $adminApi->change_password(['password' => 'new_pass']);
         $this->fail('password confirmation should be passed');
-
     }
 
     public function testChangePassword()
@@ -121,13 +120,13 @@ class AdminTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('changeAdminPassword')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $adminApi = new \Box\Mod\Profile\Api\Admin();
         $adminApi->setDi($di);
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
-        $result = $adminApi->change_password(array('current_password'=>'oldpw','new_password'=>'84asasd221AS', 'confirm_password'=>'84asasd221AS'));
+        $result = $adminApi->change_password(['current_password' => 'oldpw', 'new_password' => '84asasd221AS', 'confirm_password' => '84asasd221AS']);
         $this->assertTrue($result);
     }
 }

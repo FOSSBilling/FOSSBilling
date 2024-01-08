@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ProductTest extends ApiTestCase
 {
@@ -9,34 +10,34 @@ class Api_Admin_ProductTest extends ApiTestCase
 
         $list = $this->api_admin->product_get_pairs();
         $this->assertIsArray($list);
-        
+
         $list = $this->api_admin->product_get_types();
         $this->assertIsArray($list);
 
-        $data = array(
-            'id'    =>  10,
-        );
+        $data = [
+            'id' => 10,
+        ];
         $array = $this->api_admin->product_get($data);
         $this->assertIsArray($array);
     }
 
     public function testProduct()
     {
-        $data = array(
-            'title'                 => 'title',
-            'type'                  => Model_ProductTable::CUSTOM,
-            'product_category_id'   => 1,
-        );
+        $data = [
+            'title' => 'title',
+            'type' => Model_ProductTable::CUSTOM,
+            'product_category_id' => 1,
+        ];
         $id = $this->api_admin->product_prepare($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
-            'id'  =>  $id,
-            'title'  =>  'new title',
-        );
+        $data = [
+            'id' => $id,
+            'title' => 'new title',
+        ];
         $bool = $this->api_admin->product_update($data);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->product_update_config($data);
         $this->assertTrue($bool);
     }
@@ -46,17 +47,16 @@ class Api_Admin_ProductTest extends ApiTestCase
         $array = $this->api_admin->product_addon_get_pairs();
         $this->assertIsArray($array);
 
-
-        $data = array(
-            'title'                 => 'title',
-        );
+        $data = [
+            'title' => 'title',
+        ];
         $id = $this->api_admin->product_addon_create($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
-            'id'  =>  $id,
-            'title'  =>  'new title',
-        );
+        $data = [
+            'id' => $id,
+            'title' => 'new title',
+        ];
         $array = $this->api_admin->product_addon_get($data);
         $this->assertIsArray($array);
 
@@ -72,16 +72,16 @@ class Api_Admin_ProductTest extends ApiTestCase
         $array = $this->api_admin->product_category_get_pairs();
         $this->assertIsArray($array);
 
-        $data = array(
-            'title'                 => 'title',
-        );
+        $data = [
+            'title' => 'title',
+        ];
         $id = $this->api_admin->product_category_create($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
-            'id'                 => $id,
-            'title'                 => 'title',
-        );
+        $data = [
+            'id' => $id,
+            'title' => 'title',
+        ];
         $array = $this->api_admin->product_category_get($data);
         $this->assertIsArray($array);
 
@@ -90,7 +90,6 @@ class Api_Admin_ProductTest extends ApiTestCase
 
         $bool = $this->api_admin->product_category_delete($data);
         $this->assertTrue($bool);
-
     }
 
     public function testPromos()
@@ -98,18 +97,18 @@ class Api_Admin_ProductTest extends ApiTestCase
         $array = $this->api_admin->product_promo_get_list();
         $this->assertIsArray($array);
 
-        $data = array(
-            'code'                 => 'title',
-            'type'                 => 'percent',
-            'value'                 => '50',
-        );
+        $data = [
+            'code' => 'title',
+            'type' => 'percent',
+            'value' => '50',
+        ];
         $id = $this->api_admin->product_promo_create($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
-            'id'                 => $id,
-            'value'                 => '25',
-        );
+        $data = [
+            'id' => $id,
+            'value' => '25',
+        ];
         $array = $this->api_admin->product_promo_get($data);
         $this->assertIsArray($array);
 
@@ -118,7 +117,6 @@ class Api_Admin_ProductTest extends ApiTestCase
 
         $bool = $this->api_admin->product_promo_delete($data);
         $this->assertTrue($bool);
-
     }
 
     public function testProductGetList()
@@ -202,20 +200,18 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertIsArray($item['applies_to']);
     }
 
-
     public function testCreateTwoDomainProducts()
     {
-        $data = array(
-            'title'                 => 'Two domain product check_',
-            'type'                  => Model_ProductTable::DOMAIN,
-        );
+        $data = [
+            'title' => 'Two domain product check_',
+            'type' => Model_ProductTable::DOMAIN,
+        ];
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage('You have already created domain product.');
 
-
-        for($i = 0; $i< 2; $i++){
+        for ($i = 0; $i < 2; ++$i) {
             $id = $this->api_admin->product_prepare($data);
         }
     }

@@ -2,43 +2,41 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
 
     public function __construct()
     {
-
     }
 
     public static function getConfig()
     {
-        return array(
-            'logo' => array(
+        return [
+            'logo' => [
                 'logo' => 'clientbalance.png',
                 'height' => '50px',
                 'width' => '50px',
-            ),
-        );
+            ],
+        ];
     }
 
-    public function enoughInBalanceToCoverInvoice(\Model_Invoice $invoice)
+    public function enoughInBalanceToCoverInvoice(Model_Invoice $invoice)
     {
         $clientModel = $this->di['db']->load('Client', $invoice->client_id);
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
@@ -46,8 +44,10 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $totalSumWithTaxes = $invoiceService->getTotalWithTax($invoice);
-        if ($totalSumWithTaxes > $sumInBalance)
+        if ($totalSumWithTaxes > $sumInBalance) {
             return false;
+        }
+
         return true;
     }
 
@@ -55,17 +55,17 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
-        if (!$this->enoughInBalanceToCoverInvoice($invoiceModel)){
+        if (!$this->enoughInBalanceToCoverInvoice($invoiceModel)) {
             return __trans('Not enough in balance');
         }
 
         $invoiceService = $this->di['mod_service']('Invoice');
-        if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)){
+        if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
             return __trans('It is forbidden to pay a deposit invoice with this gateway');
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
-        $invoiceUrl = $this->di['tools']->url('invoice/'.$invoiceModel->hash);
+        $invoiceUrl = $this->di['tools']->url('invoice/' . $invoiceModel->hash);
 
         $out = "<script type='text/javascript'>
                 $(document).ready(function(){
@@ -74,12 +74,13 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
                     });
                 });
                 </script>";
-       return $out;
+
+        return $out;
     }
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
-        if(!$this->isIpnValid($data)) {
+        if (!$this->isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
         }
 
@@ -89,26 +90,27 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
         $invoiceService = $this->di['mod_service']('Invoice');
-        if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)){
-            throw new Payment_Exception('It is forbidden to pay a deposit invoice with this gateway', array(), 303);
+        if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
+            throw new Payment_Exception('It is forbidden to pay a deposit invoice with this gateway', [], 303);
         }
 
-        if($invoice_id) {
+        if ($invoice_id) {
             $invoiceService->payInvoiceWithCredits($invoiceModel);
         }
-        $invoiceService->doBatchPayWithCredits(array('client_id' => $invoiceModel->client_id));
+        $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->client_id]);
 
         $tx->error = '';
         $tx->error_code = '';
         $tx->status = 'processed';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
+
         return true;
     }
 
     public function isIpnValid($data)
     {
-        /**
+        /*
          * @TODO do we need validation here? -_-
          */
         return true;
@@ -116,18 +118,19 @@ class Payment_Adapter_ClientBalance implements \FOSSBilling\InjectionAwareInterf
 
     public function getServiceUrl($invoice_id = 0)
     {
-        $gatewayModel = $this->di['db']->findOne('PayGateway', 'gateway = ? and enabled = 1', array('ClientBalance'));
-        if (!$gatewayModel instanceof \Model_PayGateway){
+        $gatewayModel = $this->di['db']->findOne('PayGateway', 'gateway = ? and enabled = 1', ['ClientBalance']);
+        if (!$gatewayModel instanceof Model_PayGateway) {
             throw new Payment_Exception('ClientBalance gateway is not enabled', null, 301);
         }
 
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
-        if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)){
+        if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
             throw new Payment_Exception('It is forbidden to pay a deposit invoice with this gateway', null, 302);
         }
 
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+
         return $gatewayService->getCallbackUrl($gatewayModel, $invoiceModel);
     }
 }

@@ -2,23 +2,22 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Box_Url implements \FOSSBilling\InjectionAwareInterface
+class Box_Url implements FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     protected $baseUri;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -29,7 +28,7 @@ class Box_Url implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Generates a URL
+     * Generates a URL.
      */
     public function get($uri)
     {
@@ -39,7 +38,7 @@ class Box_Url implements \FOSSBilling\InjectionAwareInterface
     /**
      * @param string $uri
      */
-    public function link($uri = null, $params = array())
+    public function link($uri = null, $params = [])
     {
         $uri = trim($uri, '/');
         $link = $this->baseUri . $uri;
@@ -47,14 +46,14 @@ class Box_Url implements \FOSSBilling\InjectionAwareInterface
             $link .= '?' . http_build_query($params);
         }
 
-
         return $link;
     }
 
-    public function adminLink($uri, $params = array())
+    public function adminLink($uri, $params = [])
     {
         $uri = trim($uri, '/');
         $uri = ADMIN_PREFIX . '/' . $uri;
+
         return $this->link($uri, $params);
     }
 }

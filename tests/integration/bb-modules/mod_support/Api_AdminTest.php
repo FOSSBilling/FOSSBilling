@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_SupportTest extends BBDbApiTestCase
 {
@@ -16,9 +17,9 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $item = $list[0];
         $this->assertArrayHasKey('category', $item);
 
-        $data = array(
-            'id'    =>  '1',
-        );
+        $data = [
+            'id' => '1',
+        ];
 
         $data['category_id'] = 1;
         $data['title'] = 'new canned title';
@@ -42,9 +43,9 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $array = $this->api_admin->support_canned_category_pairs();
         $this->assertIsArray($array);
 
-        $data = array(
-            'id'    =>  '1',
-        );
+        $data = [
+            'id' => '1',
+        ];
         $array = $this->api_admin->support_canned_category_get($data);
         $this->assertIsArray($array);
 
@@ -74,12 +75,12 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $bool = $this->api_admin->support_batch_public_ticket_auto_close();
         $this->assertTrue($bool);
 
-        $data = array(
-            'name'  =>  'This is me',
-            'email'  =>  'email@email.com',
-            'subject'  =>  'subject',
-            'message'  =>  'Message',
-        );
+        $data = [
+            'name' => 'This is me',
+            'email' => 'email@email.com',
+            'subject' => 'subject',
+            'message' => 'Message',
+        ];
         $id = $this->api_admin->support_public_ticket_create($data);
         $this->assertTrue(is_numeric($id));
 
@@ -111,15 +112,15 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $bool = $this->api_admin->support_batch_ticket_auto_close();
         $this->assertTrue($bool);
 
-        $array = $this->api_admin->support_ticket_get_statuses(array());
+        $array = $this->api_admin->support_ticket_get_statuses([]);
         $this->assertIsArray($array);
 
-        $data = array(
-            'client_id'      =>  1,
-            'support_helpdesk_id'      =>  1,
-            'subject'      =>  'this is subject',
-            'content'      =>  'this is content',
-        );
+        $data = [
+            'client_id' => 1,
+            'support_helpdesk_id' => 1,
+            'subject' => 'this is subject',
+            'content' => 'this is content',
+        ];
         $id = $this->api_admin->support_ticket_create($data);
         $this->assertTrue(is_numeric($id));
 
@@ -134,7 +135,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $mid = $this->api_admin->support_ticket_reply($data);
         $this->assertTrue(is_numeric($mid));
 
-        $bool = $this->api_admin->support_ticket_message_update(array('id'=>$mid, 'content'=>'This is a new content'));
+        $bool = $this->api_admin->support_ticket_message_update(['id' => $mid, 'content' => 'This is a new content']);
         $this->assertTrue($bool);
 
         $bool = $this->api_admin->support_ticket_close($data);
@@ -144,10 +145,10 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $bool = $this->api_admin->support_ticket_update($data);
         $this->assertTrue($bool);
 
-        $data = array(
-            'ticket_id' =>  $id,
-            'note'      =>  'this is note',
-        );
+        $data = [
+            'ticket_id' => $id,
+            'note' => 'this is note',
+        ];
         $nid = $this->api_admin->support_note_create($data);
         $this->assertTrue(is_numeric($id));
 
@@ -162,9 +163,9 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
     public function testHelpdesk()
     {
-        $data = array(
-            'name'  =>  'title',
-        );
+        $data = [
+            'name' => 'title',
+        ];
         $id = $this->api_admin->support_helpdesk_create($data);
         $this->assertTrue(is_numeric($id));
 
@@ -192,44 +193,44 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
     public function testExpirePublicTicket()
     {
-        $data = array(
-            'name'  =>  'Me',
-            'email'  =>  'test@test.com',
-            'subject'  =>  'test@test.com',
-            'message'  =>  'test@test.com',
-        );
+        $data = [
+            'name' => 'Me',
+            'email' => 'test@test.com',
+            'subject' => 'test@test.com',
+            'message' => 'test@test.com',
+        ];
         $hash = $this->api_guest->support_ticket_create($data);
 
-        $ticket = $this->api_guest->support_ticket_get(array('hash'=>$hash));
+        $ticket = $this->api_guest->support_ticket_get(['hash' => $hash]);
 
-        $model = $this->di['db']->load('SupportPTicket',$ticket['id']);
+        $model = $this->di['db']->load('SupportPTicket', $ticket['id']);
         $model->status = 'on_hold';
         $model->updated_at = date('Y-m-d H:i:s', strtotime('-50 days'));
         $this->di['db']->store($model);
 
         $bool = $this->api_admin->support_batch_public_ticket_auto_close();
 
-        $array = $this->api_admin->support_public_ticket_get_list(array('status'=>'on_hold'));
+        $array = $this->api_admin->support_public_ticket_get_list(['status' => 'on_hold']);
         $this->assertIsArray($array);
         $this->assertTrue(empty($array['list']));
     }
 
     public function testTicketTask()
     {
-        $data = array(
-            'support_helpdesk_id'  =>  1,
-            'subject'  =>  'test@test.com',
-            'content'  =>  'test@test.com',
+        $data = [
+            'support_helpdesk_id' => 1,
+            'subject' => 'test@test.com',
+            'content' => 'test@test.com',
 
-            'rel_type'  =>  'order',
-            'rel_task'  =>  'cancel',
-        );
+            'rel_type' => 'order',
+            'rel_task' => 'cancel',
+        ];
 
         $id = $this->api_client->support_ticket_create($data);
 
-        $data = array(
+        $data = [
             'id' => $id,
-        );
+        ];
 
         $bool = $this->api_admin->support_task_complete($data);
         $this->assertTrue($bool);
@@ -237,7 +238,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
     public function testSupportTicketGetList()
     {
-        $array = $this->api_admin->support_ticket_get_list(array());
+        $array = $this->api_admin->support_ticket_get_list([]);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -266,7 +267,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
             $this->assertArrayHasKey('helpdesk', $item);
             $helpdesk = $item['helpdesk'];
-            if (count($helpdesk)){
+            if (count($helpdesk)) {
                 $this->assertIsArray($helpdesk);
                 $this->assertArrayHasKey('id', $helpdesk);
                 $this->assertArrayHasKey('name', $helpdesk);
@@ -291,13 +292,13 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
     public function testTicketBatchDelete()
     {
-        $array = $this->api_admin->support_ticket_get_list(array());
+        $array = $this->api_admin->support_ticket_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->support_batch_delete(array('ids' => $ids));
-        $array  = $this->api_admin->support_ticket_get_list(array());
+        $result = $this->api_admin->support_batch_delete(['ids' => $ids]);
+        $array = $this->api_admin->support_ticket_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
@@ -305,13 +306,13 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
     public function testPublicTicketBatchDelete()
     {
-        $array = $this->api_admin->support_public_ticket_get_list(array());
+        $array = $this->api_admin->support_public_ticket_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->support_batch_delete_public(array('ids' => $ids));
-        $array  = $this->api_admin->support_public_ticket_get_list(array());
+        $result = $this->api_admin->support_batch_delete_public(['ids' => $ids]);
+        $array = $this->api_admin->support_public_ticket_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
@@ -325,15 +326,15 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $array = $this->api_admin->support_kb_category_get_pairs();
         $this->assertIsArray($array);
 
-        $data = array(
-            'title'    =>      'test',
-        );
+        $data = [
+            'title' => 'test',
+        ];
         $id = $this->api_admin->support_kb_category_create($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
-            'id'    =>$id,
-        );
+        $data = [
+            'id' => $id,
+        ];
         $array = $this->api_admin->support_kb_category_get($data);
         $this->assertIsArray($array);
 
@@ -351,16 +352,16 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $array = $this->api_admin->support_kb_article_get_list();
         $this->assertIsArray($array);
 
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->support_kb_article_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'kb_article_category_id'    =>      1,
-            'title'                     =>      'test',
-        );
+        $data = [
+            'kb_article_category_id' => 1,
+            'title' => 'test',
+        ];
         $id = $this->api_admin->support_kb_article_create($data);
         $this->assertTrue(is_numeric($id));
 
@@ -420,14 +421,13 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
             $this->assertArrayHasKey('articles', $item);
 
             $articles = $item['articles'];
-            if (count($articles)){
+            if (count($articles)) {
                 $article = $articles[0];
                 $this->assertIsArray($article);
                 $this->assertArrayHasKey('id', $article);
                 $this->assertArrayHasKey('slug', $article);
                 $this->assertArrayHasKey('title', $article);
             }
-
         }
     }
 }

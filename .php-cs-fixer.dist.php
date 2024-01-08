@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -33,19 +34,14 @@ return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setFinder(
         (new PhpCsFixer\Finder())
-            ->in(__DIR__ . '/src')
+            ->in([__DIR__ . '/src', __DIR__ . '/tests'])
             ->exclude([
                 'data',
-                'library',
                 'locale',
                 'themes',
                 'vendor',
-                'install',
-                'modules/Wysiwyg',
-                'modules/Spamchecker'
             ])
             ->notPath(
                 'config-sample.php'
             )
-    )
-;
+    );

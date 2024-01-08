@@ -3,7 +3,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -14,8 +14,8 @@ namespace Box\Mod\Spamchecker;
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
-use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -79,18 +79,18 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
-            if (isset($config['captcha_version']) && 2 == $config['captcha_version']) {
-                if (!isset($config['captcha_recaptcha_privatekey']) || '' == $config['captcha_recaptcha_privatekey']) {
+            if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
+                if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
                     throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
 
-                if (!isset($params['g-recaptcha-response']) || '' == $params['g-recaptcha-response']) {
+                if (!isset($params['g-recaptcha-response']) || $params['g-recaptcha-response'] == '') {
                     throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
                 }
 
                 $client = HttpClient::create();
                 $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
-                    'body'  => [
+                    'body' => [
                         'secret' => $config['captcha_recaptcha_privatekey'],
                         'response' => $params['g-recaptcha-response'],
                         'remoteip' => $di['request']->getClientAddress(),
@@ -162,22 +162,23 @@ class Service implements InjectionAwareInterface
 
     /**
      * Checks if a provided email address is using a disposable email service.
-     * 
-     * @param string $email The email address to check.
-     * @param bool $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
-     * 
-     * @return bool true if the email address is disposable, false if it isn't.
+     *
+     * @param string $email the email address to check
+     * @param bool   $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
+     *
+     * @return bool true if the email address is disposable, false if it isn't
      */
     public function isATempEmail(string $email, bool $throw = true): bool
     {
-        /* 
+        /*
          * The EmailChecker package utilizes PHP's email verification which does not correctly validate international email addresses.
          * We are already using a proper validation package that does validate these as it should, so below is actually a workaround for the limitation.
          * @see https://github.com/MattKetmo/EmailChecker/issues/92
-         * 
+         *
          * Without this workaround, FOSSBilling would be unable to accept international email addresses when disposable email checking is enabled.
          */
         $adapter = new Adapter\ArrayAdapter($this->getTempMailDomainDB());
+
         try {
             [$local, $domain] = Utilities::parseEmailAddress($email);
         } catch (\Exception) {
@@ -197,8 +198,6 @@ class Service implements InjectionAwareInterface
      * Fetches the most recent list of disposable email addresses, parses them to remove blanks or invalid domains, and then returns it as an array.
      * The database is from here: https://github.com/7c/fakefilter
      * Results are cached for 1 week unless there's an error at which point the list will be retried in a half hour.
-     * 
-     * @return array 
      */
     private function getTempMailDomainDB(): array
     {
@@ -213,6 +212,7 @@ class Service implements InjectionAwareInterface
                 @file_put_contents($dbPath, $response->getContent());
             } else {
                 $item->expiresAfter(3600);
+
                 return [];
             }
 
@@ -220,6 +220,7 @@ class Service implements InjectionAwareInterface
             @unlink($dbPath);
             if (!$database) {
                 $item->expiresAfter(3600);
+
                 return [];
             }
 

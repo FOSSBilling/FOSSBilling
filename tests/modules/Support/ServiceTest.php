@@ -2,14 +2,12 @@
 
 namespace Box\Tests\Mod\Support;
 
-use \RedBeanPHP\OODBBean;
-
 class ServiceTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Support\Service
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
@@ -26,31 +24,31 @@ class ServiceTest extends \BBTestCase
 
     public function testOnAfterClientOpenTicket()
     {
-        $toApiArrayReturn   = array(
-            'client' => array(
-                'id' => random_int(1, 100)
-            )
-        );
-        $serviceMock        = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
+        $toApiArrayReturn = [
+            'client' => [
+                'id' => random_int(1, 100),
+            ],
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getTicketById', 'toApiArray'])->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
-            ->will($this->returnValue($supportTicketModel));
+            ->willReturn($supportTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                    = new \Pimple\Container();
-        $di['mod_service']     = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -61,7 +59,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterClientOpenTicket($eventMock);
         $this->assertNull($result);
@@ -69,31 +67,31 @@ class ServiceTest extends \BBTestCase
 
     public function testOnAfterAdminOpenTicket()
     {
-        $toApiArrayReturn   = array(
-            'client' => array(
-                'id' => random_int(1, 100)
-            )
-        );
-        $serviceMock        = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
+        $toApiArrayReturn = [
+            'client' => [
+                'id' => random_int(1, 100),
+            ],
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getTicketById', 'toApiArray'])->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
-            ->will($this->returnValue($supportTicketModel));
+            ->willReturn($supportTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -104,7 +102,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterAdminOpenTicket($eventMock);
         $this->assertNull($result);
@@ -112,31 +110,31 @@ class ServiceTest extends \BBTestCase
 
     public function testOnAfterAdminCloseTicket()
     {
-        $toApiArrayReturn   = array(
-            'client' => array(
-                'id' => random_int(1, 100)
-            )
-        );
-        $serviceMock        = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
+        $toApiArrayReturn = [
+            'client' => [
+                'id' => random_int(1, 100),
+            ],
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getTicketById', 'toApiArray'])->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
-            ->will($this->returnValue($supportTicketModel));
+            ->willReturn($supportTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -147,7 +145,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterAdminCloseTicket($eventMock);
         $this->assertNull($result);
@@ -155,31 +153,31 @@ class ServiceTest extends \BBTestCase
 
     public function testOnAfterAdminReplyTicket()
     {
-        $toApiArrayReturn   = array(
-            'client' => array(
-                'id' => random_int(1, 100)
-            )
-        );
-        $serviceMock        = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getTicketById', 'toApiArray'))->getMock();
+        $toApiArrayReturn = [
+            'client' => [
+                'id' => random_int(1, 100),
+            ],
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getTicketById', 'toApiArray'])->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
-            ->will($this->returnValue($supportTicketModel));
+            ->willReturn($supportTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -190,7 +188,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterAdminReplyTicket($eventMock);
         $this->assertNull($result);
@@ -198,30 +196,30 @@ class ServiceTest extends \BBTestCase
 
     public function testOnAfterGuestPublicTicketOpen()
     {
-        $toApiArrayReturn    = array(
+        $toApiArrayReturn = [
             'author_email' => 'email@example.com',
-            'author_name'  => 'Name',
-        );
-        $serviceMock         = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            'author_name' => 'Name',
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getPublicTicketById', 'publicToApiArray'])->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
-            ->will($this->returnValue($supportPTicketModel));
+            ->willReturn($supportPTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -231,7 +229,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterGuestPublicTicketOpen($eventMock);
         $this->assertNull($result);
@@ -239,30 +237,30 @@ class ServiceTest extends \BBTestCase
 
     public function testOnAfterAdminPublicTicketOpen()
     {
-        $toApiArrayReturn    = array(
+        $toApiArrayReturn = [
             'author_email' => 'email@example.com',
-            'author_name'  => 'Name',
-        );
-        $serviceMock         = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            'author_name' => 'Name',
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getPublicTicketById', 'publicToApiArray'])->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
-            ->will($this->returnValue($supportPTicketModel));
+            ->willReturn($supportPTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -273,7 +271,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterAdminPublicTicketOpen($eventMock);
         $this->assertNull($result);
@@ -281,30 +279,30 @@ class ServiceTest extends \BBTestCase
 
     public function testOnAfterAdminPublicTicketReply()
     {
-        $toApiArrayReturn    = array(
+        $toApiArrayReturn = [
             'author_email' => 'email@example.com',
-            'author_name'  => 'Name',
-        );
-        $serviceMock         = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            'author_name' => 'Name',
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getPublicTicketById', 'publicToApiArray'])->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
-            ->will($this->returnValue($supportPTicketModel));
+            ->willReturn($supportPTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -315,39 +313,38 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterAdminPublicTicketReply($eventMock);
         $this->assertNull($result);
     }
 
-
     public function testOnAfterAdminPublicTicketClose()
     {
-        $toApiArrayReturn    = array(
+        $toApiArrayReturn = [
             'author_email' => 'email@example.com',
-            'author_name'  => 'Name',
-        );
-        $serviceMock         = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
+            'author_name' => 'Name',
+        ];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['getPublicTicketById', 'publicToApiArray'])->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
-            ->will($this->returnValue($supportPTicketModel));
+            ->willReturn($supportPTicketModel);
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
-            ->will($this->returnValue($toApiArrayReturn));
+            ->willReturn($toApiArrayReturn);
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->onlyMethods(array('sendTemplate'))->getMock();
+            ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                   = new \Pimple\Container();
-        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName) {
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName) {
+            if ($serviceName == 'support') {
                 return $serviceMock;
             }
         });
@@ -358,7 +355,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
-            ->will($this->returnValue($di));
+            ->willReturn($di);
 
         $result = $serviceMock->onAfterAdminPublicTicketClose($eventMock);
         $this->assertNull($result);
@@ -369,9 +366,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->willReturn(new \Model_SupportTicket());
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -381,14 +378,14 @@ class ServiceTest extends \BBTestCase
 
     public function testGetPublicTicketById()
     {
-        $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($supportTicketModel));
+            ->willReturn($supportTicketModel);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -404,14 +401,14 @@ class ServiceTest extends \BBTestCase
 
     public function testFindOneByClient()
     {
-        $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($supportTicketModel));
+            ->willReturn($supportTicketModel);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -428,9 +425,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -445,48 +442,48 @@ class ServiceTest extends \BBTestCase
 
     public static function getSearchQueryProvider()
     {
-        return array(
-            array(
-                array(
-                    'search'              => 'query',
-                    'id'                  => random_int(1, 100),
-                    'status'              => 'open',
-                    'client_id'           => random_int(1, 100),
-                    'client'              => 'Client name',
-                    'order_id'            => random_int(1, 100),
-                    'subject'             => 'subject',
-                    'content'             => 'Content',
+        return [
+            [
+                [
+                    'search' => 'query',
+                    'id' => random_int(1, 100),
+                    'status' => 'open',
+                    'client_id' => random_int(1, 100),
+                    'client' => 'Client name',
+                    'order_id' => random_int(1, 100),
+                    'subject' => 'subject',
+                    'content' => 'Content',
                     'support_helpdesk_id' => random_int(1, 100),
-                    'created_at'          => date('Y-m-d H:i:s'),
-                    'date_from'           => date('Y-m-d H:i:s'),
-                    'date_to'             => date('Y-m-d H:i:s'),
-                    'priority'            => random_int(1, 100),
-                )
-            ),
-            array(
-                array(
-                    'search'              => random_int(1, 100),
-                    'id'                  => random_int(1, 100),
-                    'status'              => 'open',
-                    'client_id'           => random_int(1, 100),
-                    'client'              => 'Client name',
-                    'order_id'            => random_int(1, 100),
-                    'subject'             => 'subject',
-                    'content'             => 'Content',
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'date_from' => date('Y-m-d H:i:s'),
+                    'date_to' => date('Y-m-d H:i:s'),
+                    'priority' => random_int(1, 100),
+                ],
+            ],
+            [
+                [
+                    'search' => random_int(1, 100),
+                    'id' => random_int(1, 100),
+                    'status' => 'open',
+                    'client_id' => random_int(1, 100),
+                    'client' => 'Client name',
+                    'order_id' => random_int(1, 100),
+                    'subject' => 'subject',
+                    'content' => 'Content',
                     'support_helpdesk_id' => random_int(1, 100),
-                    'created_at'          => date('Y-m-d H:i:s'),
-                    'date_from'           => date('Y-m-d H:i:s'),
-                    'date_to'             => date('Y-m-d H:i:s'),
-                    'priority'            => random_int(1, 100),
-                )
-            )
-        );
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'date_from' => date('Y-m-d H:i:s'),
+                    'date_to' => date('Y-m-d H:i:s'),
+                    'priority' => random_int(1, 100),
+                ],
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getSearchQueryProvider')]
     public function testGetSearchQuery($data)
     {
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
         [$query, $bindings] = $this->service->getSearchQuery($data);
@@ -496,17 +493,17 @@ class ServiceTest extends \BBTestCase
 
     public function testCounter()
     {
-        $arr    = array(
+        $arr = [
             \Model_SupportTicket::OPENED => random_int(1, 100),
             \Model_SupportTicket::ONHOLD => random_int(1, 100),
             \Model_SupportTicket::CLOSED => random_int(1, 100),
-        );
+        ];
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue($arr));
+            ->willReturn($arr);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -524,9 +521,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($ticket, $ticket)));
+            ->willReturn([$ticket, $ticket]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -542,9 +539,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue(array(array('id' => 1))));
+            ->willReturn([['id' => 1]]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -558,9 +555,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -573,9 +570,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -588,14 +585,14 @@ class ServiceTest extends \BBTestCase
 
     public function testCheckIfTaskAlreadyExistsTrue()
     {
-        $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($supportTicketModel));
+            ->willReturn($supportTicketModel);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -611,9 +608,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(false));
+            ->willReturn(false);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -626,10 +623,10 @@ class ServiceTest extends \BBTestCase
 
     public static function closeTicketProvider()
     {
-        return array(
-            array(new \Model_Admin()),
-            array(new \Model_Client())
-        );
+        return [
+            [new \Model_Admin()],
+            [new \Model_Client()],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('closeTicketProvider')]
@@ -638,14 +635,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -661,10 +658,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -682,10 +679,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
             ->method('getExistingModelById')
-            ->will($this->returnValue($helpdesk));
+            ->willReturn($helpdesk);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -701,15 +698,15 @@ class ServiceTest extends \BBTestCase
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
         $helpdesk->support_helpdesk_id = random_int(1, 100);
-        $helpdesk->can_reopen          = true;
+        $helpdesk->can_reopen = true;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($helpdesk));
+            ->willReturn($helpdesk);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -730,19 +727,18 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($model)));
+            ->willReturn([$model]);
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-
 
         $result = $this->service->rmByClient($client);
         $this->assertNull($result);
@@ -754,7 +750,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->exactly(2))
             ->method('find')
             ->willReturnCallback(function (...$args) {
-                $value = match($args[0]) {
+                $value = match ($args[0]) {
                     'SupportTicketNote' => new \Model_SupportTicketNote(),
                     'SupportTicketMessage' => new \Model_SupportTicketMessage()
                 };
@@ -764,10 +760,10 @@ class ServiceTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -788,11 +784,11 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($supportTicketMessageModel));
+            ->willReturn($supportTicketMessageModel);
         $dbMock->expects($this->atleastOnce())
             ->method('load')
             ->willReturnCallback(function (...$args) use ($helpdesk) {
-                $value = match($args[0]) {
+                $value = match ($args[0]) {
                     'SupportHelpdesk' => $helpdesk,
                     'Client' => new \Model_Client()
                 };
@@ -802,26 +798,26 @@ class ServiceTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array(new \Model_SupportTicketNote())));
+            ->willReturn([new \Model_SupportTicketNote()]);
 
-        $ticketMessages = array(new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage());
-        $serviceMock    = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'))->getMock();
+        $ticketMessages = [new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage()];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('messageGetRepliesCount')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
         $serviceMock->expects($this->atLeastOnce())->method('messageToApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskToApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $serviceMock->expects($this->atLeastOnce())->method('messageGetTicketMessages')
-            ->will($this->returnValue($ticketMessages));
+            ->willReturn($ticketMessages);
         $serviceMock->expects($this->atLeastOnce())->method('noteToApiArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $serviceMock->expects($this->atLeastOnce())->method('getClientApiArrayForTicket')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
 
@@ -842,7 +838,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(new \Model_SupportTicketMessage()));
+            ->willReturn(new \Model_SupportTicketMessage());
         $dbMock->expects($this->atleastOnce())
             ->method('load')
             ->willReturnCallback(function (...$args) {
@@ -858,32 +854,32 @@ class ServiceTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array(new \Model_SupportTicketNote())));
+            ->willReturn([new \Model_SupportTicketNote()]);
 
-        $ticketMessages = array(new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage());
-        $serviceMock    = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'))->getMock();
+        $ticketMessages = [new \Model_SupportTicketMessage(), new \Model_SupportTicketMessage()];
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+            ->onlyMethods(['messageGetRepliesCount', 'messageToApiArray', 'helpdeskToApiArray', 'messageGetTicketMessages', 'noteToApiArray', 'getClientApiArrayForTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('messageGetRepliesCount')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
         $serviceMock->expects($this->atLeastOnce())->method('messageToApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskToApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $serviceMock->expects($this->atLeastOnce())->method('messageGetTicketMessages')
-            ->will($this->returnValue($ticketMessages));
+            ->willReturn($ticketMessages);
         $serviceMock->expects($this->atLeastOnce())->method('noteToApiArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $serviceMock->expects($this->atLeastOnce())->method('getClientApiArrayForTicket')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
 
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
-        $ticket->rel_id   = random_int(1, 100);
+        $ticket->rel_id = random_int(1, 100);
         $ticket->rel_type = 'Type';
 
         $result = $serviceMock->toApiArray($ticket, true, new \Model_Admin());
@@ -900,17 +896,17 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue(new \Model_Client()));
+            ->willReturn(new \Model_Client());
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
-            ->onlyMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(['toApiArray'])->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn() => $clientServiceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -926,17 +922,17 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
-            ->onlyMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(['toApiArray'])->getMock();
         $clientServiceMock->expects($this->never())->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $dbMock;
-        $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn() => $clientServiceMock);
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -956,9 +952,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue($admin));
+            ->willReturn($admin);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -973,10 +969,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -992,14 +988,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('noteGetAuthorDetails'))->getMock();
+            ->onlyMethods(['noteGetAuthorDetails'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteGetAuthorDetails')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1015,20 +1011,20 @@ class ServiceTest extends \BBTestCase
 
     public function testHelpdeskGetSearchQuery()
     {
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
 
-        $data = array(
-            'search' => 'SearchQuery'
-        );
+        $data = [
+            'search' => 'SearchQuery',
+        ];
         [$query, $bindings] = $this->service->helpdeskGetSearchQuery($data);
 
-        $expectedBindings = array(
-            ':name'      => '%SearchQuery%',
-            ':email'     => '%SearchQuery%',
+        $expectedBindings = [
+            ':name' => '%SearchQuery%',
+            ':email' => '%SearchQuery%',
             ':signature' => '%SearchQuery%',
-        );
+        ];
 
         $this->assertIsString($query);
         $this->assertIsArray($bindings);
@@ -1041,10 +1037,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue(array(0 => 'General')));
+            ->willReturn([0 => 'General']);
 
-
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1062,21 +1057,21 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = random_int(1, 100);
-        $result       = $this->service->helpdeskRm($helpdesk);
+        $result = $this->service->helpdeskRm($helpdesk);
         $this->assertTrue($result);
     }
 
@@ -1085,14 +1080,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array(new \Model_SupportTicket())));
+            ->willReturn([new \Model_SupportTicket()]);
 
         $dbMock->expects($this->never())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -1100,7 +1095,7 @@ class ServiceTest extends \BBTestCase
         $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = random_int(1, 100);
         $this->expectException(\FOSSBilling\Exception::class);
-        $result       = $this->service->helpdeskRm($helpdesk);
+        $result = $this->service->helpdeskRm($helpdesk);
         $this->assertTrue($result);
     }
 
@@ -1109,16 +1104,16 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = random_int(1, 100);
-        $result       = $this->service->helpdeskToApiArray($helpdesk);
+        $result = $this->service->helpdeskToApiArray($helpdesk);
         $this->assertIsArray($result);
     }
 
@@ -1127,9 +1122,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array(new \Model_SupportTicketMessage())));
+            ->willReturn([new \Model_SupportTicketMessage()]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1146,9 +1141,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1169,9 +1164,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue($admin));
+            ->willReturn($admin);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1194,9 +1189,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue($client));
+            ->willReturn($client);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1215,14 +1210,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('messageGetAuthorDetails'))->getMock();
+            ->onlyMethods(['messageGetAuthorDetails'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('messageGetAuthorDetails')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -1240,23 +1235,23 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
 
-        $data = array(
+        $data = [
             'support_helpdesk_id' => random_int(1, 100),
-            'status'              => \Model_SupportTicket::OPENED,
-            'subject'             => 'Subject',
-            'priority'            => random_int(1, 100),
-        );
+            'status' => \Model_SupportTicket::OPENED,
+            'subject' => 'Subject',
+            'priority' => random_int(1, 100),
+        ];
 
         $result = $this->service->ticketUpdate($ticket, $data);
         $this->assertTrue($result);
@@ -1267,22 +1262,22 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
         $message = new \Model_SupportTicketMessage();
         $message->loadBean(new \DummyBean());
 
-        $data = array(
+        $data = [
             'support_helpdesk_id' => random_int(1, 100),
-            'status'              => \Model_SupportTicket::OPENED,
-            'subject'             => 'Subject',
-            'priority'            => random_int(1, 100),
-        );
+            'status' => \Model_SupportTicket::OPENED,
+            'subject' => 'Subject',
+            'priority' => random_int(1, 100),
+        ];
 
         $result = $this->service->ticketMessageUpdate($message, $data);
         $this->assertTrue($result);
@@ -1298,10 +1293,10 @@ class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
         $client->id = random_int(1, 100);
 
-        return array(
-            array($admin),
-            array($client)
-        );
+        return [
+            [$admin],
+            [$client],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('ticketReplyProvider')]
@@ -1314,24 +1309,23 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($message));
+            ->willReturn($message);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
-
 
         $result = $this->service->ticketReply($ticket, $identity, 'Content');
         $this->assertIsInt($result);
@@ -1347,18 +1341,18 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($message));
+            ->willReturn($message);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1374,10 +1368,10 @@ class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
         $client->id = random_int(1, 100);
 
-        $data = array(
+        $data = [
             'subject' => 'Subject',
-            'content' => 'Content'
-        );
+            'content' => 'Content',
+        ];
 
         $result = $this->service->ticketCreateForAdmin($client, $helpdesk, $data, $admin);
         $this->assertIsInt($result);
@@ -1393,37 +1387,37 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($message));
+            ->willReturn($message);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('fire')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
-        $di['tools']          = $toolsMock;
+        $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
 
-        $data = array(
-            'name'    => 'Name',
-            'email'   => 'email@example.com',
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@example.com',
             'subject' => 'Subject',
-            'message' => 'message'
-        );
+            'message' => 'message',
+        ];
 
         $result = $this->service->ticketCreateForGuest($data);
         $this->assertIsString($result);
@@ -1441,62 +1435,62 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->with('SupportTicket')
-            ->will($this->returnValue($ticket));
+            ->willReturn($ticket);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_SupportPr()));
+            ->willReturn(new \Model_SupportPr());
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $config         = array(
-            'autorespond_enable'     => 1,
-            'autorespond_message_id' => random_int(1, 100)
-        );
+        $config = [
+            'autorespond_enable' => 1,
+            'autorespond_message_id' => random_int(1, 100),
+        ];
         $supportModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()
-            ->onlyMethods(array('getConfig'))->getMock();
+            ->onlyMethods(['getConfig'])->getMock();
         $supportModMock->expects($this->atLeastOnce())->method('getConfig')
-            ->will($this->returnValue($config));
+            ->willReturn($config);
 
         $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
-            ->onlyMethods(array('getCronAdmin'))->getMock();
+            ->onlyMethods(['getCronAdmin'])->getMock();
         $staffServiceMock->expects($this->atLeastOnce())->method('getCronAdmin')
-            ->will($this->returnValue(new \Model_Admin()));
+            ->willReturn(new \Model_Admin());
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('ticketReply', 'messageCreateForTicket', 'cannedToApiArray'))->getMock();
+            ->onlyMethods(['ticketReply', 'messageCreateForTicket', 'cannedToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
-            ->will($this->returnValue(new \Model_Admin()));
+            ->willReturn(new \Model_Admin());
         $serviceMock->expects($this->atLeastOnce())->method('messageCreateForTicket')
-            ->will($this->returnValue(new \Model_Admin()));
+            ->willReturn(new \Model_Admin());
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
-            ->will($this->returnValue(array('content' => 'Content')));
+            ->willReturn(['content' => 'Content']);
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
-        $di['mod']            = $di->protect(fn() => $supportModMock);
-        $di['mod_service']    = $di->protect(fn() => $staffServiceMock);
+        $di['mod'] = $di->protect(fn () => $supportModMock);
+        $di['mod_service'] = $di->protect(fn () => $staffServiceMock);
 
         $serviceMock->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
 
-        $guest     = new \Model_Guest();
+        $guest = new \Model_Guest();
         $guest->id = random_int(1, 100);
 
-        $data = array(
-            'name'    => 'Name',
-            'email'   => 'email@example.com',
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@example.com',
             'subject' => 'Subject',
-            'content' => 'content'
-        );
+            'content' => 'content',
+        ];
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
@@ -1516,22 +1510,22 @@ class ServiceTest extends \BBTestCase
         $message->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('checkIfTaskAlreadyExists'))->getMock();
+            ->onlyMethods(['checkIfTaskAlreadyExists'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('checkIfTaskAlreadyExists')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
 
-        $guest     = new \Model_Guest();
+        $guest = new \Model_Guest();
         $guest->id = random_int(1, 100);
 
-        $data = array(
-            'rel_id'        => random_int(1, 100),
-            'rel_type'      => 'Type',
-            'rel_task'      => 'Task',
+        $data = [
+            'rel_id' => random_int(1, 100),
+            'rel_type' => 'Type',
+            'rel_task' => 'Task',
             'rel_new_value' => 'New value',
-        );
+        ];
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
@@ -1540,7 +1534,7 @@ class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
         $client->id = random_int(1, 100);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $serviceMock->setDi($di);
 
@@ -1558,33 +1552,33 @@ class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
         $client->id = random_int(1, 100);
 
-        return array(
-            array(
-                $admin
-            ),
-            array(
-                $client
-            ),
-        );
+        return [
+            [
+                $admin,
+            ],
+            [
+                $client,
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('messageCreateForTicketProvider')]
     public function testMessageCreateForTicket($identity)
     {
-        $randId               = random_int(1, 100);
+        $randId = random_int(1, 100);
         $supportTicketMessage = new \Model_SupportTicketMessage();
         $supportTicketMessage->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($supportTicketMessage));
+            ->willReturn($supportTicketMessage);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di            = new \Pimple\Container();
-        $di['db']      = $dbMock;
-        $di['logger']  = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $this->service->setDi($di);
 
@@ -1598,20 +1592,20 @@ class ServiceTest extends \BBTestCase
 
     public function testMessageCreateForTicketIdentityException()
     {
-        $randId               = random_int(1, 100);
+        $randId = random_int(1, 100);
         $supportTicketMessage = new \Model_SupportTicketMessage();
         $supportTicketMessage->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($supportTicketMessage));
+            ->willReturn($supportTicketMessage);
         $dbMock->expects($this->never())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di            = new \Pimple\Container();
-        $di['db']      = $dbMock;
-        $di['logger']  = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['request'] = $this->getMockBuilder('B\FOSSBilling\Request')->getMock();
         $this->service->setDi($di);
 
@@ -1635,9 +1629,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(new \Model_SupportPTicket()));
+            ->willReturn(new \Model_SupportPTicket());
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1654,9 +1648,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1671,38 +1665,37 @@ class ServiceTest extends \BBTestCase
 
     public static function publicGetSearchQueryProvider()
     {
-        return array(
-            array(
-                array(
-                    'search'  => 'Query',
-                    'id'      => random_int(1, 100),
-                    'status'  => \Model_SupportPTicket::OPENED,
-                    'name'    => 'Name',
-                    'email'   => 'email@example.com',
+        return [
+            [
+                [
+                    'search' => 'Query',
+                    'id' => random_int(1, 100),
+                    'status' => \Model_SupportPTicket::OPENED,
+                    'name' => 'Name',
+                    'email' => 'email@example.com',
                     'subject' => 'Subject',
                     'content' => 'Content',
-                )
-            ),
-            array(
-                array(
-                    'search'  => random_int(1, 100),
-                    'search'  => random_int(1, 100),
-                    'id'      => random_int(1, 100),
-                    'status'  => \Model_SupportPTicket::OPENED,
-                    'name'    => 'Name',
-                    'email'   => 'email@example.com',
+                ],
+            ],
+            [
+                [
+                    'search' => random_int(1, 100),
+                    'search' => random_int(1, 100),
+                    'id' => random_int(1, 100),
+                    'status' => \Model_SupportPTicket::OPENED,
+                    'name' => 'Name',
+                    'email' => 'email@example.com',
                     'subject' => 'Subject',
                     'content' => 'Content',
-                )
-            ),
-        );
+                ],
+            ],
+        ];
     }
-
 
     #[\PHPUnit\Framework\Attributes\DataProvider('publicGetSearchQueryProvider')]
     public function testPublicGetSearchQuery($data)
     {
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
 
@@ -1713,17 +1706,17 @@ class ServiceTest extends \BBTestCase
 
     public function testPublicCounter()
     {
-        $arr    = array(
+        $arr = [
             \Model_SupportPTicket::OPENED => random_int(1, 100),
             \Model_SupportPTicket::ONHOLD => random_int(1, 100),
             \Model_SupportPTicket::CLOSED => random_int(1, 100),
-        );
+        ];
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue($arr));
+            ->willReturn($arr);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1739,9 +1732,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($ticket, $ticket)));
+            ->willReturn([$ticket, $ticket]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1755,9 +1748,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1771,9 +1764,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($ticket, $ticket)));
+            ->willReturn([$ticket, $ticket]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1784,10 +1777,10 @@ class ServiceTest extends \BBTestCase
 
     public static function publicCloseTicketProvider()
     {
-        return array(
-            array(new \Model_Admin()),
-            array(new \Model_Guest())
-        );
+        return [
+            [new \Model_Admin()],
+            [new \Model_Guest()],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('publicCloseTicketProvider')]
@@ -1796,14 +1789,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -1819,10 +1812,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -1838,13 +1831,13 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array(new \Model_SupportPTicketMessage())));
+            ->willReturn([new \Model_SupportPTicketMessage()]);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -1859,43 +1852,43 @@ class ServiceTest extends \BBTestCase
     {
         $self = new ServiceTest('ServiceTest');
 
-        return array(
-            array(
+        return [
+            [
                 new \Model_SupportPTicketMessage(),
-                $self->atLeastOnce()
-            ),
-            array(
+                $self->atLeastOnce(),
+            ],
+            [
                 null,
-                $self->never()
-            )
-        );
+                $self->never(),
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('publicToApiArrayProvider')]
     public function testPublicToApiArray($findOne, $publicMessageGetAuthorDetailsCalled)
     {
-        $ticketMessages = array(new \Model_SupportPTicketMessage(), new \Model_SupportPTicketMessage());
+        $ticketMessages = [new \Model_SupportPTicketMessage(), new \Model_SupportPTicketMessage()];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->any())
             ->method('findOne')
-            ->will($this->returnValue($findOne));
+            ->willReturn($findOne);
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $dbMock->expects($this->any())
             ->method('find')
-            ->will($this->returnValue($ticketMessages));
+            ->willReturn($ticketMessages);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('publicMessageToApiArray', 'publicMessageGetAuthorDetails'))->getMock();
+            ->onlyMethods(['publicMessageToApiArray', 'publicMessageGetAuthorDetails'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageToApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
-            ->will($this->returnValue(array('name' => 'Name', 'email' => 'email#example.com')));
+            ->willReturn(['name' => 'Name', 'email' => 'email#example.com']);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
 
@@ -1919,10 +1912,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($admin));
+            ->willReturn($admin);
 
-
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1940,15 +1932,15 @@ class ServiceTest extends \BBTestCase
     {
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \DummyBean());
-        $ticket->author_name  = "Name";
-        $ticket->author_email = "Email@example.com";
+        $ticket->author_name = 'Name';
+        $ticket->author_email = 'Email@example.com';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($ticket));
+            ->willReturn($ticket);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1967,14 +1959,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('publicMessageGetAuthorDetails'))->getMock();
+            ->onlyMethods(['publicMessageGetAuthorDetails'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -1996,10 +1988,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($message));
+            ->willReturn($message);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
@@ -2007,25 +1999,25 @@ class ServiceTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
-        $di['tools']          = $toolsMock;
+        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $admin = new \Model_Admin();
         $admin->loadBean(new \DummyBean());
         $admin->id = random_int(1, 100);
 
-        $data = array(
-            'email'   => 'email@example.com',
-            'name'    => 'Name',
+        $data = [
+            'email' => 'email@example.com',
+            'name' => 'Name',
             'message' => 'Message',
             'request' => 'Request',
             'subject' => 'Subject',
-        );
+        ];
 
         $result = $this->service->publicTicketCreate($data, $admin);
         $this->assertIsInt($result);
@@ -2037,23 +2029,23 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \DummyBean());
 
-        $data = array(
+        $data = [
             'support_helpdesk_id' => random_int(1, 100),
-            'status'              => \Model_SupportTicket::OPENED,
-            'subject'             => 'Subject',
-            'priority'            => random_int(1, 100),
-        );
+            'status' => \Model_SupportTicket::OPENED,
+            'subject' => 'Subject',
+            'priority' => random_int(1, 100),
+        ];
 
         $result = $this->service->publicTicketUpdate($ticket, $data);
         $this->assertTrue($result);
@@ -2068,18 +2060,18 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($message));
+            ->willReturn($message);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -2103,18 +2095,18 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($message));
+            ->willReturn($message);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $di                   = new \Pimple\Container();
-        $di['db']             = $dbMock;
-        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -2135,24 +2127,24 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
 
-        $data = array(
-            'name'        => 'Name',
-            'email'       => 'email@example.com',
-            'can_reopen'  => 1,
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@example.com',
+            'can_reopen' => 1,
             'close_after' => random_int(1, 100),
-            'signature'   => 'Signature',
-        );
+            'signature' => 'Signature',
+        ];
 
         $result = $this->service->helpdeskUpdate($helpdesk, $data);
         $this->assertTrue($result);
@@ -2160,33 +2152,33 @@ class ServiceTest extends \BBTestCase
 
     public function testHelpdeskCreate()
     {
-        $randId        = random_int(1, 100);
+        $randId = random_int(1, 100);
         $helpDeskModel = new \Model_SupportHelpdesk();
         $helpDeskModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($helpDeskModel));
+            ->willReturn($helpDeskModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportHelpdesk();
         $ticket->loadBean(new \DummyBean());
 
-        $data = array(
-            'name'        => 'Name',
-            'email'       => 'email@example.com',
-            'can_reopen'  => 1,
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@example.com',
+            'can_reopen' => 1,
             'close_after' => random_int(1, 100),
-            'signature'   => 'Signature',
-        );
+            'signature' => 'Signature',
+        ];
 
         $result = $this->service->helpdeskCreate($data);
         $this->assertIsInt($result);
@@ -2195,13 +2187,13 @@ class ServiceTest extends \BBTestCase
 
     public function testCannedGetSearchQuery()
     {
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
 
         $this->service->setDi($di);
 
-        $data = array(
+        $data = [
             'search' => 'query',
-        );
+        ];
 
         [$query, $bindings] = $this->service->cannedGetSearchQuery($data);
         $this->assertIsString($query);
@@ -2210,29 +2202,28 @@ class ServiceTest extends \BBTestCase
 
     public function testCannedGetGroupedPairs()
     {
-        $pairs = array(
-            0 => array(
-                'id'      => 1,
+        $pairs = [
+            0 => [
+                'id' => 1,
                 'r_title' => 'R  Title',
                 'c_title' => 'General',
-            )
-        );
+            ],
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue($pairs));
+            ->willReturn($pairs);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
-        $expected = array(
-            'General' =>
-            array(
+        $expected = [
+            'General' => [
                 1 => 'R  Title',
-            ),
-        );
+            ],
+        ];
 
         $result = $this->service->cannedGetGroupedPairs();
         $this->assertIsArray($result);
@@ -2244,10 +2235,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -2262,21 +2253,20 @@ class ServiceTest extends \BBTestCase
     {
         $category = new \Model_SupportPrCategory();
         $category->loadBean(new \DummyBean());
-        $category->id    = random_int(1, 100);
+        $category->id = random_int(1, 100);
         $category->title = 'General';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue($category));
+            ->willReturn($category);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
-
 
         $canned = new \Model_SupportPr();
         $canned->loadBean(new \DummyBean());
@@ -2294,15 +2284,14 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
-
 
         $canned = new \Model_SupportPr();
         $canned->loadBean(new \DummyBean());
@@ -2310,7 +2299,7 @@ class ServiceTest extends \BBTestCase
         $result = $this->service->cannedToApiArray($canned);
         $this->assertIsArray($result);
         $this->assertArrayHasKey('category', $result);
-        $this->assertEquals($result['category'], array());
+        $this->assertEquals($result['category'], []);
     }
 
     public function testCannedCategoryGetPairs()
@@ -2318,10 +2307,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue(array(0 => 'General')));
+            ->willReturn([0 => 'General']);
 
-
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -2339,10 +2327,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -2358,10 +2346,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -2374,38 +2362,38 @@ class ServiceTest extends \BBTestCase
 
     public function testCannedCreate()
     {
-        $randId        = random_int(1, 100);
+        $randId = random_int(1, 100);
         $helpDeskModel = new \Model_SupportHelpdesk();
         $helpDeskModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($helpDeskModel));
+            ->willReturn($helpDeskModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
         $settingsServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->addMethods(array('checkLimits'))->getMock();
+            ->addMethods(['checkLimits'])->getMock();
         $settingsServiceMock->expects($this->atLeastOnce())->method('checkLimits')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $settingsServiceMock);
-        $di['db']          = $dbMock;
-        $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $settingsServiceMock);
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportHelpdesk();
         $ticket->loadBean(new \DummyBean());
 
-        $data = array(
-            'name'        => 'Name',
-            'email'       => 'email@example.com',
-            'can_reopen'  => 1,
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@example.com',
+            'can_reopen' => 1,
             'close_after' => random_int(1, 100),
-            'signature'   => 'Signature',
-        );
+            'signature' => 'Signature',
+        ];
 
         $result = $this->service->cannedCreate($data, random_int(1, 100), 'Content');
         $this->assertIsInt($result);
@@ -2417,22 +2405,22 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
-        $di              = new \Pimple\Container();
-        $di['db']        = $dbMock;
-        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $this->service->setDi($di);
 
         $model = new \Model_SupportPr();
         $model->loadBean(new \DummyBean());
 
-        $data = array(
+        $data = [
             'category_id' => random_int(1, 100),
-            'title'       => 'email@example.com',
-            'content'     => 1,
-        );
+            'title' => 'email@example.com',
+            'content' => 1,
+        ];
 
         $result = $this->service->cannedUpdate($model, $data);
         $this->assertTrue($result);
@@ -2440,30 +2428,30 @@ class ServiceTest extends \BBTestCase
 
     public function testCannedCategoryCreate()
     {
-        $randId                 = random_int(1, 100);
+        $randId = random_int(1, 100);
         $supportPrCategoryModel = new \Model_SupportPrCategory();
         $supportPrCategoryModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($supportPrCategoryModel));
+            ->willReturn($supportPrCategoryModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
-        $data = array(
-            'name'        => 'Name',
-            'email'       => 'email@example.com',
-            'can_reopen'  => 1,
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@example.com',
+            'can_reopen' => 1,
             'close_after' => random_int(1, 100),
-            'signature'   => 'Signature',
-        );
+            'signature' => 'Signature',
+        ];
 
         $result = $this->service->cannedCategoryCreate($data);
         $this->assertIsInt($result);
@@ -2476,10 +2464,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -2492,30 +2480,30 @@ class ServiceTest extends \BBTestCase
 
     public function testNoteCreate()
     {
-        $randId                 = random_int(1, 100);
+        $randId = random_int(1, 100);
         $supportPrCategoryModel = new \Model_SupportPrCategory();
         $supportPrCategoryModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($supportPrCategoryModel));
+            ->willReturn($supportPrCategoryModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
-        $data = array(
-            'name'        => 'Name',
-            'email'       => 'email@example.com',
-            'can_reopen'  => 1,
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@example.com',
+            'can_reopen' => 1,
             'close_after' => random_int(1, 100),
-            'signature'   => 'Signature',
-        );
+            'signature' => 'Signature',
+        ];
 
         $admin = new \Model_Admin();
         $admin->loadBean(new \DummyBean());
@@ -2534,10 +2522,10 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
@@ -2550,22 +2538,21 @@ class ServiceTest extends \BBTestCase
 
     public static function canClientSubmitNewTicketProvider()
     {
-
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
-        $ticket->client_id  = 5;
+        $ticket->client_id = 5;
         $ticket->created_at = date('Y-m-d H:i:s');
 
         $ticket2 = new \Model_SupportTicket();
         $ticket2->loadBean(new \DummyBean());
-        $ticket2->client_id  = 5;
-        $ticket2->created_at = date('Y-m-d H:i:s', strtotime("-2 days"));;
+        $ticket2->client_id = 5;
+        $ticket2->created_at = date('Y-m-d H:i:s', strtotime('-2 days'));
 
-        return array(
-            array($ticket, 24, false), //Ticket is created today, exception should be thrown
-            array(null, 24, true), //No previously created tickets found, can submit a ticket
-            array($ticket2, 24, true) //Last ticket submitted 2 days ago, can submit a ticket
-        );
+        return [
+            [$ticket, 24, false], // Ticket is created today, exception should be thrown
+            [null, 24, true], // No previously created tickets found, can submit a ticket
+            [$ticket2, 24, true], // Last ticket submitted 2 days ago, can submit a ticket
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('canClientSubmitNewTicketProvider')]
@@ -2577,16 +2564,16 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($ticket));
+            ->willReturn($ticket);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
         $client->id = 5;
 
-        $config = array('wait_hours' => $hours);
+        $config = ['wait_hours' => $hours];
 
         $result = $this->service->canClientSubmitNewTicket($client, $config);
         $this->assertTrue($result);
@@ -2596,29 +2583,28 @@ class ServiceTest extends \BBTestCase
     * Knowledge Base Tests.
     */
 
-    public function testKb_searchArticles()
+    public function testKbSearchArticles()
     {
         $service = new \Box\Mod\Support\Service();
 
-        $willReturn = array(
-            "pages"    => 5,
-            "page"     => 2,
-            "per_page" => 2,
-            "total"    => 10,
-            "list"     => array(),
-        );
+        $willReturn = [
+            'pages' => 5,
+            'page' => 2,
+            'per_page' => 2,
+            'total' => 10,
+            'list' => [],
+        ];
 
         $di = new \Pimple\Container();
 
         $pager = $this->getMockBuilder('Box_Pagination')->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue($willReturn));
+            ->willReturn($willReturn);
 
-
-        $client      = new \Model_Client();
+        $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id  = 5;
+        $client->id = 5;
         $di['pager'] = $pager;
         $service->setDi($di);
 
@@ -2634,18 +2620,18 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('total', $result);
     }
 
-    public function testKb_findActiveArticleById()
+    public function testKbFindActiveArticleById()
     {
         $service = new \Box\Mod\Support\Service();
 
         $model = new \Model_SupportKbArticle();
         $model->loadBean(new \DummyBean());
-        $db    = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -2654,17 +2640,17 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $model);
     }
 
-    public function testKb_findActiveArticleBySlug()
+    public function testKbFindActiveArticleBySlug()
     {
         $service = new \Box\Mod\Support\Service();
 
         $model = new \Model_SupportKbArticle();
-        $db    = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -2673,15 +2659,15 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $model);
     }
 
-    public function testKb_findActive()
+    public function testKbFindActive()
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array()));
-        $di       = new \Pimple\Container();
+            ->willReturn([]);
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -2689,20 +2675,20 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKb_hitView()
+    public function testKbHitView()
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(5));
+            ->willReturn(5);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
-        $modelKb        = new \Model_SupportKbArticle();
+        $modelKb = new \Model_SupportKbArticle();
         $modelKb->loadBean(new \DummyBean());
         $modelKb->views = 10;
 
@@ -2710,25 +2696,24 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testKb_rm()
+    public function testKbRm()
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('trash')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
 
-        $modelKb        = new \Model_SupportKbArticle();
+        $modelKb = new \Model_SupportKbArticle();
         $modelKb->loadBean(new \DummyBean());
-        $modelKb->id    = 1;
+        $modelKb->id = 1;
         $modelKb->views = 10;
-
 
         $result = $service->kbRm($modelKb);
         $this->assertNull($result);
@@ -2736,131 +2721,130 @@ class ServiceTest extends \BBTestCase
 
     public static function kbToApiArrayProvider()
     {
-        $model                         = new \Model_SupportKbArticle();
+        $model = new \Model_SupportKbArticle();
         $model->loadBean(new \DummyBean());
-        $model->id                     = random_int(1, 100);
-        $model->slug                   = 'article-slug';
-        $model->title                  = "Title";
-        $model->views                  = random_int(1, 100);
-        $model->content                = 'Content';
-        $model->created_at             = '2013-01-01 12:00:00';
-        $model->updated_at             = '2014-01-01 12:00:00';
-        $model->status                 = 'active';
+        $model->id = random_int(1, 100);
+        $model->slug = 'article-slug';
+        $model->title = 'Title';
+        $model->views = random_int(1, 100);
+        $model->content = 'Content';
+        $model->created_at = '2013-01-01 12:00:00';
+        $model->updated_at = '2014-01-01 12:00:00';
+        $model->status = 'active';
         $model->kb_article_category_id = random_int(1, 100);
 
-        $category        = new \Model_SupportKbArticleCategory();
+        $category = new \Model_SupportKbArticleCategory();
         $category->loadBean(new \DummyBean());
-        $category->id    = random_int(1, 100);
-        $category->slug  = 'category-slug';
+        $category->id = random_int(1, 100);
+        $category->slug = 'category-slug';
         $category->title = 'category-title';
 
-        return array(
-            array(
+        return [
+            [
                 $model,
-                array(
-                    'id'         => $model->id,
-                    'slug'       => $model->slug,
-                    'title'      => $model->title,
-                    'views'      => $model->views,
+                [
+                    'id' => $model->id,
+                    'slug' => $model->slug,
+                    'title' => $model->title,
+                    'views' => $model->views,
                     'created_at' => $model->created_at,
                     'updated_at' => $model->updated_at,
-                    'category'   => array(
-                        'id'    => $category->id,
-                        'slug'  => $category->slug,
+                    'category' => [
+                        'id' => $category->id,
+                        'slug' => $category->slug,
                         'title' => $category->title,
-                    ),
-                    'status'                 => $model->status,
-                ),
+                    ],
+                    'status' => $model->status,
+                ],
                 false,
                 null,
-                $category
-            ),
-            array(
+                $category,
+            ],
+            [
                 $model,
-                array(
-                    'id'         => $model->id,
-                    'slug'       => $model->slug,
-                    'title'      => $model->title,
-                    'views'      => $model->views,
+                [
+                    'id' => $model->id,
+                    'slug' => $model->slug,
+                    'title' => $model->title,
+                    'views' => $model->views,
                     'created_at' => $model->created_at,
                     'updated_at' => $model->updated_at,
-                    'category'   => array(
-                        'id'    => $category->id,
-                        'slug'  => $category->slug,
+                    'category' => [
+                        'id' => $category->id,
+                        'slug' => $category->slug,
                         'title' => $category->title,
-                    ),
-                    'content'    => $model->content,
-                    'status'     => $model->status,
-                ),
+                    ],
+                    'content' => $model->content,
+                    'status' => $model->status,
+                ],
                 true,
                 null,
-                $category
-            ),
-            array(
+                $category,
+            ],
+            [
                 $model,
-                array(
-                    'id'                     => $model->id,
-                    'slug'                   => $model->slug,
-                    'title'                  => $model->title,
-                    'views'                  => $model->views,
-                    'created_at'             => $model->created_at,
-                    'updated_at'             => $model->updated_at,
-                    'category'   => array(
-                        'id'    => $category->id,
-                        'slug'  => $category->slug,
+                [
+                    'id' => $model->id,
+                    'slug' => $model->slug,
+                    'title' => $model->title,
+                    'views' => $model->views,
+                    'created_at' => $model->created_at,
+                    'updated_at' => $model->updated_at,
+                    'category' => [
+                        'id' => $category->id,
+                        'slug' => $category->slug,
                         'title' => $category->title,
-                    ),
-                    'content'                => $model->content,
-                    'status'                 => $model->status,
-                    'kb_article_category_id' => $model->kb_article_category_id
-                ),
+                    ],
+                    'content' => $model->content,
+                    'status' => $model->status,
+                    'kb_article_category_id' => $model->kb_article_category_id,
+                ],
                 true,
                 new \Model_Admin(),
-                $category
-            ),
-
-        );
+                $category,
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('kbToApiArrayProvider')]
-    public function testKb_toApiArray($model, $expected, $deep, $identity, $category)
+    public function testKbToApiArray($model, $expected, $deep, $identity, $category)
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($category));
-        $di       = new \Pimple\Container();
+            ->willReturn($category);
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
-        $result  = $service->kbToApiArray($model, $deep, $identity);
+        $result = $service->kbToApiArray($model, $deep, $identity);
         $this->assertEquals($result, $expected);
     }
 
-    public function testKb_createArticle()
+    public function testKbCreateArticle()
     {
         $service = new \Box\Mod\Support\Service();
-        $randId  = random_int(1, 100);
-        $db      = $this->getMockBuilder('Box_Database')->getMock();
+        $randId = random_int(1, 100);
+        $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
         $model = new \Model_SupportKbArticle();
         $model->loadBean(new \DummyBean());
         $db->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $tools = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->onlyMethods(array('slug'))->getMock();
+        $tools = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->onlyMethods(['slug'])->getMock();
         $tools->expects($this->atLeastOnce())
             ->method('slug')
-            ->will($this->returnValue('article-slug'));
+            ->willReturn('article-slug');
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $db;
-        $di['tools']  = $tools;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
+        $di['tools'] = $tools;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $service->setDi($di);
@@ -2869,31 +2853,31 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $randId);
     }
 
-    public function testKb_updateArticle()
+    public function testKbUpdateArticle()
     {
         $service = new \Box\Mod\Support\Service();
-        $randId  = random_int(1, 100);
+        $randId = random_int(1, 100);
 
         $model = new \Model_SupportKbArticle();
         $model->loadBean(new \DummyBean());
 
         $kb_article_category_id = random_int(1, 100);
-        $title                  = 'Title';
-        $slug                   = 'article-slug';
-        $status                 = 'active';
-        $content                = 'content';
-        $views                  = random_int(1, 100);
+        $title = 'Title';
+        $slug = 'article-slug';
+        $status = 'active';
+        $content = 'content';
+        $views = random_int(1, 100);
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $db->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $service->setDi($di);
@@ -2902,29 +2886,28 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testKb_updateArticleNotFoundException()
+    public function testKbUpdateArticleNotFoundException()
     {
         $service = new \Box\Mod\Support\Service();
-        $randId  = random_int(1, 100);
-
+        $randId = random_int(1, 100);
 
         $kb_article_category_id = random_int(1, 100);
-        $title                  = 'Title';
-        $slug                   = 'article-slug';
-        $status                 = 'active';
-        $content                = 'content';
-        $views                  = random_int(1, 100);
+        $title = 'Title';
+        $slug = 'article-slug';
+        $status = 'active';
+        $content = 'content';
+        $views = random_int(1, 100);
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(false));
+            ->willReturn(false);
         $db->expects($this->never())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $service->setDi($di);
@@ -2936,61 +2919,60 @@ class ServiceTest extends \BBTestCase
 
     public static function kbCategoryGetSearchQueryProvider()
     {
-        return array(
-            array(
-                array(),
+        return [
+            [
+                [],
                 '
                 SELECT kac.*
                 FROM support_kb_article_category kac
                 LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id GROUP BY kac.id ORDER BY kac.id DESC',
-                array(),
-            ),
-            array(
-                array(
-                    'article_status' => "active"
-                ),
+                [],
+            ],
+            [
+                [
+                    'article_status' => 'active',
+                ],
                 'SELECT kac.*
                  FROM support_kb_article_category kac
                  LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id
                  WHERE ka.status = :status GROUP BY kac.id ORDER BY kac.id DESC',
-                array(
+                [
                     ':status' => 'active',
-                ),
-            ),
-            array(
-                array(
-                    'q' => "search query"
-                ),
+                ],
+            ],
+            [
+                [
+                    'q' => 'search query',
+                ],
                 'SELECT kac.*
                  FROM support_kb_article_category kac
                  LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id
                  WHERE (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.id DESC',
-                array(
-                    ':title'   => '%search query%',
+                [
+                    ':title' => '%search query%',
                     ':content' => '%search query%',
-                ),
-            ),
-            array(
-                array(
-                    'q'              => "search query",
-                    'article_status' => "active"
-                ),
+                ],
+            ],
+            [
+                [
+                    'q' => 'search query',
+                    'article_status' => 'active',
+                ],
                 'SELECT kac.*
                  FROM support_kb_article_category kac
                  LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id
                  WHERE ka.status = :status AND (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.id DESC',
-                array(
-                    ':title'   => '%search query%',
+                [
+                    ':title' => '%search query%',
                     ':content' => '%search query%',
-                    ':status'  => 'active',
-                ),
-            ),
-
-        );
+                    ':status' => 'active',
+                ],
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('kbCategoryGetSearchQueryProvider')]
-    public function testKb_categoryGetSearchQuery($data, $query, $bindings)
+    public function testKbCategoryGetSearchQuery($data, $query, $bindings)
     {
         $service = new \Box\Mod\Support\Service();
 
@@ -3003,21 +2985,20 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertEquals(trim(preg_replace('/\s+/', '', str_replace("\n", " ", $result[0]))), trim(preg_replace('/\s+/', '', str_replace("\n", " ", $query))));
+        $this->assertEquals(trim(preg_replace('/\s+/', '', str_replace("\n", ' ', $result[0]))), trim(preg_replace('/\s+/', '', str_replace("\n", ' ', $query))));
         $this->assertEquals($result[1], $bindings);
-
     }
 
-    public function testKb_categoryFindAll()
+    public function testKbCategoryFindAll()
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -3025,16 +3006,16 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKb_categoryGetPairs()
+    public function testKbCategoryGetPairs()
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -3042,23 +3023,23 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKb_categoryRm()
+    public function testKbCategoryRm()
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(0));
+            ->willReturn(0);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
 
-        $model            = new \Model_SupportKbArticleCategory();
+        $model = new \Model_SupportKbArticleCategory();
         $model->loadBean(new \DummyBean());
-        $model->id        = random_int(1, 100);
+        $model->id = random_int(1, 100);
         $model->KbArticle = new \Model_SupportKbArticleCategory();
         $model->KbArticle->loadBean(new \DummyBean());
 
@@ -3066,23 +3047,23 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testKb_categoryRmHasArticlesException()
+    public function testKbCategoryRmHasArticlesException()
     {
         $service = new \Box\Mod\Support\Service();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue(1));
+            ->willReturn(1);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
 
-        $model            = new \Model_SupportKbArticleCategory();
+        $model = new \Model_SupportKbArticleCategory();
         $model->loadBean(new \DummyBean());
-        $model->id        = random_int(1, 100);
+        $model->id = random_int(1, 100);
         $model->KbArticle = new \Model_SupportKbArticle();
         $model->KbArticle->loadBean(new \DummyBean());
 
@@ -3091,7 +3072,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testKb_createCategory()
+    public function testKbCreateCategory()
     {
         $service = new \Box\Mod\Support\Service();
 
@@ -3100,52 +3081,51 @@ class ServiceTest extends \BBTestCase
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
         $articleCategoryModel = new \Model_SupportKbArticleCategory();
         $articleCategoryModel->loadBean(new \DummyBean());
 
         $db->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($articleCategoryModel));
+            ->willReturn($articleCategoryModel);
 
-        $tools = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->onlyMethods(array('slug'))->getMock();
+        $tools = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->onlyMethods(['slug'])->getMock();
         $tools->expects($this->atLeastOnce())
             ->method('slug')
-            ->will($this->returnValue('article-slug'));
+            ->willReturn('article-slug');
 
         $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('checkLimits')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
-        $di                = new \Pimple\Container();
-        $di['db']          = $db;
-        $di['tools']       = $tools;
-        $di['logger']      = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn() => $systemService);
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
+        $di['tools'] = $tools;
+        $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['mod_service'] = $di->protect(fn () => $systemService);
         $service->setDi($di);
 
         $result = $service->kbCreateCategory('Title', 'Description');
         $this->assertIsInt($result);
         $this->assertEquals($result, $randId);
-
     }
 
-    public function testKb_updateCategory()
+    public function testKbUpdateCategory()
     {
         $service = new \Box\Mod\Support\Service();
-        $randId  = random_int(1, 100);
-        $db      = $this->getMockBuilder('Box_Database')->getMock();
+        $randId = random_int(1, 100);
+        $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($randId));
+            ->willReturn($randId);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $db;
+        $di = new \Pimple\Container();
+        $di['db'] = $db;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $service->setDi($di);
 
-        $model     = new \Model_SupportKbArticleCategory();
+        $model = new \Model_SupportKbArticleCategory();
         $model->loadBean(new \DummyBean());
         $model->id = random_int(1, 100);
 
@@ -3153,17 +3133,17 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testKb_FindCategoryById()
+    public function testKbFindCategoryById()
     {
         $service = new \Box\Mod\Support\Service();
 
         $model = new \Model_SupportKbArticleCategory();
-        $db    = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -3172,17 +3152,17 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $model);
     }
 
-    public function testKb_FindCategoryBySlug()
+    public function testKbFindCategoryBySlug()
     {
         $service = new \Box\Mod\Support\Service();
 
         $model = new \Model_SupportKbArticleCategory();
-        $db    = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di       = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['db'] = $db;
         $service->setDi($di);
 

@@ -2,39 +2,39 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Payment_Invoice
 {
-    private $id             = NULL; // FOSSBilling Invoice Id
-    private $number         = NULL; // Invoice number for accounting
-    private string $currency       = 'USD';
-    private array $items          = array();
-    private ?\Payment_Invoice_Subscription $subscription   = NULL;
-    private ?\Payment_Invoice_Buyer $buyer          = NULL;
-    private string $title          = 'Payment for invoice';
+    private $id; // FOSSBilling Invoice Id
+    private $number; // Invoice number for accounting
+    private string $currency = 'USD';
+    private array $items = [];
+    private ?\Payment_Invoice_Subscription $subscription = null;
+    private ?\Payment_Invoice_Buyer $buyer = null;
+    private string $title = 'Payment for invoice';
 
     /**
      * Set the invoice ID.
      *
-     * @param mixed $param The invoice ID.
+     * @param mixed $param the invoice ID
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setId(mixed $param)
     {
         $this->id = $param;
+
         return $this;
     }
 
     /**
      * Get the invoice ID.
      *
-     * @return mixed The invoice ID.
+     * @return mixed the invoice ID
      */
     public function getId()
     {
@@ -44,20 +44,21 @@ class Payment_Invoice
     /**
      * Set the invoice number.
      *
-     * @param mixed $param The invoice number.
+     * @param mixed $param the invoice number
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setNumber(mixed $param)
     {
         $this->number = $param;
+
         return $this;
     }
 
     /**
      * Get the invoice number.
      *
-     * @return mixed The invoice number.
+     * @return mixed the invoice number
      */
     public function getNumber()
     {
@@ -67,20 +68,21 @@ class Payment_Invoice
     /**
      * Set the currency.
      *
-     * @param string $param The currency.
+     * @param string $param the currency
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setCurrency($param)
     {
         $this->currency = $param;
+
         return $this;
     }
 
     /**
      * Get the currency.
      *
-     * @return string The currency.
+     * @return string the currency
      */
     public function getCurrency()
     {
@@ -90,20 +92,21 @@ class Payment_Invoice
     /**
      * Set the buyer.
      *
-     * @param Payment_Invoice_Buyer $param The buyer object.
+     * @param Payment_Invoice_Buyer $param the buyer object
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setBuyer(Payment_Invoice_Buyer $param)
     {
         $this->buyer = $param;
+
         return $this;
     }
 
     /**
      * Get the buyer.
      *
-     * @return Payment_Invoice_Buyer The buyer object.
+     * @return Payment_Invoice_Buyer the buyer object
      */
     public function getBuyer()
     {
@@ -113,9 +116,9 @@ class Payment_Invoice
     /**
      * Set the items.
      *
-     * @param array $items An array of Payment_Invoice_Item objects.
+     * @param array $items an array of Payment_Invoice_Item objects
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setItems(array $items)
     {
@@ -124,13 +127,14 @@ class Payment_Invoice
                 $this->items[] = $item;
             }
         }
+
         return $this;
     }
 
     /**
      * Get the items.
      *
-     * @return array An array of Payment_Invoice_Item objects.
+     * @return array an array of Payment_Invoice_Item objects
      */
     public function getItems()
     {
@@ -140,20 +144,21 @@ class Payment_Invoice
     /**
      * Set the subscription.
      *
-     * @param Payment_Invoice_Subscription $param The subscription object.
+     * @param Payment_Invoice_Subscription $param the subscription object
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setSubscription(Payment_Invoice_Subscription $param)
     {
         $this->subscription = $param;
+
         return $this;
     }
 
     /**
      * Get the subscription.
      *
-     * @return Payment_Invoice_Subscription The subscription object.
+     * @return Payment_Invoice_Subscription the subscription object
      */
     public function getSubscription()
     {
@@ -163,20 +168,21 @@ class Payment_Invoice
     /**
      * Set the title.
      *
-     * @param null|string $title The title.
+     * @param string|null $title the title
      *
-     * @return $this The current object, for method chaining.
+     * @return $this the current object, for method chaining
      */
     public function setTitle($title)
     {
         $this->title = $title;
+
         return $this;
     }
 
     /**
      * Get the title.
      *
-     * @return null|string The title.
+     * @return string|null the title
      */
     public function getTitle()
     {
@@ -186,7 +192,7 @@ class Payment_Invoice
     /**
      * Get the total amount of the invoice (without tax).
      *
-     * @return float The total amount.
+     * @return float the total amount
      */
     public function getTotal()
     {
@@ -194,13 +200,14 @@ class Payment_Invoice
         foreach ($this->items as $item) {
             $total += $item->getTotal();
         }
+
         return $total;
     }
 
     /**
      * Get the total amount of the invoice (with tax).
      *
-     * @return float The total amount with tax.
+     * @return float the total amount with tax
      */
     public function getTotalWithTax()
     {
@@ -210,7 +217,7 @@ class Payment_Invoice
     /**
      * Get the tax amount of the invoice.
      *
-     * @return float The tax amount.
+     * @return float the tax amount
      */
     public function getTax()
     {
@@ -218,6 +225,7 @@ class Payment_Invoice
         foreach ($this->items as $item) {
             $tax += $item->getTax() * $item->getQuantity();
         }
+
         return $tax;
     }
 }

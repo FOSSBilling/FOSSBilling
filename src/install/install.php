@@ -3,7 +3,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -11,9 +11,9 @@
 
 use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpClient\HttpClient;
 use Twig\Loader\FilesystemLoader;
-use Ramsey\Uuid\Uuid;
 
 date_default_timezone_set('UTC');
 error_reporting(E_ALL);
@@ -100,7 +100,6 @@ final class FOSSBilling_Installer
      * Action router.
      *
      * @param string $action
-     * @return void
      */
     public function run($action): void
     {
@@ -109,7 +108,7 @@ final class FOSSBilling_Installer
                 // Make sure this is a POST request
                 if ($_SERVER['REQUEST_METHOD'] != 'POST') {
                     header('Location: ' . URL_INSTALL);
-                    die;
+                    exit;
                 }
 
                 // Installer validation
@@ -173,17 +172,18 @@ final class FOSSBilling_Installer
                         'message' => $e->getMessage(),
                     ]);
                 }
+
                 break;
             case 'index':
             default:
-                $requirements = new \FOSSBilling\Requirements();
+                $requirements = new FOSSBilling\Requirements();
                 $compatibility = $requirements->checkCompat();
                 $vars = [
                     'compatibility' => $compatibility,
                     'os' => PHP_OS,
                     'os_ok' => (str_starts_with(strtoupper(PHP_OS), 'WIN')) ? false : true,
                     'is_subfolder' => $this->isSubfolder(),
-                    'fossbilling_ver' => \FOSSBilling\Version::VERSION,
+                    'fossbilling_ver' => FOSSBilling\Version::VERSION,
                     'canInstall' => !$this->isSubfolder() && $compatibility['can_install'],
                     'alreadyInstalled' => $this->isAlreadyInstalled(),
                     'database_hostname' => $this->session->get('database_hostname'),
@@ -204,6 +204,7 @@ final class FOSSBilling_Installer
                     'domain' => pathinfo(SYSTEM_URL, PATHINFO_BASENAME),
                 ];
                 echo $this->render(PAGE_INSTALL, $vars);
+
                 break;
         }
     }
@@ -212,8 +213,7 @@ final class FOSSBilling_Installer
      * Render a page with Twig.
      *
      * @param string $name
-     * @param array $vars
-     * @return string
+     * @param array  $vars
      */
     private function render($name, $vars = []): string
     {
@@ -229,15 +229,13 @@ final class FOSSBilling_Installer
         $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
         $twig->addGlobal('request', $_REQUEST);
-        $twig->addGlobal('version', \FOSSBilling\Version::VERSION);
+        $twig->addGlobal('version', FOSSBilling\Version::VERSION);
 
         return $twig->render($name, $vars);
     }
 
     /**
      * Attempt to open the database connection.
-     *
-     * @return void
      */
     private function connectDatabase(): void
     {
@@ -263,19 +261,17 @@ final class FOSSBilling_Installer
 
         // Attempt to create the database.
         try {
-            $this->pdo->exec("CREATE DATABASE `" .  $this->session->get('database_name') . "` CHARACTER SET utf8 COLLATE utf8_general_ci;");
+            $this->pdo->exec('CREATE DATABASE `' . $this->session->get('database_name') . '` CHARACTER SET utf8 COLLATE utf8_general_ci;');
         } catch (PDOException) {
             // Silently fail if the database already exists.
         }
 
         // Select the database as default for future queries
-        $this->pdo->query("USE `" .  $this->session->get('database_name') . "`;");
+        $this->pdo->query('USE `' . $this->session->get('database_name') . '`;');
     }
 
     /**
      * Validate admin information meets all required parameters.
-     *
-     * @return boolean
      */
     private function validateAdmin(): bool
     {
@@ -287,15 +283,15 @@ final class FOSSBilling_Installer
             throw new Exception('Minimum admin password length is 8 characters.');
         }
 
-        if (!preg_match("#[0-9]+#", $this->session->get('admin_password'))) {
+        if (!preg_match('#[0-9]+#', $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one number.');
         }
 
-        if (!preg_match("#[a-z]+#", $this->session->get('admin_password'))) {
+        if (!preg_match('#[a-z]+#', $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one lowercase letter.');
         }
 
-        if (!preg_match("#[A-Z]+#", $this->session->get('admin_password'))) {
+        if (!preg_match('#[A-Z]+#', $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one uppercase letter.');
         }
 
@@ -308,8 +304,6 @@ final class FOSSBilling_Installer
 
     /**
      * Attempt to detect if the application is under a subfolder.
-     *
-     * @return boolean
      */
     private function isSubfolder(): bool
     {
@@ -318,8 +312,6 @@ final class FOSSBilling_Installer
 
     /**
      * Check if we are already installed.
-     *
-     * @return boolean
      */
     public function isAlreadyInstalled(): bool
     {
@@ -328,8 +320,6 @@ final class FOSSBilling_Installer
 
     /**
      * Installation processor.
-     *
-     * @return boolean
      */
     private function install(): bool
     {
@@ -363,17 +353,17 @@ final class FOSSBilling_Installer
         // Delete default currency from content file and use currency passed in the installer
         $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();
-        $stmt = $this->pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
+        $stmt = $this->pdo->prepare('INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());');
         $stmt->execute([
             'currency_title' => $this->session->get('currency_title'),
             'currency_code' => $this->session->get('currency_code'),
             'currency_format' => $this->session->get('currency_format'),
         ]);
 
-        $stmt = $this->pdo->prepare("INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())");
+        $stmt = $this->pdo->prepare('INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())');
         $stmt->execute([
             ':param' => 'last_error_reporting_nudge',
-            ':value' => \FOSSBilling\Version::VERSION,
+            ':value' => FOSSBilling\Version::VERSION,
         ]);
 
         // Copy config templates when applicable
@@ -388,7 +378,7 @@ final class FOSSBilling_Installer
                 $response = $client->request('GET', 'https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/main/src/.htaccess');
                 file_put_contents(PATH_HTACCESS, $response->getContent());
             } catch (Exception $e) {
-                throw new Exception("Unable to write required .htaccess file to " . PATH_HTACCESS . ". Check file and folder permissions.", $e->getCode());
+                throw new Exception('Unable to write required .htaccess file to ' . PATH_HTACCESS . '. Check file and folder permissions.', $e->getCode());
             }
         }
 
@@ -404,19 +394,17 @@ final class FOSSBilling_Installer
 
     /**
      * Generate the `config.php` file using the `config-sample.php` as a template.
-     *
-     * @return string
      */
     private function getConfigOutput(): string
     {
-        $updateBranch = \FOSSBilling\Version::isPreviewVersion() ? "preview" : "release";
+        $updateBranch = FOSSBilling\Version::isPreviewVersion() ? 'preview' : 'release';
 
         // Load default sample config
         $data = require PATH_CONFIG_SAMPLE;
 
         // Handle dynamic configs
         $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
-        $data['debug_and_monitoring']['report_errors'] = (bool)$this->session->get('error_reporting');
+        $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['update_branch'] = $updateBranch;
         $data['info']['salt'] = bin2hex(random_bytes(16));
         $data['info']['instance_id'] = Uuid::uuid4()->toString();
@@ -435,13 +423,12 @@ final class FOSSBilling_Installer
         // Build and return data
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($data, true) . ';';
+
         return $output;
     }
 
     /**
      * Generate the default email templates.
-     *
-     * @return boolean
      */
     private function generateEmailTemplates(): bool
     {
