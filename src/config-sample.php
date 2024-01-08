@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling configuration file example.
  *
@@ -19,6 +20,7 @@ return [
         'mode' => 'strict',
         'force_https' => true,
         'session_lifespan' => 7200,
+        'perform_session_fingerprinting' => true,
     ],
 
     'debug_and_monitoring' => [

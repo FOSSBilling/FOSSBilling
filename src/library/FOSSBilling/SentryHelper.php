@@ -54,7 +54,8 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
-        $httpClient = new class() implements HttpClientInterface {
+        $httpClient = new class() implements HttpClientInterface
+        {
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
@@ -189,7 +190,7 @@ class SentryHelper
     // Checks if either the module producing the error or the instance ID of this installation is blacklisted
     public static function isBlacklisted(string $module = null): bool
     {
-        if (INSTANCE_ID === 'Unknown') {
+        if (INSTANCE_ID === 'Unknown' || INSTANCE_ID === 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX') {
             return true;
         }
 
