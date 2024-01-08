@@ -92,12 +92,12 @@ class Server_Manager_Whm extends Server_Manager
 
         // WHM doesn't allow usernames to start with "test", so replace it with a random string if it does (test3456 would then become something like a62f93456).
         if (str_starts_with($username, 'test')) {
-            $username = str_replace('test', 'a' . bin2hex(random_bytes(2)), $username);
+            $username = substr_replace($username, 'a' . bin2hex(random_bytes(2)), 0, 5);
         }
 
         // WHM doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does. 
         if (is_numeric(substr($username, 0, 1))) {
-            $username = 'a' . $username;
+            $username = substr_replace($username, 'a', 0, 1);
         }
 
         return $username;
