@@ -26,7 +26,7 @@ class Session implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private readonly \PdoSessionHandler $handler, private readonly string $securityMode = 'regular', private bool $secure = true)
+    public function __construct(private readonly \PdoSessionHandler $handler)
     {
     }
 
@@ -52,7 +52,7 @@ class Session implements InjectionAwareInterface
         $currentCookieParams = session_get_cookie_params();
         $currentCookieParams['httponly'] = true;
         $currentCookieParams['lifetime'] = 0;
-        $currentCookieParams['secure'] = $this->secure;
+        $currentCookieParams['secure'] = $this->shouldBeSecure();
 
         $cookieParams = [
             'lifetime' => $currentCookieParams['lifetime'],
@@ -62,7 +62,7 @@ class Session implements InjectionAwareInterface
             'httponly' => $currentCookieParams['httponly'],
         ];
 
-        if ($this->securityMode == 'strict') {
+        if ($this->di['config']['security']['mode'] == 'strict') {
             $cookieParams['samesite'] = 'Strict';
         }
 
@@ -97,12 +97,10 @@ class Session implements InjectionAwareInterface
         switch ($type) {
             case 'admin':
                 $this->delete('admin');
-
                 break;
             case 'client':
                 $this->delete('client');
                 $this->delete('client_id');
-
                 break;
         }
 
@@ -115,6 +113,7 @@ class Session implements InjectionAwareInterface
      */
     private function canUseSession(): void
     {
+        $invalid = false;
         if (empty($_COOKIE['PHPSESSID'])) {
             return;
         }
@@ -135,7 +134,19 @@ class Session implements InjectionAwareInterface
             $this->di['db']->store($session);
         }
 
-        if (!$fingerprint->checkFingerprint(json_decode($session->fingerprint, true)) || $session->created_at <= $maxAge) {
+        $storedFingerprint = json_decode($session->fingerprint, true);
+        if (!$fingerprint->checkFingerprint($storedFingerprint) && $this->di['config']['security']['perform_session_fingerprinting']) {
+            $invalid = true;
+            // TODO: Trying to use monolog here causes a 503 error with an empty error log. Would love to find out why and use it instead of error_log
+            error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+            #$this->di['logger']->setChannel('security')->info("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+        }
+
+        if ($session->created_at <= $maxAge) {
+            $invalid = true;
+        }
+
+        if ($invalid) {
             $this->di['db']->trash($session);
             unset($_COOKIE['PHPSESSID']);
         }
@@ -148,12 +159,23 @@ class Session implements InjectionAwareInterface
     {
         $sessionID = $_COOKIE['PHPSESSID'] ?? session_id();
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
+        $fingerprint = new Fingerprint();
+
+        if ($this->di['config']['security']['perform_session_fingerprinting']) {
+            $updatedFingerprint = $fingerprint->fingerprint();
+        } else {
+            $updatedFingerprint = [];
+        }
 
         // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
         if (!is_null($session)) {
-            $fingerprint = new Fingerprint();
-            $session->fingerprint = json_encode($fingerprint->fingerprint());
+            $session->fingerprint = json_encode($updatedFingerprint);
             $this->di['db']->store($session);
         }
+    }
+
+    private function shouldBeSecure(): bool
+    {
+        return $this->di['config']['security']['force_https'] ?? true || Tools::isHTTPS();;
     }
 }

@@ -10,7 +10,7 @@
  */
 class Box_LogDb
 {
-    private array $ignoredChannels = ['billing', 'routing'];
+    private array $ignoredChannels = ['billing', 'routing', 'security', 'email'];
 
     /**
      * Class constructor.
