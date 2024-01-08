@@ -96,7 +96,7 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         // WHM doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does. 
-        if (is_numeric($username, 0, 1)) {
+        if (is_numeric(substr($username, 0, 1))) {
             $username = 'a' . $username;
         }
 
