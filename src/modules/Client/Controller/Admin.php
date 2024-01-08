@@ -61,7 +61,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/client', 'get_index', [], static::class);
         $app->get('/client/', 'get_index', [], static::class);
@@ -73,14 +73,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/client/logins', 'get_history', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_client_index');
     }
 
-    public function get_manage(\Box_App $app, $id)
+    public function get_manage(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $client = $api->client_get(['id' => $id]);
@@ -88,7 +88,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_manage', ['client' => $client]);
     }
 
-    public function get_group(\Box_App $app, $id)
+    public function get_group(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $model = $api->client_group_get(['id' => $id]);
@@ -96,14 +96,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_group', ['group' => $model]);
     }
 
-    public function get_history(\Box_App $app)
+    public function get_history(\FOSSBilling\App $app)
     {
         $api = $this->di['api_admin'];
 
         return $app->render('mod_client_login_history');
     }
 
-    public function get_login(\Box_App $app, $id)
+    public function get_login(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $api->client_login(['id' => $id]);

@@ -57,11 +57,11 @@ $di['session'];
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     define('ADMIN_AREA', true);
     $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
-    $app = new Box_AppAdmin([], $debugBar);
+    $app = new FOSSBilling\App($debugBar);
 } else {
     define('ADMIN_AREA', false);
     $appUrl = $url;
-    $app = new Box_AppClient([], $debugBar);
+    $app = new FOSSBilling\App($debugBar);
 }
 
 $app->setUrl($appUrl);
