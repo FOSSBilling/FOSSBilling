@@ -87,8 +87,8 @@ class Server_Manager_Whm extends Server_Manager
     // https://docs.cpanel.net/knowledge-base/accounts/reserved-invalid-and-misconfigured-username/
     public function generateUsername($domainName)
     {
-        $procsessedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domainName));
-        $username = substr($procsessedDomain, 0, 7) . random_int(0, 9);
+        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domainName));
+        $username = substr($processedDomain, 0, 7) . random_int(0, 9);
 
         // WHM doesn't allow usernames to start with "test", so replace it with a random string if it does (test3456 would then become something like a62f93456).
         if (str_starts_with($username, 'test')) {
