@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -81,6 +82,25 @@ class Server_Manager_Whm extends Server_Manager
         $json = $this->_request('version');
 
         return true;
+    }
+
+    // https://docs.cpanel.net/knowledge-base/accounts/reserved-invalid-and-misconfigured-username/
+    public function generateUsername($domainName)
+    {
+        $procsessedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domainName));
+        $username = substr($procsessedDomain, 0, 7) . random_int(0, 9);
+
+        // WHM doesn't allow usernames to start with "test", so replace it with a random string if it does (test3456 would then become something like a62f93456).
+        if (str_starts_with($username, 'test')) {
+            $username = str_replace('test', 'a' . bin2hex(random_bytes(2)), $username);
+        }
+
+        // WHM doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does. 
+        if (is_numeric($username, 0, 1)) {
+            $username = 'a' . $username;
+        }
+
+        return $username;
     }
 
     public function synchronizeAccount(Server_Account $a)
@@ -411,7 +431,7 @@ class Server_Manager_Whm extends Server_Manager
         $accesshash = $this->_config['accesshash'];
         $password = $this->_config['password'];
         $authstr = (!empty($accesshash)) ? 'WHM ' . $username . ':' . $accesshash
-                                         : 'Basic ' . $username . ':' . $password;
+            : 'Basic ' . $username . ':' . $password;
 
         $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
 
