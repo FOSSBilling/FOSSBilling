@@ -28,6 +28,7 @@ jobs:
 
             - run: |
                   echo "MONTH=$(date '+%h')" >> ${GITHUB_ENV}
+                  mkdir cache
                   mkdir cache/rector
                   mkdir cache/rector-tests
 
