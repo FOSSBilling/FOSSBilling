@@ -18,6 +18,7 @@ class Requirements
 
     public array $php_reqs = [
         'required_extensions' => [
+            'curl',
             'intl',
             'openssl',
             'pdo_mysql',
@@ -28,7 +29,6 @@ class Requirements
             'zlib',
         ],
         'suggested_extensions' => [
-            'curl',
             'mbstring',
             'opcache',
             'imagick',
