@@ -532,7 +532,7 @@ class Service implements InjectionAwareInterface
      *
      * @return float Exchange rate
      */
-    protected function _getRate($from, $to)
+        protected function _getRate($from, $to)
     {
         $from_Currency = urlencode($from);
         $to_Currency = urlencode($to);
@@ -547,23 +547,23 @@ class Service implements InjectionAwareInterface
 
             throw new \FOSSBilling\Exception('Failed to get currency rates for :currency from the European Central Bank API', [':currency' => $to_Currency]);
         } else {
-            $client = HttpClient::create();
-            $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
+            $apiClient = HttpClient::create();
+            $apiResponse = $apiClient->request('GET', 'http://apilayer.net/api/live', [
                 'query' => [
+                    'access_key' => $this->getKey(),
                     'currencies' => $to_Currency,
                     'source' => $from_Currency,
                 ],
                 'headers' => [
                     'Content-Type' => 'text/plain',
-                    'apikey' => $this->getKey(),
                 ],
             ]);
-            $array = $response->toArray();
-
-            if ($array['success'] !== true) {
-                throw new \FOSSBilling\Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
+            sleep(5);
+            $exchangeRateData = $apiResponse->toArray();
+            if ($exchangeRateData['success'] !== true) {
+                throw new \FOSSBilling\Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $exchangeRateData['error']['info']]);
             } else {
-                return (float) $array['quotes'][$from_Currency . $to_Currency];
+                return (float) $exchangeRateData['quotes'][$from_Currency . $to_Currency];
             }
         }
     }
