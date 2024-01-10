@@ -15,6 +15,7 @@ report/*
 DOCKER_ENV
 docker_tag
 src/themes/*/config/settings_data.json
+cache
 
 ### Cypress ###
 tests/cypress/videos/*

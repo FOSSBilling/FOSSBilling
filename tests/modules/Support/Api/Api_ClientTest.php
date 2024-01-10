@@ -7,43 +7,43 @@ class Api_ClientTest extends \BBTestCase
     /**
      * @var \Box\Mod\Support\Api\Client
      */
-    protected $clientApi = null;
+    protected $clientApi;
 
     public function setup(): void
     {
         $this->clientApi = new \Box\Mod\Support\Api\Client();
     }
 
-    public function testTicket_get_list()
+    public function testTicketGetList()
     {
-        $simpleResultArr = array(
-            'list' => array(
-                array('id' => 1),
-            ),
-        );
+        $simpleResultArr = [
+            'list' => [
+                ['id' => 1],
+            ],
+        ];
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
-            ->will($this->returnValue($simpleResultArr));
+            ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('getSearchQuery', 'toApiArray'))->getMock();
+            ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
-            ->will($this->returnValue(array('query', array())));
+            ->willReturn(['query', []]);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $model = new \Model_SupportTicket();
         $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di          = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['db']    = $dbMock;
+        $di['db'] = $dbMock;
 
         $this->clientApi->setDi($di);
 
@@ -54,27 +54,27 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
-        $data   = array();
+        $data = [];
         $result = $this->clientApi->ticket_get_list($data);
 
         $this->assertIsArray($result);
     }
 
-    public function testTicket_get()
+    public function testTicketGet()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('findOneByClient', 'toApiArray'))->getMock();
+            ->onlyMethods(['findOneByClient', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->willReturn(new \Model_SupportTicket());
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
 
@@ -85,20 +85,20 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
-        $data   = array(
-            'id' => random_int(1, 100)
-        );
+        $data = [
+            'id' => random_int(1, 100),
+        ];
         $result = $this->clientApi->ticket_get($data);
 
         $this->assertIsArray($result);
     }
 
-    public function testHelpdesk_get_pairs()
+    public function testHelpdeskGetPairs()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('helpdeskGetPairs'))->getMock();
+            ->onlyMethods(['helpdeskGetPairs'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetPairs')
-            ->will($this->returnValue(array(0 => 'General')));
+            ->willReturn([0 => 'General']);
 
         $this->clientApi->setService($serviceMock);
 
@@ -107,26 +107,26 @@ class Api_ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTicket_create()
+    public function testTicketCreate()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('ticketCreateForClient'))->getMock();
+            ->onlyMethods(['ticketCreateForClient'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForClient')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_SupportHelpdesk()));
+            ->willReturn(new \Model_SupportHelpdesk());
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['db']        = $dbMock;
+        $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -136,38 +136,38 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
-        $data   = array(
-            'content'             => 'Content',
-            'subject'             => 'Subject',
+        $data = [
+            'content' => 'Content',
+            'subject' => 'Subject',
             'support_helpdesk_id' => random_int(1, 100),
-        );
+        ];
         $result = $this->clientApi->ticket_create($data);
 
         $this->assertIsInt($result);
     }
 
-    public function testTicket_reply()
+    public function testTicketReply()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('canBeReopened', 'ticketReply'))->getMock();
+            ->onlyMethods(['canBeReopened', 'ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->willReturn(new \Model_SupportTicket());
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['db']        = $dbMock;
+        $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -177,38 +177,38 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
-        $data   = array(
+        $data = [
             'content' => 'Content',
-            'id'      => random_int(1, 100),
-        );
+            'id' => random_int(1, 100),
+        ];
         $result = $this->clientApi->ticket_reply($data);
 
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
-    public function testTicket_replyCanNotBeReopenedException()
+    public function testTicketReplyCanNotBeReopenedException()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('canBeReopened', 'ticketReply'))->getMock();
+            ->onlyMethods(['canBeReopened', 'ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
-            ->will($this->returnValue(false));
+            ->willReturn(false);
         $serviceMock->expects($this->never())->method('ticketReply')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->willReturn(new \Model_SupportTicket());
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['db']        = $dbMock;
+        $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -218,31 +218,31 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
-        $data   = array(
+        $data = [
             'content' => 'Content',
-            'id'      => random_int(1, 100),
-        );
+            'id' => random_int(1, 100),
+        ];
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->ticket_reply($data);
 
         $this->assertIsInt($result);
     }
 
-    public function testTicket_close()
+    public function testTicketClose()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
-            ->onlyMethods(array('findOneByClient', 'closeTicket'))->getMock();
+            ->onlyMethods(['findOneByClient', 'closeTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->willReturn(new \Model_SupportTicket());
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
-            ->will($this->returnValue(random_int(1, 100)));
+            ->willReturn(random_int(1, 100));
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
 
@@ -253,10 +253,10 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
-        $data   = array(
+        $data = [
             'content' => 'Content',
-            'id'      => random_int(1, 100),
-        );
+            'id' => random_int(1, 100),
+        ];
         $result = $this->clientApi->ticket_close($data);
 
         $this->assertIsInt($result);

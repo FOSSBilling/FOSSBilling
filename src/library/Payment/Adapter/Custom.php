@@ -2,12 +2,11 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Payment_Adapter_Custom
 {
     protected ?\Pimple\Container $di = null;
@@ -16,69 +15,70 @@ class Payment_Adapter_Custom
     {
     }
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
     public static function getConfig()
     {
-        return array(
-            'can_load_in_iframe'   =>  true,
-            'supports_one_time_payments'   =>  true,
-            'supports_subscriptions'       =>  true,
-            'description'     =>  'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML and JavaScript code is supported.',
-            'logo' => array(
+        return [
+            'can_load_in_iframe' => true,
+            'supports_one_time_payments' => true,
+            'supports_subscriptions' => true,
+            'description' => 'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML and JavaScript code is supported.',
+            'logo' => [
                 'logo' => 'custom.png',
                 'height' => '50px',
                 'width' => '50px',
-            ),
-            'form'  => array(
-                'single' => array(
-                    'textarea', array(
+            ],
+            'form' => [
+                'single' => [
+                    'textarea', [
                         'label' => 'Enter your text for single payment information',
-                    ),
-                ),
-                'recurrent' => array(
-                    'textarea', array(
+                    ],
+                ],
+                'recurrent' => [
+                    'textarea', [
                         'label' => 'Enter your text for subscription information',
-                    ),
-                ),
-            ),
-        ); 
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
-     * Generate payment text
-     * 
+     * Generate payment text.
+     *
      * @return string - html form with auto submit javascript
      */
     public function getHtml(Api_Handler $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
-        $invoiceService = $this->di['mod_service']("Invoice");
+        $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
-        $vars = array(
-            '_client_id'    => $invoice['client']['id'],
-            'invoice'   =>  $invoice,
-            '_tpl'      =>  $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.'),
-        );
+        $vars = [
+            '_client_id' => $invoice['client']['id'],
+            'invoice' => $invoice,
+            '_tpl' => $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.'),
+        ];
         $systemService = $this->di['mod_service']('System');
+
         return $systemService->renderString($vars['_tpl'], true, $vars);
     }
 
     /**
      * Processes a transaction using a custom payment adapter.
      *
-     * @param \Api_Handler $api_admin The API admin object.
-     * @param int $id The ID of the transaction to process.
-     * @param array $data The data associated with the transaction.
-     * @param int $gateway_id The ID of the payment gateway to use.
+     * @param Api_Handler $api_admin  the API admin object
+     * @param int         $id         the ID of the transaction to process
+     * @param array       $data       the data associated with the transaction
+     * @param int         $gateway_id the ID of the payment gateway to use
      *
-     * @return bool Returns true if the transaction was processed successfully, false otherwise.
+     * @return bool returns true if the transaction was processed successfully, false otherwise
      */
-    public function processTransaction(\Api_Handler $api_admin, int $id, array $data, int $gateway_id)
+    public function processTransaction(Api_Handler $api_admin, int $id, array $data, int $gateway_id)
     {
         try {
             // Get the transaction and invoice associated with the transaction
@@ -106,9 +106,9 @@ class Payment_Adapter_Custom
             $tx->currency = $invoice->currency;
             $tx->updated_at = date('Y-m-d H:i:s');
 
-            // Store the updated transaction and use it's return to indicate a sucsess or failure. 
+            // Store the updated transaction and use it's return to indicate a sucsess or failure.
             return $this->di['db']->store($tx);
-        } catch (\Exception) {
+        } catch (Exception) {
             return false;
         }
     }

@@ -2,26 +2,26 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use \Stripe\StripeClient;
+use Stripe\StripeClient;
 
-class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
     private \Stripe\StripeClient $stripe;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -52,14 +52,14 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
     public static function getConfig()
     {
         return [
-            'supports_one_time_payments'   =>  true,
-            'description'     =>  'You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
-            'logo' => array(
+            'supports_one_time_payments' => true,
+            'description' => 'You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
+            'logo' => [
                 'logo' => 'stripe.png',
                 'height' => '30px',
                 'width' => '65px',
-            ),
-            'form'  => [
+            ],
+            'form' => [
                 'pub_key' => [
                     'text', [
                         'label' => 'Live publishable key:',
@@ -93,41 +93,44 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
         return $this->_generateForm($invoiceModel);
     }
 
-    public function getAmountInCents(\Model_Invoice $invoice)
+    public function getAmountInCents(Model_Invoice $invoice)
     {
         $invoiceService = $this->di['mod_service']('Invoice');
+
         return $invoiceService->getTotalWithTax($invoice) * 100;
     }
 
-    public function getInvoiceTitle(\Model_Invoice $invoice)
+    public function getInvoiceTitle(Model_Invoice $invoice)
     {
-        $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', array(':invoice_id' => $invoice->id));
+        $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
 
         $params = [
             ':id' => sprintf('%05s', $invoice->nr),
             ':serie' => $invoice->serie,
-            ':title' => $invoiceItems[0]['title']
+            ':title' => $invoiceItems[0]['title'],
         ];
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
         if ((is_countable($invoiceItems) ? count($invoiceItems) : 0) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
         }
+
         return $title;
     }
 
     public function logError($e, Model_Transaction $tx)
     {
-        $body           = $e->getJsonBody();
-        $err            = $body['error'];
+        $body = $e->getJsonBody();
+        $err = $body['error'];
         $tx->txn_status = $err['type'];
-        $tx->error      = $err['message'];
-        $tx->status     = 'processed';
+        $tx->error = $err['message'];
+        $tx->status = 'processed';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
         if (DEBUG) {
             error_log(json_encode($e->getJsonBody()));
         }
+
         throw new Exception($tx->error);
     }
 
@@ -155,10 +158,10 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             $tx->currency = $charge->currency;
 
             $bd = [
-                'amount'        =>  $tx->amount,
-                'description'   =>  'Stripe transaction ' . $charge->id,
-                'type'          =>  'transaction',
-                'rel_id'        =>  $tx->id,
+                'amount' => $tx->amount,
+                'description' => 'Stripe transaction ' . $charge->id,
+                'type' => 'transaction',
+                'rel_id' => $tx->id,
             ];
 
             // Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
@@ -175,12 +178,13 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
                 if ($tx->invoice_id) {
                     $invoiceService->payInvoiceWithCredits($invoice);
                 } else {
-                    $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
+                    $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
                 }
             }
-        } catch (\Stripe\Exception\CardException | \Stripe\Exception\InvalidRequestException | \Stripe\Exception\AuthenticationException | \Stripe\Exception\ApiConnectionException | \Stripe\Exception\ApiErrorException $e) {
+        } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
-            throw new \FOSSBilling\Exception("There was an error when processing the transaction");
+
+            throw new FOSSBilling\Exception('There was an error when processing the transaction');
         }
 
         $paymentStatus = match ($charge->status) {
@@ -199,9 +203,9 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
         $intent = $this->stripe->paymentIntents->create([
             'amount' => $this->getAmountInCents($invoice),
             'currency' => $invoice->currency,
-            "description" => $this->getInvoiceTitle($invoice),
+            'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
-            "receipt_email" => $invoice->buyer_email
+            'receipt_email' => $invoice->buyer_email,
         ]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
@@ -282,6 +286,7 @@ class Payment_Adapter_Stripe implements \FOSSBilling\InjectionAwareInterface
             ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
             ':invoice_hash' => $invoice->hash,
         ];
+
         return strtr($form, $bindings);
     }
 }

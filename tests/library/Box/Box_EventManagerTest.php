@@ -1,12 +1,13 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_EventManagerTest extends PHPUnit\Framework\TestCase
 {
-	#[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
+    #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testEmptyFire()
     {
         $manager = new Box_EventManager();
-        $manager->fire(array());
+        $manager->fire([]);
     }
 
     public function testFire()
@@ -14,17 +15,15 @@ class Box_EventManagerTest extends PHPUnit\Framework\TestCase
         $db_mock = $this->getMockBuilder('Box_Database')->getMock();
         $db_mock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-
-        $di = new \Pimple\Container();
+        $di = new Pimple\Container();
         $di['logger'] = new Box_Log();
         $di['db'] = $db_mock;
-
 
         $manager = new Box_EventManager();
         $manager->setDi($di);
 
-        $manager->fire(array('event'=>'onBeforeClientSignup'));
+        $manager->fire(['event' => 'onBeforeClientSignup']);
     }
 }

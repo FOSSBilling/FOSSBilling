@@ -1,6 +1,6 @@
 <?php
 /**
- * Zend Framework
+ * Zend Framework.
  *
  * LICENSE
  *
@@ -13,9 +13,10 @@
  * to license@zend.com so we can send you a copy immediately.
  *
  * @category   Zend
- * @package    Zend_Reflection
+ *
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ *
  * @version    $Id: Param.php 20096 2010-01-06 02:05:09Z bkarwin $
  */
 
@@ -24,7 +25,7 @@ require_once 'Zend/Reflection/Docblock/Tag.php';
 
 /**
  * @category   Zend
- * @package    Zend_Reflection
+ *
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
@@ -33,29 +34,31 @@ class TagOptional extends Zend_Reflection_Docblock_Tag
     /**
      * @var string
      */
-    protected $_type = null;
+    protected $_type;
 
     /**
      * @var string
      */
-    protected $_variableName = null;
+    protected $_variableName;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param string $tagDocblockLine
      */
     public function __construct($tagDocblockLine)
     {
-        $matches = array();
+        $matches = [];
 
         if (!preg_match('#^@(\w+)\s+([\w|\\\]+)(?:\s+(\$\S+))?(?:\s+(.*))?#s', $tagDocblockLine, $matches)) {
             require_once 'Zend/Reflection/Exception.php';
+
             throw new Zend_Reflection_Exception('Provided docblock line is does not contain a valid tag');
         }
 
         if ($matches[1] != 'optional') {
             require_once 'Zend/Reflection/Exception.php';
+
             throw new Zend_Reflection_Exception('Provided docblock line is does not contain a valid @optional tag');
         }
 
@@ -72,7 +75,7 @@ class TagOptional extends Zend_Reflection_Docblock_Tag
     }
 
     /**
-     * Get parameter variable type
+     * Get parameter variable type.
      *
      * @return string
      */
@@ -82,7 +85,7 @@ class TagOptional extends Zend_Reflection_Docblock_Tag
     }
 
     /**
-     * Get parameter name
+     * Get parameter name.
      *
      * @return string
      */

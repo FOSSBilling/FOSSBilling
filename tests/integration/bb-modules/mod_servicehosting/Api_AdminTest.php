@@ -1,46 +1,47 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
-    
+
     public function testAdminServiceHosting()
     {
         $array = $this->api_admin->servicehosting_manager_get_pairs();
         $this->assertIsArray($array);
     }
-    
+
     public function testAccountManagement()
     {
-        $data = array(
-            'order_id'  =>  8,
-            'sld'    =>  'example',
-            'tld'    =>  '.com',
-        );
-        
+        $data = [
+            'order_id' => 8,
+            'sld' => 'example',
+            'tld' => '.com',
+        ];
+
         $bool = $this->api_admin->servicehosting_change_domain($data);
         $this->assertTrue($bool);
-        
+
         $data['plan_id'] = 2;
         $bool = $this->api_admin->servicehosting_change_plan($data);
         $this->assertTrue($bool);
-        
+
         $data['username'] = 'new-username';
         $bool = $this->api_admin->servicehosting_change_username($data);
         $this->assertTrue($bool);
-        
+
         $data['ip'] = 'kitoks';
         $bool = $this->api_admin->servicehosting_change_ip($data);
         $this->assertTrue($bool);
-        
+
         $data['password'] = 'qwerty123';
         $data['password_confirm'] = 'qwerty123';
         $bool = $this->api_admin->servicehosting_change_password($data);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->servicehosting_sync($data);
         $this->assertTrue($bool);
-        
+
         $data['username'] = 'username123';
         $bool = $this->api_admin->servicehosting_update($data);
         $this->assertTrue($bool);
@@ -50,69 +51,69 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
     {
         $array = $this->api_admin->servicehosting_hp_get_list();
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->servicehosting_hp_get_pairs();
         $this->assertIsArray($array);
-        
-        $data = array(
-            'name'  =>  'test',
-        );
+
+        $data = [
+            'name' => 'test',
+        ];
         $id = $this->api_admin->servicehosting_hp_create($data);
         $this->assertTrue(is_numeric($id));
-        
+
         $data['id'] = $id;
         $array = $this->api_admin->servicehosting_hp_get($data);
         $this->assertIsArray($array);
-        
+
         $data['quota'] = 12345;
         $bool = $this->api_admin->servicehosting_hp_update($data);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->servicehosting_hp_delete($data);
         $this->assertTrue($bool);
     }
-    
+
     public function testServer()
     {
         $array = $this->api_admin->servicehosting_server_get_pairs();
         $this->assertIsArray($array);
-        
-        $data = array(
-            'name'  =>  'test',
-            'ip'  =>  '127.15.15.1',
-            'manager'  =>  'Custom',
-        );
+
+        $data = [
+            'name' => 'test',
+            'ip' => '127.15.15.1',
+            'manager' => 'Custom',
+        ];
         $id = $this->api_admin->servicehosting_server_create($data);
         $this->assertTrue(is_numeric($id));
-        
+
         $data['id'] = $id;
         $array = $this->api_admin->servicehosting_server_get($data);
         $this->assertIsArray($array);
-        
+
         $bool = $this->api_admin->servicehosting_server_test_connection($data);
         $this->assertTrue($bool);
-        
+
         $data['quota'] = 12345;
         $bool = $this->api_admin->servicehosting_server_update($data);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->servicehosting_server_delete($data);
         $this->assertTrue($bool);
     }
-    
+
     public function testServerIps()
     {
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->servicehosting_server_get($data);
         $this->assertIsArray($array);
         $this->assertIsArray($array['assigned_ips']);
 
-        $data['assigned_ips'] = '127.85.81.156'.PHP_EOL.'189.156.45.78'.PHP_EOL;
+        $data['assigned_ips'] = '127.85.81.156' . PHP_EOL . '189.156.45.78' . PHP_EOL;
         $bool = $this->api_admin->servicehosting_server_update($data);
         $this->assertTrue($bool);
-        
+
         $array = $this->api_admin->servicehosting_server_get($data);
         $this->assertIsArray($array['assigned_ips']);
         $this->assertEquals(2, count($array['assigned_ips']));
@@ -120,7 +121,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
 
     public function testServicehostingServerGetList()
     {
-        $array = $this->api_admin->servicehosting_server_get_list(array());
+        $array = $this->api_admin->servicehosting_server_get_list([]);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -156,7 +157,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
 
     public function testServicehostingHpGetList()
     {
-        $array = $this->api_admin->servicehosting_hp_get_list(array());
+        $array = $this->api_admin->servicehosting_hp_get_list([]);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];

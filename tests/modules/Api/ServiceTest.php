@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Api;
 
-
-class ServiceTest extends \BBTestCase {
+class ServiceTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Api\Service
+     * @var Service
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
-        $this->service= new \Box\Mod\Api\Service();
+        $this->service = new Service();
     }
 
     public function testgetDi()
@@ -33,7 +32,7 @@ class ServiceTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->will($this->returnValue($requestNumber));
+            ->willReturn($requestNumber);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -43,6 +42,5 @@ class ServiceTest extends \BBTestCase {
 
         $this->assertIsInt($result);
         $this->assertEquals($requestNumber, $result);
-
     }
 }

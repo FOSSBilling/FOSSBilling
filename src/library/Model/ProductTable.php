@@ -2,35 +2,34 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
+class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
 {
-    public const CUSTOM            = 'custom';
-    public const LICENSE           = 'license';
-    public const ADDON             = 'addon';
-    public const DOMAIN            = 'domain';
-    public const DOWNLOADABLE      = 'downloadable';
-    public const HOSTING           = 'hosting';
-    public const MEMBERSHIP        = 'membership';
-    public const VPS               = 'vps';
+    public const CUSTOM = 'custom';
+    public const LICENSE = 'license';
+    public const ADDON = 'addon';
+    public const DOMAIN = 'domain';
+    public const DOWNLOADABLE = 'downloadable';
+    public const HOSTING = 'hosting';
+    public const MEMBERSHIP = 'membership';
+    public const VPS = 'vps';
 
-    public const SETUP_AFTER_ORDER     = 'after_order';
-    public const SETUP_AFTER_PAYMENT   = 'after_payment';
-    public const SETUP_MANUAL          = 'manual';
+    public const SETUP_AFTER_ORDER = 'after_order';
+    public const SETUP_AFTER_PAYMENT = 'after_payment';
+    public const SETUP_MANUAL = 'manual';
 
     protected ?\Pimple\Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -46,18 +45,19 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
     private function _getPeriodKey(Box_Period $period)
     {
         $code = $period->getCode();
+
         try {
             return match ($code) {
-                '1W'  => 'w',
-                '1M'  => 'm',
-                '3M'  => 'q',
-                '6M'  => 'b',
+                '1W' => 'w',
+                '1M' => 'm',
+                '3M' => 'q',
+                '6M' => 'b',
                 '12M' => 'a',
-                '1Y'  => 'a',
-                '2Y'  => 'bia',
-                '3Y'  => 'tria'
+                '1Y' => 'a',
+                '2Y' => 'bia',
+                '3Y' => 'tria'
             };
-        } catch (\UnhandledMatchError) {
+        } catch (UnhandledMatchError) {
             throw new FOSSBilling\Exception('Unknown period selected ' . $code);
         }
     }
@@ -67,17 +67,16 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
         if ($model->product_payment_id) {
             $service = $this->di['mod_service']('product');
             $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
+
             return $service->toProductPaymentApiArray($productPayment);
         }
 
-        throw new \FOSSBilling\Exception('Product pricing could not be determined. ' . static::class);
+        throw new FOSSBilling\Exception('Product pricing could not be determined. ' . static::class);
     }
 
     /**
-     * Price for one unit
+     * Price for one unit.
      *
-     * @param Model_Product $product
-     * @param array $config
      * @return float
      */
     public function getProductSetupPrice(Model_Product $product, array $config = null)
@@ -89,27 +88,25 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($pp->type == Model_ProductPayment::ONCE) {
-            $price = (float)$pp->once_setup_price;
+            $price = (float) $pp->once_setup_price;
         }
 
         if ($pp->type == Model_ProductPayment::RECURRENT) {
             $period = new Box_Period($config['period']);
             $key = $this->_getPeriodKey($period);
-            $price = (float)$pp->{$key . '_setup_price'};
+            $price = (float) $pp->{$key . '_setup_price'};
         }
 
         if (isset($price)) {
             return $price;
         }
 
-        throw new \FOSSBilling\Exception('Unknown period selected for setup price');
+        throw new FOSSBilling\Exception('Unknown period selected for setup price');
     }
 
     /**
-     * Price for one unit
+     * Price for one unit.
      *
-     * @param Model_Product $product
-     * @param array $config
      * @return float
      */
     public function getProductPrice(Model_Product $product, array $config = null)
@@ -126,7 +123,7 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
 
         if ($pp->type == Model_ProductPayment::RECURRENT) {
             if (!isset($config['period'])) {
-                throw new \FOSSBilling\Exception('Product :id payment type is recurrent, but period was not selected', array(':id' => $product->id));
+                throw new FOSSBilling\Exception('Product :id payment type is recurrent, but period was not selected', [':id' => $product->id]);
             }
 
             $period = new Box_Period($config['period']);
@@ -138,6 +135,6 @@ class Model_ProductTable implements \FOSSBilling\InjectionAwareInterface
             return $price;
         }
 
-        throw new \FOSSBilling\Exception('Unknown Period selected for price');
+        throw new FOSSBilling\Exception('Unknown Period selected for price');
     }
 }

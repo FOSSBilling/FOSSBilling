@@ -2,22 +2,22 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Server_Manager_Plesk extends Server_Manager
 {
     private ?\PleskX\Api\Client $_client = null;
 
-    public function init() {
+    public function init()
+    {
         $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
 
-        $this->_client = new \PleskX\Api\Client($this->_config['host'], $this->_config['port']);
+        $this->_client = new PleskX\Api\Client($this->_config['host'], $this->_config['port']);
         $this->_client->setCredentials($this->_config['username'], $this->_config['password']);
-	}
+    }
 
     public static function getForm()
     {
@@ -26,18 +26,19 @@ class Server_Manager_Plesk extends Server_Manager
         ];
     }
 
-    public function getLoginUrl(?Server_Account $account = null): string
+    public function getLoginUrl(Server_Account $account = null): string
     {
         $protocol = $this->_config['secure'] ? 'https' : 'http';
-        $url = $protocol . "://" . $this->_config['host'] . ':' . $this->_config['port'];
+        $url = $protocol . '://' . $this->_config['host'] . ':' . $this->_config['port'];
         if ($account) {
             $sessionId = $this->_client->session()->create($account->getUsername(), $_SERVER['REMOTE_ADDR']);
             $url .= '/enterprise/rsession_init.php?PHPSESSID=' . $sessionId;
         }
+
         return $url;
     }
 
-    public function getResellerLoginUrl(?Server_Account $account = null)
+    public function getResellerLoginUrl(Server_Account $account = null)
     {
         return $this->getLoginUrl();
     }
@@ -81,7 +82,7 @@ class Server_Manager_Plesk extends Server_Manager
     		    $rand = array_rand($ips['exclusive']);
     		    $account->setIp($ips['exclusive'][$rand]['ip']);
             }
-    	}
+        }
 
     	$id = $this->_createClient($account);
         $client = $account->getClient();
@@ -102,15 +103,14 @@ class Server_Manager_Plesk extends Server_Manager
     	}
         */
 
-    	return true;
+        return true;
     }
 
     public function setSubscription(Server_Account $a)
     {
-        $this->getLog()->info('Setting subscription for account ' .  $a->getUsername());
+        $this->getLog()->info('Setting subscription for account ' . $a->getUsername());
 
-        $this->_client->webspace()->request($this->_createSubscriptionProps($a, "add"));
-
+        $this->_client->webspace()->request($this->_createSubscriptionProps($a, 'add'));
     }
 
     // ??
@@ -123,7 +123,7 @@ class Server_Manager_Plesk extends Server_Manager
     {
         $this->getLog()->info('Updating subscription for account ' . $a->getUsername());
 
-        $this->_client->webspace()->request($this->_createSubscriptionProps($a, "set"));
+        $this->_client->webspace()->request($this->_createSubscriptionProps($a, 'set'));
     }
 
     public function deleteSubscription(Server_Account $a)
@@ -135,22 +135,22 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function suspendAccount(Server_Account $a, $suspend = true)
     {
-    	if ($a->getReseller()) {
+        if ($a->getReseller()) {
             $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['status' => 16]);
-    	} else {
+        } else {
             $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['status' => 16]);
-    	}
+        }
 
         return $result;
     }
 
     public function unsuspendAccount(Server_Account $a)
     {
-    	if ($a->getReseller()) {
+        if ($a->getReseller()) {
             $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['status' => 0]);
-    	} else {
+        } else {
             $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['status' => 0]);
-    	}
+        }
 
         return $result;
     }
@@ -158,46 +158,46 @@ class Server_Manager_Plesk extends Server_Manager
     public function cancelAccount(Server_Account $a)
     {
         if ($a->getReseller()) {
-    		$result = $this->_client->reseller()->delete('login', $a->getUsername());
-    	} else {
-    		$result = $this->_client->customer()->delete('login', $a->getUsername());
-    	}
+            $result = $this->_client->reseller()->delete('login', $a->getUsername());
+        } else {
+            $result = $this->_client->customer()->delete('login', $a->getUsername());
+        }
 
         return $result;
     }
 
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
-    	$domainId = null;
-     $id = $this->_modifyClient($a);
+        $domainId = null;
+        $id = $this->_modifyClient($a);
         $client = $a->getClient();
-    	if (!$id) {
-    		throw new Server_Exception('Can\'t modify client');
-    	} else {
+        if (!$id) {
+            throw new Server_Exception('Can\'t modify client');
+        } else {
             $client->setId($id);
-    	}
+        }
 
         $a->setPackage($p);
         $this->updateSubscription($a);
 
-    	if ($a->getReseller()) {
-    		$this->_addNs($a, $domainId);
-    	}
+        if ($a->getReseller()) {
+            $this->_addNs($a, $domainId);
+        }
 
-    	return true;
+        return true;
     }
 
     public function changeAccountPassword(Server_Account $a, $new)
     {
-    	$this->getLog()->info('Changing password for account ' . $a->getUsername());
+        $this->getLog()->info('Changing password for account ' . $a->getUsername());
 
-    	if ($a->getReseller()) {
+        if ($a->getReseller()) {
             $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), ['passwd' => $new]);
-    	} else {
+        } else {
             $result = $this->_client->customer()->setProperties('login', $a->getUsername(), ['passwd' => $new]);
-    	}
+        }
 
-    	return $result;
+        return $result;
     }
 
     public function changeAccountUsername(Server_Account $a, $new): never
@@ -214,14 +214,14 @@ class Server_Manager_Plesk extends Server_Manager
         $params = [
             'set' => [
                 'filter' => [
-                    'owner-login' => $a->getUsername()
+                    'owner-login' => $a->getUsername(),
                 ],
                 'values' => [
                     'gen_setup' => [
-                        'name' => $new
-                    ]
-                ]
-            ]
+                        'name' => $new,
+                    ],
+                ],
+            ],
         ];
 
         $this->_client->webspace()->request($params);
@@ -232,8 +232,9 @@ class Server_Manager_Plesk extends Server_Manager
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('changing the account IP')]);
     }
 
-    private function _getIps() {
-    	$response = $this->_client->ip()->get();
+    private function _getIps()
+    {
+        $response = $this->_client->ip()->get();
 
 		$ips = array('shared' => array(), 'exclusive' => array());
 
@@ -244,131 +245,136 @@ class Server_Manager_Plesk extends Server_Manager
 			);
 		}
 
-		return $ips;
+        return $ips;
     }
 
     private function _setIp(Server_Account $a, $new)
     {
-    	$params = array(
-    		'reseller'	=>	array(
-    			'ippool-add-ip'	=>	array(
-    				'reseller-id'   =>	$a->getUsername(),
-    				'ip'    =>	array(
-                        'ip-address' => $new
-                    ),
-    			),
-    		),
-    	);
+        $params = [
+            'reseller' => [
+                'ippool-add-ip' => [
+                    'reseller-id' => $a->getUsername(),
+                    'ip' => [
+                        'ip-address' => $new,
+                    ],
+                ],
+            ],
+        ];
 
         $response = $this->_client->request($params);
     }
 
-    private function _addNs(Server_Account $a, $domainId) {
-    	// Will be done in the future
+    private function _addNs(Server_Account $a, $domainId)
+    {
+        // Will be done in the future
 
-		return true;
+        return true;
     }
 
     private function _getNs(Server_Account $a, $domainId)
     {
         $response = $this->_client->dns()->get('domain_id', $domainId);
 
-   		$ns = array();
+        $ns = [];
 
-   		foreach ($response->dns->get_rec->result as $dns) {
-   			if ($dns->data->type == 'NS') {
-   				$ns[] = (string)$dns->id;
-   			}
-   		}
+        foreach ($response->dns->get_rec->result as $dns) {
+            if ($dns->data->type == 'NS') {
+                $ns[] = (string) $dns->id;
+            }
+        }
 
-   		return $ns;
+        return $ns;
     }
 
-    private function _removeDns($ns) {
-		foreach($ns as $key => $id)	{
-			$params['dns']['del_rec']['filter']['id' . $key] = $id;
-		}
-		if (empty($params)) {
-			return true;
-		}
+    private function _removeDns($ns)
+    {
+        foreach ($ns as $key => $id) {
+            $params['dns']['del_rec']['filter']['id' . $key] = $id;
+        }
+        if (empty($params)) {
+            return true;
+        }
 
         $response = $this->_client->request($params);
 
-   		return true;
+        return true;
     }
 
-    private function _modifyClient(Server_Account $a) {
+    private function _modifyClient(Server_Account $a)
+    {
         $client = $a->getClient();
 
         if ($a->getReseller()) {
-    		$result = $this->_client->reseller()->setProperties('login', $a->getUsername(), $this->_createClientProps($a));
-    	} else {
-    		$result = $this->_client->customer()->setProperties('login', $a->getUsername(), $this->_createClientProps($a));
-    	}
+            $result = $this->_client->reseller()->setProperties('login', $a->getUsername(), $this->_createClientProps($a));
+        } else {
+            $result = $this->_client->customer()->setProperties('login', $a->getUsername(), $this->_createClientProps($a));
+        }
 
         return $result;
     }
 
-    private function _changeIpType(Server_Account $a) {
+    private function _changeIpType(Server_Account $a)
+    {
         $client = $a->getClient();
-    	$params = array(
-    		'reseller'	=>	array(
-    			'ippool-set-ip'	=>	array(
-    				'reseller-id'	=>	$client->getId(),
-    				'filter'	=>	array(
-    					'ip-address'	=>	$a->getIp(),
-    				),
-    				'values'	=>	array(
-    					'ip-type'	=>	'shared',
-    				),
-    			),
-    		),
-    	);
+        $params = [
+            'reseller' => [
+                'ippool-set-ip' => [
+                    'reseller-id' => $client->getId(),
+                    'filter' => [
+                        'ip-address' => $a->getIp(),
+                    ],
+                    'values' => [
+                        'ip-type' => 'shared',
+                    ],
+                ],
+            ],
+        ];
 
         $response = $this->_client->reseller()->request($params);
 
-   		if (isset($response->reseller->{'ippool-set-ip'}->result->status) &&
-   			$response->reseller->{'ippool-set-ip'}->result->status == 'ok') {
-   			return true;
-   		} else {
-   			return false;
-   		}
+        if (isset($response->reseller->{'ippool-set-ip'}->result->status)
+            && $response->reseller->{'ippool-set-ip'}->result->status == 'ok') {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    private function _createSubscriptionProps(Server_Account $a, $action) {
+    private function _createSubscriptionProps(Server_Account $a, $action)
+    {
         $p = $a->getPackage();
-        $props = array (
-                $action	=>  array(
-                    'gen_setup'	=>	array(
-                        'name'          => $a->getDomain(),
-                        'owner-login'	=>	$a->getUsername(),
-                        'htype'			=>	'vrt_hst',
-                        'ip_address'    => $a->getIp()
-                    ),
-                    'hosting' => array(
-                        'vrt_hst'	=>	array(
-                            'property'	=>	array(
-                                array(
-                                    'name'	=>	'ftp_login',
-                                    'value'	=>	$a->getUsername(),
-                                ),
-                                array(
-                                    'name'	=>	'ftp_password',
-                                    'value'	=>	$a->getPassword(),
-                                ),
-                                array(
-                                    'name'	=>	'php',
-                                    'value'	=>	'true',
-                                ),
-                                array(
-                                    'name'	=>	'ssl',
-                                    'value'	=>	'true',
-                                ),
-                                array(
-                                    'name'	=>	'cgi',
-                                    'value'	=>	'true',
-                                ),
-                            ),
+        $props = [
+                $action => [
+                    'gen_setup' => [
+                        'name' => $a->getDomain(),
+                        'owner-login' => $a->getUsername(),
+                        'htype' => 'vrt_hst',
+                        'ip_address' => $a->getIp(),
+                    ],
+                    'hosting' => [
+                        'vrt_hst' => [
+                            'property' => [
+                                [
+                                    'name' => 'ftp_login',
+                                    'value' => $a->getUsername(),
+                                ],
+                                [
+                                    'name' => 'ftp_password',
+                                    'value' => $a->getPassword(),
+                                ],
+                                [
+                                    'name' => 'php',
+                                    'value' => 'true',
+                                ],
+                                [
+                                    'name' => 'ssl',
+                                    'value' => 'true',
+                                ],
+                                [
+                                    'name' => 'cgi',
+                                    'value' => 'true',
+                                ],
+                            ],
                             'ip_address' => $a->getIp(),
                         ),
                     ),
@@ -475,50 +481,54 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * Creates a new client account
+     * Creates a new client account.
+     *
+     * @return int client's Plesk id
+     *
      * @throws Server_Exception
-     * @return integer client's Plesk id
      */
-    private function _createClient(Server_Account $a) {
+    private function _createClient(Server_Account $a)
+    {
         $client = $a->getClient();
 
         $props = [
-            'cname'				=>	$client->getCompany(),
-    		'pname'				=>	$client->getFullname(),
-    		'login'				=>	$a->getUsername(),
-    		'passwd'			=>	$a->getPassword(),
-    		'phone'				=>	$client->getTelephone(),
-    		'fax'				=>	$client->getFax(),
-    		'email'				=>	$client->getEmail(),
-    		'address'			=>	$client->getAddress1(),
-    		'city'				=>	$client->getCity(),
-    		'state'				=>	$client->getState(),
-            'description'       =>  "Created using FOSSBilling.",
+            'cname' => $client->getCompany(),
+            'pname' => $client->getFullname(),
+            'login' => $a->getUsername(),
+            'passwd' => $a->getPassword(),
+            'phone' => $client->getTelephone(),
+            'fax' => $client->getFax(),
+            'email' => $client->getEmail(),
+            'address' => $client->getAddress1(),
+            'city' => $client->getCity(),
+            'state' => $client->getState(),
+            'description' => 'Created using FOSSBilling.',
         ];
 
-    	if ($a->getReseller()) {
-    		$result = $this->_client->reseller()->create($props);
-    	} else {
+        if ($a->getReseller()) {
+            $result = $this->_client->reseller()->create($props);
+        } else {
             $result = $this->_client->customer()->create($props);
-    	}
+        }
 
         return true;
     }
 
-    private function _createClientProps(Server_Account $a) {
+    private function _createClientProps(Server_Account $a)
+    {
         $client = $a->getClient();
 
         $props = [
-            'cname'				=>	$client->getCompany(),
-            'pname'				=>	$client->getFullname(),
-    		'login'				=>	$a->getUsername(),
-    		'passwd'			=>	$a->getPassword(),
-    		'phone'				=>	$client->getTelephone(),
-    		'fax'				=>	$client->getFax(),
-    		'email'				=>	$client->getEmail(),
-    		'address'			=>	$client->getAddress1(),
-    		'city'				=>	$client->getCity(),
-    		'state'				=>	$client->getState(),
+            'cname' => $client->getCompany(),
+            'pname' => $client->getFullname(),
+            'login' => $a->getUsername(),
+            'passwd' => $a->getPassword(),
+            'phone' => $client->getTelephone(),
+            'fax' => $client->getFax(),
+            'email' => $client->getEmail(),
+            'address' => $client->getAddress1(),
+            'city' => $client->getCity(),
+            'state' => $client->getState(),
         ];
 
         return $props;

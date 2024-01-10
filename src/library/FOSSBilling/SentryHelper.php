@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,12 +12,12 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use \Sentry\Event;
-use \Sentry\EventHint;
-use \Sentry\HttpClient\HttpClientInterface;
-use \Sentry\HttpClient\Request;
-use \Sentry\HttpClient\Response;
-use \Sentry\Options;
+use Sentry\Event;
+use Sentry\EventHint;
+use Sentry\HttpClient\HttpClientInterface;
+use Sentry\HttpClient\Request;
+use Sentry\HttpClient\Response;
+use Sentry\Options;
 use Symfony\Component\HttpClient\HttpClient;
 
 class SentryHelper
@@ -31,21 +31,24 @@ class SentryHelper
 
     // Errors for blacklisted modules are discarded from error reporting
     private static array $blacklistedModules = [
-        'serviceproxmox', // Remove once it's officially ready for more than just dev work 
+        'serviceproxmox', // Remove once it's officially ready for more than just dev work
         'forum',
         'servicegoogleworkspace',
-        'servicemulticraft'
+        'servicemulticraft',
     ];
 
     // Array containing instance IDs that are blacklisted from error reporting and a unix timestamp of when their blacklist expires.
     private static array $blacklistedInstances = [
-        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => 1719829175
+        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => 1_719_829_175,
     ];
+
+    private static string $placeholderFirstHalf = '--replace--this--';
+    private static string $placeholderSecondHalf = 'during--release--process--';
 
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.
      *
-     * @param array $config The FOSSBilling config.
+     * @param array $config the FOSSBilling config
      */
     public static function registerSentry(array $config): void
     {
@@ -72,7 +75,7 @@ class SentryHelper
                     $dsn->getEnvelopeApiEndpointUrl(),
                     [
                         'headers' => $requestHeaders,
-                        'body'    => $requestData,
+                        'body' => $requestData,
                     ]
                 );
 
@@ -103,7 +106,7 @@ class SentryHelper
                     if (str_starts_with($exceptionPath, PATH_MODS)) {
                         $module = self::getModule($exceptionPath);
                         $event->setTag('module.name', $module);
-                    } else if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
+                    } elseif (str_starts_with($exceptionPath, PATH_LIBRARY)) {
                         $event->setTag('library.class', self::getLibrary($exceptionPath));
                     }
                 }
@@ -113,6 +116,7 @@ class SentryHelper
                 }
 
                 $event->setTag('webserver.used', self::estimateWebServer());
+
                 return $event;
             },
 
@@ -128,13 +132,13 @@ class SentryHelper
             'attach_stacktrace' => true,
         ];
 
-        /**
+        /*
          * Here we validate that the DSN is correctly set and that error reporting is enabled before passing it off to the Sentry SDK.
          * It may look a bit odd, but the DSN placeholder value here is split into two strings and concatenated so we can easily perform a `sed` replacement of the placeholder without it effecting this check
          *
          * @phpstan-ignore-next-line (The value is replaced during release and the check is written with this in mind.)
          */
-        if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== '--replace--this--' . 'during--release--process--' && !empty($sentryDSN)) {
+        if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== self::$placeholderFirstHalf . self::$placeholderSecondHalf && !empty($sentryDSN)) {
             // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
             $options['dsn'] = $sentryDSN;
         }
@@ -150,12 +154,14 @@ class SentryHelper
         $module = 'Unknown';
 
         while ($level <= 10) {
-            if (dirname($strippedPath, ($level + 1)) === DIRECTORY_SEPARATOR) {
+            if (dirname($strippedPath, $level + 1) === DIRECTORY_SEPARATOR) {
                 $module = trim(dirname($strippedPath, $level), DIRECTORY_SEPARATOR);
+
                 break;
             }
-            $level++;
+            ++$level;
         }
+
         return $module;
     }
 
@@ -172,9 +178,9 @@ class SentryHelper
         $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
         if (function_exists('apache_get_version') || (stripos(strtolower($serverSoftware), 'apache') !== false)) {
             return 'Apache';
-        } else if (stripos(strtolower($serverSoftware), 'litespeed') !== false) {
+        } elseif (stripos(strtolower($serverSoftware), 'litespeed') !== false) {
             return 'Litespeed';
-        } else if (stripos(strtolower($serverSoftware), 'nginx') !== false) {
+        } elseif (stripos(strtolower($serverSoftware), 'nginx') !== false) {
             return 'NGINX';
         } else {
             return 'Unknown';
@@ -182,9 +188,9 @@ class SentryHelper
     }
 
     // Checks if either the module producing the error or the instance ID of this installation is blacklisted
-    public static function isBlacklisted(?string $module = null): bool
+    public static function isBlacklisted(string $module = null): bool
     {
-        if (INSTANCE_ID === 'Unknown') {
+        if (INSTANCE_ID === 'Unknown' || INSTANCE_ID === 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX') {
             return true;
         }
 

@@ -1,22 +1,23 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_StaffTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'admins.xml';
-    
+
     public function testStaff()
     {
-        $array = $this->api_admin->staff_get_list(array('status'=>'active'));
+        $array = $this->api_admin->staff_get_list(['status' => 'active']);
         $this->assertIsArray($array);
 
-        $data = array(
+        $data = [
             'admin_group_id' => 1,
-            'email' =>  random_int(5, 8_787_878).'_test@admin.com',
-            'password' =>  'dem2123123AAo',
-            'name' =>  'John Doe',
-            'signature' =>  'this is test sig',
+            'email' => random_int(5, 8_787_878) . '_test@admin.com',
+            'password' => 'dem2123123AAo',
+            'name' => 'John Doe',
+            'signature' => 'this is test sig',
             'status' => 'active',
-        );
+        ];
         $id = $this->api_admin->staff_create($data);
         $this->assertIsInt($id);
 
@@ -28,7 +29,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertIsArray($array);
 
         $data['id'] = $id;
-        $data['email']  =   'new@email.com';
+        $data['email'] = 'new@email.com';
         $bool = $this->api_admin->staff_update($data);
         $this->assertTrue($bool);
 
@@ -39,7 +40,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
 
         $staffModel = $this->di['db']->load('Admin', $id);
         $this->assertNotEquals($data['password'], $staffModel->pass);
-        
+
         $bool = $this->api_admin->staff_delete($data);
         $this->assertTrue($bool);
 
@@ -47,14 +48,15 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->isNull();
     }
 
-    public function testChangePasswordException(){
-        $this->expectException(\FOSSBilling\Exception::class);
+    public function testChangePasswordException()
+    {
+        $this->expectException(FOSSBilling\Exception::class);
 
-        $data = array(
+        $data = [
             'id' => 1,
-            'password'=> 'new123123',
-            'password_confirm' => 'wrong_confirmation'
-        );
+            'password' => 'new123123',
+            'password_confirm' => 'wrong_confirmation',
+        ];
 
         $data['password'] = 'new123123';
         $data['password_confirm'] = 'wrong_confirmation';
@@ -64,39 +66,39 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
 
     public function testPermissions()
     {
-        $data = array(
-            'id'            =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->staff_permissions_get($data);
         $this->assertIsArray($array);
-        
-        $perms = array();
+
+        $perms = [];
         $perms['activity'] = 1;
-        
-        $data = array(
-            'id'            =>  1,
-            'permissions'            =>  $perms,
-        );
+
+        $data = [
+            'id' => 1,
+            'permissions' => $perms,
+        ];
         $bool = $this->api_admin->staff_permissions_update($data);
         $this->assertTrue($bool);
-        
+
         $array = $this->api_admin->staff_permissions_get($data);
         $this->assertIsArray($array);
         $this->assertEquals($perms, $array);
     }
-    
+
     public function testGroups()
     {
-        $data = array(
+        $data = [
             'name' => 'Support',
-        );
+        ];
         $id = $this->api_admin->staff_group_create($data);
         $this->assertTrue(is_numeric($id));
 
-        $data = array(
-            'id'  =>  $id,
-            'name'  =>  'Staff',
-        );
+        $data = [
+            'id' => $id,
+            'name' => 'Staff',
+        ];
         $bool = $this->api_admin->staff_group_update($data);
         $this->assertTrue($bool);
 
@@ -112,15 +114,15 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $bool = $this->api_admin->staff_group_delete($data);
         $this->assertTrue($bool);
     }
-    
+
     public function testHistory()
     {
         $array = $this->api_admin->staff_login_history_get_list();
         $this->assertIsArray($array);
 
-        $data = array(
-            'id'    => 1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->staff_login_history_get($data);
         $this->assertIsArray($array);
 
@@ -130,7 +132,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
 
     public function testStaffActivityHistoryList()
     {
-        $array = $this->api_admin->staff_login_history_get_list(array('status' => 'active'));
+        $array = $this->api_admin->staff_login_history_get_list(['status' => 'active']);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -152,9 +154,8 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
 
     public function testStaffGroupGetList()
     {
-        $array = $this->api_admin->staff_group_get_list(array());
+        $array = $this->api_admin->staff_group_get_list([]);
         $this->assertIsArray($array);
-
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -166,15 +167,16 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertArrayHasKey('created_at', $item);
         $this->assertArrayHasKey('updated_at', $item);
     }
+
     public function testBatchDelete()
     {
-        $array = $this->api_admin->staff_login_history_get_list(array());
+        $array = $this->api_admin->staff_login_history_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->staff_batch_delete_logs(array('ids' => $ids));
-        $array  = $this->api_admin->staff_login_history_get_list(array());
+        $result = $this->api_admin->staff_batch_delete_logs(['ids' => $ids]);
+        $array = $this->api_admin->staff_login_history_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);

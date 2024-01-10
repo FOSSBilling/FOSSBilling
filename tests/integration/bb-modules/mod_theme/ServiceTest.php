@@ -1,11 +1,11 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 {
-
     public function testgetCurrentThemePreset()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
         $themeModel = $service->getTheme('huraga');
         $result = $service->getCurrentThemePreset($themeModel);
@@ -15,7 +15,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetThemePresets()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
         $themeModel = $service->getTheme('huraga');
         $result = $service->getThemePresets($themeModel);
@@ -25,7 +25,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetThemeSettings()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
         $themeModel = $service->getTheme('huraga');
         $result = $service->getThemeSettings($themeModel);
@@ -34,13 +34,13 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testupdateSettings()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
         $themeModel = $service->getTheme('huraga');
 
         $preset = 'phpUnit';
-        $params = array();
+        $params = [];
 
         $result = $service->updateSettings($themeModel, $preset, $params);
         $this->assertTrue($result);
@@ -48,7 +48,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testregenerateThemeSettingsDataFile()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
         $themeModel = $service->getTheme('huraga');
@@ -59,7 +59,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testregenerateThemeCssAndJsFiles()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
         $themeModel = $service->getTheme('huraga');
@@ -71,7 +71,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetCurrentAdminAreaTheme()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
         $result = $service->getCurrentAdminAreaTheme();
@@ -82,11 +82,11 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetCurrentClientAreaTheme()
     {
-        $service = new \Box\Mod\Theme\Service();
+        $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
         $result = $service->getCurrentClientAreaTheme();
-        $this->assertInstanceOf('\\' . \Box\Mod\Theme\Model\Theme::class, $result);
+        $this->assertInstanceOf('\\' . Box\Mod\Theme\Model\Theme::class, $result);
         $this->assertEquals('huraga', $result->getName());
     }
 }

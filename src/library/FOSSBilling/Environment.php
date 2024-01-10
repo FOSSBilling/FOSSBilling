@@ -1,8 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -23,8 +25,6 @@ class Environment
     /**
      * Get the current environment of the application.
      * The environment variable set in the operating system will have priority over the environment variable set in the .env file.
-     * 
-     * @return string
      */
     public static function getCurrentEnvironment(): string
     {
@@ -33,7 +33,6 @@ class Environment
 
     /**
      * Check if the current environment is a production environment.
-     * @return bool
      */
     public static function isProduction(): bool
     {
@@ -42,7 +41,6 @@ class Environment
 
     /**
      * Check if the current environment is a development environment.
-     * @return bool
      */
     public static function isDevelopment(): bool
     {
@@ -51,7 +49,6 @@ class Environment
 
     /**
      * Check if the current environment is a testing environment.
-     * @return bool
      */
     public static function isTesting(): bool
     {
@@ -60,10 +57,9 @@ class Environment
 
     /**
      * Check if the current environment is a CLI environment.
-     * @return bool
      */
     public static function isCLI(): bool
     {
-        return (php_sapi_name() === 'cli' || !http_response_code());
+        return php_sapi_name() === 'cli' || !http_response_code();
     }
 }

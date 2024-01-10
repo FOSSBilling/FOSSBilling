@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Invoice\Api;
 
-
-class GuestTest extends \BBTestCase {
+class GuestTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Invoice\Api\Guest
+     * @var Guest
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Invoice\Api\Guest();
+        $this->api = new Guest();
     }
 
     public function testgetDi()
@@ -28,7 +27,7 @@ class GuestTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -39,7 +38,7 @@ class GuestTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -65,7 +64,7 @@ class GuestTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -85,7 +84,7 @@ class GuestTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -96,7 +95,7 @@ class GuestTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -123,7 +122,7 @@ class GuestTest extends \BBTestCase {
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -150,7 +149,7 @@ class GuestTest extends \BBTestCase {
         $model->status = 'paid';
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -170,27 +169,27 @@ class GuestTest extends \BBTestCase {
         $gatewayServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
         $gatewayServiceMock->expects($this->atLeastOnce())
             ->method('getActive')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $gatewayServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $gatewayServiceMock);
 
         $this->api->setDi($di);
 
-        $result = $this->api->gateways(array());
+        $result = $this->api->gateways([]);
         $this->assertIsArray($result);
     }
 
     public function testpayment()
     {
-        $data = array(
+        $data = [
             'hash' => '',
             'gateway_id' => '',
-        );
+        ];
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processInvoice')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
@@ -200,9 +199,9 @@ class GuestTest extends \BBTestCase {
 
     public function testpaymentMissingHashParam()
     {
-        $data = array(
+        $data = [
             'gateway_id' => '',
-        );
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(810);
@@ -212,9 +211,9 @@ class GuestTest extends \BBTestCase {
 
     public function testpaymentMissingGatewayIdParam()
     {
-        $data = array(
+        $data = [
             'hash' => '',
-        );
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(811);
@@ -224,9 +223,9 @@ class GuestTest extends \BBTestCase {
 
     public function testpdf()
     {
-        $data = array(
+        $data = [
             'hash' => '',
-        );
+        ];
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
@@ -234,7 +233,7 @@ class GuestTest extends \BBTestCase {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;

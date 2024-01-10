@@ -1,14 +1,12 @@
 <?php
 
-
 namespace Box\Mod\Theme\Controller;
 
-
-class AdminTest extends \BBTestCase {
-
+class AdminTest extends \BBTestCase
+{
     public function testDi()
     {
-        $controller = new \Box\Mod\Theme\Controller\Admin();
+        $controller = new Admin();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -25,11 +23,11 @@ class AdminTest extends \BBTestCase {
         $boxAppMock->expects($this->exactly(1))
             ->method('get');
 
-        $controller = new \Box\Mod\Theme\Controller\Admin();
+        $controller = new Admin();
         $controller->register($boxAppMock);
     }
 
-    public function testget_theme()
+    public function testgetTheme()
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
@@ -51,7 +49,6 @@ class AdminTest extends \BBTestCase {
             ->method('isAssetsPathWritable')
             ->willReturn(false);
 
-
         $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getTheme')
@@ -64,23 +61,21 @@ class AdminTest extends \BBTestCase {
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getThemePresets');
 
-
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getService')
             ->willReturn($themeServiceMock);
 
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(function ($name) use($modMock){
-            if ($name == 'theme')
-            {
+        $di['mod'] = $di->protect(function ($name) use ($modMock) {
+            if ($name == 'theme') {
                 return $modMock;
             }
         });
 
-        $di['is_admin_logged']  = true;
+        $di['is_admin_logged'] = true;
 
-        $controller = new \Box\Mod\Theme\Controller\Admin();
+        $controller = new Admin();
         $controller->setDi($di);
         $controller->get_theme($boxAppMock, 'huraga');
     }

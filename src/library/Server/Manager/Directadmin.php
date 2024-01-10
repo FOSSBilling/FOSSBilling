@@ -2,7 +2,7 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -49,7 +49,7 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     public static function getForm(): array
     {
-        return array(
+        return [
             'label' => 'DirectAdmin',
             'form' => [
                 'credentials' => [
@@ -67,11 +67,11 @@ class Server_Manager_Directadmin extends Server_Manager
                             'label' => 'Password / Login Key',
                             'placeholder' => 'Password or login key used to connect to the server',
                             'required' => true,
-                        ]
-                    ]
-                ]
-            ]
-        );
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
@@ -104,7 +104,8 @@ class Server_Manager_Directadmin extends Server_Manager
     public function getLoginUrl(?Server_Account $account = null): string
     {
         $protocol = $this->_config['secure'] ? 'https://' : 'http://';
-        return $protocol . $this->_config['host'] . ':'. $this -> _getPort();
+
+        return $protocol . $this->_config['host'] . ':' . $this->_getPort();
     }
 
     /**
@@ -134,10 +135,11 @@ class Server_Manager_Directadmin extends Server_Manager
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
 
         // Username must start with a-z.
-        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97,122)), 0, 1) : $username;
+        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97, 122)), 0, 1) : $username;
 
         // Username must be at most 10 characters long, and sufficiently random to avoid collisions.
         $username = substr($username, 0, 7);
+
         $random_number = random_int(0, 99);
         return $username . $random_number;
     }
@@ -180,12 +182,11 @@ class Server_Manager_Directadmin extends Server_Manager
     public function createAccount(Server_Account $account): bool
     {
         $ips = $this->getIps();
-        if(empty($ips)) {
+        if (empty($ips)) {
             throw new Server_Exception('There are no available IPs on this server.');
         }
 
         $ip = $ips[array_rand($ips)];
-
         $package = $account->getPackage();
         $client  = $account->getClient();
 
@@ -268,26 +269,25 @@ class Server_Manager_Directadmin extends Server_Manager
         if($account->getReseller()) {
             $command = 'ACCOUNT_RESELLER';
 
-            $fields['ips'] = 1; //Number of ips that will be allocated to the Reseller upon account during account
-            $fields['ip']  = 'assign';
+            $fields['ips'] = 1; // Number of ips that will be allocated to the Reseller upon account during account
+            $fields['ip'] = 'assign';
         }
 
         try {
             $results = $this->_request($command, $fields);
-        }
-        catch(Exception $e) {
-            if(strtolower($e->getMessage()) == strtolower(sprintf('Server Manager DirectAdmin Error: "%s" ', 'That domain already exists'))) {
+        } catch (Exception $e) {
+            if (strtolower($e->getMessage()) == strtolower(sprintf('Server Manager DirectAdmin Error: "%s" ', 'That domain already exists'))) {
                 return true;
             } else {
                 throw new Server_Exception($e->getMessage());
             }
         }
 
-        if(str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
+        if (str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
             throw new Server_Exception('Unable to assign the Reseller ANY ips. Make sure to have free, un-assigned ips.');
         }
 
-        if(str_contains(implode('', $results), 'Error Creating User')) {
+        if (str_contains(implode('', $results), 'Error Creating User')) {
             throw new Server_Exception('Error creating user');
         }
 
@@ -297,7 +297,7 @@ class Server_Manager_Directadmin extends Server_Manager
     public function suspendAccount(Server_Account $a)
     {
         $info = $this->getAccountInfo($a);
-        if($info['suspended'] == 'yes') {
+        if ($info['suspended'] == 'yes') {
             return true;
         }
 
@@ -313,7 +313,7 @@ class Server_Manager_Directadmin extends Server_Manager
     public function unsuspendAccount(Server_Account $a)
     {
         $info = $this->getAccountInfo($a);
-        if($info['suspended'] == 'no') {
+        if ($info['suspended'] == 'no') {
             throw new Server_Exception('Server Manager DirectAdmin Error: "Account is not suspended"');
         }
 
@@ -322,16 +322,18 @@ class Server_Manager_Directadmin extends Server_Manager
         $fields['suspend']  = 'Unsuspend';
         $fields['select0']  = $a->getUsername();
         $this->_request('API_SELECT_USERS', $fields);
+
         return true;
     }
 
     public function cancelAccount(Server_Account $a)
     {
-        $fields              = array();
+        $fields = [];
         $fields['confirmed'] = 'Confirm';
         $fields['delete']    = 'yes';
         $fields['select0']   = $a->getUsername();
         $this->_request('API_SELECT_USERS', $fields);
+
         return true;
     }
 
@@ -339,64 +341,64 @@ class Server_Manager_Directadmin extends Server_Manager
     {
         $package = $a->getPackage();
 
-        $fields           = array();
+        $fields = [];
         $fields['action'] = 'customize';
-        $fields['user']   = $a->getUsername();
+        $fields['user'] = $a->getUsername();
 
-        $fields['bandwidth'] = $package->getBandwidth(); //Amount of bandwidth User will be allowed to use. Number, in Megabytes
-        if($package->getBandwidth() == 'unlimited') {
-            $fields['ubandwidth'] = 'ON'; //ON or OFF. If ON, bandwidth is ignored and no limit is set
+        $fields['bandwidth'] = $package->getBandwidth(); // Amount of bandwidth User will be allowed to use. Number, in Megabytes
+        if ($package->getBandwidth() == 'unlimited') {
+            $fields['ubandwidth'] = 'ON'; // ON or OFF. If ON, bandwidth is ignored and no limit is set
         }
-        $fields['quota'] = $package->getQuota(); //Amount of disk space User will be allowed to use. Number, in Megabytes
-        if($package->getQuota() == 'unlimited') {
-            $fields['uquota'] = 'ON'; //ON or OFF. If ON, quota is ignored and no limit is set
+        $fields['quota'] = $package->getQuota(); // Amount of disk space User will be allowed to use. Number, in Megabytes
+        if ($package->getQuota() == 'unlimited') {
+            $fields['uquota'] = 'ON'; // ON or OFF. If ON, quota is ignored and no limit is set
         }
-        $fields['vdomains'] = $package->getMaxDomains(); //Number of domains the User will be allowed to create
-        if($package->getMaxDomains() == 'unlimited') {
-            $fields['uvdomains'] = 'ON'; //ON or OFF. If ON, vdomains is ignored and no limit is set
+        $fields['vdomains'] = $package->getMaxDomains(); // Number of domains the User will be allowed to create
+        if ($package->getMaxDomains() == 'unlimited') {
+            $fields['uvdomains'] = 'ON'; // ON or OFF. If ON, vdomains is ignored and no limit is set
         }
-        $fields['nsubdomains'] = $package->getMaxSubdomains(); //Number of subdomains the User will be allowed to create
-        if($package->getMaxSubdomains() == 'unlimited') {
-            $fields['unsubdomains'] = 'ON'; //ON or OFF. If ON, nsubdomains is ignored and no limit is set
+        $fields['nsubdomains'] = $package->getMaxSubdomains(); // Number of subdomains the User will be allowed to create
+        if ($package->getMaxSubdomains() == 'unlimited') {
+            $fields['unsubdomains'] = 'ON'; // ON or OFF. If ON, nsubdomains is ignored and no limit is set
         }
-        $fields['nemails'] = $package->getMaxPop(); //Number of pop accounts the User will be allowed to create
-        if($package->getMaxPop() == 'unlimited') {
-            $fields['unemails'] = 'ON'; //ON or OFF Unlimited option for nemails
+        $fields['nemails'] = $package->getMaxPop(); // Number of pop accounts the User will be allowed to create
+        if ($package->getMaxPop() == 'unlimited') {
+            $fields['unemails'] = 'ON'; // ON or OFF Unlimited option for nemails
         }
-        $fields['nemailf'] = $package->getMaxEmailForwarders(); //Number of forwarders the User will be allowed to create
-        if($package->getMaxEmailForwarders() == 'unlimited') {
-            $fields['unemailf'] = 'ON'; //ON or OFF Unlimited option for nemailf
+        $fields['nemailf'] = $package->getMaxEmailForwarders(); // Number of forwarders the User will be allowed to create
+        if ($package->getMaxEmailForwarders() == 'unlimited') {
+            $fields['unemailf'] = 'ON'; // ON or OFF Unlimited option for nemailf
         }
-        $fields['nemailml'] = $package->getMaxEmailLists(); //Number of mailing lists the User will be allowed to create
-        if($package->getMaxEmailLists() == 'unlimited') {
-            $fields['unemailml'] = 'ON'; //ON or OFF Unlimited option for nemailml
+        $fields['nemailml'] = $package->getMaxEmailLists(); // Number of mailing lists the User will be allowed to create
+        if ($package->getMaxEmailLists() == 'unlimited') {
+            $fields['unemailml'] = 'ON'; // ON or OFF Unlimited option for nemailml
         }
-        $fields['nemailr'] = $package->getMaxEmailAutoresponders(); //Number of autoresponders the User will be allowed to create
-        if($package->getMaxEmailAutoresponders() == 'unlimited') {
-            $fields['unemailr'] = 'ON'; //ON or OFF Unlimited option for nemailr
+        $fields['nemailr'] = $package->getMaxEmailAutoresponders(); // Number of autoresponders the User will be allowed to create
+        if ($package->getMaxEmailAutoresponders() == 'unlimited') {
+            $fields['unemailr'] = 'ON'; // ON or OFF Unlimited option for nemailr
         }
-        $fields['mysql'] = $package->getMaxSql(); //Number of MySQL databases the User will be allowed to create
-        if($package->getMaxSql() == 'unlimited') {
-            $fields['umysql'] = 'ON'; //ON or OFF Unlimited option for mysql
+        $fields['mysql'] = $package->getMaxSql(); // Number of MySQL databases the User will be allowed to create
+        if ($package->getMaxSql() == 'unlimited') {
+            $fields['umysql'] = 'ON'; // ON or OFF Unlimited option for mysql
         }
-        $fields['domainptr'] = $package->getMaxParkedDomains(); //Number of domain pointers the User will be allowed to create
-        if($package->getMaxParkedDomains() == 'unlimited') {
-            $fields['udomainptr'] = 'ON'; //ON or OFF Unlimited option for domainptr
+        $fields['domainptr'] = $package->getMaxParkedDomains(); // Number of domain pointers the User will be allowed to create
+        if ($package->getMaxParkedDomains() == 'unlimited') {
+            $fields['udomainptr'] = 'ON'; // ON or OFF Unlimited option for domainptr
         }
-        $fields['ftp'] = $package->getMaxFtp(); //Number of ftp accounts the User will be allowed to create
-        if($package->getMaxFtp() == 'unlimited') {
-            $fields['uftp'] = 'ON'; //ON or OFF Unlimited option for ftp
+        $fields['ftp'] = $package->getMaxFtp(); // Number of ftp accounts the User will be allowed to create
+        if ($package->getMaxFtp() == 'unlimited') {
+            $fields['uftp'] = 'ON'; // ON or OFF Unlimited option for ftp
         }
-        $fields['aftp']       = $package->getHasAnonymousFtp() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will be able to have anonymous ftp accounts.
-        $fields['cgi']        = $package->getHasCgi() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-        $fields['php']        = $package->getHasPhp() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to run php scripts.
-        $fields['spam']       = $package->getHasSpamFilter() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to run scan email with SpamAssassin.
-        $fields['cron']       = $package->getHasCron() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to creat cronjobs.
-        $fields['catchall']   = $package->getHasCatchAll() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
-        $fields['ssl']        = $package->getHasSll() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to access their websites through secure https://.
-        $fields['ssh']        = $package->getHasShell() ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have an ssh account.
-        $fields['sysinfo']    = 'ON'; //ON or OFF If ON, the User will have access to a page that shows the system information.
-        $fields['dnscontrol'] = 'ON'; //ON or OFF If ON, the User will be able to modify his/her dns records.
+        $fields['aftp'] = $package->getHasAnonymousFtp() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will be able to have anonymous ftp accounts.
+        $fields['cgi'] = $package->getHasCgi() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to run cgi scripts in their cgi-bin.
+        $fields['php'] = $package->getHasPhp() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to run php scripts.
+        $fields['spam'] = $package->getHasSpamFilter() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to run scan email with SpamAssassin.
+        $fields['cron'] = $package->getHasCron() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to creat cronjobs.
+        $fields['catchall'] = $package->getHasCatchAll() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
+        $fields['ssl'] = $package->getHasSll() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to access their websites through secure https://.
+        $fields['ssh'] = $package->getHasShell() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have an ssh account.
+        $fields['sysinfo'] = 'ON'; // ON or OFF If ON, the User will have access to a page that shows the system information.
+        $fields['dnscontrol'] = 'ON'; // ON or OFF If ON, the User will be able to modify his/her dns records.
 
         $fields['ns1'] = $a->getNs1();
         $fields['ns2'] = $a->getNs2();
@@ -417,11 +419,13 @@ class Server_Manager_Directadmin extends Server_Manager
 
     public function changeAccountPackage(Server_Account $a, Server_Package $p): bool
     {
-        $fields            = array();
-        $fields['action']  = 'package';
-        $fields['user']    = $a->getUsername();
+        $fields = [];
+        $fields['action'] = 'package';
+        $fields['user'] = $a->getUsername();
         $fields['package'] = $a->getPackage()->getName();
+
         $this->_request('API_MODIFY_USER', $fields);
+
         return true;
     }
 
@@ -445,8 +449,9 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function getAccountInfo(Server_Account $account): array
     {
-        $fields           = array();
+        $fields = [];
         $fields['action'] = 'create';
+
         $fields['add']    = 'Submit';
         $fields['user']   = $account->getUsername();
         return $this->_request('API_SHOW_USER_CONFIG', $fields);
@@ -460,6 +465,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $fields         = array();
         $fields['user'] = $account->getUsername();
         $result        = $this->_request('API_SHOW_USER_CONFIG', $fields);
+
         return;
     }
 
@@ -476,8 +482,8 @@ class Server_Manager_Directadmin extends Server_Manager
     {
         $response = $this->_request('API_VERIFY_PASSWORD', array(
             'user' => $this->_config['username'],
-            'passwd' => $this->_config['password']
-        ));
+            'passwd' => $this->_config['password'],
+        ]);
 
         return true;
     }
@@ -519,7 +525,7 @@ class Server_Manager_Directadmin extends Server_Manager
             // If it's a POST request, include the fields in the request body
             if($post) {
                 $request = $httpClient->request('POST', $url, [
-                    'body'  => $fields,
+                    'body' => $fields,
                 ]);
             } else {
                 $request = $httpClient->request('GET', $url);
@@ -538,7 +544,7 @@ class Server_Manager_Directadmin extends Server_Manager
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
         }
 
-        if(strlen(strstr($data, "The request you've made cannot be executed because it does not exist in your authority level")) > 0) {
+        if (strlen(strstr($data, "The request you've made cannot be executed because it does not exist in your authority level")) > 0) {
             throw new Server_Exception('Server Manager DirectAdmin Error: "The request you have made cannot be executed because it does not exist in your authority level"');
         }
 

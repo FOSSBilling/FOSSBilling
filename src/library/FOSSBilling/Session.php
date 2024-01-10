@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -11,9 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use FOSSBilling\Environment;
-
-class Session implements \FOSSBilling\InjectionAwareInterface
+class Session implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
@@ -27,7 +26,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private readonly \PdoSessionHandler $handler, private readonly string $securityMode = 'regular', private bool $secure = true)
+    public function __construct(private readonly \PdoSessionHandler $handler)
     {
     }
 
@@ -51,19 +50,19 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         }
 
         $currentCookieParams = session_get_cookie_params();
-        $currentCookieParams["httponly"] = true;
-        $currentCookieParams["lifetime"] = 0;
-        $currentCookieParams["secure"] = $this->secure;
+        $currentCookieParams['httponly'] = true;
+        $currentCookieParams['lifetime'] = 0;
+        $currentCookieParams['secure'] = $this->shouldBeSecure();
 
         $cookieParams = [
-            'lifetime' => $currentCookieParams["lifetime"],
-            'path' => $currentCookieParams["path"],
-            'domain' => $currentCookieParams["domain"],
-            'secure' => $currentCookieParams["secure"],
-            'httponly' => $currentCookieParams["httponly"]
+            'lifetime' => $currentCookieParams['lifetime'],
+            'path' => $currentCookieParams['path'],
+            'domain' => $currentCookieParams['domain'],
+            'secure' => $currentCookieParams['secure'],
+            'httponly' => $currentCookieParams['httponly'],
         ];
 
-        if ($this->securityMode == 'strict') {
+        if ($this->di['config']['security']['mode'] == 'strict') {
             $cookieParams['samesite'] = 'Strict';
         }
 
@@ -114,6 +113,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
      */
     private function canUseSession(): void
     {
+        $invalid = false;
         if (empty($_COOKIE['PHPSESSID'])) {
             return;
         }
@@ -121,7 +121,7 @@ class Session implements \FOSSBilling\InjectionAwareInterface
         $sessionID = $_COOKIE['PHPSESSID'];
         $maxAge = time() - $this->di['config']['security']['session_lifespan'];
 
-        $fingerprint = new Fingerprint;
+        $fingerprint = new Fingerprint();
         /** @var \RedBeanPHP\OODBBean $session */
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
 
@@ -129,12 +129,24 @@ class Session implements \FOSSBilling\InjectionAwareInterface
             return;
         }
 
-        if(empty($session->created_at)){
+        if (empty($session->created_at)) {
             $session->created_at = time();
             $this->di['db']->store($session);
         }
 
-        if (!$fingerprint->checkFingerprint(json_decode($session->fingerprint, true)) || $session->created_at <= $maxAge) {
+        $storedFingerprint = json_decode($session->fingerprint, true);
+        if (!$fingerprint->checkFingerprint($storedFingerprint) && $this->di['config']['security']['perform_session_fingerprinting']) {
+            $invalid = true;
+            // TODO: Trying to use monolog here causes a 503 error with an empty error log. Would love to find out why and use it instead of error_log
+            error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+            #$this->di['logger']->setChannel('security')->info("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+        }
+
+        if ($session->created_at <= $maxAge) {
+            $invalid = true;
+        }
+
+        if ($invalid) {
             $this->di['db']->trash($session);
             unset($_COOKIE['PHPSESSID']);
         }
@@ -147,12 +159,23 @@ class Session implements \FOSSBilling\InjectionAwareInterface
     {
         $sessionID = $_COOKIE['PHPSESSID'] ?? session_id();
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
+        $fingerprint = new Fingerprint();
+
+        if ($this->di['config']['security']['perform_session_fingerprinting']) {
+            $updatedFingerprint = $fingerprint->fingerprint();
+        } else {
+            $updatedFingerprint = [];
+        }
 
         // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
         if (!is_null($session)) {
-            $fingerprint = new Fingerprint;
-            $session->fingerprint = json_encode($fingerprint->fingerprint());
+            $session->fingerprint = json_encode($updatedFingerprint);
             $this->di['db']->store($session);
         }
+    }
+
+    private function shouldBeSecure(): bool
+    {
+        return $this->di['config']['security']['force_https'] ?? true || Tools::isHTTPS();;
     }
 }

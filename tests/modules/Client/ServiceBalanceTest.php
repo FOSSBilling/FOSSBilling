@@ -1,11 +1,9 @@
 <?php
 
-
 namespace Box\Tests\Mod\Client;
 
 class ServiceBalanceTest extends \BBTestCase
 {
-
     public function testgetDi()
     {
         $di = new \Pimple\Container();
@@ -31,7 +29,7 @@ class ServiceBalanceTest extends \BBTestCase
             ->method('store')
             ->with($clientBalance);
         $di['db'] = $dbMock;
-        
+
         $service = new \Box\Mod\Client\ServiceBalance();
         $service->setDi($di);
 
@@ -41,9 +39,9 @@ class ServiceBalanceTest extends \BBTestCase
         $description = 'Charged for product';
         $amount = 5.55;
 
-        $extra = array(
+        $extra = [
             'rel_id' => 1,
-        );
+        ];
 
         $result = $service->deductFunds($clientModel, $amount, $description, $extra);
 
@@ -54,7 +52,7 @@ class ServiceBalanceTest extends \BBTestCase
         $this->assertEquals('default', $result->type);
     }
 
-    public function testdeductFunds_InvalidDescription()
+    public function testdeductFundsInvalidDescription()
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 
@@ -64,16 +62,16 @@ class ServiceBalanceTest extends \BBTestCase
         $description = '    ';
         $amount = 5.55;
 
-        $extra = array(
+        $extra = [
             'rel_id' => 1,
-        );
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Funds description is invalid');
         $service->deductFunds($clientModel, $amount, $description, $extra);
     }
 
-    public function testdeductFunds_InvalidAmount()
+    public function testdeductFundsInvalidAmount()
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 
@@ -81,15 +79,14 @@ class ServiceBalanceTest extends \BBTestCase
         $clientModel->loadBean(new \DummyBean());
 
         $description = 'Charged';
-        $amount = "5.5adadzxc";
+        $amount = '5.5adadzxc';
 
-        $extra = array(
+        $extra = [
             'rel_id' => 1,
-        );
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Funds amount is invalid');
         $service->deductFunds($clientModel, $amount, $description, $extra);
     }
 }
- 

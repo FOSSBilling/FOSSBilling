@@ -2,16 +2,15 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-class Model_Transaction extends \RedBeanPHP\SimpleModel
+class Model_Transaction extends RedBeanPHP\SimpleModel
 {
-    final public const STATUS_RECEIVED        = 'received';
-    final public const STATUS_APPROVED        = 'approved';
-    final public const STATUS_PROCESSED       = 'processed';
-    final public const STATUS_ERROR           = 'error';
+    final public const STATUS_RECEIVED = 'received';
+    final public const STATUS_APPROVED = 'approved';
+    final public const STATUS_PROCESSED = 'processed';
+    final public const STATUS_ERROR = 'error';
 }

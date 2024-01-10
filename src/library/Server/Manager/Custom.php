@@ -2,19 +2,18 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Server_Manager_Custom extends Server_Manager
 {
     /**
      * Method is called just after obejct contruct is complete.
      * Add required parameters checks here.
      */
-	public function init()
+    public function init()
     {
 
 	}
@@ -25,9 +24,9 @@ class Server_Manager_Custom extends Server_Manager
      */
     public static function getForm()
     {
-        return array(
-            'label'     =>  'Custom Server Manager',
-        );
+        return [
+            'label' => 'Custom Server Manager',
+        ];
     }
 
     /**
@@ -35,7 +34,7 @@ class Server_Manager_Custom extends Server_Manager
      *
      * @return string
      */
-    public function getLoginUrl(?Server_Account $account = null)
+    public function getLoginUrl(Server_Account $account = null)
     {
         return 'http://www.google.com?q=cpanel';
     }
@@ -44,7 +43,7 @@ class Server_Manager_Custom extends Server_Manager
      * Returns link to reseller account management
      * @return string
      */
-    public function getResellerLoginUrl(?Server_Account $account = null)
+    public function getResellerLoginUrl(Server_Account $account = null)
     {
         return 'http://www.google.com?q=whm';
     }
@@ -57,7 +56,7 @@ class Server_Manager_Custom extends Server_Manager
      */
     public function testConnection()
     {
-        return TRUE;
+        return true;
     }
 
     /**
@@ -68,10 +67,11 @@ class Server_Manager_Custom extends Server_Manager
      */
     public function synchronizeAccount(Server_Account $a)
     {
-        $this->getLog()->info('Synchronizing account with server '.$a->getUsername());
+        $this->getLog()->info('Synchronizing account with server ' . $a->getUsername());
         $new = clone $a;
-        //@example - retrieve username from server and set it to cloned object
-        //$new->setUsername('newusername');
+
+        // @example - retrieve username from server and set it to cloned object
+        // $new->setUsername('newusername');
         return $new;
     }
 
@@ -87,55 +87,55 @@ class Server_Manager_Custom extends Server_Manager
         } else {
             $this->getLog()->info('Creating shared hosting account');
         }
-	}
+    }
 
     /**
      * Suspend account on server
      * @param Server_Account $a
      */
-	public function suspendAccount(Server_Account $a)
+    public function suspendAccount(Server_Account $a)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Suspending reseller hosting account');
         } else {
             $this->getLog()->info('Suspending shared hosting account');
         }
-	}
+    }
 
     /**
      * Unsuspend account on server
      * @param Server_Account $a
      */
-	public function unsuspendAccount(Server_Account $a)
+    public function unsuspendAccount(Server_Account $a)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Unsuspending reseller hosting account');
         } else {
             $this->getLog()->info('Unsuspending shared hosting account');
         }
-	}
+    }
 
     /**
      * Cancel account on server
      * @param Server_Account $a
      */
-	public function cancelAccount(Server_Account $a)
+    public function cancelAccount(Server_Account $a)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Canceling reseller hosting account');
         } else {
             $this->getLog()->info('Canceling shared hosting account');
         }
-	}
+    }
 
     /**
      * Change account package on server
      * @param Server_Account $a
      * @param Server_Package $p
      */
-	public function changeAccountPackage(Server_Account $a, Server_Package $p)
+    public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Updating reseller hosting account');
         } else {
             $this->getLog()->info('Updating shared hosting account');
@@ -152,16 +152,16 @@ class Server_Manager_Custom extends Server_Manager
         $p->getMaxPop();
 
         $p->getCustomValue('param_name');
-	}
+    }
 
     /**
-     * Change account username on server
-     * @param Server_Account $a
+     * Change account username on server.
+     *
      * @param type $new - new account username
      */
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Changing reseller hosting account username');
         } else {
             $this->getLog()->info('Changing shared hosting account username');
@@ -169,13 +169,13 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Change account domain on server
-     * @param Server_Account $a
+     * Change account domain on server.
+     *
      * @param type $new - new domain name
      */
     public function changeAccountDomain(Server_Account $a, $new)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Changing reseller hosting account domain');
         } else {
             $this->getLog()->info('Changing shared hosting account domain');
@@ -183,13 +183,13 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Change account password on server
-     * @param Server_Account $a
+     * Change account password on server.
+     *
      * @param type $new - new password
      */
     public function changeAccountPassword(Server_Account $a, $new)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Changing reseller hosting account password');
         } else {
             $this->getLog()->info('Changing shared hosting account password');
@@ -197,13 +197,13 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Change account IP on server
-     * @param Server_Account $a
+     * Change account IP on server.
+     *
      * @param type $new - account IP
      */
     public function changeAccountIp(Server_Account $a, $new)
     {
-        if($a->getReseller()) {
+        if ($a->getReseller()) {
             $this->getLog()->info('Changing reseller hosting account ip');
         } else {
             $this->getLog()->info('Changing shared hosting account ip');

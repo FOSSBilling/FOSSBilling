@@ -1,16 +1,13 @@
 <?php
 
-
 namespace Box\Mod\Formbuilder\Api;
 
-
-class GuestTest extends \BBTestCase {
-
+class GuestTest extends \BBTestCase
+{
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Formbuilder\Api\Guest();
+        $this->api = new Guest();
     }
-
 
     public function testgetDi()
     {
@@ -27,12 +24,12 @@ class GuestTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getForm')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -42,5 +39,4 @@ class GuestTest extends \BBTestCase {
         $result = $this->api->get($data);
         $this->assertIsArray($result);
     }
-
 }

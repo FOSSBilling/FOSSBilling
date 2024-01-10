@@ -1,4 +1,5 @@
 <?php
+
 namespace Box\Tests\Mod\Servicedomain\Api;
 
 class Api_ClientTest extends \BBTestCase
@@ -6,27 +7,27 @@ class Api_ClientTest extends \BBTestCase
     /**
      * @var \Box\Mod\Servicedomain\Api\Client
      */
-    protected $clientApi = null;
+    protected $clientApi;
 
     public function setup(): void
     {
         $this->clientApi = new \Box\Mod\Servicedomain\Api\Client();
     }
 
-    public function testUpdate_nameservers()
+    public function testUpdateNameservers()
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Api\Client::class)
-            ->onlyMethods(array('_getService'))->getMock();
+            ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(array('updateNameservers'))->getMock();
+            ->onlyMethods(['updateNameservers'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateNameservers')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $clientApiMock->setService($serviceMock);
 
@@ -38,99 +39,99 @@ class Api_ClientTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $clientApiMock->setDi($di);
 
-        $data   = array();
+        $data = [];
         $result = $clientApiMock->update_nameservers($data);
 
         $this->assertTrue($result);
     }
 
-    public function testUpdate_contacts()
+    public function testUpdateContacts()
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Api\Client::class)
-            ->onlyMethods(array('_getService'))->getMock();
+            ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(array('updateContacts'))->getMock();
+            ->onlyMethods(['updateContacts'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateContacts')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $clientApiMock->setService($serviceMock);
 
-        $data   = array();
+        $data = [];
         $result = $clientApiMock->update_contacts($data);
 
         $this->assertTrue($result);
     }
 
-    public function testEnable_privacy_protection()
+    public function testEnablePrivacyProtection()
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Api\Client::class)
-            ->onlyMethods(array('_getService'))->getMock();
+            ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(array('enablePrivacyProtection'))->getMock();
+            ->onlyMethods(['enablePrivacyProtection'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('enablePrivacyProtection')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $clientApiMock->setService($serviceMock);
 
-        $data   = array();
+        $data = [];
         $result = $clientApiMock->enable_privacy_protection($data);
 
         $this->assertTrue($result);
     }
 
-    public function testDisable_privacy_protection()
+    public function testDisablePrivacyProtection()
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Api\Client::class)
-            ->onlyMethods(array('_getService'))->getMock();
+            ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(array('disablePrivacyProtection'))->getMock();
+            ->onlyMethods(['disablePrivacyProtection'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('disablePrivacyProtection')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $clientApiMock->setService($serviceMock);
 
-        $data   = array();
+        $data = [];
         $result = $clientApiMock->disable_privacy_protection($data);
 
         $this->assertTrue($result);
     }
 
-    public function testGet_transfer_code()
+    public function testGetTransferCode()
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Api\Client::class)
-            ->onlyMethods(array('_getService'))->getMock();
+            ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(array('getTransferCode'))->getMock();
+            ->onlyMethods(['getTransferCode'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getTransferCode')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $clientApiMock->setService($serviceMock);
 
-        $data   = array();
+        $data = [];
         $result = $clientApiMock->get_transfer_code($data);
 
         $this->assertTrue($result);
@@ -142,18 +143,18 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Api\Client::class)
-            ->onlyMethods(array('_getService'))->getMock();
+            ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(array('lock'))->getMock();
+            ->onlyMethods(['lock'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('lock')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $clientApiMock->setService($serviceMock);
 
-        $data   = array();
+        $data = [];
         $result = $clientApiMock->lock($data);
 
         $this->assertTrue($result);
@@ -165,49 +166,48 @@ class Api_ClientTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Api\Client::class)
-            ->onlyMethods(array('_getService'))->getMock();
+            ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(array('unlock'))->getMock();
+            ->onlyMethods(['unlock'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('unlock')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $clientApiMock->setService($serviceMock);
 
-        $data   = array();
+        $data = [];
         $result = $clientApiMock->unlock($data);
 
         $this->assertTrue($result);
     }
 
-
     public function testGetService()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('lock')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService', 'findForClientById'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('findForClientById')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceDomain()));
+            ->willReturn(new \Model_ServiceDomain());
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderService);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());
 
-        $data   = array(
-            'order_id' => random_int(1, 100)
-        );
+        $data = [
+            'order_id' => random_int(1, 100),
+        ];
         $result = $this->clientApi->lock($data);
 
         $this->assertTrue($result);
@@ -217,25 +217,25 @@ class Api_ClientTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('lock')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService', 'findForClientById'])->getMock();
         $orderService->expects($this->never())
             ->method('findForClientById')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
         $orderService->expects($this->never())
             ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceDomain()));
+            ->willReturn(new \Model_ServiceDomain());
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderService);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());
 
-        $data   = array();
+        $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
@@ -247,27 +247,27 @@ class Api_ClientTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('lock')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService', 'findForClientById'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('findForClientById')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $orderService->expects($this->never())
             ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceDomain()));
+            ->willReturn(new \Model_ServiceDomain());
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderService);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());
 
-        $data   = array(
-            'order_id' => random_int(1, 100)
-        );
+        $data = [
+            'order_id' => random_int(1, 100),
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
@@ -279,32 +279,31 @@ class Api_ClientTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('lock')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->clientApi->setService($serviceMock);
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(array('getOrderService', 'findForClientById'))->getMock();
+        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService', 'findForClientById'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('findForClientById')
-            ->will($this->returnValue(new \Model_ClientOrder()));
+            ->willReturn(new \Model_ClientOrder());
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $orderService);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());
 
-        $data   = array(
-            'order_id' => random_int(1, 100)
-        );
+        $data = [
+            'order_id' => random_int(1, 100),
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->lock($data);
 
         $this->assertTrue($result);
     }
-
 }

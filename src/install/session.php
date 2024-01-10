@@ -2,7 +2,7 @@
 
 class Session
 {
-    private $_handler = null;
+    private $_handler;
 
     public function __construct()
     {
@@ -23,7 +23,7 @@ class Session
     {
         return $this->_handler->get($key);
     }
-    
+
     public function set($key, $value)
     {
         $this->_handler->set($key, $value);
@@ -37,8 +37,8 @@ class Session
 
 class Box_SessionFile
 {
-    final public const SESSION_STARTED       = TRUE;
-    final public const SESSION_NOT_STARTED   = FALSE;
+    final public const SESSION_STARTED = true;
+    final public const SESSION_NOT_STARTED = false;
 
     protected $sessionState = self::SESSION_NOT_STARTED;
 
@@ -46,14 +46,14 @@ class Box_SessionFile
 
     public static function getInstance()
     {
-        if ( !isset(self::$instance))
-        {
-            self::$instance = new self;
-            if(!self::$instance->sessionExists() && !headers_sent()) {
+        if (!isset(self::$instance)) {
+            self::$instance = new self();
+            if (!self::$instance->sessionExists() && !headers_sent()) {
                 session_name('BOXSID');
                 self::$instance->sessionState = session_start();
             }
         }
+
         return self::$instance;
     }
 
@@ -64,22 +64,23 @@ class Box_SessionFile
 
     public function destroy()
     {
-        if(self::$instance->sessionExists()) {
+        if (self::$instance->sessionExists()) {
             session_destroy();
         }
     }
 
     public function delete($key)
     {
-        if(isset($_SESSION[$key])) {
+        if (isset($_SESSION[$key])) {
             unset($_SESSION[$key]);
         }
-        return TRUE;
+
+        return true;
     }
 
     private function sessionExists()
     {
-        if(!isset($_SESSION)) {
+        if (!isset($_SESSION)) {
             return false;
         }
 
@@ -104,7 +105,7 @@ class Box_SessionFile
 
     public function __get($key)
     {
-        return $_SESSION[$key] ?? NULL;
+        return $_SESSION[$key] ?? null;
     }
 
     public function __set($key, $value)
@@ -112,13 +113,13 @@ class Box_SessionFile
         $_SESSION[$key] = $value;
     }
 
-    public function __isset( $name )
+    public function __isset($name)
     {
         return isset($_SESSION[$name]);
     }
 
-    public function __unset( $name )
+    public function __unset($name)
     {
-        unset( $_SESSION[$name] );
+        unset($_SESSION[$name]);
     }
 }

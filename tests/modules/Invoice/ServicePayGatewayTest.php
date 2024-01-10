@@ -1,19 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Invoice;
 
-
-class ServicePayGatewayTest extends \BBTestCase {
-
+class ServicePayGatewayTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Invoice\ServicePayGateway
+     * @var ServicePayGateway
      */
-    protected $service = null;
+    protected $service;
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Invoice\ServicePayGateway();
+        $this->service = new ServicePayGateway();
     }
 
     public function testgetDi()
@@ -29,12 +27,12 @@ class ServicePayGatewayTest extends \BBTestCase {
         $di = new \Pimple\Container();
 
         $this->service->setDi($di);
-        $data = array();
+        $data = [];
         $result = $this->service->getSearchQuery($data);
         $this->assertIsArray($result);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
-        $this->assertEquals(array(), $result[1]);
+        $this->assertEquals([], $result[1]);
     }
 
     public function testgetSearchQueryWithAdditionalParams()
@@ -42,8 +40,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $di = new \Pimple\Container();
 
         $this->service->setDi($di);
-        $data = array('search' => 'keyword');
-        $expectedParams = array(':search' => "%$data[search]%");
+        $data = ['search' => 'keyword'];
+        $expectedParams = [':search' => "%$data[search]%"];
 
         $result = $this->service->getSearchQuery($data);
         $this->assertIsArray($result);
@@ -55,21 +53,21 @@ class ServicePayGatewayTest extends \BBTestCase {
 
     public function testgetPairs()
     {
-        $expected = array(
+        $expected = [
             1 => 'Custom',
-        );
+        ];
 
-        $queryResult = array(
-            array(
+        $queryResult = [
+            [
                 'id' => 1,
                 'name' => 'Custom',
-            ),
-        );
+            ],
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue($queryResult));
+            ->willReturn($queryResult);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -86,7 +84,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -100,19 +98,19 @@ class ServicePayGatewayTest extends \BBTestCase {
     {
         $code = 'PP';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
-            ->onlyMethods(array('getAvailable'))
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
+            ->onlyMethods(['getAvailable'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAvailable')
-            ->will($this->returnValue(array($code)));
+            ->willReturn([$code]);
 
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($payGatewayModel));
+            ->willReturn($payGatewayModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -127,16 +125,16 @@ class ServicePayGatewayTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
-    public function testinstall_GatewayNotAvailable()
+    public function testinstallGatewayNotAvailable()
     {
         $code = 'PP';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
-            ->onlyMethods(array('getAvailable'))
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
+            ->onlyMethods(['getAvailable'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAvailable')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Payment gateway is not available for installation.');
@@ -148,14 +146,14 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
-            ->onlyMethods(array(
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
+            ->onlyMethods([
                 'getAdapterConfig', 'getAcceptedCurrencies', 'getFormElements',
-                'getDescription'))
+                'getDescription'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterConfig')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAcceptedCurrencies');
         $serviceMock->expects($this->atLeastOnce())
@@ -164,25 +162,25 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getDescription');
 
         $url = 'http://localhost/';
-        $expected = array(
-            'id'                         => null,
-            'code'                       => null,
-            'title'                      => null,
-            'allow_single'               => null,
-            'allow_recurrent'            => null,
-            'accepted_currencies'        => null,
+        $expected = [
+            'id' => null,
+            'code' => null,
+            'title' => null,
+            'allow_single' => null,
+            'allow_recurrent' => null,
+            'accepted_currencies' => null,
             'supports_one_time_payments' => false,
-            'supports_subscriptions'     => false,
-            'config'                     => [],
-            'form'                       => null,
-            'description'                => null,
-            'enabled'                    => null,
-            'test_mode'                  => null,
-            'callback'                   => $url.'ipn.php?',
-        );
+            'supports_subscriptions' => false,
+            'config' => [],
+            'form' => null,
+            'description' => null,
+            'enabled' => null,
+            'test_mode' => null,
+            'callback' => $url . 'ipn.php?',
+        ];
 
         $di = new \Pimple\Container();
-        $di['config'] = array('url' => $url);
+        $di['config'] = ['url' => $url];
 
         $serviceMock->setDi($di);
 
@@ -198,12 +196,12 @@ class ServicePayGatewayTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($payGatewayModel));
+            ->willReturn($payGatewayModel);
 
         $expected = 2;
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($expected));
+            ->willReturn($expected);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -231,15 +229,15 @@ class ServicePayGatewayTest extends \BBTestCase {
 
         $this->service->setDi($di);
 
-        $data = array(
+        $data = [
             'title' => '',
             'config' => '',
-            'accepted_currencies' => array(),
+            'accepted_currencies' => [],
             'enabled' => '',
             'allow_single' => '',
             'allow_recurrent' => '',
             'test_mode' => '',
-        );
+        ];
         $result = $this->service->update($payGatewayModel, $data);
         $this->assertTrue($result);
     }
@@ -271,14 +269,14 @@ class ServicePayGatewayTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($payGatewayModel)));
+            ->willReturn([$payGatewayModel]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
 
-        $data = array('format' => 'pairs');
+        $data = ['format' => 'pairs'];
         $result = $this->service->getActive($data);
         $this->assertIsArray($result);
     }
@@ -304,62 +302,62 @@ class ServicePayGatewayTest extends \BBTestCase {
         $invoiceModel->loadBean(new \DummyBean());
         $expected = 'Payment_Adapter_Custom';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
             ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
-            ->will($this->returnValue($expected));
+            ->willReturn($expected);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
-            ->willReturn(array());
+            ->willReturn([]);
 
         $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
         $di = new \Pimple\Container();
-        $di['config'] = array('url' => 'http://fossbilling.vm/', 'debug' => true);
+        $di['config'] = ['url' => 'http://fossbilling.vm/', 'debug' => true];
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 
-        $optional = array(
+        $optional = [
             'auto_redirect' => '',
-        );
+        ];
         $result = $serviceMock->getPaymentAdapter($payGatewayModel, $invoiceModel, $optional);
         $this->assertInstanceOf($expected, $result);
     }
 
-    public function testgetPaymentAdapter_PaymentGatewayNotFound()
+    public function testgetPaymentAdapterPaymentGatewayNotFound()
     {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
             ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
-            ->willReturn(array());
+            ->willReturn([]);
 
         $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
         $di = new \Pimple\Container();
-        $di['config'] = array('url' => 'http://fossbilling.vm/', 'debug' => true);
+        $di['config'] = ['url' => 'http://fossbilling.vm/', 'debug' => true];
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
@@ -376,13 +374,13 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->gateway = 'Custom';
 
         $expected = '\Payment_Adapter_Custom';
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
             ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
-            ->will($this->returnValue($expected));
+            ->willReturn($expected);
 
         $result = $serviceMock->getAdapterConfig($payGatewayModel);
         $this->assertIsArray($result);
@@ -395,16 +393,16 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->gateway = 'Custom';
 
         $expected = 'Payment_Adapter_ClassDoesNotExists';
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
             ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
-            ->will($this->returnValue($expected));
+            ->willReturn($expected);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf("Payment gateway class %s was not found", $expected));
+        $this->expectExceptionMessage(sprintf('Payment gateway class %s was not found', $expected));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }
 
@@ -414,7 +412,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->gateway = 'Unknown';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
             ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
@@ -422,7 +420,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAdapterClassName');
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf("Payment gateway %s was not found", $payGatewayModel->gateway));
+        $this->expectExceptionMessage(sprintf('Payment gateway %s was not found', $payGatewayModel->gateway));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }
 
@@ -454,13 +452,13 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
-            ->onlyMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
+            ->onlyMethods(['getAdapterConfig'])
             ->getMock();
-        $config = array('form' => array());
+        $config = ['form' => []];
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterConfig')
-            ->will($this->returnValue($config));
+            ->willReturn($config);
 
         $result = $serviceMock->getFormElements($payGatewayModel);
         $this->assertIsArray($result);
@@ -471,17 +469,17 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
-            ->onlyMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
+            ->onlyMethods(['getAdapterConfig'])
             ->getMock();
-        $config = array();
+        $config = [];
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterConfig')
-            ->will($this->returnValue($config));
+            ->willReturn($config);
 
         $result = $serviceMock->getFormElements($payGatewayModel);
         $this->assertIsArray($result);
-        $emptyArray = array();
+        $emptyArray = [];
         $this->assertEquals($emptyArray, $result);
     }
 
@@ -490,13 +488,13 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
-            ->onlyMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
+            ->onlyMethods(['getAdapterConfig'])
             ->getMock();
-        $config = array('description' => '');
+        $config = ['description' => ''];
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterConfig')
-            ->will($this->returnValue($config));
+            ->willReturn($config);
 
         $result = $serviceMock->getDescription($payGatewayModel);
         $this->assertIsString($result);
@@ -507,13 +505,13 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)
-            ->onlyMethods(array('getAdapterConfig'))
+        $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
+            ->onlyMethods(['getAdapterConfig'])
             ->getMock();
-        $config = array();
+        $config = [];
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterConfig')
-            ->will($this->returnValue($config));
+            ->willReturn($config);
 
         $result = $serviceMock->getDescription($payGatewayModel);
         $this->assertNull($result);

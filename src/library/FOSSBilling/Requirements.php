@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -18,6 +18,7 @@ class Requirements
 
     public array $php_reqs = [
         'required_extensions' => [
+            'curl',
             'intl',
             'openssl',
             'pdo_mysql',
@@ -25,17 +26,16 @@ class Requirements
             'dom',
             'iconv',
             'json',
-            'zlib'
+            'zlib',
         ],
         'suggested_extensions' => [
-            'curl',
             'mbstring',
             'opcache',
             'imagick',
             'gd',
             'bz2',
             'simplexml',
-            'xml'
+            'xml',
         ],
         'min_version' => '8.1',
     ];
@@ -58,6 +58,7 @@ class Requirements
         if (!$ok) {
             $this->isOk = false;
         }
+
         return $ok;
     }
 
@@ -66,7 +67,7 @@ class Requirements
         $writable = false;
         if (is_writable($path)) {
             $writable = true;
-        } else if (!file_exists($path)) {
+        } elseif (!file_exists($path)) {
             $written = @file_put_contents($path, 'Test?');
             if ($written) {
                 $writable = true;
@@ -77,6 +78,7 @@ class Requirements
         } else {
             $this->isOk = false;
         }
+
         return $writable;
     }
 
@@ -88,6 +90,7 @@ class Requirements
         } else {
             $this->isOk = false;
         }
+
         return $writable;
     }
 
@@ -115,6 +118,7 @@ class Requirements
             if ($ext === 'opcache') {
                 if (!function_exists('opcache_get_status')) {
                     $result['suggested_extensions'][$ext] = false;
+
                     continue;
                 }
                 $status = opcache_get_status();
@@ -131,6 +135,7 @@ class Requirements
         ];
 
         $result['can_install'] = $this->isOk;
+
         return $result;
     }
 }

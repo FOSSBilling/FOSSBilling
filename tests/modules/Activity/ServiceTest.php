@@ -4,7 +4,6 @@ namespace Box\Tests\Mod\Activity;
 
 class ServiceTest extends \BBTestCase
 {
-
     public function testDi()
     {
         $service = new \Box\Mod\Activity\Service();
@@ -20,15 +19,15 @@ class ServiceTest extends \BBTestCase
 
     public static function searchFilters()
     {
-        return array(
-            array(array(), 'FROM activity_system ', TRUE),
-            array(array('only_clients' => 'yes'), 'm.client_id IS NOT NULL', TRUE),
-            array(array('only_staff' => 'yes'), 'm.admin_id IS NOT NULL', TRUE),
-            array(array('priority' => '2'), 'm.priority =', TRUE),
-            array(array('search' => 'keyword'), 'm.message LIKE ', TRUE),
-            array(array('no_info' => true), 'm.priority < :priority ', TRUE),
-            array(array('no_debug' => true), 'm.priority < :priority ', TRUE),
-        );
+        return [
+            [[], 'FROM activity_system ', true],
+            [['only_clients' => 'yes'], 'm.client_id IS NOT NULL', true],
+            [['only_staff' => 'yes'], 'm.admin_id IS NOT NULL', true],
+            [['priority' => '2'], 'm.priority =', true],
+            [['search' => 'keyword'], 'm.message LIKE ', true],
+            [['no_info' => true], 'm.priority < :priority ', true],
+            [['no_debug' => true], 'm.priority < :priority ', true],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
@@ -37,7 +36,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Activity\Service();
         $service->setDi($di);
-        $result  = $service->getSearchQuery($filterKey);
+        $result = $service->getSearchQuery($filterKey);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
         $this->assertTrue(str_contains($result[0], $search), $expected);
@@ -46,14 +45,14 @@ class ServiceTest extends \BBTestCase
     public function testLogEmail()
     {
         $service = new \Box\Mod\Activity\Service();
-        $data = array(
-            'client_id'    => random_int(1, 100),
-            'sender'       => 'sender',
-            'recipients'   => 'recipients',
-            'subject'      => 'subject',
+        $data = [
+            'client_id' => random_int(1, 100),
+            'sender' => 'sender',
+            'recipients' => 'recipients',
+            'subject' => 'subject',
             'content_html' => 'html',
             'content_text' => 'text',
-        );
+        ];
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
@@ -62,10 +61,10 @@ class ServiceTest extends \BBTestCase
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
         $db->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di['db'] = $db;
         $service->setDi($di);
@@ -121,8 +120,8 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->with('ActivitySystem', 'client_id = ?', array($clientModel->id))
-            ->willReturn(array($activitySystemModel));
+            ->with('ActivitySystem', 'client_id = ?', [$clientModel->id])
+            ->willReturn([$activitySystemModel]);
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
             ->with($activitySystemModel);
@@ -135,6 +134,4 @@ class ServiceTest extends \BBTestCase
 
         $service->rmByClient($clientModel);
     }
-
 }
-

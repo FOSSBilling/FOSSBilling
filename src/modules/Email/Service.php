@@ -335,7 +335,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if (Environment::isTesting()) {
             if (DEBUG) {
-                error_log('Skipping email sending in test environment');
+                $this->di['logger']->setChannel('email')->info('Skipping email sending in test environment');
             }
 
             return true;
@@ -632,8 +632,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->subject, $queue->content, $transport, $settings['custom_dsn'] ?? null);
 
             if (!Environment::isProduction()) {
-                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
-
+                $this->di['logger']->setChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
                 return true;
             }
 
@@ -648,11 +647,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             try {
                 $this->di['db']->trash($queue);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('email')->err($e->getMessage());
             }
         } catch (\Exception $e) {
             $message = $e->getMessage();
-            error_log($message);
+            $this->di['logger']->setChannel('email')->err($e->getMessage());
 
             if ($queue->priority) {
                 --$queue->priority;

@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ClientTest extends BBDbApiTestCase
 {
@@ -6,12 +7,12 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
 
     public function testClient()
     {
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->client_get($data);
         $this->assertIsArray($array);
-        
+
         $array = $this->api_admin->client_login($data);
         $this->assertIsArray($array);
 
@@ -21,7 +22,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $data['status'] = 'active';
         $bool = $this->api_admin->client_update($data);
         $this->assertTrue($bool);
-        
+
         $data['password'] = 'new';
         $data['password_confirm'] = 'new';
         $bool = $this->api_admin->client_change_password($data);
@@ -30,92 +31,91 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $array = $this->api_admin->client_get_statuses($data);
         $this->assertIsArray($array);
 
-        $bool = $this->api_admin->client_balance_add_funds(array('id' => 1, 'amount' => 100, 'description' => 'Added from PHPUnit'));
+        $bool = $this->api_admin->client_balance_add_funds(['id' => 1, 'amount' => 100, 'description' => 'Added from PHPUnit']);
         $this->assertTrue($bool);
 
         $array = $this->api_admin->client_balance_get_list($data);
         $this->assertIsArray($array);
         $this->assertEquals(count($array['list']), 1);
 
-        $bool = $this->api_admin->client_balance_delete(array('id' => 1));
+        $bool = $this->api_admin->client_balance_delete(['id' => 1]);
         $this->assertTrue($bool);
 
         $array = $this->api_admin->client_balance_get_list($data);
         $this->assertIsArray($array);
         $this->assertEquals(count($array['list']), 0);
-        
-        
-        $data = array(
-            'id'    => 1,
-        );
+
+        $data = [
+            'id' => 1,
+        ];
         $bool = $this->api_admin->client_login_history_delete($data);
         $this->assertTrue($bool);
-        
+
         $bool = $this->api_admin->client_batch_expire_password_reminders();
         $this->assertTrue($bool);
     }
 
     public function testGetPairs()
     {
-        $data = array(
-            'search'    =>  'de',
-        );
+        $data = [
+            'search' => 'de',
+        ];
 
         $array = $this->api_admin->client_get_pairs($data);
         $this->assertIsArray($array);
     }
-    
+
     public function testGroups()
     {
-        $data = array(
-            'title'    =>  'testers',
-        );
+        $data = [
+            'title' => 'testers',
+        ];
 
         $id = $this->api_admin->client_group_create($data);
         $this->assertTrue(is_numeric($id));
-        
+
         $data['id'] = $id;
         $bool = $this->api_admin->client_group_update($data);
         $this->assertTrue($bool);
-        
+
         $array = $this->api_admin->client_group_get($data);
         $this->assertIsArray($array);
 
         $array = $this->api_admin->client_group_get_pairs($data);
         $this->assertIsArray($array);
-        
+
         $bool = $this->api_admin->client_group_delete($data);
         $this->assertTrue($bool);
     }
-    
+
     public function testGet()
     {
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_admin->client_get($data);
         $this->assertIsArray($array);
         $this->assertNull($array['auth_type']);
     }
-    
+
     public function testCreate()
     {
-        $data = array(
-            'email'    =>  'tester@gmail.com',
-            'first_name'    =>  'Client',
-            'password'    =>  'password',
-        );
+        $data = [
+            'email' => 'tester@gmail.com',
+            'first_name' => 'Client',
+            'password' => 'password',
+        ];
 
         $id = $this->api_admin->client_create($data);
         $this->assertTrue($id > 1);
-        
-        $bool = $this->api_admin->client_delete(array('id'=>$id));
+
+        $bool = $this->api_admin->client_delete(['id' => $id]);
         $this->assertTrue($bool);
     }
 
     public function testLoginHistoryGetList()
     {
-        $array = $this->api_admin->client_login_history_get_list(array());
+        $array = $this->api_admin->client_login_history_get_list([]);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -140,7 +140,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
 
     public function testClientGetList()
     {
-        $array = $this->api_admin->client_get_list(array());
+        $array = $this->api_admin->client_get_list([]);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -185,10 +185,10 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
 
     public function testClientBalanceGetList()
     {
-        $bool = $this->api_admin->client_balance_add_funds(array('id' => 1, 'amount' => 100, 'description' => 'Added from PHPUnit'));
+        $bool = $this->api_admin->client_balance_add_funds(['id' => 1, 'amount' => 100, 'description' => 'Added from PHPUnit']);
         $this->assertTrue($bool);
 
-        $array = $this->api_admin->client_balance_get_list(array());
+        $array = $this->api_admin->client_balance_get_list([]);
         $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
@@ -207,29 +207,29 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
     public function testClientBatchDelete()
     {
         $id = $this->api_admin->client_create(
-            array(
-                'email'      => 'tester@gmail.com',
+            [
+                'email' => 'tester@gmail.com',
                 'first_name' => 'Client',
-                'password'   => 'password',
-            ));
+                'password' => 'password',
+            ]);
 
         $id2 = $this->api_admin->client_create(
-            array(
-                'email'      => 'tester2@gmail.com',
+            [
+                'email' => 'tester2@gmail.com',
                 'first_name' => 'Client',
-                'password'   => 'password',
-            ));
+                'password' => 'password',
+            ]);
         $id3 = $this->api_admin->client_create(
-            array(
-                'email'      => 'tester3@gmail.com',
+            [
+                'email' => 'tester3@gmail.com',
                 'first_name' => 'Client',
-                'password'   => 'password',
-            ));
+                'password' => 'password',
+            ]);
 
-        $array  = $this->api_admin->client_get_list(array());
-        $count  = count($array['list']);
-        $result = $this->api_admin->client_batch_delete(array('ids' => array($id, $id2, $id3)));
-        $array  = $this->api_admin->client_get_list(array());
+        $array = $this->api_admin->client_get_list([]);
+        $count = count($array['list']);
+        $result = $this->api_admin->client_batch_delete(['ids' => [$id, $id2, $id3]]);
+        $array = $this->api_admin->client_get_list([]);
 
         $this->assertEquals($count - 3, count($array['list']));
         $this->assertTrue($result);
@@ -237,11 +237,11 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
 
     public function testClientBatchDeleteLog()
     {
-        $this->api_admin->client_login(array('id' => 1));
-        $array = $this->api_admin->client_login_history_get_list(array());
+        $this->api_admin->client_login(['id' => 1]);
+        $array = $this->api_admin->client_login_history_get_list([]);
 
-        $result = $this->api_admin->client_batch_delete_log(array('ids' => array($array['list'][0])));
-        $array = $this->api_admin->client_login_history_get_list(array());
+        $result = $this->api_admin->client_batch_delete_log(['ids' => [$array['list'][0]]]);
+        $array = $this->api_admin->client_login_history_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);

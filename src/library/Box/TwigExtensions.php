@@ -2,27 +2,26 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
-use League\CommonMark\GithubFlavoredMarkdownConverter;
 
 class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public function setDi(?\Pimple\Container $di): void
+    public function setDi(?Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -105,7 +104,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_bb_client_link_filter($link, $params = null)
     {
-        if (null === $this->di['url']) {
+        if ($this->di['url'] === null) {
             return null;
         }
 
@@ -117,7 +116,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $this->di['url']->adminLink($link, $params);
     }
 
-    function twig_period_title(Twig\Environment $env, $period)
+    public function twig_period_title(Twig\Environment $env, $period)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -191,23 +190,24 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_script_tag($path)
     {
-        return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, \FOSSBilling\Version::VERSION);
+        return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, FOSSBilling\Version::VERSION);
     }
 
     public function twig_stylesheet_tag($path, $media = 'screen')
     {
-        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, \FOSSBilling\Version::VERSION, $media);
+        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
     }
 
     public function twig_gravatar_filter($email, $size = 20)
     {
-        if(empty($email)){
+        if (empty($email)) {
             return '';
         }
 
         $url = 'https://www.gravatar.com/avatar/';
         $url .= md5(strtolower(trim($email)));
         $url .= "?s=$size&d=mp&r=g";
+
         return $url;
     }
 
@@ -234,6 +234,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         if (is_null($number)) {
             $number = '0';
         }
+
         return number_format(floatval($number), $decimals, $dec_point, $thousands_sep);
     }
 
@@ -263,7 +264,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
         $no = floor($no);
 
-        if (1 != $no) {
+        if ($no != 1) {
             $pds[$v] .= 's';
         }
         $x = sprintf('%d %s ', $no, $pds[$v]);
@@ -353,13 +354,13 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return;
         }
 
-        if ($array instanceof \Traversable) {
+        if ($array instanceof Traversable) {
             $array = iterator_to_array($array);
         } elseif (!\is_array($array)) {
             return $array;
         }
 
-        if (null !== $arrow) {
+        if ($arrow !== null) {
             uasort($array, $arrow);
         } else {
             asort($array);

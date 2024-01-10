@@ -1,13 +1,13 @@
 <?php
-namespace Box\Tests\Mod\Profile\Api;
 
+namespace Box\Tests\Mod\Profile\Api;
 
 class ClientTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Profile\Api\Client
      */
-    protected $clientApi = null;
+    protected $clientApi;
 
     public function setUp(): void
     {
@@ -19,10 +19,10 @@ class ClientTest extends \BBTestCase
         $clientService = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientService->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di                = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn() => $clientService);
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn () => $clientService);
         $this->clientApi->setDi($di);
         $this->clientApi->setIdentity(new \Model_Client());
 
@@ -35,54 +35,54 @@ class ClientTest extends \BBTestCase
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('updateClient')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());
 
-        $data = array();
+        $data = [];
 
         $result = $this->clientApi->update($data);
         $this->assertTrue($result);
     }
 
-    public function testApi_key_get()
+    public function testApiKeyGet()
     {
-        $client            = new \Model_Client();
+        $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
         $client->api_token = '16047a3e69f5245756d73b419348f0c7';
         $this->clientApi->setIdentity($client);
 
-        $result = $this->clientApi->api_key_get(array());
+        $result = $this->clientApi->api_key_get([]);
         $this->assertEquals($result, $client->api_token);
     }
 
-    public function testApi_key_reset()
+    public function testApiKeyReset()
     {
-        $apiKey  = '16047a3e69f5245756d73b419348f0c7';
+        $apiKey = '16047a3e69f5245756d73b419348f0c7';
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('resetApiKey')
-            ->will($this->returnValue($apiKey));
+            ->willReturn($apiKey);
 
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());
 
-        $result = $this->clientApi->api_key_reset(array());
+        $result = $this->clientApi->api_key_reset([]);
         $this->assertEquals($result, $apiKey);
     }
 
-    public function testChange_password()
+    public function testChangePassword()
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('changeClientPassword')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -96,37 +96,37 @@ class ClientTest extends \BBTestCase
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity($model);
 
-        $data   = array(
+        $data = [
             'current_password' => 'oldpw',
-            'new_password'     => '16047a3e69f5245756d73b419348f0c7',
-            'confirm_password' => '16047a3e69f5245756d73b419348f0c7'
-        );
+            'new_password' => '16047a3e69f5245756d73b419348f0c7',
+            'confirm_password' => '16047a3e69f5245756d73b419348f0c7',
+        ];
         $result = $this->clientApi->change_password($data);
         $this->assertTrue($result);
     }
 
-    public function testChange_passwordPasswordsDoNotMatchException()
+    public function testChangePasswordPasswordsDoNotMatchException()
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->never())
             ->method('changeClientPassword')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());
 
-        $data   = array(
+        $data = [
             'current_password' => '1234',
-            'new_password'     => '16047a3e69f5245756d73b419348f0c7',
-            'confirm_password' => '7c0f843914b37d6575425f96e3a74061' //passwords do not match
-        );
+            'new_password' => '16047a3e69f5245756d73b419348f0c7',
+            'confirm_password' => '7c0f843914b37d6575425f96e3a74061', // passwords do not match
+        ];
 
         $this->expectException(\Exception::class);
         $result = $this->clientApi->change_password($data);
@@ -138,7 +138,7 @@ class ClientTest extends \BBTestCase
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('logoutClient')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $this->clientApi->setService($service);
 
         $result = $this->clientApi->logout();

@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Hook_Api_AdminTest extends BBDbApiTestCase
 {
@@ -8,8 +9,8 @@ class Box_Mod_Hook_Api_AdminTest extends BBDbApiTestCase
     {
         $this->assertTrue($this->api_admin->hook_batch_connect());
         $this->assertFalse($this->api_admin->hook_call());
-        $bool = $this->api_admin->hook_call(array('event'=>'onAfterAdminActivateExtension'));
-        $bool = $this->api_admin->hook_call(array('event'=>'onAfterAdminActivateExtension', 'params'=>array('id'=>'2')));
+        $bool = $this->api_admin->hook_call(['event' => 'onAfterAdminActivateExtension']);
+        $bool = $this->api_admin->hook_call(['event' => 'onAfterAdminActivateExtension', 'params' => ['id' => '2']]);
 
         $this->assertTrue($bool);
     }
@@ -17,7 +18,7 @@ class Box_Mod_Hook_Api_AdminTest extends BBDbApiTestCase
     public function testEventReturnData()
     {
         $this->api_admin->hook_batch_connect();
-        $data = $this->api_admin->hook_call(array('event'=>'onBeforeGuestPublicTicketOpen', 'params'=>array('message'=>'msg')));
+        $data = $this->api_admin->hook_call(['event' => 'onBeforeGuestPublicTicketOpen', 'params' => ['message' => 'msg']]);
 
         $this->assertTrue(true);
     }

@@ -2,12 +2,11 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 class Server_Account
 {
     private $username   = NULL;
@@ -28,6 +27,7 @@ class Server_Account
     public function setUsername($param)
     {
         $this->username = $param;
+
         return $this;
     }
 
@@ -39,6 +39,7 @@ class Server_Account
     public function setPassword($param)
     {
         $this->password = $param;
+
         return $this;
     }
 
@@ -50,6 +51,7 @@ class Server_Account
     public function setDomain($param)
     {
         $this->domain = $param;
+
         return $this;
     }
 
@@ -61,6 +63,7 @@ class Server_Account
     public function setIp($param)
     {
         $this->ip = $param;
+
         return $this;
     }
 
@@ -75,6 +78,7 @@ class Server_Account
     public function setClient(Server_Client $param)
     {
         $this->client = $param;
+
         return $this;
     }
 
@@ -92,6 +96,7 @@ class Server_Account
     public function setPackage(Server_Package $param)
     {
         $this->package = $param;
+
         return $this;
     }
 
@@ -103,6 +108,7 @@ class Server_Account
     public function setNote($param)
     {
         $this->note = $param;
+
         return $this;
     }
 
@@ -113,7 +119,8 @@ class Server_Account
 
     public function setReseller($param)
     {
-        $this->reseller = (bool)$param;
+        $this->reseller = (bool) $param;
+
         return $this;
     }
 
@@ -124,7 +131,8 @@ class Server_Account
 
     public function setSuspended($param)
     {
-        $this->suspended = (bool)$param;
+        $this->suspended = (bool) $param;
+
         return $this;
     }
 
@@ -136,6 +144,7 @@ class Server_Account
     public function setNs1($param)
     {
         $this->ns_1 = $param;
+
         return $this;
     }
 
@@ -147,6 +156,7 @@ class Server_Account
     public function setNs2($param)
     {
         $this->ns_2 = $param;
+
         return $this;
     }
 
@@ -158,6 +168,7 @@ class Server_Account
     public function setNs3($param)
     {
         $this->ns_3 = $param;
+
         return $this;
     }
 
@@ -169,6 +180,7 @@ class Server_Account
     public function setNs4($param)
     {
         $this->ns_4 = $param;
+
         return $this;
     }
 

@@ -1,14 +1,12 @@
 <?php
 
-
 namespace Box\Mod\Index\Controller;
 
-
-class AdminTest extends \BBTestCase {
-
+class AdminTest extends \BBTestCase
+{
     public function testDi()
     {
-        $controller = new \Box\Mod\Index\Controller\Admin();
+        $controller = new Admin();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -25,11 +23,11 @@ class AdminTest extends \BBTestCase {
         $boxAppMock->expects($this->exactly(4))
             ->method('get');
 
-        $controller = new \Box\Mod\Index\Controller\Admin();
+        $controller = new Admin();
         $controller->register($boxAppMock);
     }
 
-    public function testget_index_AdminIsLogged()
+    public function testgetIndexAdminIsLogged()
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
@@ -38,15 +36,14 @@ class AdminTest extends \BBTestCase {
 
         $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
         $authorizationMock->expects($this->atLeastOnce())
-            ->method("isAdminLoggedIn")
+            ->method('isAdminLoggedIn')
             ->willReturn(true);
 
         $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
 
-        $controller = new \Box\Mod\Index\Controller\Admin();
+        $controller = new Admin();
         $controller->setDi($di);
         $controller->get_index($boxAppMock);
     }
 }
- 

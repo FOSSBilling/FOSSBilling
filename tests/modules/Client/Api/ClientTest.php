@@ -1,23 +1,21 @@
 <?php
 
-
 namespace Box\Mod\Client\Api;
 
-
-class ClientTest extends \BBTestCase {
-
+class ClientTest extends \BBTestCase
+{
     public function testgetDi()
     {
         $di = new \Pimple\Container();
-        $client = new \Box\Mod\Client\Api\Client();
+        $client = new Client();
         $client->setDi($di);
         $getDi = $client->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testbalance_get_list()
+    public function testbalanceGetList()
     {
-        $data = array();
+        $data = [];
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -25,32 +23,32 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
-            ->will($this->returnValue(array('sql', array())));
+            ->willReturn(['sql', []]);
 
-        $simpleResultArr = array(
-            'list' => array(
-                array('id' => 1),
-            ),
-        );
+        $simpleResultArr = [
+            'list' => [
+                ['id' => 1],
+            ],
+        ];
 
         $pagerMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
-        $pagerMock ->expects($this->atLeastOnce())
+        $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue($simpleResultArr));
+            ->willReturn($simpleResultArr);
 
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
-        $client = new \Box\Mod\Client\Api\Client();
+        $client = new Client();
         $client->setDi($di);
         $client->setService($serviceMock);
         $client->setIdentity($model);
@@ -58,9 +56,9 @@ class ClientTest extends \BBTestCase {
         $result = $client->balance_get_list($data);
 
         $this->assertIsArray($result);
-}
+    }
 
-    public function testbalance_get_total()
+    public function testbalanceGetTotal()
     {
         $balanceAmount = 0.00;
         $model = new \Model_Client();
@@ -69,12 +67,12 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
-            ->will($this->returnValue($balanceAmount));
+            ->willReturn($balanceAmount);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn($name, $sub) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name, $sub) => $serviceMock);
 
-        $api = new \Box\Mod\Client\Api\Client();
+        $api = new Client();
         $api->setDi($di);
         $api->setIdentity($model);
 
@@ -82,10 +80,9 @@ class ClientTest extends \BBTestCase {
 
         $this->assertIsFloat($result);
         $this->assertEquals($balanceAmount, $result);
-
     }
 
-    public function testis_taxable()
+    public function testisTaxable()
     {
         $clientIsTaxable = true;
 
@@ -97,14 +94,12 @@ class ClientTest extends \BBTestCase {
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $api = new \Box\Mod\Client\Api\Client();
+        $api = new Client();
         $api->setService($serviceMock);
         $api->setIdentity($client);
 
         $result = $api->is_taxable();
         $this->assertIsBool($result);
         $this->assertEquals($clientIsTaxable, $result);
-
     }
 }
- 

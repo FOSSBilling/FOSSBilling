@@ -2,42 +2,42 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use \FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\InjectionAwareInterface;
 
 class Api_Abstract implements InjectionAwareInterface
 {
     /**
      * @var string - request ip
      */
-    protected $ip = null;
+    protected $ip;
 
     /**
-     * @var \Box_Mod
+     * @var Box_Mod
      */
-    protected $mod  = null;
+    protected $mod;
 
     // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
-    protected $service  = null;
+    protected $service;
 
     /**
      * @var Model_Admin|Model_Client|Model_Guest
      */
-    protected $identity = null;
+    protected $identity;
 
     protected ?\Pimple\Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
         return $this->di;
     }
@@ -58,6 +58,7 @@ class Api_Abstract implements InjectionAwareInterface
         if (!$this->mod) {
             throw new FOSSBilling\Exception('Mod object is not set for the service');
         }
+
         return $this->mod;
     }
 

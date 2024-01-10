@@ -1,9 +1,10 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_ProductTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
-    
+
     public function testGetAll()
     {
         $list = $this->api_guest->product_get_pairs();
@@ -11,16 +12,16 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
 
         $list = $this->api_guest->product_get_list();
         $this->assertIsArray($list);
-        
+
         $list = $this->api_guest->product_category_get_pairs();
         $this->assertIsArray($list);
 
-        $data = array(
-            'id'    =>  10,
-        );
+        $data = [
+            'id' => 10,
+        ];
         $list = $this->api_guest->product_get($data);
         $this->assertIsArray($list);
-        
+
         $list = $this->api_guest->product_get_slider($data);
         $this->assertIsArray($list);
     }
@@ -102,10 +103,9 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
         $this->assertArrayNotHasKey('category', $item);
     }
 
-    public function testProduct_StartingFromPrice_DomainType()
+    public function testProductStartingFromPriceDomainType()
     {
-        $array = $this->api_guest->product_get(array('id' => 10));
+        $array = $this->api_guest->product_get(['id' => 10]);
         $this->assertTrue($array['price_starting_from'] > 0);
     }
-
 }

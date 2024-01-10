@@ -1,59 +1,86 @@
 name: Rector and Code Styling
 
 on:
-  schedule:
-    - cron: '0 12 * * 2,4' # Runs once every Tuesday and Thursday
+    schedule:
+        - cron: "0 12 * * 2,4" # Runs once every Tuesday and Thursday
 
 jobs:
-  php-cs-fixer:
-    name: Rector & PHP-CS-Fixer
-    runs-on: ubuntu-latest
+    php-cs-fixer:
+        name: Rector & PHP-CS-Fixer
+        runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-    - name: Validate composer.json and composer.lock
-      uses: php-actions/composer@v6
-      with:
-        command: validate
+            - name: Validate composer.json and composer.lock
+              uses: php-actions/composer@v6
+              with:
+                  command: validate
 
-    - name: Cache Composer Dependencies
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: ./src/vendor
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-composer-
+            - name: Cache Composer Dependencies
+              id: composer-cache
+              uses: actions/cache@v3
+              with:
+                  path: ./src/vendor
+                  key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-composer-
 
-    - name: Install Composer Dependencies
-      if: steps.composer-cache.outputs.cache-hit != 'true'
-      uses: php-actions/composer@v6
-      with:
-        php_version: 8.2
+            - run: |
+                  echo "MONTH=$(date '+%h')" >> ${GITHUB_ENV}
+                  mkdir cache
+                  mkdir cache/rector
+                  mkdir cache/rector-tests
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
+            - name: Install Composer Dependencies
+              if: steps.composer-cache.outputs.cache-hit != 'true'
+              uses: php-actions/composer@v6
+              with:
+                  php_version: 8.2
 
-    - name: Run Reactor
-      run: |
-        php src/vendor/bin/rector
-        php src/vendor/bin/rector --config=rectorTests.php
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.2"
 
-    - name: Run PHP CS Fixer
-      run: php src/vendor/bin/php-cs-fixer fix
+            - name: Restore Rector Cache
+              uses: actions/cache@v3
+              with:
+                  path: ./var/cache/rector
+                  key: ${{ env.MONTH }}-rector
+                  restore-keys: ${{ env.MONTH }}-rector
 
-    - name: Create a Pull Request
-      uses: peter-evans/create-pull-request@v5
-      with:
-        title: Apply PHP Code Styling & Quality Changes
-        commit-message: Apply PHP Code Styling & Quality Changes
-        branch: rector-and-CS
-        body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
-        delete-branch: true
-        token: ${{ secrets.BOT_TOKEN }}
-        committer: FOSSBilling Bot <fossbilling-bot>
-        author: FOSSBilling Bot <fossbilling-bot>
-        labels: skip-changelog
+            - name: Restore Rector Cache for the Tests
+              uses: actions/cache@v3
+              with:
+                  path: ./var/cache/rector_tests
+                  key: ${{ env.MONTH }}-rector_tests
+                  restore-keys: ${{ env.MONTH }}-rector_tests
+
+            - name: Restore CS-Fixer Cache
+              uses: actions/cache@v3
+              with:
+                  path: .php-cs-fixer.cache
+                  key: ${{ env.MONTH }}-csfixer
+                  restore-keys: ${{ env.MONTH }}-csfixer
+
+            - name: Run Reactor
+              run: |
+                  php src/vendor/bin/rector
+                  php src/vendor/bin/rector --config=rectorTests.php
+
+            - name: Run PHP CS Fixer
+              run: php src/vendor/bin/php-cs-fixer fix
+
+            - name: Create a Pull Request
+              uses: peter-evans/create-pull-request@v5
+              with:
+                  title: Apply PHP Code Styling & Quality Changes
+                  commit-message: Apply PHP Code Styling & Quality Changes
+                  branch: rector-and-CS
+                  body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
+                  delete-branch: true
+                  token: ${{ secrets.BOT_TOKEN }}
+                  committer: FOSSBilling Bot <fossbilling-bot>
+                  author: FOSSBilling Bot <fossbilling-bot>
+                  labels: skip-changelog

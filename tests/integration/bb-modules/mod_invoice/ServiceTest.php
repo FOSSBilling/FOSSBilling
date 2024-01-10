@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 {
@@ -7,19 +8,19 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
     public function testEvents()
     {
-        $service = new \Box\Mod\Invoice\Service();
+        $service = new Box\Mod\Invoice\Service();
         $service->setDi($this->di);
-        $params = array(
+        $params = [
             'id' => 1,
-        );
+        ];
         $event = new Box_Event(null, 'name', $params, $this->api_admin, $this->api_guest);
         $event->setDi($this->di);
         $bool = $service->onAfterAdminInvoicePaymentReceived($event);
         $this->assertTrue($bool);
 
-        $params = array(
+        $params = [
             'id' => 1,
-        );
+        ];
         $event = new Box_Event(null, 'name', $params, $this->api_admin, $this->api_guest);
         $event->setDi($this->di);
         $bool = $service->onAfterAdminInvoiceApprove($event);
@@ -27,11 +28,11 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
     }
 
     /**
-     * Process Paypal transaction
+     * Process Paypal transaction.
      */
     public function testprocessTransaction()
     {
-        $service = new \Box\Mod\Invoice\ServiceTransaction();
+        $service = new Box\Mod\Invoice\ServiceTransaction();
         $service->setDi($this->di);
 
         $transactionModel = $this->di['db']->load('Transaction', 10);
@@ -41,15 +42,14 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
         $this->assertEquals('PayPalEmail', $gatewayModel->gateway);
 
         $service->processTransaction($transactionModel->id);
-
     }
 
     /**
-     * Process Paypal duplicate transaction
+     * Process Paypal duplicate transaction.
      */
-    public function testcreateAndProcessTransaction_Duplicate()
+    public function testcreateAndProcessTransactionDuplicate()
     {
-        $service = new \Box\Mod\Invoice\ServiceTransaction();
+        $service = new Box\Mod\Invoice\ServiceTransaction();
         $service->setDi($this->di);
 
         $transactionModel = $this->di['db']->load('Transaction', 10);
@@ -62,13 +62,13 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
         $transactionIpn = json_decode($transactionModel->ipn, 1);
 
-        $ipn = array(
-            'skip_validation'       =>  true,
-            'bb_invoice_id'         =>  $transactionModel->invoice_id,
-            'bb_gateway_id'         =>  $transactionModel->gateway_id,
-            'get'                   =>  $transactionIpn['get'],
-            'post'                  =>  $transactionIpn['post'],
-        );
+        $ipn = [
+            'skip_validation' => true,
+            'bb_invoice_id' => $transactionModel->invoice_id,
+            'bb_gateway_id' => $transactionModel->gateway_id,
+            'get' => $transactionIpn['get'],
+            'post' => $transactionIpn['post'],
+        ];
 
         $this->expectException(Payment_Exception::class);
         $this->expectExceptionMessage('Cannot process duplicate IPN');
@@ -77,7 +77,6 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
         $transactionModel = $this->di['db']->load('Transaction', $newId);
         $this->assertInstanceOf('Model_Transaction', $transactionModel);
-
     }
 
     public function testonAfterAdminCronRun()
@@ -91,7 +90,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
         $this->assertEquals($expected, $remove_after_days);
 
         $sql = "SELECT 1 FROM invoice WHERE status = 'unpaid' AND DATEDIFF(NOW(), due_at) > :days";
-        $binigns = array(':days' => $remove_after_days);
+        $binigns = [':days' => $remove_after_days];
         $result = $this->di['db']->getAll($sql, $binigns);
         $invoiceNeedsToBeDeleted = count($result);
 
@@ -99,20 +98,19 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
-            ->onlyMethods(array('getDi'))
+            ->onlyMethods(['getDi'])
             ->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->willReturn($this->di);
-        $service = new \Box\Mod\Invoice\Service();
+        $service = new Box\Mod\Invoice\Service();
         $service->onAfterAdminCronRun($eventMock);
 
         $result = $this->di['db']->getAll($sql, $binigns);
         $this->assertEquals(0, count($result));
     }
 
-
-    public function testbatch_activate_paid()
+    public function testbatchActivatePaid()
     {
         $invoiceItems = $this->di['mod_service']('Invoice', 'InvoiceItem')->getAllNotExecutePaidItems();
         $this->assertNotEmpty($invoiceItems);

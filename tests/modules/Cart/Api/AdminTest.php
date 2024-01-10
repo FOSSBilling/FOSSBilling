@@ -7,42 +7,42 @@ class AdminTest extends \BBTestCase
     /**
      * @var \Box\Mod\Cart\Api\Admin
      */
-    protected $adminApi = null;
+    protected $adminApi;
 
     public function setup(): void
     {
         $this->adminApi = new \Box\Mod\Cart\Api\Admin();
     }
 
-    public function testGet_list()
+    public function testGetList()
     {
-        $simpleResultArr = array(
-            'list' => array(
-                array('id' => 1),
-            ),
-        );
+        $simpleResultArr = [
+            'list' => [
+                ['id' => 1],
+            ],
+        ];
 
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
-            ->will($this->returnValue($simpleResultArr));
+            ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
-            ->onlyMethods(array('getSearchQuery', 'toApiArray'))->getMock();
+            ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
-            ->will($this->returnValue(array('query', array())));
+            ->willReturn(['query', []]);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $model = new \Model_Cart();
         $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue($model));
+            ->willReturn($model);
 
-        $di          = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -50,7 +50,7 @@ class AdminTest extends \BBTestCase
 
         $this->adminApi->setService($serviceMock);
 
-        $data   = array();
+        $data = [];
         $result = $this->adminApi->get_list($data);
 
         $this->assertIsArray($result);
@@ -61,55 +61,53 @@ class AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_Cart()));
+            ->willReturn(new \Model_Cart());
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
-            ->onlyMethods(array('toApiArray'))->getMock();
+            ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
-        $di              = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['db']        = $dbMock;
+        $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
 
-        $data   = array(
-            'id' => random_int(1, 100)
-        );
+        $data = [
+            'id' => random_int(1, 100),
+        ];
         $result = $this->adminApi->get($data);
 
         $this->assertIsArray($result);
     }
 
-
-    public function testBatch_expire()
+    public function testBatchExpire()
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue(array(random_int(1, 100), date('Y-m-d H:i:s'))));
+            ->willReturn([random_int(1, 100), date('Y-m-d H:i:s')]);
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
-        $di           = new \Pimple\Container();
-        $di['db']     = $dbMock;
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->adminApi->setDi($di);
 
-        $data   = array(
-            'id' => random_int(1, 100)
-        );
+        $data = [
+            'id' => random_int(1, 100),
+        ];
         $result = $this->adminApi->batch_expire($data);
 
         $this->assertTrue($result);
     }
-
 }

@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends BBDbApiTestCase
 {
@@ -6,30 +7,30 @@ class Api_AdminTest extends BBDbApiTestCase
 
     public function testActivity()
     {
-        $bool = $this->api_admin->activity_log_delete(array('id'=>1));
-        $this->assertTrue($bool);
-        
-        $bool = $this->api_admin->activity_log();
-        $this->assertFalse($bool);
-        
-        $bool = $this->api_admin->activity_log(array('m'=>'this is test message to log'));
+        $bool = $this->api_admin->activity_log_delete(['id' => 1]);
         $this->assertTrue($bool);
 
-        $bool = $this->api_admin->activity_log_email(array('subject' => 'This is an email subject'));
+        $bool = $this->api_admin->activity_log();
+        $this->assertFalse($bool);
+
+        $bool = $this->api_admin->activity_log(['m' => 'this is test message to log']);
+        $this->assertTrue($bool);
+
+        $bool = $this->api_admin->activity_log_email(['subject' => 'This is an email subject']);
         $this->assertTrue($bool);
     }
 
     public function testLogDeleteIdNotSetException()
     {
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
 
-        $this->api_admin->activity_log_delete(array());
+        $this->api_admin->activity_log_delete([]);
     }
 
     public function testLogNotFoundException()
     {
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->api_admin->activity_log_delete(array('id' => 100));
+        $this->expectException(FOSSBilling\Exception::class);
+        $this->api_admin->activity_log_delete(['id' => 100]);
     }
 
     public function testActivityLogGetList()
@@ -59,13 +60,13 @@ class Api_AdminTest extends BBDbApiTestCase
 
     public function testBatchDelete()
     {
-        $array = $this->api_admin->activity_log_get_list(array());
+        $array = $this->api_admin->activity_log_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->activity_batch_delete(array('ids' => $ids));
-        $array  = $this->api_admin->activity_log_get_list(array());
+        $result = $this->api_admin->activity_batch_delete(['ids' => $ids]);
+        $array = $this->api_admin->activity_log_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);

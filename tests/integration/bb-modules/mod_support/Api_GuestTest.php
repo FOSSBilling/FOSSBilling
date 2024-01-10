@@ -1,28 +1,29 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_SupportTest extends ApiTestCase
 {
     public function testContact()
     {
-        $data = array(
-            'name'  =>  'This is me',
-            'email'  =>  'email@email.com',
-            'subject'  =>  'subject',
-            'message'  =>  'Message',
-        );
+        $data = [
+            'name' => 'This is me',
+            'email' => 'email@email.com',
+            'subject' => 'subject',
+            'message' => 'Message',
+        ];
         $hash = $this->api_guest->support_ticket_create($data);
         $this->assertIsString($hash);
 
-        $data = array(
-            'hash'    => $hash,
-        );
+        $data = [
+            'hash' => $hash,
+        ];
         $array = $this->api_guest->support_ticket_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'hash'    => $hash,
+        $data = [
+            'hash' => $hash,
             'message' => 'Hello',
-        );
+        ];
         $hash = $this->api_guest->support_ticket_reply($data);
         $this->assertIsString($hash);
 
@@ -38,26 +39,26 @@ class Api_Guest_SupportTest extends ApiTestCase
         $array = $this->api_guest->support_kb_category_get_list();
         $this->assertIsArray($array);
 
-        $data = array(
-            'id'    =>  1,
-        );
+        $data = [
+            'id' => 1,
+        ];
         $array = $this->api_guest->support_kb_article_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'slug'    =>  'how-to-contact-support',
-        );
+        $data = [
+            'slug' => 'how-to-contact-support',
+        ];
         $array = $this->api_guest->support_kb_article_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'slug'    =>  'discuss-about-everything',
-        );
+        $data = [
+            'slug' => 'discuss-about-everything',
+        ];
         $array = $this->api_guest->support_kb_category_get($data);
         $this->assertIsArray($array);
     }
 
-    public function testKbCategory_get_pairs()
+    public function testKbCategoryGetPairs()
     {
         $array = $this->api_guest->support_kb_category_get_pairs();
         $this->assertIsArray($array);

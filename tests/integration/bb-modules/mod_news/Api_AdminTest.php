@@ -1,34 +1,35 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_NewsTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extension_news.xml';
-    
+
     public function testNews()
     {
         $array = $this->api_admin->news_get_list();
         $this->assertIsArray($array);
 
-        $data = array('id'=>1);
+        $data = ['id' => 1];
         $array = $this->api_admin->news_get($data);
         $this->assertIsArray($array);
 
-        $data = array(
-            'id'        => 1,
-            'title'     => 'News Title',
-            'slug'      => 'news-title',
-            'status'    => 'draft',
-            'content'   => 'Announcement',
-        );
+        $data = [
+            'id' => 1,
+            'title' => 'News Title',
+            'slug' => 'news-title',
+            'status' => 'draft',
+            'content' => 'Announcement',
+        ];
         $bool = $this->api_admin->news_update($data);
         $this->assertTrue($bool);
 
         $bool = $this->api_admin->news_delete($data);
         $this->assertTrue($bool);
 
-        $data = array(
-            'title' =>  'Test',
-        );
+        $data = [
+            'title' => 'Test',
+        ];
         $id = $this->api_admin->news_create($data);
         $this->assertTrue(is_numeric($id));
     }
@@ -64,18 +65,17 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
             $this->assertArrayHasKey('name', $author);
             $this->assertArrayHasKey('email', $author);
         }
-
     }
 
     public function testNewsBatchDelete()
     {
-        $array = $this->api_admin->news_get_list(array());
+        $array = $this->api_admin->news_get_list([]);
 
         foreach ($array['list'] as $value) {
             $ids[] = $value['id'];
         }
-        $result = $this->api_admin->news_batch_delete(array('ids' => $ids));
-        $array  = $this->api_admin->news_get_list(array());
+        $result = $this->api_admin->news_batch_delete(['ids' => $ids]);
+        $array = $this->api_admin->news_get_list([]);
 
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
@@ -85,31 +85,31 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
     {
         $this->assertTrue(true);
 
-        return array(
-            array(
+        return [
+            [
                 'This is blog post with<!--more--> tag',
-                'This is blog post with'
-            ),
-            array(
+                'This is blog post with',
+            ],
+            [
                 'This is blog post without more tag',
-                null
-            )
-        );
+                null,
+            ],
+        ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('testNewsMoreTagProvider')]
     public function testNewsMoreTag($content, $expectedExcerpt)
     {
-        $data = array(
-            'title'   => 'News Title',
-            'slug'    => 'news-title',
-            'status'  => 'draft',
+        $data = [
+            'title' => 'News Title',
+            'slug' => 'news-title',
+            'status' => 'draft',
             'content' => $content,
-        );
+        ];
 
         $id = $this->api_admin->news_create($data);
 
-        $array = $this->api_admin->news_get(array('id' => $id));
+        $array = $this->api_admin->news_get(['id' => $id]);
         $this->assertEquals($array['excerpt'], $expectedExcerpt);
         $this->assertEquals($array['content'], $content);
     }

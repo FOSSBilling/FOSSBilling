@@ -5,12 +5,12 @@ class ModTest extends BBDbApiTestCase
 {
     public function testConfig()
     {
-        $conf = array(
-            'ext'      => 'mod_client',
-            'required' => array(
-                'last-name'
-            )
-        );
+        $conf = [
+            'ext' => 'mod_client',
+            'required' => [
+                'last-name',
+            ],
+        ];
 
         $this->api_admin->extension_config_save($conf);
 

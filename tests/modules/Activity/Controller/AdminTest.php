@@ -1,11 +1,9 @@
 <?php
 
-
 namespace Box\Tests\Mod\Activity\Controller;
 
-
-class AdminTest extends \BBTestCase {
-
+class AdminTest extends \BBTestCase
+{
     public function testDi()
     {
         $controller = new \Box\Mod\Activity\Controller\Admin();
@@ -42,13 +40,13 @@ class AdminTest extends \BBTestCase {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('get')
-            ->with('/activity', 'get_index', array(), \Box\Mod\Activity\Controller\Admin::class);
+            ->with('/activity', 'get_index', [], \Box\Mod\Activity\Controller\Admin::class);
 
         $controllerAdmin = new \Box\Mod\Activity\Controller\Admin();
         $controllerAdmin->register($boxAppMock);
     }
 
-    public function testget_index()
+    public function testgetIndex()
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
@@ -64,4 +62,3 @@ class AdminTest extends \BBTestCase {
         $controllerAdmin->get_index($boxAppMock);
     }
 }
- 

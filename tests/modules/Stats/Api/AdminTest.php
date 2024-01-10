@@ -1,18 +1,17 @@
 <?php
 
-
 namespace Box\Mod\Stats\Api;
 
-
-class AdminTest extends \BBTestCase {
+class AdminTest extends \BBTestCase
+{
     /**
-     * @var \Box\Mod\Stats\Api\Admin
+     * @var Admin
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api= new \Box\Mod\Stats\Api\Admin();
+        $this->api = new Admin();
     }
 
     public function testgetDi()
@@ -23,12 +22,12 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testget_summary()
+    public function testgetSummary()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummary')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
@@ -36,12 +35,12 @@ class AdminTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function testget_summary_income()
+    public function testgetSummaryIncome()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummaryIncome')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
@@ -49,172 +48,171 @@ class AdminTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function testget_orders_statuses()
+    public function testgetOrdersStatuses()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrdersStatuses')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_orders_statuses($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_product_summary()
+    public function testgetProductSummary()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSummary')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_product_summary($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_product_sales()
+    public function testgetProductSales()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSales')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_product_sales($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_income_vs_refunds()
+    public function testgetIncomeVsRefunds()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('incomeAndRefundStats')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_income_vs_refunds($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_refunds()
+    public function testgetRefunds()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRefunds')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_refunds($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_income()
+    public function testgetIncome()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getIncome')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_income($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_orders()
+    public function testgetOrders()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_orders($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_clients()
+    public function testgetClients()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_clients($data);
         $this->assertIsArray($result);
     }
 
-    public function testclient_countries()
+    public function testclientCountries()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientCountries')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->client_countries($data);
         $this->assertIsArray($result);
     }
 
-    public function testsales_countries()
+    public function testsalesCountries()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSalesByCountry')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->sales_countries($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_invoices()
+    public function testgetInvoices()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_invoices($data);
         $this->assertIsArray($result);
     }
 
-    public function testget_tickets()
+    public function testgetTickets()
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
-        $data = array();
+        $data = [];
         $result = $this->api->get_tickets($data);
         $this->assertIsArray($result);
     }
 }
- 

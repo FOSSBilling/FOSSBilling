@@ -2,12 +2,11 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 abstract class Server_Manager
 {
     private ?\Box_Log $_log = null;
@@ -50,7 +49,7 @@ abstract class Server_Manager
         }
 
         if (isset($options['secure'])) {
-            $this->_config['secure'] = (bool)$options['secure'];
+            $this->_config['secure'] = (bool) $options['secure'];
         }
 
         if (isset($options['username'])) {
@@ -73,14 +72,14 @@ abstract class Server_Manager
             $this->_config['ssl'] = $options['ssl'];
         }
 
-        /**
+        /*
          * Custom configuration.
          */
         if (isset($options['config'])) {
             $this->_config['config'] = $options['config'];
         }
 
-        /**
+        /*
          * Custom connection port to API.
          * If not provided, using default server manager port
          */
@@ -95,8 +94,9 @@ abstract class Server_Manager
      * Generates a username for an account based on the provided domain name.
      * Server managers may define this function to provide their own method for username generation depending on the specifics of the server they are integrated with.
      *
-     * @param mixed $domain_name The domain name used to generate the username.
-     * @return string The generated username.
+     * @param mixed $domain_name the domain name used to generate the username
+     *
+     * @return string the generated username
      */
     public function generateUsername(mixed $domain_name)
     {
@@ -104,7 +104,8 @@ abstract class Server_Manager
         $username = substr($username, 0, 7);
         $randnum = random_int(0, 9);
         $prefix = $this->_config['config']['userprefix'] ?? '';
-        return  $prefix . $username . $randnum;
+
+        return $prefix . $username . $randnum;
     }
 
     /**
@@ -121,27 +122,31 @@ abstract class Server_Manager
     /**
      * Sets the logger object.
      *
-     * @param Box_Log $value The logger object.
+     * @param Box_Log $value the logger object
+     *
      * @return $this
      */
     public function setLog(Box_Log $value)
     {
         $this->_log = $value;
+
         return $this;
     }
 
     /**
      * Returns the logger object.
      *
-     * @return Box_Log The logger object.
+     * @return Box_Log the logger object
      */
     public function getLog()
     {
         if (!$this->_log instanceof Box_Log) {
             $log = new Box_Log();
             $log->addWriter(new Box_LogDb('Model_ActivitySystem'));
+
             return $log;
         }
+
         return $this->_log;
     }
 
@@ -150,7 +155,7 @@ abstract class Server_Manager
      */
     public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
-        return \Symfony\Component\HttpClient\HttpClient::create();
+        return Symfony\Component\HttpClient\HttpClient::create();
     }
 
     /**
@@ -202,7 +207,6 @@ abstract class Server_Manager
      */
     abstract public function createAccount(Server_Account $account);
 
-
     /**
      * Synchronizes the account status from the server.
      *
@@ -213,7 +217,6 @@ abstract class Server_Manager
      * @throws Server_Exception If there was an error while synchronizing the account.
      */
     abstract public function synchronizeAccount(Server_Account $a);
-
 
     /**
      * Suspends an account on the server.
@@ -226,7 +229,6 @@ abstract class Server_Manager
      */
     abstract public function suspendAccount(Server_Account $a);
 
-
     /**
      * Unsuspends an account on the server.
      *
@@ -238,7 +240,6 @@ abstract class Server_Manager
      */
     abstract public function unsuspendAccount(Server_Account $a);
 
-
     /**
      * Cancels an account on the server.
      *
@@ -249,7 +250,6 @@ abstract class Server_Manager
      * @throws Server_Exception If there was an error while canceling the account.
      */
     abstract public function cancelAccount(Server_Account $a);
-
 
     /**
      * Changes the password for an account on the server.
@@ -264,7 +264,6 @@ abstract class Server_Manager
      */
     abstract public function changeAccountPassword(Server_Account $a, $new_password);
 
-
     /**
      * Changes the username for an account on the server.
      *
@@ -277,7 +276,6 @@ abstract class Server_Manager
      * @throws Server_Exception If there was an error while changing the username.
      */
     abstract public function changeAccountUsername(Server_Account $a, $new_username);
-
 
     /**
      * Changes the domain for an account on the server.
@@ -292,7 +290,6 @@ abstract class Server_Manager
      */
     abstract public function changeAccountDomain(Server_Account $a, $new_domain);
 
-
     /**
      * Changes the IP address for an account on the server.
      *
@@ -305,7 +302,6 @@ abstract class Server_Manager
      * @throws Server_Exception If there was an error while changing the IP address.
      */
     abstract public function changeAccountIp(Server_Account $a, $new_ip);
-
 
     /**
      * Changes the package for an account on the server.

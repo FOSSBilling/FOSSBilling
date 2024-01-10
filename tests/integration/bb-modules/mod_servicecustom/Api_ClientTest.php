@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_ServiceCustomTest extends BBDbApiTestCase
 {
@@ -6,23 +7,23 @@ class Api_Client_ServiceCustomTest extends BBDbApiTestCase
 
     public function testServiceCustom()
     {
-        $data = array(
-            'order_id'    =>  9,
-        );
+        $data = [
+            'order_id' => 9,
+        ];
         $result = $this->api_client->servicecustom_return_params($data);
         $this->assertEquals($data, $result);
-        
+
         try {
             $this->api_client->servicecustom_non_existing($data);
             $this->fail('Method should not exist on plugin');
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $this->assertEquals(3125, $e->getCode());
         }
-        
+
         try {
             $this->api_client->servicecustom_renew($data);
             $this->fail('Renew method should be forbidden');
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $this->assertEquals(403, $e->getCode());
         }
 

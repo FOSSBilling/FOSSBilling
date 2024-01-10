@@ -3,17 +3,17 @@
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use Twig\Profiler\Profile;
-use Twig\Extension\ProfilerExtension;
 use DebugBar\Bridge\NamespacedTwigProfileCollector;
-use FOSSBilling\TwigExtensions\DebugBar;
 use FOSSBilling\Environment;
+use FOSSBilling\TwigExtensions\DebugBar;
+use Twig\Extension\ProfilerExtension;
+use Twig\Profiler\Profile;
 
 class Box_AppClient extends Box_App
 {
@@ -22,7 +22,7 @@ class Box_AppClient extends Box_App
         $m = $this->di['mod']($this->mod);
         $m->registerClientRoutes($this);
 
-        if ('api' == $this->mod) {
+        if ($this->mod == 'api') {
             define('API_MODE', true);
 
             // Prevent errors from being displayed in API mode as it can cause invalid JSON to be returned.
@@ -59,6 +59,7 @@ class Box_AppClient extends Box_App
         }
         $page = str_replace('/', '_', $page);
         $tpl = 'mod_page_' . $page;
+
         try {
             return $this->render($tpl, ['post' => $_POST], $ext);
         } catch (Exception $e) {
@@ -66,7 +67,7 @@ class Box_AppClient extends Box_App
                 error_log($e);
             }
         }
-        $e = new \FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
+        $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         $this->di['logger']->setChannel('routing')->info($e->getMessage());
         http_response_code(404);
@@ -84,7 +85,8 @@ class Box_AppClient extends Box_App
         } catch (Twig\Error\LoaderError $e) {
             $this->di['logger']->setChannel('routing')->info($e->getMessage());
             http_response_code(404);
-            throw new \FOSSBilling\InformationException('Page not found', null, 404);
+
+            throw new FOSSBilling\InformationException('Page not found', null, 404);
         }
 
         if ($fileName . '.' . $ext == 'mod_page_sitemap.xml') {

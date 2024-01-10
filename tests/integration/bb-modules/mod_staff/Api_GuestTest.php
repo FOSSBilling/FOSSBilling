@@ -1,4 +1,5 @@
 <?php
+
 #[\PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_StaffTest extends BBDbApiTestCase
 {
@@ -6,14 +7,13 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
 
     public function testCreate()
     {
-        $data = array(
-            'email'    => 'admin@fossbilling.org',
+        $data = [
+            'email' => 'admin@fossbilling.org',
             'password' => 'adminPa55word',
-        );
+        ];
 
-        $this->api_admin->staff_delete(array('id' => 1));
+        $this->api_admin->staff_delete(['id' => 1]);
         $this->api_guest->staff_create($data);
-
     }
 
     public function testCreateException()
@@ -25,13 +25,13 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
             $this->assertEquals(55, $e->getCode());
         }
     }
-    
+
     public function testLogin()
     {
-        $data  = array(
-            'email'    => 'admin@fossbilling.org',
+        $data = [
+            'email' => 'admin@fossbilling.org',
             'password' => 'demo',
-        );
+        ];
         $array = $this->api_guest->staff_login($data);
         $this->assertIsArray($array);
         $this->assertIsArray($this->session->get('admin'));

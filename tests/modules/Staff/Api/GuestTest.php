@@ -7,11 +7,11 @@ class GuestTest extends \BBTestCase
     /**
      * @var \Box\Mod\Staff\Api\Guest
      */
-    protected $api = null;
+    protected $api;
 
     public function setup(): void
     {
-        $this->api= new \Box\Mod\Staff\Api\Guest();
+        $this->api = new \Box\Mod\Staff\Api\Guest();
     }
 
     public function testgetDi()
@@ -27,7 +27,7 @@ class GuestTest extends \BBTestCase
         $adminId = 1;
 
         $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Api\Guest::class)
-            ->onlyMethods(array('login'))
+            ->onlyMethods(['login'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('login');
@@ -35,7 +35,7 @@ class GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createAdmin')
-            ->will($this->returnValue($adminId));
+            ->willReturn($adminId);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -44,7 +44,7 @@ class GuestTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -57,30 +57,30 @@ class GuestTest extends \BBTestCase
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 
-        $data = array(
+        $data = [
             'email' => 'example@fossbilling.org',
             'password' => 'EasyToGuess',
-        );
+        ];
         $result = $apiMock->create($data);
         $this->assertTrue($result);
     }
 
-    public function testCreate_Exception()
+    public function testCreateException()
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(array(array())));
+            ->willReturn([[]]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
 
-        $data = array(
+        $data = [
             'email' => 'example@fossbilling.org',
             'password' => 'EasyToGuess',
-        );
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(55);
@@ -100,7 +100,7 @@ class GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $guestApi->login(array());
+        $guestApi->login([]);
     }
 
     /**
@@ -115,7 +115,7 @@ class GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $guestApi->login(array('email'=>'email@domain.com'));
+        $guestApi->login(['email' => 'email@domain.com']);
     }
 
     public function testSuccessfulLogin()
@@ -125,13 +125,13 @@ class GuestTest extends \BBTestCase
             ->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('login')
-            ->will($this->returnValue(array()));
+            ->willReturn([]);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -153,7 +153,7 @@ class GuestTest extends \BBTestCase
         $guestApi->setMod($modMock);
         $guestApi->setService($serviceMock);
         $guestApi->setDi($di);
-        $result = $guestApi->login(array('email'=>'email@domain.com', 'password'=>'pass'));
+        $result = $guestApi->login(['email' => 'email@domain.com', 'password' => 'pass']);
         $this->assertIsArray($result);
     }
 
@@ -162,13 +162,13 @@ class GuestTest extends \BBTestCase
         $modMock = $this->getMockBuilder('\Box_Mod')
             ->disableOriginalConstructor()
             ->getMock();
-        $configArr = array(
-            'allowed_ips' => '1.1.1.1'.PHP_EOL.'2.2.2.2',
+        $configArr = [
+            'allowed_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
             'check_ip' => true,
-        );
+        ];
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->will($this->returnValue($configArr));
+            ->willReturn($configArr);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -191,10 +191,10 @@ class GuestTest extends \BBTestCase
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage(sprintf('You are not allowed to login to admin area from %s address', $ip));
 
-        $data = array(
-            'email'    => 'email@domain.com',
+        $data = [
+            'email' => 'email@domain.com',
             'password' => 'pass',
-        );
+        ];
         $guestApi->login($data);
     }
 }
