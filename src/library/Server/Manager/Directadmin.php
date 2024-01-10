@@ -78,11 +78,11 @@ class Server_Manager_Directadmin extends Server_Manager
      * Returns the port number for the DirectAdmin server.
      * If the port is not set in the configuration, it defaults to '2222'.
      *
-     * @return float|int|string The port number.
+     * @return int The port number.
      */
-    public function _getPort(): float|int|string
+    public function _getPort(): int
     {
-        return is_numeric($this->_config['port']) ? $this->_config['port'] : '2222';
+        return is_int($this->_config['port']) ? $this->_config['port'] : 2222;
     }
 
     /**
@@ -526,6 +526,7 @@ class Server_Manager_Directadmin extends Server_Manager
             throw $exception;
         }
 
+        // Check if the response data contains HTML, as some endpoints return HTML if the request fails (such as auth requests)
         if(strlen(strstr($data, '<!doctype html>')) > 0 || strlen(strstr($data, 'DirectAdmin Login')) > 0) {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
         }
@@ -537,8 +538,9 @@ class Server_Manager_Directadmin extends Server_Manager
         $response = $this->_parseResponse($data);
 
         if(isset($response['error']) && $response['error'] == 1) {
+            $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin'];
             $this->getLog()->err('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
-            throw new Server_Exception('Failed to complete the operation on the DirectAdmin server');
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         return empty($response) ? array() : $response;
