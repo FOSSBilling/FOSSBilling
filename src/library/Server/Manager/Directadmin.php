@@ -84,11 +84,11 @@ class Server_Manager_Directadmin extends Server_Manager
     public function _getPort(): int|string
     {
         $port = $this->_config['port'];
-        
+
         if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
             return $this->_config['port'];
         } else {
-            return 2222
+            return 2222;
         }
     }
 
@@ -483,7 +483,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $response = $this->_request('API_VERIFY_PASSWORD', array(
             'user' => $this->_config['username'],
             'passwd' => $this->_config['password'],
-        ]);
+        ));
 
         return true;
     }
