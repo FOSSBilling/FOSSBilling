@@ -76,13 +76,20 @@ class Server_Manager_Directadmin extends Server_Manager
 
     /**
      * Returns the port number for the DirectAdmin server.
-     * If the port is not set in the configuration, it defaults to '2222'.
+     * If the port is set in the configuration, verify that it's a valid port number (0 - 65535).
+     * If a valid port is not set in the configuration, it defaults to '2222'.
      *
-     * @return int The port number.
+     * @return int|string The port number.
      */
-    public function _getPort(): int
+    public function _getPort(): int|string
     {
-        return is_int($this->_config['port']) ? $this->_config['port'] : 2222;
+        $port = $this->_config['port'];
+        
+        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
+            return $this->_config['port'];
+        } else {
+            return 2222
+        }
     }
 
     /**
