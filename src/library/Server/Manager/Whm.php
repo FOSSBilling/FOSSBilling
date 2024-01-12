@@ -34,7 +34,7 @@ class Server_Manager_Whm extends Server_Manager
 
         // If port not set, use WHM default.
         $this->_config['port'] = empty($this->_config['port']) ? '2087' : $this->_config['port'];
-    }
+	  }
 
     public function getLoginUrl(Server_Account $account = null)
     {
@@ -129,26 +129,26 @@ class Server_Manager_Whm extends Server_Manager
         return $new;
     }
 
-    public function createAccount(Server_Account $a)
+	public function createAccount(Server_Account $account)
     {
-        $this->getLog()->info('Creating account ' . $a->getUsername());
+        $this->getLog()->info('Creating account '.$account->getUsername());
 
-        $client = $a->getClient();
-        $package = $a->getPackage();
+        $client = $account->getClient();
+        $package = $account->getPackage();
 
         $this->_checkPackageExists($package, true);
 
         $action = 'createacct';
-        $var_hash = [
-            'username' => $a->getUsername(),
-            'domain' => $a->getDomain(),
-            'password' => $a->getPassword(),
-            'contactemail' => $client->getEmail(),
-            'plan' => $this->_getPackageName($package),
-            'useregns' => 0,
-        ];
+        $var_hash = array(
+			'username'		=> $account->getUsername(),
+            'domain'		=> $account->getDomain(),
+			'password'		=> $account->getPassword(),
+			'contactemail'  => $client->getEmail(),
+			'plan'			=> $this->_getPackageName($package),
+        	'useregns'		=> 0,
+        );
 
-        if ($a->getReseller()) {
+        if($account->getReseller()) {
             $var_hash['reseller'] = 1;
         }
 
@@ -156,17 +156,18 @@ class Server_Manager_Whm extends Server_Manager
         $result = ($json->result[0]->status == 1);
 
         // if this account is reseller account set ACL list
-        if ($result && $a->getReseller()) {
-            $params = [
-                'user' => $a->getUsername(),
-                'makeowner' => 0,
-            ];
+        if($result && $account->getReseller()) {
+
+            $params = array(
+                'user'          =>  $account->getUsername(),
+                'makeowner'     =>  0,
+            );
             $this->_request('setupreseller', $params);
 
-            $params = [
-                'reseller' => $a->getUsername(),
-                'acllist' => $package->getAcllist(),
-            ];
+            $params = array(
+                'reseller'  =>  $account->getUsername(),
+                'acllist'   =>  $package->getAcllist(),
+            );
             $this->_request('setacls', $params);
         }
 
@@ -254,7 +255,7 @@ class Server_Manager_Whm extends Server_Manager
 
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        $this->getLog()->info('Changing account ' . $a->getUsername() . ' username');
+        $this->getLog()->info('Changing account '.$a->getUsername().' username');
 
         $action = 'modifyacct';
         $var_hash = [
@@ -348,7 +349,7 @@ class Server_Manager_Whm extends Server_Manager
     private function _getPackageName(Server_Package $package)
     {
         $name = $package->getName();
-        $name = $this->_config['username'] . '_' . $name;
+        $name = $this->_config['username'].'_'.$name;
 
         return $name;
     }
@@ -431,11 +432,11 @@ class Server_Manager_Whm extends Server_Manager
         $accesshash = $this->_config['accesshash'];
         $password = $this->_config['password'];
         $authstr = (!empty($accesshash)) ? 'WHM ' . $username . ':' . $accesshash
-            : 'Basic ' . $username . ':' . $password;
+                                         : 'Basic ' . $username .':'. $password;
 
         $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
 
-        try {
+        try  {
             $response = $client->request('POST', $url, [
                 'headers' => ['Authorization' => $authstr],
                 'body' => $params,

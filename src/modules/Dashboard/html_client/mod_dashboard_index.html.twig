@@ -184,7 +184,7 @@
                             <a href="{{ 'order/service/manage'|link }}/{{ order.id }}">{{ order.title|truncate(30) }}</a>
                         </td>
                         <td>
-                            <span class="badge {% if order.status == 'active' %}badge-success{% elseif order.status == 'pending_setup' %}badge-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
+                            <span class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}bg-danger{% elseif order.status == 'canceled' %}bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
                         </td>
                     </tr>
                     {% else %}
