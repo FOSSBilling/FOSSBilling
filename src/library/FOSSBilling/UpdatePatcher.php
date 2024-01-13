@@ -47,7 +47,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // Create backup of current configuration.
         try {
             $filesystem->copy(PATH_CONFIG, substr(PATH_CONFIG, 0, -4) . '.old.php');
-        } catch (FileNotFoundException | IOException) {
+        } catch (FileNotFoundException|IOException) {
             throw new Exception('Unable to create backup of configuration file');
         }
 
@@ -364,9 +364,9 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             40 => function () {
                 // Added `passwordLength` field to server managers
-                $q = "ALTER TABLE service_hosting_server ADD COLUMN `passwordLength` TINYINT DEFAULT NULL;";
+                $q = 'ALTER TABLE service_hosting_server ADD COLUMN `passwordLength` TINYINT DEFAULT NULL;';
                 $this->executeSql($q);
-            }
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

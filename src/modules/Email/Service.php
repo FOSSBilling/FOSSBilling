@@ -633,6 +633,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             if (!Environment::isProduction()) {
                 $this->di['logger']->setChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
+
                 return true;
             }
 

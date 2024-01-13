@@ -54,8 +54,7 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
-        $httpClient = new class() implements HttpClientInterface
-        {
+        $httpClient = new class() implements HttpClientInterface {
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();

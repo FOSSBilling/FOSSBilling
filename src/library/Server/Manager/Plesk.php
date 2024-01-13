@@ -61,15 +61,15 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function createAccount(Server_Account $account)
     {
-    	$this->getLog()->info('Creating account ' . $account->getUsername());
+        $this->getLog()->info('Creating account ' . $account->getUsername());
 
-    	if ($account->getReseller()) {
-    		$ips = $this->_getIps();
-    		foreach($ips['exclusive'] as $key => $ip) {
-	    		if (!$ip['empty']) {
-    				unset ($ips['exclusive'][$key]);
-    			}
-    		}
+        if ($account->getReseller()) {
+            $ips = $this->_getIps();
+            foreach ($ips['exclusive'] as $key => $ip) {
+                if (!$ip['empty']) {
+                    unset($ips['exclusive'][$key]);
+                }
+            }
 
             /*
     		if (count($ips['exclusive']) == 0) {
@@ -79,19 +79,20 @@ class Server_Manager_Plesk extends Server_Manager
             */
             if ((is_countable($ips['exclusive']) ? count($ips['exclusive']) : 0) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
-    		    $rand = array_rand($ips['exclusive']);
-    		    $account->setIp($ips['exclusive'][$rand]['ip']);
+                $rand = array_rand($ips['exclusive']);
+                $account->setIp($ips['exclusive'][$rand]['ip']);
             }
         }
 
-    	$id = $this->_createClient($account);
+        $id = $this->_createClient($account);
         $client = $account->getClient();
-    	if (!$id) {
-    		$placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
+        if (!$id) {
+            $placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
+
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-    	} else {
-            $client->setId((string)$id);
-    	}
+        } else {
+            $client->setId((string) $id);
+        }
         $this->setSubscription($account);
 
         // We need to improve the way we handle the IP address before we should enable this.
@@ -116,7 +117,6 @@ class Server_Manager_Plesk extends Server_Manager
     // ??
     public function createServicePlan(Server_Account $a)
     {
-
     }
 
     public function updateSubscription(Server_Account $a)
@@ -236,14 +236,14 @@ class Server_Manager_Plesk extends Server_Manager
     {
         $response = $this->_client->ip()->get();
 
-		$ips = array('shared' => array(), 'exclusive' => array());
+        $ips = ['shared' => [], 'exclusive' => []];
 
-        foreach($response as $ip) {
-            $ips[(string)$ip->type][] = array(
-				'ip'		=>	(string)$ip->ipAddress,
-				'empty'		=>	empty($ip->default) ? true : false,
-			);
-		}
+        foreach ($response as $ip) {
+            $ips[(string) $ip->type][] = [
+                'ip' => (string) $ip->ipAddress,
+                'empty' => empty($ip->default) ? true : false,
+            ];
+        }
 
         return $ips;
     }
@@ -340,141 +340,143 @@ class Server_Manager_Plesk extends Server_Manager
         }
     }
 
-    private function _createSubscriptionProps(Server_Account $a, $action) {
+    private function _createSubscriptionProps(Server_Account $a, $action)
+    {
         $p = $a->getPackage();
-        return array (
-            $action	=>  array(
-                'gen_setup'	=>	array(
-                    'name'          => $a->getDomain(),
-                    'owner-login'	=>	$a->getUsername(),
-                    'htype'			=>	'vrt_hst',
-                    'ip_address'    => $a->getIp()
-                ),
-                'hosting' => array(
-                    'vrt_hst'	=>	array(
-                        'property'	=>	array(
-                            array(
-                                'name'	=>	'ftp_login',
-                                'value'	=>	$a->getUsername(),
-                            ),
-                            array(
-                                'name'	=>	'ftp_password',
-                                'value'	=>	$a->getPassword(),
-                            ),
-                            array(
-                                'name'	=>	'php',
-                                'value'	=>	'true',
-                            ),
-                            array(
-                                'name'	=>	'ssl',
-                                'value'	=>	'true',
-                            ),
-                            array(
-                                'name'	=>	'cgi',
-                                'value'	=>	'true',
-                            ),
-                        ),
+
+        return [
+            $action => [
+                'gen_setup' => [
+                    'name' => $a->getDomain(),
+                    'owner-login' => $a->getUsername(),
+                    'htype' => 'vrt_hst',
+                    'ip_address' => $a->getIp(),
+                ],
+                'hosting' => [
+                    'vrt_hst' => [
+                        'property' => [
+                            [
+                                'name' => 'ftp_login',
+                                'value' => $a->getUsername(),
+                            ],
+                            [
+                                'name' => 'ftp_password',
+                                'value' => $a->getPassword(),
+                            ],
+                            [
+                                'name' => 'php',
+                                'value' => 'true',
+                            ],
+                            [
+                                'name' => 'ssl',
+                                'value' => 'true',
+                            ],
+                            [
+                                'name' => 'cgi',
+                                'value' => 'true',
+                            ],
+                        ],
                         'ip_address' => $a->getIp(),
-                    ),
-                ),
-                'limits'	=>	array(
-                    'limit'	=> array(
-                        array(
-                            'name'	=>	'max_db',
-                            'value'	=>	$p->getMaxSql() ?: 0,
-                        ),
-                        array(
-                            'name'	=>	'max_maillists',
-                            'value'	=>	$p->getMaxEmailLists() ?: 0,
-                        ),
-                        array(
-                            'name'	=>	'max_maillists',
-                            'value'	=>	$p->getMaxEmailLists() ?: 0,
-                        ),
-                        array(
-                            'name'	=>	'max_box',
-                            'value'	=>	$p->getMaxPop() ?: 0,
-                        ),
-                        array(
-                            'name'	=>	'max_traffic',
-                            'value'	=>	$p->getBandwidth() ? $p->getBandwidth() * 1024 * 1024: 0,
-                        ),
-                        array(
-                            'name'	=>	'disk_space',
-                            'value'	=>	$p->getQuota() ? $p->getQuota() * 1024 * 1024 : 0,
-                        ),
-                        array(
-                            'name'	=>	'max_subdom',
-                            'value'	=>	$p->getMaxSubdomains() ?: 0,
-                        ),
-                        array(
-                            'name'	=>	'max_subftp_users',
-                            'value'	=>	$p->getMaxFtp() ?: 0,
-                        ),
-                        array(
-                            'name'	=>	'max_site',
-                            'value'	=>	$p->getMaxDomains() ?: 0,
-                        ),
-                    ),
-                ),
-                'permissions'	=>	array(
-                    'permission'	=>	array(
-                        array(
-                            'name'	=>	'manage_subdomains',
-                            'value'	=>	$p->getMaxSubdomains() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'manage_dns',
-                            'value'	=>	'true'
-                        ),
-                        array(
-                            'name'	=>	'manage_crontab',
-                            'value'	=>	$p->getHasCron() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'manage_anonftp',
-                            'value'	=>	$p->getHasAnonymousFtp() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'manage_sh_access',
-                            'value'	=>	$p->getHasShell() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'manage_maillists',
-                            'value'	=>	$p->getMaxEmailLists() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'create_domains',
-                            'value'	=>	'true',
-                        ),
-                        array(
-                            'name'	=>	'manage_phosting',
-                            'value'	=>	'true',
-                        ),
-                        array(
-                            'name'	=>	'manage_quota',
-                            'value'	=>	$a->getReseller() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'manage_not_chroot_shell',
-                            'value'	=>	$p->getHasShell() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'manage_domain_aliases',
-                            'value'	=>	'true',
-                        ),
-                        array(
-                            'name'	=>	'manage_subftp',
-                            'value'	=>	$p->getMaxFtp() ? 'true' : 'false',
-                        ),
-                        array(
-                            'name'	=>	'manage_spamfilter',
-                            'value'	=>	$p->getHasSpamFilter() ? 'true' : 'false',
-                        ),
-                    ),
-                ),
-            ),
-        );
+                    ],
+                ],
+                'limits' => [
+                    'limit' => [
+                        [
+                            'name' => 'max_db',
+                            'value' => $p->getMaxSql() ?: 0,
+                        ],
+                        [
+                            'name' => 'max_maillists',
+                            'value' => $p->getMaxEmailLists() ?: 0,
+                        ],
+                        [
+                            'name' => 'max_maillists',
+                            'value' => $p->getMaxEmailLists() ?: 0,
+                        ],
+                        [
+                            'name' => 'max_box',
+                            'value' => $p->getMaxPop() ?: 0,
+                        ],
+                        [
+                            'name' => 'max_traffic',
+                            'value' => $p->getBandwidth() ? $p->getBandwidth() * 1024 * 1024 : 0,
+                        ],
+                        [
+                            'name' => 'disk_space',
+                            'value' => $p->getQuota() ? $p->getQuota() * 1024 * 1024 : 0,
+                        ],
+                        [
+                            'name' => 'max_subdom',
+                            'value' => $p->getMaxSubdomains() ?: 0,
+                        ],
+                        [
+                            'name' => 'max_subftp_users',
+                            'value' => $p->getMaxFtp() ?: 0,
+                        ],
+                        [
+                            'name' => 'max_site',
+                            'value' => $p->getMaxDomains() ?: 0,
+                        ],
+                    ],
+                ],
+                'permissions' => [
+                    'permission' => [
+                        [
+                            'name' => 'manage_subdomains',
+                            'value' => $p->getMaxSubdomains() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'manage_dns',
+                            'value' => 'true',
+                        ],
+                        [
+                            'name' => 'manage_crontab',
+                            'value' => $p->getHasCron() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'manage_anonftp',
+                            'value' => $p->getHasAnonymousFtp() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'manage_sh_access',
+                            'value' => $p->getHasShell() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'manage_maillists',
+                            'value' => $p->getMaxEmailLists() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'create_domains',
+                            'value' => 'true',
+                        ],
+                        [
+                            'name' => 'manage_phosting',
+                            'value' => 'true',
+                        ],
+                        [
+                            'name' => 'manage_quota',
+                            'value' => $a->getReseller() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'manage_not_chroot_shell',
+                            'value' => $p->getHasShell() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'manage_domain_aliases',
+                            'value' => 'true',
+                        ],
+                        [
+                            'name' => 'manage_subftp',
+                            'value' => $p->getMaxFtp() ? 'true' : 'false',
+                        ],
+                        [
+                            'name' => 'manage_spamfilter',
+                            'value' => $p->getHasSpamFilter() ? 'true' : 'false',
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**

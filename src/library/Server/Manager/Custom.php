@@ -15,11 +15,11 @@ class Server_Manager_Custom extends Server_Manager
      */
     public function init()
     {
-
-	}
+    }
 
     /**
      * Return server manager parameters.
+     *
      * @return type
      */
     public static function getForm()
@@ -30,7 +30,7 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Returns link to account management page
+     * Returns link to account management page.
      *
      * @return string
      */
@@ -40,7 +40,8 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Returns link to reseller account management
+     * Returns link to reseller account management.
+     *
      * @return string
      */
     public function getResellerLoginUrl(Server_Account $account = null)
@@ -50,9 +51,9 @@ class Server_Manager_Custom extends Server_Manager
 
     /**
      * This method is called to check if configuration is correct
-     * and class can connect to server
+     * and class can connect to server.
      *
-     * @return boolean
+     * @return bool
      */
     public function testConnection()
     {
@@ -62,7 +63,7 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Methods retrieves information from server, assigns new values to
      * cloned Server_Account object and returns it.
-     * @param Server_Account $a
+     *
      * @return Server_Account
      */
     public function synchronizeAccount(Server_Account $a)
@@ -76,13 +77,11 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Create new account on server
-     *
-     * @param Server_Account $account
+     * Create new account on server.
      */
-	public function createAccount(Server_Account $account)
+    public function createAccount(Server_Account $account)
     {
-        if($account->getReseller()) {
+        if ($account->getReseller()) {
             $this->getLog()->info('Creating reseller hosting account');
         } else {
             $this->getLog()->info('Creating shared hosting account');
@@ -90,8 +89,7 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Suspend account on server
-     * @param Server_Account $a
+     * Suspend account on server.
      */
     public function suspendAccount(Server_Account $a)
     {
@@ -103,8 +101,7 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Unsuspend account on server
-     * @param Server_Account $a
+     * Unsuspend account on server.
      */
     public function unsuspendAccount(Server_Account $a)
     {
@@ -116,8 +113,7 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Cancel account on server
-     * @param Server_Account $a
+     * Cancel account on server.
      */
     public function cancelAccount(Server_Account $a)
     {
@@ -129,9 +125,7 @@ class Server_Manager_Custom extends Server_Manager
     }
 
     /**
-     * Change account package on server
-     * @param Server_Account $a
-     * @param Server_Package $p
+     * Change account package on server.
      */
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
