@@ -127,22 +127,27 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailAutoresponders\\(\\)\\.$#"
-			count: 2
+			count: 3
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
 			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailForwarders\\(\\)\\.$#"
-			count: 2
+			count: 3
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
 			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailLists\\(\\)\\.$#"
-			count: 2
+			count: 3
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
 			message: "#^Access to an undefined property PleskX\\\\Api\\\\Struct\\\\Dns\\\\Info\\:\\:\\$dns\\.$#"
 			count: 1
+			path: src/library/Server/Manager/Plesk.php
+
+		-
+			message: "#^Binary operation \"\\*\" between non\\-falsy\\-string and 1024 results in an error\\.$#"
+			count: 2
 			path: src/library/Server/Manager/Plesk.php
 
 		-
@@ -173,14 +178,4 @@ parameters:
 		-
 			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailLists\\(\\)\\.$#"
 			count: 3
-			path: src/library/Server/Manager/Plesk.php
-
-		-
-			message: "#^Method Server_Manager_Plesk\\:\\:_createClient\\(\\) should return int but returns true\\.$#"
-			count: 1
-			path: src/library/Server/Manager/Plesk.php
-
-		-
-			message: "#^Method Server_Manager_Plesk\\:\\:changeAccountDomain\\(\\) should return bool but return statement is missing\\.$#"
-			count: 1
 			path: src/library/Server/Manager/Plesk.php
