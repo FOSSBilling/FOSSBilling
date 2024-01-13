@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,9 +13,9 @@ class Server_Exception extends FOSSBilling\Exception
     /**
      * Creates a new translated exception, using the FOSSBilling\Exception class.
      *
-     * @param string     $message   error message
+     * @param string $message error message
      * @param array|null $variables translation variables
-     * @param int        $code      the exception code
+     * @param int $code the exception code
      */
     public function __construct(string $message, array $variables = null, int $code = 0)
     {

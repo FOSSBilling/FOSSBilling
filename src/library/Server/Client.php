@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -37,171 +38,269 @@ class Server_Client
         return '';
     }
 
-    public function setId($id)
+    /**
+     * @return mixed
+     */
+    public function getId(): mixed
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param $id
+     * @return $this
+     */
+    public function setId($id): static
     {
         $this->id = $id;
 
         return $this;
     }
 
-    public function getId()
+    /**
+     * @return ?string
+     */
+    public function getFullName(): ?string
     {
-        return $this->id;
+        return $this->full_name;
     }
 
-    public function setFullName($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setFullName($param): static
     {
         $this->full_name = $param;
 
         return $this;
     }
 
-    public function getFullName()
+    /**
+     * @return ?string
+     */
+    public function getCompany(): ?string
     {
-        return $this->full_name;
+        return $this->company;
     }
 
-    public function setCompany($company)
+    /**
+     * @param $company
+     * @return $this
+     */
+    public function setCompany($company): static
     {
         $this->company = $company;
 
         return $this;
     }
 
-    public function getCompany()
+    /**
+     * @return mixed
+     */
+    public function getEmail(): mixed
     {
-        return $this->company;
+        return $this->email;
     }
 
-    public function setEmail($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setEmail($param): static
     {
         $this->email = $param;
 
         return $this;
     }
 
-    public function getEmail()
+    /**
+     * @return mixed
+     */
+    public function getAddress1(): mixed
     {
-        return $this->email;
+        return $this->address_1;
     }
 
-    public function setAddress1($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setAddress1($param): static
     {
         $this->address_1 = $param;
 
         return $this;
     }
 
-    public function getAddress1()
+    /**
+     * @return mixed
+     */
+    public function getAddress2(): mixed
     {
-        return $this->address_1;
+        return $this->address_2;
     }
 
-    public function setAddress2($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setAddress2($param): static
     {
         $this->address_2 = $param;
 
         return $this;
     }
 
-    public function getAddress2()
+    /**
+     * @return mixed
+     */
+    public function getStreet(): mixed
     {
-        return $this->address_2;
+        return $this->street;
     }
 
-    public function setStreet($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setStreet($param): static
     {
         $this->street = $param;
 
         return $this;
     }
 
-    public function getStreet()
+    /**
+     * @return mixed
+     */
+    public function getCity(): mixed
     {
-        return $this->street;
+        return $this->city;
     }
 
-    public function setCity($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setCity($param): static
     {
         $this->city = $param;
 
         return $this;
     }
 
-    public function getCity()
+    /**
+     * @return ?string
+     */
+    public function getState(): ?string
     {
-        return $this->city;
+        return $this->state;
     }
 
-    public function setState($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setState($param): static
     {
         $this->state = $param;
 
         return $this;
     }
 
-    public function getState()
+    /**
+     * @return ?string
+     */
+    public function getCountry(): ?string
     {
-        return $this->state;
+        return $this->country;
     }
 
-    public function setCountry($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setCountry($param): static
     {
         $this->country = $param;
 
         return $this;
     }
 
-    public function getCountry()
+    /**
+     * @return mixed
+     */
+    public function getZip(): mixed
     {
-        return $this->country;
+        return $this->zip;
     }
 
-    public function setZip($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setZip($param): static
     {
         $this->zip = $param;
 
         return $this;
     }
 
-    public function getZip()
+    /**
+     * @return mixed
+     */
+    public function getTelephone(): mixed
     {
-        return $this->zip;
+        return $this->telephone;
     }
 
-    public function setTelephone($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setTelephone($param): static
     {
         $this->telephone = $param;
 
         return $this;
     }
 
-    public function getTelephone()
+    /**
+     * @return mixed
+     */
+    public function getFax(): mixed
     {
-        return $this->telephone;
+        return $this->fax;
     }
 
-    public function setFax($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setFax($param): static
     {
         $this->fax = $param;
 
         return $this;
     }
 
-    public function getFax()
+    /**
+     * @return ?string
+     */
+    public function getWww(): ?string
     {
-        return $this->fax;
+        return $this->www;
     }
 
-    public function setWww($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setWww($param): static
     {
         $this->www = $param;
 
         return $this;
-    }
-
-    public function getWww()
-    {
-        return $this->www;
     }
 }

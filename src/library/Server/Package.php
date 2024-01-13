@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -35,14 +36,23 @@ class Server_Package
         return '';
     }
 
-    public function setCustomValues(array $param)
+    /**
+     * @param array $param
+     * @return $this
+     */
+    public function setCustomValues(array $param): static
     {
         $this->custom = $param;
 
         return $this;
     }
 
-    public function setCustomValue($param, $value)
+    /**
+     * @param $param
+     * @param $value
+     * @return $this
+     */
+    public function setCustomValue($param, $value): static
     {
         $this->custom[$param] = $value;
 
@@ -51,121 +61,188 @@ class Server_Package
 
     /**
      * @param string $param
+     * @return mixed|null
      */
-    public function getCustomValue($param)
+    public function getCustomValue(string $param)
     {
         return $this->custom[$param] ?? null;
     }
 
-    public function setName($param)
+    /**
+     * @return ?string
+     */
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setName($param): static
     {
         $this->name = $param;
 
         return $this;
     }
 
-    public function getName()
+    /**
+     * @return mixed
+     */
+    public function getQuota(): mixed
     {
-        return $this->name;
+        return $this->quota;
     }
 
-    public function setQuota($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setQuota($param): static
     {
         $this->quota = $param;
 
         return $this;
     }
 
-    public function getQuota()
+    /**
+     * @return mixed
+     */
+    public function getBandwidth(): mixed
     {
-        return $this->quota;
+        return $this->bandwidth;
     }
 
-    public function setBandwidth($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setBandwidth($param): static
     {
         $this->bandwidth = $param;
 
         return $this;
     }
 
-    public function getBandwidth()
+    /**
+     * @return mixed
+     */
+    public function getMaxDomains(): mixed
     {
-        return $this->bandwidth;
+        return $this->maxdomains;
     }
 
-    public function setMaxDomains($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setMaxDomains($param): static
     {
         $this->maxdomains = $param;
 
         return $this;
     }
 
-    public function getMaxDomains()
+    /**
+     * @return mixed
+     */
+    public function getMaxSubdomains(): mixed
     {
-        return $this->maxdomains;
+        return $this->maxsubdomains;
     }
 
-    public function setMaxSubdomains($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setMaxSubdomains($param): static
     {
         $this->maxsubdomains = $param;
 
         return $this;
     }
 
-    public function getMaxSubdomains()
+    /**
+     * @return mixed
+     */
+    public function getMaxParkedDomains(): mixed
     {
-        return $this->maxsubdomains;
+        return $this->maxparkeddomains;
     }
 
-    public function setMaxParkedDomains($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setMaxParkedDomains($param): static
     {
         $this->maxparkeddomains = $param;
 
         return $this;
     }
 
-    public function getMaxParkedDomains()
+    /**
+     * @return mixed
+     */
+    public function getMaxFtp(): mixed
     {
-        return $this->maxparkeddomains;
+        return $this->maxftp;
     }
 
-    public function setMaxFtp($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setMaxFtp($param): static
     {
         $this->maxftp = $param;
 
         return $this;
     }
 
-    public function getMaxFtp()
+    /**
+     * @return mixed
+     */
+    public function getMaxSql(): mixed
     {
-        return $this->maxftp;
+        return $this->maxsql;
     }
 
-    public function setMaxSql($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setMaxSql($param): static
     {
         $this->maxsql = $param;
 
         return $this;
     }
 
-    public function getMaxSql()
+    /**
+     * @return mixed
+     */
+    public function getMaxPop(): mixed
     {
-        return $this->maxsql;
+        return $this->maxpop;
     }
 
-    public function setMaxPop($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setMaxPop($param): static
     {
         $this->maxpop = $param;
 
         return $this;
     }
 
-    public function getMaxPop()
-    {
-        return $this->maxpop;
-    }
-
-    public function getMaxQuota()
+    /**
+     * @return mixed
+     */
+    public function getMaxQuota(): mixed
     {
         return $this->quota;
     }

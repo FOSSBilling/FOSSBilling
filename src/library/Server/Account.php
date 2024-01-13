@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,83 +10,101 @@
  */
 class Server_Account
 {
-    private $username;
-    private $password;
-    private $domain;
-    private $ip;
+    private $username = null;
+    private $password = null;
+    private $domain = null;
+    private $ip = null;
 
-    private ?\Server_Client $client = null;
-    private ?\Server_Package $package = null;
+    private ?Server_Client $client = null;
+    private ?Server_Package $package = null;
     private ?bool $reseller = null;
     private ?bool $suspended = null;
-    private $ns_1;
-    private $ns_2;
-    private $ns_3;
-    private $ns_4;
-    private $note;
+    private $ns_1 = null;
+    private $ns_2 = null;
+    private $ns_3 = null;
+    private $ns_4 = null;
+    private $note = null;
 
-    public function setUsername($param)
+    /**
+     * @return null
+     */
+    public function getUsername()
+    {
+        return $this->username;
+    }
+
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setUsername($param): static
     {
         $this->username = $param;
 
         return $this;
     }
 
-    public function getUsername()
+    /**
+     * @return null
+     */
+    public function getPassword()
     {
-        return $this->username;
+        return $this->password;
     }
 
-    public function setPassword($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setPassword($param): static
     {
         $this->password = $param;
 
         return $this;
     }
 
-    public function getPassword()
+    /**
+     * @return null
+     */
+    public function getDomain()
     {
-        return $this->password;
+        return $this->domain;
     }
 
-    public function setDomain($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setDomain($param): static
     {
         $this->domain = $param;
 
         return $this;
     }
 
-    public function getDomain()
-    {
-        return $this->domain;
-    }
-
-    public function setIp($param)
-    {
-        $this->ip = $param;
-
-        return $this;
-    }
-
+    /**
+     * @return null
+     */
     public function getIp()
     {
         return $this->ip;
     }
 
     /**
+     * @param $param
      * @return $this
      */
-    public function setClient(Server_Client $param)
+    public function setIp($param): static
     {
-        $this->client = $param;
+        $this->ip = $param;
 
         return $this;
     }
 
     /**
-     * @return Server_Client
+     * @return Server_Client|null
      */
-    public function getClient()
+    public function getClient(): ?Server_Client
     {
         return $this->client;
     }
@@ -93,99 +112,161 @@ class Server_Account
     /**
      * @return $this
      */
-    public function setPackage(Server_Package $param)
+    public function setClient(Server_Client $param): static
+    {
+        $this->client = $param;
+
+        return $this;
+    }
+
+    /**
+     * @return Server_Package
+     */
+    public function getPackage(): Server_Package
+    {
+        return $this->package;
+    }
+
+    /**
+     * @return $this
+     */
+    public function setPackage(Server_Package $param): static
     {
         $this->package = $param;
 
         return $this;
     }
 
-    public function getPackage(): Server_Package
+    /**
+     * @return null
+     */
+    public function getNote()
     {
-        return $this->package;
+        return $this->note;
     }
 
-    public function setNote($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setNote($param): static
     {
         $this->note = $param;
 
         return $this;
     }
 
-    public function getNote()
-    {
-        return $this->note;
-    }
-
-    public function setReseller($param)
-    {
-        $this->reseller = (bool) $param;
-
-        return $this;
-    }
-
-    public function getReseller()
+    /**
+     * @return bool|null
+     */
+    public function getReseller(): ?bool
     {
         return $this->reseller;
     }
 
-    public function setSuspended($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setReseller($param): static
     {
-        $this->suspended = (bool) $param;
+        $this->reseller = (bool)$param;
 
         return $this;
     }
 
-    public function getSuspended()
+    /**
+     * @return bool|null
+     */
+    public function getSuspended(): ?bool
     {
         return $this->suspended;
     }
 
-    public function setNs1($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setSuspended($param): static
+    {
+        $this->suspended = (bool)$param;
+
+        return $this;
+    }
+
+    /**
+     * @return null
+     */
+    public function getNs1()
+    {
+        return $this->ns_1;
+    }
+
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setNs1($param): static
     {
         $this->ns_1 = $param;
 
         return $this;
     }
 
-    public function getNs1()
+    /**
+     * @return null
+     */
+    public function getNs2()
     {
-        return $this->ns_1;
+        return $this->ns_2;
     }
 
-    public function setNs2($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setNs2($param): static
     {
         $this->ns_2 = $param;
 
         return $this;
     }
 
-    public function getNs2()
+    /**
+     * @return null
+     */
+    public function getNs3()
     {
-        return $this->ns_2;
+        return $this->ns_3;
     }
 
-    public function setNs3($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setNs3($param): static
     {
         $this->ns_3 = $param;
 
         return $this;
     }
 
-    public function getNs3()
+    /**
+     * @return null
+     */
+    public function getNs4()
     {
-        return $this->ns_3;
+        return $this->ns_4;
     }
 
-    public function setNs4($param)
+    /**
+     * @param $param
+     * @return $this
+     */
+    public function setNs4($param): static
     {
         $this->ns_4 = $param;
 
         return $this;
-    }
-
-    public function getNs4()
-    {
-        return $this->ns_4;
     }
 }
