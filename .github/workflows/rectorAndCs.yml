@@ -64,7 +64,7 @@ jobs:
                   key: ${{ env.MONTH }}-csfixer
                   restore-keys: ${{ env.MONTH }}-csfixer
 
-            - name: Run Reactor
+            - name: Run Rector
               run: |
                   php src/vendor/bin/rector
                   php src/vendor/bin/rector --config=rectorTests.php

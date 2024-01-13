@@ -29,4 +29,7 @@ return static function (RectorConfig $rectorConfig): void {
 
     $rectorConfig->cacheClass(FileCacheStorage::class);
     $rectorConfig->cacheDirectory('./cache/rector');
+
+    // Reduced number of processes from 16 to 8. Job size reduced from 15 to 10. (Hoping to resolve GHA errors)
+    $rectorConfig->parallel(120, 8, 10);
 };
