@@ -9,6 +9,8 @@
  */
 
 use Random\RandomException;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 /**
  * Class Server_Manager_Directadmin
@@ -17,30 +19,6 @@ use Random\RandomException;
  */
 class Server_Manager_Directadmin extends Server_Manager
 {
-    /**
-     * Initialize the server manager.
-     * Checks if the host, username, and password are set in the configuration.
-     * Throws an exception if any of these are not set.
-     * @throws Server_Exception
-     */
-    public function init(): void
-    {
-        // Check if host is set in the configuration
-        if(empty($this->_config['host'])) {
-            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'hostname'], 2001);
-        }
-
-        // Check if username is set in the configuration
-        if(empty($this->_config['username'])) {
-            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'username'], 2001);
-        }
-
-        // Check if password is set in the configuration
-        if(empty($this->_config['password'])) {
-            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'password'], 2001);
-        }
-    }
-
     /**
      * Returns the form configuration for the DirectAdmin server manager.
      * The form includes fields for username and password.
@@ -75,21 +53,39 @@ class Server_Manager_Directadmin extends Server_Manager
     }
 
     /**
-     * Returns the port number for the DirectAdmin server.
-     * If the port is set in the configuration, verify that it's a valid port number (0 - 65535).
-     * If a valid port is not set in the configuration, it defaults to '2222'.
-     *
-     * @return int|string The port number.
+     * Initialize the server manager.
+     * Checks if the host, username, and password are set in the configuration.
+     * Throws an exception if any of these are not set.
+     * @throws Server_Exception
      */
-    public function _getPort(): int|string
+    public function init(): void
     {
-        $port = $this->_config['port'];
-
-        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
-            return $this->_config['port'];
-        } else {
-            return 2222;
+        // Check if host is set in the configuration
+        if (empty($this->_config['host'])) {
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'hostname'], 2001);
         }
+
+        // Check if username is set in the configuration
+        if (empty($this->_config['username'])) {
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'username'], 2001);
+        }
+
+        // Check if password is set in the configuration
+        if (empty($this->_config['password'])) {
+            throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'password'], 2001);
+        }
+    }
+
+    /**
+     * Returns the login URL for a reseller account on the DirectAdmin server.
+     * This method simply calls the getLoginUrl method, as the URL is the same for reseller accounts.
+     *
+     * @param Server_Account|null $account The server account. This parameter is not used in this method.
+     * @return string The login URL.
+     */
+    public function getResellerLoginUrl(?Server_Account $account = null): string
+    {
+        return $this->getLoginUrl();
     }
 
     /**
@@ -109,15 +105,21 @@ class Server_Manager_Directadmin extends Server_Manager
     }
 
     /**
-     * Returns the login URL for a reseller account on the DirectAdmin server.
-     * This method simply calls the getLoginUrl method, as the URL is the same for reseller accounts.
+     * Returns the port number for the DirectAdmin server.
+     * If the port is set in the configuration, verify that it's a valid port number (0 - 65535).
+     * If a valid port is not set in the configuration, it defaults to '2222'.
      *
-     * @param Server_Account|null $account The server account. This parameter is not used in this method.
-     * @return string The login URL.
+     * @return int|string The port number.
      */
-    public function getResellerLoginUrl(?Server_Account $account = null): string
+    public function _getPort(): int|string
     {
-        return $this->getLoginUrl();
+        $port = $this->_config['port'];
+
+        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
+            return $this->_config['port'];
+        } else {
+            return 2222;
+        }
     }
 
     /**
@@ -125,14 +127,14 @@ class Server_Manager_Directadmin extends Server_Manager
      * The username is based on the domain name, but is sanitized to be alphanumeric and start with a letter.
      * The username is also limited to 10 characters to avoid collisions.
      *
-     * @param string $domain_name The domain name.
+     * @param string $domain The domain name.
      * @return string The generated username.
      * @throws RandomException
      */
-    public function generateUsername($domain_name): string
+    public function generateUsername($domain): string
     {
         // Username must be alphanumeric.
-        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
+        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain);
 
         // Username must start with a-z.
         $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97, 122)), 0, 1) : $username;
@@ -159,345 +161,6 @@ class Server_Manager_Directadmin extends Server_Manager
     }
 
     /**
-     * Synchronizes the server account with the DirectAdmin server.
-     * This method currently does nothing and simply returns the account as is.
-     *
-     * @param Server_Account $a The server account.
-     * @return Server_Account The same server account.
-     */
-    public function synchronizeAccount(Server_Account $a): Server_Account
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('synchronizing the account')]);
-    }
-
-    /**
-     * Creates a new account on the DirectAdmin server.
-     * This method sends a request to the server with the account details.
-     * If the account is a reseller account, additional fields are included in the request.
-     *
-     * @param Server_Account $account The server account.
-     * @return bool True if the account is created successfully, false otherwise.
-     * @throws Server_Exception
-     */
-    public function createAccount(Server_Account $account): bool
-    {
-        $ips = $this->getIps();
-        if (empty($ips)) {
-            throw new Server_Exception('There are no available IPs on this server.');
-        }
-
-        $ip = $ips[array_rand($ips)];
-        $package = $account->getPackage();
-        $client  = $account->getClient();
-
-        $fields             = array();
-        $fields['action']   = 'create';
-        $fields['add']      = 'Submit';
-        $fields['username'] = $account->getUsername();
-        $fields['email']    = $client->getEmail();
-        $fields['passwd']   = $account->getPassword();
-        $fields['passwd2']  = $account->getPassword();
-        $fields['domain']   = $account->getDomain();
-        $fields['ip']     = $ip;
-        $fields['notify'] = 'no';
-
-        if (!empty($package->getCustomValue('package'))) {
-            $this->getLog()->info('Using DirectAdmin package name: ' . $package->getCustomValue('package') . ', ignoring package settings');
-            $fields['package'] = $package->getCustomValue('package');
-        } else {
-            $fields['bandwidth'] = $package->getBandwidth(); //Amount of bandwidth User will be allowed to use. Number, in Megabytes
-            if($package->getBandwidth() == 'unlimited') {
-                $fields['ubandwidth'] = 'ON'; //ON or OFF. If ON, bandwidth is ignored and no limit is set
-            }
-            $fields['quota'] = $package->getQuota(); //Amount of disk space User will be allowed to use. Number, in Megabytes
-            if($package->getQuota() == 'unlimited') {
-                $fields['uquota'] = 'ON'; //ON or OFF. If ON, quota is ignored and no limit is set
-            }
-            $fields['vdomains'] = $package->getMaxDomains(); //Number of domains the User will be allowed to create
-            if($package->getMaxDomains() == 'unlimited') {
-                $fields['uvdomains'] = 'ON'; //ON or OFF. If ON, vdomains is ignored and no limit is set
-            }
-            $fields['nsubdomains'] = $package->getMaxSubdomains(); //Number of subdomains the User will be allowed to create
-            if($package->getMaxSubdomains() == 'unlimited') {
-                $fields['unsubdomains'] = 'ON'; //ON or OFF. If ON, nsubdomains is ignored and no limit is set
-            }
-            $fields['domainptr'] = $package->getMaxParkedDomains(); //Number of domain pointers the User will be allowed to create
-            if($package->getMaxParkedDomains() == 'unlimited') {
-                $fields['udomainptr'] = 'ON'; //ON or OFF Unlimited option for domainptr
-            }
-            $fields['nemails'] = $package->getMaxPop(); //Number of pop accounts the User will be allowed to create
-            if($package->getMaxPop() == 'unlimited') {
-                $fields['unemails'] = 'ON'; //ON or OFF Unlimited option for nemails
-            }
-            $fields['mysql'] = $package->getMaxSql(); //Number of MySQL databases the User will be allowed to create
-            if($package->getMaxSql() == 'unlimited') {
-                $fields['umysql'] = 'ON'; //ON or OFF Unlimited option for mysql
-            }
-            $fields['ftp'] = $package->getMaxFtp(); //Number of ftp accounts the User will be allowed to create
-            if($package->getMaxFtp() == 'unlimited') {
-                $fields['uftp'] = 'ON'; //ON or OFF Unlimited option for ftp
-            }
-            $fields['nemailf'] = $package->getCustomValue('nemailf'); //Number of forwarders the User will be allowed to create
-            if($fields['nemailf'] == 'unlimited') {
-                $fields['unemailf'] = 'ON'; //ON or OFF Unlimited option for nemailf
-            }
-            $fields['nemailml'] = $package->getCustomValue('nemailml'); //Number of mailing lists the User will be allowed to create
-            if($fields['nemailml'] == 'unlimited') {
-                $fields['unemailml'] = 'ON'; //ON or OFF Unlimited option for nemailml
-            }
-            $fields['nemailr'] = $package->getCustomValue('nemailr'); //Number of autoresponders the User will be allowed to create
-            if($fields['nemailr'] == 'unlimited') {
-                $fields['unemailr'] = 'ON'; //ON or OFF Unlimited option for nemailr
-            }
-
-            $fields['aftp']       = $package->getCustomValue('aftp') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will be able to have anonymous ftp accounts.
-            $fields['cgi']        = $package->getCustomValue('cgi') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-            $fields['php']        = $package->getCustomValue('php') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to run php scripts.
-            $fields['spam']       = $package->getCustomValue('spam') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to run scan email with SpamAssassin.
-            $fields['cron']       = $package->getCustomValue('cron') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to creat cronjobs.
-            $fields['catchall']   = $package->getCustomValue('catchall') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
-            $fields['ssl']        = $package->getCustomValue('ssl') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to access their websites through secure https://.
-            $fields['ssh']        = $package->getCustomValue('ssh') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have an ssh account.
-            $fields['sysinfo']    = $package->getCustomValue('sysinfo') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have access to a page that shows the system information.
-            $fields['login_keys'] = $package->getCustomValue('login_keys') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have access to the Login Key system for extra account passwords.
-            $fields['dnscontrol'] = $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will be able to modify his/her dns records.
-            $fields['suspend_at_limit'] = $package->getCustomValue('suspend_at_limit') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will be suspended if their User bandwidth limit is exceeded.
-        }
-
-        $command = 'API_ACCOUNT_USER';
-
-        if($account->getReseller()) {
-            $command = 'ACCOUNT_RESELLER';
-
-            $fields['ips'] = 1; // Number of ips that will be allocated to the Reseller upon account during account
-            $fields['ip'] = 'assign';
-        }
-
-        try {
-            $results = $this->_request($command, $fields);
-        } catch (Exception $e) {
-            if (strtolower($e->getMessage()) == strtolower(sprintf('Server Manager DirectAdmin Error: "%s" ', 'That domain already exists'))) {
-                return true;
-            } else {
-                throw new Server_Exception($e->getMessage());
-            }
-        }
-
-        if (str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
-            throw new Server_Exception('Unable to assign the Reseller ANY ips. Make sure to have free, un-assigned ips.');
-        }
-
-        if (str_contains(implode('', $results), 'Error Creating User')) {
-            throw new Server_Exception('Error creating user');
-        }
-
-        return true;
-    }
-
-    public function suspendAccount(Server_Account $a)
-    {
-        $info = $this->getAccountInfo($a);
-        if ($info['suspended'] == 'yes') {
-            return true;
-        }
-
-        $fields             = array();
-        $fields['location'] = 'USER_SHOW';
-        $fields['suspend']  = 'Suspend';
-        $fields['select0']  = $a->getUsername();
-        $result             = $this->_request('API_SELECT_USERS', $fields);
-
-        return true;
-    }
-
-    public function unsuspendAccount(Server_Account $a)
-    {
-        $info = $this->getAccountInfo($a);
-        if ($info['suspended'] == 'no') {
-            throw new Server_Exception('Server Manager DirectAdmin Error: "Account is not suspended"');
-        }
-
-        $fields             = array();
-        $fields['location'] = 'USER_SHOW';
-        $fields['suspend']  = 'Unsuspend';
-        $fields['select0']  = $a->getUsername();
-        $this->_request('API_SELECT_USERS', $fields);
-
-        return true;
-    }
-
-    public function cancelAccount(Server_Account $a)
-    {
-        $fields = [];
-        $fields['confirmed'] = 'Confirm';
-        $fields['delete']    = 'yes';
-        $fields['select0']   = $a->getUsername();
-        $this->_request('API_SELECT_USERS', $fields);
-
-        return true;
-    }
-
-    public function modifyAccount(Server_Account $a)
-    {
-        $package = $a->getPackage();
-
-        $fields = [];
-        $fields['action'] = 'customize';
-        $fields['user'] = $a->getUsername();
-
-        $fields['bandwidth'] = $package->getBandwidth(); // Amount of bandwidth User will be allowed to use. Number, in Megabytes
-        if ($package->getBandwidth() == 'unlimited') {
-            $fields['ubandwidth'] = 'ON'; // ON or OFF. If ON, bandwidth is ignored and no limit is set
-        }
-        $fields['quota'] = $package->getQuota(); // Amount of disk space User will be allowed to use. Number, in Megabytes
-        if ($package->getQuota() == 'unlimited') {
-            $fields['uquota'] = 'ON'; // ON or OFF. If ON, quota is ignored and no limit is set
-        }
-        $fields['vdomains'] = $package->getMaxDomains(); // Number of domains the User will be allowed to create
-        if ($package->getMaxDomains() == 'unlimited') {
-            $fields['uvdomains'] = 'ON'; // ON or OFF. If ON, vdomains is ignored and no limit is set
-        }
-        $fields['nsubdomains'] = $package->getMaxSubdomains(); // Number of subdomains the User will be allowed to create
-        if ($package->getMaxSubdomains() == 'unlimited') {
-            $fields['unsubdomains'] = 'ON'; // ON or OFF. If ON, nsubdomains is ignored and no limit is set
-        }
-        $fields['nemails'] = $package->getMaxPop(); // Number of pop accounts the User will be allowed to create
-        if ($package->getMaxPop() == 'unlimited') {
-            $fields['unemails'] = 'ON'; // ON or OFF Unlimited option for nemails
-        }
-        $fields['nemailf'] = $package->getMaxEmailForwarders(); // Number of forwarders the User will be allowed to create
-        if ($package->getMaxEmailForwarders() == 'unlimited') {
-            $fields['unemailf'] = 'ON'; // ON or OFF Unlimited option for nemailf
-        }
-        $fields['nemailml'] = $package->getMaxEmailLists(); // Number of mailing lists the User will be allowed to create
-        if ($package->getMaxEmailLists() == 'unlimited') {
-            $fields['unemailml'] = 'ON'; // ON or OFF Unlimited option for nemailml
-        }
-        $fields['nemailr'] = $package->getMaxEmailAutoresponders(); // Number of autoresponders the User will be allowed to create
-        if ($package->getMaxEmailAutoresponders() == 'unlimited') {
-            $fields['unemailr'] = 'ON'; // ON or OFF Unlimited option for nemailr
-        }
-        $fields['mysql'] = $package->getMaxSql(); // Number of MySQL databases the User will be allowed to create
-        if ($package->getMaxSql() == 'unlimited') {
-            $fields['umysql'] = 'ON'; // ON or OFF Unlimited option for mysql
-        }
-        $fields['domainptr'] = $package->getMaxParkedDomains(); // Number of domain pointers the User will be allowed to create
-        if ($package->getMaxParkedDomains() == 'unlimited') {
-            $fields['udomainptr'] = 'ON'; // ON or OFF Unlimited option for domainptr
-        }
-        $fields['ftp'] = $package->getMaxFtp(); // Number of ftp accounts the User will be allowed to create
-        if ($package->getMaxFtp() == 'unlimited') {
-            $fields['uftp'] = 'ON'; // ON or OFF Unlimited option for ftp
-        }
-        $fields['aftp'] = $package->getHasAnonymousFtp() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will be able to have anonymous ftp accounts.
-        $fields['cgi'] = $package->getHasCgi() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-        $fields['php'] = $package->getHasPhp() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to run php scripts.
-        $fields['spam'] = $package->getHasSpamFilter() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to run scan email with SpamAssassin.
-        $fields['cron'] = $package->getHasCron() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to creat cronjobs.
-        $fields['catchall'] = $package->getHasCatchAll() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
-        $fields['ssl'] = $package->getHasSll() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have the ability to access their websites through secure https://.
-        $fields['ssh'] = $package->getHasShell() ? 'ON' : 'OFF'; // ON or OFF If ON, the User will have an ssh account.
-        $fields['sysinfo'] = 'ON'; // ON or OFF If ON, the User will have access to a page that shows the system information.
-        $fields['dnscontrol'] = 'ON'; // ON or OFF If ON, the User will be able to modify his/her dns records.
-
-        $fields['ns1'] = $a->getNs1();
-        $fields['ns2'] = $a->getNs2();
-
-        $this->_request('API_MODIFY_USER', $fields);
-        return true;
-    }
-
-    public function changeAccountDomain(Server_Account $a, $new_domain): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account domain')]);
-    }
-
-    public function changeAccountIp(Server_Account $account, $new_ip): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account IP')]);
-    }
-
-    public function changeAccountPackage(Server_Account $a, Server_Package $p): bool
-    {
-        $fields = [];
-        $fields['action'] = 'package';
-        $fields['user'] = $a->getUsername();
-        $fields['package'] = $a->getPackage()->getName();
-
-        $this->_request('API_MODIFY_USER', $fields);
-
-        return true;
-    }
-
-    public function changeAccountPassword(Server_Account $a, $new_password)
-    {
-        $fields             = array();
-        $fields['username'] = $a->getUsername();
-        $fields['passwd']   = $new_password;
-        $fields['passwd2']  = $new_password;
-        $this->_request('API_USER_PASSWD', $fields);
-        return true;
-    }
-
-    public function changeAccountUsername(Server_Account $a, $new_username): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('username changes')]);
-    }
-
-    /**
-     * @throws Server_Exception
-     */
-    private function getAccountInfo(Server_Account $account): array
-    {
-        $fields = [];
-        $fields['action'] = 'create';
-
-        $fields['add']    = 'Submit';
-        $fields['user']   = $account->getUsername();
-        return $this->_request('API_SHOW_USER_CONFIG', $fields);
-    }
-
-    /**
-     * @throws Server_Exception
-     */
-    private function getUserInfo(Server_Account $account)
-    {
-        $fields         = array();
-        $fields['user'] = $account->getUsername();
-        $result        = $this->_request('API_SHOW_USER_CONFIG', $fields);
-
-        return;
-    }
-
-    /**
-     * This method is used to verify the authentication credentials for the DirectAdmin server.
-     * It sends a request to the server with the 'API_VERIFY_PASSWORD' command and the username and password from the configuration.
-     * The response from the server is stored in the $response variable, but is not used in this method.
-     * The method always returns true, regardless of the server's response.
-     *
-     * @return bool Always returns true.
-     * @throws Server_Exception If there is an error while sending the request to the server.
-     */
-    private function checkAuth()
-    {
-        $response = $this->_request('API_VERIFY_PASSWORD', array(
-            'user' => $this->_config['username'],
-            'passwd' => $this->_config['password'],
-        ));
-
-        return true;
-    }
-
-    /**
-     * @throws Server_Exception
-     */
-    private function getIps()
-    {
-        $results = $this->_request('API_SHOW_RESELLER_IPS');
-        return $results['list'] ?? array();
-    }
-
-    /**
      * @param string $command
      * @param array $fields
      * @param bool $post
@@ -512,18 +175,18 @@ class Server_Manager_Directadmin extends Server_Manager
         $field_string = http_build_query($fields);
 
         $httpClient = $this->getHttpClient()->withOptions([
-            'auth_basic'    => [ $this->_config['username'], $this->_config['password'] ],
-            'timeout'       => 60,
-            'verify_host'   => false,
-            'verify_peer'   => false,
+            'auth_basic' => [$this->_config['username'], $this->_config['password']],
+            'timeout' => 60,
+            'verify_host' => false,
+            'verify_peer' => false,
         ]);
 
-        $url = $protocol . $host . ':'. $this -> _getPort().'/CMD_' . $command . '?' . $field_string;
+        $url = $protocol . $host . ':' . $this->_getPort() . '/CMD_' . $command . '?' . $field_string;
         $this->getLog()->debug($url);
 
         try {
             // If it's a POST request, include the fields in the request body
-            if($post) {
+            if ($post) {
                 $request = $httpClient->request('POST', $url, [
                     'body' => $fields,
                 ]);
@@ -532,15 +195,15 @@ class Server_Manager_Directadmin extends Server_Manager
             }
 
             $data = $request->getContent();
-        } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface |
-                 \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $error) {
+        } catch (TransportExceptionInterface|
+        HttpExceptionInterface $error) {
             $exception = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
             $this->getLog()->err($exception);
             throw $exception;
         }
 
         // Check if the response data contains HTML, as some endpoints return HTML if the request fails (such as auth requests)
-        if(strlen(strstr($data, '<!doctype html>')) > 0 || strlen(strstr($data, 'DirectAdmin Login')) > 0) {
+        if (strlen(strstr($data, '<!doctype html>')) > 0 || strlen(strstr($data, 'DirectAdmin Login')) > 0) {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
         }
 
@@ -550,7 +213,7 @@ class Server_Manager_Directadmin extends Server_Manager
 
         $response = $this->_parseResponse($data);
 
-        if(isset($response['error']) && $response['error'] == 1) {
+        if (isset($response['error']) && $response['error'] == 1) {
             $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin'];
             $this->getLog()->err('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
@@ -587,5 +250,430 @@ class Server_Manager_Directadmin extends Server_Manager
 
         // Return the parsed response data
         return $response;
+    }
+
+    /**
+     * Synchronizes the server account with the DirectAdmin server.
+     * This method currently does nothing and simply returns the account as is.
+     *
+     * @param Server_Account $account The server account.
+     * @return Server_Account The same server account.
+     * @throws Server_Exception
+     */
+    public function synchronizeAccount(Server_Account $account): Server_Account
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('synchronizing the account')]);
+    }
+
+    /**
+     * Creates a new account on the DirectAdmin server.
+     * This method sends a request to the server with the account details.
+     * If the account is a reseller account, additional fields are included in the request.
+     *
+     * @param Server_Account $account The server account.
+     * @return bool True if the account is created successfully, false otherwise.
+     * @throws Server_Exception
+     */
+    public function createAccount(Server_Account $account): bool
+    {
+        $ips = $this->getIps();
+        if (empty($ips)) {
+            throw new Server_Exception('There are no available IPs on this server.');
+        }
+
+        $ip = $ips[array_rand($ips)];
+        $package = $account->getPackage();
+        $client = $account->getClient();
+
+        $fields = [
+            'action' => 'create',
+            'add' => 'Submit',
+            'username' => $account->getUsername(),
+            'email' => $client->getEmail(),
+            'passwd' => $account->getPassword(),
+            'passwd2' => $account->getPassword(),
+            'domain' => $account->getDomain(),
+            'ip' => $ip,
+            'notify' => 'no',
+        ];
+
+        // If the `package` custom value is set, use that package from the DirectAdmin server instead of implicitly creating a new one
+        if (!empty($package->getCustomValue('package'))) {
+            $this->getLog()->info('Using DirectAdmin package name: ' . $package->getCustomValue('package') . ', ignoring package settings');
+            $fields['package'] = $package->getCustomValue('package');
+        } else {
+            // Specify the package quotas
+            $fields = array_merge($fields, [
+                'aftp' => $package->getCustomValue('aftp') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will be able to have anonymous ftp accounts.
+                'bandwidth' => $package->getBandwidth(), // Bandwidth quota in MB
+                'catchall' => $package->getCustomValue('catchall') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
+                'cgi' => $package->getCustomValue('cgi') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
+                'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to creat cronjobs.
+                'dnscontrol' => $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will be able to modify his/her dns records.
+                'domainptr' => $package->getMaxParkedDomains(), // Domain pointer quota
+                'ftp' => $package->getMaxFtp(), // FTP account quota
+                'login_keys' => $package->getCustomValue('login_keys') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have access to the Login Key system for extra account passwords.
+                'mysql' => $package->getMaxSql(), // Database quota
+                'nemailf' => $package->getMaxEmailForwarders(), // Email forwarder quota
+                'nemailml' => $package->getMaxEmailLists(), // Mailing list quota
+                'nemailr' => $package->getMaxEmailAutoresponders(), // Autoresponder quota
+                'nemails' => $package->getMaxPop(), // Email account quota
+                'nsubdomains' => $package->getMaxSubdomains(), // Subdomain quota
+                'php' => $package->getCustomValue('php') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to run php scripts.
+                'quota' => $package->getQuota(), // Disk space quota in MB
+                'spam' => $package->getCustomValue('spam') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
+                'ssh' => $package->getCustomValue('ssh') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have an ssh account.
+                'ssl' => $package->getCustomValue('ssl') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
+                'suspend_at_limit' => $package->getCustomValue('suspend_at_limit') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will be suspended if their User bandwidth limit is exceeded.
+                'sysinfo' => $package->getCustomValue('sysinfo') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have access to a page that shows the system information.
+                'vdomains' => $package->getMaxDomains(), // Domain quota
+            ]);
+
+            if ($package->getBandwidth() == 'unlimited') {
+                $fields['ubandwidth'] = 'ON'; //ON or OFF. If ON, bandwidth is ignored and no limit is set
+            }
+
+            if ($package->getQuota() == 'unlimited') {
+                $fields['uquota'] = 'ON'; //ON or OFF. If ON, quota is ignored and no limit is set
+            }
+
+            if ($package->getMaxDomains() == 'unlimited') {
+                $fields['uvdomains'] = 'ON'; //ON or OFF. If ON, vdomains is ignored and no limit is set
+            }
+
+            if ($package->getMaxSubdomains() == 'unlimited') {
+                $fields['unsubdomains'] = 'ON'; //ON or OFF. If ON, nsubdomains is ignored and no limit is set
+            }
+
+            if ($package->getMaxParkedDomains() == 'unlimited') {
+                $fields['udomainptr'] = 'ON'; //ON or OFF Unlimited option for domainptr
+            }
+
+            if ($package->getMaxPop() == 'unlimited') {
+                $fields['unemails'] = 'ON'; //ON or OFF Unlimited option for nemails
+            }
+
+            if ($package->getMaxSql() == 'unlimited') {
+                $fields['umysql'] = 'ON'; //ON or OFF Unlimited option for mysql
+            }
+
+            if ($package->getMaxFtp() == 'unlimited') {
+                $fields['uftp'] = 'ON'; //ON or OFF Unlimited option for ftp
+            }
+
+            if ($fields['nemailf'] == 'unlimited') {
+                $fields['unemailf'] = 'ON'; //ON or OFF Unlimited option for nemailf
+            }
+
+            if ($fields['nemailml'] == 'unlimited') {
+                $fields['unemailml'] = 'ON'; //ON or OFF Unlimited option for nemailml
+            }
+
+            if ($fields['nemailr'] == 'unlimited') {
+                $fields['unemailr'] = 'ON'; //ON or OFF Unlimited option for nemailr
+            }
+        }
+
+        $command = 'API_ACCOUNT_USER';
+
+        if ($account->getReseller()) {
+            $command = 'ACCOUNT_RESELLER';
+
+            $fields['ips'] = 1; // Number of ips that will be allocated to the Reseller upon account during account
+            $fields['ip'] = 'assign';
+        }
+
+        try {
+            $results = $this->_request($command, $fields);
+        } catch (Exception $e) {
+            if (strtolower($e->getMessage()) == strtolower(sprintf('Server Manager DirectAdmin Error: "%s" ', 'That domain already exists'))) {
+                return true;
+            } else {
+                throw new Server_Exception($e->getMessage());
+            }
+        }
+
+        if (str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
+            throw new Server_Exception('Unable to assign the Reseller ANY ips. Make sure to have free, un-assigned ips.');
+        }
+
+        if (str_contains(implode('', $results), 'Error Creating User')) {
+            throw new Server_Exception('Error creating user');
+        }
+
+        return true;
+    }
+
+    /**
+     * @throws Server_Exception
+     */
+    private function getIps()
+    {
+        $results = $this->_request('API_SHOW_RESELLER_IPS');
+        return $results['list'] ?? array();
+    }
+
+    /**
+     * @param Server_Account $account
+     * @return true
+     * @throws Server_Exception
+     */
+    public function suspendAccount(Server_Account $account): bool
+    {
+        $info = $this->getAccountInfo($account);
+        if ($info['suspended'] == 'yes') {
+            return true;
+        }
+
+        $fields = [
+            'location' => 'USER_SHOW',
+            'suspend' => 'Suspend',
+            'select0' => $account->getUsername(),
+        ];
+
+        $result = $this->_request('API_SELECT_USERS', $fields);
+
+        return true;
+    }
+
+    /**
+     * @throws Server_Exception
+     */
+    private function getAccountInfo(Server_Account $account): array
+    {
+        $fields = [
+            'action' => 'create',
+            'add' => 'Submit',
+            'user' => $account->getUsername(),
+        ];
+
+        return $this->_request('API_SHOW_USER_CONFIG', $fields);
+    }
+
+    /**
+     * @param Server_Account $account
+     * @return true
+     * @throws Server_Exception
+     */
+    public function unsuspendAccount(Server_Account $account): bool
+    {
+        $info = $this->getAccountInfo($account);
+        if ($info['suspended'] == 'no') {
+            throw new Server_Exception('Server Manager DirectAdmin Error: "Account is not suspended"');
+        }
+
+        $fields = [
+            'location' => 'USER_SHOW',
+            'suspend' => 'Unsuspend',
+            'select0' => $account->getUsername(),
+        ];
+
+        $this->_request('API_SELECT_USERS', $fields);
+
+        return true;
+    }
+
+    /**
+     * @param Server_Account $account
+     * @return true
+     * @throws Server_Exception
+     */
+    public function cancelAccount(Server_Account $account): bool
+    {
+        $fields = [
+            'confirmed' => 'Confirm',
+            'delete' => 'yes',
+            'select0' => $account->getUsername(),
+        ];
+
+        $this->_request('API_SELECT_USERS', $fields);
+
+        return true;
+    }
+
+    /**
+     * @param Server_Account $account
+     * @return true
+     * @throws Server_Exception
+     */
+    public function modifyAccount(Server_Account $account): bool
+    {
+        $package = $account->getPackage();
+
+        $fields = [
+            'aftp' => $package->getHasAnonymousFtp() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be able to have anonymous ftp accounts.
+            'action' => 'customize',
+            'bandwidth' => $package->getBandwidth(), // Amount of bandwidth User will be allowed to use. Number, in Megabytes
+            'catchall' => $package->getHasCatchAll() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
+            'cgi' => $package->getHasCgi() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
+            'cron' => $package->getHasCron() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to creat cronjobs.
+            'dnscontrol' => 'ON', // ON or OFF. If ON, the User will be able to modify his/her dns records.
+            'domainptr' => $package->getMaxParkedDomains(), // Number of domain pointers the User will be allowed to create
+            'ftp' => $package->getMaxFtp(), // Number of ftp accounts the User will be allowed to create
+            'mysql' => $package->getMaxSql(), // Number of MySQL databases the User will be allowed to create
+            'nemailf' => $package->getMaxEmailForwarders(), // Number of forwarders the User will be allowed to create
+            'nemailml' => $package->getMaxEmailLists(), // Number of mailing lists the User will be allowed to create
+            'nemailr' => $package->getMaxEmailAutoresponders(), // Number of autoresponders the User will be allowed to create
+            'nemails' => $package->getMaxPop(), // Number of pop accounts the User will be allowed to create
+            'nsubdomains' => $package->getMaxSubdomains(), // Number of subdomains the User will be allowed to create
+            'ns1' => $account->getNs1(),
+            'ns2' => $account->getNs2(),
+            'php' => $package->getHasPhp() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run php scripts.
+            'quota' => $package->getQuota(), // Amount of disk space User will be allowed to use. Number, in Megabytes
+            'spam' => $package->getHasSpamFilter() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
+            'ssh' => $package->getHasShell() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have an ssh account.
+            'ssl' => $package->getHasSll() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
+            'sysinfo' => 'ON', // ON or OFF. If ON, the User will have access to a page that shows the system information.
+            'user' => $account->getUsername(),
+            'vdomains' => $package->getMaxDomains(), // Number of domains the User will be allowed to create
+        ];
+
+        if ($package->getBandwidth() == 'unlimited') {
+            $fields['ubandwidth'] = 'ON'; // ON or OFF. If ON, bandwidth is ignored and no limit is set
+        }
+
+        if ($package->getQuota() == 'unlimited') {
+            $fields['uquota'] = 'ON'; // ON or OFF. If ON, quota is ignored and no limit is set
+        }
+
+        if ($package->getMaxDomains() == 'unlimited') {
+            $fields['uvdomains'] = 'ON'; // ON or OFF. If ON, vdomains is ignored and no limit is set
+        }
+
+        if ($package->getMaxSubdomains() == 'unlimited') {
+            $fields['unsubdomains'] = 'ON'; // ON or OFF. If ON, nsubdomains is ignored and no limit is set
+        }
+
+        if ($package->getMaxPop() == 'unlimited') {
+            $fields['unemails'] = 'ON'; // ON or OFF Unlimited option for nemails
+        }
+
+        if ($package->getMaxEmailForwarders() == 'unlimited') {
+            $fields['unemailf'] = 'ON'; // ON or OFF Unlimited option for nemailf
+        }
+
+        if ($package->getMaxEmailLists() == 'unlimited') {
+            $fields['unemailml'] = 'ON'; // ON or OFF Unlimited option for nemailml
+        }
+
+        if ($package->getMaxEmailAutoresponders() == 'unlimited') {
+            $fields['unemailr'] = 'ON'; // ON or OFF Unlimited option for nemailr
+        }
+
+        if ($package->getMaxSql() == 'unlimited') {
+            $fields['umysql'] = 'ON'; // ON or OFF Unlimited option for mysql
+        }
+
+        if ($package->getMaxParkedDomains() == 'unlimited') {
+            $fields['udomainptr'] = 'ON'; // ON or OFF Unlimited option for domainptr
+        }
+
+        if ($package->getMaxFtp() == 'unlimited') {
+            $fields['uftp'] = 'ON'; // ON or OFF Unlimited option for ftp
+        }
+
+        $this->_request('API_MODIFY_USER', $fields);
+
+        return true;
+    }
+
+    /**
+     * @param Server_Account $account
+     * @param string $newDomain
+     * @return never
+     * @throws Server_Exception
+     */
+    public function changeAccountDomain(Server_Account $account, string $newDomain): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account domain')]);
+    }
+
+    /**
+     * @param Server_Account $account
+     * @param string $newIp
+     * @return never
+     * @throws Server_Exception
+     */
+    public function changeAccountIp(Server_Account $account, string $newIp): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account IP')]);
+    }
+
+    /**
+     * @param Server_Account $account
+     * @param Server_Package $package
+     * @return bool
+     * @throws Server_Exception
+     */
+    public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
+    {
+        $fields = [
+            'action' => 'package',
+            'user' => $account->getUsername(),
+            'package' => $account->getPackage()->getName(),
+        ];
+
+        $this->_request('API_MODIFY_USER', $fields);
+
+        return true;
+    }
+
+    /**
+     * @param Server_Account $account
+     * @param string $newPassword
+     * @return true
+     * @throws Server_Exception
+     */
+    public function changeAccountPassword(Server_Account $account, string $newPassword): bool
+    {
+        $fields = [
+            'username' => $account->getUsername(),
+            'passwd' => $newPassword,
+            'passwd2' => $newPassword,
+        ];
+
+        $this->_request('API_USER_PASSWD', $fields);
+
+        return true;
+    }
+
+    /**
+     * @param Server_Account $account
+     * @param string $newUsername
+     * @return never
+     * @throws Server_Exception
+     */
+    public function changeAccountUsername(Server_Account $account, string $newUsername): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('username changes')]);
+    }
+
+    /**
+     * @throws Server_Exception
+     */
+    private function getUserInfo(Server_Account $account)
+    {
+        $fields = array();
+        $fields['user'] = $account->getUsername();
+        $result = $this->_request('API_SHOW_USER_CONFIG', $fields);
+    }
+
+    /**
+     * This method is used to verify the authentication credentials for the DirectAdmin server.
+     * It sends a request to the server with the 'API_VERIFY_PASSWORD' command and the username and password from the configuration.
+     * The response from the server is stored in the $response variable, but is not used in this method.
+     * The method always returns true, regardless of the server's response.
+     *
+     * @return bool Always returns true.
+     * @throws Server_Exception If there is an error while sending the request to the server.
+     */
+    private function checkAuth()
+    {
+        $response = $this->_request('API_VERIFY_PASSWORD', array(
+            'user' => $this->_config['username'],
+            'passwd' => $this->_config['password'],
+        ));
+
+        return true;
     }
 }
