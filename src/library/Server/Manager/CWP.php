@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
 /**
@@ -15,6 +15,11 @@
  */
 class Server_Manager_CWP extends Server_Manager
 {
+    /**
+     * Returns the form configuration for the CWP server manager.
+     *
+     * @return array Returns an array with the label and form configuration for the CWP server manager.
+     */
     public static function getForm(): array
     {
         return [
@@ -31,12 +36,15 @@ class Server_Manager_CWP extends Server_Manager
                         ],
                     ],
                 ],
-            ]
+            ],
         ];
     }
 
     /**
-     * @throws Server_Exception
+     * Initializes the server manager.
+     * Checks if the required parameters (IP, host, access hash, port) are set.
+     *
+     * @throws Server_Exception If any of the required parameters are not set.
      */
     public function init(): void
     {
@@ -60,24 +68,35 @@ class Server_Manager_CWP extends Server_Manager
     }
 
     /**
-     * We can actually generate a direct log-in link from CWP, but I'm not sure if that's a secure thing to do here.
+     * Returns the login URL for the CWP server manager.
+     *
+     * @param Server_Account|null $account The account for which the login URL is generated.
+     * @return string Returns the login URL as a string.
      */
-    public function getLoginUrl(?Server_Account $account = null): string
+    public function getLoginUrl(?Server_Account $account): string
     {
         $host = $this->_config['host'];
         return 'https://' . $host . ':2083';
     }
 
-    public function getResellerLoginUrl(?Server_Account $account = null): string
+    /**
+     * Returns the reseller login URL for the CWP server manager.
+     *
+     * @param Server_Account|null $account The account for which the reseller login URL is generated.
+     * @return string Returns the reseller login URL as a string.
+     */
+    public function getResellerLoginUrl(?Server_Account $account): string
     {
         $host = $this->_config['host'];
         return 'https://' . $host . ':2031';
     }
 
     /**
-     * CWP doesn't have a connection test function, so we ask what kind of server it is (EX: KVM / OpenVZ)
-     * No error means the connection worked and we can continue
-     * @throws Server_Exception
+     * Tests the connection to the CWP server.
+     * Makes a request to the server and checks if the response is successful.
+     *
+     * @return bool Returns true if the connection test is successful.
+     * @throws Server_Exception If the connection test fails.
      */
     public function testConnection(): bool
     {
@@ -85,7 +104,7 @@ class Server_Manager_CWP extends Server_Manager
             'action' => 'list',
         ];
 
-        if ($this->makeAPIRequest('account', $data)) {
+        if ($this->request('account', $data)) {
             return true;
         } else {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'CWP']);
@@ -93,51 +112,22 @@ class Server_Manager_CWP extends Server_Manager
     }
 
     /**
-     * Makes the HTTP request to the server
+     * Synchronizes the account with the server.
+     *
+     * @param Server_Account $account The account to be synchronized.
+     * @return Server_Account Returns the synchronized account.
      */
-    private function makeAPIRequest($func, $data)
-    {
-        $data['key'] = $this->_config['accesshash'];
-        $host = $this->_config['host'];
-        $port = $this->_config['port'];
-        $url = 'https://' . $host . ":" . $port . '/v1/' . $func;
-
-        $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
-        ]);
-
-        $request = $client->request('POST', $url, [
-            'body' => $data,
-        ]);
-
-        $response = $request->toArray();
-
-        $status = $response['status'] ?? 'Error';
-        $result = $response['result'] ?? null;
-        $msg = $response['msg'] ?? 'CWP did not return a message in it\'s response.';
-
-        if ($status == 'OK' && $func != 'accountdetail') {
-            return true;
-        } elseif ($status !== 'OK') {
-            error_log('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
-            return false;
-        } else {
-            return $result;
-        }
-    }
-
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
         $this->getLog()->info('Synchronizing account with server ' . $account->getUsername());
 
         $data = [
             'action' => 'list',
-            'user' => $account->getUsername()
+            'user' => $account->getUsername(),
         ];
 
         $new = clone $account;
-        $acc = $this->makeAPIRequest('accountdetail', $data);
+        $acc = $this->request('accountdetail', $data);
 
         if ($acc['account_info']['state'] == 'suspended') {
             $new->setSuspended(true);
@@ -152,8 +142,11 @@ class Server_Manager_CWP extends Server_Manager
     }
 
     /**
-     * Package name must match on both CWP and FOSSBilling!
-     * @throws Server_Exception
+     * Creates a new account on the CWP server.
+     *
+     * @param Server_Account $account The account to be created.
+     * @return bool Returns true if the account is successfully created.
+     * @throws Server_Exception If the account creation fails.
      */
     public function createAccount(Server_Account $account): bool
     {
@@ -172,14 +165,14 @@ class Server_Manager_CWP extends Server_Manager
             'email' => $client->getEmail(),
             'package' => $package,
             'server_ips' => $ip,
-            'encodepass' => true
+            'encodepass' => true,
         ];
 
         if ($account->getReseller()) {
             $data['reseller'] = 1;
         }
 
-        if (!$this->makeAPIRequest('account', $data)) {
+        if (!$this->request('account', $data)) {
             $placeholders = [':action:' => __trans('create account'), ':type:' => 'CWP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
@@ -187,16 +180,23 @@ class Server_Manager_CWP extends Server_Manager
         return true;
     }
 
+    /**
+     * Suspends an account on the CWP server.
+     *
+     * @param Server_Account $account The account to be suspended.
+     * @return bool Returns true if the account is successfully suspended.
+     * @throws Server_Exception If the account suspension fails.
+     */
     public function suspendAccount(Server_Account $account): bool
     {
         $this->getLog()->info('Suspending account ' . $account->getUsername());
 
         $data = [
             'action' => 'susp',
-            'user' => $account->getUsername()
+            'user' => $account->getUsername(),
         ];
 
-        if (!$this->makeAPIRequest('account', $data)) {
+        if (!$this->request('account', $data)) {
             $placeholders = ['action' => __trans('suspend account'), 'type' => 'CWP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
@@ -204,16 +204,23 @@ class Server_Manager_CWP extends Server_Manager
         return true;
     }
 
+    /**
+     * Unsuspends an account on the CWP server.
+     *
+     * @param Server_Account $account The account to be unsuspended.
+     * @return bool Returns true if the account is successfully unsuspended.
+     * @throws Server_Exception If the account unsuspension fails.
+     */
     public function unsuspendAccount(Server_Account $account): bool
     {
         $this->getLog()->info('Un-suspending account ' . $account->getUsername());
 
         $data = [
             'action' => 'unsp',
-            'user' => $account->getUsername()
+            'user' => $account->getUsername(),
         ];
 
-        if (!$this->makeAPIRequest('account', $data)) {
+        if (!$this->request('account', $data)) {
             $placeholders = [':action:' => __trans('unsuspend account'), ':type:' => 'CWP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
@@ -221,6 +228,13 @@ class Server_Manager_CWP extends Server_Manager
         return true;
     }
 
+    /**
+     * Cancels an account on the CWP server.
+     *
+     * @param Server_Account $account The account to be cancelled.
+     * @return bool Returns true if the account is successfully cancelled.
+     * @throws Server_Exception If the account cancellation fails.
+     */
     public function cancelAccount(Server_Account $account): bool
     {
         $this->getLog()->info('Canceling account ' . $account->getUsername());
@@ -230,10 +244,10 @@ class Server_Manager_CWP extends Server_Manager
         $data = [
             'action' => 'del',
             'user' => $account->getUsername(),
-            'email' => $client->getEmail()
+            'email' => $client->getEmail(),
         ];
 
-        if (!$this->makeAPIRequest('account', $data)) {
+        if (!$this->request('account', $data)) {
             $placeholders = [':action:' => __trans('cancel account'), ':type:' => 'CWP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
@@ -241,6 +255,14 @@ class Server_Manager_CWP extends Server_Manager
         return true;
     }
 
+    /**
+     * Changes the package of an account on the CWP server.
+     *
+     * @param Server_Account $account The account for which the package is to be changed.
+     * @param Server_Package $package The new package.
+     * @return bool Returns true if the package is successfully changed.
+     * @throws Server_Exception If the package change fails.
+     */
     public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
     {
         $this->getLog()->info('Changing package on account ' . $account->getUsername());
@@ -248,10 +270,10 @@ class Server_Manager_CWP extends Server_Manager
         $data = [
             'action' => 'upd',
             'user' => $account->getUsername(),
-            'package' => $account->getPackage()->getName()
+            'package' => $account->getPackage()->getName(),
         ];
 
-        if (!$this->makeAPIRequest('changepack', $data)) {
+        if (!$this->request('changepack', $data)) {
             $placeholders = [':action:' => __trans('change account package'), ':type:' => 'CWP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
@@ -259,6 +281,14 @@ class Server_Manager_CWP extends Server_Manager
         return true;
     }
 
+    /**
+     * Changes the password of an account on the CWP server.
+     *
+     * @param Server_Account $account     The account for which the password is to be changed.
+     * @param string         $newPassword The new password.
+     * @return bool Returns true if the password is successfully changed.
+     * @throws Server_Exception If the password change fails.
+     */
     public function changeAccountPassword(Server_Account $account, string $newPassword): bool
     {
         $this->getLog()->info('Changing password on account ' . $account->getUsername());
@@ -266,10 +296,10 @@ class Server_Manager_CWP extends Server_Manager
         $data = [
             'action' => 'udp',
             'user' => $account->getUsername(),
-            'pass' => $newPassword
+            'pass' => $newPassword,
         ];
 
-        if (!$this->makeAPIRequest('changepass', $data)) {
+        if (!$this->request('changepass', $data)) {
             $placeholders = [':action:' => __trans('change account password'), ':type:' => 'CWP'];
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
@@ -278,8 +308,11 @@ class Server_Manager_CWP extends Server_Manager
     }
 
     /**
-     * Function graveyard for things CWP doesn't support
-     * @throws Server_Exception
+     * Throws an exception because CWP does not support username changes.
+     *
+     * @param Server_Account $account     The account for which the username is to be changed.
+     * @param string         $newUsername The new username.
+     * @throws Server_Exception Always throws an exception because CWP does not support username changes.
      */
     public function changeAccountUsername(Server_Account $account, string $newUsername): never
     {
@@ -287,7 +320,11 @@ class Server_Manager_CWP extends Server_Manager
     }
 
     /**
-     * @throws Server_Exception
+     * Throws an exception because CWP does not support changing the account domain.
+     *
+     * @param Server_Account $account   The account for which the domain is to be changed.
+     * @param string         $newDomain The new domain.
+     * @throws Server_Exception Always throws an exception because CWP does not support changing the account domain.
      */
     public function changeAccountDomain(Server_Account $account, string $newDomain): never
     {
@@ -295,13 +332,64 @@ class Server_Manager_CWP extends Server_Manager
     }
 
     /**
-     * @param Server_Account $account
-     * @param string $newIp
-     * @return never
-     * @throws Server_Exception
+     * Throws an exception because CWP does not support changing the account IP.
+     *
+     * @param Server_Account $account The account for which the IP is to be changed.
+     * @param string         $newIp   The new IP.
+     * @throws Server_Exception Always throws an exception because CWP does not support changing the account IP.
      */
     public function changeAccountIp(Server_Account $account, string $newIp): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account IP')]);
+    }
+
+    /**
+     * Makes an API request to the CWP server.
+     *
+     * @param string $func The function to be called on the server.
+     * @param array  $data The data to be sent with the request.
+     * @return mixed Returns the response from the server.
+     */
+    private function request(string $func, array $data): mixed
+    {
+        // Add the access hash to the data array
+        $data['key'] = $this->_config['accesshash'];
+
+        // Get the host and port from the config
+        $host = $this->_config['host'];
+        $port = $this->_config['port'];
+
+        // Construct the URL for the request
+        $url = 'https://' . $host . ":" . $port . '/v1/' . $func;
+
+        // Get the HTTP client with options set to ignore SSL verification
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer' => false,
+            'verify_host' => false,
+        ]);
+
+        // Make the request and convert the response to an array
+        $request = $client->request('POST', $url, [
+            'body' => $data,
+        ]);
+        $response = $request->toArray();
+
+        // Get the status, result, and message from the response, with default values if they are not set
+        $status = $response['status'] ?? 'Error';
+        $result = $response['result'] ?? null;
+        $msg = $response['msg'] ?? 'CWP did not return a message in it\'s response.';
+
+        // If the status is not 'OK', log an error message and return false
+        if ($status !== 'OK') {
+            error_log('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
+            return false;
+        }
+
+        // If the function called is 'accountdetail', return the result from the response
+        if ($func == 'accountdetail') {
+            return $result;
+        }
+
+        return true;
     }
 }

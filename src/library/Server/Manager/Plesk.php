@@ -8,14 +8,16 @@ use PleskX\Api\Client;
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 class Server_Manager_Plesk extends Server_Manager
 {
     private ?Client $_client = null;
 
     /**
-     * @return string[]
+     * Returns an array with a single key-value pair, where the key is 'label' and the value is 'Plesk'.
+     *
+     * @return string[] An array with a single key-value pair.
      */
     public static function getForm(): array
     {
@@ -25,6 +27,9 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
+     * Initializes the Plesk client with the host, port, username, and password from the configuration.
+     * If the port is not set in the configuration, it defaults to 8443.
+     *
      * @return void
      */
     public function init(): void
@@ -35,8 +40,11 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * @param Server_Account|null $account
-     * @return string
+     * Returns the login URL for a reseller account.
+     * This method is a wrapper for the getLoginUrl method.
+     *
+     * @param Server_Account|null $account The account for which the login URL should be retrieved.
+     * @return string The login URL for the reseller account.
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
@@ -44,8 +52,11 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * @param Server_Account|null $account
-     * @return string
+     * Returns the login URL for a given account.
+     * If an account is provided, a session is created for the account and the session ID is appended to the URL.
+     *
+     * @param Server_Account|null $account The account for which the login URL should be retrieved.
+     * @return string The login URL for the account.
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
@@ -60,8 +71,11 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * @return true
-     * @throws Server_Exception
+     * Tests the connection to the Plesk server by retrieving the server's statistics.
+     * If the server's uptime is less than 0, an exception is thrown.
+     *
+     * @return true If the connection to the Plesk server is successful.
+     * @throws Server_Exception If the connection to the Plesk server fails.
      */
     public function testConnection(): bool
     {
@@ -75,9 +89,11 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * @param Server_Account $account
+     * Throws an exception indicating that account synchronization is not supported.
+     *
+     * @param Server_Account $account The account to be synchronized.
      * @return never
-     * @throws Server_Exception
+     * @throws Server_Exception Always throws an exception.
      */
     public function synchronizeAccount(Server_Account $account): never
     {
@@ -85,16 +101,20 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * @param Server_Account $account
-     * @return true
-     * @throws Server_Exception
+     * Creates an account on the Plesk server.
+     * If the account is a reseller account, an exclusive IP address is assigned to the account if available.
+     * A client is created for the account and a subscription is set for the client.
+     *
+     * @param Server_Account $account The account to be created.
+     * @return true If the account is successfully created.
+     * @throws Server_Exception If the client creation fails.
      */
     public function createAccount(Server_Account $account): bool
     {
         $this->getLog()->info('Creating account ' . $account->getUsername());
 
         if ($account->getReseller()) {
-            $ips = $this->_getIps();
+            $ips = $this->getIps();
             foreach ($ips['exclusive'] as $key => $ip) {
                 if (!$ip['empty']) {
                     unset ($ips['exclusive'][$key]);
@@ -102,8 +122,8 @@ class Server_Manager_Plesk extends Server_Manager
             }
 
             /*
-    		if (count($ips['exclusive']) == 0) {
-    			// Disabled. Resellers can also use shared IP addresses.
+            if (count($ips['exclusive']) == 0) {
+                // Disabled. Resellers can also use shared IP addresses.
                 // throw new Server_Exception('Out of free IP addresses');
             }
             */
@@ -114,7 +134,7 @@ class Server_Manager_Plesk extends Server_Manager
             }
         }
 
-        $id = $this->_createClient($account);
+        $id = $this->createClient($account);
         $client = $account->getClient();
 
         if (!$id) {
@@ -128,20 +148,238 @@ class Server_Manager_Plesk extends Server_Manager
 
         // We need to improve the way we handle the IP address before we should enable this.
         /*
-    	if ($a->getReseller()) {
-    		$this->_setIp($a);
-    		$this->_changeIpType($a);
-    		$this->_addNs($a, $domainId);
-    	}
+        if ($a->getReseller()) {
+            $this->_setIp($a);
+            $this->_changeIpType($a);
+            $this->_addNs($a, $domainId);
+        }
         */
 
         return true;
     }
 
     /**
-     * @return array|array[]
+     * Sets a subscription for a given account.
+     *
+     * @param Server_Account $account The account for which the subscription should be set.
+     * @return void
      */
-    private function _getIps(): array
+    public function setSubscription(Server_Account $account): void
+    {
+        $this->getLog()->info('Setting subscription for account ' . $account->getUsername());
+
+        $this->_client->webspace()->request($this->createSubscriptionProps($account, 'add'));
+    }
+
+// ??
+
+    /**
+     * Suspends a given account.
+     * The customer's status is set to 16, which is suspended.
+     *
+     * @param Server_Account $account The account to be suspended.
+     * @param bool           $suspend Whether the account should be suspended. Defaults to true.
+     * @return bool The result of the API request to suspend the account.
+     */
+    public function suspendAccount(Server_Account $account, bool $suspend = true): bool
+    {
+        if ($account->getReseller()) {
+            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['status' => 16]);
+        } else {
+            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 16]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Unsuspends a given account.
+     * Set the customer's status to 0, which is active.
+     *
+     * @param Server_Account $account The account to be unsuspended.
+     * @return bool The result of the API request to unsuspend the account.
+     */
+    public function unsuspendAccount(Server_Account $account): bool
+    {
+        if ($account->getReseller()) {
+            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['status' => 0]);
+        } else {
+            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 0]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Cancels a given account.
+     * Delete the customer or reseller associated with the account.
+     *
+     * @param Server_Account $account The account to be cancelled.
+     * @return bool The result of the API request to cancel the account.
+     */
+    public function cancelAccount(Server_Account $account): bool
+    {
+        if ($account->getReseller()) {
+            $result = $this->_client->reseller()->delete('login', $account->getUsername());
+        } else {
+            $result = $this->_client->customer()->delete('login', $account->getUsername());
+        }
+
+        return $result;
+    }
+
+    /**
+     * Changes the package of a given account.
+     * The client's properties are modified and the subscription is updated.
+     * If the account is a reseller account, a nameserver (NS) record is added for the account.
+     *
+     * @param Server_Account $account The account for which the package should be changed.
+     * @param Server_Package $package The new package.
+     * @return true If the package is successfully changed.
+     * @throws Server_Exception If the client modification fails.
+     */
+    public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
+    {
+        $domainId = null;
+        $id = $this->modifyClient($account);
+        $client = $account->getClient();
+        if (!$id) {
+            throw new Server_Exception('Can\'t modify client');
+        } else {
+            $client->setId($id);
+        }
+
+        $account->setPackage($package);
+        $this->updateSubscription($account);
+
+        if ($account->getReseller()) {
+            $this->addNs($account, $domainId);
+        }
+
+        return true;
+    }
+
+    /**
+     * Updates the subscription for a given account.
+     * Sends a request to the Plesk API to update the subscription for the account.
+     *
+     * @param Server_Account $account The account for which the subscription should be updated.
+     * @return void
+     */
+    public function updateSubscription(Server_Account $account): void
+    {
+        $this->getLog()->info('Updating subscription for account ' . $account->getUsername());
+
+        $this->_client->webspace()->request($this->createSubscriptionProps($account, 'set'));
+    }
+
+    /**
+     * Changes the password of a given account.
+     *
+     * @param Server_Account $account     The account for which the password should be changed.
+     * @param string         $newPassword The new password.
+     * @return bool The result of the API request to change the password.
+     */
+    public function changeAccountPassword(Server_Account $account, string $newPassword): bool
+    {
+        $this->getLog()->info('Changing password for account ' . $account->getUsername());
+
+        if ($account->getReseller()) {
+            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['passwd' => $newPassword]);
+        } else {
+            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['passwd' => $newPassword]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * This is not implemented for Plesk.
+     *
+     * @param Server_Account $account    The account for which the username should be changed.
+     * @param string         $newUsername The new username.
+     * @return never
+     * @throws Server_Exception Always throws an exception.
+     */
+    public function changeAccountUsername(Server_Account $account, string $newUsername): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
+    }
+
+    /**
+     * Changes the domain of a given account.
+     * The domain of the account is updated and a request is sent to the Plesk API to update the domain of the account.
+     *
+     * @param Server_Account $account  The account for which the domain should be changed.
+     * @param string         $newDomain The new domain.
+     * @return bool The result of the API request to change the domain.
+     */
+    public function changeAccountDomain(Server_Account $account, string $newDomain): bool
+    {
+        $this->getLog()->info('Updating domain for account ' . $account->getUsername());
+
+        $account->setDomain($newDomain);
+
+        $params = [
+            'set' => [
+                'filter' => [
+                    'owner-login' => $account->getUsername(),
+                ],
+                'values' => [
+                    'gen_setup' => [
+                        'name' => $newDomain,
+                    ],
+                ],
+            ],
+        ];
+
+        $this->_client->webspace()->request($params);
+
+        return true;
+    }
+
+    /**
+     * This is not implemented for Plesk.
+     *
+     * @param Server_Account $account The account for which the IP should be changed.
+     * @param string $newIp The new IP address.
+     * @return never
+     * @throws Server_Exception Always throws an exception.
+     */
+    public function changeAccountIp(Server_Account $account, string $newIp): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('changing the account IP')]);
+    }
+
+    /**
+     * This is not implemented for Plesk.
+     *
+     * @param Server_Account $account The account for which the service plan should be created.
+     */
+    public function createServicePlan(Server_Account $account)
+    {
+
+    }
+
+    /**
+     * Deletes a subscription for a given account.
+     * Sends a request to the Plesk API to delete the webspace associated with the account's domain.
+     *
+     * @param Server_Account $account The account for which the subscription should be deleted.
+     * @return mixed The result of the API request to delete the webspace.
+     */
+    public function deleteSubscription(Server_Account $account): mixed
+    {
+        return $this->_client->webspace()->delete('name', $account->getDomain());
+    }
+
+    /**
+     * Retrieves the IP addresses from the Plesk server.
+     * Sends a request to the Plesk API to get the IP addresses and categorizes them into 'shared' and 'exclusive'.
+     *
+     * @return array An array containing 'shared' and 'exclusive' IP addresses.
+     */
+    private function getIps(): array
     {
         $response = $this->_client->ip()->get();
 
@@ -157,23 +395,46 @@ class Server_Manager_Plesk extends Server_Manager
         return $ips;
     }
 
-    // ??
+    /**
+     * Sets the IP address for a given account.
+     * Sends a request to the Plesk API to add the IP address to the reseller's IP pool.
+     *
+     * @param Server_Account $account The account for which the IP should be set.
+     * @param string $newIp The new IP address.
+     */
+    private function setIp(Server_Account $account, string $newIp): void
+    {
+        $params = [
+            'reseller' => [
+                'ippool-add-ip' => [
+                    'reseller-id' => $account->getUsername(),
+                    'ip' => [
+                        'ip-address' => $newIp,
+                    ],
+                ],
+            ],
+        ];
+
+        $this->_client->request($params);
+    }
 
     /**
-     * Creates a new client account.
+     * Creates a client on the Plesk server.
+     * Sends a request to the Plesk API to create a customer or reseller based on the account type.
+     * The client's properties include the company name, full name, username, password, telephone number, fax number, email address, address, city, and state.
      *
-     * @param Server_Account $a
-     * @return bool|int client's Plesk id
+     * @param Server_Account $account The account for which the client should be created.
+     * @return bool Returns true after the client has been created.
      */
-    private function _createClient(Server_Account $a): bool|int
+    private function createClient(Server_Account $account): bool
     {
-        $client = $a->getClient();
+        $client = $account->getClient();
 
         $props = [
             'cname' => $client->getCompany(),
             'pname' => $client->getFullname(),
-            'login' => $a->getUsername(),
-            'passwd' => $a->getPassword(),
+            'login' => $account->getUsername(),
+            'passwd' => $account->getPassword(),
             'phone' => $client->getTelephone(),
             'fax' => $client->getFax(),
             'email' => $client->getEmail(),
@@ -183,7 +444,7 @@ class Server_Manager_Plesk extends Server_Manager
             'description' => 'Created using FOSSBilling.',
         ];
 
-        if ($a->getReseller()) {
+        if ($account->getReseller()) {
             $this->_client->reseller()->create($props);
         } else {
             $this->_client->customer()->create($props);
@@ -193,22 +454,14 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * @param Server_Account $account
-     * @return void
+     * Creates an array of properties for a subscription.
+     * The properties include the domain name, owner login, hosting type, IP address, FTP login, FTP password, PHP, SSL, CGI, limits, and permissions.
+     *
+     * @param Server_Account $account The account for which the properties should be created.
+     * @param string         $action  The action to be performed on the subscription.
+     * @return array The array of subscription properties.
      */
-    public function setSubscription(Server_Account $account): void
-    {
-        $this->getLog()->info('Setting subscription for account ' . $account->getUsername());
-
-        $this->_client->webspace()->request($this->_createSubscriptionProps($account, 'add'));
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $action
-     * @return array[]
-     */
-    private function _createSubscriptionProps(Server_Account $account, $action): array
+    private function createSubscriptionProps(Server_Account $account, string $action): array
     {
         $package = $account->getPackage();
 
@@ -218,7 +471,7 @@ class Server_Manager_Plesk extends Server_Manager
                     'name' => $account->getDomain(),
                     'owner-login' => $account->getUsername(),
                     'htype' => 'vrt_hst',
-                    'ip_address' => $account->getIp()
+                    'ip_address' => $account->getIp(),
                 ),
                 'hosting' => array(
                     'vrt_hst' => array(
@@ -251,19 +504,19 @@ class Server_Manager_Plesk extends Server_Manager
                     'limit' => array(
                         array(
                             'name' => 'max_db',
-                            'value' => $package->getMaxSql() ?: 0,
+                            'value' => $package->getMaxSql() ? : 0,
                         ),
                         array(
                             'name' => 'max_maillists',
-                            'value' => $package->getMaxEmailLists() ?: 0,
+                            'value' => $package->getMaxEmailLists() ? : 0,
                         ),
                         array(
                             'name' => 'max_maillists',
-                            'value' => $package->getMaxEmailLists() ?: 0,
+                            'value' => $package->getMaxEmailLists() ? : 0,
                         ),
                         array(
                             'name' => 'max_box',
-                            'value' => $package->getMaxPop() ?: 0,
+                            'value' => $package->getMaxPop() ? : 0,
                         ),
                         array(
                             'name' => 'max_traffic',
@@ -275,15 +528,15 @@ class Server_Manager_Plesk extends Server_Manager
                         ),
                         array(
                             'name' => 'max_subdom',
-                            'value' => $package->getMaxSubdomains() ?: 0,
+                            'value' => $package->getMaxSubdomains() ? : 0,
                         ),
                         array(
                             'name' => 'max_subftp_users',
-                            'value' => $package->getMaxFtp() ?: 0,
+                            'value' => $package->getMaxFtp() ? : 0,
                         ),
                         array(
                             'name' => 'max_site',
-                            'value' => $package->getMaxDomains() ?: 0,
+                            'value' => $package->getMaxDomains() ? : 0,
                         ),
                     ),
                 ),
@@ -295,7 +548,7 @@ class Server_Manager_Plesk extends Server_Manager
                         ),
                         array(
                             'name' => 'manage_dns',
-                            'value' => 'true'
+                            'value' => 'true',
                         ),
                         array(
                             'name' => 'manage_crontab',
@@ -348,120 +601,34 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * @param Server_Account $account
-     * @return void
+     * Modifies the properties of a client account on the Plesk server.
+     *
+     * @param Server_Account $account The account for which the properties should be modified.
+     * @return mixed The result of the API request to modify the client's properties.
      */
-    public function createServicePlan(Server_Account $account)
-    {
-
-    }
-
-    /**
-     * @param Server_Account $account
-     * @return mixed
-     */
-    public function deleteSubscription(Server_Account $account): mixed
-    {
-        return $this->_client->webspace()->delete('name', $account->getDomain());
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param bool $suspend
-     * @return bool
-     */
-    public function suspendAccount(Server_Account $account, bool $suspend = true): bool
+    private function modifyClient(Server_Account $account): mixed
     {
         if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['status' => 16]);
+            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), $this->createClientProps($account));
         } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 16]);
+            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), $this->createClientProps($account));
         }
 
         return $result;
     }
 
     /**
-     * @param Server_Account $account
-     * @return bool
+     * Creates an array of properties for a client account.
+     * The properties include the client's company name, full name, username, password, telephone number, fax number, email address, address, city, and state.
+     *
+     * @param Server_Account $account The account for which the properties should be created.
+     * @return array The array of client properties.
      */
-    public function unsuspendAccount(Server_Account $account): bool
-    {
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['status' => 0]);
-        } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 0]);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @return bool
-     */
-    public function cancelAccount(Server_Account $account): bool
-    {
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->delete('login', $account->getUsername());
-        } else {
-            $result = $this->_client->customer()->delete('login', $account->getUsername());
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param Server_Package $package
-     * @return true
-     * @throws Server_Exception
-     */
-    public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
-    {
-        $domainId = null;
-        $id = $this->_modifyClient($account);
-        $client = $account->getClient();
-        if (!$id) {
-            throw new Server_Exception('Can\'t modify client');
-        } else {
-            $client->setId($id);
-        }
-
-        $account->setPackage($package);
-        $this->updateSubscription($account);
-
-        if ($account->getReseller()) {
-            $this->_addNs($account, $domainId);
-        }
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @return mixed
-     */
-    private function _modifyClient(Server_Account $account): mixed
-    {
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), $this->_createClientProps($account));
-        } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), $this->_createClientProps($account));
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @return array
-     */
-    private function _createClientProps(Server_Account $account): array
+    private function createClientProps(Server_Account $account): array
     {
         $client = $account->getClient();
 
-        $props = [
+        return [
             'cname' => $client->getCompany(),
             'pname' => $client->getFullname(),
             'login' => $account->getUsername(),
@@ -473,127 +640,32 @@ class Server_Manager_Plesk extends Server_Manager
             'city' => $client->getCity(),
             'state' => $client->getState(),
         ];
-
-        return $props;
     }
 
     /**
-     * @param Server_Account $account
-     * @return void
+     * Adds a nameserver (NS) record for a given account and domain ID.
+     * This method is not yet implemented and currently always returns true.
+     *
+     * @param Server_Account $account  The account for which the NS record should be added.
+     * @param string         $domainId The ID of the domain for which the NS record should be added.
+     * @return bool Always returns true.
      */
-    public function updateSubscription(Server_Account $account): void
-    {
-        $this->getLog()->info('Updating subscription for account ' . $account->getUsername());
-
-        $this->_client->webspace()->request($this->_createSubscriptionProps($account, 'set'));
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $domainId
-     * @return true
-     */
-    private function _addNs(Server_Account $account, $domainId): bool
+    private function addNs(Server_Account $account, string $domainId): bool
     {
         // Will be done in the future
-
         return true;
     }
 
     /**
-     * @param Server_Account $account
-     * @param string $newPassword
-     * @return bool
+     * Retrieves the nameserver (NS) records for a given account and domain ID.
+     * Sends a request to the Plesk API to get the DNS records for the domain.
+     * Then, iterates over the DNS records and adds the IDs of the NS records to an array.
+     *
+     * @param Server_Account $account  The account for which the NS records should be retrieved.
+     * @param string         $domainId The ID of the domain for which the NS records should be retrieved.
+     * @return array The array of NS record IDs.
      */
-    public function changeAccountPassword(Server_Account $account, string $newPassword): bool
-    {
-        $this->getLog()->info('Changing password for account ' . $account->getUsername());
-
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['passwd' => $newPassword]);
-        } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['passwd' => $newPassword]);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $newUsername
-     * @return never
-     * @throws Server_Exception
-     */
-    public function changeAccountUsername(Server_Account $account, string $newUsername): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('username changes')]);
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $newDomain
-     * @return void
-     */
-    public function changeAccountDomain(Server_Account $account, string $newDomain): bool
-    {
-        $this->getLog()->info('Updating domain for account ' . $account->getUsername());
-
-        $account->setDomain($newDomain);
-
-        $params = [
-            'set' => [
-                'filter' => [
-                    'owner-login' => $account->getUsername(),
-                ],
-                'values' => [
-                    'gen_setup' => [
-                        'name' => $newDomain,
-                    ],
-                ],
-            ],
-        ];
-
-        $this->_client->webspace()->request($params);
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $newIp
-     * @return never
-     * @throws Server_Exception
-     */
-    public function changeAccountIp(Server_Account $account, string $newIp): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('changing the account IP')]);
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param string $newIp
-     * @return void
-     */
-    private function _setIp(Server_Account $account, string $newIp)
-    {
-        $params = [
-            'reseller' => [
-                'ippool-add-ip' => [
-                    'reseller-id' => $account->getUsername(),
-                    'ip' => [
-                        'ip-address' => $newIp,
-                    ],
-                ],
-            ],
-        ];
-
-        $response = $this->_client->request($params);
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $domainId
-     * @return array
-     */
-    private function _getNs(Server_Account $account, $domainId)
+    private function getNs(Server_Account $account, string $domainId)
     {
         $response = $this->_client->dns()->get('domain_id', $domainId);
 
@@ -610,14 +682,13 @@ class Server_Manager_Plesk extends Server_Manager
 
     /**
      * Removes DNS records from the Plesk server.
-     *
      * Sends a request to the Plesk API to remove DNS records.
      * The DNS records to be removed are identified by their IDs.
      *
      * @param array $ns An array of DNS record IDs to be removed.
      * @return bool Returns true after the DNS records have been removed.
      */
-    private function _removeDns($ns)
+    private function removeDns(array $ns): bool
     {
         // Iterate over each DNS record ID
         foreach ($ns as $key => $id) {
@@ -639,14 +710,13 @@ class Server_Manager_Plesk extends Server_Manager
 
     /**
      * Changes the IP type of a given account to 'shared'.
-     *
      * Sends a request to the Plesk API to change the IP type of the given account to 'shared'.
      * The account is identified by its reseller ID and IP address.
      *
      * @param Server_Account $account The account for which the IP type should be changed.
      * @return bool Returns true if the IP type was successfully changed to 'shared', false otherwise.
      */
-    private function _changeIpType(Server_Account $account)
+    private function changeIpType(Server_Account $account): bool
     {
         // Get the client associated with the account
         $client = $account->getClient();

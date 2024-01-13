@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
 use Random\RandomException;
@@ -20,7 +20,9 @@ use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 class Server_Manager_Whm extends Server_Manager
 {
     /**
-     * @return array
+     * Returns the form configuration for the WHM (cPanel) server manager.
+     *
+     * @return array The form configuration as an associative array.
      */
     public static function getForm(): array
     {
@@ -50,8 +52,11 @@ class Server_Manager_Whm extends Server_Manager
     }
 
     /**
+     * Initializes the WHM server manager.
+     * Checks if the necessary configuration options are set and throws an exception if any are missing.
+     *
      * @return void
-     * @throws Server_Exception
+     * @throws Server_Exception If any necessary configuration options are missing.
      */
     public function init(): void
     {
@@ -72,8 +77,10 @@ class Server_Manager_Whm extends Server_Manager
     }
 
     /**
-     * @param Server_Account|null $account
-     * @return string
+     * Returns the login URL for a cPanel account.
+     *
+     * @param Server_Account|null $account The account for which to get the login URL. This parameter is currently not used.
+     * @return string The login URL.
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
@@ -83,8 +90,10 @@ class Server_Manager_Whm extends Server_Manager
     }
 
     /**
-     * @param Server_Account|null $account
-     * @return string
+     * Returns the login URL for a WHM reseller account.
+     *
+     * @param Server_Account|null $account The account for which to get the login URL. This parameter is currently not used.
+     * @return string The login URL.
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
@@ -94,31 +103,406 @@ class Server_Manager_Whm extends Server_Manager
     }
 
     /**
-     * @return true
-     * @throws Server_Exception
+     * Tests the connection to the WHM server.
+     * Sends a request to the WHM server to get its version.
+     *
+     * @return true If the connection was successful.
+     * @throws Server_Exception If an error occurs during the request.
      */
     public function testConnection(): bool
     {
-        $this->_request('version');
+        $this->request('version');
         return true;
     }
 
-    // https://docs.cpanel.net/knowledge-base/accounts/reserved-invalid-and-misconfigured-username/
+    /**
+     * Generates a username for a new account on the WHM server.
+     * The username is generated based on the domain name, with some modifications to comply with WHM's username restrictions.
+     *
+     * @param string $domain The domain name for which to generate a username.
+     * @return string The generated username.
+     * @throws RandomException If an error occurs during the generation of a random number.
+     */
+    public function generateUsername(string $domain): string
+    {
+        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domain));
+        $username = substr($processedDomain, 0, 7) . random_int(0, 9);
+
+        // WHM doesn't allow usernames to start with "test", so replace it with a random string if it does (test3456 would then become something like a62f93456).
+        if (str_starts_with($username, 'test')) {
+            $username = substr_replace($username, 'a' . bin2hex(random_bytes(2)), 0, 5);
+        }
+
+        // WHM doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does.
+        if (is_numeric(substr($username, 0, 1))) {
+            $username = substr_replace($username, 'a', 0, 1);
+        }
+
+        return $username;
+    }
+
+    /**
+     * Synchronizes an account with the WHM server.
+     * Sends a request to the WHM server to get the account's details and updates the Server_Account object accordingly.
+     *
+     * @param Server_Account $account The account to be synchronized.
+     * @return Server_Account The updated account.
+     * @throws Server_Exception If an error occurs during the request, or if the account does not exist on the WHM server.
+     */
+    public function synchronizeAccount(Server_Account $account): Server_Account
+    {
+        $this->getLog()->info(sprintf('Synchronizing account %s %s with server', $account->getDomain(), $account->getUsername()));
+
+        $action = 'accountsummary';
+        $varHash = [
+            'user' => $account->getUsername(),
+        ];
+
+        $result = $this->request($action, $varHash);
+        if (!isset($result->acct[0])) {
+            error_log('Could not synchronize account with cPanel server. Account does not exist.');
+
+            return $account;
+        }
+
+        $acc = $result->acct[0];
+
+        $new = clone $account;
+        $new->setSuspended($acc->suspended);
+        $new->setDomain($acc->domain);
+        $new->setUsername($acc->user);
+        $new->setIp($acc->ip);
+
+        return $new;
+    }
+
+    /**
+     * Creates a new account on the WHM server.
+     * Sends a request to the WHM server to create a new account with the details provided in the Server_Account object.
+     * If the account is a reseller account, it also sets up the reseller and assigns the appropriate ACL list.
+     *
+     * @param Server_Account $account The account to be created. This object should contain all the necessary details for the new account.
+     * @return bool Returns true if the account was successfully created, false otherwise.
+     * @throws Server_Exception If an error occurs during the request, or if the response from the WHM server indicates an error.
+     */
+    public function createAccount(Server_Account $account): bool
+    {
+        // Log the account creation
+        $this->getLog()->info('Creating account ' . $account->getUsername());
+
+        // Get the client and package associated with the account
+        $client = $account->getClient();
+        $package = $account->getPackage();
+
+        // Check if the package exists on the WHM server, create it if not
+        $this->checkPackageExists($package, true);
+
+        // Prepare the parameters for the API request
+        $action = 'createacct';
+        $varHash = array(
+            'username' => $account->getUsername(),
+            'domain' => $account->getDomain(),
+            'password' => $account->getPassword(),
+            'contactemail' => $client->getEmail(),
+            'plan' => $this->getPackageName($package),
+            'useregns' => 0,
+        );
+
+        // If the account is a reseller account, add the 'reseller' parameter
+        if ($account->getReseller()) {
+            $varHash['reseller'] = 1;
+        }
+
+        // Send the request to the WHM API
+        $json = $this->request($action, $varHash);
+        $result = ($json->result[0]->status == 1);
+
+        // If the account is a reseller account and was successfully created, set up the reseller and assign the ACL list
+        if ($result && $account->getReseller()) {
+
+            $params = array(
+                'user' => $account->getUsername(),
+                'makeowner' => 0,
+            );
+            $this->request('setupreseller', $params);
+
+            $params = array(
+                'reseller' => $account->getUsername(),
+                'acllist' => $package->getAcllist(),
+            );
+            $this->request('setacls', $params);
+        }
+
+        // Return the result of the account creation
+        return $result;
+    }
+
+    /**
+     * Suspends an account on the WHM server.
+     *
+     * @param Server_Account $account The account to be suspended.
+     * @return bool Returns true if the account was successfully suspended.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function suspendAccount(Server_Account $account): bool
+    {
+        // Log the suspension
+        $this->getLog()->info('Suspending account ' . $account->getUsername());
+
+        // Define the action and parameters for the API request
+        $action = 'suspendacct';
+        $varHash = [
+            'user' => $account->getUsername(), // Username of the account
+            'reason' => $account->getNote(), // Reason for the suspension
+        ];
+
+        // Send the request to the WHM API
+        $this->request($action, $varHash);
+
+        return true;
+    }
+
+    /**
+     * Unsuspends an account on the WHM server.
+     *
+     * @param Server_Account $account The account to be unsuspended.
+     * @return bool Returns true if the account was successfully unsuspended.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function unsuspendAccount(Server_Account $account): bool
+    {
+        // Log the unsuspension
+        $this->getLog()->info('Activating account ' . $account->getUsername());
+
+        // Define the action and parameters for the API request
+        $action = 'unsuspendacct';
+        $varHash = [
+            'user' => $account->getUsername(), // Username of the account
+        ];
+
+        // Send the request to the WHM API
+        $this->request($action, $varHash);
+
+        return true;
+    }
+
+    /**
+     * Cancels an account on the WHM server.
+     *
+     * @param Server_Account $account The account to be cancelled.
+     * @return bool Returns true if the account was successfully cancelled.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function cancelAccount(Server_Account $account): bool
+    {
+        // Log the cancellation
+        $this->getLog()->info('Canceling account ' . $account->getUsername());
+
+        // Define the action and parameters for the API request
+        $action = 'removeacct';
+        $varHash = [
+            'user' => $account->getUsername(), // Username of the account
+            'keepdns' => 0, // Whether to keep the DNS records
+        ];
+
+        // Send the request to the WHM API
+        $this->request($action, $varHash);
+
+        return true;
+    }
+
+    /**
+     * Changes the package of an account on the WHM server.
+     *
+     * @param Server_Account $account The account for which to change the package.
+     * @param Server_Package $package The new package.
+     * @return bool Returns true if the package was successfully changed.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
+    {
+        // Log the package change
+        $this->getLog()->info('Changing account ' . $account->getUsername() . ' package');
+
+        // Check if the package exists on the WHM server, create it if not
+        $this->checkPackageExists($package, true);
+
+        // Define the action and parameters for the API request
+        $varHash = [
+            'user' => $account->getUsername(), // Username of the account
+            'pkg' => $this->getPackageName($package), // Name of the new package
+        ];
+
+        // Send the request to the WHM API
+        $this->request('changepackage', $varHash);
+
+        return true;
+    }
+
+    /**
+     * Changes the password of an account on the WHM server.
+     *
+     * @param Server_Account $account The account for which to change the password.
+     * @param string $newPassword The new password.
+     * @return bool Returns true if the password was successfully changed.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function changeAccountPassword(Server_Account $account, string $newPassword): bool
+    {
+        // Log the password change
+        $this->getLog()->info('Changing account ' . $account->getUsername() . ' password');
+
+        // Define the action and parameters for the API request
+        $action = 'passwd';
+        $varHash = [
+            'user' => $account->getUsername(), // Username of the account
+            'pass' => $newPassword, // New password
+            'db_pass_update' => true, // Whether to update the password for the account's databases
+        ];
+
+        // Send the request to the WHM API
+        $result = $this->request($action, $varHash);
+
+        // If the password change failed, throw an exception
+        if (isset($result->passwd[0]) && $result->passwd[0]->status == 0) {
+            throw new Server_Exception($result->passwd[0]->statusmsg);
+        }
+
+        return true;
+    }
+
+    /**
+     * Changes the username of an account on the WHM server.
+     *
+     * @param Server_Account $account The account for which to change the username.
+     * @param string $newUsername The new username.
+     * @return bool Returns true if the username was successfully changed.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function changeAccountUsername(Server_Account $account, string $newUsername): bool
+    {
+        // Log the username change
+        $this->getLog()->info('Changing account ' . $account->getUsername() . ' username');
+
+        // Define the action and parameters for the API request
+        $action = 'modifyacct';
+        $varHash = [
+            'user' => $account->getUsername(), // Current username
+            'newuser' => $newUsername, // New username
+        ];
+
+        // Send the request to the WHM API
+        $this->request($action, $varHash);
+
+        return true;
+    }
+
+    /**
+     * Changes the domain of an account on the WHM server.
+     *
+     * @param Server_Account $account The account for which to change the domain.
+     * @param string $newDomain The new domain.
+     * @return bool Returns true if the domain was successfully changed.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function changeAccountDomain(Server_Account $account, string $newDomain): bool
+    {
+        // Log the domain change
+        $this->getLog()->info('Changing account ' . $account->getUsername() . ' domain');
+
+        // Define the action and parameters for the API request
+        $action = 'modifyacct';
+        $varHash = [
+            'user' => $account->getUsername(), // Username of the account
+            'domain' => $newDomain, // New domain
+        ];
+
+        // Send the request to the WHM API
+        $this->request($action, $varHash);
+
+        return true;
+    }
+
+    /**
+     * Changes the IP of an account on the WHM server.
+     *
+     * @param Server_Account $account The account for which to change the IP.
+     * @param string $newIp The new IP.
+     * @return bool Returns true if the IP was successfully changed.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function changeAccountIp(Server_Account $account, string $newIp): bool
+    {
+        // Log the IP change
+        $this->getLog()->info('Changing account ' . $account->getUsername() . ' ip');
+
+        // Define the action and parameters for the API request
+        $action = 'setsiteip';
+        $varHash = [
+            'domain' => $account->getDomain(), // Domain of the account
+            'ip' => $newIp, // New IP
+        ];
+
+        // Send the request to the WHM API
+        $this->request($action, $varHash);
+
+        return true;
+    }
+
+    /**
+     * Retrieves the packages from the WHM server.
+     *
+     * @return array An array of packages, each represented as an associative array of package details.
+     * @throws Server_Exception If an error occurs during the request.
+     */
+    public function getPackages(): array
+    {
+        // Send a request to the WHM server to list the packages
+        $pkgs = $this->request('listpkgs');
+        $return = [];
+
+        // Iterate over the packages and add their details to the return array
+        foreach ($pkgs->package as $pkg) {
+            $return[] = [
+                'title' => $pkg->name,
+                'name' => $pkg->name,
+                'feature_list' => $pkg->FEATURELIST,
+                'theme' => $pkg->CPMOD,
+                'quota' => $pkg->QUOTA,
+                'bandwidth' => $pkg->BWLIMIT,
+                'max_ftp' => $pkg->MAXFTP,
+                'max_sql' => $pkg->MAXSQL,
+                'max_emails' => $pkg->MAXLST,
+                'max_sub' => $pkg->MAXSUB,
+                'max_pop' => $pkg->MAXPOP,
+                'max_park' => $pkg->MAXPARK,
+                'max_addon' => $pkg->MAXADDON,
+                'has_shell' => $pkg->HASSHELL == 'n' ? 0 : 1,
+                'has_ip' => $pkg->IP == 'n' ? 0 : 1,
+                'has_cgi' => $pkg->CGI == 'n' ? 0 : 1,
+                'has_frontpage' => $pkg->FRONTPAGE == 'n' ? 0 : 1,
+                'free_registration' => 0,
+                'free_transfer' => 0,
+                'free_renewal' => 0,
+            ];
+        }
+
+        return $return;
+    }
 
     /**
      * Sends a request to the WHM server and returns the response.
-     *
      * This method sends a request to the WHM server using the provided action and parameters.
      * It handles the creation of the HTTP client, the construction of the request URL and headers,
      * and the sending of the request. It also handles any errors that may occur during the request,
      * logging them and throwing a Server_Exception if necessary.
      *
      * @param string $action The action to be performed on the WHM server.
-     * @param array $params The parameters to be sent with the request.
+     * @param array  $params The parameters to be sent with the request.
      * @return mixed The response from the WHM server, decoded from JSON into a PHP variable.
      * @throws Server_Exception If an error occurs during the request, or if the response from the WHM server indicates an error.
      */
-    private function _request(string $action, array $params = []): mixed
+    private function request(string $action, array $params = []): mixed
     {
         // Create the HTTP client with the necessary options
         $client = $this->getHttpClient()->withOptions([
@@ -199,151 +583,32 @@ class Server_Manager_Whm extends Server_Manager
     }
 
     /**
-     * @param string $domain
-     * @return string
-     * @throws RandomException
-     */
-    public function generateUsername(string $domain): string
-    {
-        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domain));
-        $username = substr($processedDomain, 0, 7) . random_int(0, 9);
-
-        // WHM doesn't allow usernames to start with "test", so replace it with a random string if it does (test3456 would then become something like a62f93456).
-        if (str_starts_with($username, 'test')) {
-            $username = substr_replace($username, 'a' . bin2hex(random_bytes(2)), 0, 5);
-        }
-
-        // WHM doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does.
-        if (is_numeric(substr($username, 0, 1))) {
-            $username = substr_replace($username, 'a', 0, 1);
-        }
-
-        return $username;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @return Server_Account
-     * @throws Server_Exception
-     */
-    public function synchronizeAccount(Server_Account $account): Server_Account
-    {
-        $this->getLog()->info(sprintf('Synchronizing account %s %s with server', $account->getDomain(), $account->getUsername()));
-
-        $action = 'accountsummary';
-        $varHash = [
-            'user' => $account->getUsername(),
-        ];
-
-        $result = $this->_request($action, $varHash);
-        if (!isset($result->acct[0])) {
-            error_log('Could not synchronize account with cPanel server. Account does not exist.');
-
-            return $account;
-        }
-
-        $acc = $result->acct[0];
-
-        $new = clone $account;
-        $new->setSuspended($acc->suspended);
-        $new->setDomain($acc->domain);
-        $new->setUsername($acc->user);
-        $new->setIp($acc->ip);
-
-        return $new;
-    }
-
-    /**
-     * Creates a new account on the WHM server.
+     * Checks if a package exists on the WHM server.
      *
-     * Sends a request to the WHM server to create a new account with the details provided in the Server_Account object.
-     * If the account is a reseller account, it also sets up the reseller and assigns the appropriate ACL list.
-     *
-     * @param Server_Account $account The account to be created. This object should contain all the necessary details for the new account.
-     * @return bool Returns true if the account was successfully created, false otherwise.
-     * @throws Server_Exception If an error occurs during the request, or if the response from the WHM server indicates an error.
+     * @param Server_Package $package The package to check.
+     * @param bool $create Whether to create the package if it does not exist.
+     * @throws Server_Exception If an error occurs during the request.
      */
-    public function createAccount(Server_Account $account): bool
+    private function checkPackageExists(Server_Package $package, bool $create = false): void
     {
-        // Log the account creation
-        $this->getLog()->info('Creating account ' . $account->getUsername());
+        // Get the name of the package
+        $name = $this->getPackageName($package);
 
-        // Get the client and package associated with the account
-        $client = $account->getClient();
-        $package = $account->getPackage();
-
-        // Check if the package exists on the WHM server, create it if not
-        $this->_checkPackageExists($package, true);
-
-        // Prepare the parameters for the API request
-        $action = 'createacct';
-        $varHash = array(
-            'username' => $account->getUsername(),
-            'domain' => $account->getDomain(),
-            'password' => $account->getPassword(),
-            'contactemail' => $client->getEmail(),
-            'plan' => $this->_getPackageName($package),
-            'useregns' => 0,
-        );
-
-        // If the account is a reseller account, add the 'reseller' parameter
-        if ($account->getReseller()) {
-            $varHash['reseller'] = 1;
-        }
-
-        // Send the request to the WHM API
-        $json = $this->_request($action, $varHash);
-        $result = ($json->result[0]->status == 1);
-
-        // If the account is a reseller account and was successfully created, set up the reseller and assign the ACL list
-        if ($result && $account->getReseller()) {
-
-            $params = array(
-                'user' => $account->getUsername(),
-                'makeowner' => 0,
-            );
-            $this->_request('setupreseller', $params);
-
-            $params = array(
-                'reseller' => $account->getUsername(),
-                'acllist' => $package->getAcllist(),
-            );
-            $this->_request('setacls', $params);
-        }
-
-        // Return the result of the account creation
-        return $result;
-    }
-
-    /**
-     * Check if Package exists.
-     *
-     * @param Server_Package $package
-     * @param bool $create
-     * @return void
-     * @throws Server_Exception
-     */
-    private function _checkPackageExists(Server_Package $package, bool $create = false): void
-    {
-        $name = $this->_getPackageName($package);
-
-        $json = $this->_request('listpkgs');
+        // Send a request to the WHM server to list the packages
+        $json = $this->request('listpkgs');
         $packages = $json->package;
 
+        // Check if the package exists
         $exists = false;
         foreach ($packages as $p) {
             if ($p->name == $name) {
                 $exists = true;
-
                 break;
             }
         }
 
-        if (!$create) {
-            return;
-        }
-
-        if (!$exists) {
+        // If the package does not exist and the $create parameter is true, create the package
+        if (!$exists && $create) {
             $varHash = [
                 'name' => $name,
                 'quota' => $package->getQuota(),
@@ -354,263 +619,60 @@ class Server_Manager_Whm extends Server_Manager
                 'maxftp' => $package->getMaxFtp(),
                 'maxsql' => $package->getMaxSql(),
                 'maxpop' => $package->getMaxPop(),
-
                 'cgi' => $package->getCustomValue('cgi'),
                 'cpmod' => $package->getCustomValue('cpmod'),
                 'maxlst' => $package->getCustomValue('maxlst'),
                 'hasshell' => $package->getCustomValue('hasshell'),
             ];
 
-            $this->_request('addpkg', $varHash);
+            // Send a request to the WHM server to add the package
+            $this->request('addpkg', $varHash);
         }
-
     }
 
     /**
-     * @param Server_Package $package
-     * @return string
+     * Generates a package name based on the WHM server's username and the package's name.
+     *
+     * @param Server_Package $package The package for which to generate a name.
+     * @return string The generated package name.
      */
-    private function _getPackageName(Server_Package $package): string
+    private function getPackageName(Server_Package $package): string
     {
         return $this->_config['username'] . '_' . $package->getName();
     }
 
     /**
-     * @param Server_Account $account
-     * @return true
-     * @throws Server_Exception
+     * Modifies the package of an account on the WHM server.
+     *
+     * @param Server_Account $a The account for which to modify the package.
+     * @param Server_Package $p The new package.
+     * @return true If the package was successfully modified.
+     * @throws Server_Exception If an error occurs during the request.
      */
-    public function suspendAccount(Server_Account $account): bool
+    private function modifyAccountPackage(Server_Account $a, Server_Package $p): bool
     {
-        $this->getLog()->info('Suspending account ' . $account->getUsername());
+        // Log the modification
+        $this->getLog()->info('Modifying account ' . $a->getUsername());
 
-        $action = 'suspendacct';
-        $varHash = [
-            'user' => $account->getUsername(),
-            'reason' => $account->getNote(),
-        ];
-
-        $this->_request($action, $varHash);
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @return true
-     * @throws Server_Exception
-     */
-    public function unsuspendAccount(Server_Account $account): bool
-    {
-        $this->getLog()->info('Activating account ' . $account->getUsername());
-
-        $action = 'unsuspendacct';
-        $varHash = [
-            'user' => $account->getUsername(),
-        ];
-
-        $this->_request($action, $varHash);
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @return true
-     * @throws Server_Exception
-     */
-    public function cancelAccount(Server_Account $account): bool
-    {
-        $this->getLog()->info('Canceling account ' . $account->getUsername());
-
-        $action = 'removeacct';
-        $varHash = [
-            'user' => $account->getUsername(),
-            'keepdns' => 0,
-        ];
-
-        $this->_request($action, $varHash);
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param Server_Package $package
-     * @return true
-     * @throws Server_Exception
-     */
-    public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
-    {
-        $this->getLog()->info('Changing account ' . $account->getUsername() . ' package');
-        $this->_checkPackageExists($package, true);
-
-        $varHash = [
-            'user' => $account->getUsername(),
-            'pkg' => $this->_getPackageName($package),
-        ];
-
-        $this->_request('changepackage', $varHash);
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param string $newPassword
-     * @return true
-     * @throws Server_Exception
-     */
-    public function changeAccountPassword(Server_Account $account, string $newPassword): bool
-    {
-        $this->getLog()->info('Changing account ' . $account->getUsername() . ' password');
-
-        $action = 'passwd';
-
-        $varHash = [
-            'user' => $account->getUsername(),
-            'pass' => $newPassword,
-            'db_pass_update' => true,
-        ];
-
-        $result = $this->_request($action, $varHash);
-        if (isset($result->passwd[0]) && $result->passwd[0]->status == 0) {
-            throw new Server_Exception($result->passwd[0]->statusmsg);
-        }
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $newUsername
-     * @return true
-     * @throws Server_Exception
-     */
-    public function changeAccountUsername(Server_Account $account, $newUsername): bool
-    {
-        $this->getLog()->info('Changing account ' . $account->getUsername() . ' username');
-
-        $action = 'modifyacct';
-        $varHash = [
-            'user' => $account->getUsername(),
-            'newuser' => $newUsername,
-        ];
-
-        $this->_request($action, $varHash);
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $newDomain
-     * @return true
-     * @throws Server_Exception
-     */
-    public function changeAccountDomain(Server_Account $account, $newDomain): bool
-    {
-        $this->getLog()->info('Changing account ' . $account->getUsername() . ' domain');
-
-        $action = 'modifyacct';
-        $varHash = [
-            'user' => $account->getUsername(),
-            'domain' => $newDomain,
-        ];
-
-        $this->_request($action, $varHash);
-
-        return true;
-    }
-
-    /**
-     * @param Server_Account $account
-     * @param $newIp
-     * @return true
-     * @throws Server_Exception
-     */
-    public function changeAccountIp(Server_Account $account, $newIp): bool
-    {
-        $this->getLog()->info('Changing account ' . $account->getUsername() . ' ip');
-
-        $action = 'setsiteip';
-        $varHash = [
-            'domain' => $account->getDomain(),
-            'ip' => $newIp,
-        ];
-
-        $this->_request($action, $varHash);
-
-        return true;
-    }
-
-    /**
-     * @return array
-     * @throws Server_Exception
-     */
-    public function getPkgs(): array
-    {
-        $pkgs = $this->_request('listpkgs');
-        $return = [];
-
-        foreach ($pkgs->package as $pkg) {
-            $return[] = [
-                'title' => $pkg->name,
-                'name' => $pkg->name,
-                'feature_list' => $pkg->FEATURELIST,
-                'theme' => $pkg->CPMOD,
-                'quota' => $pkg->QUOTA,
-                'bandwidth' => $pkg->BWLIMIT,
-                'max_ftp' => $pkg->MAXFTP,
-                'max_sql' => $pkg->MAXSQL,
-                'max_emails' => $pkg->MAXLST,
-                'max_sub' => $pkg->MAXSUB,
-                'max_pop' => $pkg->MAXPOP,
-                'max_park' => $pkg->MAXPARK,
-                'max_addon' => $pkg->MAXADDON,
-                'has_shell' => $pkg->HASSHELL == 'n' ? 0 : 1,
-                'has_ip' => $pkg->IP == 'n' ? 0 : 1,
-                'has_cgi' => $pkg->CGI == 'n' ? 0 : 1,
-                'has_frontpage' => $pkg->FRONTPAGE == 'n' ? 0 : 1,
-                'free_registration' => 0,
-                'free_transfer' => 0,
-                'free_renewal' => 0,
-            ];
-        }
-
-        return $return;
-    }
-
-    /**
-     * @param Server_Account $a
-     * @param Server_Package $p
-     * @return true
-     * @throws Server_Exception
-     */
-    private function modifyAccountPackage(Server_Account $a, Server_Package $p)
-    {
-        $this->getLog()->info('Midifying account ' . $a->getUsername());
-
-        $package = $p;
-        $action = 'modifyacct';
-
+        // Prepare the parameters for the API request
         $varHash = [
             'user' => $a->getUsername(),
             'domain' => $a->getDomain(),
-            'HASCGI' => $package->getHasCgi(),
-            'CPTHEME' => $package->getTheme(),
-            'LANG' => $package->getLanguage(),
-            'MAXPOP' => $package->getMaxPop(),
-            'MAXFTP' => $package->getMaxFtp(),
-            'MAXLST' => $package->getMaxEmailLists(),
-            'MAXSUB' => $package->getMaxSubdomains(),
-            'MAXPARK' => $package->getMaxParkedDomains(),
-            'MAXADDON' => $package->getMaxAddons(),
-            'MAXSQL' => $package->getMaxSql(),
-            'shell' => $package->getHasShell(),
+            'HASCGI' => $p->getHasCgi(),
+            'CPTHEME' => $p->getTheme(),
+            'LANG' => $p->getLanguage(),
+            'MAXPOP' => $p->getMaxPop(),
+            'MAXFTP' => $p->getMaxFtp(),
+            'MAXLST' => $p->getMaxEmailLists(),
+            'MAXSUB' => $p->getMaxSubdomains(),
+            'MAXPARK' => $p->getMaxParkedDomains(),
+            'MAXADDON' => $p->getMaxAddons(),
+            'MAXSQL' => $p->getMaxSql(),
+            'shell' => $p->getHasShell(),
         ];
 
-        $this->_request($action, $varHash);
+        // Send a request to the WHM server to modify the account's package
+        $this->request('modifyacct', $varHash);
 
         return true;
     }

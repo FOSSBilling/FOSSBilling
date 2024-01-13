@@ -8,7 +8,7 @@ use Random\RandomException;
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 abstract class Server_Manager
 {
@@ -94,7 +94,6 @@ abstract class Server_Manager
 
     /**
      * Initializes the object after construction.
-     *
      * This function can be used to perform any necessary setup tasks that are required after the object has been constructed.
      *
      * @return void
@@ -122,7 +121,7 @@ abstract class Server_Manager
     }
 
     /**
-     * This method is used to get the password length from the configuration.
+     * Get the password length from the configuration.
      * If the password length is not set in the configuration, it defaults to 10.
      *
      * @return int The password length.
@@ -242,8 +241,8 @@ abstract class Server_Manager
     /**
      * Changes the password for an account on the server.
      *
-     * @param Server_Account $account Account object containing the details of the account to update.
-     * @param string $newPassword The new password for the account.
+     * @param Server_Account $account     Account object containing the details of the account to update.
+     * @param string         $newPassword The new password for the account.
      * @return bool True if the password was changed successfully, if not the sever manager should throw an exception
      * @throws Server_Exception If there was an error while changing the password.
      */
@@ -252,8 +251,8 @@ abstract class Server_Manager
     /**
      * Changes the username for an account on the server.
      *
-     * @param Server_Account $account Account object containing the details of the account to update.
-     * @param string $newUsername The new username for the account.
+     * @param Server_Account $account     Account object containing the details of the account to update.
+     * @param string         $newUsername The new username for the account.
      * @return bool True if the username was changed successfully, if not the sever manager should throw an exception
      * @throws Server_Exception If there was an error while changing the username.
      */
@@ -263,7 +262,7 @@ abstract class Server_Manager
      * Changes the domain for an account on the server.
      *
      * @param Server_Account $account Account object containing the details of the account to update.
-     * @param string $newDomain
+     * @param string         $newDomain
      * @return bool True if the domain was changed successfully, if not the sever manager should throw an exception
      * @throws Server_Exception If there was an error while changing the domain.
      */
@@ -273,7 +272,7 @@ abstract class Server_Manager
      * Changes the IP address for an account on the server.
      *
      * @param Server_Account $account Account object containing the details of the account to update.
-     * @param string $newIp
+     * @param string         $newIp
      * @return bool True if the IP address was changed successfully, if not the sever manager should throw an exception
      * @throws Server_Exception If there was an error while changing the IP address.
      */

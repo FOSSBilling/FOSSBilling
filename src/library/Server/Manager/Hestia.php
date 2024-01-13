@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 class Server_Manager_Hestia extends Server_Manager
 {
@@ -41,7 +41,7 @@ class Server_Manager_Hestia extends Server_Manager
     }
 
     /**
-     * Method is called just after obejct contruct is complete.
+     * Method is called just after object construct is complete.
      * Add required parameters checks here.
      */
     public function init()
@@ -67,13 +67,13 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
-        return 'https://' . $this->_config['host'] . ':' . $this->_getPort() . '/';
+        return 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/';
     }
 
     /**
      * @return int|string
      */
-    public function _getPort(): int|string
+    public function getPort(): int|string
     {
         $port = $this->_config['port'];
 
@@ -101,56 +101,12 @@ class Server_Manager_Hestia extends Server_Manager
         ];
 
         // Make request and check sys info
-        $result = $this->_makeRequest($postVars);
+        $result = $this->request($postVars);
         if (intval($result) != 0) {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'HestiaCP']);
         }
 
         return true;
-    }
-
-    /**
-     * @param $params
-     * @return mixed
-     * @throws Server_Exception
-     */
-    private function _makeRequest($params): mixed
-    {
-        $host = 'https://' . $this->_config['host'] . ':' . $this->_getPort() . '/api/';
-
-        // Set return code to yes
-        $params['returncode'] = 'yes';
-
-        // Server credentials
-        if ($this->_config['accesshash'] != '' && $this->_config['username'] != '') {
-            $params['hash'] = $this->_config['username'] . ':' . $this->_config['accesshash'];
-        } elseif ($this->_config['accesshash'] != '') {
-            $params['hash'] = $this->_config['accesshash'];
-        } else {
-            $params['user'] = $this->_config['username'];
-            $params['password'] = $this->_config['password'];
-        }
-
-        // Send POST query
-        $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
-            'timeout' => 30,
-        ]);
-
-        $response = $client->request('POST', $host, [
-            'body' => $params,
-        ]);
-
-        $result = $response->getContent();
-
-        if (str_contains($result, 'Error')) {
-            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'HestiaCP']);
-        } elseif (intval($result) !== 0) {
-            error_log("HestiaCP returned error code $result for the " . $params['cmd'] . 'command');
-        }
-
-        return $result;
     }
 
     /**
@@ -191,7 +147,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
 
         // Make request and create user
-        $result1 = $this->_makeRequest($postVars);
+        $result1 = $this->request($postVars);
         if (intval($result1) == 0) {
             // Create Domain Prepare POST query
             $postVars = [
@@ -199,7 +155,7 @@ class Server_Manager_Hestia extends Server_Manager
                 'arg1' => $account->getUsername(),
                 'arg2' => $account->getDomain(),
             ];
-            $result2 = $this->_makeRequest($postVars);
+            $result2 = $this->request($postVars);
         } else {
             $placeholders = [':action:' => __trans('create user'), ':type:' => 'HestiaCP'];
 
@@ -212,7 +168,7 @@ class Server_Manager_Hestia extends Server_Manager
                 'arg1' => $account->getUsername(),
             ];
 
-            $result3 = $this->_makeRequest($postVars);
+            $result3 = $this->request($postVars);
             if (intval($result3) !== 0) {
                 $placeholders = [':action1:' => __trans('delete domain'), ':action2:' => __trans('create domain'), ':type:' => 'HestiaCP'];
 
@@ -228,6 +184,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Suspend account on server.
+     *
      * @throws Server_Exception
      */
     public function suspendAccount(Server_Account $account): bool
@@ -240,7 +197,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
 
         // Make request and suspend user
-        $result = $this->_makeRequest($postVars);
+        $result = $this->request($postVars);
 
         // Check for known errors
         if (intval($result) !== 0 && intval($result) !== 6) {
@@ -254,6 +211,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Unsuspend account on server.
+     *
      * @throws Server_Exception
      */
     public function unsuspendAccount(Server_Account $account): bool
@@ -265,7 +223,7 @@ class Server_Manager_Hestia extends Server_Manager
             'arg2' => 'no',
         ];
 
-        $result = $this->_makeRequest($postVars);
+        $result = $this->request($postVars);
         if (intval($result) !== 0) {
             $placeholders = [':action:' => __trans('unsuspend account'), ':type:' => 'HestiaCP'];
 
@@ -277,6 +235,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Cancel account on server.
+     *
      * @throws Server_Exception
      */
     public function cancelAccount(Server_Account $account): bool
@@ -289,7 +248,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
 
         // Make request and delete user
-        $result = $this->_makeRequest($postVars);
+        $result = $this->request($postVars);
         if (intval($result) !== 0 && intval($result) !== 3) {
             $placeholders = [':action:' => __trans('cancel account'), ':type:' => 'HestiaCP'];
 
@@ -301,6 +260,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account package on server.
+     *
      * @throws Server_Exception
      */
     public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
@@ -314,7 +274,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
 
         // Make request and change package
-        $result = $this->_makeRequest($postVars);
+        $result = $this->request($postVars);
         if (intval($result) !== 0) {
             $placeholders = [':action:' => __trans('change account package'), ':type:' => 'HestiaCP'];
 
@@ -326,6 +286,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account username on server.
+     *
      * @throws Server_Exception
      */
     public function changeAccountUsername(Server_Account $account, $newUsername): never
@@ -335,6 +296,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account domain on server.
+     *
      * @throws Server_Exception
      */
     public function changeAccountDomain(Server_Account $account, $newDomain): never
@@ -344,6 +306,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account password on server.
+     *
      * @throws Server_Exception
      */
     public function changeAccountPassword(Server_Account $account, string $newPassword): bool
@@ -356,7 +319,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
 
         // Make request and change password
-        $result = $this->_makeRequest($postVars);
+        $result = $this->request($postVars);
         if (intval($result) !== 0) {
             $placeholders = [':action:' => __trans('change account password'), ':type:' => 'HestiaCP'];
 
@@ -368,10 +331,55 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Change account IP on server.
+     *
      * @throws Server_Exception
      */
     public function changeAccountIp(Server_Account $account, string $newIp): never
     {
         throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('changing the account IP')]);
+    }
+
+    /**
+     * @param $params
+     * @return mixed
+     * @throws Server_Exception
+     */
+    private function request($params): mixed
+    {
+        $host = 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/api/';
+
+        // Set return code to yes
+        $params['returncode'] = 'yes';
+
+        // Server credentials
+        if ($this->_config['accesshash'] != '' && $this->_config['username'] != '') {
+            $params['hash'] = $this->_config['username'] . ':' . $this->_config['accesshash'];
+        } elseif ($this->_config['accesshash'] != '') {
+            $params['hash'] = $this->_config['accesshash'];
+        } else {
+            $params['user'] = $this->_config['username'];
+            $params['password'] = $this->_config['password'];
+        }
+
+        // Send POST query
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer' => false,
+            'verify_host' => false,
+            'timeout' => 30,
+        ]);
+
+        $response = $client->request('POST', $host, [
+            'body' => $params,
+        ]);
+
+        $result = $response->getContent();
+
+        if (str_contains($result, 'Error')) {
+            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'HestiaCP']);
+        } elseif (intval($result) !== 0) {
+            error_log("HestiaCP returned error code $result for the " . $params['cmd'] . 'command');
+        }
+
+        return $result;
     }
 }

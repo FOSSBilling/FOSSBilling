@@ -6,103 +6,120 @@
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 class Server_Account
 {
-    private $username = null;
-    private $password = null;
-    private $domain = null;
-    private $ip = null;
-
-    private ?Server_Client $client = null;
-    private ?Server_Package $package = null;
-    private ?bool $reseller = null;
-    private ?bool $suspended = null;
-    private $ns_1 = null;
-    private $ns_2 = null;
-    private $ns_3 = null;
-    private $ns_4 = null;
-    private $note = null;
+    private ?string $username;
+    private ?string $password;
+    private ?string $domain;
+    private ?string $ip;
+    private ?Server_Client $client;
+    private ?Server_Package $package;
+    private ?bool $reseller;
+    private ?bool $suspended;
+    private ?string $ns_1;
+    private ?string $ns_2;
+    private ?string $ns_3;
+    private ?string $ns_4;
+    private ?string $note;
 
     /**
-     * @return null
+     * Get the username associated with the Server_Account instance.
+     *
+     * @return string Returns the username as a string.
      */
-    public function getUsername()
+    public function getUsername(): string
     {
         return $this->username;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the username associated with the Server_Account instance.
+     *
+     * @param string $username The username to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setUsername($param): static
+    public function setUsername(string $username): static
     {
-        $this->username = $param;
+        $this->username = $username;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the password associated with the Server_Account instance.
+     *
+     * @return string|null Returns the password as a string if it exists, otherwise returns null.
      */
-    public function getPassword()
+    public function getPassword(): ?string
     {
         return $this->password;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the password associated with the Server_Account instance.
+     *
+     * @param string $password The password to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setPassword($param): static
+    public function setPassword(string $password): static
     {
-        $this->password = $param;
+        $this->password = $password;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the domain associated with the Server_Account instance.
+     *
+     * @return string|null Returns the domain as a string if it exists, otherwise returns null.
      */
-    public function getDomain()
+    public function getDomain(): ?string
     {
         return $this->domain;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the domain associated with the Server_Account instance.
+     *
+     * @param string $domain The domain to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setDomain($param): static
+    public function setDomain(string $domain): static
     {
-        $this->domain = $param;
+        $this->domain = $domain;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the IP address associated with the Server_Account instance.
+     *
+     * @return string|null Returns the IP address as a string if it exists, otherwise returns null.
      */
-    public function getIp()
+    public function getIp(): ?string
     {
         return $this->ip;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the IP address associated with the Server_Account instance.
+     *
+     * @param string $ip The IP address to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setIp($param): static
+    public function setIp(string $ip): static
     {
-        $this->ip = $param;
+        $this->ip = $ip;
 
         return $this;
     }
 
     /**
-     * @return Server_Client|null
+     * Get the client associated with the Server_Account instance.
+     *
+     * @return Server_Client|null Returns the client if it exists, otherwise returns null.
      */
     public function getClient(): ?Server_Client
     {
@@ -110,17 +127,22 @@ class Server_Account
     }
 
     /**
-     * @return $this
+     * Set the client associated with the Server_Account instance.
+     *
+     * @param Server_Client $client The client to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setClient(Server_Client $param): static
+    public function setClient(Server_Client $client): static
     {
-        $this->client = $param;
+        $this->client = $client;
 
         return $this;
     }
 
     /**
-     * @return Server_Package
+     * Get the package associated with the Server_Account instance.
+     *
+     * @return Server_Package Returns the package.
      */
     public function getPackage(): Server_Package
     {
@@ -128,36 +150,45 @@ class Server_Account
     }
 
     /**
-     * @return $this
+     * Set the package associated with the Server_Account instance.
+     *
+     * @param Server_Package $package The package to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setPackage(Server_Package $param): static
+    public function setPackage(Server_Package $package): static
     {
-        $this->package = $param;
+        $this->package = $package;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the note associated with the Server_Account instance.
+     *
+     * @return string|null Returns the note as a string if it exists, otherwise returns null.
      */
-    public function getNote()
+    public function getNote(): ?string
     {
         return $this->note;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the note associated with the Server_Account instance.
+     *
+     * @param string $note The note to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNote($param): static
+    public function setNote(string $note): static
     {
-        $this->note = $param;
+        $this->note = $note;
 
         return $this;
     }
 
     /**
-     * @return bool|null
+     * Get the reseller status associated with the Server_Account instance.
+     *
+     * @return bool|null Returns the reseller status as a boolean if it exists, otherwise returns null.
      */
     public function getReseller(): ?bool
     {
@@ -165,18 +196,22 @@ class Server_Account
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the reseller status associated with the Server_Account instance.
+     *
+     * @param bool $reseller The reseller status to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setReseller($param): static
+    public function setReseller(bool $reseller): static
     {
-        $this->reseller = (bool)$param;
+        $this->reseller = $reseller;
 
         return $this;
     }
 
     /**
-     * @return bool|null
+     * Get the suspension status associated with the Server_Account instance.
+     *
+     * @return bool|null Returns the suspension status as a boolean if it exists, otherwise returns null.
      */
     public function getSuspended(): ?bool
     {
@@ -184,88 +219,106 @@ class Server_Account
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the suspension status associated with the Server_Account instance.
+     *
+     * @param bool $suspended The suspension status to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setSuspended($param): static
+    public function setSuspended(bool $suspended): static
     {
-        $this->suspended = (bool)$param;
+        $this->suspended = $suspended;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the first nameserver associated with the Server_Account instance.
+     *
+     * @return string|null Returns the first nameserver as a string if it exists, otherwise returns null.
      */
-    public function getNs1()
+    public function getNs1(): ?string
     {
         return $this->ns_1;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the first nameserver associated with the Server_Account instance.
+     *
+     * @param string $ns1 The first nameserver to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs1($param): static
+    public function setNs1(string $ns1): static
     {
-        $this->ns_1 = $param;
+        $this->ns_1 = $ns1;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the second nameserver associated with the Server_Account instance.
+     *
+     * @return string|null Returns the second nameserver as a string if it exists, otherwise returns null.
      */
-    public function getNs2()
+    public function getNs2(): ?string
     {
         return $this->ns_2;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the second nameserver associated with the Server_Account instance.
+     *
+     * @param string $ns2 The second nameserver to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs2($param): static
+    public function setNs2(string $ns2): static
     {
-        $this->ns_2 = $param;
+        $this->ns_2 = $ns2;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the third nameserver associated with the Server_Account instance.
+     *
+     * @return string|null Returns the third nameserver as a string if it exists, otherwise returns null.
      */
-    public function getNs3()
+    public function getNs3(): ?string
     {
         return $this->ns_3;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the third nameserver associated with the Server_Account instance.
+     *
+     * @param string $ns3 The third nameserver to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs3($param): static
+    public function setNs3(string $ns3): static
     {
-        $this->ns_3 = $param;
+        $this->ns_3 = $ns3;
 
         return $this;
     }
 
     /**
-     * @return null
+     * Get the fourth nameserver associated with the Server_Account instance.
+     *
+     * @return string|null Returns the fourth nameserver as a string if it exists, otherwise returns null.
      */
-    public function getNs4()
+    public function getNs4(): ?string
     {
         return $this->ns_4;
     }
 
     /**
-     * @param $param
-     * @return $this
+     * Set the fourth nameserver associated with the Server_Account instance.
+     *
+     * @param string $ns4 The fourth nameserver to be set.
+     * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs4($param): static
+    public function setNs4(string $ns4): static
     {
-        $this->ns_4 = $param;
+        $this->ns_4 = $ns4;
 
         return $this;
     }
