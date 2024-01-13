@@ -37,10 +37,10 @@ class Server_Account
     /**
      * Set the username associated with the Server_Account instance.
      *
-     * @param string $username The username to be set.
+     * @param string|null $username The username to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setUsername(string $username): static
+    public function setUsername(?string $username): static
     {
         $this->username = $username;
 
@@ -60,10 +60,10 @@ class Server_Account
     /**
      * Set the password associated with the Server_Account instance.
      *
-     * @param string $password The password to be set.
+     * @param string|null $password The password to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setPassword(string $password): static
+    public function setPassword(?string $password): static
     {
         $this->password = $password;
 
@@ -83,10 +83,10 @@ class Server_Account
     /**
      * Set the domain associated with the Server_Account instance.
      *
-     * @param string $domain The domain to be set.
+     * @param string|null $domain The domain to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setDomain(string $domain): static
+    public function setDomain(?string $domain): static
     {
         $this->domain = $domain;
 
@@ -106,10 +106,10 @@ class Server_Account
     /**
      * Set the IP address associated with the Server_Account instance.
      *
-     * @param string $ip The IP address to be set.
+     * @param string|null $ip The IP address to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setIp(string $ip): static
+    public function setIp(?string $ip): static
     {
         $this->ip = $ip;
 
@@ -129,10 +129,10 @@ class Server_Account
     /**
      * Set the client associated with the Server_Account instance.
      *
-     * @param Server_Client $client The client to be set.
+     * @param Server_Client|null $client The client to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setClient(Server_Client $client): static
+    public function setClient(?Server_Client $client): static
     {
         $this->client = $client;
 
@@ -152,10 +152,10 @@ class Server_Account
     /**
      * Set the package associated with the Server_Account instance.
      *
-     * @param Server_Package $package The package to be set.
+     * @param Server_Package|null $package The package to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setPackage(Server_Package $package): static
+    public function setPackage(?Server_Package $package): static
     {
         $this->package = $package;
 
@@ -175,10 +175,10 @@ class Server_Account
     /**
      * Set the note associated with the Server_Account instance.
      *
-     * @param string $note The note to be set.
+     * @param string|null $note The note to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNote(string $note): static
+    public function setNote(?string $note): static
     {
         $this->note = $note;
 
@@ -244,10 +244,10 @@ class Server_Account
     /**
      * Set the first nameserver associated with the Server_Account instance.
      *
-     * @param string $ns1 The first nameserver to be set.
+     * @param string|null $ns1 The first nameserver to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs1(string $ns1): static
+    public function setNs1(?string $ns1): static
     {
         $this->ns_1 = $ns1;
 
@@ -267,10 +267,10 @@ class Server_Account
     /**
      * Set the second nameserver associated with the Server_Account instance.
      *
-     * @param string $ns2 The second nameserver to be set.
+     * @param string|null $ns2 The second nameserver to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs2(string $ns2): static
+    public function setNs2(?string $ns2): static
     {
         $this->ns_2 = $ns2;
 
@@ -290,10 +290,10 @@ class Server_Account
     /**
      * Set the third nameserver associated with the Server_Account instance.
      *
-     * @param string $ns3 The third nameserver to be set.
+     * @param string|null $ns3 The third nameserver to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs3(string $ns3): static
+    public function setNs3(?string $ns3): static
     {
         $this->ns_3 = $ns3;
 
@@ -313,10 +313,10 @@ class Server_Account
     /**
      * Set the fourth nameserver associated with the Server_Account instance.
      *
-     * @param string $ns4 The fourth nameserver to be set.
+     * @param string|null $ns4 The fourth nameserver to be set.
      * @return $this Returns the current instance to allow for method chaining.
      */
-    public function setNs4(string $ns4): static
+    public function setNs4(?string $ns4): static
     {
         $this->ns_4 = $ns4;
 
