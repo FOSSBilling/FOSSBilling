@@ -9,20 +9,20 @@
  */
 class Server_Account
 {
-    private $username   = NULL;
-    private $password   = NULL;
-    private $domain     = NULL;
-    private $ip         = NULL;
+    private $username;
+    private $password;
+    private $domain;
+    private $ip;
 
-    private ?\Server_Client $client     = NULL;
-    private ?\Server_Package $package    = NULL;
-    private ?bool $reseller   = NULL;
-    private ?bool $suspended  = NULL;
-    private $ns_1       = NULL;
-    private $ns_2       = NULL;
-    private $ns_3       = NULL;
-    private $ns_4       = NULL;
-    private $note       = NULL;
+    private ?\Server_Client $client = null;
+    private ?\Server_Package $package = null;
+    private ?bool $reseller = null;
+    private ?bool $suspended = null;
+    private $ns_1;
+    private $ns_2;
+    private $ns_3;
+    private $ns_4;
+    private $note;
 
     public function setUsername($param)
     {

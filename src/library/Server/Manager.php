@@ -11,17 +11,17 @@ abstract class Server_Manager
 {
     private ?\Box_Log $_log = null;
 
-    protected $_config = array(
-        'ip'         =>  NULL,
-        'host'       =>  NULL,
-        'secure'     =>  FALSE,
-        'username'   =>  NULL,
-        'password'   =>  NULL,
-        'accesshash' =>  NULL,
-        'config'     =>  NULL,
-        'port'       =>  NULL,
-        'passwordLength' => NULL,
-    );
+    protected $_config = [
+        'ip' => null,
+        'host' => null,
+        'secure' => false,
+        'username' => null,
+        'password' => null,
+        'accesshash' => null,
+        'config' => null,
+        'port' => null,
+        'passwordLength' => null,
+    ];
 
     /**
      * Constructor for the class.
@@ -112,7 +112,7 @@ abstract class Server_Manager
      * This method is used to get the password length from the configuration.
      * If the password length is not set in the configuration, it defaults to 10.
      *
-     * @return int The password length.
+     * @return int the password length
      */
     public function getPasswordLength(): int
     {
@@ -170,9 +170,9 @@ abstract class Server_Manager
     }
 
     /**
-     * Returns the login URL for the server. (ex: panel.example.com)
+     * Returns the login URL for the server. (ex: panel.example.com).
      *
-     * @param null|Server_Account $account Either the related `Server_Account` which can be used to generate an SSO link or `null`.
+     * @param Server_Account|null $account either the related `Server_Account` which can be used to generate an SSO link or `null`
      *
      * @return string
      */
@@ -181,7 +181,7 @@ abstract class Server_Manager
     /**
      * Returns the login URL for the server for reseller accounts.
      *
-     * @param null|Server_Account $account Either the related `Server_Account` which can be used to generate an SSO link or `null`.
+     * @param Server_Account|null $account either the related `Server_Account` which can be used to generate an SSO link or `null`
      *
      * @return string
      */
@@ -199,120 +199,115 @@ abstract class Server_Manager
     /**
      * Creates a new account on the server.
      *
-     * @param Server_Account $account Account object containing the details of the account to create.
+     * @param Server_Account $account account object containing the details of the account to create
      *
      * @return bool True if the account was created successfully, if not the server manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while creating the account.
+     * @throws Server_Exception if there was an error while creating the account
      */
     abstract public function createAccount(Server_Account $account);
 
     /**
      * Synchronizes the account status from the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to synchronize.
+     * @param Server_Account $a account object containing the details of the account to synchronize
      *
-     * @return Server_Account A new account object with the updated status.
+     * @return Server_Account a new account object with the updated status
      *
-     * @throws Server_Exception If there was an error while synchronizing the account.
+     * @throws Server_Exception if there was an error while synchronizing the account
      */
     abstract public function synchronizeAccount(Server_Account $a);
 
     /**
      * Suspends an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to suspend.
+     * @param Server_Account $a account object containing the details of the account to suspend
      *
      * @return bool True if the account was suspended successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while suspending the account.
+     * @throws Server_Exception if there was an error while suspending the account
      */
     abstract public function suspendAccount(Server_Account $a);
 
     /**
      * Unsuspends an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to unsuspend.
+     * @param Server_Account $a account object containing the details of the account to unsuspend
      *
      * @return bool True if the account was unsuspended successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while unsuspending the account.
+     * @throws Server_Exception if there was an error while unsuspending the account
      */
     abstract public function unsuspendAccount(Server_Account $a);
 
     /**
      * Cancels an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to cancel.
+     * @param Server_Account $a account object containing the details of the account to cancel
      *
      * @return bool True if the account was canceled successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while canceling the account.
+     * @throws Server_Exception if there was an error while canceling the account
      */
     abstract public function cancelAccount(Server_Account $a);
 
     /**
      * Changes the password for an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to update.
-     *
-     * @param string $new_password The new password for the account.
+     * @param Server_Account $a            account object containing the details of the account to update
+     * @param string         $new_password the new password for the account
      *
      * @return bool True if the password was changed successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while changing the password.
+     * @throws Server_Exception if there was an error while changing the password
      */
     abstract public function changeAccountPassword(Server_Account $a, $new_password);
 
     /**
      * Changes the username for an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to update.
-     *
-     * @param string $new_username The new username for the account.
+     * @param Server_Account $a            account object containing the details of the account to update
+     * @param string         $new_username the new username for the account
      *
      * @return bool True if the username was changed successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while changing the username.
+     * @throws Server_Exception if there was an error while changing the username
      */
     abstract public function changeAccountUsername(Server_Account $a, $new_username);
 
     /**
      * Changes the domain for an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to update.
-     *
-     * @param string $new_domain The new domain for the account.
+     * @param Server_Account $a          account object containing the details of the account to update
+     * @param string         $new_domain the new domain for the account
      *
      * @return bool True if the domain was changed successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while changing the domain.
+     * @throws Server_Exception if there was an error while changing the domain
      */
     abstract public function changeAccountDomain(Server_Account $a, $new_domain);
 
     /**
      * Changes the IP address for an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to update.
-     *
-     * @param string $new_ip The new IP address for the account.
+     * @param Server_Account $a      account object containing the details of the account to update
+     * @param string         $new_ip the new IP address for the account
      *
      * @return bool True if the IP address was changed successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while changing the IP address.
+     * @throws Server_Exception if there was an error while changing the IP address
      */
     abstract public function changeAccountIp(Server_Account $a, $new_ip);
 
     /**
      * Changes the package for an account on the server.
      *
-     * @param Server_Account $a Account object containing the details of the account to update.
-     *
-     * @param Server_Package $p New package for the account.
+     * @param Server_Account $a account object containing the details of the account to update
+     * @param Server_Package $p new package for the account
      *
      * @return bool True if the package was changed successfully, if not the sever manager should throw an exception
      *
-     * @throws Server_Exception If there was an error while changing the package.
+     * @throws Server_Exception if there was an error while changing the package
      */
     abstract public function changeAccountPackage(Server_Account $a, Server_Package $p);
 }

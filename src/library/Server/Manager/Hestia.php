@@ -161,10 +161,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Create new account on server.
-     *
-     * @param Server_Account $account
      */
-
     public function createAccount(Server_Account $account)
     {
         $p = $account->getPackage();

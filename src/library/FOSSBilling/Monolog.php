@@ -35,7 +35,7 @@ class Monolog
         'routing',
         'billing',
         'security',
-        'email'
+        'email',
     ];
 
     public function __construct()
