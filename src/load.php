@@ -9,6 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
@@ -203,6 +204,9 @@ function exceptionHandler(Exception|Error $e)
 
         echo $whoops->handleException($e);
     } else {
+        if (!class_exists(FOSSBilling\ErrorPage::class)) {
+            require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+        }
         $errorPage = new FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $message);
     }
@@ -237,30 +241,25 @@ checkLegacyFiles();
 // Check config exists.
 checkConfig();
 
-// All seems good, so load the config file.
-$config = require PATH_CONFIG;
+require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Config.php';
 
-// Config loaded - set globals and relevant settings.
-date_default_timezone_set($config['i18n']['timezone'] ?? 'UTC');
-define('ADMIN_PREFIX', $config['admin_area_prefix']);
-define('DEBUG', (bool) $config['debug_and_monitoring']['debug']);
-define('PATH_DATA', $config['path_data']);
+// Set globals and relevant settings based on the config.
+date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
+define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
+define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+define('PATH_DATA', Config::getProperty('path_data'));
 define('PATH_CACHE', PATH_DATA . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
-define('SYSTEM_URL', $config['url']);
-if (!empty($config['info']['instance_id'])) {
-    define('INSTANCE_ID', $config['info']['instance_id']);
-} else {
-    define('INSTANCE_ID', 'Unknown');
-}
+define('SYSTEM_URL', Config::getProperty('url'));
+define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
 // Initial setup and checks passed, now we setup our custom autoloader.
-include PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
 // Now that the config file is loaded, we can enable Sentry
-FOSSBilling\SentryHelper::registerSentry($config);
+FOSSBilling\SentryHelper::registerSentry();
 
 // Verify the installer was removed.
 checkInstaller();
