@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
@@ -31,13 +32,13 @@ $di = new Pimple\Container();
  * Returns the current FOSSBilling config.
  *
  * @param void
+ * 
+ * @deprecated
  *
  * @return array
  */
 $di['config'] = function () {
-    $config = include PATH_CONFIG;
-
-    return $config;
+    return Config::getConfig();
 };
 
 /*
