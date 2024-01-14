@@ -48,7 +48,7 @@ return [
     ],
 
     'info' => [
-        'salt' => '',
+        'salt' => bin2hex(random_bytes(16)),
         'instance_id' => 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX',
     ],
 
@@ -140,7 +140,7 @@ return [
         /*
          * Database password.
          */
-        'password' => getenv('DB_PASS') ?: 'foo',
+        'password' => getenv('DB_PASS') ?: 'bar',
 
         /*
          * Database Port.

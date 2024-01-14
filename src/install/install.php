@@ -138,7 +138,7 @@ final class FOSSBilling_Installer
                     // Setup default currency
                     $this->session->set('currency_code', $_POST['currency_code']);
                     $this->session->set('currency_title', $_POST['currency_title']);
-                    $this->session->set('currency_format', $_POST['currency_format']);
+                    $this->session->set('currency_format', $_POST['currency_format'] ?? '${{price}}');
 
                     // Attempt installation
                     $this->install();
@@ -406,7 +406,6 @@ final class FOSSBilling_Installer
         $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['update_branch'] = $updateBranch;
-        $data['info']['salt'] = bin2hex(random_bytes(16));
         $data['info']['instance_id'] = Uuid::uuid4()->toString();
         $data['url'] = SYSTEM_URL;
         $data['path_data'] = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';

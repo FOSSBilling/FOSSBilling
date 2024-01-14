@@ -381,7 +381,7 @@
         "servicemulticraft"
     ],
     "ignorePaths": [
-        "tests/**",
+        "tests-legacy/**",
         "node_modules/**",
         "src/themes/*/assets/**",
         "src/install/assets/**",
