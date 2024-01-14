@@ -23,7 +23,7 @@ class Server_Manager_Directadmin extends Server_Manager
      * Returns the form configuration for the DirectAdmin server manager.
      * The form includes fields for username and password.
      *
-     * @return array The form configuration.
+     * @return array the form configuration
      */
     public static function getForm(): array
     {
@@ -81,9 +81,11 @@ class Server_Manager_Directadmin extends Server_Manager
      * Cancels an account on the DirectAdmin server.
      * This method sends a request to the server to delete the account.
      *
-     * @param Server_Account $account The account to be cancelled.
-     * @return bool Returns true if the account is successfully cancelled.
-     * @throws Server_Exception If there is an error while sending the request to the server.
+     * @param Server_Account $account the account to be cancelled
+     *
+     * @return bool returns true if the account is successfully cancelled
+     *
+     * @throws Server_Exception if there is an error while sending the request to the server
      */
     public function cancelAccount(Server_Account $account): bool
     {
@@ -103,7 +105,7 @@ class Server_Manager_Directadmin extends Server_Manager
      * If the port is set in the configuration, verify that it's a valid port number (0 - 65535).
      * If a valid port is not set in the configuration, it defaults to '2222'.
      *
-     * @return int|string The port number.
+     * @return int|string the port number
      */
     public function getPort(): int|string
     {
@@ -120,10 +122,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * Changes the domain of an account on the DirectAdmin server.
      * This method is not supported and will always throw an exception.
      *
-     * @param Server_Account $account   The account for which the domain is to be changed.
-     * @param string         $newDomain The new domain.
-     * @return never
-     * @throws Server_Exception Always throws an exception indicating that the method is not supported.
+     * @param Server_Account $account   the account for which the domain is to be changed
+     * @param string         $newDomain the new domain
+     *
+     * @throws Server_Exception always throws an exception indicating that the method is not supported
      */
     public function changeAccountDomain(Server_Account $account, string $newDomain): never
     {
@@ -134,10 +136,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * Changes the IP of an account on the DirectAdmin server.
      * This method is not supported and will always throw an exception.
      *
-     * @param Server_Account $account The account for which the IP is to be changed.
-     * @param string         $newIp   The new IP.
-     * @return never
-     * @throws Server_Exception Always throws an exception indicating that the method is not supported.
+     * @param Server_Account $account the account for which the IP is to be changed
+     * @param string         $newIp   the new IP
+     *
+     * @throws Server_Exception always throws an exception indicating that the method is not supported
      */
     public function changeAccountIp(Server_Account $account, string $newIp): never
     {
@@ -148,10 +150,12 @@ class Server_Manager_Directadmin extends Server_Manager
      * Changes the package of an account on the DirectAdmin server.
      * This method sends a request to the server to change the package of the account.
      *
-     * @param Server_Account $account The account for which the package is to be changed.
-     * @param Server_Package $package The new package.
-     * @return bool Returns true if the package is successfully changed.
-     * @throws Server_Exception If there is an error while sending the request to the server.
+     * @param Server_Account $account the account for which the package is to be changed
+     * @param Server_Package $package the new package
+     *
+     * @return bool returns true if the package is successfully changed
+     *
+     * @throws Server_Exception if there is an error while sending the request to the server
      */
     public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
     {
@@ -170,10 +174,12 @@ class Server_Manager_Directadmin extends Server_Manager
      * Changes the password of an account on the DirectAdmin server.
      * This method sends a request to the server to change the password of the account.
      *
-     * @param Server_Account $account     The account for which the password is to be changed.
-     * @param string         $newPassword The new password.
-     * @return bool Returns true if the password is successfully changed.
-     * @throws Server_Exception If there is an error while sending the request to the server.
+     * @param Server_Account $account     the account for which the password is to be changed
+     * @param string         $newPassword the new password
+     *
+     * @return bool returns true if the password is successfully changed
+     *
+     * @throws Server_Exception if there is an error while sending the request to the server
      */
     public function changeAccountPassword(Server_Account $account, string $newPassword): bool
     {
@@ -192,10 +198,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * Changes the username of an account on the DirectAdmin server.
      * This method is not supported and will always throw an exception.
      *
-     * @param Server_Account $account     The account for which the username is to be changed.
-     * @param string         $newUsername The new username.
-     * @return never
-     * @throws Server_Exception Always throws an exception indicating that the method is not supported.
+     * @param Server_Account $account     the account for which the username is to be changed
+     * @param string         $newUsername the new username
+     *
+     * @throws Server_Exception always throws an exception indicating that the method is not supported
      */
     public function changeAccountUsername(Server_Account $account, string $newUsername): never
     {
@@ -207,8 +213,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * This method sends a request to the server with the account details.
      * If the account is a reseller account, additional fields are included in the request.
      *
-     * @param Server_Account $account The server account.
-     * @return bool True if the account is created successfully, false otherwise.
+     * @param Server_Account $account the server account
+     *
+     * @return bool true if the account is created successfully, false otherwise
+     *
      * @throws Server_Exception
      */
     public function createAccount(Server_Account $account): bool
@@ -241,73 +249,73 @@ class Server_Manager_Directadmin extends Server_Manager
         } else {
             // Specify the package quotas
             $fields = array_merge($fields, [
-                'aftp' => $package->getCustomValue('aftp') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will be able to have anonymous ftp accounts.
+                'aftp' => $package->getCustomValue('aftp') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be able to have anonymous ftp accounts.
                 'bandwidth' => $package->getBandwidth(), // Bandwidth quota in MB
-                'catchall' => $package->getCustomValue('catchall') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
-                'cgi' => $package->getCustomValue('cgi') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-                'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to creat cronjobs.
-                'dnscontrol' => $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will be able to modify his/her dns records.
+                'catchall' => $package->getCustomValue('catchall') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
+                'cgi' => $package->getCustomValue('cgi') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
+                'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to creat cronjobs.
+                'dnscontrol' => $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be able to modify his/her dns records.
                 'domainptr' => $package->getMaxParkedDomains(), // Domain pointer quota
                 'ftp' => $package->getMaxFtp(), // FTP account quota
-                'login_keys' => $package->getCustomValue('login_keys') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have access to the Login Key system for extra account passwords.
+                'login_keys' => $package->getCustomValue('login_keys') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have access to the Login Key system for extra account passwords.
                 'mysql' => $package->getMaxSql(), // Database quota
                 'nemailf' => $package->getMaxEmailForwarders(), // Email forwarder quota
                 'nemailml' => $package->getMaxEmailLists(), // Mailing list quota
                 'nemailr' => $package->getMaxEmailAutoresponders(), // Autoresponder quota
                 'nemails' => $package->getMaxPop(), // Email account quota
                 'nsubdomains' => $package->getMaxSubdomains(), // Subdomain quota
-                'php' => $package->getCustomValue('php') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to run php scripts.
+                'php' => $package->getCustomValue('php') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run php scripts.
                 'quota' => $package->getQuota(), // Disk space quota in MB
-                'spam' => $package->getCustomValue('spam') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
-                'ssh' => $package->getCustomValue('ssh') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have an ssh account.
-                'ssl' => $package->getCustomValue('ssl') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
-                'suspend_at_limit' => $package->getCustomValue('suspend_at_limit') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will be suspended if their User bandwidth limit is exceeded.
-                'sysinfo' => $package->getCustomValue('sysinfo') ? 'ON' : 'OFF', //ON or OFF. If ON, the User will have access to a page that shows the system information.
+                'spam' => $package->getCustomValue('spam') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
+                'ssh' => $package->getCustomValue('ssh') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have an ssh account.
+                'ssl' => $package->getCustomValue('ssl') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
+                'suspend_at_limit' => $package->getCustomValue('suspend_at_limit') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be suspended if their User bandwidth limit is exceeded.
+                'sysinfo' => $package->getCustomValue('sysinfo') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have access to a page that shows the system information.
                 'vdomains' => $package->getMaxDomains(), // Domain quota
             ]);
 
             if ($package->getBandwidth() == 'unlimited') {
-                $fields['ubandwidth'] = 'ON'; //ON or OFF. If ON, bandwidth is ignored and no limit is set
+                $fields['ubandwidth'] = 'ON'; // ON or OFF. If ON, bandwidth is ignored and no limit is set
             }
 
             if ($package->getQuota() == 'unlimited') {
-                $fields['uquota'] = 'ON'; //ON or OFF. If ON, quota is ignored and no limit is set
+                $fields['uquota'] = 'ON'; // ON or OFF. If ON, quota is ignored and no limit is set
             }
 
             if ($package->getMaxDomains() == 'unlimited') {
-                $fields['uvdomains'] = 'ON'; //ON or OFF. If ON, vdomains is ignored and no limit is set
+                $fields['uvdomains'] = 'ON'; // ON or OFF. If ON, vdomains is ignored and no limit is set
             }
 
             if ($package->getMaxSubdomains() == 'unlimited') {
-                $fields['unsubdomains'] = 'ON'; //ON or OFF. If ON, nsubdomains is ignored and no limit is set
+                $fields['unsubdomains'] = 'ON'; // ON or OFF. If ON, nsubdomains is ignored and no limit is set
             }
 
             if ($package->getMaxParkedDomains() == 'unlimited') {
-                $fields['udomainptr'] = 'ON'; //ON or OFF Unlimited option for domainptr
+                $fields['udomainptr'] = 'ON'; // ON or OFF Unlimited option for domainptr
             }
 
             if ($package->getMaxPop() == 'unlimited') {
-                $fields['unemails'] = 'ON'; //ON or OFF Unlimited option for nemails
+                $fields['unemails'] = 'ON'; // ON or OFF Unlimited option for nemails
             }
 
             if ($package->getMaxSql() == 'unlimited') {
-                $fields['umysql'] = 'ON'; //ON or OFF Unlimited option for mysql
+                $fields['umysql'] = 'ON'; // ON or OFF Unlimited option for mysql
             }
 
             if ($package->getMaxFtp() == 'unlimited') {
-                $fields['uftp'] = 'ON'; //ON or OFF Unlimited option for ftp
+                $fields['uftp'] = 'ON'; // ON or OFF Unlimited option for ftp
             }
 
             if ($fields['nemailf'] == 'unlimited') {
-                $fields['unemailf'] = 'ON'; //ON or OFF Unlimited option for nemailf
+                $fields['unemailf'] = 'ON'; // ON or OFF Unlimited option for nemailf
             }
 
             if ($fields['nemailml'] == 'unlimited') {
-                $fields['unemailml'] = 'ON'; //ON or OFF Unlimited option for nemailml
+                $fields['unemailml'] = 'ON'; // ON or OFF Unlimited option for nemailml
             }
 
             if ($fields['nemailr'] == 'unlimited') {
-                $fields['unemailr'] = 'ON'; //ON or OFF Unlimited option for nemailr
+                $fields['unemailr'] = 'ON'; // ON or OFF Unlimited option for nemailr
             }
         }
 
@@ -346,9 +354,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * This method simply calls the getLoginUrl method, as the URL is the same for reseller accounts.
      *
      * @param Server_Account|null $account The server account. This parameter is not used in this method.
-     * @return string The login URL.
+     *
+     * @return string the login URL
      */
-    public function getResellerLoginUrl(?Server_Account $account = null): string
+    public function getResellerLoginUrl(Server_Account $account = null): string
     {
         return $this->getLoginUrl();
     }
@@ -360,9 +369,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * Otherwise, it uses the 'http' protocol.
      *
      * @param Server_Account|null $account The server account. This parameter is not used in this method.
-     * @return string The login URL.
+     *
+     * @return string the login URL
      */
-    public function getLoginUrl(?Server_Account $account = null): string
+    public function getLoginUrl(Server_Account $account = null): string
     {
         $protocol = $this->_config['secure'] ? 'https://' : 'http://';
 
@@ -374,8 +384,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * The username is based on the domain name, but is sanitized to be alphanumeric and start with a letter.
      * The username is also limited to 10 characters to avoid collisions.
      *
-     * @param string $domain The domain name.
-     * @return string The generated username.
+     * @param string $domain the domain name
+     *
+     * @return string the generated username
+     *
      * @throws RandomException
      */
     public function generateUsername(string $domain): string
@@ -390,6 +402,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $username = substr($username, 0, 7);
 
         $random_number = random_int(0, 99);
+
         return $username . $random_number;
     }
 
@@ -397,13 +410,15 @@ class Server_Manager_Directadmin extends Server_Manager
      * Tests the connection to the DirectAdmin server.
      * This method sends a request to the server and checks if the response is an array.
      *
-     * @return bool True if the connection is successful, false otherwise.
+     * @return bool true if the connection is successful, false otherwise
+     *
      * @throws Server_Exception
      */
     public function testConnection(): bool
     {
         // Makes login test connection. As we don't currently force JSON, DirectAdmin will return HTML on a failed attempt, which causes the request to throw an error.
         $this->request('API_LOGIN_TEST');
+
         return true;
     }
 
@@ -411,8 +426,10 @@ class Server_Manager_Directadmin extends Server_Manager
      * Synchronizes the server account with the DirectAdmin server.
      * This method currently does nothing and simply returns the account as is.
      *
-     * @param Server_Account $account The server account.
-     * @return Server_Account The same server account.
+     * @param Server_Account $account the server account
+     *
+     * @return Server_Account the same server account
+     *
      * @throws Server_Exception
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
@@ -424,9 +441,11 @@ class Server_Manager_Directadmin extends Server_Manager
      * Suspends an account on the DirectAdmin server.
      * This method sends a request to the server to suspend the account.
      *
-     * @param Server_Account $account The account to be suspended.
-     * @return bool Returns true if the account is already suspended or is successfully suspended.
-     * @throws Server_Exception If there is an error while sending the request to the server.
+     * @param Server_Account $account the account to be suspended
+     *
+     * @return bool returns true if the account is already suspended or is successfully suspended
+     *
+     * @throws Server_Exception if there is an error while sending the request to the server
      */
     public function suspendAccount(Server_Account $account): bool
     {
@@ -450,9 +469,11 @@ class Server_Manager_Directadmin extends Server_Manager
      * Unsuspends an account on the DirectAdmin server.
      * This method sends a request to the server to unsuspend the account.
      *
-     * @param Server_Account $account The account to be unsuspended.
-     * @return bool Returns true if the account is successfully unsuspended.
-     * @throws Server_Exception If the account is not suspended or there is an error while sending the request to the server.
+     * @param Server_Account $account the account to be unsuspended
+     *
+     * @return bool returns true if the account is successfully unsuspended
+     *
+     * @throws Server_Exception if the account is not suspended or there is an error while sending the request to the server
      */
     public function unsuspendAccount(Server_Account $account): bool
     {
@@ -477,9 +498,11 @@ class Server_Manager_Directadmin extends Server_Manager
      * This method sends a request to the server with the updated account details.
      * If certain account parameters are set to 'unlimited', the corresponding fields are set to 'ON'.
      *
-     * @param Server_Account $account The server account to be modified.
-     * @return bool Returns true if the account is modified successfully.
-     * @throws Server_Exception If there is an error while sending the request to the server.
+     * @param Server_Account $account the server account to be modified
+     *
+     * @return bool returns true if the account is modified successfully
+     *
+     * @throws Server_Exception if there is an error while sending the request to the server
      */
     public function modifyAccount(Server_Account $account): bool
     {
@@ -569,13 +592,15 @@ class Server_Manager_Directadmin extends Server_Manager
     /**
      * Sends a request to the DirectAdmin server.
      *
-     * @param string $command The command to be executed on the server.
-     * @param array  $fields  The fields to be included in the request.
+     * @param string $command the command to be executed on the server
+     * @param array  $fields  the fields to be included in the request
      * @param bool   $post    Whether the request should be a POST request. If false, a GET request is sent.
-     * @return array The response from the server, parsed into an array.
-     * @throws Server_Exception If there is an error while sending the request or if the server returns an error.
+     *
+     * @return array the response from the server, parsed into an array
+     *
+     * @throws Server_Exception if there is an error while sending the request or if the server returns an error
      */
-    private function request(string $command, array $fields = array(), bool $post = true): array
+    private function request(string $command, array $fields = [], bool $post = true): array
     {
         // Get the host from the configuration
         $host = $this->_config['host'];
@@ -617,6 +642,7 @@ class Server_Manager_Directadmin extends Server_Manager
             // If there is an error while sending the request, throw an exception
             $exception = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
             $this->getLog()->err($exception);
+
             throw $exception;
         }
 
@@ -637,11 +663,12 @@ class Server_Manager_Directadmin extends Server_Manager
         if (isset($response['error']) && $response['error'] == 1) {
             $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin'];
             $this->getLog()->err('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
+
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         // Return the parsed response data, or an empty array if the response is empty
-        return empty($response) ? array() : $response;
+        return empty($response) ? [] : $response;
     }
 
     /**
@@ -651,8 +678,9 @@ class Server_Manager_Directadmin extends Server_Manager
      * After that, it parses the data into an array using PHP's parse_str function.
      * Finally, it logs the parsed response data and returns it.
      *
-     * @param string $data The raw response data from the DirectAdmin server.
-     * @return array The parsed response data.
+     * @param string $data the raw response data from the DirectAdmin server
+     *
+     * @return array the parsed response data
      */
     private function parseResponse(string $data): array
     {
@@ -677,21 +705,25 @@ class Server_Manager_Directadmin extends Server_Manager
     /**
      * Retrieves the list of IPs from the DirectAdmin server.
      *
-     * @return array The list of IPs.
-     * @throws Server_Exception If there is an error while sending the request to the server.
+     * @return array the list of IPs
+     *
+     * @throws Server_Exception if there is an error while sending the request to the server
      */
     private function getIps(): array
     {
         $results = $this->request('API_SHOW_RESELLER_IPS');
-        return $results['list'] ?? array();
+
+        return $results['list'] ?? [];
     }
 
     /**
      * Retrieves the information of an account from the DirectAdmin server.
      *
-     * @param Server_Account $account The account for which the information is to be retrieved.
-     * @return array The account information.
-     * @throws Server_Exception If there is an error while sending the request to the server.
+     * @param Server_Account $account the account for which the information is to be retrieved
+     *
+     * @return array the account information
+     *
+     * @throws Server_Exception if there is an error while sending the request to the server
      */
     private function getAccountInfo(Server_Account $account): array
     {

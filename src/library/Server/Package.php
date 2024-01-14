@@ -11,22 +11,23 @@
 class Server_Package
 {
     private ?string $name = 'FOSSBilling';
-    private ?string $quota;
-    private ?string $bandwidth;
-    private ?string $maxDomains;
-    private ?string $maxSubdomains;
-    private ?string $maxParkedDomains;
-    private ?string $maxFtp;
-    private ?string $maxSql;
-    private ?string $MaxPop;
+    private ?string $quota = null;
+    private ?string $bandwidth = null;
+    private ?string $maxDomains = null;
+    private ?string $maxSubdomains = null;
+    private ?string $maxParkedDomains = null;
+    private ?string $maxFtp = null;
+    private ?string $maxSql = null;
+    private ?string $MaxPop = null;
     private array $custom = [];
 
     /**
      * Handle calls to inaccessible methods.
      *
-     * @param string $name      The name of the method being called.
-     * @param array  $arguments An enumerated array containing the parameters passed to the $name'ed method.
-     * @return string Always returns an empty string.
+     * @param string $name      the name of the method being called
+     * @param array  $arguments an enumerated array containing the parameters passed to the $name'ed method
+     *
+     * @return string always returns an empty string
      */
     public function __call(string $name, array $arguments)
     {
@@ -44,8 +45,9 @@ class Server_Package
     /**
      * Set custom values for the Server_Package instance.
      *
-     * @param array $param The custom values to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param array $param the custom values to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setCustomValues(array $param): static
     {
@@ -57,9 +59,10 @@ class Server_Package
     /**
      * Set a custom value for the Server_Package instance.
      *
-     * @param string      $param The name of the custom value to be set.
-     * @param string|null $value The value to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string      $param the name of the custom value to be set
+     * @param string|null $value the value to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setCustomValue(string $param, ?string $value): static
     {
@@ -71,8 +74,9 @@ class Server_Package
     /**
      * Get a custom value from the Server_Package instance.
      *
-     * @param string $param The name of the custom value to be retrieved.
-     * @return string|null Returns the custom value if it exists, otherwise returns null.
+     * @param string $param the name of the custom value to be retrieved
+     *
+     * @return string|null returns the custom value if it exists, otherwise returns null
      */
     public function getCustomValue(string $param): ?string
     {
@@ -82,7 +86,7 @@ class Server_Package
     /**
      * Get the name of the Server_Package instance.
      *
-     * @return string|null Returns the name as a string if it exists, otherwise returns null.
+     * @return string|null returns the name as a string if it exists, otherwise returns null
      */
     public function getName(): ?string
     {
@@ -92,8 +96,9 @@ class Server_Package
     /**
      * Set the name of the Server_Package instance.
      *
-     * @param string|null $name The name to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $name the name to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setName(?string $name): static
     {
@@ -105,7 +110,7 @@ class Server_Package
     /**
      * Get the quota of the Server_Package instance.
      *
-     * @return string Returns the quota.
+     * @return string returns the quota
      */
     public function getQuota(): string
     {
@@ -115,8 +120,9 @@ class Server_Package
     /**
      * Set the quota of the Server_Package instance.
      *
-     * @param string|null $quota The quota to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $quota the quota to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setQuota(?string $quota): static
     {
@@ -128,7 +134,7 @@ class Server_Package
     /**
      * Get the bandwidth of the Server_Package instance.
      *
-     * @return string Returns the bandwidth.
+     * @return string returns the bandwidth
      */
     public function getBandwidth(): string
     {
@@ -138,8 +144,9 @@ class Server_Package
     /**
      * Set the bandwidth of the Server_Package instance.
      *
-     * @param string|null $bandwidth The bandwidth to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $bandwidth the bandwidth to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setBandwidth(?string $bandwidth): static
     {
@@ -151,7 +158,7 @@ class Server_Package
     /**
      * Get the maximum number of domains for the Server_Package instance.
      *
-     * @return string Returns the maximum number of domains.
+     * @return string returns the maximum number of domains
      */
     public function getMaxDomains(): string
     {
@@ -161,8 +168,9 @@ class Server_Package
     /**
      * Set the maximum number of domains for the Server_Package instance.
      *
-     * @param string|null $maxDomains The maximum number of domains to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $maxDomains the maximum number of domains to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setMaxDomains(?string $maxDomains): static
     {
@@ -174,7 +182,7 @@ class Server_Package
     /**
      * Get the maximum number of subdomains for the Server_Package instance.
      *
-     * @return string Returns the maximum number of subdomains.
+     * @return string returns the maximum number of subdomains
      */
     public function getMaxSubdomains(): string
     {
@@ -184,8 +192,9 @@ class Server_Package
     /**
      * Set the maximum number of subdomains for the Server_Package instance.
      *
-     * @param string|null $maxSubdomains The maximum number of subdomains to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $maxSubdomains the maximum number of subdomains to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setMaxSubdomains(?string $maxSubdomains): static
     {
@@ -197,7 +206,7 @@ class Server_Package
     /**
      * Get the maximum number of parked domains for the Server_Package instance.
      *
-     * @return string Returns the maximum number of parked domains.
+     * @return string returns the maximum number of parked domains
      */
     public function getMaxParkedDomains(): string
     {
@@ -207,8 +216,9 @@ class Server_Package
     /**
      * Set the maximum number of parked domains for the Server_Package instance.
      *
-     * @param string|null $maxParkedDomains The maximum number of parked domains to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $maxParkedDomains the maximum number of parked domains to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setMaxParkedDomains(?string $maxParkedDomains): static
     {
@@ -220,7 +230,7 @@ class Server_Package
     /**
      * Get the maximum number of FTP accounts for the Server_Package instance.
      *
-     * @return string Returns the maximum number of FTP accounts.
+     * @return string returns the maximum number of FTP accounts
      */
     public function getMaxFtp(): string
     {
@@ -230,8 +240,9 @@ class Server_Package
     /**
      * Set the maximum number of FTP accounts for the Server_Package instance.
      *
-     * @param string|null $maxFtp The maximum number of FTP accounts to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $maxFtp the maximum number of FTP accounts to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setMaxFtp(?string $maxFtp): static
     {
@@ -243,7 +254,7 @@ class Server_Package
     /**
      * Get the maximum number of SQL databases for the Server_Package instance.
      *
-     * @return string Returns the maximum number of SQL databases.
+     * @return string returns the maximum number of SQL databases
      */
     public function getMaxSql(): string
     {
@@ -253,8 +264,9 @@ class Server_Package
     /**
      * Set the maximum number of SQL databases for the Server_Package instance.
      *
-     * @param string|null $maxSql The maximum number of SQL databases to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $maxSql the maximum number of SQL databases to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setMaxSql(?string $maxSql): static
     {
@@ -266,7 +278,7 @@ class Server_Package
     /**
      * Get the maximum number of POP email accounts for the Server_Package instance.
      *
-     * @return string|null Returns the maximum number of POP email accounts.
+     * @return string|null returns the maximum number of POP email accounts
      */
     public function getMaxPop(): ?string
     {
@@ -276,8 +288,9 @@ class Server_Package
     /**
      * Set the maximum number of POP email accounts for the Server_Package instance.
      *
-     * @param string|null $maxPop The maximum number of POP email accounts to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $maxPop the maximum number of POP email accounts to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setMaxPop(?string $maxPop): static
     {
@@ -289,7 +302,7 @@ class Server_Package
     /**
      * Get the maximum quota for the Server_Package instance.
      *
-     * @return string|null Returns the maximum quota.
+     * @return string|null returns the maximum quota
      */
     public function getMaxQuota(): ?string
     {
@@ -299,8 +312,9 @@ class Server_Package
     /**
      * Set the maximum quota for the Server_Package instance.
      *
-     * @param string|null $maxQuota The maximum quota to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $maxQuota the maximum quota to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setMaxQuota(?string $maxQuota): static
     {

@@ -22,7 +22,7 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Returns the form configuration for the WHM (cPanel) server manager.
      *
-     * @return array The form configuration as an associative array.
+     * @return array the form configuration as an associative array
      */
     public static function getForm(): array
     {
@@ -55,8 +55,7 @@ class Server_Manager_Whm extends Server_Manager
      * Initializes the WHM server manager.
      * Checks if the necessary configuration options are set and throws an exception if any are missing.
      *
-     * @return void
-     * @throws Server_Exception If any necessary configuration options are missing.
+     * @throws Server_Exception if any necessary configuration options are missing
      */
     public function init(): void
     {
@@ -80,7 +79,8 @@ class Server_Manager_Whm extends Server_Manager
      * Returns the login URL for a cPanel account.
      *
      * @param Server_Account|null $account The account for which to get the login URL. This parameter is currently not used.
-     * @return string The login URL.
+     *
+     * @return string the login URL
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
@@ -93,7 +93,8 @@ class Server_Manager_Whm extends Server_Manager
      * Returns the login URL for a WHM reseller account.
      *
      * @param Server_Account|null $account The account for which to get the login URL. This parameter is currently not used.
-     * @return string The login URL.
+     *
+     * @return string the login URL
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
@@ -106,12 +107,14 @@ class Server_Manager_Whm extends Server_Manager
      * Tests the connection to the WHM server.
      * Sends a request to the WHM server to get its version.
      *
-     * @return true If the connection was successful.
-     * @throws Server_Exception If an error occurs during the request.
+     * @return true if the connection was successful
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function testConnection(): bool
     {
         $this->request('version');
+
         return true;
     }
 
@@ -119,9 +122,11 @@ class Server_Manager_Whm extends Server_Manager
      * Generates a username for a new account on the WHM server.
      * The username is generated based on the domain name, with some modifications to comply with WHM's username restrictions.
      *
-     * @param string $domain The domain name for which to generate a username.
-     * @return string The generated username.
-     * @throws RandomException If an error occurs during the generation of a random number.
+     * @param string $domain the domain name for which to generate a username
+     *
+     * @return string the generated username
+     *
+     * @throws RandomException if an error occurs during the generation of a random number
      */
     public function generateUsername(string $domain): string
     {
@@ -145,9 +150,11 @@ class Server_Manager_Whm extends Server_Manager
      * Synchronizes an account with the WHM server.
      * Sends a request to the WHM server to get the account's details and updates the Server_Account object accordingly.
      *
-     * @param Server_Account $account The account to be synchronized.
-     * @return Server_Account The updated account.
-     * @throws Server_Exception If an error occurs during the request, or if the account does not exist on the WHM server.
+     * @param Server_Account $account the account to be synchronized
+     *
+     * @return Server_Account the updated account
+     *
+     * @throws Server_Exception if an error occurs during the request, or if the account does not exist on the WHM server
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
@@ -182,8 +189,10 @@ class Server_Manager_Whm extends Server_Manager
      * If the account is a reseller account, it also sets up the reseller and assigns the appropriate ACL list.
      *
      * @param Server_Account $account The account to be created. This object should contain all the necessary details for the new account.
-     * @return bool Returns true if the account was successfully created, false otherwise.
-     * @throws Server_Exception If an error occurs during the request, or if the response from the WHM server indicates an error.
+     *
+     * @return bool returns true if the account was successfully created, false otherwise
+     *
+     * @throws Server_Exception if an error occurs during the request, or if the response from the WHM server indicates an error
      */
     public function createAccount(Server_Account $account): bool
     {
@@ -199,14 +208,14 @@ class Server_Manager_Whm extends Server_Manager
 
         // Prepare the parameters for the API request
         $action = 'createacct';
-        $varHash = array(
+        $varHash = [
             'username' => $account->getUsername(),
             'domain' => $account->getDomain(),
             'password' => $account->getPassword(),
             'contactemail' => $client->getEmail(),
             'plan' => $this->getPackageName($package),
             'useregns' => 0,
-        );
+        ];
 
         // If the account is a reseller account, add the 'reseller' parameter
         if ($account->getReseller()) {
@@ -219,17 +228,16 @@ class Server_Manager_Whm extends Server_Manager
 
         // If the account is a reseller account and was successfully created, set up the reseller and assign the ACL list
         if ($result && $account->getReseller()) {
-
-            $params = array(
+            $params = [
                 'user' => $account->getUsername(),
                 'makeowner' => 0,
-            );
+            ];
             $this->request('setupreseller', $params);
 
-            $params = array(
+            $params = [
                 'reseller' => $account->getUsername(),
                 'acllist' => $package->getAcllist(),
-            );
+            ];
             $this->request('setacls', $params);
         }
 
@@ -240,9 +248,11 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Suspends an account on the WHM server.
      *
-     * @param Server_Account $account The account to be suspended.
-     * @return bool Returns true if the account was successfully suspended.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account the account to be suspended
+     *
+     * @return bool returns true if the account was successfully suspended
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function suspendAccount(Server_Account $account): bool
     {
@@ -252,8 +262,8 @@ class Server_Manager_Whm extends Server_Manager
         // Define the action and parameters for the API request
         $action = 'suspendacct';
         $varHash = [
-            'user' => $account->getUsername(), // Username of the account
-            'reason' => $account->getNote(), // Reason for the suspension
+            'user' => $account->getUsername(),
+            'reason' => $account->getNote(),
         ];
 
         // Send the request to the WHM API
@@ -265,9 +275,11 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Unsuspends an account on the WHM server.
      *
-     * @param Server_Account $account The account to be unsuspended.
-     * @return bool Returns true if the account was successfully unsuspended.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account the account to be unsuspended
+     *
+     * @return bool returns true if the account was successfully unsuspended
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function unsuspendAccount(Server_Account $account): bool
     {
@@ -277,7 +289,7 @@ class Server_Manager_Whm extends Server_Manager
         // Define the action and parameters for the API request
         $action = 'unsuspendacct';
         $varHash = [
-            'user' => $account->getUsername(), // Username of the account
+            'user' => $account->getUsername(),
         ];
 
         // Send the request to the WHM API
@@ -289,9 +301,11 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Cancels an account on the WHM server.
      *
-     * @param Server_Account $account The account to be cancelled.
-     * @return bool Returns true if the account was successfully cancelled.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account the account to be cancelled
+     *
+     * @return bool returns true if the account was successfully cancelled
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function cancelAccount(Server_Account $account): bool
     {
@@ -301,8 +315,8 @@ class Server_Manager_Whm extends Server_Manager
         // Define the action and parameters for the API request
         $action = 'removeacct';
         $varHash = [
-            'user' => $account->getUsername(), // Username of the account
-            'keepdns' => 0, // Whether to keep the DNS records
+            'user' => $account->getUsername(),
+            'keepdns' => 0,
         ];
 
         // Send the request to the WHM API
@@ -314,10 +328,12 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Changes the package of an account on the WHM server.
      *
-     * @param Server_Account $account The account for which to change the package.
-     * @param Server_Package $package The new package.
-     * @return bool Returns true if the package was successfully changed.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account the account for which to change the package
+     * @param Server_Package $package the new package
+     *
+     * @return bool returns true if the package was successfully changed
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
     {
@@ -329,8 +345,8 @@ class Server_Manager_Whm extends Server_Manager
 
         // Define the action and parameters for the API request
         $varHash = [
-            'user' => $account->getUsername(), // Username of the account
-            'pkg' => $this->getPackageName($package), // Name of the new package
+            'user' => $account->getUsername(),
+            'pkg' => $this->getPackageName($package),
         ];
 
         // Send the request to the WHM API
@@ -342,10 +358,12 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Changes the password of an account on the WHM server.
      *
-     * @param Server_Account $account The account for which to change the password.
-     * @param string $newPassword The new password.
-     * @return bool Returns true if the password was successfully changed.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account     the account for which to change the password
+     * @param string         $newPassword the new password
+     *
+     * @return bool returns true if the password was successfully changed
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function changeAccountPassword(Server_Account $account, string $newPassword): bool
     {
@@ -355,9 +373,9 @@ class Server_Manager_Whm extends Server_Manager
         // Define the action and parameters for the API request
         $action = 'passwd';
         $varHash = [
-            'user' => $account->getUsername(), // Username of the account
-            'pass' => $newPassword, // New password
-            'db_pass_update' => true, // Whether to update the password for the account's databases
+            'user' => $account->getUsername(),
+            'pass' => $newPassword,
+            'db_pass_update' => true,
         ];
 
         // Send the request to the WHM API
@@ -374,10 +392,12 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Changes the username of an account on the WHM server.
      *
-     * @param Server_Account $account The account for which to change the username.
-     * @param string $newUsername The new username.
-     * @return bool Returns true if the username was successfully changed.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account     the account for which to change the username
+     * @param string         $newUsername the new username
+     *
+     * @return bool returns true if the username was successfully changed
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function changeAccountUsername(Server_Account $account, string $newUsername): bool
     {
@@ -387,8 +407,8 @@ class Server_Manager_Whm extends Server_Manager
         // Define the action and parameters for the API request
         $action = 'modifyacct';
         $varHash = [
-            'user' => $account->getUsername(), // Current username
-            'newuser' => $newUsername, // New username
+            'user' => $account->getUsername(),
+            'newuser' => $newUsername,
         ];
 
         // Send the request to the WHM API
@@ -400,10 +420,12 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Changes the domain of an account on the WHM server.
      *
-     * @param Server_Account $account The account for which to change the domain.
-     * @param string $newDomain The new domain.
-     * @return bool Returns true if the domain was successfully changed.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account   the account for which to change the domain
+     * @param string         $newDomain the new domain
+     *
+     * @return bool returns true if the domain was successfully changed
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function changeAccountDomain(Server_Account $account, string $newDomain): bool
     {
@@ -413,8 +435,8 @@ class Server_Manager_Whm extends Server_Manager
         // Define the action and parameters for the API request
         $action = 'modifyacct';
         $varHash = [
-            'user' => $account->getUsername(), // Username of the account
-            'domain' => $newDomain, // New domain
+            'user' => $account->getUsername(),
+            'domain' => $newDomain,
         ];
 
         // Send the request to the WHM API
@@ -426,10 +448,12 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Changes the IP of an account on the WHM server.
      *
-     * @param Server_Account $account The account for which to change the IP.
-     * @param string $newIp The new IP.
-     * @return bool Returns true if the IP was successfully changed.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $account the account for which to change the IP
+     * @param string         $newIp   the new IP
+     *
+     * @return bool returns true if the IP was successfully changed
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function changeAccountIp(Server_Account $account, string $newIp): bool
     {
@@ -439,8 +463,8 @@ class Server_Manager_Whm extends Server_Manager
         // Define the action and parameters for the API request
         $action = 'setsiteip';
         $varHash = [
-            'domain' => $account->getDomain(), // Domain of the account
-            'ip' => $newIp, // New IP
+            'domain' => $account->getDomain(),
+            'ip' => $newIp,
         ];
 
         // Send the request to the WHM API
@@ -452,8 +476,9 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Retrieves the packages from the WHM server.
      *
-     * @return array An array of packages, each represented as an associative array of package details.
-     * @throws Server_Exception If an error occurs during the request.
+     * @return array an array of packages, each represented as an associative array of package details
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     public function getPackages(): array
     {
@@ -497,10 +522,12 @@ class Server_Manager_Whm extends Server_Manager
      * and the sending of the request. It also handles any errors that may occur during the request,
      * logging them and throwing a Server_Exception if necessary.
      *
-     * @param string $action The action to be performed on the WHM server.
-     * @param array  $params The parameters to be sent with the request.
-     * @return mixed The response from the WHM server, decoded from JSON into a PHP variable.
-     * @throws Server_Exception If an error occurs during the request, or if the response from the WHM server indicates an error.
+     * @param string $action the action to be performed on the WHM server
+     * @param array  $params the parameters to be sent with the request
+     *
+     * @return mixed the response from the WHM server, decoded from JSON into a PHP variable
+     *
+     * @throws Server_Exception if an error occurs during the request, or if the response from the WHM server indicates an error
      */
     private function request(string $action, array $params = []): mixed
     {
@@ -533,6 +560,7 @@ class Server_Manager_Whm extends Server_Manager
         } catch (HttpExceptionInterface $error) {
             $e = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
             $this->getLog()->err($e);
+
             throw $e;
         }
 
@@ -585,9 +613,10 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Checks if a package exists on the WHM server.
      *
-     * @param Server_Package $package The package to check.
-     * @param bool $create Whether to create the package if it does not exist.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Package $package the package to check
+     * @param bool           $create  whether to create the package if it does not exist
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     private function checkPackageExists(Server_Package $package, bool $create = false): void
     {
@@ -603,6 +632,7 @@ class Server_Manager_Whm extends Server_Manager
         foreach ($packages as $p) {
             if ($p->name == $name) {
                 $exists = true;
+
                 break;
             }
         }
@@ -633,8 +663,9 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Generates a package name based on the WHM server's username and the package's name.
      *
-     * @param Server_Package $package The package for which to generate a name.
-     * @return string The generated package name.
+     * @param Server_Package $package the package for which to generate a name
+     *
+     * @return string the generated package name
      */
     private function getPackageName(Server_Package $package): string
     {
@@ -644,10 +675,12 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Modifies the package of an account on the WHM server.
      *
-     * @param Server_Account $a The account for which to modify the package.
-     * @param Server_Package $p The new package.
-     * @return true If the package was successfully modified.
-     * @throws Server_Exception If an error occurs during the request.
+     * @param Server_Account $a the account for which to modify the package
+     * @param Server_Package $p the new package
+     *
+     * @return true if the package was successfully modified
+     *
+     * @throws Server_Exception if an error occurs during the request
      */
     private function modifyAccountPackage(Server_Account $a, Server_Package $p): bool
     {

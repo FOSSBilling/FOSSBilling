@@ -50,9 +50,6 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Returns link to reseller account management.
-     *
-     * @param Server_Account|null $account
-     * @return string
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
@@ -61,18 +58,12 @@ class Server_Manager_Hestia extends Server_Manager
 
     /**
      * Returns link to account management page.
-     *
-     * @param Server_Account|null $account
-     * @return string
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
         return 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/';
     }
 
-    /**
-     * @return int|string
-     */
     public function getPort(): int|string
     {
         $port = $this->_config['port'];
@@ -88,7 +79,6 @@ class Server_Manager_Hestia extends Server_Manager
      * This method is called to check if configuration is correct
      * and class can connect to server.
      *
-     * @return bool
      * @throws Server_Exception
      */
     public function testConnection(): bool
@@ -112,9 +102,6 @@ class Server_Manager_Hestia extends Server_Manager
     /**
      * Methods retrieves information from server, assign's new values to
      * cloned Server_Account object and returns it.
-     *
-     * @param Server_Account $account
-     * @return Server_Account
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
@@ -128,8 +115,8 @@ class Server_Manager_Hestia extends Server_Manager
     /**
      * Create new account on server.
      *
-     * @param Server_Account $account
      * @return true
+     *
      * @throws Server_Exception
      */
     public function createAccount(Server_Account $account): bool
@@ -340,8 +327,6 @@ class Server_Manager_Hestia extends Server_Manager
     }
 
     /**
-     * @param $params
-     * @return mixed
      * @throws Server_Exception
      */
     private function request($params): mixed

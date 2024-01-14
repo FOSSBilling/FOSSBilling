@@ -10,24 +10,24 @@
  */
 class Server_Account
 {
-    private ?string $username;
-    private ?string $password;
-    private ?string $domain;
-    private ?string $ip;
-    private ?Server_Client $client;
-    private ?Server_Package $package;
-    private ?bool $reseller;
-    private ?bool $suspended;
-    private ?string $ns_1;
-    private ?string $ns_2;
-    private ?string $ns_3;
-    private ?string $ns_4;
-    private ?string $note;
+    private ?string $username = null;
+    private ?string $password = null;
+    private ?string $domain = null;
+    private ?string $ip = null;
+    private ?Server_Client $client = null;
+    private ?Server_Package $package = null;
+    private ?bool $reseller = null;
+    private ?bool $suspended = null;
+    private ?string $ns_1 = null;
+    private ?string $ns_2 = null;
+    private ?string $ns_3 = null;
+    private ?string $ns_4 = null;
+    private ?string $note = null;
 
     /**
      * Get the username associated with the Server_Account instance.
      *
-     * @return string Returns the username as a string.
+     * @return string returns the username as a string
      */
     public function getUsername(): string
     {
@@ -37,8 +37,9 @@ class Server_Account
     /**
      * Set the username associated with the Server_Account instance.
      *
-     * @param string|null $username The username to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $username the username to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setUsername(?string $username): static
     {
@@ -50,7 +51,7 @@ class Server_Account
     /**
      * Get the password associated with the Server_Account instance.
      *
-     * @return string|null Returns the password as a string if it exists, otherwise returns null.
+     * @return string|null returns the password as a string if it exists, otherwise returns null
      */
     public function getPassword(): ?string
     {
@@ -60,8 +61,9 @@ class Server_Account
     /**
      * Set the password associated with the Server_Account instance.
      *
-     * @param string|null $password The password to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $password the password to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setPassword(?string $password): static
     {
@@ -73,7 +75,7 @@ class Server_Account
     /**
      * Get the domain associated with the Server_Account instance.
      *
-     * @return string|null Returns the domain as a string if it exists, otherwise returns null.
+     * @return string|null returns the domain as a string if it exists, otherwise returns null
      */
     public function getDomain(): ?string
     {
@@ -83,8 +85,9 @@ class Server_Account
     /**
      * Set the domain associated with the Server_Account instance.
      *
-     * @param string|null $domain The domain to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $domain the domain to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setDomain(?string $domain): static
     {
@@ -96,7 +99,7 @@ class Server_Account
     /**
      * Get the IP address associated with the Server_Account instance.
      *
-     * @return string|null Returns the IP address as a string if it exists, otherwise returns null.
+     * @return string|null returns the IP address as a string if it exists, otherwise returns null
      */
     public function getIp(): ?string
     {
@@ -106,8 +109,9 @@ class Server_Account
     /**
      * Set the IP address associated with the Server_Account instance.
      *
-     * @param string|null $ip The IP address to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $ip the IP address to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setIp(?string $ip): static
     {
@@ -119,7 +123,7 @@ class Server_Account
     /**
      * Get the client associated with the Server_Account instance.
      *
-     * @return Server_Client|null Returns the client if it exists, otherwise returns null.
+     * @return Server_Client|null returns the client if it exists, otherwise returns null
      */
     public function getClient(): ?Server_Client
     {
@@ -129,8 +133,9 @@ class Server_Account
     /**
      * Set the client associated with the Server_Account instance.
      *
-     * @param Server_Client|null $client The client to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param Server_Client|null $client the client to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setClient(?Server_Client $client): static
     {
@@ -142,7 +147,7 @@ class Server_Account
     /**
      * Get the package associated with the Server_Account instance.
      *
-     * @return Server_Package Returns the package.
+     * @return Server_Package returns the package
      */
     public function getPackage(): Server_Package
     {
@@ -152,8 +157,9 @@ class Server_Account
     /**
      * Set the package associated with the Server_Account instance.
      *
-     * @param Server_Package|null $package The package to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param Server_Package|null $package the package to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setPackage(?Server_Package $package): static
     {
@@ -165,7 +171,7 @@ class Server_Account
     /**
      * Get the note associated with the Server_Account instance.
      *
-     * @return string|null Returns the note as a string if it exists, otherwise returns null.
+     * @return string|null returns the note as a string if it exists, otherwise returns null
      */
     public function getNote(): ?string
     {
@@ -175,8 +181,9 @@ class Server_Account
     /**
      * Set the note associated with the Server_Account instance.
      *
-     * @param string|null $note The note to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $note the note to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setNote(?string $note): static
     {
@@ -188,7 +195,7 @@ class Server_Account
     /**
      * Get the reseller status associated with the Server_Account instance.
      *
-     * @return bool|null Returns the reseller status as a boolean if it exists, otherwise returns null.
+     * @return bool|null returns the reseller status as a boolean if it exists, otherwise returns null
      */
     public function getReseller(): ?bool
     {
@@ -198,8 +205,9 @@ class Server_Account
     /**
      * Set the reseller status associated with the Server_Account instance.
      *
-     * @param bool $reseller The reseller status to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param bool $reseller the reseller status to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setReseller(bool $reseller): static
     {
@@ -211,7 +219,7 @@ class Server_Account
     /**
      * Get the suspension status associated with the Server_Account instance.
      *
-     * @return bool|null Returns the suspension status as a boolean if it exists, otherwise returns null.
+     * @return bool|null returns the suspension status as a boolean if it exists, otherwise returns null
      */
     public function getSuspended(): ?bool
     {
@@ -221,8 +229,9 @@ class Server_Account
     /**
      * Set the suspension status associated with the Server_Account instance.
      *
-     * @param bool $suspended The suspension status to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param bool $suspended the suspension status to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setSuspended(bool $suspended): static
     {
@@ -234,7 +243,7 @@ class Server_Account
     /**
      * Get the first nameserver associated with the Server_Account instance.
      *
-     * @return string|null Returns the first nameserver as a string if it exists, otherwise returns null.
+     * @return string|null returns the first nameserver as a string if it exists, otherwise returns null
      */
     public function getNs1(): ?string
     {
@@ -244,8 +253,9 @@ class Server_Account
     /**
      * Set the first nameserver associated with the Server_Account instance.
      *
-     * @param string|null $ns1 The first nameserver to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $ns1 the first nameserver to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setNs1(?string $ns1): static
     {
@@ -257,7 +267,7 @@ class Server_Account
     /**
      * Get the second nameserver associated with the Server_Account instance.
      *
-     * @return string|null Returns the second nameserver as a string if it exists, otherwise returns null.
+     * @return string|null returns the second nameserver as a string if it exists, otherwise returns null
      */
     public function getNs2(): ?string
     {
@@ -267,8 +277,9 @@ class Server_Account
     /**
      * Set the second nameserver associated with the Server_Account instance.
      *
-     * @param string|null $ns2 The second nameserver to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $ns2 the second nameserver to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setNs2(?string $ns2): static
     {
@@ -280,7 +291,7 @@ class Server_Account
     /**
      * Get the third nameserver associated with the Server_Account instance.
      *
-     * @return string|null Returns the third nameserver as a string if it exists, otherwise returns null.
+     * @return string|null returns the third nameserver as a string if it exists, otherwise returns null
      */
     public function getNs3(): ?string
     {
@@ -290,8 +301,9 @@ class Server_Account
     /**
      * Set the third nameserver associated with the Server_Account instance.
      *
-     * @param string|null $ns3 The third nameserver to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $ns3 the third nameserver to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setNs3(?string $ns3): static
     {
@@ -303,7 +315,7 @@ class Server_Account
     /**
      * Get the fourth nameserver associated with the Server_Account instance.
      *
-     * @return string|null Returns the fourth nameserver as a string if it exists, otherwise returns null.
+     * @return string|null returns the fourth nameserver as a string if it exists, otherwise returns null
      */
     public function getNs4(): ?string
     {
@@ -313,8 +325,9 @@ class Server_Account
     /**
      * Set the fourth nameserver associated with the Server_Account instance.
      *
-     * @param string|null $ns4 The fourth nameserver to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string|null $ns4 the fourth nameserver to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setNs4(?string $ns4): static
     {

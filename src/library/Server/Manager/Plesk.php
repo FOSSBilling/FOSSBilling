@@ -17,7 +17,7 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * Returns an array with a single key-value pair, where the key is 'label' and the value is 'Plesk'.
      *
-     * @return string[] An array with a single key-value pair.
+     * @return string[] an array with a single key-value pair
      */
     public static function getForm(): array
     {
@@ -29,13 +29,11 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * Initializes the Plesk client with the host, port, username, and password from the configuration.
      * If the port is not set in the configuration, it defaults to 8443.
-     *
-     * @return void
      */
     public function init(): void
     {
         $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
-        $this->_client = new PleskX\Api\Client($this->_config['host'], $this->_config['port']);
+        $this->_client = new Client($this->_config['host'], $this->_config['port']);
         $this->_client->setCredentials($this->_config['username'], $this->_config['password']);
     }
 
@@ -43,8 +41,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Returns the login URL for a reseller account.
      * This method is a wrapper for the getLoginUrl method.
      *
-     * @param Server_Account|null $account The account for which the login URL should be retrieved.
-     * @return string The login URL for the reseller account.
+     * @param Server_Account|null $account the account for which the login URL should be retrieved
+     *
+     * @return string the login URL for the reseller account
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
@@ -55,8 +54,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Returns the login URL for a given account.
      * If an account is provided, a session is created for the account and the session ID is appended to the URL.
      *
-     * @param Server_Account|null $account The account for which the login URL should be retrieved.
-     * @return string The login URL for the account.
+     * @param Server_Account|null $account the account for which the login URL should be retrieved
+     *
+     * @return string the login URL for the account
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
@@ -74,8 +74,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Tests the connection to the Plesk server by retrieving the server's statistics.
      * If the server's uptime is less than 0, an exception is thrown.
      *
-     * @return true If the connection to the Plesk server is successful.
-     * @throws Server_Exception If the connection to the Plesk server fails.
+     * @return true if the connection to the Plesk server is successful
+     *
+     * @throws Server_Exception if the connection to the Plesk server fails
      */
     public function testConnection(): bool
     {
@@ -91,9 +92,9 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * Throws an exception indicating that account synchronization is not supported.
      *
-     * @param Server_Account $account The account to be synchronized.
-     * @return never
-     * @throws Server_Exception Always throws an exception.
+     * @param Server_Account $account the account to be synchronized
+     *
+     * @throws Server_Exception always throws an exception
      */
     public function synchronizeAccount(Server_Account $account): never
     {
@@ -105,9 +106,11 @@ class Server_Manager_Plesk extends Server_Manager
      * If the account is a reseller account, an exclusive IP address is assigned to the account if available.
      * A client is created for the account and a subscription is set for the client.
      *
-     * @param Server_Account $account The account to be created.
-     * @return true If the account is successfully created.
-     * @throws Server_Exception If the client creation fails.
+     * @param Server_Account $account the account to be created
+     *
+     * @return true if the account is successfully created
+     *
+     * @throws Server_Exception if the client creation fails
      */
     public function createAccount(Server_Account $account): bool
     {
@@ -117,7 +120,7 @@ class Server_Manager_Plesk extends Server_Manager
             $ips = $this->getIps();
             foreach ($ips['exclusive'] as $key => $ip) {
                 if (!$ip['empty']) {
-                    unset ($ips['exclusive'][$key]);
+                    unset($ips['exclusive'][$key]);
                 }
             }
 
@@ -139,10 +142,11 @@ class Server_Manager_Plesk extends Server_Manager
 
         if (!$id) {
             $placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
+
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
-        $client->setId((string)$id);
+        $client->setId((string) $id);
 
         $this->setSubscription($account);
 
@@ -161,8 +165,7 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * Sets a subscription for a given account.
      *
-     * @param Server_Account $account The account for which the subscription should be set.
-     * @return void
+     * @param Server_Account $account the account for which the subscription should be set
      */
     public function setSubscription(Server_Account $account): void
     {
@@ -171,15 +174,16 @@ class Server_Manager_Plesk extends Server_Manager
         $this->_client->webspace()->request($this->createSubscriptionProps($account, 'add'));
     }
 
-// ??
+    // ??
 
     /**
      * Suspends a given account.
      * The customer's status is set to 16, which is suspended.
      *
-     * @param Server_Account $account The account to be suspended.
+     * @param Server_Account $account the account to be suspended
      * @param bool           $suspend Whether the account should be suspended. Defaults to true.
-     * @return bool The result of the API request to suspend the account.
+     *
+     * @return bool the result of the API request to suspend the account
      */
     public function suspendAccount(Server_Account $account, bool $suspend = true): bool
     {
@@ -196,8 +200,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Unsuspends a given account.
      * Set the customer's status to 0, which is active.
      *
-     * @param Server_Account $account The account to be unsuspended.
-     * @return bool The result of the API request to unsuspend the account.
+     * @param Server_Account $account the account to be unsuspended
+     *
+     * @return bool the result of the API request to unsuspend the account
      */
     public function unsuspendAccount(Server_Account $account): bool
     {
@@ -214,8 +219,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Cancels a given account.
      * Delete the customer or reseller associated with the account.
      *
-     * @param Server_Account $account The account to be cancelled.
-     * @return bool The result of the API request to cancel the account.
+     * @param Server_Account $account the account to be cancelled
+     *
+     * @return bool the result of the API request to cancel the account
      */
     public function cancelAccount(Server_Account $account): bool
     {
@@ -233,10 +239,12 @@ class Server_Manager_Plesk extends Server_Manager
      * The client's properties are modified and the subscription is updated.
      * If the account is a reseller account, a nameserver (NS) record is added for the account.
      *
-     * @param Server_Account $account The account for which the package should be changed.
-     * @param Server_Package $package The new package.
-     * @return true If the package is successfully changed.
-     * @throws Server_Exception If the client modification fails.
+     * @param Server_Account $account the account for which the package should be changed
+     * @param Server_Package $package the new package
+     *
+     * @return true if the package is successfully changed
+     *
+     * @throws Server_Exception if the client modification fails
      */
     public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
     {
@@ -263,8 +271,7 @@ class Server_Manager_Plesk extends Server_Manager
      * Updates the subscription for a given account.
      * Sends a request to the Plesk API to update the subscription for the account.
      *
-     * @param Server_Account $account The account for which the subscription should be updated.
-     * @return void
+     * @param Server_Account $account the account for which the subscription should be updated
      */
     public function updateSubscription(Server_Account $account): void
     {
@@ -276,9 +283,10 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * Changes the password of a given account.
      *
-     * @param Server_Account $account     The account for which the password should be changed.
-     * @param string         $newPassword The new password.
-     * @return bool The result of the API request to change the password.
+     * @param Server_Account $account     the account for which the password should be changed
+     * @param string         $newPassword the new password
+     *
+     * @return bool the result of the API request to change the password
      */
     public function changeAccountPassword(Server_Account $account, string $newPassword): bool
     {
@@ -296,10 +304,10 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * This is not implemented for Plesk.
      *
-     * @param Server_Account $account    The account for which the username should be changed.
-     * @param string         $newUsername The new username.
-     * @return never
-     * @throws Server_Exception Always throws an exception.
+     * @param Server_Account $account     the account for which the username should be changed
+     * @param string         $newUsername the new username
+     *
+     * @throws Server_Exception always throws an exception
      */
     public function changeAccountUsername(Server_Account $account, string $newUsername): never
     {
@@ -310,9 +318,10 @@ class Server_Manager_Plesk extends Server_Manager
      * Changes the domain of a given account.
      * The domain of the account is updated and a request is sent to the Plesk API to update the domain of the account.
      *
-     * @param Server_Account $account  The account for which the domain should be changed.
-     * @param string         $newDomain The new domain.
-     * @return bool The result of the API request to change the domain.
+     * @param Server_Account $account   the account for which the domain should be changed
+     * @param string         $newDomain the new domain
+     *
+     * @return bool the result of the API request to change the domain
      */
     public function changeAccountDomain(Server_Account $account, string $newDomain): bool
     {
@@ -341,10 +350,10 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * This is not implemented for Plesk.
      *
-     * @param Server_Account $account The account for which the IP should be changed.
-     * @param string $newIp The new IP address.
-     * @return never
-     * @throws Server_Exception Always throws an exception.
+     * @param Server_Account $account the account for which the IP should be changed
+     * @param string         $newIp   the new IP address
+     *
+     * @throws Server_Exception always throws an exception
      */
     public function changeAccountIp(Server_Account $account, string $newIp): never
     {
@@ -354,19 +363,19 @@ class Server_Manager_Plesk extends Server_Manager
     /**
      * This is not implemented for Plesk.
      *
-     * @param Server_Account $account The account for which the service plan should be created.
+     * @param Server_Account $account the account for which the service plan should be created
      */
     public function createServicePlan(Server_Account $account)
     {
-
     }
 
     /**
      * Deletes a subscription for a given account.
      * Sends a request to the Plesk API to delete the webspace associated with the account's domain.
      *
-     * @param Server_Account $account The account for which the subscription should be deleted.
-     * @return mixed The result of the API request to delete the webspace.
+     * @param Server_Account $account the account for which the subscription should be deleted
+     *
+     * @return mixed the result of the API request to delete the webspace
      */
     public function deleteSubscription(Server_Account $account): mixed
     {
@@ -377,19 +386,19 @@ class Server_Manager_Plesk extends Server_Manager
      * Retrieves the IP addresses from the Plesk server.
      * Sends a request to the Plesk API to get the IP addresses and categorizes them into 'shared' and 'exclusive'.
      *
-     * @return array An array containing 'shared' and 'exclusive' IP addresses.
+     * @return array an array containing 'shared' and 'exclusive' IP addresses
      */
     private function getIps(): array
     {
         $response = $this->_client->ip()->get();
 
-        $ips = array('shared' => array(), 'exclusive' => array());
+        $ips = ['shared' => [], 'exclusive' => []];
 
         foreach ($response as $ip) {
-            $ips[(string)$ip->type][] = array(
-                'ip' => (string)$ip->ipAddress,
+            $ips[(string) $ip->type][] = [
+                'ip' => (string) $ip->ipAddress,
                 'empty' => empty($ip->default),
-            );
+            ];
         }
 
         return $ips;
@@ -399,8 +408,8 @@ class Server_Manager_Plesk extends Server_Manager
      * Sets the IP address for a given account.
      * Sends a request to the Plesk API to add the IP address to the reseller's IP pool.
      *
-     * @param Server_Account $account The account for which the IP should be set.
-     * @param string $newIp The new IP address.
+     * @param Server_Account $account the account for which the IP should be set
+     * @param string         $newIp   the new IP address
      */
     private function setIp(Server_Account $account, string $newIp): void
     {
@@ -423,8 +432,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Sends a request to the Plesk API to create a customer or reseller based on the account type.
      * The client's properties include the company name, full name, username, password, telephone number, fax number, email address, address, city, and state.
      *
-     * @param Server_Account $account The account for which the client should be created.
-     * @return bool Returns true after the client has been created.
+     * @param Server_Account $account the account for which the client should be created
+     *
+     * @return bool returns true after the client has been created
      */
     private function createClient(Server_Account $account): bool
     {
@@ -457,154 +467,156 @@ class Server_Manager_Plesk extends Server_Manager
      * Creates an array of properties for a subscription.
      * The properties include the domain name, owner login, hosting type, IP address, FTP login, FTP password, PHP, SSL, CGI, limits, and permissions.
      *
-     * @param Server_Account $account The account for which the properties should be created.
-     * @param string         $action  The action to be performed on the subscription.
-     * @return array The array of subscription properties.
+     * @param Server_Account $account the account for which the properties should be created
+     * @param string         $action  the action to be performed on the subscription
+     *
+     * @return array the array of subscription properties
      */
     private function createSubscriptionProps(Server_Account $account, string $action): array
     {
         $package = $account->getPackage();
 
-        return array(
-            $action => array(
-                'gen_setup' => array(
+        return [
+            $action => [
+                'gen_setup' => [
                     'name' => $account->getDomain(),
                     'owner-login' => $account->getUsername(),
                     'htype' => 'vrt_hst',
                     'ip_address' => $account->getIp(),
-                ),
-                'hosting' => array(
-                    'vrt_hst' => array(
-                        'property' => array(
-                            array(
+                ],
+                'hosting' => [
+                    'vrt_hst' => [
+                        'property' => [
+                            [
                                 'name' => 'ftp_login',
                                 'value' => $account->getUsername(),
-                            ),
-                            array(
+                            ],
+                            [
                                 'name' => 'ftp_password',
                                 'value' => $account->getPassword(),
-                            ),
-                            array(
+                            ],
+                            [
                                 'name' => 'php',
                                 'value' => 'true',
-                            ),
-                            array(
+                            ],
+                            [
                                 'name' => 'ssl',
                                 'value' => 'true',
-                            ),
-                            array(
+                            ],
+                            [
                                 'name' => 'cgi',
                                 'value' => 'true',
-                            ),
-                        ),
+                            ],
+                        ],
                         'ip_address' => $account->getIp(),
-                    ),
-                ),
-                'limits' => array(
-                    'limit' => array(
-                        array(
+                    ],
+                ],
+                'limits' => [
+                    'limit' => [
+                        [
                             'name' => 'max_db',
-                            'value' => $package->getMaxSql() ? : 0,
-                        ),
-                        array(
+                            'value' => $package->getMaxSql() ?: 0,
+                        ],
+                        [
                             'name' => 'max_maillists',
-                            'value' => $package->getMaxEmailLists() ? : 0,
-                        ),
-                        array(
+                            'value' => $package->getMaxEmailLists() ?: 0,
+                        ],
+                        [
                             'name' => 'max_maillists',
-                            'value' => $package->getMaxEmailLists() ? : 0,
-                        ),
-                        array(
+                            'value' => $package->getMaxEmailLists() ?: 0,
+                        ],
+                        [
                             'name' => 'max_box',
-                            'value' => $package->getMaxPop() ? : 0,
-                        ),
-                        array(
+                            'value' => $package->getMaxPop() ?: 0,
+                        ],
+                        [
                             'name' => 'max_traffic',
                             'value' => $package->getBandwidth() ? $package->getBandwidth() * 1024 * 1024 : 0,
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'disk_space',
                             'value' => $package->getQuota() ? $package->getQuota() * 1024 * 1024 : 0,
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'max_subdom',
-                            'value' => $package->getMaxSubdomains() ? : 0,
-                        ),
-                        array(
+                            'value' => $package->getMaxSubdomains() ?: 0,
+                        ],
+                        [
                             'name' => 'max_subftp_users',
-                            'value' => $package->getMaxFtp() ? : 0,
-                        ),
-                        array(
+                            'value' => $package->getMaxFtp() ?: 0,
+                        ],
+                        [
                             'name' => 'max_site',
-                            'value' => $package->getMaxDomains() ? : 0,
-                        ),
-                    ),
-                ),
-                'permissions' => array(
-                    'permission' => array(
-                        array(
+                            'value' => $package->getMaxDomains() ?: 0,
+                        ],
+                    ],
+                ],
+                'permissions' => [
+                    'permission' => [
+                        [
                             'name' => 'manage_subdomains',
                             'value' => $package->getMaxSubdomains() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_dns',
                             'value' => 'true',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_crontab',
                             'value' => $package->getHasCron() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_anonftp',
                             'value' => $package->getHasAnonymousFtp() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_sh_access',
                             'value' => $package->getHasShell() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_maillists',
                             'value' => $package->getMaxEmailLists() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'create_domains',
                             'value' => 'true',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_phosting',
                             'value' => 'true',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_quota',
                             'value' => $account->getReseller() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_not_chroot_shell',
                             'value' => $package->getHasShell() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_domain_aliases',
                             'value' => 'true',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_subftp',
                             'value' => $package->getMaxFtp() ? 'true' : 'false',
-                        ),
-                        array(
+                        ],
+                        [
                             'name' => 'manage_spamfilter',
                             'value' => $package->getHasSpamFilter() ? 'true' : 'false',
-                        ),
-                    ),
-                ),
-            ),
-        );
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
      * Modifies the properties of a client account on the Plesk server.
      *
-     * @param Server_Account $account The account for which the properties should be modified.
-     * @return mixed The result of the API request to modify the client's properties.
+     * @param Server_Account $account the account for which the properties should be modified
+     *
+     * @return mixed the result of the API request to modify the client's properties
      */
     private function modifyClient(Server_Account $account): mixed
     {
@@ -621,8 +633,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Creates an array of properties for a client account.
      * The properties include the client's company name, full name, username, password, telephone number, fax number, email address, address, city, and state.
      *
-     * @param Server_Account $account The account for which the properties should be created.
-     * @return array The array of client properties.
+     * @param Server_Account $account the account for which the properties should be created
+     *
+     * @return array the array of client properties
      */
     private function createClientProps(Server_Account $account): array
     {
@@ -646,9 +659,10 @@ class Server_Manager_Plesk extends Server_Manager
      * Adds a nameserver (NS) record for a given account and domain ID.
      * This method is not yet implemented and currently always returns true.
      *
-     * @param Server_Account $account  The account for which the NS record should be added.
-     * @param string         $domainId The ID of the domain for which the NS record should be added.
-     * @return bool Always returns true.
+     * @param Server_Account $account  the account for which the NS record should be added
+     * @param string         $domainId the ID of the domain for which the NS record should be added
+     *
+     * @return bool always returns true
      */
     private function addNs(Server_Account $account, string $domainId): bool
     {
@@ -661,9 +675,10 @@ class Server_Manager_Plesk extends Server_Manager
      * Sends a request to the Plesk API to get the DNS records for the domain.
      * Then, iterates over the DNS records and adds the IDs of the NS records to an array.
      *
-     * @param Server_Account $account  The account for which the NS records should be retrieved.
-     * @param string         $domainId The ID of the domain for which the NS records should be retrieved.
-     * @return array The array of NS record IDs.
+     * @param Server_Account $account  the account for which the NS records should be retrieved
+     * @param string         $domainId the ID of the domain for which the NS records should be retrieved
+     *
+     * @return array the array of NS record IDs
      */
     private function getNs(Server_Account $account, string $domainId)
     {
@@ -673,7 +688,7 @@ class Server_Manager_Plesk extends Server_Manager
 
         foreach ($response->dns->get_rec->result as $dns) {
             if ($dns->data->type == 'NS') {
-                $ns[] = (string)$dns->id;
+                $ns[] = (string) $dns->id;
             }
         }
 
@@ -685,8 +700,11 @@ class Server_Manager_Plesk extends Server_Manager
      * Sends a request to the Plesk API to remove DNS records.
      * The DNS records to be removed are identified by their IDs.
      *
-     * @param array $ns An array of DNS record IDs to be removed.
-     * @return bool Returns true after the DNS records have been removed.
+     * @param array $ns an array of DNS record IDs to be removed
+     *
+     * @return bool returns true after the DNS records have been removed
+     *
+     * @throws Exception
      */
     private function removeDns(array $ns): bool
     {
@@ -713,8 +731,9 @@ class Server_Manager_Plesk extends Server_Manager
      * Sends a request to the Plesk API to change the IP type of the given account to 'shared'.
      * The account is identified by its reseller ID and IP address.
      *
-     * @param Server_Account $account The account for which the IP type should be changed.
-     * @return bool Returns true if the IP type was successfully changed to 'shared', false otherwise.
+     * @param Server_Account $account the account for which the IP type should be changed
+     *
+     * @return bool returns true if the IP type was successfully changed to 'shared', false otherwise
      */
     private function changeIpType(Server_Account $account): bool
     {
@@ -725,12 +744,12 @@ class Server_Manager_Plesk extends Server_Manager
         $params = [
             'reseller' => [
                 'ippool-set-ip' => [
-                    'reseller-id' => $client->getId(), // The reseller ID of the client
+                    'reseller-id' => $client->getId(),
                     'filter' => [
-                        'ip-address' => $account->getIp(), // The IP address of the account
+                        'ip-address' => $account->getIp(),
                     ],
                     'values' => [
-                        'ip-type' => 'shared', // The new IP type
+                        'ip-type' => 'shared',
                     ],
                 ],
             ],

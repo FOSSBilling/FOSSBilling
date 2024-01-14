@@ -13,7 +13,7 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Returns server manager parameters.
      *
-     * @return array Returns an array with the label of the server manager.
+     * @return array returns an array with the label of the server manager
      */
     public static function getForm(): array
     {
@@ -33,8 +33,9 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Returns the URL for account management.
      *
-     * @param Server_Account|null $account The account for which the URL is generated.
-     * @return string Returns the URL as a string.
+     * @param Server_Account|null $account the account for which the URL is generated
+     *
+     * @return string returns the URL as a string
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
@@ -44,8 +45,9 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Returns the URL for reseller account management.
      *
-     * @param Server_Account|null $account The account for which the URL is generated.
-     * @return string Returns the URL as a string.
+     * @param Server_Account|null $account the account for which the URL is generated
+     *
+     * @return string returns the URL as a string
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
@@ -55,7 +57,7 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Tests the connection to the server.
      *
-     * @return bool Returns true if the connection is successful.
+     * @return bool returns true if the connection is successful
      */
     public function testConnection(): bool
     {
@@ -65,8 +67,9 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Synchronizes the account with the server.
      *
-     * @param Server_Account $account The account to be synchronized.
-     * @return Server_Account Returns the synchronized account.
+     * @param Server_Account $account the account to be synchronized
+     *
+     * @return Server_Account returns the synchronized account
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
@@ -80,8 +83,9 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Creates a new account on the server.
      *
-     * @param Server_Account $account The account to be created.
-     * @return bool Returns true if the account is successfully created.
+     * @param Server_Account $account the account to be created
+     *
+     * @return bool returns true if the account is successfully created
      */
     public function createAccount(Server_Account $account): bool
     {
@@ -97,8 +101,9 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Suspends an account on the server.
      *
-     * @param Server_Account $account The account to be suspended.
-     * @return bool Returns true if the account is successfully suspended.
+     * @param Server_Account $account the account to be suspended
+     *
+     * @return bool returns true if the account is successfully suspended
      */
     public function suspendAccount(Server_Account $account): bool
     {
@@ -114,8 +119,9 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Unsuspends an account on the server.
      *
-     * @param Server_Account $account The account to be unsuspended.
-     * @return bool Returns true if the account is successfully unsuspended.
+     * @param Server_Account $account the account to be unsuspended
+     *
+     * @return bool returns true if the account is successfully unsuspended
      */
     public function unsuspendAccount(Server_Account $account): bool
     {
@@ -131,8 +137,9 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Cancels an account on the server.
      *
-     * @param Server_Account $account The account to be cancelled.
-     * @return bool Returns true if the account is successfully cancelled.
+     * @param Server_Account $account the account to be cancelled
+     *
+     * @return bool returns true if the account is successfully cancelled
      */
     public function cancelAccount(Server_Account $account): bool
     {
@@ -148,9 +155,10 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Changes the package of an account on the server.
      *
-     * @param Server_Account $account The account for which the package is to be changed.
-     * @param Server_Package $package The new package.
-     * @return bool Returns true if the package is successfully changed.
+     * @param Server_Account $account the account for which the package is to be changed
+     * @param Server_Package $package the new package
+     *
+     * @return bool returns true if the package is successfully changed
      */
     public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
     {
@@ -178,9 +186,10 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Changes the username of an account on the server.
      *
-     * @param Server_Account $account     The account for which the username is to be changed.
-     * @param string         $newUsername The new username.
-     * @return bool Returns true if the username is successfully changed.
+     * @param Server_Account $account     the account for which the username is to be changed
+     * @param string         $newUsername the new username
+     *
+     * @return bool returns true if the username is successfully changed
      */
     public function changeAccountUsername(Server_Account $account, string $newUsername): bool
     {
@@ -196,9 +205,10 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Changes the domain of an account on the server.
      *
-     * @param Server_Account $account   The account for which the domain is to be changed.
-     * @param string         $newDomain The new domain.
-     * @return bool Returns true if the domain is successfully changed.
+     * @param Server_Account $account   the account for which the domain is to be changed
+     * @param string         $newDomain the new domain
+     *
+     * @return bool returns true if the domain is successfully changed
      */
     public function changeAccountDomain(Server_Account $account, string $newDomain): bool
     {
@@ -214,9 +224,10 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Changes the password of an account on the server.
      *
-     * @param Server_Account $account     The account for which the password is to be changed.
-     * @param string         $newPassword The new password.
-     * @return bool Returns true if the password is successfully changed.
+     * @param Server_Account $account     the account for which the password is to be changed
+     * @param string         $newPassword the new password
+     *
+     * @return bool returns true if the password is successfully changed
      */
     public function changeAccountPassword(Server_Account $account, string $newPassword): bool
     {
@@ -232,9 +243,10 @@ class Server_Manager_Custom extends Server_Manager
     /**
      * Changes the IP of an account on the server.
      *
-     * @param Server_Account $account The account for which the IP is to be changed.
-     * @param string         $newIp   The new IP.
-     * @return bool Returns true if the IP is successfully changed.
+     * @param Server_Account $account the account for which the IP is to be changed
+     * @param string         $newIp   the new IP
+     *
+     * @return bool returns true if the IP is successfully changed
      */
     public function changeAccountIp(Server_Account $account, string $newIp): bool
     {

@@ -10,20 +10,20 @@
  */
 class Server_Client
 {
-    private ?int $id;
-    private ?string $email;
+    private ?int $id = null;
+    private ?string $email = null;
     private ?string $full_name = 'FOSSBilling Client';
     private ?string $company = 'FOSSBilling';
     private ?string $www = 'www.fossbilling.org';
-    private ?string $address_1;
-    private ?string $address_2;
-    private ?string $street;
+    private ?string $address_1 = null;
+    private ?string $address_2 = null;
+    private ?string $street = null;
     private ?string $state = 'n/a';
     private ?string $country = 'US';
-    private ?string $city;
-    private ?string $zip;
-    private ?string $telephone;
-    private ?string $fax;
+    private ?string $city = null;
+    private ?string $zip = null;
+    private ?string $telephone = null;
+    private ?string $fax = null;
 
     public function __call($name, $arguments)
     {
@@ -41,7 +41,7 @@ class Server_Client
     /**
      * Get the ID of the Server_Client instance.
      *
-     * @return int|null Returns the ID of the Server_Client instance.
+     * @return int|null returns the ID of the Server_Client instance
      */
     public function getId(): ?int
     {
@@ -51,8 +51,9 @@ class Server_Client
     /**
      * Set the ID of the Server_Client instance.
      *
-     * @param int $id The ID to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param int $id the ID to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setId(int $id): static
     {
@@ -64,7 +65,7 @@ class Server_Client
     /**
      * Get the full name of the Server_Client instance.
      *
-     * @return string|null Returns the full name as a string if it exists, otherwise returns null.
+     * @return string|null returns the full name as a string if it exists, otherwise returns null
      */
     public function getFullName(): ?string
     {
@@ -74,8 +75,9 @@ class Server_Client
     /**
      * Set the full name of the Server_Client instance.
      *
-     * @param string $fullName The full name to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $fullName the full name to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setFullName(string $fullName): static
     {
@@ -87,7 +89,7 @@ class Server_Client
     /**
      * Get the company of the Server_Client instance.
      *
-     * @return string|null Returns the company as a string if it exists, otherwise returns null.
+     * @return string|null returns the company as a string if it exists, otherwise returns null
      */
     public function getCompany(): ?string
     {
@@ -97,8 +99,9 @@ class Server_Client
     /**
      * Set the company of the Server_Client instance.
      *
-     * @param string $company The company to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $company the company to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setCompany(string $company): static
     {
@@ -110,7 +113,7 @@ class Server_Client
     /**
      * Get the email of the Server_Client instance.
      *
-     * @return string|null Returns the email of the Server_Client instance.
+     * @return string|null returns the email of the Server_Client instance
      */
     public function getEmail(): ?string
     {
@@ -120,8 +123,9 @@ class Server_Client
     /**
      * Set the email of the Server_Client instance.
      *
-     * @param string $email The email to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $email the email to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setEmail(string $email): static
     {
@@ -133,7 +137,7 @@ class Server_Client
     /**
      * Get the first address of the Server_Client instance.
      *
-     * @return string|null Returns the first address of the Server_Client instance.
+     * @return string|null returns the first address of the Server_Client instance
      */
     public function getAddress1(): ?string
     {
@@ -143,8 +147,9 @@ class Server_Client
     /**
      * Set the first address of the Server_Client instance.
      *
-     * @param string $address1 The first address to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $address1 the first address to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setAddress1(string $address1): static
     {
@@ -156,7 +161,7 @@ class Server_Client
     /**
      * Get the second address of the Server_Client instance.
      *
-     * @return string|null Returns the second address of the Server_Client instance.
+     * @return string|null returns the second address of the Server_Client instance
      */
     public function getAddress2(): ?string
     {
@@ -166,8 +171,9 @@ class Server_Client
     /**
      * Set the second address of the Server_Client instance.
      *
-     * @param string $address2 The second address to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $address2 the second address to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setAddress2(string $address2): static
     {
@@ -179,7 +185,7 @@ class Server_Client
     /**
      * Get the street of the Server_Client instance.
      *
-     * @return string|null Returns the street of the Server_Client instance.
+     * @return string|null returns the street of the Server_Client instance
      */
     public function getStreet(): ?string
     {
@@ -189,8 +195,9 @@ class Server_Client
     /**
      * Set the street of the Server_Client instance.
      *
-     * @param string $street The street to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $street the street to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setStreet(string $street): static
     {
@@ -202,7 +209,7 @@ class Server_Client
     /**
      * Get the city of the Server_Client instance.
      *
-     * @return string|null Returns the city of the Server_Client instance.
+     * @return string|null returns the city of the Server_Client instance
      */
     public function getCity(): ?string
     {
@@ -212,8 +219,9 @@ class Server_Client
     /**
      * Set the city of the Server_Client instance.
      *
-     * @param string $city The city to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $city the city to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setCity(string $city): static
     {
@@ -225,7 +233,7 @@ class Server_Client
     /**
      * Get the state of the Server_Client instance.
      *
-     * @return string|null Returns the state as a string if it exists, otherwise returns null.
+     * @return string|null returns the state as a string if it exists, otherwise returns null
      */
     public function getState(): ?string
     {
@@ -235,8 +243,9 @@ class Server_Client
     /**
      * Set the state of the Server_Client instance.
      *
-     * @param string $state The state to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $state the state to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setState(string $state): static
     {
@@ -248,7 +257,7 @@ class Server_Client
     /**
      * Get the country of the Server_Client instance.
      *
-     * @return string|null Returns the country as a string if it exists, otherwise returns null.
+     * @return string|null returns the country as a string if it exists, otherwise returns null
      */
     public function getCountry(): ?string
     {
@@ -258,8 +267,9 @@ class Server_Client
     /**
      * Set the country of the Server_Client instance.
      *
-     * @param string $country The country to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $country the country to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setCountry(string $country): static
     {
@@ -271,7 +281,7 @@ class Server_Client
     /**
      * Get the zip code of the Server_Client instance.
      *
-     * @return string|null Returns the zip code of the Server_Client instance.
+     * @return string|null returns the zip code of the Server_Client instance
      */
     public function getZip(): ?string
     {
@@ -281,8 +291,9 @@ class Server_Client
     /**
      * Set the zip code of the Server_Client instance.
      *
-     * @param string $zip The zip code to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $zip the zip code to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setZip(string $zip): static
     {
@@ -294,7 +305,7 @@ class Server_Client
     /**
      * Get the telephone number of the Server_Client instance.
      *
-     * @return string|null Returns the telephone number of the Server_Client instance.
+     * @return string|null returns the telephone number of the Server_Client instance
      */
     public function getTelephone(): ?string
     {
@@ -304,8 +315,9 @@ class Server_Client
     /**
      * Set the telephone number of the Server_Client instance.
      *
-     * @param string $telephone The telephone number to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $telephone the telephone number to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setTelephone(string $telephone): static
     {
@@ -317,7 +329,7 @@ class Server_Client
     /**
      * Get the fax number of the Server_Client instance.
      *
-     * @return string|null Returns the fax number of the Server_Client instance.
+     * @return string|null returns the fax number of the Server_Client instance
      */
     public function getFax(): ?string
     {
@@ -327,8 +339,9 @@ class Server_Client
     /**
      * Set the fax number of the Server_Client instance.
      *
-     * @param string $fax The fax number to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $fax the fax number to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setFax(string $fax): static
     {
@@ -340,7 +353,7 @@ class Server_Client
     /**
      * Get the website URL of the Server_Client instance.
      *
-     * @return string|null Returns the website URL as a string if it exists, otherwise returns null.
+     * @return string|null returns the website URL as a string if it exists, otherwise returns null
      */
     public function getWww(): ?string
     {
@@ -350,8 +363,9 @@ class Server_Client
     /**
      * Set the website URL of the Server_Client instance.
      *
-     * @param string $www The website URL to be set.
-     * @return $this Returns the current instance to allow for method chaining.
+     * @param string $www the website URL to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
      */
     public function setWww(string $www): static
     {
