@@ -89,7 +89,7 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $config =  Config::getProperty('db');
+    $config = Config::getProperty('db');
 
     $pdo = new PDO(
         $config['type'] . ':host=' . $config['host'] . ';port=' . $config['port'] . ';dbname=' . $config['name'],
@@ -282,7 +282,7 @@ $di['twig'] = $di->factory(function () use ($di) {
     // Get internationalisation settings from config, or use sensible defaults for
     // missing required settings.
     $locale = FOSSBilling\i18n::getActiveLocale();
-    $timezone = Config::getProperty('i18n.timezone' . 'UTC');
+    $timezone = Config::getProperty('i18n.timezoneUTC');
     $date_format = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
     $time_format = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
     $datetime_pattern = Config::getProperty('i18n.datetime_pattern');
@@ -311,7 +311,7 @@ $di['twig'] = $di->factory(function () use ($di) {
     try {
         $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
     } catch (Symfony\Polyfill\Intl\Icu\Exception\MethodArgumentValueNotImplementedException) {
-        if (Config::getProperty('i18n.locale', 'en_US')  == 'en_US') {
+        if (Config::getProperty('i18n.locale', 'en_US') == 'en_US') {
             $dateFormatter = new IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
             throw new FOSSBilling\InformationException('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => Config::getProperty('i18n.locale')]);

@@ -367,7 +367,7 @@ class Box_App
 
     protected function processRequest()
     {
-        /**
+        /*
          * Block requests if the system is undergoing maintenance.
          * It will respect any URL/IP whitelisting under the configuration file.
          */

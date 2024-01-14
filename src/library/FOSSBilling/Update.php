@@ -137,7 +137,7 @@ class Update implements InjectionAwareInterface
                     $httpClient = HttpClient::create();
                     $response = $httpClient->request('GET', $releaseInfoUrl);
                     $releases = $response->toArray();
-                } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
+                } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
                     error_log($e->getMessage());
 
                     throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
@@ -226,7 +226,7 @@ class Update implements InjectionAwareInterface
                 fwrite($fileHandler, $chunk->getContent());
             }
             fclose($fileHandler);
-        } catch (TransportExceptionInterface | HttpExceptionInterface $e) {
+        } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
             error_log($e->getMessage());
 
             throw new Exception('Failed to download the update archive. Further details are available in the error log.');
