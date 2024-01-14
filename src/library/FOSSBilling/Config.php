@@ -18,6 +18,8 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class Config
 {
+    final public const MAX_RECURSION_LEVEL = 25;
+
     public static function getConfig(): array
     {
         return include PATH_CONFIG;
@@ -33,13 +35,11 @@ class Config
     {
         $result = self::getConfig();
         foreach (explode('.', $property) as $segment) {
-            if (isset($result[$segment])) {
+            if (array_key_exists($segment, $result)) {
                 $result = $result[$segment];
             } else {
                 // Key not found, handle the error or set a default value
-                $result = $default;
-
-                break;
+                return $default;
             }
         }
 
@@ -61,7 +61,7 @@ class Config
 
         $temp = &$config;
         foreach (explode('.', $property) as $segment) {
-            if (!isset($temp[$segment]) || !is_array($temp[$segment])) {
+            if (!array_key_exists($segment, $temp) || !is_array($temp[$segment])) {
                 $temp[$segment] = [];
             }
             $temp = &$temp[$segment];
@@ -112,7 +112,7 @@ class Config
      *
      * @return string the formatted code that can be written to a PHP file and then read again to fetch the array
      *
-     * @throws Exception if the number of recursive iterations passes 25
+     * @throws Exception if the number of recursive iterations passes this class's MAX_RECURSION_LEVEL
      */
     private static function prettyPrintArrayToPHP(array $array): string
     {
@@ -129,11 +129,11 @@ class Config
     /**
      * Handles the recursive looping and formatting over each array key.
      *
-     * @throws Exception if the number of recursive iterations passes 25
+     * @throws Exception if the number of recursive iterations passes this class's MAX_RECURSION_LEVEL
      */
     private static function recursivelyIdentAndFormat(array|string|bool|float|int $value, $level = 1): string
     {
-        if ($level > 25) {
+        if ($level > self::MAX_RECURSION_LEVEL) {
             throw new Exception('Too many iterations performed while formatting the config file');
         }
 
@@ -161,6 +161,7 @@ class Config
         // Handle arrays. Loop through each one & indent
         $result = ' => [' . PHP_EOL;
         foreach ($value as $key => $value) {
+            // Special case for empty arrays to ensure they are printed on a single line
             if (is_array($value) && !$value) {
                 $result .= $additionalIndent . "'" . $key . "'=> []," . PHP_EOL;
 
