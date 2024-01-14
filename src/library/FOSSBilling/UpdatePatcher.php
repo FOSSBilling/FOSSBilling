@@ -43,7 +43,6 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     public function applyConfigPatches(): void
     {
-
         $currentConfig = Config::getConfig();
 
         if (!is_array($currentConfig)) {

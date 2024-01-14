@@ -32,14 +32,12 @@ $di = new Pimple\Container();
  * Returns the current FOSSBilling config.
  *
  * @param void
- * 
+ *
  * @deprecated
  *
  * @return array
  */
-$di['config'] = function () {
-    return Config::getConfig();
-};
+$di['config'] = fn () => Config::getConfig();
 
 /*
  * Create a new logger instance and configures it based on the settings in the configuration file.

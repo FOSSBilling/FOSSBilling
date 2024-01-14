@@ -253,8 +253,9 @@ class Admin extends \Api_Abstract
      */
     public function toggle_error_reporting(): bool
     {
-        $current = Config::getProperty('debug_and_monitoring.report_errors');
+        $current = Config::getProperty('debug_and_monitoring.report_errors', true);
         Config::setProperty('debug_and_monitoring.report_errors', !$current);
+
         return true;
     }
 
