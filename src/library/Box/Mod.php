@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -7,6 +8,9 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+
+use FOSSBilling\Config;
+
 class Box_Mod
 {
     private ?string $mod = null;
@@ -238,13 +242,12 @@ class Box_Mod
     public function getConfig()
     {
         $db = $this->di['db'];
-        $bb_config = $this->di['config'];
         $config = [];
 
         $modName = 'mod_' . strtolower($this->mod);
         $c = $db->findOne('extension_meta', 'extension = :ext AND meta_key = :key', [':ext' => $modName, ':key' => 'config']);
         if ($c) {
-            $config = $this->di['crypt']->decrypt($c->meta_value, $bb_config['info']['salt']);
+            $config = $this->di['crypt']->decrypt($c->meta_value, Config::getProperty('info.salt'));
             $config = $this->di['tools']->decodeJ($config);
         }
 

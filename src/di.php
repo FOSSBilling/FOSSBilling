@@ -89,12 +89,12 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () use ($di) {
-    $c = $di['config']['db'];
+    $config =  Config::getProperty('db');
 
     $pdo = new PDO(
-        $c['type'] . ':host=' . $c['host'] . ';port=' . $c['port'] . ';dbname=' . $c['name'],
-        $c['user'],
-        $c['password'],
+        $config['type'] . ':host=' . $config['host'] . ';port=' . $config['port'] . ';dbname=' . $config['name'],
+        $config['user'],
+        $config['password'],
         [
             PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -106,7 +106,7 @@ $di['pdo'] = function () use ($di) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ($c['type'] === 'mysql') {
+    if ($config['type'] === 'mysql') {
         $pdo->exec('SET NAMES "utf8"');
         $pdo->exec('SET CHARACTER SET utf8');
         $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
@@ -139,7 +139,7 @@ $di['db'] = function () use ($di) {
 
     $mapper = new Facade();
     $mapper->getRedBean()->setBeanHelper($helper);
-    $freeze = isset($di['config']['db']['freeze']) ? (bool) $di['config']['db']['freeze'] : true;
+    $freeze = Config::getProperty('db.freeze', true);
     $mapper->freeze($freeze);
 
     $db = new Box_Database();
@@ -277,16 +277,15 @@ $di['auth'] = fn () => new Box_Authorization($di);
  * @throws \Twig\Error\SyntaxError If a template is malformed.
  */
 $di['twig'] = $di->factory(function () use ($di) {
-    $config = $di['config'];
-    $options = $config['twig'];
+    $options = Config::getProperty('twig');
 
     // Get internationalisation settings from config, or use sensible defaults for
     // missing required settings.
     $locale = FOSSBilling\i18n::getActiveLocale();
-    $timezone = $config['i18n']['timezone'] ?? 'UTC';
-    $date_format = !empty($config['i18n']['date_format']) ? strtoupper($config['i18n']['date_format']) : 'MEDIUM';
-    $time_format = !empty($config['i18n']['time_format']) ? strtoupper($config['i18n']['time_format']) : 'SHORT';
-    $datetime_pattern = $config['i18n']['datetime_pattern'] ?? null;
+    $timezone = Config::getProperty('i18n.timezone' . 'UTC');
+    $date_format = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
+    $time_format = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+    $datetime_pattern = Config::getProperty('i18n.datetime_pattern');
 
     $loader = new Twig\Loader\ArrayLoader();
     $twig = new Twig\Environment($loader, $options);
@@ -312,7 +311,7 @@ $di['twig'] = $di->factory(function () use ($di) {
     try {
         $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
     } catch (Symfony\Polyfill\Intl\Icu\Exception\MethodArgumentValueNotImplementedException) {
-        if (($config['i18n']['locale'] ?? 'en_US') == 'en_US') {
+        if (Config::getProperty('i18n.locale', 'en_US')  == 'en_US') {
             $dateFormatter = new IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
             throw new FOSSBilling\InformationException('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => $config['i18n']['locale']]);

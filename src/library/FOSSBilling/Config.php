@@ -116,7 +116,7 @@ class Config
      */
     private static function prettyPrintArrayToPHP(array $array): string
     {
-        $output = '<?php' . PHP_EOL . 'return [' . PHP_EOL;
+        $output = '<?php' . PHP_EOL . 'return [';
         foreach ($array as $key => $value) {
             // Extra spacing between each "primary" key for slightly improved readability
             $output .= PHP_EOL . "    '" . $key . "'" . self::recursivelyIdentAndFormat($value);

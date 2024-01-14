@@ -11,6 +11,7 @@
 
 namespace Box\Mod\System;
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Version;
@@ -272,7 +273,7 @@ class Service
         }
 
         $last_exec = $this->getParamValue('last_cron_exec');
-        $disableAutoCron = $this->di['config']['disable_auto_cron'] ?? false;
+        $disableAutoCron = Config::getProperty('disable_auto_cron', true);
 
         /*
          * Here we check if cron has been run at all or within a recent timeframe.
@@ -330,7 +331,7 @@ class Service
                         'text' => 'We\'d apreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
                         'url' => $url,
                     ];
-                } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && $this->di['config']['debug_and_monitoring']['report_errors'] && !Version::isPreviewVersion()) {
+                } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && Config::getProperty('debug_and_monitoring.report_errors', false) && !Version::isPreviewVersion()) {
                     /*
                      * The installation already had error reporting enabled, but something has changed so we should nudge the user to review the changes.
                      * This message is cached for a full 24 hours to help ensure it is seen.

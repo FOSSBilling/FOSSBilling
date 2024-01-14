@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,7 @@
 
 namespace Box\Mod\Cron;
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 
 class Service
@@ -119,7 +121,7 @@ class Service
 
     private function clearOldSessions(): ?int
     {
-        $maxAge = time() - $this->di['config']['security']['session_lifespan'];
+        $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
         $sql = 'DELETE FROM session WHERE created_at <= :age';
 
         return $this->di['db']->exec($sql, [':age' => $maxAge]);

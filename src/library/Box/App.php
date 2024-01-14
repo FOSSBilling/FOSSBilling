@@ -10,6 +10,7 @@
  */
 
 use DebugBar\StandardDebugBar;
+use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
 
 class Box_App
@@ -294,7 +295,7 @@ class Box_App
     {
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
 
-        $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
+        $allowedURLs = Config::getProperty('maintenance_mode.allowed_urls', []);
 
         // Allow access to the staff panel all the time
         $adminApiPrefixes = [
@@ -324,7 +325,7 @@ class Box_App
      */
     protected function checkAllowedIPs()
     {
-        $allowedIPs = $this->di['config']['maintenance_mode']['allowed_ips'];
+        $allowedIPs = Config::getProperty('maintenance_mode.allowed_ips', []);
         $visitorIP = $this->di['request']->getClientAddress();
 
         // Check if the visitor is in using of the allowed IPs/networks
@@ -370,8 +371,7 @@ class Box_App
          * Block requests if the system is undergoing maintenance.
          * It will respect any URL/IP whitelisting under the configuration file.
          */
-        $maintmode = $this->di['config']['maintenance_mode']['enabled'] ?? false;
-        if ($maintmode) {
+        if (Config::getProperty('maintenance_mode.enabled', false)) {
             // Check the allowlists
             if ($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
                 // Set response code to 503.

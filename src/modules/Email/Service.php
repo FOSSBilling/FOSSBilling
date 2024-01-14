@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Email;
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
@@ -117,8 +118,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function setVars($t, $vars)
     {
-        $config = $this->di['config'];
-        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), $config['info']['salt']);
+        $t->vars = $this->di['crypt']->encrypt(json_encode($vars), Config::getProperty('info.salt'));
         $this->di['db']->store($t);
 
         return true;
@@ -129,8 +129,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getVars($t)
     {
-        $config = $this->di['config'];
-        $json = $this->di['crypt']->decrypt($t->vars, $config['info']['salt']);
+        $json = $this->di['crypt']->decrypt($t->vars, Config::getProperty('info.salt'));
 
         return $this->di['tools']->decodeJ($json);
     }

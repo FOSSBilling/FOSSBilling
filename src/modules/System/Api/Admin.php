@@ -245,7 +245,7 @@ class Admin extends \Api_Abstract
      */
     public function error_reporting_enabled(): bool
     {
-        return (bool) $this->di['config']['debug_and_monitoring']['report_errors'];
+        return (bool) Config::getProperty('debug_and_monitoring.report_errors');
     }
 
     /**
