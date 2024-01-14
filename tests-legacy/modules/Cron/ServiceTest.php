@@ -78,13 +78,6 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $di['db'] = $dbMock;
         $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
-        $di['config'] = [
-            'security' => [
-                'mode' => 'strict',
-                'force_https' => true,
-                'cookie_lifespan' => 7200,
-            ],
-        ];
 
         $result = $serviceMock->runCrons();
         $this->assertTrue($result);

@@ -289,8 +289,6 @@ class GuestTest extends \BBTestCase
         $setLang = 'en_US';
         $di = new \Pimple\Container();
 
-        $di['config'] = ['i18n' => ['locale' => 'en_US']];
-
         $this->api->setDi($di);
 
         $result = $this->api->locale();

@@ -216,11 +216,9 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
-        $configMock = ['salt' => md5(random_bytes(13))];
 
         $di['db'] = $db;
         $di['crypt'] = $cryptMock;
-        $di['config'] = $configMock;
         $service->setDi($di);
 
         $t = new \stdClass();
@@ -242,7 +240,6 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
-        $configMock = ['salt' => md5(random_bytes(13))];
         $expected = ['param1' => 'value1'];
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -252,7 +249,6 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $di['tools'] = $toolsMock;
         $di['crypt'] = $cryptMock;
-        $di['config'] = $configMock;
         $service->setDi($di);
 
         $t = new \stdClass();
@@ -289,11 +285,9 @@ class ServiceTest extends \BBTestCase
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
-        $configMock = ['salt' => md5(random_bytes(13))];
 
         $di['db'] = $db;
         $di['crypt'] = $cryptMock;
-        $di['config'] = $configMock;
         $di['api_admin'] = function () use ($di) {
             $api = new \Api_Handler(new \Model_Admin());
             $api->setDi($di);
@@ -366,10 +360,8 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
-        $configMock = ['salt' => md5(random_bytes(13))];
         $di['db'] = $db;
         $di['crypt'] = $cryptMock;
-        $di['config'] = $configMock;
         $di['twig'] = $twig;
         $di['mod_service'] = $di->protect(fn () => $systemService);
         $di['tools'] = new \FOSSBilling\Tools();
@@ -486,8 +478,6 @@ class ServiceTest extends \BBTestCase
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
 
-        $configMock = ['salt' => md5(random_bytes(13))];
-
         $di['api_admin'] = function () use ($di) {
             $api = new \Api_Handler(new \Model_Admin());
             $api->setDi($di);
@@ -504,7 +494,6 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $di['twig'] = $twig;
         $di['crypt'] = $cryptMock;
-        $di['config'] = $configMock;
         $di['mod_service'] = $di->protect(function ($name) use ($system, $staffServiceMock, $clientServiceMock) {
             if ($name == 'staff') {
                 return $staffServiceMock;
