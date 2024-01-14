@@ -476,6 +476,18 @@ class Server_Manager_Plesk extends Server_Manager
     {
         $package = $account->getPackage();
 
+        // check if bandwidth quota is set as an integer. If so, convert it to bytes
+        $bandwidth = 0;
+        if (is_numeric($package->getBandwidth())) {
+            $bandwidth = intval($package->getBandwidth()) * 1024 * 1024;
+        }
+
+        // check if disk quota is set as an integer. If so, convert it to bytes
+        $quota = 0;
+        if (is_numeric($package->getQuota())) {
+            $quota = intval($package->getQuota()) * 1024 * 1024;
+        }
+
         return [
             $action => [
                 'gen_setup' => [
@@ -531,11 +543,11 @@ class Server_Manager_Plesk extends Server_Manager
                         ],
                         [
                             'name' => 'max_traffic',
-                            'value' => $package->getBandwidth() ? $package->getBandwidth() * 1024 * 1024 : 0,
+                            'value' => $bandwidth,
                         ],
                         [
                             'name' => 'disk_space',
-                            'value' => $package->getQuota() ? $package->getQuota() * 1024 * 1024 : 0,
+                            'value' => $quota,
                         ],
                         [
                             'name' => 'max_subdom',
