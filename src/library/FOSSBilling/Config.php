@@ -27,7 +27,7 @@ class Config
      * Fetches a property from the config file using dot notation.
      *
      * @param string $property the property to pull from the database. Example: `debug_and_monitoring.report_errors`
-     * @param mixed  $default  sets a default value to return if this propery doesn't exist
+     * @param mixed  $default  sets a default value to return if this property doesn't exist
      */
     public static function getProperty(string $property, mixed $default = null): mixed
     {
@@ -154,7 +154,7 @@ class Config
             return ' => ' . $boolAsWord . ',' . PHP_EOL;
         }
 
-        // Generate an indentdation equal to 4 spaces per level of recursion
+        // Generate an indentation equal to 4 spaces per level of recursion
         $indent = str_repeat(' ', $level * 4);
         $additionalIndent = str_repeat(' ', ($level + 1) * 4);
 
