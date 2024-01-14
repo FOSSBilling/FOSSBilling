@@ -385,7 +385,8 @@
         "USERPWD",
         "COOKIEJAR",
         "COOKIEFILE",
-        "nonaggregated"
+        "nonaggregated",
+        "bindto"
     ],
     "ignorePaths": [
         "tests-legacy/**",
