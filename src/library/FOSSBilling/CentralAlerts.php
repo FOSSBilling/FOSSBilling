@@ -107,7 +107,7 @@ class CentralAlerts implements InjectionAwareInterface
         $url = $this->_url . $endpoint;
 
         try {
-            $httpClient = HttpClient::create();
+            $httpClient = HttpClient::create(['bindto' => BIND_TO]);
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
                 'query' => [...$params, 'fossbilling_version' => Version::VERSION],

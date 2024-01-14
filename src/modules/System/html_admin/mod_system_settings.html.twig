@@ -25,6 +25,8 @@
 {% block content %}
     {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
     {% set params = admin.system_get_params %}
+    {% set enviroment = admin.system_env %}
+    {% set external_ip = admin.system_env({ 'ip': true }) %}
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -44,6 +46,9 @@
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error reporting'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network interface'|trans }}</a>
             </li>
         </ul>
 
@@ -565,6 +570,47 @@ ZW=Zimbabwe
                     </div>
                 </div>
 
+                <div class="tab-pane fade" id="network-interface" role="tabpanel">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ 'Network interface'|trans }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert {% if external_ip %}alert-success{% else %}alert-danger{% endif %}" role="alert">
+                            {% if external_ip %}
+                                {{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }} {{ external_ip }}
+                            {% else %}
+                                {{ 'The currently selected network interface does not appear to be able to reach the internet!'|trans }}
+                            {% endif %}
+                        </div>
+
+                        <form class="api-form" method="post" action="{{ 'api/admin/system/set_interface_ip'|link }}" data-api-reload="1">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                            <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
+                            {% set interface_ips = admin.system_get_interface_ips %}
+                            <label for="interface">{{"Select the default network interface:"|trans }}</label>
+                            <select class="form-select" aria-label="Available network interfaces" name="interface" id="interface">
+                                <option value="0" {% if constant('BIND_TO') == 0 %} selected {%endif%}>{{ 'None (Default PHP Behavior)'|trans }}</option>
+                                {% for i, interface in interface_ips %}
+                                <option value="{{ interface }}" {% if constant('BIND_TO') == interface %} selected {% endif %}>{{ interface }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <br>
+
+                            <label for="custom_interface">{{'Enter a custom interface to use:'|trans }}</label>
+                            {% if constant('BIND_TO') not in interface_ips and constant('BIND_TO') != 0%}
+                                <input class="form-control" type="text" name="custom_interface" id="custom_interface" value="{{ constant('BIND_TO') }}">
+                            {% else %}
+                                <input class="form-control" type="text" name="custom_interface" id="custom_interface">
+                            {% endif %}
+                            <span class="text-muted">{{ 'Not seeing the correct interface above? You may enter the IP address here of the correct interface to use.'|trans }}</span>
+
+                            <br>
+
+                            <input type="submit" class="btn btn-primary" value="{{ 'Update'|trans }}">
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

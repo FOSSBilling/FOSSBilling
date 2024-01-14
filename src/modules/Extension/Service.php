@@ -451,7 +451,7 @@ class Service implements InjectionAwareInterface
 
         // Download the extension archive and save it to the cache folder
         $fileHandler = fopen($zipPath, 'w');
-        $client = \Symfony\Component\HttpClient\HttpClient::create();
+        $client = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
         $response = $client->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();

@@ -16,6 +16,8 @@ use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
+use Pimple\Exception\UnknownIdentifierException;
+use Symfony\Component\HttpClient\HttpClient;
 
 class Tools
 {
@@ -129,7 +131,7 @@ class Tools
         $symbols = '!@#$%&?()+-_';
 
         switch ($strength) {
-            // lowercase + uppercase + numeric
+                // lowercase + uppercase + numeric
             case 3:
                 $lower = random_int(1, $length - 2);
                 $upper = random_int(1, $length - $lower - 1);
@@ -326,5 +328,68 @@ class Tools
 
         // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the other to will be set to `https`, so either one means we are connected via HTTPS.
         return strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0;
+    }
+
+    /** 
+     * Tries to fetch a list of possible interfaces (IPs) to bind to when making requests.
+     * Attempts to make external requests for each interface & only works with IPv4.
+     */
+    public static function listHttpInterfaces(): array
+    {
+        // Fetch a list of IP addresses for local interfaces
+        $validatedIps = [];
+        try {
+            $ips = gethostbynamel(gethostname());
+        } catch (\Exception) {
+            $ips = [];
+        }
+
+        if (!$ips) {
+            return [];
+        }
+
+        // For each of the found IPs, attempt a generic network request. If the request produces no errors, consider it valid
+        foreach ($ips as $ip) {
+            try {
+                $httpClient = HttpClient::create(['bindto' => $ip]);
+                $response = $httpClient->request('GET', 'https://api.ipify.org', [
+                    'timeout' => 2,
+                ]);
+                if ($response->getStatusCode() === 200) {
+                    $validatedIps[] = $ip;
+                }
+            } catch (\Exception) {
+            }
+        }
+        return $validatedIps;
+    }
+
+    /**
+     * Returns the currently configured default network interface.
+     * If a custom interface IP address is entered, no validation is performed.
+     * However, if we are using an interface IP address that was selected from a given list, we will validate that the IP address is still in the list of known IP address interfaces.
+     * 
+     * @return string|int Either the IP address of the interface to use (string) or 0 if there's none set / the set one is invalid.
+     */
+    public function getDefaultInterface(): string|int
+    {
+        $customInterface = $this->di['mod_service']('system')->getParamValue('custom_interface_ip', '');
+        if ($customInterface) {
+            return $customInterface;
+        }
+
+        $interface = $this->di['mod_service']('system')->getParamValue('interface_ip', '0');
+
+        try {
+            $knownInterfaces = gethostbynamel(gethostname());
+        } catch (\Exception) {
+            $knownInterfaces = [];
+        }
+
+        if ($interface && $interface !== '0' && in_array($interface, $knownInterfaces)) {
+            return $interface;
+        }
+
+        return 0;
     }
 }

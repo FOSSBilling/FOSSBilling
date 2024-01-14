@@ -41,7 +41,7 @@ class Google implements \FOSSBilling\InjectionAwareInterface
     public function pingSitemap(string $url)
     {
         $link = 'https://www.google.com/ping';
-        $httpClient = HttpClient::create();
+        $httpClient = HttpClient::create(['bindto' => BIND_TO]);
 
         $request = $httpClient->request('GET', $link, [
             'query' => [

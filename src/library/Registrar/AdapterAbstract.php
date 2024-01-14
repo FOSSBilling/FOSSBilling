@@ -230,7 +230,7 @@ abstract class Registrar_AdapterAbstract
      */
     public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
-        return Symfony\Component\HttpClient\HttpClient::create();
+        return Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
     }
 
     /**
