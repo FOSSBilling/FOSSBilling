@@ -47,10 +47,8 @@ class SentryHelper
 
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.
-     *
-     * @param array $config the FOSSBilling config
      */
-    public static function registerSentry(array $config): void
+    public static function registerSentry(): void
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
@@ -137,7 +135,7 @@ class SentryHelper
          *
          * @phpstan-ignore-next-line (The value is replaced during release and the check is written with this in mind.)
          */
-        if ($config['debug_and_monitoring']['report_errors'] && $sentryDSN !== self::$placeholderFirstHalf . self::$placeholderSecondHalf && !empty($sentryDSN)) {
+        if (Config::getProperty('debug_and_monitoring.report_errors', false) && $sentryDSN !== self::$placeholderFirstHalf . self::$placeholderSecondHalf && !empty($sentryDSN)) {
             // Per Sentry documentation, not setting this results in the SDK simply not sending any information.
             $options['dsn'] = $sentryDSN;
         }

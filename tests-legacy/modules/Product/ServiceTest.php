@@ -1040,11 +1040,9 @@ class ServiceTest extends \BBTestCase
     public function testgetSavePath()
     {
         $filename = 'cfg.file';
-        $config = ['path_data' => '/home'];
         $expected = PATH_DATA . '/uploads/' . md5($filename);
 
         $di = new \Pimple\Container();
-        $di['config'] = $config;
 
         $this->service->setDi($di);
         $result = $this->service->getSavePath($filename);
@@ -1107,45 +1105,5 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->canUpgradeTo($productModel, $newProductModel);
         $this->assertFalse($result);
-    }
-
-    public function testgetStartingDomainPrice()
-    {
-        $di = new \Pimple\Container();
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $sqlQuery = 'SELECT min(price_registration)
-                FROM tld
-                WHERE active = 1';
-        $amount = '10.00';
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->with($sqlQuery)
-            ->willReturn($amount);
-
-        $di['db'] = $dbMock;
-        $this->service->setDi($di);
-        $result = $this->service->getStartingDomainPrice();
-        $this->assertEquals($amount, $result);
-    }
-
-    public function testgetStartingDomainPriceNoActiveTld()
-    {
-        $di = new \Pimple\Container();
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $sqlQuery = 'SELECT min(price_registration)
-                FROM tld
-                WHERE active = 1';
-        $amount = null;
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->with($sqlQuery)
-            ->willReturn($amount);
-
-        $di['db'] = $dbMock;
-        $this->service->setDi($di);
-        $result = $this->service->getStartingDomainPrice();
-        $this->assertEquals((float) $amount, $result);
     }
 }

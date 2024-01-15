@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -7,6 +8,9 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+
+use FOSSBilling\Config;
+
 class Box_Crypt implements FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -77,7 +81,7 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
     private function _getSalt($pass = null)
     {
         if ($pass == null) {
-            $pass = $this->di['config']['info']['salt'];
+            $pass = Config::getProperty('info.salt');
         }
 
         return pack('H*', hash('md5', $pass));

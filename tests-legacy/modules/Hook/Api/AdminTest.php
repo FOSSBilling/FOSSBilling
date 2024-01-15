@@ -48,8 +48,6 @@ class AdminTest extends \BBTestCase
     {
         $data['event'] = 'testEvent';
 
-        $configMock = ['debug_and_monitoring' => ['debug' => true]];
-
         $logMock = $this->getMockBuilder('\Box_log')->getMock();
 
         $eventManager = $this->getMockBuilder('\Box_EventManager')->getMock();
@@ -58,7 +56,6 @@ class AdminTest extends \BBTestCase
             ->willReturn(1);
 
         $di = new \Pimple\Container();
-        $di['config'] = $configMock;
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
 

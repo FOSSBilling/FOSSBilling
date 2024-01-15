@@ -27,7 +27,6 @@ class ServiceTest extends \BBTestCase
 
     public function testgetCompany()
     {
-        $config = ['url' => 'www.fossbilling.org'];
         $expected = [
             'www' => 'http://localhost/',
             'name' => 'Inc. Test',
@@ -69,7 +68,6 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['config'] = $config;
 
         $this->service->setDi($di);
 

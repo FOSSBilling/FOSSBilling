@@ -161,7 +161,6 @@ class ServicePayGatewayTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getDescription');
 
-        $url = 'http://localhost/';
         $expected = [
             'id' => null,
             'code' => null,
@@ -176,11 +175,10 @@ class ServicePayGatewayTest extends \BBTestCase
             'description' => null,
             'enabled' => null,
             'test_mode' => null,
-            'callback' => $url . 'ipn.php?',
+            'callback' => 'http://localhost/ipn.php?',
         ];
 
         $di = new \Pimple\Container();
-        $di['config'] = ['url' => $url];
 
         $serviceMock->setDi($di);
 
@@ -320,7 +318,6 @@ class ServicePayGatewayTest extends \BBTestCase
             ->method('link');
 
         $di = new \Pimple\Container();
-        $di['config'] = ['url' => 'http://fossbilling.vm/', 'debug' => true];
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
@@ -357,7 +354,6 @@ class ServicePayGatewayTest extends \BBTestCase
             ->method('link');
 
         $di = new \Pimple\Container();
-        $di['config'] = ['url' => 'http://fossbilling.vm/', 'debug' => true];
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);

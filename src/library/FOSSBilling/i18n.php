@@ -23,7 +23,6 @@ class i18n
      */
     public static function getActiveLocale(bool $autoDetect = true): string
     {
-        $config = include PATH_CONFIG;
         $locale = null;
 
         /*
@@ -38,7 +37,7 @@ class i18n
 
         // If we somehow still don't have a locale, use the default / fallback.
         if (!$locale) {
-            return $config['i18n']['locale'] ?? 'en_US';
+            return Config::getProperty('i18n.locale', 'en_US');
         }
 
         return $locale;

@@ -11,7 +11,6 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
             ->willReturn(null);
 
         $di = new Pimple\Container();
-        $di['config'] = ['salt' => 'salt'];
         $di['db'] = $db;
 
         $mod = new Box_Mod('api');

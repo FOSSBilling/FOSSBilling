@@ -14,6 +14,8 @@
 
 namespace Box\Mod\System\Api;
 
+use FOSSBilling\i18n;
+
 class Guest extends \Api_Abstract
 {
     /**
@@ -192,15 +194,7 @@ class Guest extends \Api_Abstract
      */
     public function locale()
     {
-        $locale = $this->di['config']['i18n']['locale'];
-        if (isset($_COOKIE['BBLANG'])) {
-            $bblang = $_COOKIE['BBLANG'];
-            if (!empty($bblang)) {
-                $locale = $bblang;
-            }
-        }
-
-        return $locale;
+        return i18n::getActiveLocale();
     }
 
     public function get_pending_messages()

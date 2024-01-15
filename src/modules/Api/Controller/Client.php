@@ -15,6 +15,7 @@
 
 namespace Box\Mod\Api\Controller;
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -90,7 +91,7 @@ class Client implements InjectionAwareInterface
     private function _loadConfig()
     {
         if (is_null($this->_api_config)) {
-            $this->_api_config = $this->di['config']['api'];
+            $this->_api_config = Config::getProperty('api', []);
         }
     }
 

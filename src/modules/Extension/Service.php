@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Extension;
 
+use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -644,7 +645,7 @@ class Service implements InjectionAwareInterface
 
     private function _getSalt()
     {
-        return $this->di['config']['info']['salt'];
+        return Config::getProperty('info.salt');
     }
 
     public function getCoreAndActiveModules()

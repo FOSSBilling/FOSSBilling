@@ -316,9 +316,6 @@ class ServiceTest extends \BBTestCase
 
     public function testgetCurrentAdminAreaTheme()
     {
-        $configMock = [
-            'url' => 'fossbilling.org/',
-        ];
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
@@ -326,7 +323,6 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['config'] = $configMock;
 
         $this->service->setDi($di);
 

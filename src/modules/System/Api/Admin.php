@@ -15,7 +15,7 @@
 
 namespace Box\Mod\System\Api;
 
-use Symfony\Component\Filesystem\Filesystem;
+use FOSSBilling\Config;
 
 class Admin extends \Api_Abstract
 {
@@ -245,7 +245,7 @@ class Admin extends \Api_Abstract
      */
     public function error_reporting_enabled(): bool
     {
-        return (bool) $this->di['config']['debug_and_monitoring']['report_errors'];
+        return (bool) Config::getProperty('debug_and_monitoring.report_errors', false);
     }
 
     /**
@@ -253,18 +253,8 @@ class Admin extends \Api_Abstract
      */
     public function toggle_error_reporting(): bool
     {
-        $filesystem = new Filesystem();
-        $config = include PATH_CONFIG;
-
-        // Invert the current config value
-        $config['debug_and_monitoring']['report_errors'] = !$config['debug_and_monitoring']['report_errors'];
-
-        // Create the output file
-        $output = '<?php ' . PHP_EOL;
-        $output .= 'return ' . var_export($config, true) . ';';
-
-        // Finally write it to the disk and then return bool if no exceptions were thrown.
-        $filesystem->dumpFile(PATH_CONFIG, $output);
+        $current = Config::getProperty('debug_and_monitoring.report_errors', false);
+        Config::setProperty('debug_and_monitoring.report_errors', !$current);
 
         return true;
     }

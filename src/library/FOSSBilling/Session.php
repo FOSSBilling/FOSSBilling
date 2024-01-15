@@ -62,7 +62,7 @@ class Session implements InjectionAwareInterface
             'httponly' => $currentCookieParams['httponly'],
         ];
 
-        if ($this->di['config']['security']['mode'] == 'strict') {
+        if (Config::getProperty('security.mode', 'strict') == 'strict') {
             $cookieParams['samesite'] = 'Strict';
         }
 
@@ -121,7 +121,7 @@ class Session implements InjectionAwareInterface
         }
 
         $sessionID = $_COOKIE['PHPSESSID'];
-        $maxAge = time() - $this->di['config']['security']['session_lifespan'];
+        $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
         $fingerprint = new Fingerprint();
         /** @var \RedBeanPHP\OODBBean $session */
@@ -137,7 +137,7 @@ class Session implements InjectionAwareInterface
         }
 
         $storedFingerprint = json_decode($session->fingerprint, true);
-        if (!$fingerprint->checkFingerprint($storedFingerprint) && $this->di['config']['security']['perform_session_fingerprinting']) {
+        if (!$fingerprint->checkFingerprint($storedFingerprint) && Config::getProperty('security.perform_session_fingerprinting', true)) {
             $invalid = true;
             // TODO: Trying to use monolog here causes a 503 error with an empty error log. Would love to find out why and use it instead of error_log
             error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
@@ -163,7 +163,7 @@ class Session implements InjectionAwareInterface
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
         $fingerprint = new Fingerprint();
 
-        if ($this->di['config']['security']['perform_session_fingerprinting']) {
+        if (Config::getProperty('security.perform_session_fingerprinting', true)) {
             $updatedFingerprint = $fingerprint->fingerprint();
         } else {
             $updatedFingerprint = [];
@@ -178,6 +178,6 @@ class Session implements InjectionAwareInterface
 
     private function shouldBeSecure(): bool
     {
-        return $this->di['config']['security']['force_https'] ?? true || Tools::isHTTPS();
+        return Config::getProperty('security.force_https', true) || Tools::isHTTPS();
     }
 }

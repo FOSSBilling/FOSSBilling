@@ -656,7 +656,6 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['crypt'] = $cryptMock;
         $di['tools'] = $toolsMock;
-        $di['config'] = ['salt' => ''];
         $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
         $this->service->setDi($di);
@@ -735,7 +734,6 @@ class ServiceTest extends \BBTestCase
         $di['crypt'] = $cryptMock;
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $di['config'] = ['salt' => ''];
         $di['mod'] = $di->protect(fn () => $modMock);
         $di['mod_service'] = $di->protect(fn () => $staffMock);
         $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
