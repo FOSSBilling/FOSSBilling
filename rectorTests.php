@@ -12,7 +12,7 @@ use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->paths([
-        __DIR__ . '/tests',
+        __DIR__ . '/tests-legacy',
     ]);
 
     $rectorConfig->skip([

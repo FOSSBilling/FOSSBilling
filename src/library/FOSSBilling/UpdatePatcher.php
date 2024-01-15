@@ -31,6 +31,14 @@ class UpdatePatcher implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function availablePatches(): int
+    {
+        $patchLevel = $this->getPatchLevel();
+        $patches = $this->getPatches($patchLevel);
+
+        return count($patches);
+    }
+
     /**
      * Apply configuration file patches.
      */
