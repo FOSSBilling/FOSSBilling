@@ -13,6 +13,8 @@ env:
     APP_ENV: test
     TEST_PASS: 4WGemqiihh8iM3
     TEST_EMAIL: email@example.com
+    APP_URL: http://localhost/
+    TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
 
 jobs:
   build:
@@ -29,11 +31,31 @@ jobs:
       - name: 'PHP Build' 
         uses: FOSSBilling/.workflows/.github/actions/php-build@8cdd61a976263ca52e1d53580c4d421d5f518369
         with:
-          cache-deps: 'false'
-          composer-args: '--prefer-dist --no-dev --optimize-autoloader'
+          cache-deps: 'true'
+          composer-args: '--prefer-dist --optimize-autoloader'
           php-version: 8.1
 
+      - name: Make Needed Directories
+        run: |
+          mkdir -p ./src/themes/admin_default/build
+          mkdir -p ./src/themes/huraga/build
+
+      - name: Cache Built Admin Theme
+        id: cache-admin_default
+        uses: actions/cache@v3
+        with:
+          path: ./src/themes/admin_default/build
+          key: admin_default-${{ hashFiles('./package-lock.json', './src/themes/admin_default/assets/fossbilling.js', './src/themes/admin_default/assets/scss/*.scss', './src/themes/admin_default/assets/js/*.js', './src/themes/admin_default/assets/js/ui/*.js') }}
+
+      - name: Cache Built Huraga Theme
+        id: cache-huraga
+        uses: actions/cache@v3
+        with:
+          path: ./src/themes/huraga/build
+          key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
+
       - name: 'Install Node.js and Enable Caching'
+        if: steps.cache-admin_default.outputs.cache-hit != 'true' && steps.cache-huraga.outputs.cache-hit != 'true'
         uses: actions/setup-node@v4
         with:
           cache: 'npm'
@@ -41,9 +63,11 @@ jobs:
           node-version: 20
 
       - name: 'Install Node.js Dependencies'
+        if: steps.cache-admin_default.outputs.cache-hit != 'true' && steps.cache-huraga.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: 'Build Frontend Assets'
+        if: steps.cache-admin_default.outputs.cache-hit != 'true' && steps.cache-huraga.outputs.cache-hit != 'true'
         run: npm run build
 
       - name: 'Download Latest Translations'
@@ -109,10 +133,10 @@ jobs:
           sudo systemctl restart apache2
 
           # Finally, set the permissions
-          sudo chown -R www-data:www-data /var/www/html*
+          sudo chown -R www-data:www-data /var/www/localhost*
           cd /var/www/localhost
-          sudo find . -type d -exec chmod 777 {} \;
-          sudo find . -type f -exec chmod 777 {} \;
+          sudo find . -type d -exec chmod 755 {} \;
+          sudo find . -type f -exec chmod 644 {} \;
 
       - name: Setup MySQL
         run: |
@@ -133,5 +157,20 @@ jobs:
           -F admin_password="${{ env.TEST_PASS }}" \
           -F currency_code="USD" \
           -F currency_title="US Dollar" \
+          -F admin_api_token="${{ env.TEST_API_KEY }}" \
           -X POST \
           http://localhost/install/install.php?a=install
+
+      - name: Run Cron
+        run: php /var/www/localhost/cron.php
+
+      - name: Run the API test suite
+        run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
+
+      - name: Display the FOSSBilling PHP error log
+        if: always()
+        run: cat /var/www/localhost/data/log/php_error.log
+      
+      - name: Display the Admin Table
+        if: always()
+        run: mysql -u ${{ env.DB_USER }} -p${{ env.DB_PASS }} -e "SELECT * FROM  ${{ env.DB_NAME }}.admin"

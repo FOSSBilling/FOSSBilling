@@ -173,6 +173,12 @@ class Update implements InjectionAwareInterface
         return $result > 0;
     }
 
+    public function isBehindOnDBPatches(): bool
+    {
+        $patcher = new UpdatePatcher();
+        return $patcher->availablePatches() > 0;
+    }
+
     /**
      * Perform manual update - apply patches and update config.
      *

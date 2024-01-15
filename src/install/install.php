@@ -133,6 +133,13 @@ final class FOSSBilling_Installer
                     $this->session->set('admin_name', $_POST['admin_name']);
                     $this->session->set('admin_email', $_POST['admin_email']);
                     $this->session->set('admin_password', $_POST['admin_password']);
+
+                    if (Environment::isTesting()) {
+                        $this->session->set('admin_api_token', $_POST['admin_api_token'] ?? null);
+                    } else {
+                        $this->session->set('admin_api_token', null);
+                    }
+
                     $this->validateAdmin();
 
                     // Setup default currency
@@ -343,11 +350,12 @@ final class FOSSBilling_Installer
 
         // Create default administrator
         $passwordObject = new Box_Password();
-        $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW());");
+        $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at, api_token) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW(), :api_token);");
         $stmt->execute([
             'admin_name' => $this->session->get('admin_name'),
             'admin_email' => $this->session->get('admin_email'),
             'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
+            'api_token' => $this->session->get('admin_api_token'),
         ]);
 
         // Delete default currency from content file and use currency passed in the installer

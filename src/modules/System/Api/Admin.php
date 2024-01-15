@@ -207,11 +207,9 @@ class Admin extends \Api_Abstract
     /**
      * Update FOSSBilling config.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function manual_update()
+    public function manual_update(): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
@@ -223,6 +221,16 @@ class Admin extends \Api_Abstract
 
         return true;
     }
+
+    /**
+     * Checks if the database is behind on patches
+     */
+    public function is_behind_on_patches(): bool
+    {
+        $updater = $this->di['updater'];
+        return $updater->isBehindOnDBPatches();
+    }
+
 
     /**
      * Returns the unique instance ID for this FOSSBilling installation.

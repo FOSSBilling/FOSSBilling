@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -185,10 +186,13 @@ class Client implements InjectionAwareInterface
     private function getAuth()
     {
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            error_log("HTTP_AUTHORIZATION: " . $_SERVER['HTTP_AUTHORIZATION']);
             $auth_params = explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
             $_SERVER['PHP_AUTH_USER'] = $auth_params[0];
             unset($auth_params[0]);
             $_SERVER['PHP_AUTH_PW'] = implode('', $auth_params);
+        } else {
+            error_log("HTTP_AUTHORIZATION was not set.");
         }
 
         if (!isset($_SERVER['PHP_AUTH_USER'])) {
@@ -203,6 +207,7 @@ class Client implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 206);
         }
 
+        error_log("User: " . $_SERVER['PHP_AUTH_USER'] . "pass: " . $_SERVER['PHP_AUTH_PW']);
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
     }
 
