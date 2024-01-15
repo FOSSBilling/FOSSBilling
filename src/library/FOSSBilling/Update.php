@@ -177,6 +177,7 @@ class Update implements InjectionAwareInterface
     {
         $patcher = new UpdatePatcher();
         $patcher->setDi($this->di);
+
         return $patcher->availablePatches() > 0;
     }
 

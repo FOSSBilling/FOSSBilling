@@ -35,6 +35,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
+
         return count($patches);
     }
 

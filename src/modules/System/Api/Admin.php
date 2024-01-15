@@ -223,14 +223,14 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Checks if the database is behind on patches
+     * Checks if the database is behind on patches.
      */
     public function is_behind_on_patches(): bool
     {
         $updater = $this->di['updater'];
+
         return $updater->isBehindOnDBPatches();
     }
-
 
     /**
      * Returns the unique instance ID for this FOSSBilling installation.

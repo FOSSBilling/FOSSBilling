@@ -5,18 +5,15 @@ namespace APIHelper;
 class Request
 {
     /**
-     * Handles making a response to the FOSSBilling server
-     * 
-     * @param string $endpoint the API endpoint to call (Example: `guest/system/company`)
-     * @param string $method set to POST to have cURL make a POST request to the server 
-     * @param array $payload when using POST, this array will be sent as the POST fields 
-     * @param null|string $username (optional) the username to authenticate with
-     * @param null|string $apiKey (optional) the API key to authenticate with
-     * @param null|string $baseUrl (optional) the base instance URL to make requests against (Example: `http://localhost/`)
-     * 
-     * @return Response 
+     * Handles making a response to the FOSSBilling server.
+     *
+     * @param string      $endpoint the API endpoint to call (Example: `guest/system/company`)
+     * @param string      $method   set to POST to have cURL make a POST request to the server
+     * @param array       $payload  when using POST, this array will be sent as the POST fields
+     * @param string|null $apiKey   (optional) the API key to authenticate with
+     * @param string|null $baseUrl  (optional) the base instance URL to make requests against (Example: `http://localhost/`)
      */
-    public static function makeRequest(string $endpoint, array $payload = [], ?string $role = null, ?string $apiKey = null, string $method = 'POST', ?string $baseUrl = null): Response
+    public static function makeRequest(string $endpoint, array $payload = [], string $role = null, string $apiKey = null, string $method = 'POST', string $baseUrl = null): Response
     {
         $cookie = tempnam(sys_get_temp_dir(), 'cookie.txt');
         if (!$role) {
@@ -91,6 +88,7 @@ class Response
     {
         $message = $this->decodedResponse['error']['message'] ?? 'None';
         $code = $this->decodedResponse['error']['code'] ?? 0;
+
         return "$message (Error code $code)";
     }
 
