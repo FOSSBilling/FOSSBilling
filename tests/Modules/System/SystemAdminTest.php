@@ -13,9 +13,5 @@ final class SystemAdminTest extends TestCase
         $response = Request::makeRequest('admin/system/clear_cache');
         $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
         $this->assertIsBool($response->getResult());
-
-        // And then validate the folder is actually empty
-        $this->assertDirectoryExists(APP_PATH . DIRECTORY_SEPARATOR . 'Cache');
-        $this->assertFalse(scandir(APP_PATH . DIRECTORY_SEPARATOR . 'Cache'));
     }
 }

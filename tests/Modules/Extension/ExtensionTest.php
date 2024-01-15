@@ -58,7 +58,7 @@ final class ExtensionTest extends TestCase
         $this->assertEmpty(Request::makeRequest('admin/extension/languages', ['disabled' => true, 'details' => false])->getResult()); // There should now be no disabled languages
 
         // Get a list of all languages, validate they have an expected completion level
-        $locales = Request::makeRequest('admin/extension/languages')->getResult();
+        $locales = Request::makeRequest('admin/extension/languages', ['details' => false])->getResult();
         foreach ($locales as $locale) {
             $completionResult = Request::makeRequest('admin/extension/locale_completion', ['locale_id' => $locale]);
             if ($locale === 'en_US') {

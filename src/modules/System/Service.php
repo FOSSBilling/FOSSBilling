@@ -463,9 +463,6 @@ class Service
     public function clearCache()
     {
         $this->di['tools']->emptyFolder(PATH_CACHE);
-        if (!file_exists(PATH_CACHE)) {
-            mkdir(PATH_CACHE);
-        }
 
         return true;
     }

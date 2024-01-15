@@ -18,7 +18,7 @@ final class CronGuestTest extends TestCase
         Request::makeRequest('admin/system/update_params', ['guest_cron' => true]);
         Request::makeRequest('admin/system/update_params', ['last_cron_exec' => date('Y-m-d H:i:s', time() - 6400)]);
         $response = Request::makeRequest('guest/cron/run');
-        $this->assertTrue($response->wasSuccessful(), 'Cron should have run, but did not');
+        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
 
         // Finally, ensure the rate limit is working
         $response = Request::makeRequest('guest/cron/run');
