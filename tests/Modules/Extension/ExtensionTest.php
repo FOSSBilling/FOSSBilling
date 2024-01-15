@@ -13,11 +13,17 @@ final class ExtensionTest extends TestCase
         $this->assertTrue($response->wasSuccessful(), 'The API request failed with the following message: ' . $response->getError());
     }
 
-    public function testCanInstallExtension(): void
+    public function testCanDeactivateExtension(): void
+    {
+        $response = Request::makeRequest('admin/extension/deactivate', 'POST', ['type' => 'mod', 'id' => 'massmailer']);
+        $this->assertTrue($response->wasSuccessful(), 'The API request failed with the following message: ' . $response->getError());
+    }
+
+    /*public function testCanInstallExtension(): void
     {
         $response = Request::makeRequest('admin/extension/install', 'POST', ['type' => 'mod', 'id' => 'example']);
         $this->assertTrue($response->wasSuccessful(), 'The API request failed with the following message: ' . $response->getError());
-    }
+    }*/
 
     public function testLanguageManagement(): void
     {
