@@ -137,7 +137,7 @@ final class FOSSBilling_Installer
                     if (Environment::isTesting()) {
                         $this->session->set('admin_api_token', $_POST['admin_api_token'] ?? null);
                     } else {
-                        $this->session->set('admin_api_token', null);
+                        $this->session->set('admin_api_token', $_POST['admin_api_token'] ?? null);
                     }
 
                     $this->validateAdmin();
