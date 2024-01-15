@@ -40,4 +40,4 @@ Reports covering any of the following topics will be rejected by the FOSSBilling
 - Weak SSL/TLS/SSH algorithms or protocols.
 - Attacks involving physical access to a user’s device, or involving a device or network that’s already seriously compromised (eg man-in-the-middle).
 - The user attacks themselves.
-- Anything in `/tests-legacy`.
+- Anything in `/tests-legacy` or `tests`.

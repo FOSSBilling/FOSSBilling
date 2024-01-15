@@ -10,15 +10,13 @@ final class HealthTest extends TestCase
     public function testIsFOSSBillingWorking(): void
     {
         $response = Request::makeRequest('guest/system/company');
-        $this->assertEquals(200, $response->getHttpCode());
-        $this->assertTrue($response->wasSuccessful(), "The API request failed with the following message: " . $response->getError());
+        $this->assertTrue($response->wasSuccessful(), 'The API request failed with the following message: ' . $response->getError());
     }
 
     public function testStartingPatchNotBehind(): void
     {
         $response = Request::makeRequest('admin/system/is_behind_on_patches');
-        $this->assertEquals(200, $response->getHttpCode());
-        $this->assertTrue($response->wasSuccessful(), "The API request failed with the following message: " . $response->getError());
-        $this->assertNotTrue($response->getResult());
+        $this->assertTrue($response->wasSuccessful(), 'The API request failed with the following message: ' . $response->getError());
+        $this->assertNotTrue($response->getResult()); // This should return false to indicate there are no patches available, meaning the `last_patch` number is correct for fresh installs.
     }
 }

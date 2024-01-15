@@ -17,15 +17,9 @@ env:
     TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
 
 jobs:
-  build:
+  fresh-install:
     runs-on: ubuntu-latest
     steps:
-      #- name: Download FOSSBilling Release Archive
-      #  uses: dawidd6/action-download-artifact@v3
-      #  with:
-      #    name: FOSSBilling Preview
-      #    workflow: release-build.yml
-
       - uses: actions/checkout@v4
 
       - name: 'PHP Build' 
@@ -170,7 +164,3 @@ jobs:
       - name: Display the FOSSBilling PHP error log
         if: always()
         run: cat /var/www/localhost/data/log/php_error.log
-      
-      - name: Display the Admin Table
-        if: always()
-        run: mysql -u ${{ env.DB_USER }} -p${{ env.DB_PASS }} -e "SELECT * FROM  ${{ env.DB_NAME }}.admin"
