@@ -384,7 +384,8 @@
         "CURLAUTH",
         "USERPWD",
         "COOKIEJAR",
-        "COOKIEFILE"
+        "COOKIEFILE",
+        "nonaggregated"
     ],
     "ignorePaths": [
         "tests-legacy/**",

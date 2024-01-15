@@ -28,7 +28,8 @@ final class CronAdminTest extends TestCase
         $response = Request::makeRequest('admin/cron/info');
         $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
         $this->assertNotEmpty($response->getResult()['last_cron_exec']);
+
         $newDate = new DateTime($response->getResult()['last_cron_exec']);
-        $this->assertGreaterThan($newDate, $firstDate, "Cron's last execution time was not incremented");
+        $this->assertGreaterThan($firstDate, $newDate, "Cron's last execution time was not incremented");
     }
 }
