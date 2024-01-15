@@ -15,7 +15,6 @@ env:
     TEST_EMAIL: email@example.com
     APP_URL: http://localhost/
     TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
-    APP_PATH: /var/www/localhost
 
 jobs:
   fresh-install:

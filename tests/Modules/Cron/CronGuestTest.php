@@ -22,6 +22,7 @@ final class CronGuestTest extends TestCase
 
         // Finally, ensure the rate limit is working
         $response = Request::makeRequest('guest/cron/run');
-        $this->assertFalse($response->wasSuccessful(), 'Cron ran when it should have been rate limited');
+        $this->assertTrue($response->wasSuccessful(), 'Cron ran when it should have been rate limited');
+        $this->assertFalse($response->getResult()); // Returns false when rate-limited
     }
 }
