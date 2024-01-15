@@ -245,7 +245,7 @@ class Admin extends \Api_Abstract
      */
     public function error_reporting_enabled(): bool
     {
-        return (bool) Config::getProperty('debug_and_monitoring.report_errors');
+        return (bool) Config::getProperty('debug_and_monitoring.report_errors', false);
     }
 
     /**
@@ -253,7 +253,7 @@ class Admin extends \Api_Abstract
      */
     public function toggle_error_reporting(): bool
     {
-        $current = Config::getProperty('debug_and_monitoring.report_errors', true);
+        $current = Config::getProperty('debug_and_monitoring.report_errors', false);
         Config::setProperty('debug_and_monitoring.report_errors', !$current);
 
         return true;

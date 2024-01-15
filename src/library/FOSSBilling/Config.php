@@ -60,7 +60,9 @@ class Config
         $config = self::getConfig();
 
         $temp = &$config;
-        foreach (explode('.', $property) as $segment) {
+        $segments = explode('.', $property);
+
+        foreach ($segments as $segment) {
             if (!array_key_exists($segment, $temp) || !is_array($temp[$segment])) {
                 $temp[$segment] = [];
             }
@@ -95,6 +97,9 @@ class Config
         }
 
         if ($clearCache) {
+            @touch(PATH_CACHE, time() - 6400);
+            @opcache_invalidate(PATH_CONFIG, true);
+            opcache_compile_file(PATH_CONFIG);
             try {
                 $filesystem->remove(PATH_CACHE);
                 $filesystem->mkdir(PATH_CACHE, 0755);
