@@ -97,9 +97,12 @@ class Config
         }
 
         if ($clearCache) {
-            @touch(PATH_CACHE, time() - 6400);
-            @opcache_invalidate(PATH_CONFIG, true);
-            opcache_compile_file(PATH_CONFIG);
+            if (function_exists('opcache_invalidate') && function_exists('opcache_compile_file')) {
+                @touch(PATH_CACHE, time() - 6400);
+                @opcache_invalidate(PATH_CONFIG, true);
+                @opcache_compile_file(PATH_CONFIG);
+            }
+
             try {
                 $filesystem->remove(PATH_CACHE);
                 $filesystem->mkdir(PATH_CACHE, 0755);
