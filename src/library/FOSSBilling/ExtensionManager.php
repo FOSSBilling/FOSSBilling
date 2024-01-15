@@ -136,7 +136,7 @@ class ExtensionManager implements InjectionAwareInterface
     {
         $latest = $this->getLatestExtensionRelease($extension);
 
-        if ($this->di['config']['update_branch'] === 'release') {
+        if ($this->di['config']['update_branch'] === 'release' && !Environment::isTesting()) {
             if (version_compare(Version::VERSION, $latest['min_fossbilling_version'], '<')) {
                 return false;
             }
