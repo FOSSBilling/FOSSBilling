@@ -16,7 +16,7 @@ class Request
      * 
      * @return Response 
      */
-    public static function makeRequest(string $endpoint, string $method = 'POST', array $payload = [], ?string $role = null, ?string $apiKey = null, ?string $baseUrl = null): Response
+    public static function makeRequest(string $endpoint, array $payload = [], ?string $role = null, ?string $apiKey = null, string $method = 'POST', ?string $baseUrl = null): Response
     {
         $cookie = tempnam(sys_get_temp_dir(), 'cookie.txt');
         if (!$role) {
