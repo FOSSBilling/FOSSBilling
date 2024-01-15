@@ -176,6 +176,7 @@ class Update implements InjectionAwareInterface
     public function isBehindOnDBPatches(): bool
     {
         $patcher = new UpdatePatcher();
+        $patcher->setDi($this->di);
         return $patcher->availablePatches() > 0;
     }
 
