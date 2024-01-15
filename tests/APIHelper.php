@@ -92,6 +92,11 @@ class Response
         return "$message (Error code $code)";
     }
 
+    public function generatePHPUnitMessage(): string
+    {
+        return 'The API request failed with the following message: ' . $this->getError();
+    }
+
     public function getResult(): mixed
     {
         return $this->decodedResponse['result'] ?? '';

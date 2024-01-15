@@ -110,8 +110,9 @@ class ErrorPage
      *
      * @param int $code The error code
      */
-    public static function getCodeInfo(int $code): array
+    public static function getCodeInfo(int|string $code): array
     {
+        $code = intval($code);
         $errorDetails = [
             'title' => 'An error has occurred.',
             'link' => [
