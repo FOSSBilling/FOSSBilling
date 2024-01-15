@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,6 +15,7 @@
 
 namespace Box\Mod\Api\Controller;
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -89,7 +91,7 @@ class Client implements InjectionAwareInterface
     private function _loadConfig()
     {
         if (is_null($this->_api_config)) {
-            $this->_api_config = $this->di['config']['api'];
+            $this->_api_config = Config::getProperty('api', []);
         }
     }
 

@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Ramsey\Uuid\Uuid;
-use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -31,24 +30,23 @@ class UpdatePatcher implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function availablePatches(): int
+    {
+        $patchLevel = $this->getPatchLevel();
+        $patches = $this->getPatches($patchLevel);
+
+        return count($patches);
+    }
+
     /**
      * Apply configuration file patches.
      */
     public function applyConfigPatches(): void
     {
-        $filesystem = new Filesystem();
-
-        $currentConfig = include PATH_CONFIG;
+        $currentConfig = Config::getConfig();
 
         if (!is_array($currentConfig)) {
             throw new Exception('Unable to load existing configuration');
-        }
-
-        // Create backup of current configuration.
-        try {
-            $filesystem->copy(PATH_CONFIG, substr(PATH_CONFIG, 0, -4) . '.old.php');
-        } catch (FileNotFoundException|IOException) {
-            throw new Exception('Unable to create backup of configuration file');
         }
 
         $newConfig = $currentConfig;
@@ -97,15 +95,7 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        $output = '<?php ' . PHP_EOL;
-        $output .= 'return ' . var_export($newConfig, true) . ';';
-
-        // Write updated configuration file.
-        try {
-            $filesystem->dumpFile(PATH_CONFIG, $output);
-        } catch (IOException) {
-            throw new Exception('Error when writing updated configuration file.');
-        }
+        Config::setConfig($newConfig);
     }
 
     /**

@@ -378,10 +378,17 @@
         "borderless",
         "serviceproxmox",
         "servicegoogleworkspace",
-        "servicemulticraft"
+        "servicemulticraft",
+        "CURLOPT",
+        "HTTPAUTH",
+        "CURLAUTH",
+        "USERPWD",
+        "COOKIEJAR",
+        "COOKIEFILE",
+        "nonaggregated"
     ],
     "ignorePaths": [
-        "tests/**",
+        "tests-legacy/**",
         "node_modules/**",
         "src/themes/*/assets/**",
         "src/install/assets/**",
@@ -392,6 +399,7 @@
         "build.xml",
         "data/**",
         "phpunit.xml.dist",
+        "phpunit-live.xml",
         "bin/**",
         "src/library/GeoLite2-Country.mmdb",
         "cspell.json",

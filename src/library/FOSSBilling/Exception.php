@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -25,9 +26,8 @@ class Exception extends \Exception
      */
     public function __construct(string $message, array $variables = null, int $code = 0, bool $protected = false)
     {
-        $config = include PATH_CONFIG;
-        $logStack = $config['debug_and_monitoring']['log_stacktrace'] ?? true;
-        $stackLength = $config['debug_and_monitoring']['stacktrace_length'] ?? 25;
+        $logStack = Config::getProperty('debug_and_monitoring.log_stacktrace', true);
+        $stackLength = Config::getProperty('debug_and_monitoring.stacktrace_length', 25);
 
         if (DEBUG && $logStack) {
             error_log('An exception has been thrown. Stacktrace:');

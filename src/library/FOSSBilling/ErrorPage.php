@@ -110,8 +110,9 @@ class ErrorPage
      *
      * @param int $code The error code
      */
-    public static function getCodeInfo(int $code): array
+    public static function getCodeInfo(int|string $code): array
     {
+        $code = intval($code);
         $errorDetails = [
             'title' => 'An error has occurred.',
             'link' => [
@@ -148,8 +149,12 @@ class ErrorPage
     public function generatePage(int $code, string $message): never
     {
         $error = static::getCodeInfo($code);
-        $error['message'] ??= "You've received a generic error message: <code> . $message . </code>";
-        $instanceID = INSTANCE_ID ?? 'Unknown';
+        $error['message'] ??= "You've received a generic error message: <code> $message </code>";
+        if (defined('INSTANCE_ID')) {
+            $instanceID = INSTANCE_ID;
+        } else {
+            $instanceID = 'Unknown';
+        }
 
         $page = '
         <!DOCTYPE html>

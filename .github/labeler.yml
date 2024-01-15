@@ -73,4 +73,5 @@ npm:
 tests/CI:
   - any:
     - changed-files:
+      - any-glob-to-any-file: ["tests-legacy/**/*"]
       - any-glob-to-any-file: ["tests/**/*"]

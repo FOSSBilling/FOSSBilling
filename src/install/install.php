@@ -133,12 +133,15 @@ final class FOSSBilling_Installer
                     $this->session->set('admin_name', $_POST['admin_name']);
                     $this->session->set('admin_email', $_POST['admin_email']);
                     $this->session->set('admin_password', $_POST['admin_password']);
+
+                    $this->session->set('admin_api_token', $_POST['admin_api_token'] ?? null);
+
                     $this->validateAdmin();
 
                     // Setup default currency
                     $this->session->set('currency_code', $_POST['currency_code']);
                     $this->session->set('currency_title', $_POST['currency_title']);
-                    $this->session->set('currency_format', $_POST['currency_format']);
+                    $this->session->set('currency_format', $_POST['currency_format'] ?? '${{price}}');
 
                     // Attempt installation
                     $this->install();
@@ -343,11 +346,12 @@ final class FOSSBilling_Installer
 
         // Create default administrator
         $passwordObject = new Box_Password();
-        $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW());");
+        $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at, api_token) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW(), :api_token);");
         $stmt->execute([
             'admin_name' => $this->session->get('admin_name'),
             'admin_email' => $this->session->get('admin_email'),
             'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
+            'api_token' => $this->session->get('admin_api_token'),
         ]);
 
         // Delete default currency from content file and use currency passed in the installer
@@ -406,7 +410,6 @@ final class FOSSBilling_Installer
         $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['update_branch'] = $updateBranch;
-        $data['info']['salt'] = bin2hex(random_bytes(16));
         $data['info']['instance_id'] = Uuid::uuid4()->toString();
         $data['url'] = SYSTEM_URL;
         $data['path_data'] = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';

@@ -42,7 +42,7 @@ class Update implements InjectionAwareInterface
      */
     public function getUpdateBranch(): string
     {
-        return $this->di['config']['update_branch'] ?? 'release';
+        return Config::getProperty('update_branch', 'release');
     }
 
     /**
@@ -171,6 +171,14 @@ class Update implements InjectionAwareInterface
         $result = (Version::isPreviewVersion() && $this->getUpdateBranch() === 'release') ? 1 : $result;
 
         return $result > 0;
+    }
+
+    public function isBehindOnDBPatches(): bool
+    {
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($this->di);
+
+        return $patcher->availablePatches() > 0;
     }
 
     /**

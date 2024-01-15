@@ -37,3 +37,4 @@ src/.php-cs-fixer.cache
 src/themes/*/config/settings_data.json
 docker-compose.yml
 .phpunit.cache/test-results
+.phpunit-live.cache/test-results
