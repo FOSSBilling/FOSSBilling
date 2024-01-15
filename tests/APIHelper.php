@@ -89,7 +89,9 @@ class Response
 
     public function getError(): string
     {
-        return $this->decodedResponse['error'] ?? '';
+        $message = $this->decodedResponse['error']['message'] ?? 'None';
+        $code = $this->decodedResponse['error']['code'] ?? 0;
+        return "$message (Error code $code)";
     }
 
     public function getResult(): mixed
