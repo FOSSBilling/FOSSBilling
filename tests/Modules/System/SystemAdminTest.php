@@ -26,9 +26,6 @@ final class SystemAdminTest extends TestCase
         $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
         $this->assertTrue($response->getResult());
 
-        // Reset OPCache, wait a moment so a cached result doesn't give us issues
-        sleep(1);
-
         // Check that it was correctly switched
         $after = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
         $this->assertIsBool($after);
