@@ -14,7 +14,7 @@ final class StatsAdminTest extends TestCase
         $this->assertIsArray($response->getResult());
     }
 
-    public function testStstsSummaryIncome(): void
+    public function testStatsSummaryIncome(): void
     {
         $response = Request::makeRequest('admin/stats/get_summary_income');
         $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());

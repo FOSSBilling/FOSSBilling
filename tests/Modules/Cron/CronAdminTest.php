@@ -12,7 +12,7 @@ final class CronAdminTest extends TestCase
         // Get when cron was last run
         $response = Request::makeRequest('admin/cron/info');
         $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $firstDate = new DateTime($response->getResult()['last_cron_exec']);
+        $firstDate = new DateTime($response->getResult()['last_cron_exec'] ?? 'now');
 
         // Then run it
         $response = Request::makeRequest('admin/cron/run');
