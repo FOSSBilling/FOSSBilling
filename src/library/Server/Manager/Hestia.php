@@ -113,6 +113,20 @@ class Server_Manager_Hestia extends Server_Manager
         return $name;
     }
 
+    public function generateUsername($domainName)
+    {
+        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domainName));
+        $username = substr($processedDomain, 0, 7) . random_int(0, 9);
+
+        // HestiaCP doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does.
+        // See: https://github.com/hestiacp/hestiacp/pull/4195
+        if (is_numeric(substr($username, 0, 1))) {
+            $username = substr_replace($username, 'a', 0, 1);
+        }
+
+        return $username;
+    }
+
     /**
      * This method is called to check if configuration is correct
      * and class can connect to server.
