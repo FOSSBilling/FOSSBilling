@@ -1,27 +1,15 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 class Server_Manager_Hestia extends Server_Manager
 {
-    /**
-     * Method is called just after obejct contruct is complete.
-     * Add required parameters checks here.
-     */
-    public function init()
-    {
-    }
-
-    public function _getPort()
-    {
-        return is_numeric($this->_config['port']) ? $this->_config['port'] : '8083';
-    }
-
     /**
      * Return server manager parameters.
      */
@@ -53,28 +41,314 @@ class Server_Manager_Hestia extends Server_Manager
     }
 
     /**
-     * Returns link to account management page.
-     *
-     * @return string
+     * Method is called just after object construct is complete.
+     * Add required parameters checks here.
      */
-    public function getLoginUrl(Server_Account $account = null)
+    public function init()
     {
-        return 'https://' . $this->_config['host'] . ':' . $this->_getPort() . '/';
     }
 
     /**
      * Returns link to reseller account management.
-     *
-     * @return string
      */
-    public function getResellerLoginUrl(Server_Account $account = null)
+    public function getResellerLoginUrl(Server_Account $account = null): string
     {
         return $this->getLoginUrl();
     }
 
-    private function _makeRequest($params)
+    /**
+     * Returns link to account management page.
+     */
+    public function getLoginUrl(Server_Account $account = null): string
     {
-        $host = 'https://' . $this->_config['host'] . ':' . $this->_getPort() . '/api/';
+        return 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/';
+    }
+
+    public function getPort(): int|string
+    {
+        $port = $this->_config['port'];
+
+        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
+            return $this->_config['port'];
+        } else {
+            return 8083;
+        }
+    }
+
+    public function generateUsername(string $domain): string
+    {
+        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domain));
+        $username = substr($processedDomain, 0, 7) . random_int(0, 9);
+
+        // HestiaCP doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does.
+        // See: https://github.com/hestiacp/hestiacp/pull/4195
+        if (is_numeric(substr($username, 0, 1))) {
+            $username = substr_replace($username, 'a', 0, 1);
+        }
+
+        return $username;
+    }
+
+    /**
+     * This method is called to check if configuration is correct
+     * and class can connect to server.
+     *
+     * @throws Server_Exception
+     */
+    public function testConnection(): bool
+    {
+        // Prepare POST query
+        $postVars = [
+            'cmd' => 'v-list-users',
+            'arg1' => $this->_config['username'],
+            'arg2' => $this->_config['password'],
+        ];
+
+        // Make request and check sys info
+        $result = $this->request($postVars);
+        if (intval($result) != 0) {
+            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'HestiaCP']);
+        }
+
+        return true;
+    }
+
+    /**
+     * Methods retrieves information from server, assign's new values to
+     * cloned Server_Account object and returns it.
+     */
+    public function synchronizeAccount(Server_Account $account): Server_Account
+    {
+        $this->getLog()->info('Synchronizing account with server ' . $account->getUsername());
+
+        // @example - retrieve username from server and set it to cloned object
+        // $new->setUsername('newusername');
+        return clone $account;
+    }
+
+    /**
+     * Create new account on server.
+     *
+     * @return true
+     *
+     * @throws Server_Exception
+     */
+    public function createAccount(Server_Account $account): bool
+    {
+        $client = $account->getClient();
+
+        // Prepare POST query
+        $postVars = [
+            'cmd' => 'v-add-user',
+            'arg1' => $account->getUsername(),
+            'arg2' => $account->getPassword(),
+            'arg3' => $client->getEmail(),
+            'arg4' => $account->getPackage()->getName(),
+            'arg5' => trim($client->getFullName()),
+        ];
+
+        // Make request and create user
+        $result1 = $this->request($postVars);
+        if (intval($result1) == 0) {
+            // Create Domain Prepare POST query
+            $postVars = [
+                'cmd' => 'v-add-domain',
+                'arg1' => $account->getUsername(),
+                'arg2' => $account->getDomain(),
+            ];
+            $result2 = $this->request($postVars);
+        } else {
+            $placeholders = [':action:' => __trans('create user'), ':type:' => 'HestiaCP'];
+
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        if (intval($result2) !== 0) {
+            $postVars = [
+                'cmd' => 'v-delete-user',
+                'arg1' => $account->getUsername(),
+            ];
+
+            $result3 = $this->request($postVars);
+            if (intval($result3) !== 0) {
+                $placeholders = [':action1:' => __trans('delete domain'), ':action2:' => __trans('create domain'), ':type:' => 'HestiaCP'];
+
+                throw new Server_Exception('Failed to :action1: on the :type: server after failed to :action2:, check the error logs for further details', $placeholders);
+            }
+            $placeholders = [':action:' => __trans('create domain'), ':type:' => 'HestiaCP'];
+
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Suspend account on server.
+     *
+     * @throws Server_Exception
+     */
+    public function suspendAccount(Server_Account $account): bool
+    {
+        // Prepare POST query
+        $postVars = [
+            'cmd' => 'v-suspend-user',
+            'arg1' => $account->getUsername(),
+            'arg2' => 'no',
+        ];
+
+        // Make request and suspend user
+        $result = $this->request($postVars);
+
+        // Check for known errors
+        if (intval($result) !== 0 && intval($result) !== 6) {
+            $placeholders = [':action:' => __trans('suspend account'), ':type:' => 'HestiaCP'];
+
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Unsuspend account on server.
+     *
+     * @throws Server_Exception
+     */
+    public function unsuspendAccount(Server_Account $account): bool
+    {
+        // Prepare POST query
+        $postVars = [
+            'cmd' => 'v-unsuspend-user',
+            'arg1' => $account->getUsername(),
+            'arg2' => 'no',
+        ];
+
+        $result = $this->request($postVars);
+        if (intval($result) !== 0) {
+            $placeholders = [':action:' => __trans('unsuspend account'), ':type:' => 'HestiaCP'];
+
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Cancel account on server.
+     *
+     * @throws Server_Exception
+     */
+    public function cancelAccount(Server_Account $account): bool
+    {
+        // Prepare POST query
+        $postVars = [
+            'cmd' => 'v-delete-user',
+            'arg1' => $account->getUsername(),
+            'arg2' => 'no',
+        ];
+
+        // Make request and delete user
+        $result = $this->request($postVars);
+        if (intval($result) !== 0 && intval($result) !== 3) {
+            $placeholders = [':action:' => __trans('cancel account'), ':type:' => 'HestiaCP'];
+
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Change account package on server.
+     *
+     * @throws Server_Exception
+     */
+    public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
+    {
+        // Prepare POST query
+        $postVars = [
+            'cmd' => 'v-change-user-package',
+            'arg1' => $account->getUsername(),
+            'arg2' => $package->getName(),
+            'arg3' => 'no',
+        ];
+
+        // Make request and change package
+        $result = $this->request($postVars);
+        if (intval($result) !== 0) {
+            $placeholders = [':action:' => __trans('change account package'), ':type:' => 'HestiaCP'];
+
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Change account username on server.
+     *
+     * @throws Server_Exception
+     */
+    public function changeAccountUsername(Server_Account $account, $newUsername): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('username changes')]);
+    }
+
+    /**
+     * Change account domain on server.
+     *
+     * @throws Server_Exception
+     */
+    public function changeAccountDomain(Server_Account $account, $newDomain): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('changing the account domain')]);
+    }
+
+    /**
+     * Change account password on server.
+     *
+     * @throws Server_Exception
+     */
+    public function changeAccountPassword(Server_Account $account, string $newPassword): bool
+    {
+        // Prepare POST query
+        $postVars = [
+            'cmd' => 'v-change-user-password',
+            'arg1' => $account->getUsername(),
+            'arg2' => $newPassword,
+        ];
+
+        // Make request and change password
+        $result = $this->request($postVars);
+        if (intval($result) !== 0) {
+            $placeholders = [':action:' => __trans('change account password'), ':type:' => 'HestiaCP'];
+
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Change account IP on server.
+     *
+     * @throws Server_Exception
+     */
+    public function changeAccountIp(Server_Account $account, string $newIp): never
+    {
+        throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('changing the account IP')]);
+    }
+
+    /**
+     * @throws Server_Exception
+     */
+    private function request($params): mixed
+    {
+        $host = 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/api/';
+
+        // Set return code to yes
+        $params['returncode'] = 'yes';
 
         // Server credentials
         if ($this->_config['accesshash'] != '' && $this->_config['username'] != '') {
@@ -92,9 +366,11 @@ class Server_Manager_Hestia extends Server_Manager
             'verify_host' => false,
             'timeout' => 30,
         ]);
+
         $response = $client->request('POST', $host, [
             'body' => $params,
         ]);
+
         $result = $response->getContent();
 
         if (str_contains($result, 'Error')) {
@@ -104,296 +380,5 @@ class Server_Manager_Hestia extends Server_Manager
         }
 
         return $result;
-    }
-
-    private function _getPackageName(Server_Package $package)
-    {
-        $name = $package->getName();
-
-        return $name;
-    }
-
-    public function generateUsername($domainName)
-    {
-        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domainName));
-        $username = substr($processedDomain, 0, 7) . random_int(0, 9);
-
-        // HestiaCP doesn't allow usernames to start with a number, so automatically append the letter 'a' to the start of a username that does.
-        // See: https://github.com/hestiacp/hestiacp/pull/4195
-        if (is_numeric(substr($username, 0, 1))) {
-            $username = substr_replace($username, 'a', 0, 1);
-        }
-
-        return $username;
-    }
-
-    /**
-     * This method is called to check if configuration is correct
-     * and class can connect to server.
-     *
-     * @return bool
-     */
-    public function testConnection()
-    {
-        // Server credentials
-        $vst_command = 'v-list-users';
-        $vst_returncode = 'yes';
-        // Prepare POST query
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $this->_config['username'],
-            'arg2' => $this->_config['password'],
-        ];
-
-        // Make request and check sys info
-        $result = $this->_makeRequest($postvars);
-        if (intval($result) == 0) {
-            return true;
-        } else {
-            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'HestiaCP']);
-        }
-
-        return true;
-    }
-
-    /**
-     * Methods retrieves information from server, assign's new values to
-     * cloned Server_Account object and returns it.
-     *
-     * @return Server_Account
-     */
-    public function synchronizeAccount(Server_Account $a)
-    {
-        $this->getLog()->info('Synchronizing account with server ' . $a->getUsername());
-        $new = clone $a;
-
-        // @example - retrieve username from server and set it to cloned object
-        // $new->setUsername('newusername');
-        return $new;
-    }
-
-    /**
-     * Create new account on server.
-     */
-    public function createAccount(Server_Account $account)
-    {
-        $p = $account->getPackage();
-        $packname = $this->_getPackageName($p);
-        $client = $account->getClient();
-        // Server credentials
-        $vst_command = 'v-add-user';
-        $vst_returncode = 'yes';
-        // Prepare POST query
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $account->getUsername(),
-            'arg2' => $account->getPassword(),
-            'arg3' => $client->getEmail(),
-            'arg4' => $packname,
-            'arg5' => trim($client->getFullName()),
-        ];
-        // Make request and create user
-        $result1 = $this->_makeRequest($postvars);
-        if (intval($result1) == 0) {
-            // Create Domain Prepare POST query
-            $postvars2 = [
-                'returncode' => 'yes',
-                'cmd' => 'v-add-domain',
-                'arg1' => $account->getUsername(),
-                'arg2' => $account->getDomain(),
-            ];
-            $result2 = $this->_makeRequest($postvars2);
-        } else {
-            $placeholders = [':action:' => __trans('create user'), ':type:' => 'HestiaCP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-        if (intval($result2) !== 0) {
-            $postvars3 = [
-                'returncode' => 'yes',
-                'cmd' => 'v-delete-user',
-                'arg1' => $account->getUsername(),
-            ];
-            $result3 = $this->_makeRequest($postvars3);
-            if (intval($result3) !== 0) {
-                $placeholders = [':action1:' => __trans('delete domain'), ':action2:' => __trans('create domain'), ':type:' => 'HestiaCP'];
-
-                throw new Server_Exception('Failed to :action1: on the :type: server after failed to :action2:, check the error logs for further details', $placeholders);
-            }
-            $placeholders = [':action:' => __trans('create domain'), ':type:' => 'HestiaCP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-
-        return true;
-    }
-
-    /**
-     * Suspend account on server.
-     */
-    public function suspendAccount(Server_Account $a)
-    {
-        $user = $a->getUsername();
-        // Prepare POST query
-        $postvars = [
-            'returncode' => 'yes',
-            'cmd' => 'v-suspend-user',
-            'arg1' => $a->getUsername(),
-            'arg2' => 'no',
-        ];
-        // Make request and suspend user
-        $result = $this->_makeRequest($postvars);
-        // Check if error 6 the account is suspended on server
-        if (intval($result) == 6) {
-            return true;
-        }
-        if (intval($result) !== 0) {
-            $placeholders = [':action:' => __trans('suspend account'), ':type:' => 'HestiaCP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-
-        return true;
-    }
-
-    /**
-     * Unsuspend account on server.
-     */
-    public function unsuspendAccount(Server_Account $a)
-    {
-        // Server credentials
-        $vst_command = 'v-unsuspend-user';
-        $vst_returncode = 'yes';
-        // Prepare POST query
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $a->getUsername(),
-            'arg2' => 'no',
-        ];
-
-        $result = $this->_makeRequest($postvars);
-        if (intval($result) !== 0) {
-            $placeholders = [':action:' => __trans('unsuspend account'), ':type:' => 'HestiaCP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-
-        return true;
-    }
-
-    /**
-     * Cancel account on server.
-     */
-    public function cancelAccount(Server_Account $a)
-    {
-        // Server credentials
-        $vst_username = $this->_config['username'];
-        $vst_password = $this->_config['password'];
-        $vst_command = 'v-delete-user';
-        $vst_returncode = 'yes';
-        // Prepare POST query
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $a->getUsername(),
-            'arg2' => 'no',
-        ];
-        // Make request and delete user
-        $result = $this->_makeRequest($postvars);
-        if (intval($result) == '3') {
-            return true;
-        } elseif (intval($result) !== 0) {
-            $placeholders = [':action:' => __trans('cancel account'), ':type:' => 'HestiaCP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-
-        return true;
-    }
-
-    /**
-     * Change account package on server.
-     */
-    public function changeAccountPackage(Server_Account $a, Server_Package $p)
-    {
-        $package = $a->getPackage()->getName();
-
-        // Server credentials
-        $vst_username = $this->_config['username'];
-        $vst_password = $this->_config['password'];
-        $vst_command = 'v-change-user-package';
-        $vst_returncode = 'yes';
-        // Prepare POST query
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $a->getUsername(),
-            'arg2' => $this->_getPackageName($p),
-            'arg3' => 'no',
-        ];
-        // Make request and change package
-        $result = $this->_makeRequest($postvars);
-        if (intval($result) !== 0) {
-            $placeholders = [':action:' => __trans('change account package'), ':type:' => 'HestiaCP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-
-        return true;
-    }
-
-    /**
-     * Change account username on server.
-     */
-    public function changeAccountUsername(Server_Account $a, $new): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('username changes')]);
-    }
-
-    /**
-     * Change account domain on server.
-     */
-    public function changeAccountDomain(Server_Account $a, $new): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('changing the account domain')]);
-    }
-
-    /**
-     * Change account password on server.
-     */
-    public function changeAccountPassword(Server_Account $a, $new)
-    {
-        // Server credentials
-        $vst_username = $this->_config['username'];
-        $vst_password = $this->_config['password'];
-        $vst_command = 'v-change-user-password';
-        $vst_returncode = 'yes';
-        // Prepare POST query
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $a->getUsername(),
-            'arg2' => $new,
-        ];
-        // Make request and change password
-        $result = $this->_makeRequest($postvars);
-        if (intval($result) !== 0) {
-            $placeholders = [':action:' => __trans('change account password'), ':type:' => 'HestiaCP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-
-        return true;
-    }
-
-    /**
-     * Change account IP on server.
-     */
-    public function changeAccountIp(Server_Account $a, $new): never
-    {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'HestiaCP', ':action:' => __trans('changing the account IP')]);
     }
 }

@@ -354,7 +354,7 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             40 => function () {
                 // Added `passwordLength` field to server managers
-                $q = 'ALTER TABLE service_hosting_server ADD COLUMN `passwordLength` TINYINT DEFAULT NULL;';
+                $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
                 $this->executeSql($q);
             },
         ];

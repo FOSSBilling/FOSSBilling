@@ -1,28 +1,29 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 class Server_Client
 {
-    private $id;
-    private $email;
+    private ?int $id = null;
+    private ?string $email = null;
     private ?string $full_name = 'FOSSBilling Client';
     private ?string $company = 'FOSSBilling';
     private ?string $www = 'www.fossbilling.org';
-    private $address_1;
-    private $address_2;
-    private $street;
+    private ?string $address_1 = null;
+    private ?string $address_2 = null;
+    private ?string $street = null;
     private ?string $state = 'n/a';
     private ?string $country = 'US';
-    private $city;
-    private $zip;
-    private $telephone;
-    private $fax;
+    private ?string $city = null;
+    private ?string $zip = null;
+    private ?string $telephone = null;
+    private ?string $fax = null;
 
     public function __call($name, $arguments)
     {
@@ -37,171 +38,339 @@ class Server_Client
         return '';
     }
 
-    public function setId($id)
+    /**
+     * Get the ID of the Server_Client instance.
+     *
+     * @return int|null returns the ID of the Server_Client instance
+     */
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    /**
+     * Set the ID of the Server_Client instance.
+     *
+     * @param int $id the ID to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setId(int $id): static
     {
         $this->id = $id;
 
         return $this;
     }
 
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    public function setFullName($param)
-    {
-        $this->full_name = $param;
-
-        return $this;
-    }
-
-    public function getFullName()
+    /**
+     * Get the full name of the Server_Client instance.
+     *
+     * @return string|null returns the full name as a string if it exists, otherwise returns null
+     */
+    public function getFullName(): ?string
     {
         return $this->full_name;
     }
 
-    public function setCompany($company)
+    /**
+     * Set the full name of the Server_Client instance.
+     *
+     * @param string $fullName the full name to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setFullName(string $fullName): static
+    {
+        $this->full_name = $fullName;
+
+        return $this;
+    }
+
+    /**
+     * Get the company of the Server_Client instance.
+     *
+     * @return string|null returns the company as a string if it exists, otherwise returns null
+     */
+    public function getCompany(): ?string
+    {
+        return $this->company;
+    }
+
+    /**
+     * Set the company of the Server_Client instance.
+     *
+     * @param string $company the company to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setCompany(string $company): static
     {
         $this->company = $company;
 
         return $this;
     }
 
-    public function getCompany()
-    {
-        return $this->company;
-    }
-
-    public function setEmail($param)
-    {
-        $this->email = $param;
-
-        return $this;
-    }
-
-    public function getEmail()
+    /**
+     * Get the email of the Server_Client instance.
+     *
+     * @return string|null returns the email of the Server_Client instance
+     */
+    public function getEmail(): ?string
     {
         return $this->email;
     }
 
-    public function setAddress1($param)
+    /**
+     * Set the email of the Server_Client instance.
+     *
+     * @param string $email the email to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setEmail(string $email): static
     {
-        $this->address_1 = $param;
+        $this->email = $email;
 
         return $this;
     }
 
-    public function getAddress1()
+    /**
+     * Get the first address of the Server_Client instance.
+     *
+     * @return string|null returns the first address of the Server_Client instance
+     */
+    public function getAddress1(): ?string
     {
         return $this->address_1;
     }
 
-    public function setAddress2($param)
+    /**
+     * Set the first address of the Server_Client instance.
+     *
+     * @param string $address1 the first address to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setAddress1(string $address1): static
     {
-        $this->address_2 = $param;
+        $this->address_1 = $address1;
 
         return $this;
     }
 
-    public function getAddress2()
+    /**
+     * Get the second address of the Server_Client instance.
+     *
+     * @return string|null returns the second address of the Server_Client instance
+     */
+    public function getAddress2(): ?string
     {
         return $this->address_2;
     }
 
-    public function setStreet($param)
+    /**
+     * Set the second address of the Server_Client instance.
+     *
+     * @param string $address2 the second address to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setAddress2(string $address2): static
     {
-        $this->street = $param;
+        $this->address_2 = $address2;
 
         return $this;
     }
 
-    public function getStreet()
+    /**
+     * Get the street of the Server_Client instance.
+     *
+     * @return string|null returns the street of the Server_Client instance
+     */
+    public function getStreet(): ?string
     {
         return $this->street;
     }
 
-    public function setCity($param)
+    /**
+     * Set the street of the Server_Client instance.
+     *
+     * @param string $street the street to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setStreet(string $street): static
     {
-        $this->city = $param;
+        $this->street = $street;
 
         return $this;
     }
 
-    public function getCity()
+    /**
+     * Get the city of the Server_Client instance.
+     *
+     * @return string|null returns the city of the Server_Client instance
+     */
+    public function getCity(): ?string
     {
         return $this->city;
     }
 
-    public function setState($param)
+    /**
+     * Set the city of the Server_Client instance.
+     *
+     * @param string $city the city to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setCity(string $city): static
     {
-        $this->state = $param;
+        $this->city = $city;
 
         return $this;
     }
 
-    public function getState()
+    /**
+     * Get the state of the Server_Client instance.
+     *
+     * @return string|null returns the state as a string if it exists, otherwise returns null
+     */
+    public function getState(): ?string
     {
         return $this->state;
     }
 
-    public function setCountry($param)
+    /**
+     * Set the state of the Server_Client instance.
+     *
+     * @param string $state the state to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setState(string $state): static
     {
-        $this->country = $param;
+        $this->state = $state;
 
         return $this;
     }
 
-    public function getCountry()
+    /**
+     * Get the country of the Server_Client instance.
+     *
+     * @return string|null returns the country as a string if it exists, otherwise returns null
+     */
+    public function getCountry(): ?string
     {
         return $this->country;
     }
 
-    public function setZip($param)
+    /**
+     * Set the country of the Server_Client instance.
+     *
+     * @param string $country the country to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setCountry(string $country): static
     {
-        $this->zip = $param;
+        $this->country = $country;
 
         return $this;
     }
 
-    public function getZip()
+    /**
+     * Get the zip code of the Server_Client instance.
+     *
+     * @return string|null returns the zip code of the Server_Client instance
+     */
+    public function getZip(): ?string
     {
         return $this->zip;
     }
 
-    public function setTelephone($param)
+    /**
+     * Set the zip code of the Server_Client instance.
+     *
+     * @param string $zip the zip code to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setZip(string $zip): static
     {
-        $this->telephone = $param;
+        $this->zip = $zip;
 
         return $this;
     }
 
-    public function getTelephone()
+    /**
+     * Get the telephone number of the Server_Client instance.
+     *
+     * @return string|null returns the telephone number of the Server_Client instance
+     */
+    public function getTelephone(): ?string
     {
         return $this->telephone;
     }
 
-    public function setFax($param)
+    /**
+     * Set the telephone number of the Server_Client instance.
+     *
+     * @param string $telephone the telephone number to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setTelephone(string $telephone): static
     {
-        $this->fax = $param;
+        $this->telephone = $telephone;
 
         return $this;
     }
 
-    public function getFax()
+    /**
+     * Get the fax number of the Server_Client instance.
+     *
+     * @return string|null returns the fax number of the Server_Client instance
+     */
+    public function getFax(): ?string
     {
         return $this->fax;
     }
 
-    public function setWww($param)
+    /**
+     * Set the fax number of the Server_Client instance.
+     *
+     * @param string $fax the fax number to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setFax(string $fax): static
     {
-        $this->www = $param;
+        $this->fax = $fax;
 
         return $this;
     }
 
-    public function getWww()
+    /**
+     * Get the website URL of the Server_Client instance.
+     *
+     * @return string|null returns the website URL as a string if it exists, otherwise returns null
+     */
+    public function getWww(): ?string
     {
         return $this->www;
+    }
+
+    /**
+     * Set the website URL of the Server_Client instance.
+     *
+     * @param string $www the website URL to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setWww(string $www): static
+    {
+        $this->www = $www;
+
+        return $this;
     }
 }
