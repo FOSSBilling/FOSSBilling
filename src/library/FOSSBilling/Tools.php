@@ -373,12 +373,12 @@ class Tools
      */
     public function getDefaultInterface(): string|int
     {
-        $customInterface = $this->di['mod_service']('system')->getParamValue('custom_interface_ip', '');
-        if ($customInterface) {
+        $customInterface = Config::getProperty('custom_interface_ip', '');
+        if (!empty($customInterface)) {
             return $customInterface;
         }
 
-        $interface = $this->di['mod_service']('system')->getParamValue('interface_ip', '0');
+        $interface = Config::getProperty('interface_ip', '0');
 
         try {
             $knownInterfaces = gethostbynamel(gethostname());
