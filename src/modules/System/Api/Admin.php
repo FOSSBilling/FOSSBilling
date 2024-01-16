@@ -269,7 +269,6 @@ class Admin extends \Api_Abstract
 
     public function get_interface_ips(): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_network_interface');
         return \FOSSBilling\Tools::listHttpInterfaces();
     }
 

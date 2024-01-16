@@ -477,12 +477,7 @@ class Service
     {
         if ($ip) {
             try {
-                $client = HttpClient::create(['bindto' => BIND_TO]);
-                $response = $client->request('GET', 'https://api64.ipify.org', [
-                    'timeout' => 2,
-                ]);
-
-                return $response->getContent();
+                return \FOSSBilling\Tools::getExternalIP();
             } catch (\Exception) {
                 return '';
             }
