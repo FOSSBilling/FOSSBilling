@@ -351,13 +351,8 @@ class Tools
         // For each of the found IPs, attempt a generic network request. If the request produces no errors, consider it valid
         foreach ($ips as $ip) {
             try {
-                $httpClient = HttpClient::create(['bindto' => $ip]);
-                $response = $httpClient->request('GET', 'https://api.ipify.org', [
-                    'timeout' => 2,
-                ]);
-                if ($response->getStatusCode() === 200) {
-                    $validatedIps[] = $ip;
-                }
+                self::getExternalIP(true, $ip);
+                $validatedIps[] = $ip;
             } catch (\Exception) {
             }
         }
@@ -371,7 +366,7 @@ class Tools
      * 
      * @return string|int Either the IP address of the interface to use (string) or 0 if there's none set / the set one is invalid.
      */
-    public function getDefaultInterface(): string|int
+    public static function getDefaultInterface(): string|int
     {
         $customInterface = Config::getProperty('custom_interface_ip', '');
         if (!empty($customInterface)) {
@@ -391,5 +386,42 @@ class Tools
         }
 
         return 0;
+    }
+
+    /**
+     * Returns the public IP address of the current FOSSBilling instance.
+     * Will try multiple services in order if they time out.
+     * Try order: ipify.org, ifconfig.io, ip.hestiacp.com
+     * Will use  and then fallback onto 
+     * 
+     * @param bool $throw if the function should throw an exception on an error.
+     * @param ?string $bind overrides the default network interface bind. Set to `null` to disable this behavior.
+     * 
+     * @return ?string `null` if there was an error, otherwise an IP address will be returned.
+     */
+    public static function getExternalIP(bool $throw, ?string $bind): ?string
+    {
+        $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
+        $bind ??= BIND_TO;
+        foreach ($services as $service) {
+            try {
+                $client = HttpClient::create(['bindto' => $bind]);
+                $response = $client->request('GET', $service, [
+                    'timeout' => 2,
+                ]);
+
+                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
+                if ($ip) {
+                    return $ip;
+                }
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
+                if ($throw) {
+                    throw $e;
+                }
+            }
+        }
+
+        return null;
     }
 }

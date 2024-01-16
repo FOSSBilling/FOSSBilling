@@ -56,10 +56,6 @@ if (!empty($_GET['restore_session'])) {
 $di['session'];
 $debugBar['time']->stopMeasure('session_start');
 
-$debugBar['time']->startMeasure('default_net_interface', 'Fetching the default network interface');
-define('BIND_TO', $di['tools']->getDefaultInterface());
-$debugBar['time']->stopMeasure('default_net_interface');
-
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     define('ADMIN_AREA', true);
     $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));

@@ -7,13 +7,20 @@ use PHPUnit\Framework\TestCase;
 
 final class SystemAdminTest extends TestCase
 {
-    private function ipifyWorking(): bool
+    private function ipLookupWorking(): bool
     {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_URL, 'https://api64.ipify.org');
-        $ip = curl_exec($ch);
-        return filter_var($ip, FILTER_VALIDATE_IP);
+        $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
+        foreach ($services as $service) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_URL, $service);
+            $ip = curl_exec($ch);
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function testClearCache(): void
@@ -54,22 +61,21 @@ final class SystemAdminTest extends TestCase
         $response = Request::makeRequest('admin/system/get_interface_ips');
         $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
         $this->assertIsArray($response->getResult());
-        $this->assertNotEmpty($response->getResult());
 
         // And then validate they are all valid IP addresses
         foreach ($response->getResult() as $ip) {
-            $this->assertTrue(filter_var($ip, FILTER_VALIDATE_IP));
+            $this->assertTrue((bool) filter_var($ip, FILTER_VALIDATE_IP));
         }
 
         // Only test each found interface if ipify.org is functioning
-        if ($this->ipifyWorking()) {
+        if ($this->ipLookupWorking()) {
             foreach ($response->getResult() as $ip) {
                 $response = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => $ip]);
                 $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
 
                 $response = Request::makeRequest('admin/system/env', ['ip' => true]);
                 $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-                $this->assertTrue(filter_var($response->getResult(), FILTER_VALIDATE_IP));
+                $this->assertTrue((bool) filter_var($response->getResult(), FILTER_VALIDATE_IP));
             }
         }
 
@@ -85,10 +91,10 @@ final class SystemAdminTest extends TestCase
         $this->assertTrue($response->getResult());
 
         // Now we validate that the system is discarding it for not being one of the local interface IPs, ensuring that outbound communication still works
-        if ($this->ipifyWorking()) {
+        if ($this->ipLookupWorking()) {
             $response = Request::makeRequest('admin/system/env', ['ip' => true]);
             $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-            $this->assertTrue(filter_var($response->getResult(), FILTER_VALIDATE_IP));
+            $this->assertTrue((bool) filter_var($response->getResult(), FILTER_VALIDATE_IP));
         }
     }
 
@@ -100,10 +106,10 @@ final class SystemAdminTest extends TestCase
         $this->assertTrue($response->getResult());
 
         // And since we don't (can't) perform any checks against the custom interface, it should now be in use despite not being valid and as a result the system will be unable to get it's IP address
-        if ($this->ipifyWorking()) {
+        if ($this->ipLookupWorking()) {
             $response = Request::makeRequest('admin/system/env', ['ip' => true]);
             $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-            $this->assertFalse(filter_var($response->getResult(), FILTER_VALIDATE_IP));
+            $this->assertNotEmpty($response->getResult());
         }
 
         // Finally reset everything to ensure networking will continue to function

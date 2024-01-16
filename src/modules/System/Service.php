@@ -473,12 +473,12 @@ class Service
         return true;
     }
 
-    public function getEnv($ip)
+    public function getEnv($ip = null)
     {
-        if (isset($ip)) {
+        if ($ip) {
             try {
                 $client = HttpClient::create(['bindto' => BIND_TO]);
-                $response = $client->request('GET', 'https://api.ipify.org', [
+                $response = $client->request('GET', 'https://api64.ipify.org', [
                     'timeout' => 2,
                 ]);
 

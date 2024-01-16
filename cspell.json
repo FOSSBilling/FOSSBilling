@@ -386,7 +386,9 @@
         "COOKIEJAR",
         "COOKIEFILE",
         "nonaggregated",
-        "bindto"
+        "bindto",
+        "ipify",
+        "hestiacp"
     ],
     "ignorePaths": [
         "tests-legacy/**",

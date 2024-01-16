@@ -52,7 +52,8 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
-        $httpClient = new class() implements HttpClientInterface {
+        $httpClient = new class() implements HttpClientInterface
+        {
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
@@ -65,7 +66,7 @@ class SentryHelper
                     throw new \RuntimeException('The request data is empty.');
                 }
 
-                $client = HttpClient::create(); // TODO: Network interface is defined later than this point in the app's startup. Perhaps we need to be storing it in the config file instead of the DB?
+                $client = HttpClient::create(['bindto' => BIND_TO]);
                 $requestHeaders = \Sentry\Util\Http::getRequestHeaders($dsn, \Sentry\Client::SDK_IDENTIFIER, \Sentry\Client::SDK_VERSION);
                 $response = $client->request(
                     'POST',
