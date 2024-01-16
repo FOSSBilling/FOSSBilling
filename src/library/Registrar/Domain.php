@@ -22,13 +22,13 @@ class Registrar_Domain implements Stringable
     private $_ns3;
     private $_ns4;
 
-    private ?\Registrar_Domain_Contact $_contact_registrar = null;
+    private ?Registrar_Domain_Contact $_contact_registrar = null;
 
-    private ?\Registrar_Domain_Contact $_contact_admin = null;
+    private ?Registrar_Domain_Contact $_contact_admin = null;
 
-    private ?\Registrar_Domain_Contact $_contact_tech = null;
+    private ?Registrar_Domain_Contact $_contact_tech = null;
 
-    private ?\Registrar_Domain_Contact $_contact_billing = null;
+    private ?Registrar_Domain_Contact $_contact_billing = null;
 
     public function setRegistrationPeriod($years)
     {

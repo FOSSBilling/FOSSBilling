@@ -15,7 +15,7 @@ class Box_Mod
 {
     private ?string $mod = null;
 
-    private ?\Pimple\Container $di = null;
+    private ?Pimple\Container $di = null;
 
     private array $core = [
         'api',

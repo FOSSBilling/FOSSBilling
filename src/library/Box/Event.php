@@ -9,7 +9,7 @@
  */
 class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
     protected $value;
     protected $processed = false;
 

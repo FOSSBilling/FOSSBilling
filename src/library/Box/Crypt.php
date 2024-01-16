@@ -13,7 +13,7 @@ use FOSSBilling\Config;
 
 class Box_Crypt implements FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
 
     final public const METHOD = 'aes-256-cbc';
 

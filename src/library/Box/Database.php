@@ -12,7 +12,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Box_Database implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
     protected $orm;
 
     public function setDataMapper($orm)

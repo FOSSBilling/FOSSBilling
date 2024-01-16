@@ -25,7 +25,7 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
     final public const SETUP_AFTER_PAYMENT = 'after_payment';
     final public const SETUP_MANUAL = 'manual';
 
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
 
     public function setDi(Pimple\Container $di): void
     {

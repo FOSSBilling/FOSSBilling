@@ -40,7 +40,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         self::DEBUG => 'DEBUG',
     ];
 
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
     protected $_min_priority;
 
     protected array $_writers = [];
