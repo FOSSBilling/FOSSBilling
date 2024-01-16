@@ -9,7 +9,7 @@
  */
 class Payment_Adapter_Custom
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
 
     public function __construct(private $config)
     {

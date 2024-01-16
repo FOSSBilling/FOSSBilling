@@ -21,7 +21,7 @@ abstract class Registrar_AdapterAbstract
     /**
      * Related order.
      */
-    protected ?\Model_ClientOrder $_order = null;
+    protected ?Model_ClientOrder $_order = null;
 
     /**
      * Return array with configuration.
