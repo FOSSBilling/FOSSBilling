@@ -12,9 +12,9 @@ use Stripe\StripeClient;
 
 class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
 
-    private \Stripe\StripeClient $stripe;
+    private StripeClient $stripe;
 
     public function setDi(Pimple\Container $di): void
     {

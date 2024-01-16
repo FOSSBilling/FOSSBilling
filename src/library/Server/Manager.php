@@ -9,7 +9,7 @@
  */
 abstract class Server_Manager
 {
-    private ?\Box_Log $_log = null;
+    private ?Box_Log $_log = null;
 
     protected $_config = [
         'ip' => null,

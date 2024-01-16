@@ -14,7 +14,7 @@ final class Api_Handler implements InjectionAwareInterface
 {
     protected $type;
     protected $ip;
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
 
     private bool $_enable_cache = false;
     private array $_cache = [];

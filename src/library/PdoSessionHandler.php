@@ -20,7 +20,7 @@ class PdoSessionHandler
     /**
      * @var PDO PDO instance
      */
-    private readonly \PDO $pdo;
+    private readonly PDO $pdo;
 
     /**
      * @var array database options

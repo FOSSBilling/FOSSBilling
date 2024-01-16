@@ -14,8 +14,8 @@ class Server_Account
     private $domain;
     private $ip;
 
-    private ?\Server_Client $client = null;
-    private ?\Server_Package $package = null;
+    private ?Server_Client $client = null;
+    private ?Server_Package $package = null;
     private ?bool $reseller = null;
     private ?bool $suspended = null;
     private $ns_1;

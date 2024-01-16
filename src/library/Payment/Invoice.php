@@ -13,8 +13,8 @@ class Payment_Invoice
     private $number; // Invoice number for accounting
     private string $currency = 'USD';
     private array $items = [];
-    private ?\Payment_Invoice_Subscription $subscription = null;
-    private ?\Payment_Invoice_Buyer $buyer = null;
+    private ?Payment_Invoice_Subscription $subscription = null;
+    private ?Payment_Invoice_Buyer $buyer = null;
     private string $title = 'Payment for invoice';
 
     /**

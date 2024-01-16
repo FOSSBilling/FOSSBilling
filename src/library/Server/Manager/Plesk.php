@@ -9,7 +9,7 @@
  */
 class Server_Manager_Plesk extends Server_Manager
 {
-    private ?\PleskX\Api\Client $_client = null;
+    private ?PleskX\Api\Client $_client = null;
 
     public function init()
     {

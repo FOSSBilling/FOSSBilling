@@ -20,7 +20,7 @@ class Box_App
     protected $after_filters = [];
     protected $shared = [];
     protected $options;
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
     protected $ext = 'html.twig';
     protected $mod = 'index';
     protected $url = '/';
