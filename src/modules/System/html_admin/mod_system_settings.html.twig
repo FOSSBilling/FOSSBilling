@@ -587,27 +587,31 @@ ZW=Zimbabwe
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
                             {% set interface_ips = admin.system_get_interface_ips %}
-                            <label for="interface">{{"Select the default network interface:"|trans }}</label>
-                            <select class="form-select" aria-label="Available network interfaces" name="interface" id="interface">
-                                <option value="0" {% if constant('BIND_TO') == 0 %} selected {%endif%}>{{ 'None (Default PHP Behavior)'|trans }}</option>
-                                {% for i, interface in interface_ips %}
-                                <option value="{{ interface }}" {% if constant('BIND_TO') == interface %} selected {% endif %}>{{ interface }}</option>
-                                {% endfor %}
-                            </select>
+                            
+                            <div class="col-12 col-lg-3">
+                                <label for="interface">{{"Select the default network interface:"|trans }}</label>
+                                <select class="form-select" aria-label="Available network interfaces" name="interface" id="interface">
+                                    <option value="0" {% if constant('BIND_TO') == 0 %} selected {%endif%}>{{ 'None (Default PHP Behavior)'|trans }}</option>
+                                    {% for i, interface in interface_ips %}
+                                    <option value="{{ interface }}" {% if constant('BIND_TO') == interface %} selected {% endif %}>{{ interface }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
                             <br>
 
-                            <label for="custom_interface">{{'Enter a custom interface to use:'|trans }}</label>
-                            {% if constant('BIND_TO') not in interface_ips and constant('BIND_TO') != 0%}
-                                <input class="form-control" type="text" name="custom_interface" id="custom_interface" value="{{ constant('BIND_TO') }}">
-                            {% else %}
-                                <input class="form-control" type="text" name="custom_interface" id="custom_interface">
-                            {% endif %}
-                            <span class="text-muted">{{ 'Not seeing the correct interface above? You may enter the IP address here of the correct interface to use.'|trans }}</span>
-
+                            <div class="col-12 col-lg-3">
+                                <label for="custom_interface">{{'Enter a custom interface to use:'|trans }}</label>
+                                {% if constant('BIND_TO') not in interface_ips and constant('BIND_TO') != 0%}
+                                    <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface" value="{{ constant('BIND_TO') }}">
+                                {% else %}
+                                    <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface">
+                                {% endif %}
+                            </div>
+                            <span class="text-muted">{{ "If the dropdown doesn't contain the correct interface, you can enter the IP address of the correct one above."|trans }}</span>
                             <br>
 
-                            <input type="submit" class="btn btn-primary" value="{{ 'Update'|trans }}">
+                            <input type="submit" class="btn btn-primary mt-1" value="{{ 'Update'|trans }}">
                         </form>
                     </div>
                 </div>
