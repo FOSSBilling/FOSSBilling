@@ -9,42 +9,42 @@ final class ExtensionTest extends TestCase
 {
     public function testCanActivateExtension(): void
     {
-        $response = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'massmailer']);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
+        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'massmailer']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
     }
 
     public function testCanDeactivateExtension(): void
     {
-        $response = Request::makeRequest('admin/extension/deactivate', ['type' => 'mod', 'id' => 'massmailer']);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
+        $result = Request::makeRequest('admin/extension/deactivate', ['type' => 'mod', 'id' => 'massmailer']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
     }
 
     /*
     public function testCanInstallExtension(): void
     {
-        $response = Request::makeRequest('admin/extension/install', ['type' => 'mod', 'id' => 'example']);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
+        $result = Request::makeRequest('admin/extension/install', ['type' => 'mod', 'id' => 'example']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
     }
     */
 
     public function testLanguageManagement(): void
     {
-        $response = Request::makeRequest('admin/extension/languages');
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertNotCount(0, $response->getResult()); // A fresh install should never display 0 enabled languages
+        $result = Request::makeRequest('admin/extension/languages');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertNotCount(0, $result->getResult()); // A fresh install should never display 0 enabled languages
 
-        $response = Request::makeRequest('admin/extension/languages', ['disabled' => true]);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertCount(0, $response->getResult()); // There should be no disabled languages on a fresh install
+        $result = Request::makeRequest('admin/extension/languages', ['disabled' => true]);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertCount(0, $result->getResult()); // There should be no disabled languages on a fresh install
 
         // Disable the en_US language
-        $response = Request::makeRequest('admin/extension/toggle_language', ['locale_id' => 'en_US']);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
+        $result = Request::makeRequest('admin/extension/toggle_language', ['locale_id' => 'en_US']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         // Validate it's now listed under the disabled languages
-        $response = Request::makeRequest('admin/extension/languages', ['disabled' => true, 'details' => false]);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertContains('en_US', $response->getResult(), 'The en_US language was not disabled');
+        $result = Request::makeRequest('admin/extension/languages', ['disabled' => true, 'details' => false]);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertContains('en_US', $result->getResult(), 'The en_US language was not disabled');
     }
 
     public function testLanguageCompletion(): void

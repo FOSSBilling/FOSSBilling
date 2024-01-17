@@ -26,9 +26,9 @@ final class SystemAdminTest extends TestCase
     public function testClearCache(): void
     {
         // Clear the cache
-        $response = Request::makeRequest('admin/system/clear_cache');
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertIsBool($response->getResult());
+        $result = Request::makeRequest('admin/system/clear_cache');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertIsBool($result->getResult());
     }
 
     public function testErrorReportingToggle(): void
@@ -38,9 +38,9 @@ final class SystemAdminTest extends TestCase
         $this->assertIsBool($before);
 
         // Toggle the option
-        $response = Request::makeRequest('admin/system/toggle_error_reporting');
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertTrue($response->getResult());
+        $result = Request::makeRequest('admin/system/toggle_error_reporting');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertTrue($result->getResult());
 
         // Check that it was correctly switched
         $after = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
@@ -49,33 +49,33 @@ final class SystemAdminTest extends TestCase
 
         // Ensure we don't leave error reporting on (it shouldn't report anyways, but this is best practice)
         if ($after) {
-            $response = Request::makeRequest('admin/system/toggle_error_reporting');
-            $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-            $this->assertTrue($response->getResult());
+            $result = Request::makeRequest('admin/system/toggle_error_reporting');
+            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+            $this->assertTrue($result->getResult());
         }
     }
 
     public function testGetAndSetNetworkInterfaces(): void
     {
         // Get the list of network interfaces, validate the response is as expected
-        $response = Request::makeRequest('admin/system/get_interface_ips');
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertIsArray($response->getResult());
+        $result = Request::makeRequest('admin/system/get_interface_ips');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertIsArray($result->getResult());
 
         // And then validate they are all valid IP addresses
-        foreach ($response->getResult() as $ip) {
+        foreach ($result->getResult() as $ip) {
             $this->assertTrue((bool) filter_var($ip, FILTER_VALIDATE_IP));
         }
 
         // Only test each found interface if ipify.org is functioning
         if ($this->ipLookupWorking()) {
-            foreach ($response->getResult() as $ip) {
-                $response = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => $ip]);
-                $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
+            foreach ($result->getResult() as $ip) {
+                $result = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => $ip]);
+                $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
-                $response = Request::makeRequest('admin/system/env', ['ip' => true]);
-                $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-                $this->assertTrue((bool) filter_var($response->getResult(), FILTER_VALIDATE_IP));
+                $result = Request::makeRequest('admin/system/env', ['ip' => true]);
+                $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+                $this->assertTrue((bool) filter_var($result->getResult(), FILTER_VALIDATE_IP));
             }
         }
 
@@ -86,35 +86,35 @@ final class SystemAdminTest extends TestCase
     public function testInterfaceIsIgnoredWhenNotValid(): void
     {
         // Set the network interface to one that's invalid
-        $response = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => '12345']);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertTrue($response->getResult());
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => '12345']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertTrue($result->getResult());
 
         // Now we validate that the system is discarding it for not being one of the local interface IPs, ensuring that outbound communication still works
         if ($this->ipLookupWorking()) {
-            $response = Request::makeRequest('admin/system/env', ['ip' => true]);
-            $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-            $this->assertTrue((bool) filter_var($response->getResult(), FILTER_VALIDATE_IP));
+            $result = Request::makeRequest('admin/system/env', ['ip' => true]);
+            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+            $this->assertTrue((bool) filter_var($result->getResult(), FILTER_VALIDATE_IP));
         }
     }
 
     public function testCustomInterface(): void
     {
         // Validate that we can set the custom network interface without errors
-        $response = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface_ip' => '12345']);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertTrue($response->getResult());
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface_ip' => '12345']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertTrue($result->getResult());
 
         // And since we don't (can't) perform any checks against the custom interface, it should now be in use despite not being valid and as a result the system will be unable to get it's IP address
         if ($this->ipLookupWorking()) {
-            $response = Request::makeRequest('admin/system/env', ['ip' => true]);
-            $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-            $this->assertNotEmpty($response->getResult());
+            $result = Request::makeRequest('admin/system/env', ['ip' => true]);
+            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+            $this->assertNotEmpty($result->getResult());
         }
 
         // Finally reset everything to ensure networking will continue to function
-        $response = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface_ip' => '', 'interface_ip' => '0']);
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertTrue($response->getResult());
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface_ip' => '', 'interface_ip' => '0']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertTrue($result->getResult());
     }
 }

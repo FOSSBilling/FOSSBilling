@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -135,5 +136,22 @@ class Admin extends \Api_Abstract
         $data['id'] ??= null;
 
         return $this->getService()->invalidateSessions($data['type'], $data['id']);
+    }
+
+    /**
+     * Generate new API key for a given client
+     * 
+     * @return string the new API key for the client
+     */
+    public function api_key_reset($data): string
+    {
+        $required = [
+            'id' => 'Client ID not passed',
+        ];
+
+        $validator = $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $client = $this->di['db']->getExistingModelById('Client', $data['di']);
+
+        return $this->getService()->resetApiKey($client);
     }
 }

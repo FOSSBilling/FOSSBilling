@@ -1,6 +1,7 @@
 name: Perform Live Tests
 
 on:
+  push:
   pull_request:
     branches: main
 
@@ -109,6 +110,7 @@ jobs:
               Options Indexes FollowSymLinks
               AllowOverride All
               Require all granted
+              SetEnv APP_ENV ${APP_ENV}
             </Directory>
         
             ErrorLog \${APACHE_LOG_DIR}/error.log
