@@ -152,7 +152,7 @@
                     </svg>
                     <span>{{ 'View as client'|trans }}</span>
                 </a>
-                {% if invoice.status != 'revoked' %}
+                {% if invoice.status == 'unpaid' %}
                 <a href="{{ 'api/admin/invoice/revoke'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#close" />

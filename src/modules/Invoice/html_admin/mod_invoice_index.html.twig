@@ -251,14 +251,16 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
+                                {% if invoice.status == 'unpaid' %}
                                 <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
-                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                    href="{{ 'api/admin/invoice/revoke'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
+                                    data-api-confirm="{{ 'Are you sure you want to revoke this invoice?'|trans }}"
                                     data-api-reload="1">
                                     <svg class="icon">
-                                        <use xlink:href="#delete" />
+                                        <use xlink:href="#cross" />
                                     </svg>
                                 </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
