@@ -169,6 +169,7 @@ jobs:
 
       - name: Display the other FOSSBilling logs
         if: always()
+        working-directory: /var/www/localhost/data/log/
         run: |
           directories=$(find . -type d)
           for dir in $directories; do
