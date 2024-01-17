@@ -38,18 +38,18 @@
                             <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#nav-paid"
                                     type="button" role="tab" aria-controls="nav-paid"
                                     aria-selected="false">{{ 'Paid'|trans }}&nbsp;<span
-                                    class="badge bg-secondary">{{ paid_invoices.total }}</span></button>
-                            {% if revoked_invoices.total > 0 %}
-                            <button class="nav-link" id="revoked-tab" data-bs-toggle="tab" data-bs-target="#nav-revoked"
-                                    type="button" role="tab" aria-controls="nav-revoked"
-                                    aria-selected="false">{{ 'Revoked'|trans }}&nbsp;<span
-                                    class="badge bg-warning">{{ revoked_invoices.total }}</span></button>
-                            {% endif %}
+                                    class="badge bg-success">{{ paid_invoices.total }}</span></button>
                             {% if refunded_invoices.total > 0 %}
                             <button class="nav-link" id="refunded-tab" data-bs-toggle="tab" data-bs-target="#nav-refunded"
                                     type="button" role="tab" aria-controls="nav-refunded"
                                     aria-selected="false">{{ 'Refunded'|trans }}&nbsp;<span
-                                    class="badge bg-success">{{ refunded_invoices.total }}</span></button>
+                                    class="badge bg-warning">{{ refunded_invoices.total }}</span></button>
+                            {% endif %}
+                            {% if revoked_invoices.total > 0 %}
+                            <button class="nav-link" id="revoked-tab" data-bs-toggle="tab" data-bs-target="#nav-revoked"
+                                    type="button" role="tab" aria-controls="nav-revoked"
+                                    aria-selected="false">{{ 'Revoked'|trans }}&nbsp;<span
+                                    class="badge bg-secondary">{{ revoked_invoices.total }}</span></button>
                             {% endif %}
                         </div>
                     </nav>
@@ -74,7 +74,7 @@
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.due_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
-                                            <td><a class="btn btn-sm btn-success"
+                                            <td><a class="btn btn-sm btn-primary"
                                                    href="{{ 'invoice'|link }}/{{ invoice.hash }}">{{ 'Pay'|trans }}</a>
                                             </td>
                                         </tr>
