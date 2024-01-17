@@ -810,6 +810,27 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function updateClientAddress($model)
+    {
+        // Get Client Adress from database and update invoice
+        $client = $this->di['db']->load('Client', $model->client_id);
+        $model->buyer_first_name = $client->first_name;
+        $model->buyer_last_name = $client->last_name;
+        $model->buyer_company = $client->company;
+        $model->buyer_company_vat = $client->company_vat;
+        $model->buyer_company_number = $client->company_number;
+        $model->buyer_address = $client->address_1 . ' ' . $client->address_2;
+        $model->buyer_city = $client->city;
+        $model->buyer_state = $client->state;
+        $model->buyer_country = $client->country;
+        $model->buyer_zip = $client->postcode;
+        $model->buyer_phone = $client->phone_cc . ' ' . $client->phone;
+        $model->buyer_email = $client->email;
+        $this->di['db']->store($model);
+
+
+    }
+
     public function rmInvoice(\Model_Invoice $model)
     {
         // remove related invoice from orders
@@ -838,6 +859,28 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDelete', 'params' => ['id' => $id]]);
 
         $this->di['logger']->info('Removed invoice #%s', $id);
+
+        return true;
+    }
+
+    /**
+     * Revokes invoice by Admin
+     * 
+     * @param \Model_Invoice $model
+     * 
+     * @return bool
+     */
+    public function revokeInvoiceByAdmin(\Model_Invoice $model)
+    {
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceRevoke', 'params' => ['id' => $model->id]]);
+
+        $model->status = \Model_Invoice::STATUS_REVOKED;
+        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($model);
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRevoke', 'params' => ['id' => $model->id]]);
+
+        $this->di['logger']->info('Revoked invoice #%s', $model->id);
 
         return true;
     }
