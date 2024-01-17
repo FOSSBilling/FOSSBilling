@@ -345,7 +345,7 @@
                                 <div class="input-icon w-100">
                                     <input class="form-control datepicker"
                                            id="expires_at"
-                                           value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
+                                           value="{% if order.expires_at %}{{ order.expires_at|format_date }}{% endif %}"
                                            name="expires_at"
                                     >
                                     <span class="input-icon-addon">
@@ -515,8 +515,9 @@
                     <tr>
                         <th>ID</th>
                         <th>{{ 'Amount'|trans }}</th>
-                        <th>{{ 'Issued at'|trans }}</th>
-                        <th>{{ 'Paid at'|trans }}</th>
+                        <th>{{ 'Invoice Date'|trans }}</th>
+                        <th>{{ 'Due Date'|trans }}</th>
+                        <th>{{ 'Paid Date'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
                         <th class="w-1"></th>
                     </tr>
@@ -528,6 +529,7 @@
                         <td><a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">#{{ invoice.id }}</a></td>
                         <td>{{ mf.currency_format( invoice.total, invoice.currency, 1) }}</td>
                         <td>{{ invoice.created_at|format_date }}</td>
+                        <td>{{ invoice.due_at|format_date }}</td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                         <td>
                             {% if invoice.status == 'paid' %}

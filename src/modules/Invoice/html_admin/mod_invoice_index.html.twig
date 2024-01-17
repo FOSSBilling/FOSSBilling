@@ -81,13 +81,13 @@
                         </div>
                 </div> #}
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Issue date'|trans }}</label>
+                    <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Invoice date'|trans }}</label>
                     <div class="col">
                         <div class="input-group">
                             <div class="input-icon w-100">
                                 <input class="form-control datepicker"
                                        id="issue_date"
-                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                       value="{% if request.date_from %}{{ request.date_from|format_date }}{% endif %}{% if request.date_to %} to {{ request.date_to|format_date }}{% endif %}"
                                        data-name-from="date_from"
                                        data-name-to="date_to"
                                 >
@@ -209,8 +209,9 @@
                             <th class="w-1"></th>
                             <th>{{ 'Name'|trans }}</th>
                             <th class="text-center">{{ 'Amount'|trans }}</th>
-                            <th class="text-center">{{ 'Issued at'|trans }}</th>
-                            <th class="text-center">{{ 'Paid at'|trans }}</th>
+                            <th class="text-center">{{ 'Invoice Date'|trans }}</th>
+                            <th class="text-center">{{ 'Due Date'|trans }}</th>
+                            <th class="text-center">{{ 'Paid Date'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -234,8 +235,9 @@
                                 <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
                             <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
-                            <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
-                            <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
+                            <td class="text-center">{{ invoice.created_at|format_date }}</td>
+                            <td class="text-center">{{ invoice.due_at|format_date }}</td>
+                            <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
                                     <span class="badge bg-success me-1"></span>

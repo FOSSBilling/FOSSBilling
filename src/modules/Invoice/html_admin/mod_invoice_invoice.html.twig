@@ -97,15 +97,15 @@
                         <td>{{ invoice.currency }}</td>
                     </tr>
                     <tr>
-                        <td class="text-end">{{ 'Date Created'|trans }}:</td>
+                        <td class="text-end">{{ 'Invoice Date'|trans }}:</td>
                         <td>{{ invoice.created_at|format_datetime }}</td>
                     </tr>
                     <tr>
-                        <td class="text-end">{{ 'Date Due'|trans }}:</td>
+                        <td class="text-end">{{ 'Due Date'|trans }}:</td>
                         <td>{{ invoice.due_at|format_datetime }}</td>
                     </tr>
                     <tr>
-                        <td class="text-end">{{ 'Date Paid'|trans }}:</td>
+                        <td class="text-end">{{ 'Paid Date'|trans }}:</td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_datetime }}{% else %}-{% endif %}</td>
                     </tr>
                     <tr>
@@ -262,13 +262,13 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Created at'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Invoice Date'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
                                     <input class="form-control datepicker"
                                            id="created_at"
-                                           value="{{ invoice.created_at|date('Y-m-d') }}"
+                                           value="{{ invoice.created_at|format_datetime }}"
                                            name="created_at"
                                     >
                                     <span class="input-icon-addon">
@@ -287,13 +287,13 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="due_at">{{ 'Due at'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="due_at">{{ 'Due Date'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
                                     <input class="form-control datepicker"
                                            id="due_at"
-                                           value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}"
+                                           value="{% if invoice.due_at %}{{ invoice.due_at|format_datetime }}{% endif %}"
                                            name="due_at"
                                     >
                                     <span class="input-icon-addon">
@@ -312,13 +312,13 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="paid_at">{{ 'Paid at'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="paid_at">{{ 'Paid Date'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
                                     <input class="form-control datepicker"
                                            id="paid_at"
-                                           value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}"
+                                           value="{% if invoice.paid_at %}{{ invoice.paid_at|format_datetime }}{% endif %}"
                                            name="paid_at"
                                     >
                                     <span class="input-icon-addon">

@@ -368,7 +368,7 @@
                                 <div class="input-icon w-100">
                                     <input class="form-control datepicker"
                                            id="created_at"
-                                           value="{{ client.created_at|date('Y-m-d') }}"
+                                           value="{{ client.created_at|format_date }}"
                                            name="created_at"
                                     >
                                     <span class="input-icon-addon">
@@ -520,8 +520,9 @@
                         <tr>
                             <th class="w-1">#</th>
                             <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Issued on'|trans }}</th>
-                            <th>{{ 'Paid on'|trans }}</th>
+                            <th>{{ 'Invoice Date'|trans }}</th>
+                            <th>{{ 'Due Date'|trans }}</th>
+                            <th>{{ 'Paid Date'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -535,6 +536,7 @@
                             </td>
                             <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
+                            <td>{{ invoice.due_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
