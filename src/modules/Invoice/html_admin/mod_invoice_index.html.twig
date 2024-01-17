@@ -249,6 +249,9 @@
                                 {% if invoice.status == 'canceled' %}
                                     <span class="badge bg-secondary me-1"></span>
                                 {% endif %}
+                                {% if invoice.status == 'revoked' %}
+                                    <span class="badge bg-danger me-1"></span>
+                                {% endif %}
                                 {{ mf.status_name(invoice.status) }}
                             </td>
                             <td>
