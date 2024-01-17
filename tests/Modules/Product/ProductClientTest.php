@@ -15,7 +15,7 @@ final class ProductClientTest extends TestCase
     {
         parent::setUp();
         // Generate a new test user
-        $this->clientPassword = bin2hex(random_bytes(6));
+        $this->clientPassword = 'A' . bin2hex(random_bytes(6));
         $result = Request::makeRequest('guest/client/create', [
             'email' => 'client@example.com',
             'first_name' => 'Test',

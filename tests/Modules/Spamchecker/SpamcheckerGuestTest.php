@@ -16,7 +16,7 @@ final class SpamcheckerGuestTest extends TestCase
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         // Generate a new test user with by using a throwaway email address, which should fail
-        $password = bin2hex(random_bytes(6));
+        $password = 'A' . bin2hex(random_bytes(6));
         $result = Request::makeRequest('guest/client/create', [
             'email' => 'email@yopmail.net',
             'first_name' => 'Test',
@@ -46,7 +46,7 @@ final class SpamcheckerGuestTest extends TestCase
          *
          * @see http://api.stopforumspam.org/api?email=email@example.com
          */
-        $password = bin2hex(random_bytes(6));
+        $password = 'A' . bin2hex(random_bytes(6));
         $result = Request::makeRequest('guest/client/create', [
             'email' => 'email@example.com',
             'first_name' => 'Test',
