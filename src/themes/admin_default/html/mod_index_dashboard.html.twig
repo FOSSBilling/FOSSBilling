@@ -159,10 +159,10 @@
                         <tr>
                             <td>{{ 'Income'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'paid_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ mf.currency_format(income.today) }}</a>
+                                <a href="{{ 'invoice'|alink({ 'paid_at': 'now'|format_date}) }}" class="text-danger">{{ mf.currency_format(income.today) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'paid_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ mf.currency_format(income.yesterday) }}</a>
+                                <a href="{{ 'invoice'|alink({ 'paid_at': 'yesterday'|format_date}) }}" class="text-danger">{{ mf.currency_format(income.yesterday) }}</a>
                             </td>
                             <td class="text-center">
                                 <a href="{{ 'invoice'|alink }}" class="text-danger">{{ mf.currency_format(income.this_month) }}</a>
@@ -177,10 +177,10 @@
                         <tr>
                             <td>{{ 'Clients'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_today }}</a>
+                                <a href="{{ 'client'|alink({ 'created_at': 'now'|format_date}) }}" class="text-danger">{{ stats.clients_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_yesterday }}</a>
+                                <a href="{{ 'client'|alink({ 'created_at': 'yesterday'|format_date}) }}" class="text-danger">{{ stats.clients_yesterday }}</a>
                             </td>
                             <td class="text-center">
                                 <a href="{{ 'client'|alink }}" class="text-danger">{{ stats.clients_this_month }}</a>
@@ -195,10 +195,10 @@
                         <tr>
                             <td>{{ 'Orders'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_today }}</a>
+                                <a href="{{ 'order'|alink({ 'created_at': 'now'|format_date}) }}" class="text-danger">{{ stats.orders_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_yesterday }}</a>
+                                <a href="{{ 'order'|alink({ 'created_at': 'yesterday'|format_date}) }}" class="text-danger">{{ stats.orders_yesterday }}</a>
                             </td>
                             <td class="text-center">
                                 <a href="{{ 'order'|alink }}" class="text-danger">{{ stats.orders_this_month }}</a>
@@ -213,10 +213,10 @@
                         <tr>
                             <td>{{ 'Invoices'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_today }}</a>
+                                <a href="{{ 'invoice'|alink({ 'created_at': 'now'|format_date}) }}" class="text-danger">{{ stats.invoices_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_yesterday }}</a>
+                                <a href="{{ 'invoice'|alink({ 'created_at': 'yesterday'|format_date}) }}" class="text-danger">{{ stats.invoices_yesterday }}</a>
                             </td>
                             <td class="text-center">
                                 <a href="{{ 'invoice'|alink }}" class="text-danger">{{ stats.invoices_this_month }}</a>
@@ -231,10 +231,10 @@
                         <tr>
                             <td>{{ 'Tickets'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_today }}</a>
+                                <a href="{{ 'support'|alink({ 'created_at': 'now'|format_date}) }}" class="text-danger">{{ stats.tickets_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_yesterday }}</a>
+                                <a href="{{ 'support'|alink({ 'created_at': 'yesterday'|format_date}) }}" class="text-danger">{{ stats.tickets_yesterday }}</a>
                             </td>
                             <td class="text-center">
                                 <a href="{{ 'support'|alink }}" class="text-danger">{{ stats.tickets_this_month }}</a>
@@ -269,9 +269,21 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
+                 <table class="table card-table table-vcenter table-striped text-nowrap">                
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th></th>
+                            <th>{{ 'Name'|trans }}</th>
+                            <th class="text-center">{{ 'Amount'|trans }}</th>
+                            <th class="text-center">{{ 'Invoice Date'|trans }}</th>
+                            <th class="text-center">{{ 'Due Date'|trans }}</th>
+                            <th>{{ 'Status'|trans }}</th>
+                        </tr>
+                    </thead>           
                     <tbody>
-                        {% for invoice in invoicesUnpaid.list %}
+                        {% for invoice in invoicesUnpaid.list %}  
+                         <tr>
                         <tr>
                             <td class="w-1">
                                 <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
@@ -286,6 +298,7 @@
                             </td>
                             <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|format_date }}</td>
+                            <td class="text-center">{{ invoice.due_at|format_date }}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
                                     <span class="badge bg-success me-1"></span>

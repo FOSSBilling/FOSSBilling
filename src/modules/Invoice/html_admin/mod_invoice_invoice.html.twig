@@ -137,14 +137,18 @@
                         <td class="w-15 text-start">{{ 'Email'|trans }}:</td>
                         <td>{{ invoice.buyer.email  }}</td>
                     </tr>
-                    {% if invoice.notes %}
+                    </tbody>
+                </table>
+                {% if invoice.notes %}
+                <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tr>
-                        <td class="text-start">{{ 'Notes'|trans }}:</td>
-                        <td>{{ invoice.notes|markdown }}</td>
+                        <td class="w-15">{{ 'Notes'|trans }}:<br /></td>
+                        <td>{{ invoice.notes|markdown }}
+                        </td>
                     </tr>
-                    {% endif %}
-                </tbody>
-            </table>
+                </table>
+                {% endif %}
+            
             <div class="card-footer text-center">
                 <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
@@ -153,11 +157,11 @@
                     <span>{{ 'View as client'|trans }}</span>
                 </a>
                 {% if invoice.status == 'unpaid' %}
-                <a href="{{ 'api/admin/invoice/revoke'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+                <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
-                    <span>{{ 'Revoke'|trans }}</span>
+                    <span>{{ 'Delete'|trans }}</span>
                 </a>
                 {% endif %}
                 {% if invoice.status == 'unpaid' %}
@@ -257,7 +261,7 @@
                                 <label class="form-label col-3 col-form-label" for="created_at">{{ 'Invoice Date'|trans }}:</label>
                                 <div class="input-group">
                                     <div class="input-icon w-100">
-                                        <input class="form-control datepicker" id="created_at" value="{{ invoice.created_at|format_date }}" name="created_at">
+                                        <input class="form-control datepicker" id="created_at" value="{{ invoice.created_at|date('Y-m-d') }}" name="created_at">
                                         <span class="input-icon-addon">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -279,7 +283,7 @@
                             <label class="form-label col-3 col-form-label" for="due_at">{{ 'Due Date'|trans }}:</label>
                             <div class="input-group">
                                 <div class="input-icon w-100">
-                                    <input class="form-control datepicker" id="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|format_date }}{% endif %}" name="due_at">
+                                    <input class="form-control datepicker" id="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}" name="due_at">
                                     <span class="input-icon-addon">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -300,7 +304,7 @@
                             <label class="form-label col-3 col-form-label" for="paid_at">{{ 'Paid Date'|trans }}:</label>
                             <div class="input-group">
                                 <div class="input-icon w-100">
-                                    <input class="form-control datepicker" id="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% endif %}" name="paid_at">
+                                    <input class="form-control datepicker" id="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}" name="paid_at">
                                     <span class="input-icon-addon">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -339,7 +343,7 @@
                             </tr>
                             <tr>
                                 <td class="text-start">{{ 'Notes'|trans }}:</td>
-                                <td class="text-start"><textarea class="form-control" name="notes" rows="6">{{ invoice.notes }}</textarea></td>
+                                <td class="text-start"><textarea class="form-control textarea" name="notes" rows="6">{{ invoice.notes }}</textarea></td>
                             </tr>
                         </tbody>
                     </table>
@@ -354,15 +358,17 @@
                     {% endif %}
                     
                 </div>
-                <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                <div class="card-footer text-center">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </div>
             </form>
         </div>
         <div class="tab-pane fade" id="tab-texts" role="tabpanel">
             <div class="card-body">
-                {% if invoice.status == 'unpaid' %}
+                
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                    <div class="mb-3 row">
+                    <div >
                         <label class="form-label col-3 col-form-label">{{ 'Text before invoice items'|trans }}:</label>
                         <div class="col">
                             <textarea class="form-control bb-textarea" name="text_1" rows="6">{{ invoice.text_1 }}</textarea>
@@ -374,20 +380,13 @@
                             <textarea class="form-control bb-textarea" name="text_2" rows="6">{{ invoice.text_2 }}</textarea>
                         </div>
                     </div>
-
-                    <input type="hidden" name="id" value="{{ invoice.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                    {% if invoice.status == 'unpaid' %}
+                    <div class="mb-3 row">
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                    </div>
+                    {% endif %}
                 </form>
-                {% else %}
-                <div class="mb-3 row">
-                    <label class="col-3"><b>{{ 'Text before invoice items'|trans }}:</b></label><br />
-                    {{ invoice.text_1 }}
-                </div>
-                <div class="mb-3 row">
-                    <label class="col-3"><b>{{ 'Text after invoice items'|trans }}:</b></label><br />
-                    {{ invoice.text_2 }}
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -606,6 +605,16 @@
 {% block js %}
 {% autoescape "js" %}
 <script>
+    // when the document is ready
+    $(document).ready(function() {
+    {% if invoice.status != 'unpaid' %}
+        if (typeof editors !== "undefined" && Array.isArray(editors)) {
+            Object.keys(editors).forEach(function (name) {
+                editors[name].editor.enableReadOnlyMode('not_unpaid');
+            });
+        }{% endif %}
+    });
+    
     $(function() {
         $('input[name=gateway]:first').attr('checked', true);
         $('#pay-now-button').on('click', function() {
@@ -614,6 +623,8 @@
         return false;
         });
     });
+    
+    
 </script>
 {% endautoescape %}
 {% endblock %}

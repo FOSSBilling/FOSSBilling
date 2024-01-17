@@ -1114,6 +1114,7 @@ class Service implements InjectionAwareInterface
             \Model_Invoice::STATUS_UNPAID => $data[\Model_Invoice::STATUS_UNPAID] ?? 0,
             \Model_Invoice::STATUS_REFUNDED => $data[\Model_Invoice::STATUS_REFUNDED] ?? 0,
             \Model_Invoice::STATUS_CANCELED => $data[\Model_Invoice::STATUS_CANCELED] ?? 0,
+            \Model_Invoice::STATUS_REVOKED => $data[\Model_Invoice::STATUS_REVOKED] ?? 0,
         ];
     }
 

@@ -238,19 +238,17 @@ class Admin extends \Api_Abstract
     public function delete($data)
     {
         $model = $this->_getInvoice($data);
-        // TODO: check if setting "Allow Invoice Deletion" is active
-        return $this->getService()->deleteInvoiceByAdmin($model);
-    }
-
-    /**
-     * Set Invoice status to revoked.
-     * 
-     * @return bool
-     */
-    public function revoke($data)
-    {
-        $model = $this->_getInvoice($data);
-        return $this->getService()->revokeInvoiceByAdmin($model);
+        // check if invoice is unpaid and not approved
+        if ($model->status == 'unpaid') {
+            // if invoice is approved, then revoke it
+            if ($model->approved == '1') {
+                return $this->getService()->revokeInvoiceByAdmin($model);
+            } else {
+                return $this->getService()->deleteInvoiceByAdmin($model);
+            }
+        } else {
+            throw new \FOSSBilling\InformationException('Only unpaid invoices can be deleted');
+        }
     }
 
     /**

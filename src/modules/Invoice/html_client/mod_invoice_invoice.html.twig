@@ -4,7 +4,13 @@
 
 {% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
 
-{% block meta_title %}{{ 'Invoice'|trans }} #{{ nr }}{% endblock %}
+{% if invoice.status != 'refunded' %}
+    {% set document_title = 'Invoice'|trans %}
+{% else %}
+    {% set document_title = 'Credit Note'|trans %}
+{% endif %}
+
+{% block meta_title %}{{ document_title }} #{{ nr }}{% endblock %}
 
 {% block body_class %}invoice-invoice{% endblock %}
 
@@ -54,7 +60,7 @@
                 <div class="card-header py-3 py-3">
                     <div class="d-flex justify-content-between">
                         <div class="d-flex flex-column">
-                            <h5 class="mb-1 d-flex align-items-center">{{ 'Invoice'|trans }}</h5>
+                            <h5 class="mb-1 d-flex align-items-center">{{ document_title }}</h5>
                             <span class="small text-muted">{{ 'You can print this invoice or export it to a PDF file by clicking on the corresponding button.'|trans }}</span>
                         </div>
                         <div class="d-flex align-items-center">
@@ -71,27 +77,27 @@
                         <div class="row">
                             <div class="col-md-6 mb-4">
                                 <div class="well small">
-                                    <h4 class="fw-light mt-2 mb-3">{{ 'Invoice'|trans }} #{{ nr }}</h4>
+                                    <h4 class="fw-light mt-2 mb-3">{{ document_title }} #{{ nr }}</h4>
                                     <dl class="row">
-                                        <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
-                                        <dd class="col-sm-8">
+                                        <dt class="col-sm-5 text-muted">{{document_title}} {{ 'Date'|trans }}</dt>
+                                        <dd class="col-sm-6">
                                             {% if invoice.paid_at|trim %}
                                                 {{ invoice.paid_at|format_date }}
                                             {% else %}
                                                 {{ invoice.created_at|format_date }}
                                             {% endif %}
                                         </dd>
-                                        <dt class="col-sm-4 text-muted">{{ 'Due Date'|trans }}</dt>
-                                        <dd class="col-sm-8">
+                                        <dt class="col-sm-5 text-muted">{{ 'Due Date'|trans }}</dt>
+                                        <dd class="col-sm-6">
                                             {% if invoice.due_at|trim %}
                                                 {{ invoice.due_at|format_date }}
                                             {% else %}
                                                 -----
                                             {% endif %}
                                         </dd>
-                                        <dt class="col-sm-4 text-muted">{{ 'Status'|trans }}</dt>
-                                        <dd class="col-sm-8">
-                                        <span class="badge fs-7 {% if invoice.status == 'paid' %} bg-success{% elseif invoice.status == 'unpaid' %}bg-warning{% elseif invoice.status == 'revoked' %}bg-error{% endif %}">
+                                        <dt class="col-sm-5 text-muted">{{ 'Status'|trans }}</dt>
+                                        <dd class="col-sm-6">
+                                        <span class="badge fs-7 {% if invoice.status == 'paid' %} bg-success {% elseif invoice.status == 'refunded' %}bg-success{% elseif invoice.status == 'unpaid' %}bg-danger{% elseif invoice.status == 'revoked' %}bg-warning{% endif %}">
                                             {{ mf.status_name(invoice.status) }}
                                         </span>
                                         </dd>
@@ -147,35 +153,37 @@
                                     <div class="well small">
                                         <h5>{{ 'Client'|trans }}</h5>
                                         <dl class="row">
-                                            {% if buyer.first_name|trim or buyer.last_name|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Name'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.first_name }} {{ buyer.last_name }}</dd>
-                                            {% endif %}
-
                                             {% if buyer.company|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Company'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.company }}</dd>
+                                                <dt class="col-sm-5 text-muted">{{ 'Company'|trans }}</dt>
+                                                <dd class="col-sm-6">{{ buyer.company }}</dd>
+                                            {% endif %}
+                                            {% if buyer.first_name|trim or buyer.last_name|trim %}
+                                                <dt class="col-sm-5 text-muted">{{ 'Name'|trans }}</dt>
+                                                <dd class="col-sm-6">{{ buyer.first_name }} {{ buyer.last_name }}</dd>
                                             {% endif %}
 
                                             {% if buyer.company_number|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Company number'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.company_number }}</dd>
+                                                <dt class="col-sm-5 text-muted">{{ 'Company number'|trans }}</dt>
+                                                <dd class="col-sm-6">{{ buyer.company_number }}</dd>
                                             {% endif %}
 
                                             {% if buyer.company_vat|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.company_vat }}</dd>
+                                                <dt class="col-sm-5 text-muted">{{ 'Company VAT'|trans }}</dt>
+                                                <dd class="col-sm-6">{{ buyer.company_vat }}</dd>
                                             {% endif %}
 
                                             {% if buyer.address|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.address }}</dd>
-                                                <dd class="col-sm-4">{{ buyer.city }}, {{ buyer.state }}</dd>
-                                                <dd class="col-sm-8">{{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}</dd>
+                                                <dt class="col-sm-5 text-muted">{{ 'Address'|trans }}</dt>
+                                                <dd class="col-sm-6">
+                                                    {{ buyer.address }}<br >
+                                                    {{ buyer.city }}, {{ buyer.state }}<br>
+                                                    {{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}
+                                                </dd>
+
                                             {% endif %}
 
                                             {% if buyer.phone|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
+                                                <dt class="col-sm-5 text-muted">{{ 'Phone'|trans }}</dt>
                                                 <dd class="col-sm-8">{{ buyer.phone }}</dd>
                                             {% endif %}
                                         </dl>
