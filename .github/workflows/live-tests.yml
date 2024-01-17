@@ -166,3 +166,19 @@ jobs:
       - name: Display the FOSSBilling PHP error log
         if: always()
         run: cat /var/www/localhost/data/log/php_error.log
+
+      - name: Display the other FOSSBilling logs
+        if: always()
+        run: |
+          directories=$(find . -type d)
+          for dir in $directories; do
+            # Use find again to get a list of files in the current directory
+            files=$(find "$dir" -type f)
+            
+            # Loop through each file in the current directory and cat its contents
+            for file in $files; do
+              echo "Contents of $file:"
+                cat "$file"
+                echo "--------------------------"
+              done
+            done

@@ -24,7 +24,7 @@ final class CronAdminTest extends TestCase
         $result = Request::makeRequest('admin/cron/run');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
-        // This seems to be failing for no real reason, so let's try a slight delay incase we are tring to pull from the DB too soon or something
+        // This seems to be failing for no real reason, so let's try a slight delay incase we are trying to pull from the DB too soon or something
         sleep(1);
 
         // Validate the last run date was moved up
