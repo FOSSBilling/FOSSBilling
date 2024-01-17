@@ -878,6 +878,13 @@ class Service implements InjectionAwareInterface
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
+        // remove related invoice from orders
+        $sql = '
+            UPDATE client_order
+            SET unpaid_invoice_id = NULL
+            WHERE unpaid_invoice_id = :id';
+        $this->di['db']->exec($sql, ['id' => $model->id]);
+        
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRevoke', 'params' => ['id' => $model->id]]);
 
         $this->di['logger']->info('Revoked invoice #%s', $model->id);

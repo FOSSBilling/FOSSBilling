@@ -52,7 +52,7 @@
                     <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                     <div class="col">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" {% if not request.status %} checked{% endif %}>
+                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value="0" {% if not request.status %} checked{% endif %}>
                             <label class="form-check-label" for="radioStatusAll">{{ 'All statuses'|trans }}</label>
                         </div>
                         <div class="form-check form-check-inline">
@@ -141,7 +141,7 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
-                            <span class="bg-secondary text-white avatar">{{ statuses.refunded }}</span>
+                            <span class="bg-warning text-white avatar">{{ statuses.refunded }}</span>
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ 'Refunded'|trans }}</div>
@@ -203,7 +203,6 @@
                             <th class="text-center">{{ 'Amount'|trans }}</th>
                             <th class="text-center">{{ 'Invoice Date'|trans }}</th>
                             <th class="text-center">{{ 'Due Date'|trans }}</th>
-                            <th class="text-center">{{ 'Paid Date'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -230,24 +229,23 @@
                             <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|format_date }}</td>
                             <td class="text-center">{{ invoice.due_at|format_date }}</td>
-                            <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
+                                    <span class="badge bg-success text-white">
                                 {% endif %}
                                 {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
+                                    <span class="badge bg-danger text-white">
                                 {% endif %}
                                 {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
+                                    <span class="badge bg-warning text-white">
                                 {% endif %}
                                 {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
+                                    <span class="badge bg-secondary text-white">
                                 {% endif %}
                                 {% if invoice.status == 'revoked' %}
-                                    <span class="badge bg-danger me-1"></span>
+                                    <span class="badge bg-secondary text-white">
                                 {% endif %}
-                                {{ mf.status_name(invoice.status) }}
+                                {{ mf.status_name(invoice.status) }}</span>
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
@@ -333,7 +331,6 @@
                             <th class="text-center">{{ 'Amount'|trans }}</th>
                             <th class="text-center">{{ 'Invoice Date'|trans }}</th>
                             <th class="text-center">{{ 'Due Date'|trans }}</th>
-                            <th class="text-center">{{ 'Paid Date'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -360,24 +357,23 @@
                             <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|format_date }}</td>
                             <td class="text-center">{{ invoice.due_at|format_date }}</td>
-                            <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
+                                    <span class="badge bg-success text-white">
                                 {% endif %}
                                 {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
+                                    <span class="badge bg-danger text-white">
                                 {% endif %}
                                 {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
+                                    <span class="badge bg-warning text-white">
                                 {% endif %}
                                 {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
+                                    <span class="badge bg-secondary text-white">
                                 {% endif %}
                                 {% if invoice.status == 'revoked' %}
-                                    <span class="badge bg-danger me-1"></span>
+                                    <span class="badge bg-secondary text-white">
                                 {% endif %}
-                                {{ mf.status_name(invoice.status) }}
+                                {{ mf.status_name(invoice.status) }}</span>
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
