@@ -228,8 +228,9 @@
         </div>
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-reload="{{ 'Invoice updated'|trans }}">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+            <input type="hidden" name="id" value="{{ invoice.id }}">
                 <div class="card-body">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% if invoice.status == 'unpaid' %}
                     <div class="mb-3 row">
                         <div class="mb-3 row">
@@ -317,36 +318,43 @@
                     </div>
                     {% endif %}
                     <!-- Table with paid invoice data -->
+                    {% if invoice.status == 'paid' %}
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <tbody>
                             <tr>
                                 <td class="w-10 text-start"><b>{{ 'Invoice Details'|trans }}:</b></td>
                                 <td></td>
                             </tr>
-                            {% if invoice.status == 'paid' %}
-                                <tr>
-                                    <td class="w-10 text-start">{{ 'Invoice Date'|trans }}:</td>
-                                    <td>{{ invoice.created_at|format_date}}</td>
-                                </tr>
-                                <tr>
-                                    <td class="w-15 text-start">{{ 'Due Date'|trans }}:</td>
-                                    <td>{{ invoice.due_at |format_date }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-start">{{ 'Paid Date'|trans }}:</td>
-                                    <td>{{ invoice.paid_at|format_date }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-start">{{ 'Notes'|trans }}:</td>
-                                    <td class="text-start"><textarea class="form-control" name="notes" rows="6">{{ invoice.notes }}</textarea></td>
-                                </tr>
-                            {% endif %}
+                            <tr>
+                                <td class="w-10 text-start">{{ 'Invoice Date'|trans }}:</td>
+                                <td>{{ invoice.created_at|format_date}}</td>
+                            </tr>
+                            <tr>
+                                <td class="w-15 text-start">{{ 'Due Date'|trans }}:</td>
+                                <td>{{ invoice.due_at|format_date }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">{{ 'Paid Date'|trans }}:</td>
+                                <td>{{ invoice.paid_at|format_date }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">{{ 'Notes'|trans }}:</td>
+                                <td class="text-start"><textarea class="form-control" name="notes" rows="6">{{ invoice.notes }}</textarea></td>
+                            </tr>
                         </tbody>
                     </table>
+                    {% endif %}
+                    {% if invoice.status != 'paid' %}
+                    <div class="mb-3 row">
+                        <div class="col">
+                            <label class="form-label col-3 col-form-label">{{ 'Notes'|trans }}:</label>
+                            <textarea class="form-control textarea" name="notes" rows="6">{{ invoice.notes }}</textarea>
+                        </div>
+                    </div>
+                    {% endif %}
                     
-                    <input type="hidden" name="id" value="{{ invoice.id }}">
-                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
                 </div>
+                <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
             </form>
         </div>
         <div class="tab-pane fade" id="tab-texts" role="tabpanel">
@@ -372,11 +380,11 @@
                 </form>
                 {% else %}
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label"><b>{{ 'Text before invoice items'|trans }}:</b></label><br />
+                    <label class="col-3"><b>{{ 'Text before invoice items'|trans }}:</b></label><br />
                     {{ invoice.text_1 }}
                 </div>
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label"><b>{{ 'Text after invoice items'|trans }}:</b></label><br />
+                    <label class="col-3"><b>{{ 'Text after invoice items'|trans }}:</b></label><br />
                     {{ invoice.text_2 }}
                 </div>
                 {% endif %}
