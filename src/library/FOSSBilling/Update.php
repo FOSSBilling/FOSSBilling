@@ -134,7 +134,7 @@ class Update implements InjectionAwareInterface
 
                 try {
                     $releaseInfoUrl = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases';
-                    $httpClient = HttpClient::create();
+                    $httpClient = HttpClient::create(['bindto' => BIND_TO]);
                     $response = $httpClient->request('GET', $releaseInfoUrl);
                     $releases = $response->toArray();
                 } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
@@ -218,6 +218,7 @@ class Update implements InjectionAwareInterface
             $httpClient = HttpClient::create([
                 'timeout' => 30,
                 'max_duration' => 120,
+                'bindto' => BIND_TO,
             ]);
             $response = $httpClient->request('GET', $this->getLatestVersionInfo($updateBranch)['download_url']);
 

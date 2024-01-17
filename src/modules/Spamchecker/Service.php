@@ -88,7 +88,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
                 }
 
-                $client = HttpClient::create();
+                $client = HttpClient::create(['bindto' => BIND_TO]);
                 $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
                     'body' => [
                         'secret' => $config['captcha_recaptcha_privatekey'],
@@ -204,7 +204,7 @@ class Service implements InjectionAwareInterface
         return $this->di['cache']->get('CentralAlerts.getAlerts', function (ItemInterface $item) {
             $item->expiresAfter(86400); // The list is updated once every 24 hours, so we will cache it for that long
 
-            $client = HttpClient::create();
+            $client = HttpClient::create(['bindto' => BIND_TO]);
             $response = $client->request('GET', 'https://raw.githubusercontent.com/7c/fakefilter/main/txt/data.txt');
             $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tempEmailDB.txt';
 

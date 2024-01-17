@@ -266,4 +266,26 @@ class Admin extends \Api_Abstract
     {
         return \FOSSBilling\SentryHelper::last_change;
     }
+
+    public function get_interface_ips(): array
+    {
+        return \FOSSBilling\Tools::listHttpInterfaces();
+    }
+
+    public function set_interface_ip($data): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_network_interface');
+        $config = Config::getConfig();
+
+        if (isset($data['interface'])) {
+            $config['interface_ip'] = $data['interface'];
+        }
+
+        if (isset($data['custom_interface'])) {
+            $config['custom_interface_ip'] = $data['custom_interface'];
+        }
+
+        Config::setConfig($config);
+        return true;
+    }
 }

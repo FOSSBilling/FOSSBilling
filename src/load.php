@@ -258,6 +258,8 @@ require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
+define('BIND_TO', FOSSBilling\Tools::getDefaultInterface());
+
 // Now that the config file is loaded, we can enable Sentry
 FOSSBilling\SentryHelper::registerSentry();
 

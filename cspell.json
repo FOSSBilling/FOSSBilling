@@ -385,7 +385,10 @@
         "USERPWD",
         "COOKIEJAR",
         "COOKIEFILE",
-        "nonaggregated"
+        "nonaggregated",
+        "bindto",
+        "ipify",
+        "hestiacp"
     ],
     "ignorePaths": [
         "tests-legacy/**",

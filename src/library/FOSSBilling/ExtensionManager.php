@@ -163,7 +163,7 @@ class ExtensionManager implements InjectionAwareInterface
         return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
             $item->expiresAfter(60 * 60);
 
-            $httpClient = \Symfony\Component\HttpClient\HttpClient::create();
+            $httpClient = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
                 'query' => [...$params, 'fossbilling_version' => Version::VERSION],

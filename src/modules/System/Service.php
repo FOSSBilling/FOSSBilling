@@ -53,6 +53,11 @@ class Service
                 'display_name' => __trans('Update FOSSBilling'),
                 'description' => __trans('Allows the staff member to update FOSSBilling.'),
             ],
+            'manage_network_interface' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage the network interface'),
+                'description' => __trans('Allows the staff member to fetch a list of all local interface IP addresses and set the default network interface for FOSSBilling to use.'),
+            ],
         ];
     }
 
@@ -468,16 +473,11 @@ class Service
         return true;
     }
 
-    public function getEnv($ip)
+    public function getEnv($ip = null)
     {
-        if (isset($ip)) {
+        if ($ip) {
             try {
-                $client = HttpClient::create();
-                $response = $client->request('GET', 'https://api.ipify.org', [
-                    'timeout' => 2,
-                ]);
-
-                return $response->getContent();
+                return \FOSSBilling\Tools::getExternalIP();
             } catch (\Exception) {
                 return '';
             }
