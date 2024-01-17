@@ -16,7 +16,6 @@ use FOSSBilling\Environment;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Version;
 use Pimple\Container;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service

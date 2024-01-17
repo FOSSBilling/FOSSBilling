@@ -64,7 +64,7 @@ final class ExtensionTest extends TestCase
             if ($locale === 'en_US') {
                 $this->assertEquals(100, $completionResult->getResult());
             } else {
-                $this->greaterThanOrEqual(25, $completionResult->getResult());
+                $this->assertGreaterThanOrEqual(25, $completionResult->getResult());
             }
         }
     }

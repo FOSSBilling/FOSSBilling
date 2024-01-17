@@ -11,7 +11,7 @@ class HandlerTest extends BBDbApiTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('api_roles')]
+    #[PHPUnit\Framework\Attributes\DataProvider('api_roles')]
     public function testInstances($apiName)
     {
         $api = $this->di[$apiName];

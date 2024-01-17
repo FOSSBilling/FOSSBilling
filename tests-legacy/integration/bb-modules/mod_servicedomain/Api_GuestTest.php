@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_ServiceDomainTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';

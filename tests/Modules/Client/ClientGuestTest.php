@@ -15,7 +15,7 @@ final class ClientGuestTest extends TestCase
             'email' => 'client@example.com',
             'first_name' => 'Test',
             'password' => $password,
-            'password_confirm' => $password
+            'password_confirm' => $password,
         ]);
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());

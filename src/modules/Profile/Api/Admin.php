@@ -139,8 +139,8 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Generate new API key for a given client
-     * 
+     * Generate new API key for a given client.
+     *
      * @return string the new API key for the client
      */
     public function api_key_reset($data): string

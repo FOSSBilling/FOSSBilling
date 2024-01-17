@@ -21,7 +21,7 @@ final class SpamcheckerGuestTest extends TestCase
             'email' => 'email@yopmail.net',
             'first_name' => 'Test',
             'password' => $password,
-            'password_confirm' => $password
+            'password_confirm' => $password,
         ]);
 
         $this->assertFalse($result->wasSuccessful(), 'The client account was created when it should not have been');
@@ -43,7 +43,7 @@ final class SpamcheckerGuestTest extends TestCase
 
         /**
          * This one should create without any errors as long as the email address doesn't get listed as spam.
-         * 
+         *
          * @see http://api.stopforumspam.org/api?email=email@example.com
          */
         $password = bin2hex(random_bytes(6));
@@ -51,7 +51,7 @@ final class SpamcheckerGuestTest extends TestCase
             'email' => 'email@example.com',
             'first_name' => 'Test',
             'password' => $password,
-            'password_confirm' => $password
+            'password_confirm' => $password,
         ]);
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());

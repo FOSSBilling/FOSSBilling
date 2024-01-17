@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_ServiceDomainTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
@@ -13,7 +13,7 @@ class Api_Client_ServiceDomainTest extends BBDbApiTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('orders')]
+    #[PHPUnit\Framework\Attributes\DataProvider('orders')]
     public function testClientServiceDomain($id)
     {
         $this->api_admin->order_renew(['id' => $id]);

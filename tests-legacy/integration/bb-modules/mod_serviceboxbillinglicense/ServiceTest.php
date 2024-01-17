@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
     public function testService()

@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class LogTest extends BBDbApiTestCase
 {
     public static function logWithoutParamsProvider()
@@ -11,7 +11,7 @@ class LogTest extends BBDbApiTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('logWithoutParamsProvider')]
+    #[PHPUnit\Framework\Attributes\DataProvider('logWithoutParamsProvider')]
     public function testLogWithoutParams($msg)
     {
         $msg = 'Test message';
@@ -38,7 +38,7 @@ class LogTest extends BBDbApiTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('testLogProvider')]
+    #[PHPUnit\Framework\Attributes\DataProvider('testLogProvider')]
     public function testLogWithSingleParam($msg, $param, $expected)
     {
         $this->di['logger']->info($msg, $param);

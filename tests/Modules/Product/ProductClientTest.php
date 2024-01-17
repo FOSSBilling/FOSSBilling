@@ -20,7 +20,7 @@ final class ProductClientTest extends TestCase
             'email' => 'client@example.com',
             'first_name' => 'Test',
             'password' => $this->clientPassword,
-            'password_confirm' => $this->clientPassword
+            'password_confirm' => $this->clientPassword,
         ]);
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());

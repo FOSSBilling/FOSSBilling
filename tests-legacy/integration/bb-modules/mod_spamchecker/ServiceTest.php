@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Spamchecker_ServiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_spamchecker.xml';

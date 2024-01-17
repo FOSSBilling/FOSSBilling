@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_SystemTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'settings.xml';

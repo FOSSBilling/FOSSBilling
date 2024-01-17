@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_InvoiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'transactions.xml';
@@ -864,7 +864,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('testPrepareInvoiceDueDateProvider')]
+    #[PHPUnit\Framework\Attributes\DataProvider('testPrepareInvoiceDueDateProvider')]
     public function testPrepareInvoiceDueDate($invoice_due_days, $diff)
     {
         if (!is_null($invoice_due_days)) {
