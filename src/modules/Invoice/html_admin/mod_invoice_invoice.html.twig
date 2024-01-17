@@ -325,16 +325,16 @@
                             </tr>
                             {% if invoice.status == 'paid' %}
                                 <tr>
-                                    <td class="w-10 text-start">{{ 'Created at'|trans }}:</td>
-                                    <td>{{ invoice.created_at|date('Y-m-d') }}</td>
+                                    <td class="w-10 text-start">{{ 'Invoice Date'|trans }}:</td>
+                                    <td>{{ invoice.created_at|format_date}}</td>
                                 </tr>
                                 <tr>
-                                    <td class="w-15 text-start">{{ 'Due at'|trans }}:</td>
-                                    <td>{{ invoice.due_at |date('Y-m-d') }}</td>
+                                    <td class="w-15 text-start">{{ 'Due Date'|trans }}:</td>
+                                    <td>{{ invoice.due_at |format_date }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-start">{{ 'Paid at'|trans }}:</td>
-                                    <td>{{ invoice.paid_at|date('Y-m-d') }}</td>
+                                    <td class="text-start">{{ 'Paid Date'|trans }}:</td>
+                                    <td>{{ invoice.paid_at|format_date }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-start">{{ 'Notes'|trans }}:</td>
