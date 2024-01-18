@@ -20,7 +20,7 @@ final class CartTest extends TestCase
         $productID = intval($result->getResult());
 
         // Now configure it
-        $result = Request::makeRequest('admin/product/prepare', [
+        $result = Request::makeRequest('admin/product/update', [
             'id' => $productID,
             'status' => 'enabled',
             'pricing' => [
