@@ -186,6 +186,11 @@ class GuestTest extends \BBTestCase
         $sessionMock->expects($this->atLeastOnce())
             ->method('set');
 
+        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock->expects($this->once())
+            ->method('transferFromOtherSession')
+            ->willReturn(true);
+
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
@@ -200,6 +205,7 @@ class GuestTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn () => $cartServiceMock);
 
         $client = new Guest();
         $client->setDi($di);
