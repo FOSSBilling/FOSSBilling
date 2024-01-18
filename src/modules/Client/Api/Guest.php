@@ -132,12 +132,15 @@ class Guest extends \Api_Abstract
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
 
+        $oldSession = $this->di['session']->getId();
         session_regenerate_id();
         $result = $service->toSessionArray($client);
         $this->di['session']->set('client_id', $client->id);
 
         $this->di['logger']->info('Client #%s logged in', $client->id);
         $this->di['session']->delete('redirect_uri');
+
+        $this->di['mod_service']('cart')->transferFromOtherSession($oldSession);
 
         return $result;
     }
