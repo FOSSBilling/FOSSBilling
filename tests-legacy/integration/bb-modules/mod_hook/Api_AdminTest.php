@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Hook_Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_hook.xml';

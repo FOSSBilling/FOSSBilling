@@ -1,6 +1,7 @@
 name: Perform Live Tests
 
 on:
+  push:
   pull_request:
     branches: main
 
@@ -109,6 +110,7 @@ jobs:
               Options Indexes FollowSymLinks
               AllowOverride All
               Require all granted
+              SetEnv APP_ENV ${APP_ENV}
             </Directory>
         
             ErrorLog \${APACHE_LOG_DIR}/error.log
@@ -164,3 +166,17 @@ jobs:
       - name: Display the FOSSBilling PHP error log
         if: always()
         run: cat /var/www/localhost/data/log/php_error.log
+
+      - name: Display the other FOSSBilling logs
+        if: always()
+        working-directory: /var/www/localhost/data/log/
+        run: |
+          # Use find again to get a list of files in the current directory
+          files=$(find . -type f ! -name '*.html' ! -name 'php_error.log')
+
+          # Loop through each file in the current directory and cat its contents
+          for file in $files; do
+            echo "Contents of $file:"
+            cat "$file"
+            echo "--------------------------"
+          done

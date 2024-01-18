@@ -2,7 +2,7 @@
 
 class Payment_Adapter_Dummy
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Pimple\Container $di = null;
 
     public function setDi(Pimple\Container $di): void
     {

@@ -388,7 +388,8 @@
         "nonaggregated",
         "bindto",
         "ipify",
-        "hestiacp"
+        "hestiacp",
+        "intval"
     ],
     "ignorePaths": [
         "tests-legacy/**",

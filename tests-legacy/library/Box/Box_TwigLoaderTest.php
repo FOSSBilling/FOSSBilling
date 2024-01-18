@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
 {
     public function testTemplates()
