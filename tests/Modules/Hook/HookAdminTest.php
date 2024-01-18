@@ -11,6 +11,7 @@ final class HookAdminTest extends TestCase
     {
         $result = Request::makeRequest('admin/hook/batch_connect');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertTrue($result->getResult());
     }
 
     public function testGetHookList(): void

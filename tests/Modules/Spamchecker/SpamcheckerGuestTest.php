@@ -25,6 +25,7 @@ final class SpamcheckerGuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful(), 'The client account was created when it should not have been');
+        $this->assertEquals('Disposable email addresses are not allowed', $result->getErrorMessage());
 
         // If the account was created, perform cleanup
         if ($result->wasSuccessful()) {

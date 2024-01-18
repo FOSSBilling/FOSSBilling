@@ -80,12 +80,14 @@ class Response
         return $this->decodedResponse && !$this->decodedResponse['error'];
     }
 
-    public function getError(): string
+    public function getErrorMessage(): string
     {
-        $message = $this->decodedResponse['error']['message'] ?? 'None';
-        $code = $this->decodedResponse['error']['code'] ?? 0;
+        return $this->decodedResponse['error']['message'] ?? 'None';
+    }
 
-        return "$message (Error code $code)";
+    public function getErrorCode(): int
+    {
+        return intval($this->decodedResponse['error']['code'] ?? 0);
     }
 
     public function generatePHPUnitMessage(): string

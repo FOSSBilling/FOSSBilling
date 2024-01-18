@@ -45,6 +45,15 @@ final class ExtensionTest extends TestCase
         $result = Request::makeRequest('admin/extension/languages', ['disabled' => true, 'details' => false]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertContains('en_US', $result->getResult(), 'The en_US language was not disabled');
+
+        // Validate it's no longer listed under the enabled languages
+        $result = Request::makeRequest('admin/extension/languages');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertNotContains('en_US', $result->getResult(), 'The en_US language was not disabled');
+
+        // Enable it again
+        $result = Request::makeRequest('admin/extension/toggle_language', ['locale_id' => 'en_US']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
     }
 
     public function testLanguageCompletion(): void

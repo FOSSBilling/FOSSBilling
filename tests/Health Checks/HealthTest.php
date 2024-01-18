@@ -11,6 +11,7 @@ final class HealthTest extends TestCase
     {
         $result = Request::makeRequest('guest/system/company');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertIsArray($result->getResult());
     }
 
     public function testStartingPatchNotBehind(): void
