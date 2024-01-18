@@ -165,7 +165,7 @@
                 </a>
                 {% endif %}
                 {% if invoice.status == 'unpaid' %}
-                <a href="{{ 'api/admin/invoice/update_client_address'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken}) }}" class="btn btn-primary api-link" data-api-msg="Adress data Updated">
+                <a href="{{ 'api/admin/invoice/update_client_address'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken}) }}" class="btn btn-primary api-link" data-api-msg="Address data Updated">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#refresh" />
                     </svg>

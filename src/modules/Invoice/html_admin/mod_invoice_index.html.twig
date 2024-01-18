@@ -53,7 +53,7 @@
                     <div class="col">
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" id="radioStatusAll" type="radio" name="status" {% if not request.status %} checked{% endif %}>
-                            <label class="form-check-label" for="radioStatusAll">{{ 'All stati'|trans }}</label>
+                            <label class="form-check-label" for="radioStatusAll">{{ 'All statuses'|trans }}</label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked{% endif %}>

@@ -812,7 +812,7 @@ class Service implements InjectionAwareInterface
 
     public function updateClientAddress($model)
     {
-        // Get Client Adress from database and update invoice
+        // Get Client address from database and update invoice
         $client = $this->di['db']->load('Client', $model->client_id);
         $model->buyer_first_name = $client->first_name;
         $model->buyer_last_name = $client->last_name;
