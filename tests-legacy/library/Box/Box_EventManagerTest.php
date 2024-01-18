@@ -1,9 +1,9 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_EventManagerTest extends PHPUnit\Framework\TestCase
 {
-    #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
+    #[PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testEmptyFire()
     {
         $manager = new Box_EventManager();

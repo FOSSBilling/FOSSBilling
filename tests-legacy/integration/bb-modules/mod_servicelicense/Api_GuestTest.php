@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_ServiceLicenseTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'licensing-server.xml';
@@ -39,7 +39,7 @@ class Api_Guest_ServiceLicenseTest extends BBDbApiTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('variations')]
+    #[PHPUnit\Framework\Attributes\DataProvider('variations')]
     public function testGuestServiceLicense($data, $valid)
     {
         $result = $this->api_guest->servicelicense_check($data);

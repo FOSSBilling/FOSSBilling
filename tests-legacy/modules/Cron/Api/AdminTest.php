@@ -24,16 +24,4 @@ class AdminTest extends \BBTestCase
         $result = $api_admin->info([]);
         $this->assertIsArray($result);
     }
-
-    public function testrun()
-    {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('runCrons')->willReturn(true);
-
-        $api_admin = new Admin();
-        $api_admin->setService($serviceMock);
-
-        $result = $api_admin->run([]);
-        $this->assertIsBool($result);
-    }
 }

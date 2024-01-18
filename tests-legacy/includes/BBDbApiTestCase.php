@@ -2,7 +2,7 @@
 
 abstract class BBDbApiTestCase extends BBDatabaseTestCase
 {
-    protected ?\Pimple\Container $di;
+    protected ?Pimple\Container $di;
     protected $session;
     protected $api_guest;
     protected $api_client;

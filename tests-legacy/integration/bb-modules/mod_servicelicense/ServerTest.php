@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'servicelicense.xml';
@@ -34,7 +34,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('variations')]
+    #[PHPUnit\Framework\Attributes\DataProvider('variations')]
     public function testLicenseServer($data, $valid, $validation)
     {
         $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
@@ -200,7 +200,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
     /**
      * @expectedException \LogicException
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('testLicenseServerProcessValidationFailProvider')]
+    #[PHPUnit\Framework\Attributes\DataProvider('testLicenseServerProcessValidationFailProvider')]
     public function testLicenseServerProcessValidationFail($isActive, $validIp, $validHost, $validVersion, $validPath, $called)
     {
         $data = [

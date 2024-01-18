@@ -70,9 +70,7 @@ class Service
         $this->_exec($api, 'email_batch_sendmail');
 
         // Update the last time cron was executed
-        $create = Environment::isProduction();
-        $ss = $this->di['mod_service']('system');
-        $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
+        $this->di['mod_service']('system')->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), true);
 
         // Purge old sessions from the DB
         $count = $this->clearOldSessions() ?? 0;

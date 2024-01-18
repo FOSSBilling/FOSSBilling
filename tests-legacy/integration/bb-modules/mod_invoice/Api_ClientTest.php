@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Invoice_Api_ClientTest extends BBModTestCase
 {
     protected $_mod = 'invoice';

@@ -15,11 +15,11 @@ class Api_GUest_FormbuilderTest extends BBDbApiTestCase
         } catch (Box_Exception) {
         }
 
-         try {
-             $this->api_guest->formbuilder_get(['id' => 100000]);
-             $this->fail('An expected exception has not been raised.');
-         } catch (Box_Exception) {
-         }
+        try {
+            $this->api_guest->formbuilder_get(['id' => 100000]);
+            $this->fail('An expected exception has not been raised.');
+        } catch (Box_Exception) {
+        }
     }
 
     public function testGet()

@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_CryptTest extends PHPUnit\Framework\TestCase
 {
     public function testCrypt()

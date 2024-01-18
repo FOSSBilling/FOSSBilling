@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 {
     public static function domains()
@@ -19,7 +19,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('domains')]
+    #[PHPUnit\Framework\Attributes\DataProvider('domains')]
     public function testValidator($domain, $valid)
     {
         $v = new FOSSBilling\Validate();

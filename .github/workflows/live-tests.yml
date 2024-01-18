@@ -1,6 +1,7 @@
 name: Perform Live Tests
 
 on:
+  push:
   pull_request:
     branches: main
 
@@ -36,14 +37,14 @@ jobs:
 
       - name: Cache Built Admin Theme
         id: cache-admin_default
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ./src/themes/admin_default/build
           key: admin_default-${{ hashFiles('./package-lock.json', './src/themes/admin_default/assets/fossbilling.js', './src/themes/admin_default/assets/scss/*.scss', './src/themes/admin_default/assets/js/*.js', './src/themes/admin_default/assets/js/ui/*.js') }}
 
       - name: Cache Built Huraga Theme
         id: cache-huraga
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ./src/themes/huraga/build
           key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
@@ -109,6 +110,7 @@ jobs:
               Options Indexes FollowSymLinks
               AllowOverride All
               Require all granted
+              SetEnv APP_ENV ${APP_ENV}
             </Directory>
         
             ErrorLog \${APACHE_LOG_DIR}/error.log
@@ -164,3 +166,17 @@ jobs:
       - name: Display the FOSSBilling PHP error log
         if: always()
         run: cat /var/www/localhost/data/log/php_error.log
+
+      - name: Display the other FOSSBilling logs
+        if: always()
+        working-directory: /var/www/localhost/data/log/
+        run: |
+          # Use find again to get a list of files in the current directory
+          files=$(find . -type f ! -name '*.html' ! -name 'php_error.log')
+
+          # Loop through each file in the current directory and cat its contents
+          for file in $files; do
+            echo "Contents of $file:"
+            cat "$file"
+            echo "--------------------------"
+          done

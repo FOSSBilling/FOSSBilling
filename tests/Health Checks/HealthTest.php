@@ -9,14 +9,15 @@ final class HealthTest extends TestCase
 {
     public function testIsFOSSBillingWorking(): void
     {
-        $response = Request::makeRequest('guest/system/company');
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
+        $result = Request::makeRequest('guest/system/company');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertIsArray($result->getResult());
     }
 
     public function testStartingPatchNotBehind(): void
     {
-        $response = Request::makeRequest('admin/system/is_behind_on_patches');
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
-        $this->assertNotTrue($response->getResult()); // This should return false to indicate there are no patches available, meaning the `last_patch` number is correct for fresh installs.
+        $result = Request::makeRequest('admin/system/is_behind_on_patches');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->assertNotTrue($result->getResult()); // This should return false to indicate there are no patches available, meaning the `last_patch` number is correct for fresh installs.
     }
 }

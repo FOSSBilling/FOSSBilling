@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Client_InvoiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'transactions.xml';

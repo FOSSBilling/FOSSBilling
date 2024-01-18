@@ -150,7 +150,7 @@ globalThis.bb = {
           const formData = new FormData(formElement);
 
           // Get all CKEditor instances and replace the original textarea values with the updated content.
-          if (typeof editors !== "undefined" && Array.isArray(editors)) {
+          if (typeof editors !== "undefined" && Array.isArray(editors) && editors.length > 0) {
             let editorContentOnRequiredAttr = false;
             Object.keys(editors).forEach(function (name) {
               editorContentOnRequiredAttr = editors[name].required

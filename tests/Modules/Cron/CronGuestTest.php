@@ -11,18 +11,18 @@ final class CronGuestTest extends TestCase
     {
         // Ensure cron does not run for guests when disabled
         Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_cron', 'guest_cron' => false]);
-        $response = Request::makeRequest('guest/cron/run');
-        $this->assertFalse($response->wasSuccessful(), 'Cron was run when it was not supposed to');
+        $result = Request::makeRequest('guest/cron/run');
+        $this->assertFalse($result->wasSuccessful(), 'Cron was run when it was not supposed to');
 
         // Now enable it, set the last exec back into the past, and then validate it does run
         Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_cron', 'guest_cron' => true]);
         Request::makeRequest('admin/system/update_params', ['last_cron_exec' => date('Y-m-d H:i:s', time() - 6400)]);
-        $response = Request::makeRequest('guest/cron/run');
-        $this->assertTrue($response->wasSuccessful(), $response->generatePHPUnitMessage());
+        $result = Request::makeRequest('guest/cron/run');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         // Finally, ensure the rate limit is working
-        $response = Request::makeRequest('guest/cron/run');
-        $this->assertTrue($response->wasSuccessful(), 'Cron ran when it should have been rate limited');
-        $this->assertFalse($response->getResult()); // Returns false when rate-limited
+        $result = Request::makeRequest('guest/cron/run');
+        $this->assertTrue($result->wasSuccessful(), 'Cron ran when it should have been rate limited');
+        $this->assertFalse($result->getResult()); // Returns false when rate-limited
     }
 }

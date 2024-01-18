@@ -16,7 +16,6 @@ use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
-use Pimple\Exception\UnknownIdentifierException;
 use Symfony\Component\HttpClient\HttpClient;
 
 class Tools
@@ -131,7 +130,7 @@ class Tools
         $symbols = '!@#$%&?()+-_';
 
         switch ($strength) {
-                // lowercase + uppercase + numeric
+            // lowercase + uppercase + numeric
             case 3:
                 $lower = random_int(1, $length - 2);
                 $upper = random_int(1, $length - $lower - 1);
@@ -330,7 +329,7 @@ class Tools
         return strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0;
     }
 
-    /** 
+    /**
      * Tries to fetch a list of possible interfaces (IPs) to bind to when making requests.
      * Attempts to make external requests for each interface & only works with IPv4.
      */
@@ -338,6 +337,7 @@ class Tools
     {
         // Fetch a list of IP addresses for local interfaces
         $validatedIps = [];
+
         try {
             $ips = gethostbynamel(gethostname());
         } catch (\Exception) {
@@ -356,6 +356,7 @@ class Tools
             } catch (\Exception) {
             }
         }
+
         return $validatedIps;
     }
 
@@ -363,8 +364,8 @@ class Tools
      * Returns the currently configured default network interface.
      * If a custom interface IP address is entered, no validation is performed.
      * However, if we are using an interface IP address that was selected from a given list, we will validate that the IP address is still in the list of known IP address interfaces.
-     * 
-     * @return string|int Either the IP address of the interface to use (string) or 0 if there's none set / the set one is invalid.
+     *
+     * @return string|int either the IP address of the interface to use (string) or 0 if there's none set / the set one is invalid
      */
     public static function getDefaultInterface(): string|int
     {
@@ -391,14 +392,14 @@ class Tools
     /**
      * Returns the public IP address of the current FOSSBilling instance.
      * Will try multiple services in order if they time out.
-     * Try order: ipify.org, ifconfig.io, ip.hestiacp.com
-     * 
-     * @param bool $throw if the function should throw an exception on an error.
-     * @param ?string $bind overrides the default network interface bind. Set to `null` to disable this behavior.
-     * 
-     * @return ?string `null` if there was an error, otherwise an IP address will be returned.
+     * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
+     *
+     * @param bool    $throw if the function should throw an exception on an error
+     * @param ?string $bind  overrides the default network interface bind. Set to `null` to disable this behavior.
+     *
+     * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
-    public static function getExternalIP(bool $throw = true, ?string $bind = null): ?string
+    public static function getExternalIP(bool $throw = true, string $bind = null): ?string
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;

@@ -286,6 +286,7 @@ class Admin extends \Api_Abstract
         }
 
         Config::setConfig($config);
+
         return true;
     }
 }

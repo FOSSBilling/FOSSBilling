@@ -2,9 +2,9 @@
 
 use PHPUnit\Framework\TestCase;
 
-abstract class BBDatabaseTestCase extends Testcase
+abstract class BBDatabaseTestCase extends TestCase
 {
-    private static ?\PDO $pdo = null;
+    private static ?PDO $pdo = null;
     private $conn;
 
     protected $_seedFilesPath;

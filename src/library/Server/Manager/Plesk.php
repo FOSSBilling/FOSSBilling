@@ -12,7 +12,7 @@ use PleskX\Api\Client;
  */
 class Server_Manager_Plesk extends Server_Manager
 {
-    private ?PleskX\Api\Client $_client = null;
+    private ?Client $_client = null;
 
     /**
      * Returns an array with a single key-value pair, where the key is 'label' and the value is 'Plesk'.

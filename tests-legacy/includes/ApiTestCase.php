@@ -2,7 +2,7 @@
 
 class ApiTestCase extends PHPUnit\Framework\TestCase
 {
-    protected ?\Pimple\Container $di;
+    protected ?Pimple\Container $di;
     protected $session;
     protected $api_guest;
     protected $api_client;

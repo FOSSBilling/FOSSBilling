@@ -1,6 +1,6 @@
 <?php
 
-#[\PHPUnit\Framework\Attributes\Group('Core')]
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
 {
     protected $_mod = 'massmailer';

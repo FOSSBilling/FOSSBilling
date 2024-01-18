@@ -51,16 +51,12 @@ class Request
 
 class Response
 {
-    private int $code;
-    private string $rawResponse;
     private array $decodedResponse = [];
 
-    public function __construct(int $code, string $rawResponse)
+    public function __construct(private readonly int $code, private readonly string $rawResponse)
     {
-        $this->code = $code;
-        $this->rawResponse = $rawResponse;
-        if (json_validate($rawResponse)) {
-            $this->decodedResponse = json_decode($rawResponse, true);
+        if (json_validate($this->rawResponse)) {
+            $this->decodedResponse = json_decode($this->rawResponse, true);
         }
     }
 
@@ -84,12 +80,19 @@ class Response
         return $this->decodedResponse && !$this->decodedResponse['error'];
     }
 
+    public function getErrorMessage(): string
+    {
+        return $this->decodedResponse['error']['message'] ?? 'None';
+    }
+
+    public function getErrorCode(): int
+    {
+        return intval($this->decodedResponse['error']['code'] ?? 0);
+    }
+
     public function getError(): string
     {
-        $message = $this->decodedResponse['error']['message'] ?? 'None';
-        $code = $this->decodedResponse['error']['code'] ?? 0;
-
-        return "$message (Error code $code)";
+        return $this->getErrorMessage() . ' (Code ' . $this->getErrorCode() . ')';
     }
 
     public function generatePHPUnitMessage(): string
