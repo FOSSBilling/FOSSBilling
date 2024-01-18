@@ -49,7 +49,7 @@ class Service implements InjectionAwareInterface
         $cart = $this->getSessionCart($sessionID);
         $cart->session_id = $this->di['session']->getId();
         $this->di['db']->store($cart);
-        return true
+        return true;
     }
 
     /**
