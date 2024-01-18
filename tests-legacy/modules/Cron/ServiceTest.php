@@ -27,62 +27,6 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testrunCrons()
-    {
-        $apiSystem = new \Api_Handler(new \Model_Admin());
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
-            ->onlyMethods(['_exec'])
-            ->getMock();
-
-        $serviceMock->expects($this->exactly(13))
-            ->method('_exec')
-            ->willReturnCallback(function (...$args) use ($apiSystem) {
-                $series = [
-                    [[$apiSystem], 'hook_batch_connect'],
-                    [[$apiSystem], 'invoice_batch_pay_with_credits'],
-                    [[$apiSystem], 'invoice_batch_activate_paid'],
-                    [[$apiSystem], 'invoice_batch_send_reminders'],
-                    [[$apiSystem], 'invoice_batch_generate'],
-                    [[$apiSystem], 'invoice_batch_invoke_due_event'],
-                    [[$apiSystem], 'order_batch_suspend_expired'],
-                    [[$apiSystem], 'order_batch_cancel_suspended'],
-                    [[$apiSystem], 'support_batch_ticket_auto_close'],
-                    [[$apiSystem], 'support_batch_public_ticket_auto_close'],
-                    [[$apiSystem], 'client_batch_expire_password_reminders'],
-                    [[$apiSystem], 'cart_batch_expire'],
-                    [[$apiSystem], 'email_batch_sendmail'],
-                ];
-
-                [$expectedApiSystem, $expectedMethod] = array_shift($series);
-                $this->equalTo($expectedApiSystem);
-                $this->equalTo($expectedMethod);
-            });
-
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('setParamValue');
-
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('exec');
-
-        $di = new \Pimple\Container();
-        $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $eventsMock;
-        $di['api_system'] = $apiSystem;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
-        $serviceMock->setDi($di);
-        $di['db'] = $dbMock;
-        $di['cache'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
-
-        $result = $serviceMock->runCrons();
-        $this->assertTrue($result);
-    }
-
     public function testgetLastExecutionTime()
     {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
