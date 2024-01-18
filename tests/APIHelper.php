@@ -90,6 +90,11 @@ class Response
         return intval($this->decodedResponse['error']['code'] ?? 0);
     }
 
+    public function getError(): string
+    {
+        return $this->getErrorMessage() . ' (Code ' . $this->getErrorCode() . ')';
+    }
+
     public function generatePHPUnitMessage(): string
     {
         return 'The API request failed with the following message: ' . $this->getError();

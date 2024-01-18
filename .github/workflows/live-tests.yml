@@ -171,15 +171,12 @@ jobs:
         if: always()
         working-directory: /var/www/localhost/data/log/
         run: |
-          directories=$(find . -type d)
-          for dir in $directories; do
-            # Use find again to get a list of files in the current directory
-            files=$(find "$dir" -type f)
-            
-            # Loop through each file in the current directory and cat its contents
-            for file in $files; do
-              echo "Contents of $file:"
-                cat "$file"
-                echo "--------------------------"
-              done
-            done
+          # Use find again to get a list of files in the current directory
+          files=$(find . -type f ! -name '*.html' ! -name 'php_error.log')
+
+          # Loop through each file in the current directory and cat its contents
+          for file in $files; do
+            echo "Contents of $file:"
+            cat "$file"
+            echo "--------------------------"
+          done
