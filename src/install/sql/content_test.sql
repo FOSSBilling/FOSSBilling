@@ -35,7 +35,7 @@ LOCK TABLES `admin` WRITE;
 
 INSERT INTO `admin` (`id`, `role`, `admin_group_id`, `email`, `pass`, `salt`, `name`, `signature`, `protected`, `status`, `api_token`, `permissions`, `created_at`, `updated_at`)
 VALUES
-	(1,'admin',1,'admin@fossbilling.org','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'Demo Administrator','Sincerely Yours, Demo Administrator',1,'active','644846a924e9f4ca76f04f39b3f9c8ac',NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(1,'admin',1,'admin@fossbilling.org','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'Demo Administrator','Sincerely Yours, Demo Administrator',1,'active','644846a924e9f4ca76f04f39b3f9c8ac',NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -163,7 +163,7 @@ LOCK TABLES `extension` WRITE;
 INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`, `manifest`)
 VALUES
     (1,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\",\"author\":\"FOSSBilling\",\"author_url\":\"http:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/News\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-    (1,'mod','branding','installed','0.0.1','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"Show your support by voluntarily displaying references to FOSSBilling.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"0.0.1\",\"icon_url\":\"\\/modules\\/Branding\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
+    (2,'mod','branding','installed','0.0.1','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"Show your support by voluntarily displaying references to FOSSBilling.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"0.0.1\",\"icon_url\":\"\\/modules\\/Branding\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
     (3,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Redirect\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
     (4,'mod','wysiwyg','installed','1.0.0','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"Wysiwyg\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Wysiwyg\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
 
@@ -287,7 +287,7 @@ LOCK TABLES `support_kb_article_category` WRITE;
 
 INSERT INTO `support_kb_article_category` (`id`, `title`, `description`, `slug`, `created_at`, `updated_at`)
 VALUES
-	(1,'Instructions','Section for common issues','instructions','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(1,'Instructions','Section for common issues','instructions','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `support_kb_article_category` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -318,7 +318,7 @@ LOCK TABLES `post` WRITE;
 
 INSERT INTO `post` (`id`, `admin_id`, `title`, `content`, `slug`, `status`, `image`, `section`, `publish_at`, `published_at`, `expires_at`, `created_at`, `updated_at`)
 VALUES
-	(1,1,'FOSSBilling is completely free!','FOSSBilling is completely free and open source!\n\nTo learn more about it, you can always visit our website at [fossbilling.org](https://fossbilling.org)','fossbilling-is-completely-free','active',NULL,NULL,NULL,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(1,1,'FOSSBilling is completely free!','FOSSBilling is completely free and open source!\n\nTo learn more about it, you can always visit our website at [fossbilling.org](https://fossbilling.org)','fossbilling-is-completely-free','active',NULL,NULL,NULL,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `post` ENABLE KEYS */;
 UNLOCK TABLES;
