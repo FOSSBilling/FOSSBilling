@@ -110,6 +110,11 @@ class AdminTest extends \BBTestCase
         $sessionMock->expects($this->atLeastOnce())->
         method('set');
 
+        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock->expects($this->once())
+            ->method('transferFromOtherSession')
+            ->willReturn(true);
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
@@ -120,6 +125,7 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
         $di['validator'] = $validatorMock;
+        $di['mod_service'] = $di->protect(fn () => $cartServiceMock);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);

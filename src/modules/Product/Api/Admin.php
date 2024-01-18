@@ -83,7 +83,7 @@ class Admin extends \Api_Abstract
     public function prepare($data)
     {
         $required = [
-            'title' => 'Notification is required',
+            'title' => 'You must specify a title',
             'type' => 'Type is missing',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -192,7 +192,7 @@ class Admin extends \Api_Abstract
     public function addon_create($data)
     {
         $required = [
-            'title' => 'Notification is required',
+            'title' => 'You must specify a title',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 

@@ -13,6 +13,7 @@ final class CartTest extends TestCase
         $result = Request::makeRequest('admin/product/prepare', [
             'title' => 'Dummy Product',
             'type' => 'custom',
+            'product_category_id' => 1,
         ]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertIsNumeric($result->getResult());

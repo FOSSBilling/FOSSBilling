@@ -44,11 +44,12 @@ class Service implements InjectionAwareInterface
         return [$sql, []];
     }
 
-    public function transferFromOtherSession(string $sessionID): void
+    public function transferFromOtherSession(string $sessionID): bool
     {
         $cart = $this->getSessionCart($sessionID);
         $cart->session_id = $this->di['session']->getId();
         $this->di['db']->store($cart);
+        return true
     }
 
     /**
