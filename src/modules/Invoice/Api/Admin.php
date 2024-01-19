@@ -70,7 +70,7 @@ class Admin extends \Api_Abstract
         $gateway_id = ['id' => $invoice->gateway_id];
 
         if (!$gateway_id['id']) {
-            throw new InformationException('You must set the payment gateway in the invoice "manage" tab before marking it as paid.');
+            throw new InformationException('You must set the payment gateway in the invoice manage tab before marking it as paid.');
         }
 
         $payGateway = $this->gateway_get($gateway_id);
