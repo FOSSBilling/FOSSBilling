@@ -91,9 +91,11 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
+        $model->gateway_id = '1';
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
