@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,6 +14,8 @@
  */
 
 namespace Box\Mod\Invoice\Api;
+
+use FOSSBilling\InformationException;
 
 class Admin extends \Api_Abstract
 {
@@ -65,6 +68,11 @@ class Admin extends \Api_Abstract
         }
         $invoice = $this->_getInvoice($data);
         $gateway_id = ['id' => $invoice->gateway_id];
+
+        if (!$gateway_id['id']) {
+            throw new InformationException('You must set the payment gateway in the invoice "manage" tab before marking it as paid.');
+        }
+
         $payGateway = $this->gateway_get($gateway_id);
         $charge = false;
 
