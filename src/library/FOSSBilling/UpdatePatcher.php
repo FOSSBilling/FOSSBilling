@@ -299,18 +299,22 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
                 $this->executeSql($q);
 
-                // If the Kb extension is currently active, set enabled in Support settings.
-                $ext_service = $this->di['mod_service']('extension');
-                if ($ext_service->isExtensionActive('mod', 'kb')) {
-                    $support_ext_config = $ext_service->getConfig('mod_support');
-                    $support_ext_config['kb_enable'] = 'on';
-                    $ext_service->setConfig($support_ext_config);
-                }
+                // An error here can pretty safely be ignore.
+                try {
+                    // If the Kb extension is currently active, set enabled in Support settings.
+                    $ext_service = $this->di['mod_service']('extension');
+                    if ($ext_service->isExtensionActive('mod', 'kb')) {
+                        $support_ext_config = $ext_service->getConfig('mod_support');
+                        $support_ext_config['kb_enable'] = 'on';
+                        $ext_service->setConfig($support_ext_config);
+                    }
 
-                // If the Kb extension exists, uninstall it.
-                $kb_ext = $ext_service->findExtension('mod', 'kb');
-                if ($kb_ext instanceof \Model_Extension) {
-                    $ext_service->uninstall($kb_ext);
+                    // If the Kb extension exists, uninstall it.
+                    $kb_ext = $ext_service->findExtension('mod', 'kb');
+                    if ($kb_ext instanceof \Model_Extension) {
+                        $ext_service->uninstall($kb_ext);
+                    }
+                } catch (\Exception) {
                 }
 
                 // Finally, remove old Kb extension files/folders.
@@ -323,11 +327,14 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to complete remove the outdated queue module.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
 
-                $ext_service = $this->di['mod_service']('extension');
-                // If the queue extension exists, uninstall it.
-                $queue_ext = $ext_service->findExtension('mod', 'queue');
-                if ($queue_ext instanceof \Model_Extension) {
-                    $ext_service->uninstall($queue_ext);
+                try {
+                    $ext_service = $this->di['mod_service']('extension');
+                    // If the queue extension exists, uninstall it.
+                    $queue_ext = $ext_service->findExtension('mod', 'queue');
+                    if ($queue_ext instanceof \Model_Extension) {
+                        $ext_service->uninstall($queue_ext);
+                    }
+                } catch (\Exception) {
                 }
 
                 // Finally, remove old queue module from the disk.
