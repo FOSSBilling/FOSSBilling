@@ -18,71 +18,37 @@ use Symfony\Component\HttpClient\HttpClient;
 
 final class IPDatabase
 {
-    public const IPv4 = 4;
-    public const IPv6 = 6;
-    public const IPvUnknown = 0;
-
     /**
      * FOSSBilling uses databases that are licensed under the public domain (CC0 and PDDL).
      * This is done to ensure that we have good enough data out of the box that's updated regularly and that can be used without a concern of licensing. 
-     * Below are the download URLs for both the IPv4 and IPv6 DBs we utilize.
-     * Both include ASN and Country information. 
+     * @see https://github.com/HostByBelle/IP-Geolocation-DB for the database sources
      */
-    public const DefaultIPv4DB = 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/cc0-pddl-country-asn-v4-variant-1.mmdb';
-    public const DefaultIPv6DB = 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/cc0-pddl-country-asn-v6-variant-1.mmdb';
+    public const defaultSource = 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/cc0-pddl-country-asn-both-variant-1.mmdb';
+    public const defaultDBPath = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'ipDB.mmdb';
+    public const customDBDownloadedPath = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'customIpDB.mmdb';
 
     /**
-     * Creates a new instance of the GeoIP2 reader for either a fixed address type or optionally will autodetect the correct type 
-     * 
-     * @param int $type The IP address type. Represented as `4`, `6`, or `0`. A zero should be passed to have the type automatically detected by providing the IP address used.
-     * @param null|string $ip (optional) The IP address to detect the type of.
-     * @throws Exception If the IP address or type given is invalid.
+     * Creates a new instance of the GeoIP2 reader, selecting either our default DB or the custom one as set by the system admin
      */
-    public static function getReader(int $type = self::IPvUnknown, ?string $ip = null): Reader
+    public static function getReader(): Reader
     {
-        if ($type === self::IPvUnknown) {
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                $type = self::IPv4;
-            } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-                $type = self::IPv6;
-            } else {
-                throw new Exception("The provided IP address is invalid");
-            }
-        }
-
-        [$IPv4, $IPv6] = self::getPaths();
-
-        switch ($type) {
-            case self::IPv4:
-                return new Reader($IPv4);
-                break;
-            case self::IPv6:
-                return new Reader($IPv6);
-                break;
-            default:
-                throw new Exception("An invalid IP address type was given");
-        }
+        return new Reader(self::getPath());
     }
 
     /**
-     * Updates the default databases that are included inside of FOSSBilling.
-     * If one of the databases have been replaced with an alternative, it won't be updated.
-     * 
-     * This function will only ever update one DB at a time as both an effort to spread out server load and to lessen any hangs that the fallback cron method may cause.
+     * Updates the currently in use DB
      */
     public static function update()
     {
-        [$IPv4, $IPv6] = self::getPaths(true);
-        $IPv4Age = time() - filemtime($IPv4);
-        $IPv6Age = time() - filemtime($IPv6);
-
-        if (!defined('IPv4DB') && $IPv4Age >= 86400) {
-            self::performUpdate($IPv4, self::DefaultIPv4DB);
+        if (!empty($custom_path)) {
             return;
         }
 
-        if (!defined('IPv6DB') && $IPv6Age >= 86400) {
-            self::performUpdate($IPv6, self::DefaultIPv6DB);
+        $localDb = self::getPath(true);
+        $dbAge = time() - filemtime($localDb);
+
+        if ($dbAge >= 86400) {
+            self::performUpdate($localDb, self::getDownloadUrl());
             return;
         }
     }
@@ -95,19 +61,14 @@ final class IPDatabase
      */
     public static function whatIsIncluded(): array
     {
-        if (defined('includedIPv4')) {
-            $IPv4 = includedIPv4;
-        } else {
-            $IPv4 = ['country', 'asn'];
-        }
+        $custom_path = Config::getProperty('ip_database.custom_path', '');
+        $custom_url = Config::getProperty('ip_database.custom_url', '');
 
-        if (defined('includedIPv6')) {
-            $IPv6 = includedIPv6;
+        if (!empty($custom_path) && !empty($custom_url)) {
+            return ['country', 'asn'];
         } else {
-            $IPv6 = ['country', 'asn'];
+            return Config::getProperty('ip_database.included_data', []);
         }
-
-        return [$IPv4, $IPv6];
     }
 
     /**
@@ -115,21 +76,33 @@ final class IPDatabase
      * 
      * @param bool $defaults Set to true to only have the default DB paths returned. 
      */
-    public static function getPaths(bool $defaults = false): array
+    public static function getPath(bool $default = false, bool $skipUpdate = false): string
     {
-        if (defined('IPv4DB') && !$defaults) {
-            $IPv4 = Path::canonicalize(IPv4DB);
-        } else {
-            $IPv4 = Path::normalize(PATH_LIBRARY . '/IPv4.mmdb');
+        $custom_path = Config::getProperty('ip_database.custom_path', '');
+        $custom_url = Config::getProperty('ip_database.custom_url', '');
+
+        if (!empty($custom_url) && empty($custom_path) && !$default) {
+            // First, update the remote DB if it doesn't exist
+            if (file_exists(self::customDBDownloadedPath) && !$skipUpdate) {
+                self::update();
+            }
+            return self::customDBDownloadedPath;
         }
 
-        if (defined('IPv6DB')  && !$defaults) {
-            $IPv6 = Path::canonicalize(IPv6DB);;
+        if (!empty($custom_path) && !$default) {
+            return Path::canonicalize($custom_path);
         } else {
-            $IPv6 = Path::normalize(PATH_LIBRARY . '/IPv6.mmdb');
+            return self::defaultDBPath;
         }
-
-        return [$IPv4, $IPv6];
+    }
+    public function getDownloadUrl(bool $default = false)
+    {
+        $custom_url = Config::getProperty('ip_database.custom_url', '');
+        if (!$default && !empty($custom_url)) {
+            return $custom_url;
+        } else {
+            return self::defaultSource;
+        }
     }
 
     private static function performUpdate(string $path, string $url)
@@ -143,7 +116,7 @@ final class IPDatabase
                 error_log("Got a " . $response->getStatusCode() . ' status code when attempting to download ' . $url);
             }
         } catch (\Exception $e) {
-            error_log("There was an error while updating one of the IP address databases: " . $e->getMessage());
+            error_log("There was an error while updating the IP address database: " . $e->getMessage());
         }
     }
 }

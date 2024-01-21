@@ -82,11 +82,10 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
-        $newConfig['IPDatabase'] ??= [
-            'customIPv4' => '',
-            'includedIPv4' => [],
-            'customIPv6' => '',
-            'includedIPv6' => [],
+        $newConfig['ip_database'] ??= [
+            'custom_path'   => '',
+            'custom_url'    => '',
+            'included_data' => [],
         ];
 
         // Remove depreciated config keys/subkeys.

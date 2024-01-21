@@ -770,7 +770,7 @@ $di['license_server'] = function () use ($di) {
  */
 $di['geoip'] = function () {
     error_log("Deprecated 'geoip' function called from the DI");
-    return FOSSBilling\IPDatabase::getReader(4);
+    return FOSSBilling\IPDatabase::getReader();
 };
 
 /*

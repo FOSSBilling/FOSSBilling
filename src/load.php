@@ -253,16 +253,6 @@ define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
 define('SYSTEM_URL', Config::getProperty('url'));
 define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
-if (!empty($config['IPDatabase']['customIPv4']) && isset($config['IPDatabase']['includedIPv4'])) {
-    define('IPv4DB', $config['IPDatabase']['customIPv4']);
-    define('includedIPv4', $config['IPDatabase']['includedIPv4']);
-}
-
-if (!empty($config['IPDatabase']['customIPv6']) && isset($config['IPDatabase']['includedIPv6'])) {
-    define('IPv6DB', $config['IPDatabase']['customIPv6']);
-    define('includedIPv6', $config['IPDatabase']['includedIPv6']);
-}
-
 // Initial setup and checks passed, now we setup our custom autoloader.
 require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Autoloader.php';
 $loader = new FOSSBilling\AutoLoader();
