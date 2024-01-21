@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -43,12 +44,21 @@ class Service implements InjectionAwareInterface
         return [$sql, []];
     }
 
+    public function transferFromOtherSession(string $sessionID): bool
+    {
+        $cart = $this->getSessionCart($sessionID);
+        $cart->session_id = $this->di['session']->getId();
+        $this->di['db']->store($cart);
+        return true;
+    }
+
     /**
      * @return \Model_Cart
      */
-    public function getSessionCart()
+    public function getSessionCart(?string $sessionID = null)
     {
-        $sqlBindings = [':session_id' => $this->di['session']->getId()];
+        $sessionID ??= $this->di['session']->getId();
+        $sqlBindings = [':session_id' => $sessionID];
         $cart = $this->di['db']->findOne('Cart', 'session_id = :session_id', $sqlBindings);
 
         if ($cart instanceof \Model_Cart) {
@@ -65,7 +75,7 @@ class Service implements InjectionAwareInterface
         }
 
         $cart = $this->di['db']->dispense('Cart');
-        $cart->session_id = $this->di['session']->getId();
+        $cart->session_id = $sessionID;
         $cart->currency_id = $currency->id;
         $cart->created_at = date('Y-m-d H:i:s');
         $cart->updated_at = date('Y-m-d H:i:s');

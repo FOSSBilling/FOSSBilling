@@ -15,7 +15,7 @@ class Request
      */
     public static function makeRequest(string $endpoint, array $payload = [], string $role = null, string $apiKey = null, string $method = 'POST', string $baseUrl = null): Response
     {
-        $cookie = tempnam(sys_get_temp_dir(), 'cookie.txt');
+        $cookie = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cookie.txt';
         if (!$role) {
             $role = str_starts_with($endpoint, 'admin') ? 'admin' : 'client';
         }
@@ -46,6 +46,11 @@ class Request
         curl_close($ch);
 
         return new Response($httpCode, $output);
+    }
+
+    public static function resetCookies()
+    {
+        unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cookie.txt');
     }
 }
 
