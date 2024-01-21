@@ -40,6 +40,7 @@ final class IPDatabase
      */
     public static function update()
     {
+        $custom_path = Config::getProperty('ip_database.custom_path', '');
         if (!empty($custom_path)) {
             return;
         }
@@ -101,7 +102,7 @@ final class IPDatabase
 
         return $path;
     }
-    public function getDownloadUrl(bool $default = false)
+    public static function getDownloadUrl(bool $default = false)
     {
         $custom_url = Config::getProperty('ip_database.custom_url', '');
         if (!$default && !empty($custom_url)) {
