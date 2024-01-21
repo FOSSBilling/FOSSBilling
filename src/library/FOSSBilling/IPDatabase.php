@@ -44,7 +44,7 @@ final class IPDatabase
             return;
         }
 
-        $localDb = self::getPath(true);
+        $localDb = self::getPath(false, true);
         if (file_exists($localDb)) {
             $dbAge = time() - filemtime($localDb);
         } else {
@@ -78,7 +78,8 @@ final class IPDatabase
     /**
      * Returns the correct path for the actively used database.
      * 
-     * @param bool $defaults Set to true to only have the default DB paths returned. 
+     * @param bool $default set to true to only have the default DB paths returned
+     * @param bool $skipUpdate set to true to have the system skip trying to call our updater do download the DB if it doesn't exist 
      */
     public static function getPath(bool $default = false, bool $skipUpdate = false): string
     {
@@ -94,7 +95,7 @@ final class IPDatabase
             $path = self::defaultDBPath;
         }
 
-        if (file_exists(self::customDBDownloadedPath) && !$skipUpdate) {
+        if (!file_exists(self::customDBDownloadedPath) && !$skipUpdate) {
             self::update();
         }
 
