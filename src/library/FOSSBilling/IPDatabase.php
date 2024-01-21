@@ -20,7 +20,7 @@ final class IPDatabase
 {
     /**
      * FOSSBilling uses databases that are licensed under the public domain (CC0 and PDDL).
-     * This is done to ensure that we have good enough data out of the box that's updated regularly and that can be used without a concern of licensing. 
+     * This is done to ensure that we have good enough data out of the box that's updated regularly and that can be used without a concern of licensing issues. 
      * @see https://github.com/HostByBelle/IP-Geolocation-DB for the database sources
      */
     public const defaultSource = 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/cc0-pddl-country-asn-both-variant-1.mmdb';
@@ -45,7 +45,11 @@ final class IPDatabase
         }
 
         $localDb = self::getPath(true);
-        $dbAge = time() - filemtime($localDb);
+        if (file_exists($localDb)) {
+            $dbAge = time() - filemtime($localDb);
+        } else {
+            $dbAge = 86400;
+        }
 
         if ($dbAge >= 86400) {
             self::performUpdate($localDb, self::getDownloadUrl());
@@ -72,7 +76,7 @@ final class IPDatabase
     }
 
     /**
-     * Returns the correct paths for the actively used database.
+     * Returns the correct path for the actively used database.
      * 
      * @param bool $defaults Set to true to only have the default DB paths returned. 
      */
@@ -82,18 +86,19 @@ final class IPDatabase
         $custom_url = Config::getProperty('ip_database.custom_url', '');
 
         if (!empty($custom_url) && empty($custom_path) && !$default) {
-            // First, update the remote DB if it doesn't exist
-            if (file_exists(self::customDBDownloadedPath) && !$skipUpdate) {
-                self::update();
-            }
-            return self::customDBDownloadedPath;
+            $path = self::customDBDownloadedPath;
+        } else if (!empty($custom_path) && !$default) {
+            $path = Path::canonicalize($custom_path);
+            $skipUpdate = true;
+        } else {
+            $path = self::defaultDBPath;
         }
 
-        if (!empty($custom_path) && !$default) {
-            return Path::canonicalize($custom_path);
-        } else {
-            return self::defaultDBPath;
+        if (file_exists(self::customDBDownloadedPath) && !$skipUpdate) {
+            self::update();
         }
+
+        return $path;
     }
     public function getDownloadUrl(bool $default = false)
     {

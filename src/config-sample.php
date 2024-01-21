@@ -198,7 +198,7 @@ return [
     ],
 
     /**
-     * Use these options to override the default IP address database that FOSSBilling inlcudes which are free of licencing and also includes ASN data rather than just country data, however it does so at a loss to accuracy.
+     * Use these options to override the default IP address database that FOSSBilling includes which are free of licencing and also includes ASN data rather than just country data, however it does so at a loss to accuracy.
      * `custom_path` will define the local path to reference when loading the database.
      * `custom_url` can be set to have FOSSBilling update a database of your choosing from the provided URL once daily.
      * `included` defines what data types are included in that database. For example, the default ones for FOSSBilling would be ['country', 'asn']. This isn't strictly needed, but may be used by modules to enable / disable functionality.
