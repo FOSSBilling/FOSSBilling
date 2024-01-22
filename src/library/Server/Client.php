@@ -79,7 +79,7 @@ class Server_Client
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setFullName(string $fullName): static
+    public function setFullName(?string $fullName): static
     {
         $this->full_name = $fullName;
 
