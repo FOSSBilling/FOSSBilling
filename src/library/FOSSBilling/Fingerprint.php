@@ -112,6 +112,7 @@ class Fingerprint
     {
         $itemCount = 0;
         $scoreSubtract = 0;
+        $differing = [];
 
         foreach ($this->fingerprintProperties as $name => $properties) {
             $exitsInFingerprint = array_key_exists($name, $fingerprint);
@@ -121,6 +122,7 @@ class Fingerprint
                 // The property exists in one fingerprint and not the other, so we increment the total count and deduct from the score.
                 ++$itemCount;
                 $scoreSubtract += $properties['weight'];
+                $differing[] = $name;
             } elseif (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
                 // Do nothing in this case, as the property isn't in either fingerprint.
             } else {
@@ -129,6 +131,7 @@ class Fingerprint
 
                 if ($fingerprint[$name] !== $hashedData) {
                     $scoreSubtract += $properties['weight'];
+                    $differing[] = $name;
                 }
             }
         }
@@ -159,8 +162,26 @@ class Fingerprint
 
         // Here we calculate the "percentage wrong" (weighted, not a true percent) and return true (indicating no issues) if it's less then the failure threshold.
         $percentageWrong = $scoreSubtract / $itemCount;
+        $valid = $percentageWrong < $failureThreshold;
 
-        return $percentageWrong < $failureThreshold;
+        // If fingerprint debugging is enabled and it failed, print some debug info to the log
+        if (!$valid && Config::getProperty('security.debug_fingerprint', true)) {
+            $ID = $_COOKIE['PHPSESSID'] ?? null;
+            if (!$ID) {
+                return $valid;
+            }
+
+            $percentageWrong = round($percentageWrong * 100, 3);
+            $failureThreshold = round($failureThreshold * 100, 3);
+
+            error_log("The session with the ID '$ID' failed it's fingerprint check with a (weighted) $percentageWrong% of difference compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
+            $output = PHP_EOL;
+            foreach ($differing as $name) {
+                $output .= '    ' . $name . PHP_EOL;
+            }
+            error_log("The following properties differed:" . $output);
+        }
+        return $valid;
     }
 
     private function extractAgentInfo(): array

@@ -54,6 +54,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['security']['force_https'] ??= true;
         $newConfig['security']['session_lifespan'] ??= $newConfig['security']['cookie_lifespan'] ?? 7200;
         $newConfig['security']['perform_session_fingerprinting'] ??= true;
+        $newConfig['security']['debug_fingerprint'] ??= false;
         $newConfig['update_branch'] ??= 'release';
         $newConfig['log_stacktrace'] ??= true;
         $newConfig['stacktrace_length'] ??= 25;
