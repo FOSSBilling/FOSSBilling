@@ -21,6 +21,7 @@ return [
         'force_https' => true,
         'session_lifespan' => 7200,
         'perform_session_fingerprinting' => true,
+        'debug_fingerprint' => false,
     ],
 
     'debug_and_monitoring' => [
