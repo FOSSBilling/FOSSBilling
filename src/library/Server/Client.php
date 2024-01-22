@@ -75,7 +75,7 @@ class Server_Client
     /**
      * Set the full name of the Server_Client instance.
      *
-     * @param string $fullName the full name to be set
+     * @param string|null $fullName the full name to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
@@ -99,11 +99,11 @@ class Server_Client
     /**
      * Set the company of the Server_Client instance.
      *
-     * @param string $company the company to be set
+     * @param string|null $company the company to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setCompany(string $company): static
+    public function setCompany(?string $company): static
     {
         $this->company = $company;
 
@@ -123,11 +123,11 @@ class Server_Client
     /**
      * Set the email of the Server_Client instance.
      *
-     * @param string $email the email to be set
+     * @param string|null $email the email to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setEmail(string $email): static
+    public function setEmail(?string $email): static
     {
         $this->email = $email;
 
@@ -147,11 +147,11 @@ class Server_Client
     /**
      * Set the first address of the Server_Client instance.
      *
-     * @param string $address1 the first address to be set
+     * @param string|null $address1 the first address to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setAddress1(string $address1): static
+    public function setAddress1(?string $address1): static
     {
         $this->address_1 = $address1;
 
@@ -171,11 +171,11 @@ class Server_Client
     /**
      * Set the second address of the Server_Client instance.
      *
-     * @param string $address2 the second address to be set
+     * @param string|null $address2 the second address to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setAddress2(string $address2): static
+    public function setAddress2(?string $address2): static
     {
         $this->address_2 = $address2;
 
@@ -195,11 +195,11 @@ class Server_Client
     /**
      * Set the street of the Server_Client instance.
      *
-     * @param string $street the street to be set
+     * @param string|null $street the street to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setStreet(string $street): static
+    public function setStreet(?string $street): static
     {
         $this->street = $street;
 
@@ -219,11 +219,11 @@ class Server_Client
     /**
      * Set the city of the Server_Client instance.
      *
-     * @param string $city the city to be set
+     * @param string|null $city the city to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setCity(string $city): static
+    public function setCity(?string $city): static
     {
         $this->city = $city;
 
@@ -243,11 +243,11 @@ class Server_Client
     /**
      * Set the state of the Server_Client instance.
      *
-     * @param string $state the state to be set
+     * @param string|null $state the state to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setState(string $state): static
+    public function setState(?string $state): static
     {
         $this->state = $state;
 
@@ -267,11 +267,11 @@ class Server_Client
     /**
      * Set the country of the Server_Client instance.
      *
-     * @param string $country the country to be set
+     * @param string|null $country the country to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setCountry(string $country): static
+    public function setCountry(?string $country): static
     {
         $this->country = $country;
 
@@ -291,11 +291,11 @@ class Server_Client
     /**
      * Set the zip code of the Server_Client instance.
      *
-     * @param string $zip the zip code to be set
+     * @param string|null $zip the zip code to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setZip(string $zip): static
+    public function setZip(?string $zip): static
     {
         $this->zip = $zip;
 
@@ -315,11 +315,11 @@ class Server_Client
     /**
      * Set the telephone number of the Server_Client instance.
      *
-     * @param string $telephone the telephone number to be set
+     * @param string|null $telephone the telephone number to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setTelephone(string $telephone): static
+    public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
 
@@ -339,11 +339,11 @@ class Server_Client
     /**
      * Set the fax number of the Server_Client instance.
      *
-     * @param string $fax the fax number to be set
+     * @param string|null $fax the fax number to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setFax(string $fax): static
+    public function setFax(?string $fax): static
     {
         $this->fax = $fax;
 
@@ -363,11 +363,11 @@ class Server_Client
     /**
      * Set the website URL of the Server_Client instance.
      *
-     * @param string $www the website URL to be set
+     * @param string|null $www the website URL to be set
      *
      * @return $this returns the current instance to allow for method chaining
      */
-    public function setWww(string $www): static
+    public function setWww(?string $www): static
     {
         $this->www = $www;
 
