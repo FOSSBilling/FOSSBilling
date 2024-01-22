@@ -112,7 +112,7 @@ abstract class Server_Manager
      *
      * @throws RandomException
      */
-    public function generateUsername(string $domain): string
+    public function generateUsername(string $domain)
     {
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain);
         $username = substr($username, 0, 7);
@@ -177,21 +177,21 @@ abstract class Server_Manager
      *
      * @param Server_Account|null $account either the related `Server_Account` which can be used to generate an SSO link or `null`
      */
-    abstract public function getLoginUrl(?Server_Account $account): string;
+    abstract public function getLoginUrl(?Server_Account $account);
 
     /**
      * Returns the login URL for the server for reseller accounts.
      *
      * @param Server_Account|null $account either the related `Server_Account` which can be used to generate an SSO link or `null`
      */
-    abstract public function getResellerLoginUrl(?Server_Account $account): string;
+    abstract public function getResellerLoginUrl(?Server_Account $account);
 
     /**
      * Used to test the connection to the server and verify the server configuration is correct.
      *
      * @throws Server_Exception
      */
-    abstract public function testConnection(): bool;
+    abstract public function testConnection();
 
     /**
      * Creates a new account on the server.
@@ -202,7 +202,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while creating the account
      */
-    abstract public function createAccount(Server_Account $account): bool;
+    abstract public function createAccount(Server_Account $account);
 
     /**
      * Synchronizes the account status from the server.
@@ -213,7 +213,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while synchronizing the account
      */
-    abstract public function synchronizeAccount(Server_Account $account): Server_Account;
+    abstract public function synchronizeAccount(Server_Account $account);
 
     /**
      * Suspends an account on the server.
@@ -224,7 +224,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while suspending the account
      */
-    abstract public function suspendAccount(Server_Account $account): bool;
+    abstract public function suspendAccount(Server_Account $account);
 
     /**
      * Unsuspends an account on the server.
@@ -235,7 +235,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while unsuspending the account
      */
-    abstract public function unsuspendAccount(Server_Account $account): bool;
+    abstract public function unsuspendAccount(Server_Account $account);
 
     /**
      * Cancels an account on the server.
@@ -246,7 +246,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while canceling the account
      */
-    abstract public function cancelAccount(Server_Account $account): bool;
+    abstract public function cancelAccount(Server_Account $account);
 
     /**
      * Changes the password for an account on the server.
@@ -258,7 +258,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while changing the password
      */
-    abstract public function changeAccountPassword(Server_Account $account, string $newPassword): bool;
+    abstract public function changeAccountPassword(Server_Account $account, string $newPassword);
 
     /**
      * Changes the username for an account on the server.
@@ -270,7 +270,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while changing the username
      */
-    abstract public function changeAccountUsername(Server_Account $account, string $newUsername): bool;
+    abstract public function changeAccountUsername(Server_Account $account, string $newUsername);
 
     /**
      * Changes the domain for an account on the server.
@@ -281,7 +281,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while changing the domain
      */
-    abstract public function changeAccountDomain(Server_Account $account, string $newDomain): bool;
+    abstract public function changeAccountDomain(Server_Account $account, string $newDomain);
 
     /**
      * Changes the IP address for an account on the server.
@@ -292,7 +292,7 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while changing the IP address
      */
-    abstract public function changeAccountIp(Server_Account $account, string $newIp): bool;
+    abstract public function changeAccountIp(Server_Account $account, string $newIp);
 
     /**
      * Changes the package for an account on the server.
@@ -304,5 +304,5 @@ abstract class Server_Manager
      *
      * @throws Server_Exception if there was an error while changing the package
      */
-    abstract public function changeAccountPackage(Server_Account $account, Server_Package $package): bool;
+    abstract public function changeAccountPackage(Server_Account $account, Server_Package $package);
 }
