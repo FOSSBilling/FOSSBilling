@@ -179,6 +179,7 @@ class Client implements InjectionAwareInterface
         }
 
         $api = $this->di['api']($role);
+        unset($params['CSRFToken']);
         $result = $api->$method($params);
 
         return $this->renderJson($result);
