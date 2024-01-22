@@ -174,7 +174,7 @@ class Fingerprint
             $percentageWrong = round($percentageWrong * 100, 3);
             $failureThreshold = round($failureThreshold * 100, 3);
 
-            error_log("The session with the ID '$ID' failed it's fingerprint check with a (weighted) $percentageWrong% of difference compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
+            error_log("The session with the ID '$ID' failed it's fingerprint check with a (weighted) difference of $percentageWrong% compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
             $output = PHP_EOL;
             foreach ($differing as $name) {
                 $output .= '    ' . $name . PHP_EOL;
