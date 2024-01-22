@@ -165,7 +165,7 @@ class Fingerprint
         $valid = $percentageWrong < $failureThreshold;
 
         // If fingerprint debugging is enabled and it failed, print some debug info to the log
-        if (!$valid && Config::getProperty('security.debug_fingerprint', true)) {
+        if (!$valid && Config::getProperty('security.debug_fingerprint', false)) {
             $ID = $_COOKIE['PHPSESSID'] ?? null;
             if (!$ID) {
                 return $valid;
