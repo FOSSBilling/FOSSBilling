@@ -250,7 +250,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
         if ($model->price <= 0) {
-            throw new \FOSSBilling\InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
+            throw new InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
         }
 
         return $this->getService()->renewInvoice($model, $data);
@@ -726,7 +726,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - id
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws InformationException
      */
     public function subscription_create($data)
     {
@@ -741,7 +741,7 @@ class Admin extends \Api_Abstract
         $payGateway = $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
 
         if ($client->currency != $data['currency']) {
-            throw new \FOSSBilling\InformationException('Client currency must match subscription currency. Check if clients currency is defined.');
+            throw new InformationException('Client currency must match subscription currency. Check if clients currency is defined.');
         }
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
 

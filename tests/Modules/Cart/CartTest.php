@@ -24,8 +24,8 @@ final class CartTest extends TestCase
             'id' => $productID,
             'status' => 'enabled',
             'pricing' => [
-                'type' => 'free'
-            ]
+                'type' => 'free',
+            ],
         ]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
