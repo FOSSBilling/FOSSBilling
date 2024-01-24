@@ -49,13 +49,14 @@ class Service implements InjectionAwareInterface
         $cart = $this->getSessionCart($sessionID);
         $cart->session_id = $this->di['session']->getId();
         $this->di['db']->store($cart);
+
         return true;
     }
 
     /**
      * @return \Model_Cart
      */
-    public function getSessionCart(?string $sessionID = null)
+    public function getSessionCart(string $sessionID = null)
     {
         $sessionID ??= $this->di['session']->getId();
         $sqlBindings = [':session_id' => $sessionID];

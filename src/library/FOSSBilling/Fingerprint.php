@@ -179,8 +179,9 @@ class Fingerprint
             foreach ($differing as $name) {
                 $output .= '    ' . $name . PHP_EOL;
             }
-            error_log("The following properties differed:" . $output);
+            error_log('The following properties differed:' . $output);
         }
+
         return $valid;
     }
 
