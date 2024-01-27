@@ -1,39 +1,41 @@
-{% extends "layout_public.html.twig" %}
-
-{% block meta_title %}{{ 'System undergoing maintenance'|trans }}{% endblock %}
-
-{% block body_class %}page-login{% endblock %}
-
-{% block body %}
-    <div>
-        <div class="row h-75 justify-content-center align-items-center">
-            <div class="col-md-6 col-lg-4">
-                {% if settings.login_page_show_logo %}
-                    <div class="d-flex justify-content-center">
-                        <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank">
-                            <img class="my-4" height="50px" src="{{ guest.system_company.logo_url }}" alt="{{ guest.system_company.name }}"/>
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {% set company = guest.system_company %}
-    <div style="margin: 50px 40px; font-size: 16px; text-align: center;">
+{% set company = guest.system_company %}
+<html>
+<head>
+    <title>{{ 'System undergoing maintenance'|trans }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <style>
+        body {
+            background-color: #eee;
+        }
+        h1, h2, h3, h4, p, li {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div style="margin:50px 40px; font-size: 16px;">
         <h1>{{ 'System undergoing maintenance'|trans }}</h1>
-        <p>{{ 'Our systems are undergoing maintenance. We\'ll be back soon.'|trans }}</p>
+        <p>{{ 'Our systems are undergoing a maintenance. We\'ll be back soon.'|trans }}</p>
         <hr>
-        <h4>{{ 'While we\'re away, you can still reach us over other channels.'|trans }}</h4>
-        <ul style="list-style-type: none; padding: 0;">
-            <li>{{ company.name }}</li>
-            <li>{{ company.address_1 }}</li>
-            <li>{{ company.address_2 }}</li>
-            <li>{{ company.address_3 }}</li>
-            <li>{{ company.tel }}</li>
-            <li>{{ company.email }}</li>
-        </ul>
+        <h4>{{ 'While we\'re away, you can still reach us over other channels.'|trans }}</h1>
+        <li>
+            {{ company.name }}
+        </li>
+        <li>
+            {{ company.address_1 }}
+        </li>
+        <li>
+            {{ company.address_2 }}
+        </li>
+        <li>
+            {{ company.address_3 }}
+        </li>
+        <li>
+            {{ company.tel }}
+        </li>
+        <li>
+            {{ company.email }}
+        </li>
     </div>
-{% endblock %}
-
-
+</body>
+</html>
