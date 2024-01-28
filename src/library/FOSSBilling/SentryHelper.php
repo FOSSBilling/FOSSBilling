@@ -52,7 +52,8 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
-        $httpClient = new class() implements HttpClientInterface {
+        $httpClient = new class() implements HttpClientInterface
+        {
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
@@ -179,6 +180,8 @@ class SentryHelper
             return 'Litespeed';
         } elseif (stripos(strtolower($serverSoftware), 'nginx') !== false) {
             return 'NGINX';
+        } elseif (PHP_SAPI === 'cli-server') {
+            return 'PHP Development Server';
         } else {
             return 'Unknown';
         }
