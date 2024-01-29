@@ -483,7 +483,7 @@ VALUES
 	(1,'last_patch','39',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(2,'company_name','FOSSBilling demo',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,'company_email','demo@fossbilling.org',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(4,'company_signature','FOSSBilling.org - Client Management, Invoice and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(5,'company_logo','themes/huraga/assets/img/logo.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(6,'company_logo_dark','themes/huraga/assets/img/logo_white.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(7,'company_address_1','Demo address line 1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
