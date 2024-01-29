@@ -1198,6 +1198,7 @@ class Service implements InjectionAwareInterface
         $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
+        $options->setDefaultFont('DejaVu Sans');
 
         $sellerLines = 0;
         $buyerLines = 0;
