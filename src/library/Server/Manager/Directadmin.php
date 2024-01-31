@@ -392,8 +392,10 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     public function generateUsername(string $domain): string
     {
+        $prefix = $this->_config['config']['userprefix'] ?? '';
+
         // Username must be alphanumeric.
-        $username = preg_replace('/[^A-Za-z0-9]/', '', $domain);
+        $username = preg_replace('/[^A-Za-z0-9]/', '', $prefix . $domain);
 
         // Username must start with a-z.
         $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97, 122)), 0, 1) : $username;
