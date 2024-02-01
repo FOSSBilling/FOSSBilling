@@ -5,7 +5,7 @@
  * The backend used for PDF generation is Dompdf, which has fairly limited CSS support, roughly CSS 2.1
  */
 
- hr.Rounded {
+hr.Rounded {
     border-top: 8px solid #bbb;
     border-radius: 5px;
     position: relative;
@@ -24,14 +24,13 @@ img.CompanyLogo {
     left: 40px;
     top: 7px;
 }
-
-h3.CompanyInfo{
+h3.CompanyInfo {
     position: absolute;
     left: 25px;
     top: 110px;
 }
 
-div.CompanyInfo{
+div.CompanyInfo {
     position: absolute;
     left: 25px;
     top: 145px;
@@ -40,13 +39,13 @@ div.CompanyInfo{
     max-width: 300px;
 }
 
-h3.ClientInfo{
+h3.ClientInfo {
     position: absolute;
     top: 110px;
     left: 410px;
 }
 
-div.ClientInfo{
+div.ClientInfo {
     position: absolute;
     top: 145px;
     left: 410px;
@@ -55,9 +54,10 @@ div.ClientInfo{
     max-width: 45%;
 }
 
-div.Breakdown{
+div.Breakdown {
     position: absolute;
     width: 100%;
+    z-index: 9999;
 }
 
 table {
@@ -69,11 +69,11 @@ p {
 }
 
 tr:nth-of-type(odd) {
-    background-color:#ccc;
+    background-color: #ccc;
 }
 
-.right{
-    text-align:right;
+.right {
+    text-align: right;
 }
 
 /**
@@ -88,9 +88,15 @@ body {
  * The following CSS is used to style the invoice footer.
  */
 div.InvoiceFooter {
+    z-index: 1;
     position: absolute;
     bottom: 0px;
     width: 100%;
     text-align: center;
     font-size: 10px;
+}
+
+.muted-text {
+    color: #656665;
+    font-size: 0.75em;
 }

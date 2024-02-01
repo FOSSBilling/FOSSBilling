@@ -1,7 +1,7 @@
 {% if buyer_lines >= seller_lines %}
-	{% set top = 325 + (25 * buyer_lines) %}
+	{% set top = 275 + (25 * buyer_lines) %}
 {% else %}
-	{% set top = 325 + (25 * seller_lines) %}
+	{% set top = 275 + (25 * seller_lines) %}
 {% endif %}
 
 {% set address_lines = [] %}
@@ -96,7 +96,7 @@
 					<th style='text-align: right'>{{ invoice.total|money(currency_code) }}</th>
 				</tr>
 			</table>
-		<p>{{ footer.signature }}</p>
+		<span class="muted-text">{{ footer.signature }}</span>
 		</div>
 		<div class='InvoiceFooter'>
 			{% if footer.display_bank_info == 1 %}
