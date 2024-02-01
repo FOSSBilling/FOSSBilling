@@ -57,6 +57,7 @@ div.ClientInfo {
 div.Breakdown {
     position: absolute;
     width: 100%;
+    z-index: 9999;
 }
 
 table {
@@ -87,6 +88,7 @@ body {
  * The following CSS is used to style the invoice footer.
  */
 div.InvoiceFooter {
+    z-index: 1;
     position: absolute;
     bottom: 0px;
     width: 100%;
