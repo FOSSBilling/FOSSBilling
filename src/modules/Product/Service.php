@@ -275,7 +275,7 @@ class Service implements InjectionAwareInterface
         $model->form_id = empty($form_id) ? null : $form_id;
         $model->icon_url = $data['icon_url'] ?? $model->icon_url;
         $model->status = $data['status'] ?? $model->status;
-        $model->hidden = (int) $data['hidden'] ?? $model->hidden;
+        $model->hidden = (int) ($data['hidden'] ?? $model->hidden);
         $model->slug = $data['slug'] ?? $model->slug;
         $model->setup = $data['setup'] ?? $model->setup;
         // remove empty value in data['upgrades];
