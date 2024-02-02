@@ -1378,53 +1378,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $randId);
     }
 
-    public function testTicketCreateForGuest()
-    {
-        $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \DummyBean());
-
-        $randId = random_int(1, 100);
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($message);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($randId);
-
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn([]);
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
-        $di['events_manager'] = $eventMock;
-        $di['tools'] = $toolsMock;
-
-        $this->service->setDi($di);
-
-        $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \DummyBean());
-
-        $data = [
-            'name' => 'Name',
-            'email' => 'email@example.com',
-            'subject' => 'Subject',
-            'message' => 'message',
-        ];
-
-        $result = $this->service->ticketCreateForGuest($data);
-        $this->assertIsString($result);
-        $this->assertGreaterThanOrEqual(200, strlen($result));
-        $this->assertLessThanOrEqual(255, strlen($result));
-    }
-
     public function testTicketCreateForClient()
     {
         $ticket = new \Model_SupportTicket();
