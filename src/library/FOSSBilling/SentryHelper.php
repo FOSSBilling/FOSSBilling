@@ -179,6 +179,8 @@ class SentryHelper
             return 'Litespeed';
         } elseif (stripos(strtolower($serverSoftware), 'nginx') !== false) {
             return 'NGINX';
+        } elseif (PHP_SAPI === 'cli-server') {
+            return 'PHP Development Server';
         } else {
             return 'Unknown';
         }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,6 +10,8 @@
  */
 
 namespace Box\Mod\Support;
+
+use FOSSBilling\InformationException;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -802,6 +805,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForGuest($data)
     {
+        $extensionService = $this->di['mod_service']('extension');
+        $config = $extensionService->getConfig('mod_support');
+
+        if (isset($config['disable_public_tickets']) && $config['disable_public_tickets']) {
+            throw new InformationException("We currently aren't accepting support tickets from unregistered users. Please use another contact method.");
+        }
+
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
         $event_params = $data;

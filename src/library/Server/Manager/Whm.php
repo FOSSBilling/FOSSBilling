@@ -543,7 +543,7 @@ class Server_Manager_Whm extends Server_Manager
 
         // Construct the authorization header
         $username = $this->_config['username'];
-        $accessHash = $this->_config['accessHash'];
+        $accessHash = $this->_config['accesshash'];
         $password = $this->_config['password'];
         $authHeader = (!empty($accessHash)) ? 'WHM ' . $username . ':' . $accessHash
             : 'Basic ' . $username . ':' . $password;

@@ -111,6 +111,17 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="card-body">
+                            <h3 class="card-title">{{ 'Public Tickets'|trans }}</h3>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 form-label">{{ 'Disable Public Tickets'|trans }}</label>
+                                <div class="col-md-6">
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" name="disable_public_tickets" type="checkbox" {% if params.disable_public_tickets %} checked="checked"{% endif %}>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         <div class="card-footer text-end">
                             <input type="submit" class="btn btn-primary" value="{{ 'Update'|trans }}">
                         </div>

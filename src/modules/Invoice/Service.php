@@ -1198,6 +1198,7 @@ class Service implements InjectionAwareInterface
         $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
+        $options->setDefaultFont('DejaVu Sans');
 
         $sellerLines = 0;
         $buyerLines = 0;
@@ -1496,7 +1497,7 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($sourceData as $label => $data) {
-            if (empty(trim($data))) {
+            if ($data === null || empty(trim($data))) {
                 unset($sourceData[$label]);
             } else {
                 ++$lines;
@@ -1512,11 +1513,15 @@ class Service implements InjectionAwareInterface
             'Company' => $invoice['buyer']['company'],
             'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
             'Address' => $invoice['buyer']['address'],
+            'City' => $invoice['buyer']['city'],
+            'State' => $invoice['buyer']['state'],
+            'Zip' => $invoice['buyer']['zip'],
+            'Country' => $invoice['buyer']['country'],
             'Phone' => $invoice['buyer']['phone'],
         ];
 
         foreach ($sourceData as $label => $data) {
-            if (empty(trim($data))) {
+            if ($data === null || empty(trim($data))) {
                 unset($sourceData[$label]);
             } else {
                 ++$lines;
@@ -1546,7 +1551,7 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($sourceData as $label => $data) {
-            if ($data !== null && empty(trim($data))) {
+            if ($data === null || empty(trim($data))) {
                 unset($sourceData[$label]);
             }
         }
