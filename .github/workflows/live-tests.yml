@@ -66,7 +66,7 @@ jobs:
         run: npm run build
 
       - name: 'Download Latest Translations'
-        uses: robinraju/release-downloader@v1.9
+        uses: robinraju/release-downloader@v1.8
         with:
           repository: 'FOSSBilling/locale'
           latest: true
