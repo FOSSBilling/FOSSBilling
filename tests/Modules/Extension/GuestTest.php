@@ -36,14 +36,14 @@ final class GuestTest extends TestCase
 
     public function testExtensionIsActive()
     {
-        $result = Request::makeRequest('guest/extension/is_on', ['ext' => 'index']);
+        $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'index']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
     }
 
     public function testExtensionIsNotActive()
     {
-        $result = Request::makeRequest('guest/extension/is_on', ['ext' => 'serviceapikey']);
+        $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'serviceapikey']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertFalse($result->getResult());
     }

@@ -7,7 +7,7 @@ namespace FormbuilderTests;
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class Guest extends TestCase
+final class GuestTest extends TestCase
 {
     public function testGet()
     {
