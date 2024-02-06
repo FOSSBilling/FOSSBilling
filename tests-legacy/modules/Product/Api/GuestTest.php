@@ -22,49 +22,6 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList()
-    {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getProductSearchQuery')
-            ->willReturn(['sqlString', []]);
-
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
-        $pagerMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
-            ->willReturn(['list' => []]);
-
-        $di = new \Pimple\Container();
-        $di['pager'] = $pagerMock;
-
-        $this->api->setService($serviceMock);
-        $this->api->setDi($di);
-        $result = $this->api->get_list([]);
-        $this->assertIsArray($result);
-    }
-
-    public function testgetPairs()
-    {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getPairs')
-            ->willReturn([]);
-
-        $this->api->setService($serviceMock);
-        $result = $this->api->get_pairs([]);
-        $this->assertIsArray($result);
-    }
-
-    public function testgetMissingRequiredParams()
-    {
-        $data = [];
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Product ID or slug is missing');
-        $this->api->get($data);
-    }
-
     public function testgetWithSetId()
     {
         $data = [
