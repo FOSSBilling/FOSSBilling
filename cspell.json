@@ -389,7 +389,8 @@
         "bindto",
         "ipify",
         "hestiacp",
-        "intval"
+        "intval",
+        "thisfiledoesnotexist"
     ],
     "ignorePaths": [
         "tests-legacy/**",
