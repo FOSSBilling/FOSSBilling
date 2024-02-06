@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace CartTests;
+
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class CartTest extends TestCase
+final class ClientTest extends TestCase
 {
     public function testDoesCartTransferOnLogin(): void
     {

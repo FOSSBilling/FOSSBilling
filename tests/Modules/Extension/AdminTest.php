@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace ExtensionTests;
+
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class ExtensionTest extends TestCase
+final class AdminTest extends TestCase
 {
     public function testCanActivateExtension(): void
     {

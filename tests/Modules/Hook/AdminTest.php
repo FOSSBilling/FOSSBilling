@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace HookTests;
+
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class HookAdminTest extends TestCase
+final class AdminTest extends TestCase
 {
     public function testBatchConnect(): void
     {
