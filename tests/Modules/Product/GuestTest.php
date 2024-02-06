@@ -25,7 +25,7 @@ final class GuestTest extends TestCase
 
     public function testGetMissingRequiredParams()
     {
-        $result = Request::makeRequest('guest/product/get_pairs');
+        $result = Request::makeRequest('guest/product/get');
         $this->assertFalse($result->wasSuccessful(), "The request succeeded when it should not have");
         $this->assertEquals('Product ID or slug is missing', $result->getResult());
     }
