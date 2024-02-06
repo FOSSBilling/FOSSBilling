@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace ProductTests;
+
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class ProductClientTest extends TestCase
+final class ClientTest extends TestCase
 {
     private string $clientPassword;
     private int $clientID;

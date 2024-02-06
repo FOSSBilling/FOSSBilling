@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace SupportTests;
+
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class SupportGuestTest extends TestCase
+final class GuestTest extends TestCase
 {
     public function testTicketCreateForGuest()
     {

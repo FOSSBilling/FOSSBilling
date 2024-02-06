@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace CronTests;
+
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class CronGuestTest extends TestCase
+final class GuestTest extends TestCase
 {
     public function testCronGuestBehavior(): void
     {

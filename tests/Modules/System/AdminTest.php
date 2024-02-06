@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace SystemTests;
+
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
 
-final class SystemAdminTest extends TestCase
+final class AdminTest extends TestCase
 {
     private function ipLookupWorking(): bool
     {
