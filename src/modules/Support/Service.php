@@ -651,7 +651,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
         if ((is_countable($tickets) ? count($tickets) : 0) > 0) {
-            throw new \FOSSBilling\InformationException('Can not remove helpdesk which has tickets');
+            throw new InformationException('Can not remove helpdesk which has tickets');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted helpdesk #%s', $id);
@@ -865,7 +865,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $timeSinceLast = round(abs(strtotime($lastTicket->created_at) - strtotime(date('Y-m-d H:i:s'))) / 3600, 0);
 
         if ($timeSinceLast < $hours) {
-            throw new \FOSSBilling\InformationException(sprintf('You can submit one ticket per %s hours. %s hours left', $hours, $hours - $timeSinceLast));
+            throw new InformationException(sprintf('You can submit one ticket per %s hours. %s hours left', $hours, $hours - $timeSinceLast));
         }
 
         return true;
@@ -899,13 +899,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (!in_array($rel_new_value, $allowedUpgrades)) {
                 $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
 
-                throw new \FOSSBilling\InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
+                throw new InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
             }
         }
 
         // check if support ticket with same uncompleted task already exists
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {
-            throw new \FOSSBilling\InformationException('We have already received this request.');
+            throw new InformationException('We have already received this request.');
         }
 
         $mod = $this->di['mod']('support');
@@ -1745,7 +1745,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $articlesCount = $this->di['db']->getCell('SELECT count(*) as cnt FROM support_kb_article WHERE kb_article_category_id = :kb_article_category_id', $bindings);
 
         if ($articlesCount > 0) {
-            throw new \FOSSBilling\InformationException('Can not remove category which has articles');
+            throw new InformationException('Can not remove category which has articles');
         }
 
         $id = $model->id;

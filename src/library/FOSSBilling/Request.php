@@ -32,7 +32,7 @@ class Request implements InjectionAwareInterface
      * @param bool $trustForwardedHeader - No by default because this can be changed to anything extremely easy, making it unreliable for tracking and adding a potential source for external data to be executed.
      *                                   Please see: https://stackoverflow.com/questions/3003145/how-to-get-the-client-ip-address-in-php
      */
-    public function getClientAddress(bool $trustForwardedHeader = false): null|string|array
+    public function getClientAddress(bool $trustForwardedHeader = false): string|array|null
     {
         $address = null;
         if ($trustForwardedHeader && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
