@@ -170,7 +170,7 @@ class SentryHelper
     /**
      * Tries to guess what type of webserver is being used and tags the Sentry event with it.
      */
-    private static function estimateWebServer(): string
+    public static function estimateWebServer(): string
     {
         $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
         if (function_exists('apache_get_version') || (stripos(strtolower($serverSoftware), 'apache') !== false)) {

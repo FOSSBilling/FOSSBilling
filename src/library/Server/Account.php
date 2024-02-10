@@ -29,7 +29,7 @@ class Server_Account
      *
      * @return string returns the username as a string
      */
-    public function getUsername(): string
+    public function getUsername(): ?string
     {
         return $this->username;
     }

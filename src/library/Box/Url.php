@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -40,6 +41,7 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
      */
     public function link($uri = null, $params = [])
     {
+        $uri ??= '';
         $uri = trim($uri, '/');
         $link = $this->baseUri . $uri;
         if (!empty($params)) {
@@ -51,6 +53,7 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
 
     public function adminLink($uri, $params = [])
     {
+        $uri ??= '';
         $uri = trim($uri, '/');
         $uri = ADMIN_PREFIX . '/' . $uri;
 

@@ -11,6 +11,7 @@
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\SentryHelper;
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
@@ -116,7 +117,8 @@ function checkSSL()
     $config = include PATH_CONFIG;
     if (isset($config['security']['force_https']) && $config['security']['force_https'] && !Environment::isCLI()) {
         if (!FOSSBilling\Tools::isHTTPS()) {
-            $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+            $hostname = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '';
+            $url = 'https://' . $hostname . $_SERVER['REQUEST_URI'];
             header('Location: ' . $url);
             exit;
         }
@@ -131,9 +133,8 @@ function checkWebServer()
     $filesystem = new Filesystem();
 
     // Check for missing required .htaccess on Apache and Apache-compatible web servers.
-    $isApache = function_exists('apache_get_version') ? true : false;
-    $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
-    if ($isApache or (stripos($serverSoftware, 'apache') !== false) or stripos($serverSoftware, 'litespeed') !== false) {
+    $webSever = SentryHelper::estimateWebServer();
+    if ($webSever === 'Apache' || $webSever === 'Litespeed') {
         if (!$filesystem->exists('.htaccess')) {
             throw new Exception('Missing .htaccess file', 5);
         }
@@ -232,9 +233,6 @@ checkRequirements();
 // Requirements met - load required packages/files.
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
-// Check web server and web server settings.
-checkWebServer();
-
 // Check for legacy BoxBilling/FOSSBilling files.
 checkLegacyFiles();
 
@@ -268,6 +266,9 @@ checkInstaller();
 
 // Check if SSL required, and enforce if so.
 checkSSL();
+
+// Check web server and web server settings.
+checkWebServer();
 
 // Set error and exception handlers, and default logging settings.
 ini_set('log_errors', '1');
