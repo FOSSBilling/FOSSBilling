@@ -117,10 +117,10 @@ class Tools
      *
      * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
      */
-    public function generatePassword(int $length, bool|int $includeSpecial = false): string
+    public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
     {
         $characters = 'abcdefghijklmnopqrstuvwxyz';
-        $numbsers = '0123456789';
+        $numbers = '0123456789';
         $specialCharacters = '!@#$%&?()+-_';
 
         // Backwards compatibility with previous behavior
@@ -128,7 +128,7 @@ class Tools
             $includeSpecial = $includeSpecial === 4;
         }
 
-        $charSet = $characters . strtoupper($characters) . $numbsers;
+        $charSet = $characters . strtoupper($characters) . $numbers;
         if ($includeSpecial) {
             $charSet .= $specialCharacters;
         }
@@ -154,7 +154,7 @@ class Tools
             // Handle validations
             $hasLowercase = $hasLowercase || str_contains($characters, $character);
             $hasUppercase = $hasUppercase || str_contains(strtoupper($characters), $character);
-            $hasNumber = $hasNumber || str_contains($numbsers, $character);
+            $hasNumber = $hasNumber || str_contains($numbers, $character);
             $hasSpecial = !$includeSpecial || $hasSpecial || str_contains($specialCharacters, $character);
 
             // Once we reach the required length, check if the password is valid
