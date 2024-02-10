@@ -153,7 +153,7 @@ function errorHandler(int $number, string $message, string $file, int $line)
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
     }
 
-    if (!class_exists('\\' . FOSSBilling\SentryHelper::class)) {
+    if (!class_exists('\\' . SentryHelper::class)) {
         require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
     }
 
@@ -261,7 +261,7 @@ $loader->register();
 define('BIND_TO', FOSSBilling\Tools::getDefaultInterface());
 
 // Now that the config file is loaded, we can enable Sentry
-FOSSBilling\SentryHelper::registerSentry();
+SentryHelper::registerSentry();
 
 // Verify the installer was removed.
 checkInstaller();

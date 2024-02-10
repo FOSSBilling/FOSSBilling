@@ -680,7 +680,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $contact
             ->setEmail($email)
             ->setUsername($email)
-            ->setPassword($this->di['tools']->generatePassword(10, 3))
+            ->setPassword($this->di['tools']->generatePassword(10))
             ->setFirstname($first_name)
             ->setLastname($last_name)
             ->setCity($city)

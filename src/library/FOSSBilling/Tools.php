@@ -110,62 +110,72 @@ class Tools
     }
 
     /**
-     * Generates random password.
+     * Generates a password of a set length and complexity.
      *
-     * @param int $length
-     * @param int $strength
+     * @param int      $length         the length of the password to generate
+     * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
      *
-     * @return string
+     * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
      */
-    public function generatePassword($length = 8, $strength = 3)
+    public function generatePassword(int $length, bool|int $includeSpecial = false): string
     {
-        $upper = 0;
-        $lower = 0;
-        $numeric = 0;
-        $other = 0;
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+        $numbsers = '0123456789';
+        $specialCharacters = '!@#$%&?()+-_';
 
-        $upper_letters = 'QWERTYUIOPASDFGHJKLZXCVBNM';
-        $lower_letters = 'qwertyuiopasdfghjklzxccvbnm';
-        $numbers = '1234567890';
-        $symbols = '!@#$%&?()+-_';
-
-        switch ($strength) {
-            // lowercase + uppercase + numeric
-            case 3:
-                $lower = random_int(1, $length - 2);
-                $upper = random_int(1, $length - $lower - 1);
-                $numeric = $length - $lower - $upper;
-
-                break;
-                // lowercase + uppercase + numeric + symbols
-            case 4:
-            default:
-                $lower = random_int(1, $length - 3);
-                $upper = random_int(1, $length - $lower - 2);
-                $numeric = random_int(1, $length - $lower - $upper - 1);
-                $other = $length - $lower - $upper - $numeric;
-
-                break;
+        // Backwards compatibility with previous behavior
+        if (is_int($includeSpecial)) {
+            $includeSpecial = $includeSpecial === 4;
         }
 
-        $passOrder = [];
-
-        for ($i = 0; $i < $upper; ++$i) {
-            $passOrder[] = $upper_letters[random_int(0, mt_getrandmax()) % strlen($upper_letters)];
-        }
-        for ($i = 0; $i < $lower; ++$i) {
-            $passOrder[] = $lower_letters[random_int(0, mt_getrandmax()) % strlen($lower_letters)];
-        }
-        for ($i = 0; $i < $numeric; ++$i) {
-            $passOrder[] = $numbers[random_int(0, mt_getrandmax()) % strlen($numbers)];
-        }
-        for ($i = 0; $i < $other; ++$i) {
-            $passOrder[] = $symbols[random_int(0, mt_getrandmax()) % strlen($symbols)];
+        $charSet = $characters . strtoupper($characters) . $numbsers;
+        if ($includeSpecial) {
+            $charSet .= $specialCharacters;
         }
 
-        shuffle($passOrder);
+        $charSetLength = strlen($charSet);
 
-        return implode('', $passOrder);
+        // Loop flow-control
+        $valid = false;
+        $iterations = 0;
+
+        // Password requirements validation
+        $hasLowercase = false;
+        $hasUppercase = false;
+        $hasNumber = false;
+        $hasSpecial = false;
+
+        $password = '';
+        while (!$valid && $iterations < 50) {
+            // Add a random character to the password from the provided list of acceptable.
+            $character = substr($charSet, random_int(0, $charSetLength - 1), 1);
+            $password .= $character;
+
+            // Handle validations
+            $hasLowercase = $hasLowercase || str_contains($characters, $character);
+            $hasUppercase = $hasUppercase || str_contains(strtoupper($characters), $character);
+            $hasNumber = $hasNumber || str_contains($numbsers, $character);
+            $hasSpecial = !$includeSpecial || $hasSpecial || str_contains($specialCharacters, $character);
+
+            // Once we reach the required length, check if the password is valid
+            if (strlen($password) === $length) {
+                $valid = $hasLowercase && $hasUppercase && $hasNumber && $hasSpecial;
+                if (!$valid) {
+                    ++$iterations;
+                    $password = '';
+                    $hasLowercase = false;
+                    $hasUppercase = false;
+                    $hasNumber = false;
+                    $hasSpecial = false;
+                }
+            }
+        }
+
+        if ($valid) {
+            return $password;
+        } else {
+            throw new InformationException('We were unable to generate a password with the required parameters');
+        }
     }
 
     public function autoLinkText($text)

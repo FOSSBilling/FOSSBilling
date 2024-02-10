@@ -110,7 +110,7 @@ class Service implements InjectionAwareInterface
         $serverManager = $this->_getServerMangerForOrder($model);
 
         // Generate a password for the service
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), 4);
+        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
 
         // If a password is already specified in the order's configuration, use that instead
         if (isset($config['password']) && !empty($config['password'])) {
@@ -238,7 +238,7 @@ class Service implements InjectionAwareInterface
         $serverManager = $this->_getServerMangerForOrder($model);
 
         // As we replace the password internally with asterisks, generate a new password
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), 4);
+        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
         $model->pass = $pass;
 
         // Retrieve the adapter and account, then create the account on the server
