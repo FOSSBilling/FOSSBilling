@@ -133,8 +133,8 @@ function checkWebServer()
     $filesystem = new Filesystem();
 
     // Check for missing required .htaccess on Apache and Apache-compatible web servers.
-    $websever = SentryHelper::estimateWebServer();
-    if ($websever === 'Apache' || $websever === 'Litespeed') {
+    $webSever = SentryHelper::estimateWebServer();
+    if ($webSever === 'Apache' || $webSever === 'Litespeed') {
         if (!$filesystem->exists('.htaccess')) {
             throw new Exception('Missing .htaccess file', 5);
         }
@@ -233,9 +233,6 @@ checkRequirements();
 // Requirements met - load required packages/files.
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
-// Check web server and web server settings.
-checkWebServer();
-
 // Check for legacy BoxBilling/FOSSBilling files.
 checkLegacyFiles();
 
@@ -269,6 +266,9 @@ checkInstaller();
 
 // Check if SSL required, and enforce if so.
 checkSSL();
+
+// Check web server and web server settings.
+checkWebServer();
 
 // Set error and exception handlers, and default logging settings.
 ini_set('log_errors', '1');
