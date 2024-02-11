@@ -146,7 +146,7 @@ class Tools
         $hasSpecial = false;
 
         $password = '';
-        while (!$valid && $iterations < 50) {
+        while (!$valid && $iterations < 100) {
             // Add a random character to the password from the provided list of acceptable.
             $character = substr($charSet, random_int(0, $charSetLength - 1), 1);
             $password .= $character;
