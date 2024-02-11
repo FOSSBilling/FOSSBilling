@@ -144,7 +144,6 @@
                     <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
                 </form>
             </div>
-            {% block head %}{{ mf.bb_editor('bb-textarea') }}{% endblock %}
         </div>
 
         <div class="tab-pane fade" id="tab-categories" role="tabpanel">
@@ -203,4 +202,5 @@
         </div>
     </div>
 </div>
+{{ mf.bb_editor('bb-textarea') }}
 {% endblock %}
