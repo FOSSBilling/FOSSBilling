@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -100,12 +101,12 @@ class Box_Database implements InjectionAwareInterface
         return $beans;
     }
 
-    public function findAll(string $table, string $sql = null)
+    public function findAll(string $table, string $sql = null, array $bindings = [])
     {
         if (is_null($sql)) {
             return $this->orm->findAll($table);
         } else {
-            return $this->orm->findAll($table, $sql);
+            return $this->orm->findAll($table, $sql, $bindings);
         }
     }
 
