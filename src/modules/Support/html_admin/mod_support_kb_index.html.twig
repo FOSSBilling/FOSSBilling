@@ -137,13 +137,14 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
                         <div class="col">
-                            <textarea class="form-control" name="content" rows="10">{{ request.content }}</textarea>
+                            <textarea class="form-control bb-textarea" name="content" rows="10">{{ request.content }}</textarea>
                         </div>
                     </div>
 
                     <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
                 </form>
             </div>
+            {% block head %}{{ mf.bb_editor('bb-textarea') }}{% endblock %}
         </div>
 
         <div class="tab-pane fade" id="tab-categories" role="tabpanel">
