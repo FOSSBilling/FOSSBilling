@@ -76,23 +76,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      */
     public function getTlds()
     {
-        return [
-            '.com', '.net', '.biz', '.org', '.info', '.name', '.co',
-            '.asia', '.ru', '.com.ru', '.net.ru', '.org.ru',
-            '.de', '.es', '.us', '.xxx', '.ca', '.au', '.com.au',
-            '.net.au', '.co.uk', '.org.uk', '.me.uk',
-            '.eu', '.in', '.co.in', '.net.in', '.org.in',
-            '.gen.in', '.firm.in', '.ind.in', '.cn.com',
-            '.com.co', '.net.co', '.nom.co', '.me', '.mobi',
-            '.tel', '.tv', '.cc', '.ws', '.bz', '.mn', '.co.nz',
-            '.net.nz', '.org.nz', '.eu.com', '.gb.com', '.ae.org',
-            '.kr.com', '.us.com', '.qc.com', '.gr.com',
-            '.de.com', '.gb.net', '.no.com', '.hu.com',
-            '.jpn.com', '.uy.com', '.za.com', '.br.com',
-            '.sa.com', '.se.com', '.se.net', '.uk.com',
-            '.uk.net', '.ru.com', '.com.cn', '.net.cn',
-            '.org.cn', '.nl', '.co', '.com.co', '.pw',
-        ];
+        return [];
     }
 
     public function isDomainAvailable(Registrar_Domain $domain)
@@ -121,8 +105,10 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         $params = [
             'domain-name' => $domain->getName(),
         ];
-        $result = $this->_makeRequest('domains/validate-transfer', $params, 'GET');
-
+        // domains/validate-transfer endpoint has has been removed
+        //$result = $this->_makeRequest('domains/validate-transfer', $params, 'GET');
+        // need to add check if lock is pressent
+        $result = !$this -> isDomainAvailable($domain);
         return strtolower($result) == 'true';
     }
 
@@ -494,7 +480,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $params = [...$optional_params, ...$params];
         $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
-
         return $customer_id;
     }
 
@@ -502,6 +487,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     {
         $c = $domain->getContactRegistrar();
         $customer = $this->_getCustomerDetails($domain);
+        error_log(json_encode($customer));
         $customer_id = $customer['customerid'];
 
         $tld = $domain->getTld();
@@ -550,7 +536,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $id = $this->_makeRequest('contacts/add', $contact, 'POST');
-
+        error_log(json_encode($id));
         return $id;
     }
 
@@ -665,7 +651,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     private function _getApiUrl()
     {
         if ($this->isTestEnv()) {
-            return 'http://test.httpapi.com/api/';
+            return 'https://test.httpapi.com/api/';
         }
 
         return 'https://httpapi.com/api/';
@@ -1005,8 +991,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             if ($result['recsonpage'] < 1) {
                 throw new Registrar_Exception('Contact not found');
             }
-            $existing_contact_id = $result['result'][0]['entity.entityid'];
-            $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
+            return $result['result'][0]['entity.entityid'];
         } catch (Registrar_Exception $e) {
             $this->getLog()->info($e->getMessage());
         }
