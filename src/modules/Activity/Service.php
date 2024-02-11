@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -100,6 +101,26 @@ class Service implements InjectionAwareInterface
         $di['db']->store($log);
     }
 
+    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $retention = $di['mod_service']('extension')->getConfig('mod_activity') ?? 90;
+
+        if (intval($retention) === 0) {
+            return;
+        }
+
+        $ageInSeconds = intval($retention) * 86_400;
+
+        try {
+            $di['db']->exec('DELETE FROM activity_admin_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+            $di['db']->exec('DELETE FROM activity_client_email WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+            $di['db']->exec('DELETE FROM activity_client_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+            $di['db']->exec('DELETE FROM activity_system WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+    }
     public function getSearchQuery($data)
     {
         $sql = 'SELECT m.*, a.id as staff_id, a.email as staff_email, a.name as staff_name, c.id as client_id, CONCAT(c.first_name, " ", c.last_name) as client_name, c.email as client_email

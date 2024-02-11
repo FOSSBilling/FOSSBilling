@@ -1,0 +1,47 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Activity settings'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Activity settings'|trans }}</li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+{% set params = admin.extension_config_get({ 'ext': 'mod_activity' }) %}
+<div class="card">
+  <div class="card-header">
+        <h2>{{ 'Activity settings'|trans }}</h2>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+            <input type="hidden" name="ext" value="mod_activity">
+            <div class="mb-3 row">
+                <h3>{{ 'Activity log retention'|trans }}</h3>
+                <div class="form-floating">
+                    <input class="form-control" id="max_age" name="max_age" type="number" value="{{ params.max_age|default('90') }}">
+                    <label for="max_age">{{ 'Number of days'|trans }}</label>
+                </div>
+                <span class="text-muted">{{ 'FOSSBilling will automatically remove activity logs that are older than the configured number of days. Set to 0 to disable this behavior'|trans }}</span>
+            </div>
+            <button type="submit" class="btn btn-primary">{{ 'Update'|trans }}</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
