@@ -18,7 +18,6 @@ use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use RedBeanPHP\Facade;
-use Symfony\Bridge\Twig\Extension\TranslationExtension;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
@@ -304,7 +303,6 @@ $di['twig'] = $di->factory(function () use ($di) {
     // $twig->addExtension(new OptimizerExtension());
     $twig->addExtension(new StringLoaderExtension());
     $twig->addExtension(new DebugExtension());
-    $twig->addExtension(new TranslationExtension());
     $twig->addExtension($box_extensions);
     $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
 

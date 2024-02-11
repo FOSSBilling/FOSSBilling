@@ -87,7 +87,10 @@ class Monolog
         $priority = $this->parsePriority($event['priority']);
         $message = $event['message'];
         $context = isset($event['info']) && is_array($event['info']) ? $event['info'] : [];
-
-        $this->getChannel($channel)->log($priority, $message, $context);
+        try {
+            $this->getChannel($channel)->log($priority, $message, $context);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
     }
 }
