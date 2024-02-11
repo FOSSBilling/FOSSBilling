@@ -118,9 +118,11 @@ function checkSSL()
     if (isset($config['security']['force_https']) && $config['security']['force_https'] && !Environment::isCLI()) {
         if (!FOSSBilling\Tools::isHTTPS()) {
             $hostname = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '';
-            $url = 'https://' . $hostname . $_SERVER['REQUEST_URI'];
-            header('Location: ' . $url);
-            exit;
+            if (!empty($hostname) && !empty($_SERVER['REQUEST_URI'])) {
+                $url = 'https://' . $hostname . $_SERVER['REQUEST_URI'];
+                header('Location: ' . $url);
+                exit;
+            }
         }
     }
 }

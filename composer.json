@@ -21,6 +21,7 @@
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
+        "ext-curl": "*",
         "antcms/antloader": "^2.0.2",
         "dompdf/dompdf": "^2.0.1",
         "egulias/email-validator": "^4.0",
@@ -47,10 +48,8 @@
         "symfony/http-client": "^6.4",
         "symfony/mailer": "^6.4",
         "symfony/polyfill-intl-icu": "^1.27",
-        "symfony/polyfill-intl-idn": "*",
+        "symfony/polyfill-intl-idn": "^1.29.0",
         "symfony/sendgrid-mailer": "^6.4",
-        "symfony/translation": "^6.4",
-        "symfony/twig-bridge": "^6.4",
         "symfony/webpack-encore-bundle": "^2.1",
         "twig/intl-extra": "^3.5",
         "twig/twig": "^3.3.9"
@@ -65,7 +64,6 @@
         "symfony/phpunit-bridge": "^6.4"
     },
     "suggest": {
-        "ext-curl": "*",
         "ext-gettext": "*",
         "ext-intl": "*"
     },
