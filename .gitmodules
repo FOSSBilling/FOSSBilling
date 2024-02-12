@@ -1,4 +1,0 @@
-[submodule "src/locale"]
-	path = src/locale
-	url = https://github.com/FOSSBilling/locale.git
-	branch = main
