@@ -44,19 +44,16 @@ jobs:
         run: npm run build
 
       - name: 'Download Latest Translations'
-        uses: robinraju/release-downloader@v1.8
-        with:
-          repository: 'FOSSBilling/locale'
-          latest: true
-          fileName: 'translations.zip'
-          out-file-path: './src/locale'
-          extract: true
+        run: |
+          wget https://github.com/FOSSBilling/locale/releases/download/latest/translations.zip -O translations.zip
+          mkdir -p ./src/locale
+          unzip -o translations.zip -d ./src/locale
 
       - name: 'Copy Required Files and Clean-up'
         run: |
           cp README.md ./src/
           cp LICENSE ./src/
-          rm ./src/locale/translations.zip
+          rm translations.zip
 
       - name: 'Add Short Commit Hash as the Release Vesion'
         if: ${{ inputs.preview }}

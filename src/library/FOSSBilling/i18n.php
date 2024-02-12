@@ -113,7 +113,14 @@ class i18n
             return $locales;
         }
         $details = [];
-        $array = include PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php';
+
+        // Handle when FOSSBilling is running with a dummy locale folder.
+        if (file_exists(PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php')) {
+            $array = include PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php';
+        } else {
+            $array = ['en_US' => 'English'];
+        }
+
         foreach ($locales as $locale) {
             $title = ($array[$locale] ?? $locale) . "($locale)";
             $details[] = [
