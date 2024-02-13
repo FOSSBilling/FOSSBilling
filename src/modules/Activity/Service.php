@@ -121,6 +121,7 @@ class Service implements InjectionAwareInterface
             error_log($e->getMessage());
         }
     }
+
     public function getSearchQuery($data)
     {
         $sql = 'SELECT m.*, a.id as staff_id, a.email as staff_email, a.name as staff_name, c.id as client_id, CONCAT(c.first_name, " ", c.last_name) as client_name, c.email as client_email
