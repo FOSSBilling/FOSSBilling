@@ -105,10 +105,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         $params = [
             'domain-name' => $domain->getName(),
         ];
-        // domains/validate-transfer endpoint has has been removed
-        //$result = $this->_makeRequest('domains/validate-transfer', $params, 'GET');
-        // need to add check if lock is pressent
-        $result = !$this -> isDomainAvailable($domain);
+        $result = $this->_makeRequest('domains/validate-transfer', $params, 'GET');
         return strtolower($result) == 'true';
     }
 
@@ -487,7 +484,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     {
         $c = $domain->getContactRegistrar();
         $customer = $this->_getCustomerDetails($domain);
-        error_log(json_encode($customer));
         $customer_id = $customer['customerid'];
 
         $tld = $domain->getTld();
@@ -536,7 +532,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $id = $this->_makeRequest('contacts/add', $contact, 'POST');
-        error_log(json_encode($id));
         return $id;
     }
 
@@ -700,18 +695,16 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
             $this->getLog()->info('API RESULT: ' . $result->getContent());
 
-            // response checker
+            try{
             $json = $result->toArray();
+            } catch (Exception $e){
+            }
             if (!is_array($json)) {
+                error_log($result->getContent());
                 return $result->getContent();
             }
         } catch (HttpExceptionInterface $error) {
-            $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
-            $this->getLog()->err($e);
-
-            throw $e;
         }
-
         if (isset($json['status']) && $json['status'] == 'ERROR') {
             error_log('ResellerClub error: ' . $json['message']);
             $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
