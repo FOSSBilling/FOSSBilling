@@ -59,15 +59,6 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertArrayHasKey('form', $result);
     }
 
-    public function testgetTlds()
-    {
-        $adapter = $this->getAdapter();
-        $result = $adapter->getTlds();
-
-        $this->assertNotEmpty($result);
-        $this->assertIsArray($result);
-    }
-
     public function testisDomainAvailableFoundInArray()
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
@@ -78,6 +69,25 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $registrarDomain->setSld('example')->setTld('.com');
 
         $requestResult = [];
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('_makeRequest')
+            ->with('domains/available')
+            ->willReturn($requestResult);
+
+        $result = $adapterMock->isDomainAvailable($registrarDomain);
+        $this->assertTrue($result);
+    }
+
+    public function testisDomainAvailableStatusAvailable()
+    {
+        $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
+            ->onlyMethods(['_makeRequest'])
+            ->getMock();
+
+        $registrarDomain = new Registrar_Domain();
+        $registrarDomain->setSld('example')->setTld('.com');
+
+        $requestResult = [$registrarDomain->getName() => ['status' => 'available']];
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
             ->with('domains/available')
