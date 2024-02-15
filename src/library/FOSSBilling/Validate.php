@@ -36,6 +36,9 @@ class Validate
     {
         $sld = ltrim($sld, '.');
         $sld = idn_to_ascii($sld);
+        if ($sld === false) {
+            return false;
+        }
         $sld = strtolower($sld);
 
         // allow punnycode
@@ -51,7 +54,7 @@ class Validate
     }
 
     /**
-     * Validates if a given TLD is valid, comparing against the official TLD list by the IANA.
+     * Validates a given TLD, comparing against the official TLD list by the IANA.
      * In the event that fetching the valid list doesn't work, some very simple validation is performed instead.
      */
     public function isTldValid(string $tld): bool
