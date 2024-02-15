@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -56,9 +57,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($action == 'owndomain') {
-            if (!isset($data['owndomain_sld'])) {
-                throw new \FOSSBilling\Exception('Order data must contain :field configuration field', [':field' => 'owndomain_sld']);
-            }
+            $required = [
+                'owndomain_tld' => 'Domain TLD is required.',
+                'owndomain_sld' => 'Domain name is required.',
+            ];
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
                 $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -66,29 +69,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
-            $required = [
-                'owndomain_tld' => 'Domain TLD is invalid.',
-                'owndomain_sld' => 'Domain name is required.',
-            ];
-            $this->di['validator']->checkRequiredParamsForArray($required, $data);
+            if (!$validator->isTldValid($data['owndomain_tld'])) {
+                throw new \FOSSBilling\InformationException('TLD is invalid');
+            }
         }
 
         if ($action == 'transfer') {
-            if (!isset($data['transfer_sld'])) {
-                throw new \FOSSBilling\InformationException('Order data must contain :field configuration field', [':field' => 'transfer_sld']);
-            }
+            $required = [
+                'transfer_tld' => 'Transfer domain type (TLD) is required.',
+                'transfer_sld' => 'Transfer domain name (SLD) is required.',
+            ];
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
                 $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
                 throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
-
-            $required = [
-                'transfer_tld' => 'Transfer domain type (TLD) is required.',
-                'transfer_sld' => 'Transfer domain name (SLD) is required.',
-            ];
-            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
             if (!$tld instanceof \Model_Tld) {
@@ -106,22 +103,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($action == 'register') {
-            if (!isset($data['register_sld'])) {
-                throw new \FOSSBilling\InformationException('Order data must contain :field configuration field', [':field' => 'register_sld']);
-            }
-
-            if (!$validator->isSldValid($data['register_sld'])) {
-                $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
-            }
-
             $required = [
                 'register_tld' => 'Domain registration tld parameter missing.',
                 'register_sld' => 'Domain registration sld parameter missing.',
                 'register_years' => 'Years parameter is missing for domain configuration.',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+            if (!$validator->isSldValid($data['register_sld'])) {
+                $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+            }
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
             if (!$tld instanceof \Model_Tld) {
@@ -416,7 +409,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'postcode' => 'Required field postcode is missing',
             'phone_cc' => 'Required field phone_cc is missing',
             'phone' => 'Required field phone is missing',
-            ];
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $contact);
 
         $model->contact_first_name = $contact['first_name'];
