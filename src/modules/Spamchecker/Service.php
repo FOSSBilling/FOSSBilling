@@ -201,7 +201,7 @@ class Service implements InjectionAwareInterface
      */
     private function getTempMailDomainDB(): array
     {
-        return $this->di['cache']->get('CentralAlerts.getAlerts', function (ItemInterface $item) {
+        return $this->di['cache']->get('tempMailDB', function (ItemInterface $item) {
             $item->expiresAfter(86400); // The list is updated once every 24 hours, so we will cache it for that long
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
