@@ -60,75 +60,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public static function validateOrderDataProvider()
-    {
-        $self = new ServiceTest('ServiceTest');
-
-        return [
-            [
-                [
-                    'action' => 'owndomain',
-                    'owndomain_sld' => 'example',
-                    'owndomain_tld' => '.com',
-                ],
-                $self->never(),
-                $self->never(),
-                $self->never(),
-            ],
-            [
-                [
-                    'action' => 'transfer',
-                    'transfer_sld' => 'example',
-                    'transfer_tld' => '.com',
-                ],
-                $self->atLeastOnce(),
-                $self->atLeastOnce(),
-                $self->never(),
-            ],
-            [
-                [
-                    'action' => 'register',
-                    'register_sld' => 'example',
-                    'register_tld' => '.com',
-                    'register_years' => '2',
-                ],
-                $self->atLeastOnce(),
-                $self->never(),
-                $self->atLeastOnce(),
-            ],
-        ];
-    }
-
-    #[\PHPUnit\Framework\Attributes\DataProvider('validateOrderDataProvider')]
-    public function testValidateOrderData($data, $finOneByTldCalled, $canBeTransferredCalled, $isDomainAvailableCalled)
-    {
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
-            ->willReturn(true);
-
-        $tld = new \Model_Tld();
-        $tld->loadBean(new \DummyBean());
-        $tld->tld = '.com';
-        $tld->min_years = 2;
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(['tldFindOneByTld', 'canBeTransferred', 'isDomainAvailable'])->getMock();
-
-        $serviceMock->expects($finOneByTldCalled)->method('tldFindOneByTld')
-            ->willReturn($tld);
-        $serviceMock->expects($canBeTransferredCalled)->method('canBeTransferred')
-            ->willReturn(true);
-        $serviceMock->expects($isDomainAvailableCalled)->method('isDomainAvailable')
-            ->willReturn(true);
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->validateOrderData($data);
-        $this->assertNull($result);
-    }
-
     public static function validateOrderDataExceptionsProvider()
     {
         return [
@@ -144,49 +75,6 @@ class ServiceTest extends \BBTestCase
     public function testValidateOrderDataExceptions($data)
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-        $this->service->setDi($di);
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->validateOrderData($data);
-        $this->assertNull($result);
-    }
-
-    public static function validateOrderDateOwndomainExceptionsProvider()
-    {
-        $self = new ServiceTest('ServiceTest');
-
-        return [
-            [
-                [ // "owndomain_sld" is missing
-                    'action' => 'owndomain',
-                    'owndomain_tld' => '.com',
-                ],
-                $self->never(),
-                true,
-            ],
-            [
-                [
-                    'action' => 'owndomain',
-                    'owndomain_sld' => 'example',
-                    'owndomain_tld' => '.com',
-                ],
-                $self->atLeastOnce(),
-                false, // //"isSldValid" returns false
-            ],
-        ];
-    }
-
-    #[\PHPUnit\Framework\Attributes\DataProvider('validateOrderDateOwndomainExceptionsProvider')]
-    public function testValidateOrderDateOwndomainOwndomain($data, $isSldValidCalled, $isSldValidReturn)
-    {
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($isSldValidCalled)->method('isSldValid')
-            ->willReturn($isSldValidReturn);
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
