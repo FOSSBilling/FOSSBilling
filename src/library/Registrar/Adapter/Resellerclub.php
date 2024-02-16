@@ -698,9 +698,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $this->getLog()->err($e);
             throw $e;
         }
-        if(empty($result)){
-            return;
-        }
+
         if($result->getContent(false) == 'true'){
             return $result->getContent(false);
         }
@@ -976,27 +974,28 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id];
     }
 
-    private function _getContact($contact, $customer_id, $type = 'Contact')
-    {
-        try {
-            $params = [
-                'customer-id' => $customer_id,
-                'no-of-records' => 20,
-                'page-no' => 1,
-                'status' => 'Active',
-                'type' => $type,
-            ];
-            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
-            if ($result['recsonpage'] < 1) {
-                throw new Registrar_Exception('Contact not found');
-            }
-            return $result['result'][0]['entity.entityid'];
-        } catch (Registrar_Exception $e) {
-            $this->getLog()->info($e->getMessage());
-        }
+   private function _getContact($contact, $customer_id, $type = 'Contact')
+   {
+       try {
+           $params = [
+               'customer-id' => $customer_id,
+               'no-of-records' => 20,
+               'page-no' => 1,
+               'status' => 'Active',
+               'type' => $type,
+           ];
+           $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
+           if ($result['recsonpage'] < 1) {
+               throw new Registrar_Exception('Contact not found');
+           }
+           $existing_contact_id = $result['result'][0]['entity.entityid'];
+           $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
+       } catch (Registrar_Exception $e) {
+           $this->getLog()->info($e->getMessage());
+       }
 
-        return $this->_makeRequest('contacts/add', $contact, 'POST');
-    }
+       return $this->_makeRequest('contacts/add', $contact, 'POST');
+   }
 
     private function getCARegistrantAgreementVersion()
     {
