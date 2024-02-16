@@ -61,13 +61,16 @@ class Validate
     {
         $tld = ltrim($tld, '.');
         $tld = idn_to_ascii($tld);
-        $tld = strtoupper($tld);
+        if ($tld === false) {
+            return false;
+        }
+        $tld = strtolower($tld);
 
         $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item) {
             $item->expiresAfter(86400);
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
-            $response = $client->request('GET', 'https://data.iana.org/TLD/tlds-alpha-by-domain.txt');
+            $response = $client->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
             $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tlds.txt';
 
             if ($response->getStatusCode() === 200) {
@@ -86,15 +89,21 @@ class Validate
                 return [];
             }
 
-            $validTlds = array_filter($database, fn ($tld) => !str_starts_with($tld, '#'));
+            $validTlds = array_filter($database, fn ($tld) => !str_starts_with($tld, '/'));
 
             $result = [];
             foreach ($validTlds as $tld) {
-                $result[$tld] = true;
+                if (str_contains($tld, 'END ICANN DOMAINS')) {
+                    break;
+                }
+                $tld = idn_to_ascii($tld);
+                if ($tld !== false) {
+                    $result[$tld] = true;
+                }
             }
 
             // Sanity check we've created the list correctly
-            if (!($result['COM'] ?? false) || !($result['NET'] ?? false) || !($result['ORG'] ?? false)) {
+            if (!($result['com'] ?? false) || !($result['net'] ?? false) || !($result['org'] ?? false)) {
                 $item->expiresAfter(3600);
 
                 return [];
