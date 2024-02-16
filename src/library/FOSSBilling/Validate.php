@@ -74,6 +74,7 @@ class Validate
                 @file_put_contents($dbPath, $response->getContent());
             } else {
                 $item->expiresAfter(3600);
+
                 return [];
             }
 
@@ -81,6 +82,7 @@ class Validate
             @unlink($dbPath);
             if (!$database) {
                 $item->expiresAfter(3600);
+
                 return [];
             }
 
@@ -93,6 +95,8 @@ class Validate
 
             // Sanity check we've created the list correctly
             if (!($result['COM'] ?? false) || !($result['NET'] ?? false) || !($result['ORG'] ?? false)) {
+                $item->expiresAfter(3600);
+
                 return [];
             }
 
