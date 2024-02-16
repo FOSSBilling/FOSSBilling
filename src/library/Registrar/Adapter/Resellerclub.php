@@ -694,8 +694,13 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             }
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
+            $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
+            $this->getLog()->err($e);
+            throw $e;
         }
-
+        if(empty($result)){
+            return;
+        }
         if($result->getContent(false) == 'true'){
             return $result->getContent(false);
         }
