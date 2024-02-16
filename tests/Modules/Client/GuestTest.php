@@ -12,7 +12,7 @@ final class GuestTest extends TestCase
     public function testCreateAndDestroyClient(): void
     {
         // Generate a new test user
-        $password = 'A1' . bin2hex(random_bytes(6));
+        $password = 'A1a' . bin2hex(random_bytes(6));
         $result = Request::makeRequest('guest/client/create', [
             'email' => 'client@example.com',
             'first_name' => 'Test',
