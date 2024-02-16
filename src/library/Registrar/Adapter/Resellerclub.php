@@ -692,19 +692,21 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 $result = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
                 $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             }
-
-            $this->getLog()->info('API RESULT: ' . $result->getContent());
-
-            try{
-            $json = $result->toArray();
-            } catch (Exception $e){
-            }
-            if (!is_array($json)) {
-                error_log($result->getContent());
-                return $result->getContent();
-            }
+            $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
         }
+
+        if($result->getContent(false) == 'true'){
+            return $result->getContent(false);
+        }
+        if(is_numeric($result->getContent(false))){
+            return $data = $result->getContent(false);
+        }
+        $json = $result->toArray(false);
+        if (!is_array($json)) {
+            return $data = $result->getContent(false);
+        }
+
         if (isset($json['status']) && $json['status'] == 'ERROR') {
             error_log('ResellerClub error: ' . $json['message']);
             $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
@@ -725,7 +727,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
-
         return $json;
     }
 
