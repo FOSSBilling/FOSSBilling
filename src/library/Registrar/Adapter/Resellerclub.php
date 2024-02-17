@@ -69,32 +69,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
     }
 
-    /**
-     * Tells what TLDs can be registered via this adapter.
-     *
-     * @return string[]
-     */
-    public function getTlds()
-    {
-        return [
-            '.com', '.net', '.biz', '.org', '.info', '.name', '.co',
-            '.asia', '.ru', '.com.ru', '.net.ru', '.org.ru',
-            '.de', '.es', '.us', '.xxx', '.ca', '.au', '.com.au',
-            '.net.au', '.co.uk', '.org.uk', '.me.uk',
-            '.eu', '.in', '.co.in', '.net.in', '.org.in',
-            '.gen.in', '.firm.in', '.ind.in', '.cn.com',
-            '.com.co', '.net.co', '.nom.co', '.me', '.mobi',
-            '.tel', '.tv', '.cc', '.ws', '.bz', '.mn', '.co.nz',
-            '.net.nz', '.org.nz', '.eu.com', '.gb.com', '.ae.org',
-            '.kr.com', '.us.com', '.qc.com', '.gr.com',
-            '.de.com', '.gb.net', '.no.com', '.hu.com',
-            '.jpn.com', '.uy.com', '.za.com', '.br.com',
-            '.sa.com', '.se.com', '.se.net', '.uk.com',
-            '.uk.net', '.ru.com', '.com.cn', '.net.cn',
-            '.org.cn', '.nl', '.co', '.com.co', '.pw',
-        ];
-    }
-
     public function isDomainAvailable(Registrar_Domain $domain)
     {
         $params = [
