@@ -76,23 +76,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      */
     public function getTlds()
     {
-        return [
-            '.com', '.net', '.biz', '.org', '.info', '.name', '.co',
-            '.asia', '.ru', '.com.ru', '.net.ru', '.org.ru',
-            '.de', '.es', '.us', '.xxx', '.ca', '.au', '.com.au',
-            '.net.au', '.co.uk', '.org.uk', '.me.uk',
-            '.eu', '.in', '.co.in', '.net.in', '.org.in',
-            '.gen.in', '.firm.in', '.ind.in', '.cn.com',
-            '.com.co', '.net.co', '.nom.co', '.me', '.mobi',
-            '.tel', '.tv', '.cc', '.ws', '.bz', '.mn', '.co.nz',
-            '.net.nz', '.org.nz', '.eu.com', '.gb.com', '.ae.org',
-            '.kr.com', '.us.com', '.qc.com', '.gr.com',
-            '.de.com', '.gb.net', '.no.com', '.hu.com',
-            '.jpn.com', '.uy.com', '.za.com', '.br.com',
-            '.sa.com', '.se.com', '.se.net', '.uk.com',
-            '.uk.net', '.ru.com', '.com.cn', '.net.cn',
-            '.org.cn', '.nl', '.co', '.com.co', '.pw',
-        ];
+        return [];
     }
 
     public function isDomainAvailable(Registrar_Domain $domain)
@@ -122,7 +106,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'domain-name' => $domain->getName(),
         ];
         $result = $this->_makeRequest('domains/validate-transfer', $params, 'GET');
-
         return strtolower($result) == 'true';
     }
 
@@ -494,7 +477,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $params = [...$optional_params, ...$params];
         $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
-
         return $customer_id;
     }
 
@@ -550,7 +532,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $id = $this->_makeRequest('contacts/add', $contact, 'POST');
-
         return $id;
     }
 
@@ -665,7 +646,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     private function _getApiUrl()
     {
         if ($this->isTestEnv()) {
-            return 'http://test.httpapi.com/api/';
+            return 'https://test.httpapi.com/api/';
         }
 
         return 'https://httpapi.com/api/';
@@ -711,19 +692,22 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 $result = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
                 $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             }
-
-            $this->getLog()->info('API RESULT: ' . $result->getContent());
-
-            // response checker
-            $json = $result->toArray();
-            if (!is_array($json)) {
-                return $result->getContent();
-            }
+            $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
             $this->getLog()->err($e);
-
             throw $e;
+        }
+
+        if($result->getContent(false) == 'true'){
+            return $result->getContent(false);
+        }
+        if(is_numeric($result->getContent(false))){
+            return $data = $result->getContent(false);
+        }
+        $json = $result->toArray(false);
+        if (!is_array($json)) {
+            return $data = $result->getContent(false);
         }
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
@@ -746,7 +730,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
-
         return $json;
     }
 
@@ -991,28 +974,28 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id];
     }
 
-    private function _getContact($contact, $customer_id, $type = 'Contact')
-    {
-        try {
-            $params = [
-                'customer-id' => $customer_id,
-                'no-of-records' => 20,
-                'page-no' => 1,
-                'status' => 'Active',
-                'type' => $type,
-            ];
-            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
-            if ($result['recsonpage'] < 1) {
-                throw new Registrar_Exception('Contact not found');
-            }
-            $existing_contact_id = $result['result'][0]['entity.entityid'];
-            $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
-        } catch (Registrar_Exception $e) {
-            $this->getLog()->info($e->getMessage());
-        }
+   private function _getContact($contact, $customer_id, $type = 'Contact')
+   {
+       try {
+           $params = [
+               'customer-id' => $customer_id,
+               'no-of-records' => 20,
+               'page-no' => 1,
+               'status' => 'Active',
+               'type' => $type,
+           ];
+           $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
+           if ($result['recsonpage'] < 1) {
+               throw new Registrar_Exception('Contact not found');
+           }
+           $existing_contact_id = $result['result'][0]['entity.entityid'];
+           $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
+       } catch (Registrar_Exception $e) {
+           $this->getLog()->info($e->getMessage());
+       }
 
-        return $this->_makeRequest('contacts/add', $contact, 'POST');
-    }
+       return $this->_makeRequest('contacts/add', $contact, 'POST');
+   }
 
     private function getCARegistrantAgreementVersion()
     {

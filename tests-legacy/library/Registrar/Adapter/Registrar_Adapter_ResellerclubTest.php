@@ -59,15 +59,6 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertArrayHasKey('form', $result);
     }
 
-    public function testgetTlds()
-    {
-        $adapter = $this->getAdapter();
-        $result = $adapter->getTlds();
-
-        $this->assertNotEmpty($result);
-        $this->assertIsArray($result);
-    }
-
     public function testisDomainAvailableFoundInArray()
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
