@@ -88,6 +88,7 @@ jobs:
 
       - name: Setup Apache
         run: |
+          sudo apt-get update
           sudo apt-get install libapache2-mod-php8.3
           sudo a2enmod php8.3
           sudo systemctl start apache2
