@@ -92,7 +92,7 @@
                             <tr>
                                 <td>{{ file }}</td>
                                 <td class="red">FAIL</td>
-                                <td>Please make sure that file exists and is writable.</td>
+                                <td>Permissions are incorrect, preventing FOSSBilling from writing to this file name. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshootng)</a></td>
                             </tr>
                         {% endif %}
                     {% endfor %}
@@ -101,7 +101,7 @@
                             <tr>
                                 <td>{{ folder }}</td>
                                 <td class="red">FAIL</td>
-                                <td>Please make sure that directory exists and is writable.</td>
+                                <td>Please make sure that directory exists and is writable. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshootng)</a></td>
                             </tr>
                         {% endif %}
                     {% endfor %}
