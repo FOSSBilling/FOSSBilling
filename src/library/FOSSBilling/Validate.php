@@ -114,7 +114,7 @@ class Validate
 
         if (!$validTlds) {
             // Fallback behavior if we fail to get a valid list
-            if (str_starts_with($tld, 'XN--') || preg_match('/^[a-z]+$/', $tld)) {
+            if (str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld)) {
                 return true;
             } else {
                 return false;
