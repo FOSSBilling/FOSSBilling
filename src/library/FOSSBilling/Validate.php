@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
+
 class Validate
 {
     protected ?\Pimple\Container $di = null;
@@ -31,6 +34,13 @@ class Validate
      */
     public function isSldValid(string $sld): bool
     {
+        $sld = ltrim($sld, '.');
+        $sld = idn_to_ascii($sld);
+        if ($sld === false) {
+            return false;
+        }
+        $sld = strtolower($sld);
+
         // allow punnycode
         if (str_starts_with($sld, 'xn--')) {
             return true;
@@ -40,6 +50,77 @@ class Validate
             return true;
         } else {
             return false;
+        }
+    }
+
+    /**
+     * Validates a given TLD, comparing against the official TLD list by the IANA.
+     * In the event that fetching the valid list doesn't work, some very simple validation is performed instead.
+     */
+    public function isTldValid(string $tld): bool
+    {
+        $tld = ltrim($tld, '.');
+        $tld = idn_to_ascii($tld);
+        if ($tld === false) {
+            return false;
+        }
+        $tld = strtolower($tld);
+
+        $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item) {
+            $item->expiresAfter(86400);
+
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
+            $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tlds.txt';
+
+            if ($response->getStatusCode() === 200) {
+                @file_put_contents($dbPath, $response->getContent());
+            } else {
+                $item->expiresAfter(3600);
+
+                return [];
+            }
+
+            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            @unlink($dbPath);
+            if (!$database) {
+                $item->expiresAfter(3600);
+
+                return [];
+            }
+
+            $validTlds = array_filter($database, fn ($tld) => !str_starts_with($tld, '/'));
+
+            $result = [];
+            foreach ($validTlds as $tld) {
+                if (str_contains($tld, 'END ICANN DOMAINS')) {
+                    break;
+                }
+                $tld = idn_to_ascii($tld);
+                if ($tld !== false) {
+                    $result[$tld] = true;
+                }
+            }
+
+            // Sanity check we've created the list correctly
+            if (!($result['com'] ?? false) || !($result['net'] ?? false) || !($result['org'] ?? false)) {
+                $item->expiresAfter(3600);
+
+                return [];
+            }
+
+            return $result;
+        });
+
+        if (!$validTlds) {
+            // Fallback behavior if we fail to get a valid list
+            if (str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return $validTlds[$tld] ?? false;
         }
     }
 
