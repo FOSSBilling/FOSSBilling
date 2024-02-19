@@ -34,6 +34,34 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function enableAdminTwoFactorAuthentication(\Model_Admin $admin, $token){
+        $event_params = [];
+        $event_params['enabled'] = true;
+        $event_params['id'] = $admin->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfileTwoFactorAuthChange', 'params' => $event_params]);
+
+        $admin -> tfa_token = $token;
+        $admin->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($admin);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffProfileTwoFactorAuthChange', 'params' => $event_params]);
+        $this->di['logger']->info('Two Factor Authentication Enabled');
+        return true;
+    }
+
+    public function disableAdminTwoFactorAuthentication(\Model_Admin $admin){
+        $event_params = [];
+        $event_params['enabled'] = false;
+        $event_params['id'] = $admin->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfileTwoFactorAuthChange', 'params' => $event_params]);
+
+        $admin -> tfa_token = '';
+        $admin->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($admin);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffProfileTwoFactorAuthChange', 'params' => $event_params]);
+        $this->di['logger']->info('Two Factor Authentication Disable');
+        return true;
+    }
+
     public function changeAdminPassword(\Model_Admin $admin, $new_password)
     {
         $event_params = [];
@@ -102,6 +130,7 @@ class Service implements InjectionAwareInterface
             'name' => $identity->name,
             'signature' => $identity->signature,
             'status' => $identity->status,
+            'tfa_token' => $identity->tfa_token,
             'api_token' => $identity->api_token,
             'created_at' => $identity->created_at,
             'updated_at' => $identity->updated_at,
