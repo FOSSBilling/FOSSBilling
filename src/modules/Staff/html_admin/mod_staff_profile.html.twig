@@ -17,6 +17,9 @@
             <a class="nav-link" href="#tab-password" data-bs-toggle="tab">{{ 'Change Password'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-2fa" data-bs-toggle="tab">{{ 'Two Factor Authentication'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-api" data-bs-toggle="tab">{{ 'API'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
@@ -82,7 +85,29 @@
                 </form>
             </div>
         </div>
+        <div class="tab-pane fade" id="tab-2fa" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Two Factor Authentication'|trans }}</h3>
+                <p class="text-muted">{{ 'Enable Two factor authentication for your account'|trans }}</p>
+                <form method="post" action="{{ 'api/admin/profile/change_2fa'|link }}" class="api-form" data-api-jsonp="onAfterKeyUpdate">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Enable Two Factor Authentication'|trans }}</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="enable2FA" type="checkbox" name="status" value="1" {% if staff.tfa != '' %} checked {% endif %}/>
+                                <label class="form-check-label" for="enable2FA">{{ 'Enabled'|trans }}</label>
+                            </div>
+                            {% if staff.tfa != '' %}
+                            Laad 2FA drama
+                            {% endif %}
+                        </div>
+                    </div>
 
+                    <input type="submit" value="{{ 'Generate new key'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
         <div class="tab-pane fade" id="tab-api" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'API Key'|trans }}</h3>
