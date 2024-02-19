@@ -106,6 +106,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'domain-name' => $domain->getName(),
         ];
         $result = $this->_makeRequest('domains/validate-transfer', $params, 'GET');
+
         return strtolower($result) == 'true';
     }
 
@@ -477,6 +478,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $params = [...$optional_params, ...$params];
         $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
+
         return $customer_id;
     }
 
@@ -532,6 +534,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $id = $this->_makeRequest('contacts/add', $contact, 'POST');
+
         return $id;
     }
 
@@ -696,13 +699,14 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
             $this->getLog()->err($e);
+
             throw $e;
         }
 
-        if($result->getContent(false) == 'true'){
+        if ($result->getContent(false) == 'true') {
             return $result->getContent(false);
         }
-        if(is_numeric($result->getContent(false))){
+        if (is_numeric($result->getContent(false))) {
             return $data = $result->getContent(false);
         }
         $json = $result->toArray(false);
@@ -730,6 +734,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
+
         return $json;
     }
 
@@ -974,28 +979,28 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id];
     }
 
-   private function _getContact($contact, $customer_id, $type = 'Contact')
-   {
-       try {
-           $params = [
-               'customer-id' => $customer_id,
-               'no-of-records' => 20,
-               'page-no' => 1,
-               'status' => 'Active',
-               'type' => $type,
-           ];
-           $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
-           if ($result['recsonpage'] < 1) {
-               throw new Registrar_Exception('Contact not found');
-           }
-           $existing_contact_id = $result['result'][0]['entity.entityid'];
-           $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
-       } catch (Registrar_Exception $e) {
-           $this->getLog()->info($e->getMessage());
-       }
+    private function _getContact($contact, $customer_id, $type = 'Contact')
+    {
+        try {
+            $params = [
+                'customer-id' => $customer_id,
+                'no-of-records' => 20,
+                'page-no' => 1,
+                'status' => 'Active',
+                'type' => $type,
+            ];
+            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
+            if ($result['recsonpage'] < 1) {
+                throw new Registrar_Exception('Contact not found');
+            }
+            $existing_contact_id = $result['result'][0]['entity.entityid'];
+            $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
+        } catch (Registrar_Exception $e) {
+            $this->getLog()->info($e->getMessage());
+        }
 
-       return $this->_makeRequest('contacts/add', $contact, 'POST');
-   }
+        return $this->_makeRequest('contacts/add', $contact, 'POST');
+    }
 
     private function getCARegistrantAgreementVersion()
     {

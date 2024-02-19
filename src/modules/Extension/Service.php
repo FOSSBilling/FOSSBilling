@@ -147,15 +147,17 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($installed as $im) {
-            $manifest = json_decode($im['manifest'], 1);
-            if (!is_array($manifest)) {
-                error_log('Error decoding module json file. ' . $im['name']);
+            $m = $this->di['mod']($im['name']);
+
+            try {
+                $manifest = $m->getManifest();
+            } catch (\Exception $e) {
+                error_log('Error while decoding the manifest file for ' . $im['name'] . ' : ' . $e->getMessage());
 
                 continue;
             }
-            $m = $this->di['mod']($im['name']);
-            $manifest['version'] = $im['version'];
 
+            $manifest['version'] = $im['version'];
             $manifest['status'] = $im['status'];
             if ($im['type'] == 'mod' && $im['status'] == 'installed') {
                 $manifest['has_settings'] = $m->hasSettingsPage();
@@ -354,7 +356,6 @@ class Service implements InjectionAwareInterface
                 $manifest = $mod->getManifest();
                 $this->installModule($ext);
                 $ext->version = $manifest['version'];
-                $ext->manifest = json_encode($manifest);
                 $result['redirect'] = $mod->hasAdminController();
                 $result['has_settings'] = $mod->hasSettingsPage();
 
@@ -570,7 +571,6 @@ class Service implements InjectionAwareInterface
             $ext->type = $data['type'];
             $ext->version = null;
             $ext->status = 'deactivated';
-            $ext->manifest = null;
             $ext_id = $this->di['db']->store($ext);
         }
         $ext_id ??= $ext->id;
