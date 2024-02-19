@@ -36,7 +36,7 @@
                 {% else %}
                 {% set params = guest.extension_settings({ 'ext': 'mod_staff' }) %}
                     <h2 class="h2 text-center mb-4">{{ 'Log into your account' | trans }}</h2>
-                    <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ redirect_uri|default('/')|alink }}">
+                    <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-jsonp="onAfterLogin" data-api-redirect="{{ redirect_uri|default('/')|alink }}" id="login-form">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3">
                             <label class="form-label" for="inputEmail">{{ 'Email' | trans }}</label>
@@ -66,6 +66,17 @@
                                 placeholder="{{ 'Enter your password' | trans }}"
                                 required>
                         </div>
+                        <div class="mb-3" id="showtfwa" style="display:none;">
+                            <label class="form-label" for="inputToken">
+                                {{ '2FA Token' | trans }}
+                            </label>
+                            <input class="form-control"
+                                id="inputToken"
+                                type="text"
+                                name="token"
+                                placeholder="{{ 'Enter 2FA Token' | trans }}"
+                                >
+                        </div>
                         <div class="form-footer">
                             <button class="btn btn-primary w-100" type="submit">{{ 'Login' | trans }}</button>
                         </div>
@@ -75,4 +86,16 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block js %}
+<script>
+    function onAfterLogin(result) {
+        if(result.tfa == 'required'){
+            document.getElementById('showtfwa').style="";
+            return false;
+        }else{
+            window.location = document.getElementById('login-form').getAttribute("data-api-redirect");
+        }
+    }
+</script>
 {% endblock %}

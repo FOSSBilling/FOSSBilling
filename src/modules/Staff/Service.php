@@ -11,6 +11,7 @@
 namespace Box\Mod\Staff;
 
 use FOSSBilling\InjectionAwareInterface;
+use RobThree\Auth\TwoFactorAuth;
 
 class Service implements InjectionAwareInterface
 {
@@ -68,7 +69,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function login($email, $password, $ip)
+    public function login($email, $password, $ip, $token = '')
     {
         $event_params = [];
         $event_params['email'] = $email;
@@ -84,6 +85,16 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->id, 'ip' => $ip]]);
+        if($model -> tfa_token != NULL){
+            if($token == ''){
+                return ['tfa' => 'required'];
+            }else{
+                $tfa = new TwoFactorAuth();
+                if( !$tfa -> verifyCode($model -> tfa_token, $token)){
+                    throw new \FOSSBilling\InformationException('Invalid token', null, 403);
+                }
+            }
+        }
 
         $result = [
             'id' => $model->id,

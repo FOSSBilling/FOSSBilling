@@ -80,8 +80,7 @@ class Guest extends \Api_Abstract
                 }
             }
         }
-
-        $result = $this->getService()->login($data['email'], $data['password'], $this->getIp());
+        $result = $this->getService()->login($data['email'], $data['password'], $this->getIp(), $data['token']);
         $this->di['session']->delete('redirect_uri');
 
         return $result;
