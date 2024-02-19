@@ -365,11 +365,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
                 $this->executeSql($q);
             },
-            40 => function () {
-                // Added `passwordLength` field to server managers
-                $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
-                $this->executeSql($q);
-            },
             41 => function () {
                 // Added tfa_token field to admin table for Two Factor Auth Support
                 $q = 'ALTER TABLE `admin` ADD `tfa_token` VARCHAR(32) NOT NULL AFTER `status`;';
