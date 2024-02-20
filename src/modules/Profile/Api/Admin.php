@@ -138,6 +138,9 @@ class Admin extends \Api_Abstract
             'verify_token' => 'Token is required',
             'tfa_token' => 'Secret is required'
         ];
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
+
         $staff = $this->getIdentity();
 
         if (!$this->di['password']->verify($data['password'], $staff->pass)) {
@@ -148,7 +151,7 @@ class Admin extends \Api_Abstract
             $this->getService()->invalidateSessions();
             return $this->getService()->enableAdminTwoFactorAuthentication($staff, $data['tfa_token']);
         }else{
-            throw new \FOSSBilling\InformationException('Unable to verify token');
+            throw new \FOSSBilling\InformationException('Unable to verify Two Factor Autenenticaion token');
         }
 
 
@@ -166,6 +169,9 @@ class Admin extends \Api_Abstract
         $required = [
             'password' => 'Password required',
         ];
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
+
         $staff = $this->getIdentity();
 
         if (!$this->di['password']->verify($data['password'], $staff->pass)) {
@@ -176,7 +182,6 @@ class Admin extends \Api_Abstract
     }
 
     public function get_qr(){
-        $staff = $this->getIdentity();
         $tfa = new TwoFactorAuth();
         //default = 80 we use 160 instead
         $token = $tfa->createSecret(160);
