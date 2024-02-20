@@ -151,7 +151,7 @@ class Admin extends \Api_Abstract
             $this->getService()->invalidateSessions();
             return $this->getService()->enableAdminTwoFactorAuthentication($staff, $data['tfa_token']);
         }else{
-            throw new \FOSSBilling\InformationException('Unable to verify Two Factor Autenenticaion token');
+            throw new \FOSSBilling\InformationException('Unable to verify Two Factor Authentication token');
         }
 
 

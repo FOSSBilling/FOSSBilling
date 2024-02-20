@@ -91,7 +91,7 @@ class Service implements InjectionAwareInterface
             }else{
                 $tfa = new TwoFactorAuth();
                 if( !$tfa -> verifyCode($model -> tfa_token, $token)){
-                    throw new \FOSSBilling\InformationException('Invalid Two Factor Autenenticaion token', null, 403);
+                    throw new \FOSSBilling\InformationException('Invalid Two Factor Authentication token', null, 403);
                 }
             }
         }
