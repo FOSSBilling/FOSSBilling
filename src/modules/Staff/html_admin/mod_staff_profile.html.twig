@@ -193,7 +193,6 @@
         })
     }
     function getQrCode(){
-        console.log(document.getElementById('enable2FA').checked);
         document.querySelectorAll('.qrcode').forEach((div) => {
         div.style=""
         });
@@ -204,7 +203,6 @@
                 img.src = response.qrcode;
                 document.getElementById('qrcode').append(img);
             }, function(error) {
-                console.log(response);
             }, false);
         }else{
             document.querySelectorAll('.qrcode').forEach((div) => {

@@ -96,7 +96,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function change_password($data)
     {
@@ -129,7 +129,7 @@ class Admin extends \Api_Abstract
     *
     * @return bool
     *
-    * @throws \FOSSBilling\Exception
+    * @throws \FOSSBilling\InformationException
     */
 
     public function enable_2fa($data){
@@ -162,7 +162,7 @@ class Admin extends \Api_Abstract
     *
     * @return bool
     *
-    * @throws \FOSSBilling\Exception
+    * @throws \FOSSBilling\InformationException
     */
 
     public function disable_2fa($data){
