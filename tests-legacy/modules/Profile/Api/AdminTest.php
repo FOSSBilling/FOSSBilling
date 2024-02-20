@@ -32,6 +32,7 @@ class AdminTest extends \BBTestCase
             'name' => $model->name,
             'signature' => $model->signature,
             'status' => $model->status,
+            'tfa_token' => null,
             'api_token' => null,
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,

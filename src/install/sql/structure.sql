@@ -108,6 +108,7 @@ CREATE TABLE `admin` (
   `signature` varchar(255) DEFAULT NULL,
   `protected` tinyint(1) DEFAULT '0',
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
+  `tfa_token` varchar(32) DEFAULT NULL,
   `api_token` varchar(128) DEFAULT NULL,
   `permissions` text,
   `created_at` datetime DEFAULT NULL,

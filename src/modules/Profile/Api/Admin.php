@@ -14,6 +14,7 @@
  */
 
 namespace Box\Mod\Profile\Api;
+use RobThree\Auth\TwoFactorAuth;
 
 class Admin extends \Api_Abstract
 {
@@ -34,6 +35,7 @@ class Admin extends \Api_Abstract
      *		[name] => Demo Administrator
      *		[signature] => Sincerely Yours, Demo Administrator
      * 		[status] => active
+     *    [tfa_token] => token_used_for_verification
      *		[api_token] => 29baba87f1c120f1b7fc6b0139167003
      *		[created_at] => 1310024416
      *		[updated_at] => 1310024416
@@ -94,7 +96,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     public function change_password($data)
     {
@@ -120,6 +122,72 @@ class Admin extends \Api_Abstract
         $this->getService()->invalidateSessions();
 
         return $this->getService()->changeAdminPassword($staff, $data['new_password']);
+    }
+
+    /**
+    * Enable 2FA for currently logged in staff member
+    *
+    * @return bool
+    *
+    * @throws \FOSSBilling\InformationException
+    */
+
+    public function enable_2fa($data){
+        $required = [
+            'password' => 'Password required',
+            'verify_token' => 'Token is required',
+            'tfa_token' => 'Secret is required'
+        ];
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
+
+        $staff = $this->getIdentity();
+
+        if (!$this->di['password']->verify($data['password'], $staff->pass)) {
+            throw new \FOSSBilling\InformationException('Password incorrect');
+        }
+        $tfa = new TwoFactorAuth();
+        if( $tfa -> verifyCode($data['tfa_token'], $data['token'])){
+            $this->getService()->invalidateSessions();
+            return $this->getService()->enableAdminTwoFactorAuthentication($staff, $data['tfa_token']);
+        }else{
+            throw new \FOSSBilling\InformationException('Unable to verify Two Factor Authentication token');
+        }
+
+
+    }
+
+    /**
+    * Disable 2FA for currently logged in staff member
+    *
+    * @return bool
+    *
+    * @throws \FOSSBilling\InformationException
+    */
+
+    public function disable_2fa($data){
+        $required = [
+            'password' => 'Password required',
+        ];
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
+
+        $staff = $this->getIdentity();
+
+        if (!$this->di['password']->verify($data['password'], $staff->pass)) {
+            throw new \FOSSBilling\InformationException('Password incorrect');
+        }
+        $this->getService()->invalidateSessions();
+        return $this->getService()->disableAdminTwoFactorAuthentication($staff);
+    }
+
+    public function get_qr(){
+        $tfa = new TwoFactorAuth();
+        //default = 80 we use 160 instead
+        $token = $tfa->createSecret(160);
+        $qrcode = $tfa->getQRCodeImageAsDataUri(SYSTEM_URL, $token);
+        $data = ['token' => $token, 'qrcode' => $qrcode];
+        return $data;
     }
 
     /**

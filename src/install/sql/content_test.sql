@@ -33,9 +33,9 @@
 LOCK TABLES `admin` WRITE;
 /*!40000 ALTER TABLE `admin` DISABLE KEYS */;
 
-INSERT INTO `admin` (`id`, `role`, `admin_group_id`, `email`, `pass`, `salt`, `name`, `signature`, `protected`, `status`, `api_token`, `permissions`, `created_at`, `updated_at`)
+INSERT INTO `admin` (`id`, `role`, `admin_group_id`, `email`, `pass`, `salt`, `name`, `signature`, `protected`, `status`,`tfa_token`, `api_token`, `permissions`, `created_at`, `updated_at`)
 VALUES
-	(1,'admin',1,'admin@fossbilling.org','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'Demo Administrator','Sincerely Yours, Demo Administrator',1,'active','644846a924e9f4ca76f04f39b3f9c8ac',NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(1,'admin',1,'admin@fossbilling.org','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'Demo Administrator','Sincerely Yours, Demo Administrator',1,'active',NULL,'644846a924e9f4ca76f04f39b3f9c8ac',NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -480,7 +480,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','39',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(1,'last_patch','41',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(2,'company_name','FOSSBilling demo',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,'company_email','demo@fossbilling.org',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
