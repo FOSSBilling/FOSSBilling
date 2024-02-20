@@ -365,6 +365,11 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
                 $this->executeSql($q);
             },
+            41 => function () {
+                // Remove the  `manifest` column from the extensions table since it's no longer used
+                $q = 'ALTER TABLE extension DROP COLUMN manifest;';
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

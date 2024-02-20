@@ -160,12 +160,12 @@ UNLOCK TABLES;
 LOCK TABLES `extension` WRITE;
 /*!40000 ALTER TABLE `extension` DISABLE KEYS */;
 
-INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`, `manifest`)
+INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`)
 VALUES
-    (1,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\",\"author\":\"FOSSBilling\",\"author_url\":\"http:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/News\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-    (2,'mod','branding','installed','0.0.1','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"Show your support by voluntarily displaying references to FOSSBilling.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\",\"license\":\"https:\\/\\/github.com\\/FOSSBilling\\/FOSSBilling\\/blob\\/main\\/LICENSE\",\"version\":\"0.0.1\",\"icon_url\":\"\\/modules\\/Branding\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-    (3,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Redirect\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}'),
-    (4,'mod','wysiwyg','installed','1.0.0','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"Wysiwyg\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\\/\\/fossbilling.org\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"license\":\"N\\/A\",\"version\":\"1.0.0\",\"icon_url\":\"\\/modules\\/Wysiwyg\\/icon.svg\",\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
+    (1,'mod','news','installed','1.0.0'),
+    (2,'mod','branding','installed','0.0.1'),
+    (3,'mod','redirect','installed','1.0.0'),
+    (4,'mod','wysiwyg','installed','1.0.0');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -480,7 +480,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','39',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(1,'last_patch','41',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(2,'company_name','FOSSBilling demo',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,'company_email','demo@fossbilling.org',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),

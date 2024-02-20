@@ -10,6 +10,7 @@
  */
 
 use FOSSBilling\Config;
+use Symfony\Component\Filesystem\Path;
 
 class Box_Mod
 {
@@ -66,7 +67,7 @@ class Box_Mod
 
     public function hasManifest()
     {
-        return file_exists($this->_getModPath() . 'manifest.json');
+        return file_exists(Path::normalize($this->_getModPath() . 'manifest.json'));
     }
 
     public function getManifest()
@@ -74,11 +75,13 @@ class Box_Mod
         if (!$this->hasManifest()) {
             throw new FOSSBilling\Exception('Module :mod manifest file is missing', [':mod' => $this->mod], 5897);
         }
-        $file = $this->_getModPath() . 'manifest.json';
-        $json = json_decode(file_get_contents($file), true);
-        if (empty($json)) {
+
+        $contents = file_get_contents(Path::normalize($this->_getModPath() . 'manifest.json'));
+        if (!json_validate($contents)) {
             throw new FOSSBilling\Exception('Module :mod manifest file is invalid. Check file syntax and permissions.', [':mod' => $this->mod]);
         }
+
+        $json = json_decode($contents, true);
 
         // default module info if some fields are missing
         $info = [
