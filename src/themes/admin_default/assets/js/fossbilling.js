@@ -194,6 +194,9 @@ globalThis.bb = {
               return bb._afterComplete(formElement, result);
             },
             function (error) {
+              buttons.forEach(function (button) {
+                button.setAttribute("disabled", "false");
+              });
               FOSSBilling.message(`${error.message} (${error.code})`, "error");
             }
           );
