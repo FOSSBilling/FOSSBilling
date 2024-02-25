@@ -155,7 +155,7 @@ abstract class Payment_AdapterAbstract
      *
      * @param string $param the parameter name to retrieve from the config
      *
-     * @return mixed|null The associated config parameter or null if its not defined
+     * @return mixed|null The associated config parameter or null if it's not defined
      */
     public function getParam($param)
     {
