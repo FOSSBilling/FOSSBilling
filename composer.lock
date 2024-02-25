@@ -2935,16 +2935,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v13.11.0",
+            "version": "v13.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "d92a95bd61be5d3141d86986c3b454065f9fcc13"
+                "reference": "8052da9058caae10c7297f85821f652b38e31d85"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/d92a95bd61be5d3141d86986c3b454065f9fcc13",
-                "reference": "d92a95bd61be5d3141d86986c3b454065f9fcc13",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/8052da9058caae10c7297f85821f652b38e31d85",
+                "reference": "8052da9058caae10c7297f85821f652b38e31d85",
                 "shasum": ""
             },
             "require": {
@@ -2988,9 +2988,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v13.11.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v13.12.0"
             },
-            "time": "2024-02-16T00:23:50+00:00"
+            "time": "2024-02-22T22:19:58+00:00"
         },
         {
             "name": "symfony/asset",
