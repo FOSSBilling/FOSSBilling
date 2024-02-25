@@ -203,7 +203,7 @@ class ClientTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Order id is required');
+        $this->expectExceptionMessage('Order ID is required');
         $this->api->_getService($data);
     }
 }

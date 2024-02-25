@@ -459,7 +459,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Can not remove product which has active orders.');
+        $this->expectExceptionMessage('Cannot remove product which has active orders.');
         $this->service->deleteProduct($model);
     }
 
@@ -563,7 +563,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Can not remove product category with products');
+        $this->expectExceptionMessage('Cannot remove product category with products');
         $this->service->removeProductCategory($modelProductCategory);
     }
 

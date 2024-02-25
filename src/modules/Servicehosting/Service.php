@@ -311,7 +311,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
-            throw new InformationException('Account ip is missing or is invalid');
+            throw new InformationException('Account IP address is missing or is invalid');
         }
 
         $ip = $data['ip'];
@@ -335,7 +335,7 @@ class Service implements InjectionAwareInterface
             !isset($data['tld']) || empty($data['tld'])
             || !isset($data['sld']) || empty($data['sld'])
         ) {
-            throw new InformationException('Domain sld or tld is missing');
+            throw new InformationException('Domain SLD or TLD is missing');
         }
 
         $sld = $data['sld'];
@@ -835,7 +835,7 @@ class Service implements InjectionAwareInterface
         $id = $model->id;
         $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
         if ($serviceHosting) {
-            throw new InformationException('Can not remove hosting plan which has active accounts');
+            throw new InformationException('Cannot remove hosting plan which has active accounts');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted hosting plan %s', $id);

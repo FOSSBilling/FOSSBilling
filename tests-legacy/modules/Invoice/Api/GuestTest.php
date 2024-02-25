@@ -160,7 +160,7 @@ class GuestTest extends \BBTestCase
 
         $data['hash'] = md5(1);
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Paid Invoice can not be modified');
+        $this->expectExceptionMessage('Paid Invoice cannot be modified');
         $this->api->update($data);
     }
 

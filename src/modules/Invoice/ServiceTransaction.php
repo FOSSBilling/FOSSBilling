@@ -79,11 +79,11 @@ class ServiceTransaction implements InjectionAwareInterface
         $skip_validation = isset($data['skip_validation']) ? (bool) $data['skip_validation'] : false;
         if (!$skip_validation) {
             if (!isset($data['bb_invoice_id'])) {
-                throw new \FOSSBilling\InformationException('Transaction invoice id is missing');
+                throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');
             }
 
             if (!isset($data['bb_gateway_id'])) {
-                throw new \FOSSBilling\InformationException('Payment gateway id is missing');
+                throw new \FOSSBilling\InformationException('Payment gateway ID is missing');
             }
             $this->di['db']->getExistingModelById('Invoice', $data['bb_invoice_id'], 'Invoice was not found');
             $this->di['db']->getExistingModelById('PayGateway', $data['bb_gateway_id'], 'Gateway was not found');
@@ -353,7 +353,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $gtw = $this->di['db']->load('PayGateway', $tx->gateway_id);
         if (!$gtw instanceof \Model_PayGateway) {
-            throw new \FOSSBilling\Exception('Can not handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
+            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
         }
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
@@ -473,7 +473,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $gtw = $this->di['db']->load('PayGateway', $tx->gateway_id);
         if (!$gtw instanceof \Model_PayGateway) {
-            throw new \FOSSBilling\Exception('Can not handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
+            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
         }
 
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
@@ -596,7 +596,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->_validateApprovedTransaction($tx);
 
         if (empty($tx->s_id)) {
-            throw new \FOSSBilling\Exception('Can not create subscription. Subscription id from payment gateway was not received');
+            throw new \FOSSBilling\Exception('Cannot create subscription. Subscription ID from payment gateway was not received');
         }
 
         $invoice = $this->di['db']->load('Invoice', $tx->invoice_id);
@@ -675,7 +675,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         // do not debit negative or zero amount
         if ($tx->amount < 0) {
-            throw new \FOSSBilling\Exception('Can not add negative amount to client balance for debit transaction');
+            throw new \FOSSBilling\Exception('Cannot add negative amount to client balance for debit transaction');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');

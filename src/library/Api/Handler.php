@@ -72,7 +72,7 @@ final class Api_Handler implements InjectionAwareInterface
             $staff_service = $this->di['mod_service']('Staff');
             if (!$staff_service->hasPermission($this->identity, $mod)) {
                 if ($this->_acl_exception) {
-                    throw new FOSSBilling\Exception('You do not have access to :mod module', [':mod' => $mod], 725);
+                    throw new FOSSBilling\Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
                 } else {
                     if (DEBUG) {
                         error_log('You do not have access to ' . $mod . ' module');
@@ -88,7 +88,7 @@ final class Api_Handler implements InjectionAwareInterface
         $api = new $api_class();
 
         if (!$api instanceof Api_Abstract) {
-            throw new FOSSBilling\Exception('Api class must be instance of Api_Abstract', null, 730);
+            throw new FOSSBilling\Exception('Api class must be an instance of Api_Abstract', null, 730);
         }
 
         $bb_mod = $this->di['mod']($mod);

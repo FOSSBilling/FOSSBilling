@@ -146,7 +146,7 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
-            throw new \FOSSBilling\InformationException('Email is already registered.');
+            throw new \FOSSBilling\InformationException('This email address is already registered.');
         }
 
         $validator->isPasswordStrong($data['password']);
@@ -236,7 +236,7 @@ class Admin extends \Api_Abstract
             $email = $data['email'];
             $email = $this->di['tools']->validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
-                throw new \FOSSBilling\InformationException('Can not change email. It is already registered.');
+                throw new \FOSSBilling\InformationException('This email address is already registered.');
             }
         }
 

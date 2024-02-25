@@ -388,7 +388,7 @@ class Service implements InjectionAwareInterface
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $ext->name;
                 if ($this->isCoreModule($mod)) {
-                    throw new \FOSSBilling\InformationException('FOSSBilling core modules can not be managed');
+                    throw new \FOSSBilling\InformationException('FOSSBilling core modules cannot be managed');
                 }
 
                 try {
@@ -537,12 +537,12 @@ class Service implements InjectionAwareInterface
         $mod = $this->di['mod']($ext->name);
 
         if ($mod->isCore()) {
-            throw new \FOSSBilling\InformationException('FOSSBilling core modules can not be installed or removed');
+            throw new \FOSSBilling\InformationException('FOSSBilling core modules cannot be installed or removed');
         }
 
         $info = $mod->getManifest();
         if (isset($info['minimum_boxbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_boxbilling_version']) > 0) {
-            throw new \FOSSBilling\InformationException('Module can not be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
+            throw new \FOSSBilling\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
         }
 
         // Allow install module even if no installer exists

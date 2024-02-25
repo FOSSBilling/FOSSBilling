@@ -505,7 +505,7 @@ class Service implements InjectionAwareInterface
     public function delete(\Model_Admin $model)
     {
         if ($model->protected) {
-            throw new \FOSSBilling\InformationException('This administrator account is protected and can not be removed');
+            throw new \FOSSBilling\InformationException('This administrator account is protected and cannot be removed');
         }
 
         if ($model->role === 'admin') {
@@ -668,7 +668,7 @@ class Service implements InjectionAwareInterface
 
         $id = $model->id;
         if ($model->id == 1) {
-            throw new \FOSSBilling\InformationException('Administrators group can not be removed');
+            throw new \FOSSBilling\InformationException('Administrators group cannot be removed');
         }
 
         $sql = 'SELECT count(1)
@@ -676,7 +676,7 @@ class Service implements InjectionAwareInterface
                 WHERE admin_group_id = :id';
         $staffMembersInGroup = $this->di['db']->getCell($sql, ['id' => $model->id]);
         if ($staffMembersInGroup > 0) {
-            throw new \FOSSBilling\InformationException('Can not remove group which has staff members');
+            throw new \FOSSBilling\InformationException('Cannot remove group which has staff members');
         }
 
         $this->di['db']->trash($model);

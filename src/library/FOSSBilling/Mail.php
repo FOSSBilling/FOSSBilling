@@ -155,7 +155,7 @@ class Mail implements InjectionAwareInterface
                 break;
             case 'sendgrid':
                 if (empty($options['sendgrid_key'])) {
-                    throw new InformationException('A Sendgrid API key is required to send emails via Sendgrid');
+                    throw new InformationException('A SendGrid API key is required to send emails via SendGrid');
                 }
                 $dsn = 'sendgrid://' . $options['sendgrid_key'] . '@default';
 

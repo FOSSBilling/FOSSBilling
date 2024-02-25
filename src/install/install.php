@@ -142,7 +142,7 @@ final class FOSSBilling_Installer
 
                     $this->validateAdmin();
 
-                    // Setup default currency
+                    // Set up default currency
                     $this->session->set('currency_code', $_POST['currency_code']);
                     $this->session->set('currency_title', $_POST['currency_title']);
                     $this->session->set('currency_format', $_POST['currency_format'] ?? '${{price}}');

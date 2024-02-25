@@ -113,7 +113,7 @@ class Client extends \Api_Abstract
     protected function _getService($data)
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order id is required');
+            throw new \FOSSBilling\Exception('Order ID is required');
         }
         $orderService = $this->di['mod_service']('order');
 

@@ -105,7 +105,7 @@ class GuestTest extends \BBTestCase
         $client->setService($serviceMock);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Email is already registered. You may want to login instead of registering.');
+        $this->expectExceptionMessage('This email address is already registered.');
         $client->create($data);
     }
 

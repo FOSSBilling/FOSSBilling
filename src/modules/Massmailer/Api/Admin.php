@@ -70,7 +70,7 @@ class Admin extends \Api_Abstract
 
         if (isset($data['from_name'])) {
             if (empty($data['from_name'])) {
-                throw new \FOSSBilling\InformationException('Message from name can not be empty');
+                throw new \FOSSBilling\InformationException('Message from name cannot be empty');
             }
             $model->from_name = $data['from_name'];
         }

@@ -139,7 +139,7 @@ class Service implements InjectionAwareInterface
                         $this->di['validator']->checkRequiredParamsForArray($required, $ac);
 
                         if (!$this->isPeriodEnabledForProduct($addon, $ac['period'])) {
-                            throw new \FOSSBilling\InformationException('Selected billing period is invalid for the selected addon');
+                            throw new \FOSSBilling\InformationException('Selected billing period is invalid for the selected add-on');
                         }
                     }
                     $ac['parent_id'] = $product->id;
@@ -295,7 +295,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($this->isEmptyCart($cart)) {
-            throw new \FOSSBilling\InformationException('Add products to cart before applying promo code');
+            throw new \FOSSBilling\InformationException('Add products to your cart before applying promo code');
         }
 
         $cart->promo_id = $promo->id;
@@ -440,15 +440,15 @@ class Service implements InjectionAwareInterface
         if ($cart->promo_id) {
             $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');
             if (!$this->isClientAbleToUsePromo($client, $promo)) {
-                throw new \FOSSBilling\InformationException('You have already used this promo code. Please remove promo code and checkout again.', null, 9874);
+                throw new \FOSSBilling\InformationException('You have already used this promo code. Please remove the promo code and checkout again.', null, 9874);
             }
 
             if (!$promo instanceof \Model_Promo) {
-                throw new \FOSSBilling\InformationException('Promo code is expired or does not exist');
+                throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');
             }
 
             if (!$this->isPromoAvailableForClientGroup($promo)) {
-                throw new \FOSSBilling\InformationException('Promo can not be applied to your account');
+                throw new \FOSSBilling\InformationException('Promo code cannot be applied to your account');
             }
         }
 
@@ -500,7 +500,7 @@ class Service implements InjectionAwareInterface
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
         if ((is_countable($ca['items']) ? count($ca['items']) : 0) == 0) {
-            throw new \FOSSBilling\InformationException('Can not checkout an empty cart');
+            throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
         }
 
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');

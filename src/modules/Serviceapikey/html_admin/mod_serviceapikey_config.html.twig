@@ -4,7 +4,7 @@
         <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'API key settings updated'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
-                <P>{{ 'Here you can configured the length of the API keys that will be generated. We recommend making this no less than 16 at a minimum. When in doubt, leave this at 32.'|trans }}</p>
+                <P>{{ 'Here you can configure the length of the API keys that will be generated. We recommend making this no less than 16 at a minimum. When in doubt, leave this at 32.'|trans }}</p>
                 <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
                 <div class="col">
                     <input type="number" class="form-control" name="config[length]" value="{{ product.config.length|default(32) }}">

@@ -79,7 +79,7 @@ class Client extends \Api_Abstract
     public function _getService($data)
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order id is required');
+            throw new \FOSSBilling\Exception('Order ID is required');
         }
         $identity = $this->getIdentity();
         $order = $this->di['db']->findOne('ClientOrder', 'id = ? and client_id = ?', [$data['order_id'], $identity->id]);

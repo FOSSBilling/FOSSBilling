@@ -125,7 +125,7 @@ class Client extends \Api_Abstract
         }
 
         if (!$this->getService()->canBeReopened($ticket)) {
-            throw new \FOSSBilling\InformationException('Ticket can not be reopened.');
+            throw new \FOSSBilling\InformationException('Ticket cannot be reopened.');
         }
 
         $result = $this->getService()->ticketReply($ticket, $client, $data['content']);

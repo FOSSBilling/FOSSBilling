@@ -76,7 +76,7 @@ class ExtensionManager implements InjectionAwareInterface
         $releases = $this->getExtension($id)['releases'];
 
         if (empty($releases) || !is_array($releases)) {
-            throw new Exception('Unable to fetch the releases of the extension from the FOSSBilling extension directory.');
+            throw new Exception('An error occurred when fetching the extensions releases');
         }
 
         return $releases;
@@ -99,7 +99,7 @@ class ExtensionManager implements InjectionAwareInterface
         $latest = reset($releases);
 
         if (empty($latest) || !is_array($latest)) {
-            throw new Exception('Unable to fetch the latest release of the extension.');
+            throw new Exception('Unable to fetch the latest extension release.');
         }
 
         return $latest;

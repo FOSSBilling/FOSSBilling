@@ -79,7 +79,7 @@ class Client extends \Api_Abstract
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
         if ($invoice->status == 'paid') {
-            throw new \FOSSBilling\InformationException('Paid Invoice can not be modified');
+            throw new \FOSSBilling\InformationException('Paid Invoice cannot be modified');
         }
 
         $updateParams = [];

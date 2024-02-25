@@ -24,7 +24,7 @@ class Client extends \Api_Abstract
     public function send_file($data)
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order id is required');
+            throw new \FOSSBilling\Exception('Order ID is required');
         }
         $identity = $this->getIdentity();
         $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);

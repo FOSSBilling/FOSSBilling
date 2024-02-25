@@ -81,7 +81,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         ];
 
         $this->expectException(FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Selected billing period is invalid for the selected addon');
+        $this->expectExceptionMessage('Selected billing period is invalid for the selected add-on');
 
         $bool = $this->api_guest->cart_add_item($data);
     }
@@ -465,7 +465,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
 
         $this->assertEquals(4, count($cart['items']));
 
-        $this->api_guest->cart_remove_item(['id' => $cart['items'][1]['id']]); // removing second item from cart. Should remove it's addons as well
+        $this->api_guest->cart_remove_item(['id' => $cart['items'][1]['id']]); // removing second item from cart. Should remove its addons as well
         $cart = $this->api_guest->cart_get();
 
         $this->assertEquals(1, count($cart['items']));

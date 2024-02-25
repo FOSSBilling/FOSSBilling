@@ -515,7 +515,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->rm($model); // will throw \FOSSBilling\Exception because default currency can not be removed
+        $service->rm($model); // will throw \FOSSBilling\Exception because default currency cannot be removed
     }
 
     public function testRm()

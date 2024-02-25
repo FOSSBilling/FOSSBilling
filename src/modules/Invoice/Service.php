@@ -629,7 +629,7 @@ class Service implements InjectionAwareInterface
             case 'negative_invoice':
                 $total = $this->getTotalWithTax($invoice);
                 if ($total <= 0) {
-                    throw new \FOSSBilling\InformationException('Can not refund invoice with negative amount');
+                    throw new \FOSSBilling\InformationException('Cannot refund invoice with negative amount');
                 }
 
                 $new = $this->di['db']->dispense('Invoice');

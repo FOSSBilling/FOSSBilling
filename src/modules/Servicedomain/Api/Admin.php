@@ -240,7 +240,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
-            throw new \FOSSBilling\InformationException('Tld already registered');
+            throw new \FOSSBilling\InformationException('TLD already registered');
         }
 
         return $this->getService()->tldCreate($data);

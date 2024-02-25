@@ -1027,7 +1027,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
-            throw new \FOSSBilling\Exception('Can not cancel ' . $order->status . ' order');
+            throw new \FOSSBilling\Exception('Cannot cancel ' . $order->status . ' order');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);

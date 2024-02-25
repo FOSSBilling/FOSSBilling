@@ -206,7 +206,7 @@ class Update implements InjectionAwareInterface
     {
         $updateBranch = $this->getUpdateBranch();
         if ($updateBranch !== 'preview' && !$this->isUpdateAvailable()) {
-            throw new InformationException('You have latest version of FOSSBilling. You do not need to update.');
+            throw new InformationException('You have the latest version of FOSSBilling. You do not need to update.');
         }
 
         error_log('Started FOSSBilling auto-update script');

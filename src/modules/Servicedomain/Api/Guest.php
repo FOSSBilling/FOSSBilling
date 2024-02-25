@@ -121,7 +121,7 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\InformationException('TLD is not active.');
         }
         if (!$this->getService()->canBeTransferred($tld, $data['sld'])) {
-            throw new \FOSSBilling\InformationException('Domain can not be transferred.');
+            throw new \FOSSBilling\InformationException('Domain cannot be transferred.');
         }
 
         return true;

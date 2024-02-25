@@ -29,7 +29,7 @@ class Client extends \Api_Abstract
 
     public function _getService(array $data)
     {
-        $required = ['order_id' => 'Order id is required'];
+        $required = ['order_id' => 'Order ID is required'];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $client = $this->getIdentity();

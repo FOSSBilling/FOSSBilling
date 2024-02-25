@@ -201,7 +201,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove currency. Default currency can not be removed.
+     * Remove currency. Default currency cannot be removed.
      *
      * @return bool
      *
