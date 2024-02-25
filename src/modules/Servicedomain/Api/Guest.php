@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2022-2023 FOSSBilling
+ * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
