@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2023 FOSSBilling
+ * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -195,7 +195,7 @@ function exceptionHandler(Exception|Error $e)
          */
         $whoops = new Run();
         $prettyPage = new PrettyPageHandler();
-        $prettyPage->setPageTitle('An error ocurred');
+        $prettyPage->setPageTitle('An error occurred');
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
             'Error code' => $e->getCode(),
