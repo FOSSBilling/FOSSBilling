@@ -195,7 +195,7 @@ function exceptionHandler(Exception|Error $e)
          */
         $whoops = new Run();
         $prettyPage = new PrettyPageHandler();
-        $prettyPage->setPageTitle('An error ocurred');
+        $prettyPage->setPageTitle('An error occurred');
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
             'Error code' => $e->getCode(),
