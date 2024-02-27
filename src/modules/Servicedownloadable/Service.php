@@ -278,7 +278,7 @@ class Service implements InjectionAwareInterface
         $filename = $info['filename'];
         $path = $info['path'];
         if (!file_exists($path)) {
-            throw new \FOSSBilling\Exception('File can not be downloaded at the moment. Please contact support', null, 404);
+            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support', null, 404);
         }
         $this->hitDownload($serviceDownloadable);
         $this->sendDownload($filename, $path);

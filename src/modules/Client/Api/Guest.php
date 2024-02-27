@@ -81,7 +81,7 @@ class Guest extends \Api_Abstract
         $email = $this->di['tools']->validateAndSanitizeEmail($email);
         $email = strtolower(trim($email));
         if ($service->clientAlreadyExists($email)) {
-            throw new \FOSSBilling\InformationException('Email is already registered. You may want to login instead of registering.');
+            throw new \FOSSBilling\InformationException('This email address is already registered.');
         }
 
         $client = $service->guestCreateClient($data);

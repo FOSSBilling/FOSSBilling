@@ -417,7 +417,7 @@ class ServiceTest extends \BBTestCase
         $clientService->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Currency can not be changed. Client already have invoices issued.');
+        $this->expectExceptionMessage('Currency cannot be changed. Client already has invoices issued.');
         $clientService->canChangeCurrency($model, $currency);
     }
 
@@ -525,7 +525,7 @@ class ServiceTest extends \BBTestCase
         $clientService = new \Box\Mod\Client\Service();
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Define clients currency before adding funds.');
+        $this->expectExceptionMessage('You must define the client’s currency before adding funds.');
         $clientService->addFunds($modelClient, $amount, $description);
     }
 
@@ -961,7 +961,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Can not remove group with clients');
+        $this->expectExceptionMessage('Cannot remove groups with clients');
         $service->deleteGroup($model);
     }
 
@@ -1122,7 +1122,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Email can not be changed');
+        $this->expectExceptionMessage('Email address cannot be changed');
         $service->canChangeEmail($clientModel, $email);
     }
 

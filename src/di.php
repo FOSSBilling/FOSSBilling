@@ -312,7 +312,7 @@ $di['twig'] = $di->factory(function () use ($di) {
         if (Config::getProperty('i18n.locale', 'en_US') == 'en_US') {
             $dateFormatter = new IntlDateFormatter('en', constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
         } else {
-            throw new FOSSBilling\InformationException('It appears you are trying to use FOSSBilling without the php intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => Config::getProperty('i18n.locale')]);
+            throw new FOSSBilling\InformationException('It appears you are trying to use FOSSBilling without the PHP intl extension enabled. FOSSBilling includes a polyfill for the intl extension, however it does not support :locale. Please enable the intl extension.', [':locale' => Config::getProperty('i18n.locale')]);
         }
     }
 
@@ -522,7 +522,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         // If it's an API request, only allow requests to the "client" and "profile" modules so they can change their email address or resend the confirmation email.
         if (strncasecmp($url, '/api/', strlen('/api/')) === 0) {
             if (strncasecmp($url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp($url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
-                throw new Exception('Please check your mailbox and confirm email address.');
+                throw new Exception('Please check your mailbox and confirm your email address.');
             }
         } elseif (strncasecmp($url, '/client', strlen('/client')) !== 0) {
             // If they aren't attempting to access their profile, redirect them to it.

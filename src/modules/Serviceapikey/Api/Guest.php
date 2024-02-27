@@ -24,7 +24,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Gets the information tied to an API key such as it's validity and any custom parameters tied to it.
+     * Gets the information tied to an API key such as its validity and any custom parameters tied to it.
      *
      * @param array $data
      *                    - 'key' What API key to check & get custom parameters for

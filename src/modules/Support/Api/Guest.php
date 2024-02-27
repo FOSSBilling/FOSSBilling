@@ -81,7 +81,7 @@ class Guest extends \Api_Abstract
     {
         $required = [
             'hash' => 'Public ticket hash required',
-            'message' => 'Message is required and can not be blank',
+            'message' => 'Message is required and cannot be blank',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 

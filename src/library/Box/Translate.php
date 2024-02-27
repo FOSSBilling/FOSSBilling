@@ -52,7 +52,7 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
         $locale = $this->getLocale();
         if (empty($locale)) {
             // We are using the standard PHP Exception here rather than our custom one as ours requires translations to be setup, which we cannot do without the locale being defined.
-            throw new Exception('Unable to setup FOSSBilling translation functionality, locale was undefined.');
+            throw new Exception('Unable to set up FOSSBilling translation functionality, locale was undefined.');
         }
 
         $codeset = 'UTF-8';

@@ -23,7 +23,7 @@
                     {% for ip in service.ips %}
                     {{ ip }} <br/>
                     {% else %}
-                    {{ 'All ips'|trans }}
+                    {{ 'All IPs'|trans }}
                     {% endfor %}
                 </td>
             </tr>
@@ -62,7 +62,7 @@
             {% if service.validate_path %}
             <tr>
                 <td>
-                    {{ 'Valid Install paths'|trans }}
+                    {{ 'Valid Installation Paths'|trans }}
                 </td>
                 <td>
                     {% for path in service.paths %}

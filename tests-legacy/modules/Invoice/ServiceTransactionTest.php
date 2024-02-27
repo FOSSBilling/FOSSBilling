@@ -155,7 +155,7 @@ class ServiceTransactionTest extends \BBTestCase
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Transaction invoice id is missing');
+        $this->expectExceptionMessage('Transaction invoice ID is missing');
         $this->service->create($data);
     }
 
@@ -176,7 +176,7 @@ class ServiceTransactionTest extends \BBTestCase
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Payment gateway id is missing');
+        $this->expectExceptionMessage('Payment gateway ID is missing');
         $this->service->create($data);
     }
 

@@ -189,7 +189,7 @@ class Admin extends \Api_Abstract
     {
         $updater = $this->di['updater'];
         if ($updater->getUpdateBranch() !== 'preview' && !$updater->isUpdateAvailable()) {
-            throw new \FOSSBilling\InformationException('You have latest version of FOSSBilling. You do not need to update.');
+            throw new \FOSSBilling\InformationException('You have the latest version of FOSSBilling. You do not need to update.');
         }
 
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');

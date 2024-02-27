@@ -116,7 +116,7 @@ class CentralAlerts implements InjectionAwareInterface
         } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
             error_log($e->getMessage());
 
-            throw new Exception('Unable to fetch alerts from Central Alerts System. See error log for more information.', null);
+            throw new Exception('Unable to fetch alerts from Central Alerts System. See the error log for more information.', null);
         }
 
         if (isset($json['error']) && is_array($json['error'])) {

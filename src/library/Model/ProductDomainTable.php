@@ -251,6 +251,6 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     public function rm(Model_Product $product): never
     {
-        throw new FOSSBilling\Exception('Domain product can not be removed.');
+        throw new FOSSBilling\Exception('Domain product cannot be removed.');
     }
 }

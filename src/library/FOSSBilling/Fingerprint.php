@@ -104,7 +104,7 @@ class Fingerprint
      * This function creates a baseline "score" with the total of properties in the fingerprint. The final score must be at least half of the baseline.
      *      - Each property can define a weight. For example, if the IP address doesn't match and the weight is set to 3, 3 will be selected from the total.
      *          - This means with a total of 9 properties, the IP address being wrong would effectively be weighted as 3 properties and only two more differing properties will make it fail the check.
-     *      - If any property is found in one of the fingerprints and not the other, the baseline is incremented and the final score is decreased by it's weight.
+     *      - If any property is found in one of the fingerprints and not the other, the baseline is incremented and the final score is decreased by its weight.
      *
      * @return bool `true` if the fingerprint passes, `false` if it's considered invalid
      */
@@ -174,7 +174,7 @@ class Fingerprint
             $percentageWrong = round($percentageWrong * 100, 3);
             $failureThreshold = round($failureThreshold * 100, 3);
 
-            error_log("The session with the ID '$ID' failed it's fingerprint check with a (weighted) difference of $percentageWrong% compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
+            error_log("The session with the ID '$ID' failed its fingerprint check with a (weighted) difference of $percentageWrong% compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
             $output = PHP_EOL;
             foreach ($differing as $name) {
                 $output .= '    ' . $name . PHP_EOL;

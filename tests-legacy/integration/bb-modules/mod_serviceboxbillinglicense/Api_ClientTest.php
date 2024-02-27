@@ -37,7 +37,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $clientApi->setDi($this->di);
 
         $this->expectException(FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Order id is required');
+        $this->expectExceptionMessage('Order ID is required');
 
         $bool = $clientApi->reset($data);
     }

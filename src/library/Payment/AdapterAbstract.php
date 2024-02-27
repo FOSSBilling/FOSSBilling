@@ -48,14 +48,14 @@ abstract class Payment_AdapterAbstract
          * Redirect client after successful payment, usually to invoice
          */
         if (!$this->getParam('return_url')) {
-            throw new Payment_Exception('Return URL for payment gateway was not set', [], 6001);
+            throw new Payment_Exception('Return URL for the payment gateway was not set', [], 6001);
         }
 
         /*
          * URL to redirect client if payment process was canceled
          */
         if (!$this->getParam('cancel_url')) {
-            throw new Payment_Exception('Cancel URL for payment gateway was not set', [], 6002);
+            throw new Payment_Exception('Cancel URL for the payment gateway was not set', [], 6002);
         }
 
         /*
@@ -63,7 +63,7 @@ abstract class Payment_AdapterAbstract
          * to inform FOSSBilling about payment
          */
         if (!$this->getParam('notify_url')) {
-            throw new Payment_Exception('IPN Notification URL for payment gateway was not set', [], 6003);
+            throw new Payment_Exception('IPN Notification URL for the payment gateway was not set', [], 6003);
         }
 
         /*
@@ -73,7 +73,7 @@ abstract class Payment_AdapterAbstract
          * as IPN data, and client gets redirected to invoice page.
          */
         if (!$this->getParam('redirect_url')) {
-            throw new Payment_Exception('IPN redirect URL for payment gateway was not set', [], 6004);
+            throw new Payment_Exception('IPN redirect URL for the payment gateway was not set', [], 6004);
         }
 
         $this->init();

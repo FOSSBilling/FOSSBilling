@@ -419,7 +419,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         if ($orderService->productHasOrders($product)) {
-            throw new \FOSSBilling\InformationException('Can not remove product which has active orders.');
+            throw new \FOSSBilling\InformationException('Cannot remove product which has active orders.');
         }
         $id = $product->id;
         $this->di['db']->trash($product);
@@ -478,7 +478,7 @@ class Service implements InjectionAwareInterface
     {
         $model = $this->di['db']->findOne('Product', 'product_category_id = :category_id', [':category_id' => $category->id]);
         if ($model instanceof \Model_Product) {
-            throw new \FOSSBilling\InformationException('Can not remove product category with products');
+            throw new \FOSSBilling\InformationException('Cannot remove product category with products');
         }
         $id = $category->id;
         $this->di['db']->trash($category);

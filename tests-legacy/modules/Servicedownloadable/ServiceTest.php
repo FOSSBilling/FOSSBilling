@@ -292,7 +292,7 @@ class ServiceTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(404);
-        $this->expectExceptionMessage('File can not be downloaded at the moment. Please contact support');
+        $this->expectExceptionMessage('File cannot be downloaded at the moment. Please contact support');
         $this->service->sendFile($serviceDownloadableModel);
     }
 }

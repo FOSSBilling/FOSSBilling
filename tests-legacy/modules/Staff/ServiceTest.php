@@ -1022,7 +1022,7 @@ class ServiceTest extends \BBTestCase
         $service = new Service();
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('This administrator account is protected and can not be removed');
+        $this->expectExceptionMessage('This administrator account is protected and cannot be removed');
         $service->delete($adminModel);
     }
 
@@ -1381,7 +1381,7 @@ class ServiceTest extends \BBTestCase
             ->method('hasPermission')->willReturn(true);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Administrators group can not be removed');
+        $this->expectExceptionMessage('Administrators group cannot be removed');
         $serviceMock->deleteGroup($adminGroupModel);
     }
 
@@ -1407,7 +1407,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Can not remove group which has staff members');
+        $this->expectExceptionMessage('Cannot remove group which has staff members');
         $serviceMock->deleteGroup($adminGroupModel);
     }
 

@@ -602,7 +602,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Account ip is missing or is invalid');
+        $this->expectExceptionMessage('Account IP address is missing or is invalid');
         $this->service->changeAccountIp($orderModel, $model, $data);
     }
 
@@ -656,7 +656,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Domain sld or tld is missing');
+        $this->expectExceptionMessage('Domain SLD or TLD is missing');
         $this->service->changeAccountDomain($orderModel, $model, $data);
     }
 

@@ -189,13 +189,13 @@
                     <div class="col">
                         <div class="row align-items-center">
                             <div class="col-sm-auto d-flex align-items-center mb-2">
-                                <label>{{ 'Clicking on html element with classname or ID'|trans }}</label>
+                                <label>{{ 'Clicking on an HTML element with the classname or ID'|trans }}</label>
                             </div>
                             <div class="col-5 col-sm-auto d-flex align-items-center mb-2">
                                 <input class="form-control" type="text" name="bind_selector" id="bind_selector" value="{{ params.bind_selector | default('.order-button') }}" placeholder=".order-button">
                             </div>
                             <div class="col-7 col-sm-auto d-flex align-items-center mb-2">
-                                <label>{{ 'will open popup window for'|trans }}</label>
+                                <label>{{ 'will open a popup window for'|trans }}</label>
                             </div>
                             <div class="col-8 col-sm-2 d-flex align-items-center mb-2">
                                 {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products') }}

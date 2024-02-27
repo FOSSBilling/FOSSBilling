@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Wysiwyg settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'WYSIWYG settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,7 +18,7 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Wysiwyg settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'WYSIWYG settings'|trans }}</li>
     </ol>
 {% endblock %}
 
@@ -27,7 +27,7 @@
         <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
             <input type="hidden" name="ext" value="mod_wysiwyg">
             <div class="card-body">
-                <h3 class="card-title">{{ 'Wysiwyg settings'|trans }}</h3>
+                <h3 class="card-title">{{ 'WYSIWYG settings'|trans }}</h3>
                 {% set params = admin.extension_config_get({ 'ext': 'mod_wysiwyg' }) %}
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="row">

@@ -14,7 +14,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         try {
             // do not allow install core extension
             $bool = $this->api_admin->extension_mod_install($data);
-            $this->fail('Core extension can not be installed');
+            $this->fail('Core extension cannot be installed');
         } catch (Box_Exception) {
             $this->assertTrue(true);
         }
@@ -22,7 +22,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         try {
             // do not allow uninstall core extension
             $bool = $this->api_admin->extension_mod_uninstall($data);
-            $this->fail('Core extension can not be uninstalled');
+            $this->fail('Core extension cannot be uninstalled');
         } catch (Box_Exception) {
             $this->assertTrue(true);
         }

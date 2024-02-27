@@ -24,7 +24,7 @@
         <p>Change the <b>config.php</b> file permissions to read-only.</p>
         <pre>chmod 644 {{ config_file_path }}</pre>
 
-        <h3>3) Setup Cron Job</h3>
+        <h3>3) Set up Cron Job</h3>
         <p>Add the following command into your crontab. <a href='https://fossbilling.org/docs/getting-started/apache#setting-up-the-cron-jobs' data-tooltip="Opens in a new tab." target='_blank'>Click here</a> for help.</p>
         <pre>*/5 * * * * php {{ cron_path }}</pre>
 

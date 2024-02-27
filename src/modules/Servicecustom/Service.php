@@ -42,7 +42,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if ($field['readonly'] == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
-                        throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You can not change its value', null, 5468);
+                        throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
                     }
                 }
             }

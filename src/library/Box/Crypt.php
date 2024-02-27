@@ -20,7 +20,7 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
     public function __construct()
     {
         if (!extension_loaded('openssl')) {
-            throw new FOSSBilling\Exception('The PHP openssl extension must be enabled on your server');
+            throw new FOSSBilling\Exception('The PHP OpenSSL extension must be enabled on your server');
         }
     }
 

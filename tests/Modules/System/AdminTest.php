@@ -107,7 +107,7 @@ final class AdminTest extends TestCase
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
 
-        // And since we don't (can't) perform any checks against the custom interface, it should now be in use despite not being valid and as a result the system will be unable to get it's IP address
+        // And since we don't (can't) perform any checks against the custom interface, it should now be in use despite not being valid and as a result the system will be unable to get its IP address
         if ($this->ipLookupWorking()) {
             $result = Request::makeRequest('admin/system/env', ['ip' => true]);
             $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());

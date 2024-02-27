@@ -86,7 +86,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get form data by it's id.
+     * Get form data by its id.
      *
      * @return array
      *
@@ -160,7 +160,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Delete form and it's form fields.
+     * Delete form and its form fields.
      *
      * @return bool
      *

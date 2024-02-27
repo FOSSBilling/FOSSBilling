@@ -194,7 +194,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setService($serviceMock);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Email is already registered.');
+        $this->expectExceptionMessage('This email address is already registered.');
         $admin_Client->create($data);
     }
 
@@ -400,7 +400,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Can not change email. It is already registered.');
+        $this->expectExceptionMessage('This email address is already registered.');
         $admin_Client->update($data);
     }
 

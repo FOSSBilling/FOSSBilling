@@ -66,12 +66,12 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             return $whois->isDomainAvailable($domain->getName());
         }
 
-        throw new Registrar_Exception('Email registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability']);
+        throw new Registrar_Exception(':type: registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability']);
     }
 
     public function isDomaincanBeTransferred(Registrar_Domain $domain): never
     {
-        throw new Registrar_Exception('Email registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain transferability']);
+        throw new Registrar_Exception(':type: registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain transferability']);
     }
 
     public function modifyNs(Registrar_Domain $domain)

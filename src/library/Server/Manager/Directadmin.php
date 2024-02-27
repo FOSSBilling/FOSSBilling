@@ -339,7 +339,7 @@ class Server_Manager_Directadmin extends Server_Manager
         }
 
         if (str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
-            throw new Server_Exception('Unable to assign the Reseller ANY ips. Make sure to have free, un-assigned ips.');
+            throw new Server_Exception('Unable to assign the Reseller ANY IPs. Make sure to have free, unassigned IPs.');
         }
 
         if (str_contains(implode('', $results), 'Error Creating User')) {

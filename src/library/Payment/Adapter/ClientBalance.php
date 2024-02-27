@@ -56,12 +56,12 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
         if (!$this->enoughInBalanceToCoverInvoice($invoiceModel)) {
-            return __trans('Not enough in balance');
+            return __trans('Your account balance is insufficient to cover this invoice.');
         }
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
-            return __trans('It is forbidden to pay a deposit invoice with this gateway');
+            return __trans('You may not pay a deposit invoice with this payment gateway.');
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
@@ -91,7 +91,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
-            throw new Payment_Exception('It is forbidden to pay a deposit invoice with this gateway', [], 303);
+            throw new Payment_Exception('You may not pay a deposit invoice with this payment gateway.', [], 303);
         }
 
         if ($invoice_id) {
@@ -126,7 +126,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
-            throw new Payment_Exception('It is forbidden to pay a deposit invoice with this gateway', null, 302);
+            throw new Payment_Exception('You may not pay a deposit invoice with this payment gateway.', null, 302);
         }
 
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');

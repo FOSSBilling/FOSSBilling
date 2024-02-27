@@ -651,7 +651,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
         if ((is_countable($tickets) ? count($tickets) : 0) > 0) {
-            throw new InformationException('Can not remove helpdesk which has tickets');
+            throw new InformationException('Cannot remove helpdesk which has tickets');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted helpdesk #%s', $id);
@@ -1745,7 +1745,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $articlesCount = $this->di['db']->getCell('SELECT count(*) as cnt FROM support_kb_article WHERE kb_article_category_id = :kb_article_category_id', $bindings);
 
         if ($articlesCount > 0) {
-            throw new InformationException('Can not remove category which has articles');
+            throw new InformationException('Cannot remove category which has articles');
         }
 
         $id = $model->id;

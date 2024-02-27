@@ -124,7 +124,7 @@ class Admin extends \Api_Abstract
      * @optional bool $hidden - product visibility flag
      * @optional bool $stock_control - product stock control flag.
      * @optional bool $allow_quantity_select - client can select product quantity on order form flag
-     * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order can not be placed.
+     * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order cannot be placed.
      *
      * @return bool
      *
@@ -247,7 +247,7 @@ class Admin extends \Api_Abstract
      * @optional bool $hidden - product visibility flag
      * @optional bool $stock_control - product stock control flag.
      * @optional bool $allow_quantity_select - client can select product quantity on order form flag
-     * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order can not be placed.
+     * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order cannot be placed.
      *
      * @return bool
      *

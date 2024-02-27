@@ -137,11 +137,11 @@ class Service implements InjectionAwareInterface
         $text = preg_replace('~[^\-\w]+~', '', $text);
 
         if (is_numeric(substr($text, 0, 1))) {
-            throw new \FOSSBilling\InformationException('Field name can not start with number.', null, 1649);
+            throw new \FOSSBilling\InformationException('Field name cannot start with number.', null, 1649);
         }
 
         if (empty($text)) {
-            throw new \FOSSBilling\InformationException('Field name can not be empty. Please make sure it is not empty and does not contain special characters.', null, 3502);
+            throw new \FOSSBilling\InformationException('Field name cannot be empty. Please make sure it is not empty and does not contain special characters.', null, 3502);
         }
 
         return $text;
