@@ -29,17 +29,62 @@ class SentryHelper
      */
     final public const last_change = '0.6.0';
 
-    // Errors for blacklisted modules are discarded from error reporting
-    private static array $blacklistedModules = [
-        'serviceproxmox', // Remove once it's officially ready for more than just dev work
-        'forum',
-        'servicegoogleworkspace',
-        'servicemulticraft',
+    // A full lost of our own modules which we want to recieve error reports for 
+    private static array $allowedModules = [
+        'activity',
+        'api',
+        'branding',
+        'cart',
+        'client',
+        'cookieconsent',
+        'cron',
+        'currency',
+        'custompages',
+        'dashboard',
+        'email',
+        'embed',
+        'extension',
+        'formbuilder',
+        'hook',
+        'index',
+        'invoice',
+        'massmailer',
+        'news',
+        'notification',
+        'order',
+        'orderbutton',
+        'page',
+        'paidsupport',
+        'product',
+        'profile',
+        'redirect',
+        'seo',
+        'serviceapikey',
+        'servicecustom',
+        'servicedomain',
+        'servicedownloadable',
+        'servicehosting',
+        'servicelicense',
+        'servicemembership',
+        //'serviceproxmox',
+        'spamchecker',
+        'staff',
+        'stats',
+        'support',
+        'system',
+        'theme',
+        'wysiwyg'
     ];
 
-    // Array containing instance IDs that are blacklisted from error reporting and a unix timestamp of when their blacklist expires.
+    // Themes we want to recieve error reports for
+    private static array $allowedThemes = [
+        'admin_default',
+        'huraga'
+    ];
+
+    // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
     private static array $blacklistedInstances = [
-        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => 1_719_829_175,
+        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => '2024-07-01',
     ];
 
     private static string $placeholderFirstHalf = '--replace--this--';
@@ -52,7 +97,8 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
-        $httpClient = new class() implements HttpClientInterface {
+        $httpClient = new class() implements HttpClientInterface
+        {
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
@@ -87,8 +133,11 @@ class SentryHelper
 
             'before_send' => function (Event $event, ?EventHint $hint): ?Event {
                 $module = null;
+                $theme = null;
+
                 if ($hint) {
                     $errorInfo = ErrorPage::getCodeInfo($hint->exception->getCode());
+                    $exceptionPath = $hint->exception->getFile();
 
                     // Skip any errors that aren't supposed to be reported
                     if (!$errorInfo['report']) {
@@ -98,17 +147,25 @@ class SentryHelper
                     // Tag the event with the exception's category.
                     $event->setTag('exception.category', $errorInfo['category']);
 
-                    // Tag the event with the correct module / library
-                    $exceptionPath = $hint->exception->getFile();
+                    // Tag the module name
                     if (str_starts_with($exceptionPath, PATH_MODS)) {
-                        $module = self::getModule($exceptionPath);
+                        $module = self::extractName($exceptionPath, PATH_MODS);
                         $event->setTag('module.name', $module);
-                    } elseif (str_starts_with($exceptionPath, PATH_LIBRARY)) {
+                    }
+
+                    // Tag the theme name
+                    if (str_starts_with($exceptionPath, PATH_THEMES)) {
+                        $theme = self::extractName($exceptionPath, PATH_THEMES);
+                        $event->setTag('theme.name', $theme);
+                    }
+
+                    // Tag the library class.
+                    if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
                         $event->setTag('library.class', self::getLibrary($exceptionPath));
                     }
                 }
 
-                if (self::isBlacklisted($module)) {
+                if (self::dontReport($module, $theme)) {
                     return null;
                 }
 
@@ -144,22 +201,22 @@ class SentryHelper
         \Sentry\init($options);
     }
 
-    private static function getModule(string $exceptionPath)
+    private static function extractName(string $exceptionPath, string $path)
     {
-        $strippedPath = str_replace(PATH_MODS, '', $exceptionPath);
+        $strippedPath = str_replace($path, '', $exceptionPath);
         $level = 0;
-        $module = 'Unknown';
+        $name = 'Unknown';
 
         while ($level <= 10) {
             if (dirname($strippedPath, $level + 1) === DIRECTORY_SEPARATOR) {
-                $module = trim(dirname($strippedPath, $level), DIRECTORY_SEPARATOR);
+                $name = trim(dirname($strippedPath, $level), DIRECTORY_SEPARATOR);
 
                 break;
             }
             ++$level;
         }
 
-        return $module;
+        return $name;
     }
 
     private static function getLibrary(string $exceptionPath)
@@ -168,7 +225,7 @@ class SentryHelper
     }
 
     /**
-     * Tries to guess what type of webserver is being used and tags the Sentry event with it.
+     * Tries to guess what type of webserver is in use
      */
     public static function estimateWebServer(): string
     {
@@ -186,18 +243,25 @@ class SentryHelper
         }
     }
 
-    // Checks if either the module producing the error or the instance ID of this installation is blacklisted
-    public static function isBlacklisted(string $module = null): bool
+    public static function dontReport(string $module = null, string $theme = null): bool
     {
-        if (INSTANCE_ID === 'Unknown' || INSTANCE_ID === 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX') {
+        if (!defined('INSTANCE_ID') || !INSTANCE_ID || INSTANCE_ID === 'Unknown' || INSTANCE_ID === 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX') {
             return true;
         }
 
-        if (in_array(INSTANCE_ID, self::$blacklistedInstances) && self::$blacklistedInstances[INSTANCE_ID] >= time()) {
+        if (in_array(INSTANCE_ID, self::$blacklistedInstances) && strtotime(self::$blacklistedInstances[INSTANCE_ID]) >= time()) {
             return true;
         }
 
-        if (is_string($module) && in_array(strtolower($module), self::$blacklistedModules)) {
+        if (is_string($module) && !in_array(strtolower($module), self::$allowedModules)) {
+            return true;
+        }
+
+        if (is_string($theme) && !in_array(strtolower($theme), self::$allowedThemes)) {
+            return true;
+        }
+
+        if (Version::isPreviewVersion()) {
             return true;
         }
 
