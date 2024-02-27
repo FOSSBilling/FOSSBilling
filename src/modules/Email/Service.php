@@ -201,7 +201,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $sent = false;
 
         if (!$from) {
-            throw new \FOSSBilling\InformationException('The “from” email address cannot be empty');
+            throw new \FOSSBilling\InformationException('The "from" email address cannot be empty');
         }
 
         if (isset($staff)) {
