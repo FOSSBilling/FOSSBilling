@@ -236,7 +236,7 @@ class Service implements InjectionAwareInterface
     public function addFunds(\Model_Client $client, $amount, $description, array $data = [])
     {
         if (!$client->currency) {
-            throw new \FOSSBilling\InformationException('You must define the client’s currency before adding funds.');
+            throw new \FOSSBilling\InformationException('You must define the client\'s currency before adding funds.');
         }
 
         if (!is_numeric($amount)) {

@@ -525,7 +525,7 @@ class ServiceTest extends \BBTestCase
         $clientService = new \Box\Mod\Client\Service();
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('You must define the client’s currency before adding funds.');
+        $this->expectExceptionMessage('You must define the client\'s currency before adding funds.');
         $clientService->addFunds($modelClient, $amount, $description);
     }
 
