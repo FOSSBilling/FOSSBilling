@@ -29,7 +29,7 @@ class SentryHelper
      */
     final public const last_change = '0.6.0';
 
-    // A full lost of our own modules which we want to recieve error reports for 
+    // A full lost of our own modules which we want to receive error reports for 
     private static array $allowedModules = [
         'activity',
         'api',
@@ -76,7 +76,7 @@ class SentryHelper
         'wysiwyg'
     ];
 
-    // Themes we want to recieve error reports for
+    // Themes we want to receive error reports for
     private static array $allowedThemes = [
         'admin_default',
         'huraga'
@@ -165,7 +165,7 @@ class SentryHelper
                     }
                 }
 
-                if (self::dontReport($module, $theme)) {
+                if (self::skipReporting($module, $theme)) {
                     return null;
                 }
 
@@ -243,7 +243,7 @@ class SentryHelper
         }
     }
 
-    public static function dontReport(string $module = null, string $theme = null): bool
+    public static function skipReporting(string $module = null, string $theme = null): bool
     {
         if (!defined('INSTANCE_ID') || !INSTANCE_ID || INSTANCE_ID === 'Unknown' || INSTANCE_ID === 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX') {
             return true;
