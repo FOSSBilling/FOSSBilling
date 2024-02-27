@@ -168,6 +168,7 @@ class Service implements InjectionAwareInterface
         $result['id'] = $row['id'];
         $result['serie'] = $row['serie'];
         $result['nr'] = $row['nr'];
+        $result['client_id'] = $invoice->client_id;
 
         $nr = (is_numeric($result['nr'])) ? $result['nr'] : $result['id'];
         $result['serie_nr'] = $result['serie'] . sprintf('%05s', $nr);
