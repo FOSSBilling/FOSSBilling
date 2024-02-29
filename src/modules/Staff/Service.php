@@ -145,7 +145,7 @@ class Service implements InjectionAwareInterface
      * @param string|null       $key        the permission key for the associated module
      * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
      */
-    public function hasPermission(\Model_Admin|null $member, string $module, string $key = null, mixed $constraint = null): bool
+    public function hasPermission(?\Model_Admin $member, string $module, string $key = null, mixed $constraint = null): bool
     {
         $alwaysAllowed = ['index', 'dashboard', 'profile'];
 

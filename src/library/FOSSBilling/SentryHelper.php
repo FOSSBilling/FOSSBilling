@@ -29,7 +29,7 @@ class SentryHelper
      */
     final public const last_change = '0.6.0';
 
-    // A full list of our own modules which we want to receive error reports for 
+    // A full list of our own modules which we want to receive error reports for
     private static array $allowedModules = [
         'activity',
         'api',
@@ -66,20 +66,20 @@ class SentryHelper
         'servicehosting',
         'servicelicense',
         'servicemembership',
-        //'serviceproxmox',
+        // 'serviceproxmox',
         'spamchecker',
         'staff',
         'stats',
         'support',
         'system',
         'theme',
-        'wysiwyg'
+        'wysiwyg',
     ];
 
     // Themes we want to receive error reports for
     private static array $allowedThemes = [
         'admin_default',
-        'huraga'
+        'huraga',
     ];
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
@@ -97,8 +97,7 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
-        $httpClient = new class() implements HttpClientInterface
-        {
+        $httpClient = new class() implements HttpClientInterface {
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
@@ -225,7 +224,7 @@ class SentryHelper
     }
 
     /**
-     * Tries to guess what type of webserver is in use
+     * Tries to guess what type of webserver is in use.
      */
     public static function estimateWebServer(): string
     {
