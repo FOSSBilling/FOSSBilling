@@ -16,7 +16,7 @@ class Session implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
-    public function setDi(\Pimple\Container|null $di): void
+    public function setDi(?\Pimple\Container $di): void
     {
         $this->di = $di;
     }

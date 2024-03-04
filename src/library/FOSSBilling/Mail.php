@@ -48,7 +48,7 @@ class Mail implements InjectionAwareInterface
      *
      * @return void
      */
-    public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, string|null $transport, string $dsn = null)
+    public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, ?string $transport, string $dsn = null)
     {
         if (isset($from['email']) && isset($from['name'])) {
             $fromAddress = new Address($from['email'], $from['name']);

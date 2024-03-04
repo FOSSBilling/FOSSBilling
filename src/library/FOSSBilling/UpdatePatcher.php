@@ -161,7 +161,7 @@ class UpdatePatcher implements InjectionAwareInterface
      *
      * @return int|null the current patch level
      */
-    private function getPatchLevel(): int|null
+    private function getPatchLevel(): ?int
     {
         $sql = 'SELECT value FROM setting WHERE param = :param';
         $sqlStatement = $this->di['pdo']->prepare($sql);
