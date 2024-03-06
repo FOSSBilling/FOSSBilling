@@ -54,7 +54,7 @@
   },
   "overrides": {
     "postcss": "^8.4.31",
-    "@melloware/coloris": "^0.22.0",
+    "@melloware/coloris": "^0.23.0",
     "imask": "^7.1.3"
   }
 }
