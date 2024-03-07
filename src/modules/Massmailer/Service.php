@@ -110,10 +110,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $sql .= ' ORDER BY c.id DESC';
 
-        if (isset($data['debug']) && $data['debug']) {
-            throw new \Exception($sql . ' ' . print_r($values, 1));
-        }
-
         return $this->di['db']->getAll($sql, $values);
     }
 
