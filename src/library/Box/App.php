@@ -15,20 +15,18 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Box_App
 {
-    protected $mappings = [];
-    protected $before_filters = [];
-    protected $after_filters = [];
-    protected $shared = [];
-    protected $options;
+    protected array $mappings = [];
+    protected array $shared = [];
+    protected ArrayObject $options;
     protected ?Pimple\Container $di = null;
-    protected $ext = 'html.twig';
-    protected $mod = 'index';
-    protected $url = '/';
+    protected string $ext = 'html.twig';
+    protected string $mod = 'index';
+    protected string $url = '/';
     protected StandardDebugBar $debugBar;
 
     public $uri;
 
-    public function __construct($options = [], StandardDebugBar $debugBar = null)
+    public function __construct(array|object $options = [], StandardDebugBar $debugBar = null)
     {
         $this->options = new ArrayObject($options);
 
@@ -44,7 +42,7 @@ class Box_App
         $this->di = $di;
     }
 
-    public function setUrl($url)
+    public function setUrl($url): void
     {
         $this->url = $url;
     }
@@ -54,7 +52,7 @@ class Box_App
         return $this->debugBar;
     }
 
-    protected function registerModule()
+    protected function registerModule(): void
     {
         // bind module urls and process
         // determine module and bind urls
@@ -78,15 +76,15 @@ class Box_App
         $this->uri = $requestUri;
     }
 
-    protected function init()
+    protected function init(): void
     {
     }
 
-    protected function checkPermission()
+    protected function checkPermission(): void
     {
     }
 
-    public function show404(Exception $e)
+    public function show404(Exception $e): string
     {
         $this->di['logger']->setChannel('routing')->info($e->getMessage());
         http_response_code(404);
@@ -94,77 +92,27 @@ class Box_App
         return $this->render('error', ['exception' => $e]);
     }
 
-    /**
-     * @param string $url
-     * @param string $methodName
-     * @param string $class
-     */
-    public function get($url, $methodName, $conditions = [], $class = null)
+    public function get(string $url, string $methodName, array $conditions = [], string $class = null): void
     {
         $this->event('get', $url, $methodName, $conditions, $class);
     }
 
-    /**
-     * @param string $url
-     * @param string $methodName
-     * @param string $class
-     */
-    public function post($url, $methodName, $conditions = [], $class = null)
+    public function post(string $url, string $methodName, array $conditions = [], string $class = null): void
     {
         $this->event('post', $url, $methodName, $conditions, $class);
     }
 
-    public function put($url, $methodName, $conditions = [], $class = null)
+    public function put(string $url, string $methodName, array $conditions = [], string $class = null): void
     {
         $this->event('put', $url, $methodName, $conditions, $class);
     }
 
-    public function delete($url, $methodName, $conditions = [], $class = null)
+    public function delete(string $url, string $methodName, array $conditions = [], string $class = null): void
     {
         $this->event('delete', $url, $methodName, $conditions, $class);
     }
 
-    public function before($methodName, $filterName)
-    {
-        $this->push_filter($this->before_filters, $methodName, $filterName);
-    }
-
-    public function after($methodName, $filterName)
-    {
-        $this->push_filter($this->after_filters, $methodName, $filterName);
-    }
-
-    protected function push_filter(&$arr_filter, $methodName, $filterName)
-    {
-        if (!is_array($methodName)) {
-            $methodName = explode('|', $methodName);
-        }
-
-        $counted = count($methodName);
-        for ($i = 0; $i < $counted; ++$i) {
-            $method = $methodName[$i];
-            if (!isset($arr_filter[$method])) {
-                $arr_filter[$method] = [];
-            }
-            $arr_filter[$method][] = $filterName;
-        }
-    }
-
-    protected function run_filter($arr_filter, $methodName)
-    {
-        if (isset($arr_filter[$methodName])) {
-            $counted = is_countable($arr_filter[$methodName]) ? count($arr_filter[$methodName]) : 0;
-            for ($i = 0; $i < $counted; ++$i) {
-                $return = call_user_func([$this, $arr_filter[$methodName][$i]]);
-
-                if (!is_null($return)) {
-                    return $return;
-                }
-            }
-        }
-    }
-
-    public function run()
+    public function run(): string
     {
         $this->debugBar['time']->startMeasure('registerModule', 'Registering module routes');
         $this->registerModule();
@@ -191,15 +139,12 @@ class Box_App
         exit;
     }
 
-    /**
-     * @param string $fileName
-     */
-    public function render($fileName, $variableArray = [])
+    public function render($fileName, $variableArray = []): string
     {
-        echo 'Rendering ' . $fileName;
+        return 'Rendering ' . $fileName;
     }
 
-    public function sendFile($filename, $contentType, $path)
+    public function sendFile($filename, $contentType, $path): false|int
     {
         header("Content-type: $contentType");
         header("Content-Disposition: attachment; filename=$filename");
@@ -207,7 +152,7 @@ class Box_App
         return readfile($path);
     }
 
-    public function sendDownload($filename, $path)
+    public function sendDownload($filename, $path): false|int
     {
         header('Content-Type: application/force-download');
         header('Content-Type: application/octet-stream');
@@ -219,7 +164,7 @@ class Box_App
         return readfile($path);
     }
 
-    protected function executeShared($classname, $methodName, $params)
+    protected function executeShared($classname, $methodName, $params): string
     {
         $this->debugBar['time']->startMeasure('executeShared', 'Reflecting module controller (shared mapping)');
         $class = new $classname();
@@ -242,13 +187,9 @@ class Box_App
         return $reflection->invokeArgs($class, $args);
     }
 
-    protected function execute($methodName, $params, $classname = null)
+    protected function execute($methodName, $params, $classname = null): string
     {
         $this->debugBar['time']->startMeasure('execute', 'Reflecting module controller');
-        $return = $this->run_filter($this->before_filters, $methodName);
-        if (!is_null($return)) {
-            return $return;
-        }
 
         $reflection = new ReflectionMethod(static::class, $methodName);
         $args = [];
@@ -265,18 +206,10 @@ class Box_App
 
         $response = $reflection->invokeArgs($this, $args);
 
-        $return = $this->run_filter($this->after_filters, $methodName);
-        if (!is_null($return)) {
-            return $return;
-        }
-
         return $response;
     }
 
-    /**
-     * @param string $httpMethod
-     */
-    protected function event($httpMethod, $url, $methodName, $conditions = [], $classname = null)
+    protected function event(string $httpMethod, string $url, string $methodName, array $conditions = [], string $classname = null): void
     {
         if (method_exists($this, $methodName)) {
             $this->mappings[] = [$httpMethod, $url, $methodName, $conditions];
@@ -286,12 +219,7 @@ class Box_App
         }
     }
 
-    /**
-     * Check if the requested URL is in the allowlist.
-     *
-     * @since 4.22.0
-     */
-    protected function checkAllowedURLs()
+    protected function checkAllowedURLs(): bool
     {
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
 
@@ -318,12 +246,7 @@ class Box_App
         return true;
     }
 
-    /**
-     * Check if the visitor IP is in the allowlist.
-     *
-     * @since 4.22.0
-     */
-    protected function checkAllowedIPs()
+    protected function checkAllowedIPs(): bool
     {
         $allowedIPs = Config::getProperty('maintenance_mode.allowed_ips', []);
         $visitorIP = $this->di['request']->getClientAddress();
@@ -346,12 +269,7 @@ class Box_App
         return true;
     }
 
-    /**
-     * Check if the requested URL is a part of the admin area.
-     *
-     * @since 4.22.0
-     */
-    protected function checkAdminPrefix()
+    protected function checkAdminPrefix(): bool
     {
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
 
@@ -365,7 +283,7 @@ class Box_App
         return true;
     }
 
-    protected function processRequest()
+    protected function processRequest(): string
     {
         /*
          * Block requests if the system is undergoing maintenance.

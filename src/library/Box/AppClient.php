@@ -17,7 +17,7 @@ use Twig\Profiler\Profile;
 
 class Box_AppClient extends Box_App
 {
-    protected function init()
+    protected function init(): void
     {
         $m = $this->di['mod']($this->mod);
         $m->registerClientRoutes($this);
@@ -45,12 +45,12 @@ class Box_AppClient extends Box_App
         }
     }
 
-    public function get_index()
+    public function get_index(): string
     {
         return $this->render('mod_index_dashboard');
     }
 
-    public function get_custom_page($page)
+    public function get_custom_page($page): string
     {
         $ext = $this->ext;
         if (str_contains($page, '.')) {
@@ -78,7 +78,7 @@ class Box_AppClient extends Box_App
     /**
      * @param string $fileName
      */
-    public function render($fileName, $variableArray = [], $ext = 'html.twig')
+    public function render($fileName, $variableArray = [], $ext = 'html.twig'): string
     {
         try {
             $template = $this->getTwig()->load($fileName . '.' . $ext);
@@ -96,7 +96,7 @@ class Box_AppClient extends Box_App
         return $template->render($variableArray);
     }
 
-    protected function getTwig()
+    protected function getTwig(): Twig\Environment
     {
         $service = $this->di['mod_service']('theme');
         $code = $service->getCurrentClientAreaThemeCode();

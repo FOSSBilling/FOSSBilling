@@ -10,13 +10,10 @@
  */
 class Box_UrlHelper
 {
-    public $params = [];
-    public $match = false;
+    public array $params = [];
+    public bool $match = false;
 
-    /**
-     * @param string $requestUri
-     */
-    public function __construct(private $method, $url, private $conditions, $requestUri)
+    public function __construct(private readonly string $method, string $url, private array $conditions, string $requestUri)
     {
         $requestMethod = $_SERVER['REQUEST_METHOD'];
 
@@ -43,7 +40,7 @@ class Box_UrlHelper
         }
     }
 
-    private function regexValue($matches)
+    private function regexValue($matches): string
     {
         $key = str_replace(':', '', $matches[0]);
         if (array_key_exists($key, $this->conditions)) {
