@@ -17,7 +17,7 @@ use Twig\Profiler\Profile;
 
 class Box_AppAdmin extends Box_App
 {
-    public function init()
+    public function init(): void
     {
         $m = $this->di['mod']($this->mod);
         $controller = $m->getAdminController();
@@ -26,7 +26,7 @@ class Box_AppAdmin extends Box_App
         }
     }
 
-    protected function checkPermission()
+    protected function checkPermission(): void
     {
         $service = $this->di['mod_service']('Staff');
 
@@ -38,7 +38,7 @@ class Box_AppAdmin extends Box_App
         }
     }
 
-    public function render($fileName, $variableArray = [])
+    public function render($fileName, $variableArray = []): string
     {
         $template = $this->getTwig()->load($fileName . '.html.twig');
 
@@ -52,7 +52,7 @@ class Box_AppAdmin extends Box_App
         exit;
     }
 
-    protected function getTwig()
+    protected function getTwig(): Twig\Environment
     {
         $service = $this->di['mod_service']('theme');
         $theme = $service->getCurrentAdminAreaTheme();
