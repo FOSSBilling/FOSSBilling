@@ -36,7 +36,7 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
         return $this->baseUri . $uri;
     }
 
-    public function link(string $uri = null, array $params = []): string
+    public function link(string $uri = null, ?array $params = []): string
     {
         $uri ??= '';
         $uri = trim($uri, '/');
@@ -48,7 +48,7 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
         return $link;
     }
 
-    public function adminLink(?string $uri, array $params = []): string
+    public function adminLink(?string $uri, ?array $params = []): string
     {
         $uri ??= '';
         $uri = trim($uri, '/');
