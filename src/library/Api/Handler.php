@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -16,8 +17,6 @@ final class Api_Handler implements InjectionAwareInterface
     protected $ip;
     protected ?Pimple\Container $di = null;
 
-    private bool $_enable_cache = false;
-    private array $_cache = [];
     private bool $_acl_exception = false;
 
     public function __construct(protected $identity)
@@ -53,12 +52,6 @@ final class Api_Handler implements InjectionAwareInterface
 
         if (empty($mod)) {
             throw new FOSSBilling\Exception('Invalid module name', null, 714);
-        }
-
-        // cache
-        $cache_key = md5($this->type . $mod . $method_name . serialize($arguments));
-        if ($this->_enable_cache && isset($this->_cache[$cache_key])) {
-            return $this->_cache[$cache_key];
         }
 
         $service = $this->di['mod']('extension')->getService();
@@ -108,9 +101,6 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
         $res = $api->{$method_name}($arguments);
-        if ($this->_enable_cache) {
-            $this->_cache[$cache_key] = $res;
-        }
 
         return $res;
     }
