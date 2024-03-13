@@ -27,12 +27,12 @@ class Requirements
             'iconv',
             'json',
             'zlib',
+            'gd',
         ],
         'suggested_extensions' => [
             'mbstring',
             'opcache',
             'imagick',
-            'gd',
             'bz2',
             'simplexml',
             'xml',

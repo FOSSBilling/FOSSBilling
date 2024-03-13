@@ -1,8 +1,8 @@
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 # Install required packages, configure Apache, install PHP exensions, and clean-up.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends wget unzip zlib1g-dev libpng-dev libicu-dev libbz2-dev libmagickwand-dev \
+  && apt-get install -y --no-install-recommends wget unzip zlib1g-dev libpng-dev libicu-dev libbz2-dev \
   && a2enmod rewrite \
   && docker-php-ext-configure bz2 \
   && docker-php-ext-install -j$(nproc) bz2 \
@@ -14,8 +14,6 @@ RUN apt-get update \
   && docker-php-ext-install -j$(nproc) opcache \
   && docker-php-ext-configure pdo_mysql \
   && docker-php-ext-install -j$(nproc) pdo_mysql \
-  && pecl install imagick \
-  && docker-php-ext-enable imagick \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
