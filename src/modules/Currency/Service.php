@@ -570,7 +570,7 @@ class Service implements InjectionAwareInterface
 
         // Their open access API endpoint has a specific param to inform of if it ever goes EOL, so let's monitor that and trigger an error to alert us if it's deprecated
         if (array_key_exists('time_eol_unix', $result) && $result['time_eol_unix'] !== 0) {
-            trigger_error('ExchangeRate-API', E_USER_DEPRECATED); // Should be sent via error reporting, making monitoring this easy
+            trigger_error('ExchangeRate-API has deprecated their open endpoint. Investigate!', E_USER_DEPRECATED); // Should be sent via error reporting, making monitoring this easy
         }
 
         // Different array key between the open and authenticated endpoint, but otherwise it's the same structure.
