@@ -282,10 +282,29 @@
     <legend>Checkout</legend>
     <table>
     <tr>
-        <td><label>Require clients to indicate they've read and accept your terms of service / privacy policy</label></td>
+        <td><label>Terms of service / privacy policy requirement for the checkout screen</label></td>
         <td>
-            <label><input type="radio" name="require_tos_accept" value="1"/>Yes</label>
-            <label><input type="radio" name="require_tos_accept" value="0" checked="checked"/>No</label>
+            <select name="checkout_tos">
+                <option value="explicit">Explicit agreement</option>
+                <option value="implicit">Implicit agreement</option>
+                <option value="none">None</option>
+            </select>
+        </td>
+    </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Signup page</legend>
+    <table>
+    <tr>
+        <td><label>Terms of service / privacy policy requirement for the signup page</label></td>
+        <td>
+            <select name="signup_tos">
+                <option value="explicit">Explicit agreement</option>
+                <option value="implicit">Implicit agreement</option>
+                <option value="none">None</option>
+            </select>
         </td>
     </tr>
     </table>
