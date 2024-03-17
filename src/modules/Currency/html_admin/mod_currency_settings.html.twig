@@ -3,6 +3,8 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'system' %}
+{% set params = admin.extension_config_get({ 'ext': 'mod_currency' }) %}
+{% set old_key = admin.currency_get_key %}
 
 {% block meta_title %}{{ 'Currency settings'|trans }}{% endblock %}
 
@@ -37,7 +39,7 @@
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Settings'|trans }}</a>
+                <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Integrations / Automation'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-converter" data-bs-toggle="tab" role="tab">{{ 'Converter'|trans }}</a>
@@ -155,37 +157,89 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/currency/update_rate_settings'|link }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+                        <input type="hidden" name="ext" value="mod_currency">
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Adjust settings for currency rate updater'|trans }}</h3>
-                            <div class="card-subtitle">
-                                <p>FOSSBilling uses data retrieved from <a href="https://www.ecb.europa.eu/home/html/index.en.html" target="_blank">European Central Bank</a> for conversions from Euro to other currencies, and <a href="https://currencylayer.com/" target="_blank">Currencylayer</a> for conversations from US Dollar to other currencies.</p>
-                                <p>If you choose Euro as your default currency, data from European Central Bank will be used, if you choose US Dollar, data from Currencylayer will be used.</p>
-                                <p>As the European Central Bank has decided to keep its API free to everyone, you won't need an authorization key to use the ECB data. However, you'll need an API key to use Currencylayer.</p>
-                                <p>The API key can be obtained from Currencylayer's <a href="https://currencylayer.com/product" target="_blank">website</a>. Please be informed that FOSSBilling does not generate any profits from your transactions on currencylayer.com.</p>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-11">
-                                    <div class="alert alert-warning" role="alert">
-                                        <h4 class="alert-title">WARNING!</h4>
-                                        <div class="text-muted">FOSSBilling is not responsible for any information obtained from third-party sources, specifically, the <a href="https://apilayer.com/" target="_blank">APILayer</a>, who are the rightful owners of Currencylayer API and the <a href="https://www.ecb.europa.eu/home/html/index.en.html" target="_blank">European Central Bank</a>.</div>
-                                    </div>
+                            <h3 class="card-title">{{ 'Available exchange rate data providers'|trans }}</h3>
+                            <p>{{ 'FOSSBilling provides integration with various currency rate data providers, allowing you to choose whichever one best suits your needs. By default, FOSSBilling will use the ExchangeRate-API "Open Access Endpoint" which does not require any configuration.'|trans }}</p>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Provider'|trans }}</th>
+                                        <th>{{ 'Authentication Required'|trans }}</th>
+                                        <th>{{ 'Update Frequency'|trans }}</th>
+                                        <th>{{ 'Supported Currencies'|trans }}</th>
+                                        <th>{{ 'Pricing'|trans }}</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <th><a href="https://www.exchangerate-api.com/docs/free" target="_blank">{{ 'ExchangeRate-API (Open Access Endpoint)'|trans }}</a></th>
+                                      <th>✖️</th>
+                                      <th>{{ '1D'|trans }}</th>
+                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
+                                      <th>{{ 'Free'|trans }}</th>
+                                    </tr>
+                                    <tr>
+                                      <th><a href="https://www.exchangerate-api.com/#pricing" target="_blank">ExchangeRate-API</a></th>
+                                      <th>☑️</th>
+                                      <th>{{ '1D / 1H / 5M'|trans }}</th>
+                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
+                                      <th>{{ 'Free / paid'|trans }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th><a href="https://apilayer.com/marketplace/currency_data-api" target="_blank">Currency Data API</a></th>
+                                        <th>☑️</th>
+                                        <th>{{ '1D / 1H / 10M / 1M'|trans }}</th>
+                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
+                                        <th>{{ 'Free / paid'|trans }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th><a href="https://currencylayer.com/" target="_blank">currencylayer</a></th>
+                                        <th>☑️</th>
+                                        <th>{{ '1D / 1H / 10M / 1M'|trans }}</th>
+                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
+                                        <th>{{ 'Free / paid'|trans }}</th>
+                                    </tr>
+                                  </tbody>                                    
+                            </table>
+                            <span class="text-muted">{{ 'When using ExchangeRate-API, their API informs FOSSBilling when the next update will occur which makes it more efficient for automated exchange rate syncing.'|trans }}</span>
+                            <br/>
+                            <span class="text-muted">{{ 'To the best of our knowedge, "Currency Data API" and "currencylayer" are both owned by APILayer and provide the same data, but through a different API.'|trans }}</span>
+                            <div class="form-group mb-3 mt-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Currency data provider'|trans }}</label>
+                                <div class="col-md-6">
+                                    <select class="form-select" aria-label="Currency data provider selection" name="provider" id="provider_select">
+                                        <option value="exchangerate-api" selected>{{ 'ExchangeRate-API'|trans }}</option>
+                                        <option value="currencydataapi">Currency Data API</option>
+                                        <option value="currencylayer">currencylayer</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Currencylayer API key'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'API key'|trans }}</label>
                                 <div class="col-md-6">
-                                    <input class="form-control" type="text" name="currencylayer_key" value="{{ admin.currency_get_key }}">
+                                    <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ parames.currencydata_key|default(old_key) }}" hidden="true">
+                                    <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ parames.currencylayer_key }}"  hidden="true">
+                                    <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ parames.exchangerate_api_key }}" hidden="true">
+                                    <span class="text-muted" id="exchangerate_api_helptext" hidden="true">{{ 'Leave this blank to use the ExchangeRate-API "Open Access Endpoint".'|trans }}</span>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Enable CRON jobs'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Automatic Sync Rate'|trans }}</label>
                                 <div class="col-md-6">
-                                    <label class="form-check form-switch">
-                                        <input class="form-check-input" name="crons_enabled" type="checkbox" value="1" {% if admin.currency_is_cron_enabled %} checked{% endif %}>
-                                    </label>
-                                    <small class="form-hint">{{ 'If you enable this, conversion rates will be automatically updated whenever the CRON job fires up. This should only be used if you have a paid subscription for Currencylayer, as otherwise you will quickly hit your rate limit.'|trans }}</small>
+                                    <select class="form-select" aria-label="Currency data provider selection" name="sync_rate" id="sync_rate">
+                                        <option value="auto" id="auto-sync" selected>{{ 'Auto'|trans }}</option>
+                                        <option value="never">{{ 'Never'|trans }}</option>
+                                        <option value="1d">{{ 'Daily'|trans }}</option>
+                                        <option value="1h">{{ 'Hourly'|trans }}</option>
+                                        <option value="10m">{{ 'Every 10 minutes'|trans }}</option>
+                                        <option value="5m">{{ 'Every 5 minutes'|trans }}</option>
+                                        <option value="1m" id="1m-sync">{{ 'Every minute'|trans }}</option>
+                                    </select>
+                                <p class="text-muted">{{ '"Auto" is only available for the ExchangeRate-API, which also does not provide updates every minute.'|trans }}</p>
+                                <p class="text-muted">{{ 'Exchange rate syncing runs via the cronjob and as such is limited by the frequency of your cron schedule (typically 5 minutes).'|trans }}</p>
                                 </div>
                             </div>
                         </div>
@@ -226,5 +280,40 @@
 
         return false;
     };
+
+    function switchKeyBox(value){
+        if(value === 'currencylayer'){
+            document.getElementById("currencydata").hidden = true;
+            document.getElementById("currencylayer").hidden = false;
+            document.getElementById("exchangerate_api").hidden = true;
+            document.getElementById("exchangerate_api_helptext").hidden = true;
+            document.getElementById("auto-sync").disabled = true;
+            document.getElementById("1m-sync").disabled = false;
+        } else if(value === 'currencydataapi'){
+            document.getElementById("currencydata").hidden = false;
+            document.getElementById("currencylayer").hidden = true;
+            document.getElementById("exchangerate_api").hidden = true;
+            document.getElementById("exchangerate_api_helptext").hidden = true;
+            document.getElementById("auto-sync").disabled = true;
+            document.getElementById("1m-sync").disabled = false;
+        } else {
+            document.getElementById("currencydata").hidden = true;
+            document.getElementById("currencylayer").hidden = true;
+            document.getElementById("exchangerate_api").hidden = false;
+            document.getElementById("exchangerate_api_helptext").hidden = false;
+            document.getElementById("auto-sync").disabled = false;
+            document.getElementById("1m-sync").disabled = true;
+        }
+    }
+
+    document.getElementById("provider_select").onchange = function() {
+        switchKeyBox(this.value);
+    };
+    document.addEventListener("DOMContentLoaded", (event) => {
+        document.getElementById("sync_rate").value = "{{ params.sync_rate }}"
+        document.getElementById("provider_select").value = "{{ params.provider }}"
+        switchKeyBox("{{ params.provider }}");
+    });
+
 </script>
 {% endblock %}

@@ -155,28 +155,6 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Updates the API key for currencylayer.
-     *
-     * @since 4.22.0
-     *
-     * @return bool
-     */
-    public function update_rate_settings($data)
-    {
-        $this->getService()->updateKey($data['currencylayer_key'] ?? null);
-
-        if ($data['crons_enabled'] ?? null == '1') {
-            $set = '1';
-        } else {
-            $set = '0';
-        }
-
-        $this->getService()->setCron($set);
-
-        return true;
-    }
-
-    /**
      * See if CRON jobs are enabled for currency rates.
      *
      * @todo why does this even return a string instead of a boolean?

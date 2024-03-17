@@ -361,22 +361,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Updates the API credentials for currencylayer.
-     *
-     * @todo maybe make this extensible so people can choose their data provider?
-     *
-     * @since 4.22.0
-     */
-    public function updateKey($key)
-    {
-        $sql = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currencylayer', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
-        $values = [':key' => $key];
-
-        $db = $this->di['db'];
-        $db->exec($sql, $values);
-    }
-
-    /**
      * See if we should update exchange rates whenever the CRON jobs are run.
      *
      * @since 4.22.0
@@ -395,25 +379,6 @@ class Service implements InjectionAwareInterface
         } else {
             return false;
         }
-    }
-
-    /**
-     * Enable or disable updating exchange rates whenever the CRON jobs are run.
-     */
-    public function setCron($data): void
-    {
-        $sql = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
-
-        if ($data == '1') {
-            $key = '1';
-        } else {
-            $key = '0';
-        }
-
-        $values = [':key' => $key];
-
-        $db = $this->di['db'];
-        $db->exec($sql, $values);
     }
 
     public function toApiArray(\Model_Currency $model)
