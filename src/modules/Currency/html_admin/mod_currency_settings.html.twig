@@ -206,13 +206,13 @@
                             </table>
                             <span class="text-muted">{{ 'When using ExchangeRate-API, their API informs FOSSBilling when the next update will occur which makes it more efficient for automated exchange rate syncing.'|trans }}</span>
                             <br/>
-                            <span class="text-muted">{{ 'To the best of our knowedge, "Currency Data API" and "currencylayer" are both owned by APILayer and provide the same data, but through a different API.'|trans }}</span>
+                            <span class="text-muted">{{ 'To the best of our knowledge, "Currency Data API" and "currencylayer" are both owned by APILayer and provide the same data, but through a different API.'|trans }}</span>
                             <div class="form-group mb-3 mt-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Currency data provider'|trans }}</label>
                                 <div class="col-md-6">
                                     <select class="form-select" aria-label="Currency data provider selection" name="provider" id="provider_select">
                                         <option value="exchangerate-api" selected>{{ 'ExchangeRate-API'|trans }}</option>
-                                        <option value="currencydataapi">Currency Data API</option>
+                                        <option value="currency_data_api">Currency Data API</option>
                                         <option value="currencylayer">currencylayer</option>
                                     </select>
                                 </div>
@@ -223,7 +223,7 @@
                                     <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ params.currencydata_key|default(old_key) }}" hidden="true">
                                     <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ params.currencylayer_key }}"  hidden="true">
                                     <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key }}" hidden="true">
-                                    <span class="text-muted" id="exchangerate_api_helptext" hidden="true">{{ 'Leave this blank to use the ExchangeRate-API "Open Access Endpoint".'|trans }}</span>
+                                    <span class="text-muted" id="exchangerate_api_help_text" hidden="true">{{ 'Leave this blank to use the ExchangeRate-API "Open Access Endpoint".'|trans }}</span>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
@@ -286,21 +286,21 @@
             document.getElementById("currencydata").hidden = true;
             document.getElementById("currencylayer").hidden = false;
             document.getElementById("exchangerate_api").hidden = true;
-            document.getElementById("exchangerate_api_helptext").hidden = true;
+            document.getElementById("exchangerate_api_help_text").hidden = true;
             document.getElementById("auto-sync").disabled = true;
             document.getElementById("1m-sync").disabled = false;
-        } else if(value === 'currencydataapi'){
+        } else if(value === 'currency_data_api'){
             document.getElementById("currencydata").hidden = false;
             document.getElementById("currencylayer").hidden = true;
             document.getElementById("exchangerate_api").hidden = true;
-            document.getElementById("exchangerate_api_helptext").hidden = true;
+            document.getElementById("exchangerate_api_help_text").hidden = true;
             document.getElementById("auto-sync").disabled = true;
             document.getElementById("1m-sync").disabled = false;
         } else {
             document.getElementById("currencydata").hidden = true;
             document.getElementById("currencylayer").hidden = true;
             document.getElementById("exchangerate_api").hidden = false;
-            document.getElementById("exchangerate_api_helptext").hidden = false;
+            document.getElementById("exchangerate_api_help_text").hidden = false;
             document.getElementById("auto-sync").disabled = false;
             document.getElementById("1m-sync").disabled = true;
         }
