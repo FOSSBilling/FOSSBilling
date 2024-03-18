@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -144,10 +145,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Gets the API key for currencylayer.
-     *
-     * @since 4.22.0
-     *
-     * @return string
+     * @deprecated as this will only return the OLD key from before currency data got refactored. Current keys are stored in the module's keys.
      */
     public function get_key($data)
     {
@@ -156,14 +154,8 @@ class Admin extends \Api_Abstract
 
     /**
      * See if CRON jobs are enabled for currency rates.
-     *
-     * @todo why does this even return a string instead of a boolean?
-     *
-     * @since 4.22.0
-     *
-     * @return string (0/1)
      */
-    public function is_cron_enabled($data)
+    public function is_cron_enabled($data): bool
     {
         return $this->getService()->isCronEnabled();
     }
