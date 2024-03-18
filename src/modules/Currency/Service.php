@@ -380,7 +380,7 @@ class Service implements InjectionAwareInterface
         } elseif (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == '0' && empty($config['sync_rate'])) {
             return false;
         } else {
-            return $config['sync_rate'] !== 'never';
+            return ($config['sync_rate'] ?? 'auto') !== 'never';
         }
     }
 
@@ -539,7 +539,6 @@ class Service implements InjectionAwareInterface
     protected function getExchangeRateAPIRates(string $from, int $validFor, string $key): array
     {
         $result = $this->di['cache']->get("exchangerate.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
-            $item->expiresAfter($validFor);
             $from_Currency = urlencode($from);
 
             if (!empty($key)) {
@@ -563,6 +562,8 @@ class Service implements InjectionAwareInterface
             if ($validFor === 0) {
                 // ExchangeRate-API is great and will tell us exactly when the data will next have an update, so we will use that for the cache expiration when "auto" is the sync mode.
                 $item->expiresAt(new \DateTime($array['time_next_update_utc']));
+            } else {
+                $item->expiresAfter($validFor);
             }
 
             return $array;
