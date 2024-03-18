@@ -145,7 +145,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Gets the API key for currencylayer.
-     * @deprecated as this will only return the OLD key from before currency data got refactored. Current keys are stored in the module's keys.
+     * @deprecated as this will only return the OLD key from before currency data got refactored. Current keys are stored in the module's config.
      */
     public function get_key($data)
     {

@@ -345,15 +345,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Returns the API credentials for currencylayer.
-     *
-     * @todo maybe make this extensible so people can choose their data provider?
-     *
-     * @since 4.22.0
-     *
-     * @return string
+     * Returns the old API key. Kept to ensure updating doesn't break a config
      */
-    public function getKey()
+    public function getKey(): string
     {
         $sql = 'SELECT `param`, `value` FROM setting';
         $db = $this->di['db'];
@@ -506,10 +500,11 @@ class Service implements InjectionAwareInterface
         };
 
         if ($config['provider'] === 'currency_data_api') {
-            if (empty($config['currencydata_key'])) {
+            $key = $config['currencydata_key'] ?? $this->getKey();
+            if (empty($key)) {
                 throw new InformationException('You must configure your API key to use Currency Data API as an exchange rate data source.');
             }
-            $rates = $this->getCurrencyDataRates($from, $validFor, $config['currencydata_key']);
+            $rates = $this->getCurrencyDataRates($from, $validFor, $key);
         } elseif ($config['provider'] === 'currencylayer') {
             if (empty($config['currencylayer_key'])) {
                 throw new InformationException('You must configure your API key to use currencylayer as an exchange rate data source.');
