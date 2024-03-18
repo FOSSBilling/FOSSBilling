@@ -223,7 +223,7 @@
                                 <label class="col-md-3 col-form-label">{{ 'Currency exchange rate data provider'|trans }}</label>
                                 <div class="col-md-6">
                                     <select class="form-select" aria-label="Currency data provider selection" name="provider" id="provider_select">
-                                        <option value="exchangerate-api" selected>{{ 'ExchangeRate-API'|trans }}</option>
+                                        <option value="exchangerate-api" selected>ExchangeRate-API</option>
                                         <option value="currency_data_api">Currency Data API</option>
                                         <option value="currencylayer">currencylayer</option>
                                     </select>
@@ -316,14 +316,24 @@
             document.getElementById("auto-sync").disabled = false;
             document.getElementById("1m-sync").disabled = true;
         }
+
+        if(value === 'exchangerate-api'){
+            if(document.getElementById("sync_rate").value === '1m'){
+                document.getElementById("sync_rate").value = 'auto';
+            }
+        } else {
+            if(document.getElementById("sync_rate").value === 'auto'){
+                document.getElementById("sync_rate").value = '1d';
+            }
+        }
     }
 
     document.getElementById("provider_select").onchange = function() {
         switchKeyBox(this.value);
     };
     document.addEventListener("DOMContentLoaded", (event) => {
-        document.getElementById("sync_rate").value = "{{ params.sync_rate }}"
-        document.getElementById("provider_select").value = "{{ params.provider }}"
+        document.getElementById("sync_rate").value = "{{ params.sync_rate }}";
+        document.getElementById("provider_select").value = "{{ params.provider }}";
         switchKeyBox("{{ params.provider }}");
     });
 
