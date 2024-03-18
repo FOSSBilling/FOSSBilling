@@ -50,8 +50,17 @@
                 <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel">
                     <div class="card-body border-bottom">
                         <h3 class="card-title">{{ 'Manage currencies'|trans }}</h3>
-                        <p class="card-subtitle">{{ 'The default currency is the one you define product pricing in. If your client chooses a different currency, pricing will be recalculated according to the conversion rate. You can have only one default currency. You cannot add multiple instances of the same currency. Changing the default currency after orders have been placed may have unexpected issues. Nothing is recalculated on default currency change. Your income is calculated in the default currency. Changing the default currency after you have paid invoices will distort income statistics. Currency rates are taken from the European Central Bank and currencylayer.'|trans }}</p>
+                        <p class="card-subtitle">{{ 'The default currency is the one you define product pricing in. If your client chooses a different currency, pricing will be recalculated according to the conversion rate. Changing the default currency after orders have been placed may have unexpected issues. Nothing is recalculated on default currency change. Your income is calculated in the default currency. Changing the default currency after you have paid invoices will distort income statistics.'|trans }}</p>
                     </div>
+                    {% if params.sync_rate != 'never' %}
+                        <div class="alert alert-success" role="alert">
+                            {{ 'FOSSBilling is configured to automatically sync currency exchange rates.'|trans }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            {{ 'FOSSBilling is not configured to automatically sync currency exchange rates.'|trans }}
+                        </div>
+                    {% endif %}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
@@ -118,6 +127,9 @@
                             </svg>
                             <span>{{ 'Update Rates'|trans }}</span>
                         </a>
+                        {% if params.provider == "exchangerate-api" %}
+                            <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates By ExchangeRate-API.'|trans }}</p></a>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -162,7 +174,7 @@
                         <input type="hidden" name="ext" value="mod_currency">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Available exchange rate data providers'|trans }}</h3>
-                            <p>{{ 'FOSSBilling provides integration with various currency rate data providers, allowing you to choose whichever one best suits your needs. By default, FOSSBilling will use the ExchangeRate-API "Open Access Endpoint" which does not require any configuration.'|trans }}</p>
+                            <p>{{ 'FOSSBilling provides integration with various currency exchange rate data providers, allowing you to choose whichever one best suits your needs. By default, FOSSBilling will use the ExchangeRate-API "Open Access Endpoint" which does not require any configuration.'|trans }}</p>
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -208,7 +220,7 @@
                             <br/>
                             <span class="text-muted">{{ 'To the best of our knowledge, "Currency Data API" and "currencylayer" are both owned by APILayer and provide the same data, but through a different API.'|trans }}</span>
                             <div class="form-group mb-3 mt-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Currency data provider'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Currency exchange rate data provider'|trans }}</label>
                                 <div class="col-md-6">
                                     <select class="form-select" aria-label="Currency data provider selection" name="provider" id="provider_select">
                                         <option value="exchangerate-api" selected>{{ 'ExchangeRate-API'|trans }}</option>
@@ -238,7 +250,7 @@
                                         <option value="5m">{{ 'Every 5 minutes'|trans }}</option>
                                         <option value="1m" id="1m-sync">{{ 'Every minute'|trans }}</option>
                                     </select>
-                                <p class="text-muted">{{ '"Auto" is only available for the ExchangeRate-API, which also does not provide updates every minute.'|trans }}</p>
+                                <p class="text-muted">{{ '"Auto" is only available for ExchangeRate-API and when used will cause API requests to be made only when new data is made available, preventing excess requests.'|trans }}</p>
                                 <p class="text-muted">{{ 'Exchange rate syncing runs via the cronjob and as such is limited by the frequency of your cron schedule (typically 5 minutes).'|trans }}</p>
                                 </div>
                             </div>
