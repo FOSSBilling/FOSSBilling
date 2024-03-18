@@ -538,7 +538,7 @@ class Service implements InjectionAwareInterface
      */
     protected function getExchangeRateAPIRates(string $from, int $validFor, string $key): array
     {
-        $result = $this->di['cache']->get("currency.data.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
+        $result = $this->di['cache']->get("exchangerate.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
             $item->expiresAfter($validFor);
             $from_Currency = urlencode($from);
 
@@ -661,7 +661,7 @@ class Service implements InjectionAwareInterface
             if (!is_numeric($rate)) {
                 continue;
             }
-            // All values are prefixed with our from currency (EX: "USDAUD"), so strip that off before storing it.
+            // All values are prefixed with our 'from' currency (EX: 'USDAUD'), so strip that off before storing it.
             $strippedName = substr($key, $prefixLen);
             $rates[$strippedName] = $rate;
         }
