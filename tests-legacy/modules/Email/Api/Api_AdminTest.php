@@ -278,7 +278,7 @@ class Api_AdminTest extends \BBTestCase
         $willReturn = [
             'list' => [
                 [
-                'id' => 1,
+                    'id' => 1,
                 ],
             ],
         ];

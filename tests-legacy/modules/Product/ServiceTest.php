@@ -60,9 +60,9 @@ class ServiceTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods([
-                             'getStartingFromPrice',
-                             'getUpgradablePairs',
-                             'toProductPaymentApiArray', ])
+                'getStartingFromPrice',
+                'getUpgradablePairs',
+                'toProductPaymentApiArray', ])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -807,7 +807,7 @@ class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturnOnConsecutiveCalls(
                 [
-                'price_starting_from' => 4,
+                    'price_starting_from' => 4,
                 ],
                 [
                     'price_starting_from' => 5,

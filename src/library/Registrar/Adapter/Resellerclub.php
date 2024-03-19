@@ -55,16 +55,16 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'label' => 'Manages domains on ResellerClub via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where FOSSBilling is installed to authorize it for API access.',
             'form' => [
                 'userid' => ['text', [
-                            'label' => 'Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID',
-                            'description' => 'ResellerClub Reseller ID',
-                        ],
-                     ],
+                    'label' => 'Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID',
+                    'description' => 'ResellerClub Reseller ID',
+                ],
+                ],
                 'api-key' => ['password', [
-                            'label' => 'ResellerClub API Key',
-                            'description' => 'You can get this at ResellerClub control panel, go to Settings -> API',
-                            'required' => false,
-                        ],
-                     ],
+                    'label' => 'ResellerClub API Key',
+                    'description' => 'You can get this at ResellerClub control panel, go to Settings -> API',
+                    'required' => false,
+                ],
+                ],
             ],
         ];
     }

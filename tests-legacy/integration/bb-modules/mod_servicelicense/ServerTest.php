@@ -8,9 +8,9 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
     public static function variations()
     {
         return [
-//            array(array(
-//                'fail'       =>  '',
-//            ), false),
+            //            array(array(
+            //                'fail'       =>  '',
+            //            ), false),
 
             [[
                 'license' => 'BOX-NOT-EXISTS',
