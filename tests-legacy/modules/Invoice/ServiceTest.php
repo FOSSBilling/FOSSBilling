@@ -1363,7 +1363,7 @@ class ServiceTest extends \BBTestCase
     {
         $sqlResult = [
             ['status' => \Model_Invoice::STATUS_PAID,
-                  'counter' => 2],
+                'counter' => 2],
         ];
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

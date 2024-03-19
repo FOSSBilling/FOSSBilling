@@ -143,8 +143,8 @@ class ServiceTest extends \BBTestCase
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
-                                          'disable_change_email' => 0,
-                                      ]);
+                'disable_change_email' => 0,
+            ]);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
@@ -222,8 +222,8 @@ class ServiceTest extends \BBTestCase
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
-                                          'disable_change_email' => 1,
-                                      ]);
+                'disable_change_email' => 1,
+            ]);
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->never())->
@@ -268,8 +268,8 @@ class ServiceTest extends \BBTestCase
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
-                                          'disable_change_email' => 0,
-                                      ]);
+                'disable_change_email' => 0,
+            ]);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');

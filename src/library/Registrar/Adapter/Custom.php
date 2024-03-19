@@ -34,10 +34,10 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
             'label' => 'Custom Registrar always responds with positive results. Usefull if no other registrar is suitable.',
             'form' => [
                 'use_whois' => ['radio', [
-                            'multiOptions' => ['1' => 'Yes', '0' => 'No'],
-                            'label' => 'Use WHOIS to check for domain availability',
-                    ],
-                 ],
+                    'multiOptions' => ['1' => 'Yes', '0' => 'No'],
+                    'label' => 'Use WHOIS to check for domain availability',
+                ],
+                ],
             ],
         ];
     }
