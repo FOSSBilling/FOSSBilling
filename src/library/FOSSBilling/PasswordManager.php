@@ -13,9 +13,14 @@ namespace FOSSBilling;
 
 class PasswordManager
 {
-    private string $algo = PASSWORD_DEFAULT;
-    private static string $defualtOptions = ['cost' => 12];
-    private array $options = [];
+    private string $algo;
+    private array $options;
+
+    public function __construct(string $algo = PASSWORD_DEFAULT, array $options = [])
+    {
+        $this->setAlgo($algo);
+        $this->setOptions($options);
+    }
 
     /**
      * Sets the password hashing algorithm.
@@ -44,8 +49,7 @@ class PasswordManager
      */
     public function setOptions($options = []): object
     {
-        array_merge($this->defualtOptions, $options);
-        $this->options = $options;
+        $this->options = array_merge(['cost' => 12], $options);
         return $this;
     }
 
