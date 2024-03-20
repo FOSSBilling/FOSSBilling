@@ -370,6 +370,11 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'ALTER TABLE extension DROP COLUMN manifest;';
                 $this->executeSql($q);
             },
+            35 => function () {
+                // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
+                $q = "ALTER TABLE currency ADD `rounding_precision` int(11) DEFAULT '1' AFTER `price_format`;";
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

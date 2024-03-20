@@ -422,13 +422,14 @@ class Service implements InjectionAwareInterface
             'code' => $model->code,
             'title' => $model->title,
             'conversion_rate' => (float) $model->conversion_rate,
+            'rounding_precision' => (float) $model->rounding_precision,
             'format' => $model->format,
             'price_format' => $model->price_format,
             'default' => $model->is_default,
         ];
     }
 
-    public function createCurrency($code, $format, $title = null, $conversionRate = 1)
+    public function createCurrency($code, $format, $title = null, $conversionRate = 1, $roundingprecision = 1)
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Currency', 2);
@@ -440,6 +441,7 @@ class Service implements InjectionAwareInterface
         $model->title = $title;
         $model->format = $format;
         $model->conversion_rate = $conversionRate;
+        $model->rounding_precision = $roundingprecision;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -456,7 +458,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null)
+    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null, $roundingprecision = 1)
     {
         $db = $this->di['db'];
 
@@ -483,6 +485,14 @@ class Service implements InjectionAwareInterface
                 throw new \FOSSBilling\InformationException('Currency rate is invalid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
+        }
+
+        // update rounding_precision
+        if (isset($roundingprecision)) {
+            if (!is_numeric($roundingprecision) || $roundingprecision < 0) {
+                throw new \Box_Exception('Currency rounding precision is invalid', null, 151);
+            }
+            $model->rounding_precision = $roundingprecision;
         }
 
         $model->updated_at = date('Y-m-d H:i:s');

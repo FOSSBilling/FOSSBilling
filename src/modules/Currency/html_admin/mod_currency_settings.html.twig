@@ -57,6 +57,7 @@
                                 <th>{{ 'ISO code'|trans }}</th>
                                 <th>{{ 'Title'|trans }}</th>
                                 <th>{{ 'Conversion rate'|trans }}</th>
+                                <th>{{ 'Rounding Precision'|trans }}</th>
                                 <th>{{ 'Example price'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
@@ -69,6 +70,7 @@
                                         <a href="{{ '/currency/manage'|alink }}/{{ currency.code }}">{{ currency.title }}</a>
                                     </td>
                                     <td>{{ currency.conversion_rate }}</td>
+                                    <td>{{ currency.rounding_precision }}</td>
                                     <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
                                     <td>
                                         <a class="btn btn-icon" href="{{ '/currency/manage'|alink }}/{{ currency.code }}"

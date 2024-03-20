@@ -112,8 +112,8 @@ class Admin extends \Api_Abstract
 
         $title = $data['title'] ?? null;
         $conversionRate = $data['conversion_rate'] ?? 1;
-
-        return $service->createCurrency($data['code'] ?? null, $data['format'] ?? null, $title, $conversionRate);
+        $roundingprecision = $data['rounding_precision'] ?? 1;
+        return $service->createCurrency($data['code'] ?? null, $data['format'] ?? null, $title, $conversionRate, $roundingprecision);
     }
 
     /**
@@ -138,8 +138,9 @@ class Admin extends \Api_Abstract
         $title = $data['title'] ?? null;
         $priceFormat = $data['price_format'] ?? null;
         $conversionRate = $data['conversion_rate'] ?? null;
+        $roundingprecision = $data['rounding_precision'] ?? null;
 
-        return $this->getService()->updateCurrency($data['code'], $format, $title, $priceFormat, $conversionRate);
+        return $this->getService()->updateCurrency($data['code'], $format, $title, $priceFormat, $conversionRate, $roundingprecision);
     }
 
     /**

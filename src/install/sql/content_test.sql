@@ -141,9 +141,10 @@ LOCK TABLES `currency` WRITE;
 
 INSERT INTO `currency` (`id`, `title`, `code`, `is_default`, `conversion_rate`, `format`, `price_format`, `created_at`, `updated_at`)
 VALUES
-	(1,'US Dollar','USD',1,1.000000,'${{price}}','1','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(2,'Euro','EUR',0,0.600000,'€{{price}}','1','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(3,'Pound Sterling','GBP',0,0.600000,'{{price}} ₤','1','2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(1,'US Dollar','USD',1,1.000000,'${{price}}','1','1','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,'Euro','EUR',0,0.600000,'€{{price}}','1','1','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(3,'Pound Sterling','GBP',0,0.600000,'{{price}} ₤','1','1','2022-12-01 12:00:00','2022-12-01 12:00:00');
+    (4,'Swiss Francs','CHF',0,1.1500000,'{{price}} CHF','1','0.05','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `currency` ENABLE KEYS */;
 UNLOCK TABLES;
