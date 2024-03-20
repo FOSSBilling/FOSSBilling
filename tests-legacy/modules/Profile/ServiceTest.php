@@ -104,7 +104,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);
@@ -338,7 +338,7 @@ class ServiceTest extends \BBTestCase
 
         $password = 'new password';
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);

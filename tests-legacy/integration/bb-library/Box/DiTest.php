@@ -40,7 +40,7 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertInstanceOf('\\' . Box\Mod\Theme\Model\Theme::class, $di['theme']);
         $this->assertInstanceOf('\Model_Cart', $di['cart']);
         $this->assertInstanceOf('\\' . GeoIp2\Database\Reader::class, $di['geoip']);
-        $this->assertInstanceOf('\Box_Password', $di['password']);
+        $this->assertInstanceOf('\FOSSBilling\PasswordManager', $di['password']);
         $this->assertInstanceOf('\Box_Translate', $di['translate']());
     }
 }

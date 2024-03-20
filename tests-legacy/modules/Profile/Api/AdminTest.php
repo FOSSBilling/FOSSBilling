@@ -110,7 +110,7 @@ class AdminTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
         $di['validator'] = new \FOSSBilling\Validate();
-        $di['password'] = new \Box_Password();
+        $di['password'] = new \FOSSBilling\PasswordManager();
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());

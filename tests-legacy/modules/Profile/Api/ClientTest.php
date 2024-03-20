@@ -86,7 +86,7 @@ class ClientTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['password'] = new \Box_Password();
+        $di['password'] = new \FOSSBilling\PasswordManager();
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());

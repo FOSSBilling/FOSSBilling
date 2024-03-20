@@ -855,7 +855,7 @@ class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
@@ -902,7 +902,7 @@ class ServiceTest extends \BBTestCase
             ->method('getClientAddress')
             ->willReturn($ip);
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
