@@ -46,20 +46,6 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         ];
     }
 
-    public function getTlds()
-    {
-        return [
-            '.co', '.com', '.net', '.eu',
-            '.org', '.it', '.fr', '.info',
-            '.tel', '.us', '.biz', '.co.uk',
-            '.in', '.mobi', '.asia', '.tv',
-            '.re', '.be', '.cc', '.com.fr',
-            '.com.re', '.org.uk', '.me.uk', '.com.co',
-            '.net.co', '.nom.co', '.co.in', '.net.in',
-            '.org.in', '.firm.in', '.gen.in', '.ind.in',
-        ];
-    }
-
     public function isDomainAvailable(Registrar_Domain $domain)
     {
         $params = [
