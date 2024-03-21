@@ -1713,6 +1713,9 @@ class Service
             if ($cache->prune()) {
                 $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
             }
+
+            // Update the IP address database
+            \FOSSBilling\IPDatabase::update();
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
