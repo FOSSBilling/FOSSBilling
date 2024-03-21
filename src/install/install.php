@@ -349,7 +349,7 @@ final class FOSSBilling_Installer
         }
 
         // Create default administrator
-        $passwordObject = new Box_Password();
+        $passwordObject = new FOSSBilling\PasswordManager();
         $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at, api_token) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW(), :api_token);");
         $stmt->execute([
             'admin_name' => $this->session->get('admin_name'),

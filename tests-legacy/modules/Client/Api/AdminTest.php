@@ -441,7 +441,7 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);

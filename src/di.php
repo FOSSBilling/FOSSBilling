@@ -776,7 +776,7 @@ $di['geoip'] = fn () => new GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Cou
  *
  * @return \Box_Password
  */
-$di['password'] = fn () => new Box_Password();
+$di['password'] = fn () => new \FOSSBilling\PasswordManager();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.

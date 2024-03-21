@@ -32,6 +32,7 @@ class Box_Authorization
         if ($this->di['password']->verify($plainTextPassword, $user->pass)) {
             if ($this->di['password']->needsRehash($user->pass)) {
                 $user->pass = $this->di['password']->hashIt($plainTextPassword);
+                $user->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($user);
             }
 

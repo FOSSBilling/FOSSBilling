@@ -333,7 +333,7 @@ class GuestTest extends \BBTestCase
         $eventMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
         $passwordMock->expects($this->once())
             ->method('hashIt');
 

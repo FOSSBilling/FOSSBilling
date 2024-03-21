@@ -1,10 +1,10 @@
 <?php
 
-class Box_PasswordTest extends PHPUnit\Framework\TestCase
+class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
 {
     public function testsetAlgo()
     {
-        $boxPassword = new Box_Password();
+        $boxPassword = new FOSSBilling\PasswordManager();
         $algo = PASSWORD_BCRYPT;
         $boxPassword->setAlgo($algo);
         $result = $boxPassword->getAlgo();
@@ -13,7 +13,7 @@ class Box_PasswordTest extends PHPUnit\Framework\TestCase
 
     public function testSetOptions()
     {
-        $boxPassword = new Box_Password();
+        $boxPassword = new FOSSBilling\PasswordManager();
         $options = [
             'cost' => 12,
         ];
@@ -24,7 +24,7 @@ class Box_PasswordTest extends PHPUnit\Framework\TestCase
 
     public function testHashing()
     {
-        $boxPassword = new Box_Password();
+        $boxPassword = new FOSSBilling\PasswordManager();
         $password = '123456';
         $hash = $boxPassword->hashIt($password);
         $this->assertIsString($hash);
@@ -41,7 +41,7 @@ class Box_PasswordTest extends PHPUnit\Framework\TestCase
 
     public function testNeedsRehashing()
     {
-        $boxPassword = new Box_Password();
+        $boxPassword = new FOSSBilling\PasswordManager();
         $password = '123456';
         $hash = $boxPassword->hashIt($password);
         $this->assertIsString($hash);
