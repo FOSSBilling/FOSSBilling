@@ -534,11 +534,11 @@ class Service implements InjectionAwareInterface
     protected function getExchangeRateAPIRates(string $from, int $validFor, string $key): array
     {
         $result = $this->di['cache']->get("exchangerate.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
-            $from_Currency = urlencode($from);
+            $from_currency = urlencode($from);
 
             if (!empty($key)) {
                 $key = urlencode($key);
-                $requestUrl = "https://v6.exchangerate-api.com/v6/$key/latest/$from_Currency";
+                $requestUrl = "https://v6.exchangerate-api.com/v6/$key/latest/$from_currency";
             } else {
                 $requestUrl = 'https://open.er-api.com/v6/latest/USD';
             }
@@ -587,12 +587,12 @@ class Service implements InjectionAwareInterface
         $result = $this->di['cache']->get("currency.data.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
             $item->expiresAfter($validFor);
 
-            $from_Currency = urlencode($from);
+            $from_currency = urlencode($from);
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
                 'query' => [
-                    'source' => $from_Currency,
+                    'source' => $from_currency,
                 ],
                 'headers' => [
                     'Content-Type' => 'text/plain',
@@ -623,13 +623,13 @@ class Service implements InjectionAwareInterface
         $result = $this->di['cache']->get("currencylayer.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
             $item->expiresAfter($validFor);
 
-            $from_Currency = urlencode($from);
+            $from_currency = urlencode($from);
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
                 'query' => [
                     'access_key' => $key,
-                    'source' => $from_Currency,
+                    'source' => $from_currency,
                 ],
             ]);
             $array = $response->toArray();
