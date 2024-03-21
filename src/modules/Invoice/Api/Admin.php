@@ -199,6 +199,21 @@ class Admin extends \Api_Abstract
         return $this->getService()->updateInvoice($model, $data);
     }
 
+    /** 
+     * Update buyer details.
+     * 
+     * @return bool
+     */
+    public function update_client_address($data)
+    {
+        $model = $this->_getInvoice($data);
+        // check if invoice is unpaid 
+        if ($model->status != 'unpaid') {
+            throw new \FOSSBilling\InformationException('Invoice must be unpaid to update buyer details');
+        }
+        return $this->getService()->updateClientAddress($model);
+    }
+
     /**
      * Remove one line from invoice.
      *
@@ -225,8 +240,17 @@ class Admin extends \Api_Abstract
     public function delete($data)
     {
         $model = $this->_getInvoice($data);
-
-        return $this->getService()->deleteInvoiceByAdmin($model);
+        // check if invoice is unpaid and not approved
+        if ($model->status == 'unpaid') {
+            // if invoice is approved, then revoke it
+            if ($model->approved == '1') {
+                return $this->getService()->revokeInvoiceByAdmin($model);
+            } else {
+                return $this->getService()->deleteInvoiceByAdmin($model);
+            }
+        } else {
+            throw new \FOSSBilling\InformationException('Only unpaid invoices can be deleted');
+        }
     }
 
     /**
