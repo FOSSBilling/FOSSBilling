@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,8 +11,10 @@
 
 namespace Box\Mod\Currency;
 
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -63,7 +66,7 @@ class Service implements InjectionAwareInterface
     {
         $f_rate = $this->getRateByCode($foreign_code);
         if ($f_rate == 0) {
-            throw new \FOSSBilling\InformationException('Currency conversion rate cannot be zero');
+            throw new InformationException('Currency conversion rate cannot be zero');
         }
 
         return 1 / $f_rate;
@@ -327,7 +330,7 @@ class Service implements InjectionAwareInterface
     public function rm(\Model_Currency $model)
     {
         if ($model->is_default) {
-            throw new \FOSSBilling\InformationException('Cannot remove default currency');
+            throw new InformationException('Cannot remove default currency');
         }
 
         if ($model->code === null || empty($model->code)) {
@@ -342,15 +345,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Returns the API credentials for currencylayer.
-     *
-     * @todo maybe make this extensible so people can choose their data provider?
-     *
-     * @since 4.22.0
-     *
-     * @return string
+     * Returns the old API key. Kept to ensure updating doesn't break a config
      */
-    public function getKey()
+    public function getKey(): string
     {
         $sql = 'SELECT `param`, `value` FROM setting';
         $db = $this->di['db'];
@@ -361,59 +358,24 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Updates the API credentials for currencylayer.
-     *
-     * @todo maybe make this extensible so people can choose their data provider?
-     *
-     * @since 4.22.0
-     */
-    public function updateKey($key)
-    {
-        $sql = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currencylayer', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
-        $values = [':key' => $key];
-
-        $db = $this->di['db'];
-        $db->exec($sql, $values);
-    }
-
-    /**
      * See if we should update exchange rates whenever the CRON jobs are run.
-     *
-     * @since 4.22.0
-     *
-     * @return bool
      */
-    public function isCronEnabled()
+    public function isCronEnabled(): bool
     {
+        $config = $this->di['mod_config']('currency');
         $sql = 'SELECT `param`, `value` FROM setting';
         $db = $this->di['db'];
 
         $pairs = $db->getAssoc($sql);
 
-        if (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == '1') {
+        // Keeping backwards compatibility with old settings
+        if (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == '1' && empty($config['sync_rate'])) {
             return true;
-        } else {
+        } elseif (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == '0' && empty($config['sync_rate'])) {
             return false;
-        }
-    }
-
-    /**
-     * Enable or disable updating exchange rates whenever the CRON jobs are run.
-     */
-    public function setCron($data): void
-    {
-        $sql = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
-
-        if ($data == '1') {
-            $key = '1';
         } else {
-            $key = '0';
+            return ($config['sync_rate'] ?? 'auto') !== 'never';
         }
-
-        $values = [':key' => $key];
-
-        $db = $this->di['db'];
-        $db->exec($sql, $values);
     }
 
     public function toApiArray(\Model_Currency $model)
@@ -480,7 +442,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($conversionRate)) {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
-                throw new \FOSSBilling\InformationException('Currency rate is invalid', null, 151);
+                throw new InformationException('Currency rate is invalid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
         }
@@ -493,7 +455,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateCurrencyRates($data)
+    public function updateCurrencyRates()
     {
         $dc = $this->getDefault();
 
@@ -522,50 +484,185 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Fetch exchange rates from external sources.
-     * Uses data from the European Central Bank and currencylayer when the base currencies are Euro and US Dollar respectively.
-     *
-     * @todo use HTTPClient instead of simplexml_load_file()
-     *
-     * @param string $from Short code for the base currency
-     * @param string $to   Short code for the target currency
-     *
-     * @return float Exchange rate
+     * Gives a conversion rate between two currencies.
+     * Handles selecting the right function to query the data sources & passing the correct parameters.
      */
-    protected function _getRate($from, $to)
+    protected function _getRate(string $from, string $to): float|false
     {
-        $from_Currency = urlencode($from);
-        $to_Currency = urlencode($to);
+        $config = $this->di['mod_config']('currency');
+        $validFor = match ($config['sync_rate'] ?? 'auto') {
+            '1h' => 3600,
+            '10m' => 600,
+            '5m' => 300,
+            '1m' => 60,
+            'never' => 0,
+            default => 86_400, // Intentionally matches '1d', 'auto', and anything else
+        };
 
-        if ($from_Currency == 'EUR' && empty($this->getKey())) {
-            $XML = simplexml_load_file('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
-            foreach ($XML->Cube->Cube->Cube as $rate) {
-                if ($rate['currency'] == $to_Currency) {
-                    return (float) $rate['rate'];
-                }
+        if ($config['provider'] === 'currency_data_api') {
+            $key = $config['currencydata_key'] ?? $this->getKey();
+            if (empty($key)) {
+                throw new InformationException('You must configure your API key to use Currency Data API as an exchange rate data source.');
+            }
+            $rates = $this->getCurrencyDataRates($from, $validFor, $key);
+        } elseif ($config['provider'] === 'currencylayer') {
+            if (empty($config['currencylayer_key'])) {
+                throw new InformationException('You must configure your API key to use currencylayer as an exchange rate data source.');
+            }
+            $rates = $this->getCurrencyLayerRates($from, $validFor, $config['currencylayer_key']);
+        } else {
+            $key = $config['exchangerate_api_key'] ?? ''; // No key is OK here, we will just use the open API
+            if ($config['sync_rate'] ?? 'auto' === 'auto') {
+                $rates = $this->getExchangeRateAPIRates($from, 0, $key);
+            } else {
+                $rates = $this->getExchangeRateAPIRates($from, $validFor, $key);
+            }
+        }
+
+        if (isset($rates[$to]) && is_numeric($rates[$to])) {
+            return floatval($rates[$to]);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Gets the rates from https://www.exchangerate-api.com.
+     * Handles both their open API endpoint as well as the authenticated ones.
+     * Implements smart caching using their API provided next update time and will also alert us if the open endpoint goes EOL.
+     */
+    protected function getExchangeRateAPIRates(string $from, int $validFor, string $key): array
+    {
+        $result = $this->di['cache']->get("exchangerate.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
+            $from_currency = urlencode($from);
+
+            if (!empty($key)) {
+                $key = urlencode($key);
+                $requestUrl = "https://v6.exchangerate-api.com/v6/$key/latest/$from_currency";
+            } else {
+                $requestUrl = 'https://open.er-api.com/v6/latest/USD';
             }
 
-            throw new \FOSSBilling\Exception('Failed to get currency rates for :currency from the European Central Bank API', [':currency' => $to_Currency]);
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('GET', $requestUrl);
+            $array = $response->toArray();
+
+            if ($array['result'] !== 'success') {
+                $item->expiresAfter(15 * 60 * 60); // Try again in 15 min
+                error_log('ExchangeRate-API Gave an error: ' . $array['error-type']);
+
+                throw new \FOSSBilling\Exception('There was an error when fetching currency rates from ExchangeRate-API. See the error log for details.');
+            }
+
+            if ($validFor === 0) {
+                // ExchangeRate-API is great and will tell us exactly when the data will next have an update, so we will use that for the cache expiration when "auto" is the sync mode.
+                $item->expiresAt(new \DateTime($array['time_next_update_utc']));
+            } else {
+                $item->expiresAfter($validFor);
+            }
+
+            return $array;
+        });
+
+        // Their open access API endpoint has a specific param to inform of if it ever goes EOL, so let's monitor that and trigger an error to alert us if it's deprecated
+        if (array_key_exists('time_eol_unix', $result) && $result['time_eol_unix'] !== 0) {
+            trigger_error('ExchangeRate-API has deprecated their open endpoint. Investigate!', E_USER_DEPRECATED); // Should be sent via error reporting, making monitoring this easy
+        }
+
+        // Different array key between the open and authenticated endpoint, but otherwise it's the same structure.
+        if (!empty($key)) {
+            return $result['conversion_rates'] ?? [];
         } else {
+            return $result['rates'] ?? [];
+        }
+    }
+
+    /**
+     * Gets the rates from https://apilayer.com/marketplace/currency_data-api.
+     * Fetches a complete list off currencies and then caches that result for the specified period.
+     * Normalizes the return array.
+     */
+    protected function getCurrencyDataRates(string $from, int $validFor, string $key)
+    {
+        $result = $this->di['cache']->get("currency.data.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
+            $item->expiresAfter($validFor);
+
+            $from_currency = urlencode($from);
+
             $client = HttpClient::create(['bindto' => BIND_TO]);
             $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
                 'query' => [
-                    'currencies' => $to_Currency,
-                    'source' => $from_Currency,
+                    'source' => $from_currency,
                 ],
                 'headers' => [
                     'Content-Type' => 'text/plain',
-                    'apikey' => $this->getKey(),
+                    'apikey' => $key,
                 ],
             ]);
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                throw new \FOSSBilling\Exception('<b>Currencylayer threw an error:</b><br />:errorInfo', [':errorInfo' => $array['error']['info']]);
-            } else {
-                return (float) $array['quotes'][$from_Currency . $to_Currency];
+                error_log($array['error']['info']);
+
+                throw new \FOSSBilling\Exception('There was an error when fetching currency rates from Currency Data API. See the error log for details.');
             }
+
+            return $array;
+        });
+
+        return $this->processApiLayerFormat($result, $from);
+    }
+
+    /**
+     * Gets the rates from https://currencylayer.com/.
+     * Fetches a complete list off currencies and then caches that result for the specified period.
+     * Normalizes the return array.
+     */
+    protected function getCurrencyLayerRates(string $from, int $validFor, string $key)
+    {
+        $result = $this->di['cache']->get("currencylayer.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
+            $item->expiresAfter($validFor);
+
+            $from_currency = urlencode($from);
+
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('GET', 'https://api.apilayer.com/currency_data/live', [
+                'query' => [
+                    'access_key' => $key,
+                    'source' => $from_currency,
+                ],
+            ]);
+            $array = $response->toArray();
+
+            if ($array['success'] !== true) {
+                error_log($array['error']['info']);
+
+                throw new \FOSSBilling\Exception('There was an error when fetching currency rates from currencylayer. See the error log for details.');
+            }
+
+            return $array;
+        });
+
+        return $this->processApiLayerFormat($result, $from);
+    }
+
+    /**
+     * Normalizes the response from Currency Data API / currencylayer.
+     */
+    private function processApiLayerFormat(array $result, string $from): array
+    {
+        $rates = [];
+        $prefixLen = strlen($from);
+        foreach ($result['quotes'] as $key => $rate) {
+            if (!is_numeric($rate)) {
+                continue;
+            }
+            // All values are prefixed with our 'from' currency (EX: 'USDAUD'), so strip that off before storing it.
+            $strippedName = substr($key, $prefixLen);
+            $rates[$strippedName] = $rate;
         }
+
+        return $rates;
     }
 
     public function deleteCurrencyByCode($code)
@@ -590,8 +687,6 @@ class Service implements InjectionAwareInterface
 
     /**
      * If enabled, automatically call _getRate to fetch exchange rates whenever CRON jobs are run.
-     *
-     * @since 4.22.0
      */
     public static function onBeforeAdminCronRun(\Box_Event $event)
     {
@@ -600,7 +695,7 @@ class Service implements InjectionAwareInterface
 
         try {
             if ($currencyService->isCronEnabled()) {
-                $currencyService->updateCurrencyRates('');
+                $currencyService->updateCurrencyRates();
             }
         } catch (\Exception $e) {
             error_log($e);

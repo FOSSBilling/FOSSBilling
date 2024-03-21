@@ -715,7 +715,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($model);
         $service->expects($this->atLeastOnce())
             ->method('_getRate')
-            ->willReturn(random_int(1, 50) / 10);
+            ->willReturn(floatval(random_int(1, 50) / 10));
 
         $bean = new \DummyBean();
         $bean->is_default = 1;
@@ -757,7 +757,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($model);
         $service->expects($this->atLeastOnce())
             ->method('_getRate')
-            ->willReturn(null);
+            ->willReturn(false);
 
         $bean = new \DummyBean();
         $bean->is_default = 0;

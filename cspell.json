@@ -391,7 +391,9 @@
         "ipify",
         "hestiacp",
         "intval",
-        "thisfiledoesnotexist"
+        "thisfiledoesnotexist",
+        "exchangerate",
+        "currencydata"
     ],
     "ignorePaths": [
         "tests-legacy/**",
