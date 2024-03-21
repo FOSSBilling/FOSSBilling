@@ -24,18 +24,19 @@ class PasswordManager
 
     /**
      * Sets the password hashing algorithm.
-     * 
-     * @return object an instance of the current class, for use with chaining.
-     * 
-     * @throws \Exception if the provided algorithm is not listed as a valid option in PHP.
+     *
+     * @return object an instance of the current class, for use with chaining
+     *
+     * @throws \Exception if the provided algorithm is not listed as a valid option in PHP
      */
     public function setAlgo(string $algo): object
     {
         if (!in_array($algo, password_algos())) {
-            throw new \Exception("Invalid password hash provided");
+            throw new \Exception('Invalid password hash provided');
         }
 
         $this->algo = $algo;
+
         return $this;
     }
 
@@ -44,12 +45,13 @@ class PasswordManager
         return $this->algo;
     }
 
-    /** 
-     * @return object an instance of the current class, for use with chaining 
+    /**
+     * @return object an instance of the current class, for use with chaining
      */
     public function setOptions($options = []): object
     {
         $this->options = array_merge(['cost' => 12], $options);
+
         return $this;
     }
 
@@ -59,8 +61,8 @@ class PasswordManager
     }
 
     /**
-     * Creates a hash of the provided password
-     * 
+     * Creates a hash of the provided password.
+     *
      * @throws \Exception if there was an error when hashing the password
      */
     public function hashIt(string $password): string
