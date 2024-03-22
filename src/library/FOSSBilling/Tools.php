@@ -335,7 +335,7 @@ class Tools
     {
         $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
 
-        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the other to will be set to `https`, so either one means we are connected via HTTPS.
+        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the others to will be set to `https`, so either one means we are connected via HTTPS.
         return strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0;
     }
 

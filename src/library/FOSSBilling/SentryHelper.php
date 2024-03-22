@@ -84,7 +84,8 @@ class SentryHelper
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
     private static array $blacklistedInstances = [
-        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => '2024-07-01',
+        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => '2024-07-01', // Low quality modifications causing lots of errors
+        'fd26d5bc-95f4-4c9f-9807-28577f43c811' => '2024-05-01', // Low quality modifications causing lots of errors
     ];
 
     private static string $placeholderFirstHalf = '--replace--this--';

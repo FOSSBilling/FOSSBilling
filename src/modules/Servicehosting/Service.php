@@ -535,10 +535,10 @@ class Service implements InjectionAwareInterface
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
-            if (!is_null($model->config)) {
-                $result['config'] = json_decode($model->config, 1);
+            if (!empty($model->config) && json_validate($model->config)) {
+                $data['config'] = json_decode($model->config, true);
             } else {
-                $result['config'] = [];
+                $data['config'] = [];
             }
             $result['username'] = $model->username;
             $result['password'] = $model->password;
@@ -776,8 +776,10 @@ class Service implements InjectionAwareInterface
         $config['host'] = $model->hostname;
         $config['port'] = $model->port;
         $config['config'] = [];
-        if (!is_null($model->config)) {
-            $config['config'] = json_decode($model->config, 1);
+        if (!empty($model->config) && json_validate($model->config)) {
+            $config['config'] = json_decode($model->config, true);
+        } else {
+            $config['config'] = [];
         }
         $config['secure'] = $model->secure;
         $config['username'] = $model->username;
@@ -884,8 +886,8 @@ class Service implements InjectionAwareInterface
         $model->max_park = $data['max_park'] ?? $model->max_park;
 
         /* add new config value to hosting plan */
-        if ($model->config) {
-            $config = json_decode($model->config, 1);
+        if (!empty($model->config) && json_validate($model->config)) {
+            $config = json_decode($model->config, true);
         } else {
             $config = [];
         }
