@@ -126,7 +126,7 @@
                             </svg>
                             <span>{{ 'Update Rates'|trans }}</span>
                         </a>
-                        {% if params.provider == "exchangerate-api" %}
+                        {% if params.provider|default('exchangerate-api') == "exchangerate-api" and not params.exchangerate_api_key %}
                             <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates By ExchangeRate-API.'|trans }}</p></a>
                         {% endif %}
                     </div>
@@ -231,9 +231,9 @@
                             <div class="form-group mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'API key'|trans }}</label>
                                 <div class="col-md-6">
+                                    <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key }}" hidden="true">
                                     <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ params.currencydata_key }}" hidden="true">
                                     <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ params.currencylayer_key }}"  hidden="true">
-                                    <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key }}" hidden="true">
                                     <span class="text-muted" id="exchangerate_api_help_text" hidden="true">{{ 'Leave this blank to use the ExchangeRate-API "Open Access Endpoint".'|trans }}</span>
                                 </div>
                             </div>
