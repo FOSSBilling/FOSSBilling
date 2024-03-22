@@ -540,7 +540,7 @@ class Service implements InjectionAwareInterface
                 $key = urlencode($key);
                 $requestUrl = "https://v6.exchangerate-api.com/v6/$key/latest/$from_currency";
             } else {
-                $requestUrl = 'https://open.er-api.com/v6/latest/USD';
+                $requestUrl = "https://open.er-api.com/v6/latest/$from_currency";
             }
 
             $client = HttpClient::create(['bindto' => BIND_TO]);

@@ -189,13 +189,13 @@ globalThis.bb = {
             data,
             function (result) {
               buttons.forEach(function (button) {
-                button.setAttribute("disabled", "false");
+                button.removeAttribute("disabled");
               });
               return bb._afterComplete(formElement, result);
             },
             function (error) {
               buttons.forEach(function (button) {
-                button.setAttribute("disabled", "false");
+                button.removeAttribute("disabled");
               });
               FOSSBilling.message(`${error.message} (${error.code})`, "error");
             }
@@ -401,7 +401,7 @@ $.fn.simpleTabs = function () {
   if ($(document.location.hash).length) {
     $('a[href="' + document.location.hash + '"]')
       .parent()
-      .click();
+      .trigger();
     $(window).scrollTop(window.location.href.indexOf("#"));
   }
 }; //end function
