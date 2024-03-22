@@ -345,37 +345,12 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Returns the old API key. Kept to ensure updating doesn't break a config
-     */
-    public function getKey(): string
-    {
-        $sql = 'SELECT `param`, `value` FROM setting';
-        $db = $this->di['db'];
-
-        $pairs = $db->getAssoc($sql);
-
-        return $pairs['currencylayer'] ?? '';
-    }
-
-    /**
      * See if we should update exchange rates whenever the CRON jobs are run.
      */
     public function isCronEnabled(): bool
     {
         $config = $this->di['mod_config']('currency');
-        $sql = 'SELECT `param`, `value` FROM setting';
-        $db = $this->di['db'];
-
-        $pairs = $db->getAssoc($sql);
-
-        // Keeping backwards compatibility with old settings
-        if (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == '1' && empty($config['sync_rate'])) {
-            return true;
-        } elseif (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == '0' && empty($config['sync_rate'])) {
-            return false;
-        } else {
-            return ($config['sync_rate'] ?? 'auto') !== 'never';
-        }
+        return ($config['sync_rate'] ?? 'auto') !== 'never';
     }
 
     public function toApiArray(\Model_Currency $model)
@@ -500,11 +475,10 @@ class Service implements InjectionAwareInterface
         };
 
         if ($config['provider'] === 'currency_data_api') {
-            $key = $config['currencydata_key'] ?? $this->getKey();
-            if (empty($key)) {
+            if (empty($config['currencydata_key'])) {
                 throw new InformationException('You must configure your API key to use Currency Data API as an exchange rate data source.');
             }
-            $rates = $this->getCurrencyDataRates($from, $validFor, $key);
+            $rates = $this->getCurrencyDataRates($from, $validFor, $config['currencydata_key']);
         } elseif ($config['provider'] === 'currencylayer') {
             if (empty($config['currencylayer_key'])) {
                 throw new InformationException('You must configure your API key to use currencylayer as an exchange rate data source.');

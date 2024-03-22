@@ -370,6 +370,28 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'ALTER TABLE extension DROP COLUMN manifest;';
                 $this->executeSql($q);
             },
+            42 => function () {
+                $ext_service = $this->di['mod_service']('extension');
+                $config = $ext_service->getConfig('mod_currency');
+                $pairs = $this->di['db']->getAssoc('SELECT `param`, `value` FROM setting');
+
+                // Migrate the old currency exchange rate sync settings
+                $key = $pairs['currencylayer'] ?? '';
+                if ($key) {
+                    $config['provider'] = 'currency_data_api';
+                    $config['currencydata_key'] = $key;
+                }
+
+                // Now migrate the cron setting
+                $cron = $pairs['currency_cron_enabled'] ?? 0;
+                if ($cron == '1') {
+                    $config['sync_rate'] = 'auto';
+                } else {
+                    $config['sync_rate'] = 'never';
+                }
+
+                $ext_service->setConfig($config);
+            }
         ];
         ksort($patches, SORT_NATURAL);
 
