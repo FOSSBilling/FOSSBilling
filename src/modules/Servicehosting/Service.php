@@ -536,9 +536,9 @@ class Service implements InjectionAwareInterface
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
             if (!empty($model->config) && json_validate($model->config)) {
-                $data['config'] = json_decode($model->config, true);
+                $result['config'] = json_decode($model->config, true);
             } else {
-                $data['config'] = [];
+                $result['config'] = [];
             }
             $result['username'] = $model->username;
             $result['password'] = $model->password;
