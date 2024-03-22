@@ -335,7 +335,11 @@ class Service implements InjectionAwareInterface
         $supportService = $this->di['mod_service']('support');
 
         $data = $this->di['db']->toArray($model);
-        $data['config'] = json_decode($model->config, 1);
+        if (!empty($model->config) && json_validate($model->config)) {
+            $data['config'] = json_decode($model->config, true);
+        } else {
+            $data['config'] = [];
+        }
         $data['total'] = $this->getTotal($model);
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);

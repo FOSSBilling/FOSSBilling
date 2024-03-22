@@ -129,8 +129,8 @@ class ServicePayGateway implements InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $result['supports_one_time_payments'] = $single;
             $result['supports_subscriptions'] = $recurrent;
-            if ($model->config) {
-                $result['config'] = json_decode($model->config, 1);
+            if (!empty($model->config) && json_validate($model->config)) {
+                $result['config'] = json_decode($model->config, true);
             } else {
                 $result['config'] = [];
             }
