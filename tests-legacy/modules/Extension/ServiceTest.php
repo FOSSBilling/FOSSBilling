@@ -692,7 +692,7 @@ class ServiceTest extends \BBTestCase
         $result = $this->service->getConfig($data['ext']);
 
         $this->assertIsArray($result);
-        $this->assertEquals([], $result);
+        $this->assertEquals(['ext' => 'extensionName'], $result);
     }
 
     public function testsetConfig()
