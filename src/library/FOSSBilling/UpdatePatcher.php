@@ -371,6 +371,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql($q);
             },
             42 => function () {
+                // This patch will migrate previous currency exchange rate data provider settings to the new ones
                 $ext_service = $this->di['mod_service']('extension');
                 $config = $ext_service->getConfig('mod_currency');
                 $pairs = $this->di['db']->getAssoc('SELECT `param`, `value` FROM setting');
