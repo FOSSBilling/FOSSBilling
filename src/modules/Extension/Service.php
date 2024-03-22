@@ -609,6 +609,7 @@ class Service implements InjectionAwareInterface
                 $config = $this->di['tools']->decodeJ($config);
             }
 
+            $config['ext'] = $ext;
             return $config;
         });
     }
