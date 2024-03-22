@@ -144,15 +144,6 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Gets the API key for currencylayer.
-     * @deprecated as this will only return the OLD key from before currency data got refactored. Current keys are stored in the module's config.
-     */
-    public function get_key($data)
-    {
-        return $this->getService()->getKey();
-    }
-
-    /**
      * See if CRON jobs are enabled for currency rates.
      */
     public function is_cron_enabled($data): bool
