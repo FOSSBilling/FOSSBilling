@@ -209,7 +209,7 @@ class Box_App
         return $response;
     }
 
-    protected function event(string $httpMethod, string $url, string $methodName, array $conditions = [], string $classname = null): void
+    protected function event(string $httpMethod, string $url, string $methodName, ?array $conditions = [], string $classname = null): void
     {
         if (method_exists($this, $methodName)) {
             $this->mappings[] = [$httpMethod, $url, $methodName, $conditions];
