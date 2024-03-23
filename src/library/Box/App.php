@@ -92,22 +92,22 @@ class Box_App
         return $this->render('error', ['exception' => $e]);
     }
 
-    public function get(string $url, string $methodName, array $conditions = [], string $class = null): void
+    public function get(string $url, string $methodName, ?array $conditions = [], string $class = null): void
     {
         $this->event('get', $url, $methodName, $conditions, $class);
     }
 
-    public function post(string $url, string $methodName, array $conditions = [], string $class = null): void
+    public function post(string $url, string $methodName, ?array $conditions = [], string $class = null): void
     {
         $this->event('post', $url, $methodName, $conditions, $class);
     }
 
-    public function put(string $url, string $methodName, array $conditions = [], string $class = null): void
+    public function put(string $url, string $methodName, ?array $conditions = [], string $class = null): void
     {
         $this->event('put', $url, $methodName, $conditions, $class);
     }
 
-    public function delete(string $url, string $methodName, array $conditions = [], string $class = null): void
+    public function delete(string $url, string $methodName, ?array $conditions = [], string $class = null): void
     {
         $this->event('delete', $url, $methodName, $conditions, $class);
     }
@@ -209,7 +209,7 @@ class Box_App
         return $response;
     }
 
-    protected function event(string $httpMethod, string $url, string $methodName, array $conditions = [], string $classname = null): void
+    protected function event(string $httpMethod, string $url, string $methodName, ?array $conditions = [], string $classname = null): void
     {
         if (method_exists($this, $methodName)) {
             $this->mappings[] = [$httpMethod, $url, $methodName, $conditions];

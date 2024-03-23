@@ -474,12 +474,14 @@ class Service implements InjectionAwareInterface
             default => 86_400, // Intentionally matches '1d', 'auto', and anything else
         };
 
-        if ($config['provider'] === 'currency_data_api') {
+        $provider = $config['provider'] ?? '';
+
+        if ($provider === 'currency_data_api') {
             if (empty($config['currencydata_key'])) {
                 throw new InformationException('You must configure your API key to use Currency Data API as an exchange rate data source.');
             }
             $rates = $this->getCurrencyDataRates($from, $validFor, $config['currencydata_key']);
-        } elseif ($config['provider'] === 'currencylayer') {
+        } elseif ($provider === 'currencylayer') {
             if (empty($config['currencylayer_key'])) {
                 throw new InformationException('You must configure your API key to use currencylayer as an exchange rate data source.');
             }
