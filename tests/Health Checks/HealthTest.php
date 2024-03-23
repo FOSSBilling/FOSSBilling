@@ -1,11 +1,9 @@
-
 <?php
 
 declare(strict_types=1);
 
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
-
 
 final class HealthTest extends TestCase
 {
