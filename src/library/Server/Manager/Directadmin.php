@@ -388,11 +388,8 @@ class Server_Manager_Directadmin extends Server_Manager
             'action' => 'create',
             'expiry'=>'30m', // when the URL expires, so does the user session
             'login_keys_notify_on_creation' => 0,
-            'method' => 'GET',
-            'passwd' => $this->_config['password'],
             'redirect-url' => $protocol . $this->_config['host'] . ':' . $this->getPort(),
             'type' => 'one_time_url',
-            'user' => $this->_config['username']."|".$account->getUsername(),
         ];
 
         $result = $this->request('API_LOGIN_KEYS', $fields, true, $account->getUsername());
