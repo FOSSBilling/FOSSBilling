@@ -356,6 +356,8 @@ class Server_Manager_Directadmin extends Server_Manager
      * @param Server_Account|null $account The server account. This parameter is not used in this method.
      *
      * @return string the login URL
+     *
+     * @throws Server_Exception
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
@@ -371,12 +373,28 @@ class Server_Manager_Directadmin extends Server_Manager
      * @param Server_Account|null $account The server account. This parameter is not used in this method.
      *
      * @return string the login URL
+     *
+     * @throws Server_Exception
      */
     public function getLoginUrl(Server_Account $account = null): string
     {
         $protocol = $this->_config['secure'] ? 'https://' : 'http://';
 
-        return $protocol . $this->_config['host'] . ':' . $this->getPort();
+        if (!$account) {
+            return $protocol . $this->_config['host'] . ':' . $this->getPort();
+        }
+
+        $fields = [
+            'action' => 'create',
+            'expiry'=>'30m', // when the URL expires, so does the user session
+            'login_keys_notify_on_creation' => 0,
+            'redirect-url' => $protocol . $this->_config['host'] . ':' . $this->getPort(),
+            'type' => 'one_time_url',
+        ];
+
+        $result = $this->request('API_LOGIN_KEYS', $fields, true, $account->getUsername());
+
+        return $result['details'];
     }
 
     /**
@@ -602,7 +620,7 @@ class Server_Manager_Directadmin extends Server_Manager
      *
      * @throws Server_Exception if there is an error while sending the request or if the server returns an error
      */
-    private function request(string $command, array $fields = [], bool $post = true): array
+    private function request(string $command, array $fields = [], bool $post = true, string $asUser = ''): array
     {
         // Get the host from the configuration
         $host = $this->_config['host'];
@@ -613,9 +631,15 @@ class Server_Manager_Directadmin extends Server_Manager
         // Build the field string for the request
         $field_string = http_build_query($fields);
 
+        // Support login-as for non-admin functions
+        $username = $this->_config['username'];
+        if ($asUser) {
+            $username .= '|' . $asUser;
+        }
+
         // Get the HTTP client with the basic authentication and timeout options set
         $httpClient = $this->getHttpClient()->withOptions([
-            'auth_basic' => [$this->_config['username'], $this->_config['password']],
+            'auth_basic' => [$username, $this->_config['password']],
             'timeout' => 60,
             'verify_host' => false,
             'verify_peer' => false,
