@@ -247,19 +247,28 @@ class Update implements InjectionAwareInterface
             throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
-        // Apply system patches and migrate configuration file.
+        // Create the update patcher
         $patcher = new UpdatePatcher();
         $patcher->setDi($this->di);
-        $patcher->applyCorePatches();
 
-        // Apply configuration file patches.
+        // Clear the cache folder to reduce chances of errors
+        try {
+            $filesystem = new Filesystem();
+            $filesystem->remove(PATH_CACHE);
+            $filesystem->mkdir(PATH_CACHE, 0755);
+        } catch (\Exception) {
+            // This step is rarely important, we can safely ignore an error here
+        }
+
+        // Now run the patches
+        $patcher->applyCorePatches();
         $patcher->applyConfigPatches();
 
-        // Clear cache and remove install folder.
+        // Clear cache and remove the install folder.
         try {
             $filesystem = new Filesystem();
             $filesystem->remove([PATH_CACHE, PATH_ROOT . '/install']);
-            $filesystem->mkdir(PATH_CACHE, 0777);
+            $filesystem->mkdir(PATH_CACHE, 0755);
         } catch (IOException $e) {
             error_log($e->getMessage());
 
