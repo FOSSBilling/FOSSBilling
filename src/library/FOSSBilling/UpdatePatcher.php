@@ -392,7 +392,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
 
                 $ext_service->setConfig($config);
-            }
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

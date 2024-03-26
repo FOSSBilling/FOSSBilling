@@ -610,6 +610,7 @@ class Service implements InjectionAwareInterface
             }
 
             $config['ext'] = $ext;
+
             return $config;
         });
     }

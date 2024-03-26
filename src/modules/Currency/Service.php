@@ -350,6 +350,7 @@ class Service implements InjectionAwareInterface
     public function isCronEnabled(): bool
     {
         $config = $this->di['mod_config']('currency');
+
         return ($config['sync_rate'] ?? 'auto') !== 'never';
     }
 
