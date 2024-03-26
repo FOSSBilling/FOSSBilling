@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,7 @@
 
 namespace Box\Mod\Order;
 
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -515,7 +517,7 @@ class Service implements InjectionAwareInterface
         $cartService = $this->di['mod_service']('cart');
         // check stock
         if (!$cartService->isStockAvailable($product, $qty)) {
-            throw new \FOSSBilling\InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
+            throw new InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
         }
 
         // Addons must have defined master order
@@ -979,7 +981,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->status != \Model_ClientOrder::STATUS_ACTIVE) {
-            throw new \FOSSBilling\InformationException('Only active orders can be suspended');
+            throw new InformationException('Only active orders can be suspended');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_SUSPEND);
@@ -1121,7 +1123,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->trash($model);
     }
 
-    public function deleteFromOrder(\Model_ClientOrder $order)
+    public function deleteFromOrder(\Model_ClientOrder $order, bool $forceDelete = false)
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderDelete', 'params' => ['id' => $order->id]]);
 
@@ -1129,7 +1131,16 @@ class Service implements InjectionAwareInterface
             $this->rmInvoiceItemByOrder($order);
         }
 
-        $this->_callOnService($order, \Model_ClientOrder::ACTION_DELETE);
+        try {
+            $this->_callOnService($order, \Model_ClientOrder::ACTION_DELETE);
+        } catch (\Exception $e) {
+            if (!$forceDelete) {
+                throw $e;
+            } else {
+                error_log($e->getMessage() . 'in ' . $e->getFile() . ':' . $e->getFile());
+            }
+        }
+
         $id = $order->id;
         $this->rmClientOrderStatusByOrder($order);
         $this->rmOrder($order);
