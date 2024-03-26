@@ -213,7 +213,7 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
         $delete_addons = isset($data['delete_addons']) ? (bool) $data['delete_addons'] : false;
-        $forceDelete = (bool) $data['force_delete'] ?? false;
+        $forceDelete = (bool) ($data['force_delete'] ?? false);
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
