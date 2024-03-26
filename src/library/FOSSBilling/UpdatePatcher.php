@@ -405,7 +405,7 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * If we end up needing a newly introduced package during the update process, composer's autoloader won't have it until the next load.
      * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
-     * This isn't particulalry fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
+     * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
      */
     private function registerFallbackAutoloader()
     {
