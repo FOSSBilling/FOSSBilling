@@ -17,7 +17,7 @@ final class HealthTest extends TestCase
         'contact-us' => 200,
         'login' => 200,
         'signup' => 200,
-        'password-reset' => 200
+        'password-reset' => 200,
     ];
 
     public function testUrls(): void

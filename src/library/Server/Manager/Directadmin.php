@@ -386,7 +386,7 @@ class Server_Manager_Directadmin extends Server_Manager
 
         $fields = [
             'action' => 'create',
-            'expiry'=>'30m', // when the URL expires, so does the user session
+            'expiry' => '30m', // when the URL expires, so does the user session
             'login_keys_notify_on_creation' => 0,
             'redirect-url' => $protocol . $this->_config['host'] . ':' . $this->getPort(),
             'type' => 'one_time_url',
