@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -212,15 +213,16 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
         $delete_addons = isset($data['delete_addons']) ? (bool) $data['delete_addons'] : false;
+        $forceDelete = (bool) $data['force_delete'] ?? false;
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
             foreach ($list as $addon) {
-                $this->getService()->deleteFromOrder($addon);
+                $this->getService()->deleteFromOrder($addon, $forceDelete);
             }
         }
 
-        return $this->getService()->deleteFromOrder($order);
+        return $this->getService()->deleteFromOrder($order, $forceDelete);
     }
 
     /**
