@@ -372,9 +372,12 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             42 => function () {
                 // This patch will migrate previous currency exchange rate data provider settings to the new ones
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
                 $ext_service = $this->di['mod_service']('extension');
-                $config = $ext_service->getConfig('mod_currency');
                 $pairs = $this->di['db']->getAssoc('SELECT `param`, `value` FROM setting');
+                $config = $ext_service->getConfig('mod_currency');
+
+                $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
 
                 // Migrate the old currency exchange rate sync settings
                 $key = $pairs['currencylayer'] ?? '';
@@ -399,6 +402,11 @@ class UpdatePatcher implements InjectionAwareInterface
         return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 
+    /**
+     * If we end up needing a newly introduced package during the update process, composer's autoloader won't have it until the next load.
+     * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
+     * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
+     */
     private function registerFallbackAutoloader()
     {
         $loader = new \AntCMS\AntLoader([
