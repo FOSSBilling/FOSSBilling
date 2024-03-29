@@ -190,7 +190,18 @@
                         </svg>
                         <span>{{ 'Renew'|trans }}</span>
                     </a>
-
+                    {% if order.status == 'active' %}
+                    {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
+                        <a class="btn btn-primary api-link"
+                           href="{{ 'api/admin/order/ssl'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                           data-api-confirm="{{ 'Are you sure?'|trans }}"
+                           data-api-reload="{{ 'SSL enabled'|trans }}">
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#refresh" />
+                            </svg>
+                            <span>{{ 'SSL'|trans }}</span>
+                        </a>
+                    {% endif %}
                     {% if params.suspend_reason_list|trim == null %}
                     <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/order/suspend'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
@@ -270,12 +281,15 @@
                     </a>
                     {% endif %}
 
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <a class="btn btn-primary api-link"
+                        href="{{ 'api/admin/order/delete'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                        data-api-confirm="{{ 'Are you sure?'|trans }}"
+                        data-api-redirect="{{ 'order'|alink }}">
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
                         <span>{{ 'Delete'|trans }}</span>
-                    </button>
+                    </a>
 
                     {% if not order.unpaid_invoice_id %}
                     <a class="btn btn-primary api-link"
@@ -291,30 +305,6 @@
                 {% endset %}
 
                 {{ order_actions }}
-            </div>
-        </div>
-
-        <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-sm">
-                <div class="modal-content">
-                    <form method="post" action="{{ 'api/admin/order/delete'|link }}" class="api-form" data-api-redirect="{{ 'order'|alink }}">
-                        <div class="modal-status bg-danger"></div>
-                        <div class="modal-body">
-                            <div class="modal-title">{{ 'Are you sure?'|trans }}</div>
-                            <input name="id" type="number" hidden value="{{ order.id }}">
-                            <p>{{ 'Are you sure you want to delete the selected item?'|trans }}</p>
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" name="force_delete" class="form-check-input" id="forceDelete">
-                                <label class="form-check-label"for="forceDelete">{{ 'Force the deletion of the item'|trans }}</label>
-                            </div>
-                            <span class="text-muted">{{ 'Selecting this will force the item to be removed from the database even if errors occurs.'|trans }}</span>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                            <button type="submit" class="btn btn-primary">{{ 'Delete'|trans }}</button>
-                        </div>
-                    </form>
-                </div>
             </div>
         </div>
 

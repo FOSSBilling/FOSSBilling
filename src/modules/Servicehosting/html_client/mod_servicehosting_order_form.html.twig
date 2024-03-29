@@ -1,33 +1,53 @@
 {% set periods = guest.system_periods %}
 {% set pricing = product.pricing %}
 {% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
+{% set apps = guest.servicehosting_application_get_list({ 'per_page': 100 }) %}
 
 <div class="row">
     <div class="col-md-12">
-        <h5 class="mb-1">{{ product_details }}</h5>
+        <span style="font-size: small;" class="mb-1">{{ product_details }}</span>
+        <div class="pt-3 text-center">
+            <span class="badge bg-info">{{ 'Select pre-install application'|trans }}</span>
+            <fieldset class="pt-3">
+                {% for app in apps.list %}
+                <input type="radio" name="application" class="sr-only" value="{{ app.id }}" id="{{ app.id }}" style="display: none;">
+                <label for="{{ app.id }}">
+                        <div class="thumbnail">
+                                <img src="{{ app.image }}" class="border border-3" alt="Lights" style="border-color: rgb(13 202 240) !important; width:250px; height: 190px">
+                                <div class="text-center" style="font-size: small">
+                                    <small>{{ app.name }}</small>
+                                </div>
+                        </div>
+                </label>
+                {% endfor %}
+            </fieldset>
+        </div>
         <span class="text-muted">{{ 'Domain configuration'|trans }}</span>
         <div class="mb-2">
             <div class="form-check">
-                <input class="form-check-input" type="radio" name="domain[action]" value="owndomain"id="own-domain-check" onclick="selectDomainAction(this);" {% if tlds is empty %} checked {% endif %}>
-                <label class="form-check-label" for="own-domain-check">{{ 'I will use my existing domain and update nameservers'|trans }}</label>
+                <input class="form-check-input" type="radio" name="domain[action]" value="owndomain"id="own-domain-check" onclick="selectDomainAction(this);" {% if tlds is empty %} checked {% endif %} checked>
+                <label class="form-check-label" for="own-domain-check">{{ 'I want to register a new domain'|trans }}</label>
             </div>
-            {% if tlds is not empty %}
+           {# {% if tlds is not empty %}
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="domain[action]" value="register" id="domain-register-check" onclick="selectDomainAction(this);">
+                    <input class="form-check-input" type="radio" name="domain[action]" value="register" id="domain-register-check" onclick="selectDomainAction(this);" >
                     <label class="form-check-label" for="domain-register-check">{{ 'I want to register a new domain'|trans }}</label>
                 </div>
-            {% endif %}
+            {% endif %}#}
 
-            <div id="owndomain" class="mt-2 domain_action" {% if tlds is not empty %} style="display: none;" {% endif %}>
+            <div id="owndomain" class="mt-2 domain_action" {% if tlds is not empty %} {#style="display: none;"#} {% endif %}>
                 <div class="row">
                     <div class="col-md-8">
                         <div class="d-flex gap-2">
                             <div class="input-group mb-3">
-                                <input class="form-control w-75" type="text" name="domain[owndomain_sld]"
+                                <input class="form-control w-70" type="text" name="domain[owndomain_sld]"
                                        value="{{ request.owndomain_sld }}"
-                                       placeholder="{{ 'Your existing domain'|trans }}">
-                                <input class="form-control" type="text" name="domain[owndomain_tld]"
-                                       value="{{ request.owndomain_tld|default('.com') }}">
+                                       placeholder="{{ 'Your new domain'|trans }}">
+                                <select class="form-select" name="domain[owndomain_tld]">
+                                    {% for tld in tlds %}
+                                        <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -39,7 +59,7 @@
                     <div class="col-md-9">
                         <div class="d-flex gap-2">
                             <div class="input-group mb-3">
-                                <input class="form-control w-75" type="text" name="domain[register_sld]"
+                                <input class="form-control w-70" type="text" name="domain[register_sld]"
                                        value="{{ request.register_sld }}"
                                        placeholder="{{ 'Your new domain'|trans }}">
                                 <select class="form-select" name="domain[register_tld]">

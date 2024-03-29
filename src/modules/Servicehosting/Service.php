@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -146,7 +146,22 @@ class Service implements InjectionAwareInterface
             'password' => $pass,
         ];
     }
+    public function action_ssl(\Model_ClientOrder $order): bool
+    {
+        // move expiration period to future
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+            throw new Exception('SLL activate false ', [':id' => $order->id]);
+        }
+        $domain = $model->sld . $model->tld;
+        [$adapter, $account] = $this->_getAM($model);
+        $adapter->addDomainLetsEncrypt($account,$domain);
+        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($model);
 
+        return true;
+    }
     /**
      * @throws Exception
      *
@@ -311,7 +326,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
-            throw new InformationException('Account IP address is missing or is invalid');
+            throw new InformationException('Account ip is missing or is invalid');
         }
 
         $ip = $data['ip'];
@@ -335,7 +350,7 @@ class Service implements InjectionAwareInterface
             !isset($data['tld']) || empty($data['tld'])
             || !isset($data['sld']) || empty($data['sld'])
         ) {
-            throw new InformationException('Domain SLD or TLD is missing');
+            throw new InformationException('Domain sld or tld is missing');
         }
 
         $sld = $data['sld'];
@@ -535,8 +550,8 @@ class Service implements InjectionAwareInterface
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
-            if (!empty($model->config) && json_validate($model->config)) {
-                $result['config'] = json_decode($model->config, true);
+            if (!is_null($model->config)) {
+                $result['config'] = json_decode($model->config, 1);
             } else {
                 $result['config'] = [];
             }
@@ -776,10 +791,8 @@ class Service implements InjectionAwareInterface
         $config['host'] = $model->hostname;
         $config['port'] = $model->port;
         $config['config'] = [];
-        if (!empty($model->config) && json_validate($model->config)) {
-            $config['config'] = json_decode($model->config, true);
-        } else {
-            $config['config'] = [];
+        if (!is_null($model->config)) {
+            $config['config'] = json_decode($model->config, 1);
         }
         $config['secure'] = $model->secure;
         $config['username'] = $model->username;
@@ -828,6 +841,14 @@ class Service implements InjectionAwareInterface
 
         return [$sql, []];
     }
+    public function getApplicationSearchQuery($data): array
+    {
+        $sql = 'SELECT *
+                FROM service_hosting_application
+                ORDER BY id asc';
+
+        return [$sql, []];
+    }
 
     /**
      * @throws InformationException
@@ -837,7 +858,7 @@ class Service implements InjectionAwareInterface
         $id = $model->id;
         $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
         if ($serviceHosting) {
-            throw new InformationException('Cannot remove hosting plan which has active accounts');
+            throw new InformationException('Can not remove hosting plan which has active accounts');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted hosting plan %s', $id);
@@ -872,6 +893,26 @@ class Service implements InjectionAwareInterface
 
         return $result;
     }
+    public function toHostingApplicationApiArray(\Model_ServiceHostingApplication $model, $deep = false, $identity = null): array
+    {
+        if (is_null($model->config)) {
+            $model->config = '';
+        }
+
+        $result = [
+            'id' => $model->id,
+
+            'name' => $model->name,
+            'os' => $model->os,
+            'demo' => $model->demo,
+
+            'image' => $model->image,
+            'created_at' => $model->created_at,
+            'updated_at' => $model->updated_at,
+        ];
+
+        return $result;
+    }
 
     public function updateHp(\Model_ServiceHostingHp $model, array $data): bool
     {
@@ -886,8 +927,8 @@ class Service implements InjectionAwareInterface
         $model->max_park = $data['max_park'] ?? $model->max_park;
 
         /* add new config value to hosting plan */
-        if (!empty($model->config) && json_validate($model->config)) {
-            $config = json_decode($model->config, true);
+        if ($model->config) {
+            $config = json_decode($model->config, 1);
         } else {
             $config = [];
         }
@@ -919,6 +960,19 @@ class Service implements InjectionAwareInterface
 
         return true;
     }
+    public function updateApplication(\Model_ServiceHostingApplication $model, array $data): bool
+    {
+        $model->name = $data['name'] ?? $model->name;
+        $model->os = $data['os'] ?? $model->os;
+        $model->image = $data['image'] ?? $model->image;
+        $model->demo = $data['demo'] ?? $model->demo;
+        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($model);
+
+        $this->di['logger']->info('Updated application %s', $model->id);
+
+        return true;
+    }
 
     public function createHp($name, $data)
     {
@@ -940,6 +994,24 @@ class Service implements InjectionAwareInterface
         $newId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Added new hosting plan %s', $newId);
+
+        return $newId;
+    }
+    public function createApplication($name, $data)
+    {
+
+        $model = $this->di['db']->dispense('ServiceHostingApplication');
+        $model->name = $name;
+
+        $model->os = $data['os'] ?? "wp";
+        $model->image = $data['image'] ?? "";
+        $model->demo = $data['demo'] ?? "https://demo.d3s.one";
+
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
+        $newId = $this->di['db']->store($model);
+
+        $this->di['logger']->info('Added new Application %s', $newId);
 
         return $newId;
     }

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -69,9 +69,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
-            if (!$validator->isTldValid($data['owndomain_tld'])) {
+           /* if (!$validator->isTldValid($data['owndomain_tld'])) {
                 throw new \FOSSBilling\InformationException('TLD is invalid');
-            }
+            }*/
         }
 
         if ($action == 'transfer') {
@@ -94,7 +94,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $domain = $data['transfer_sld'] . $tld->tld;
             if (!$this->canBeTransferred($tld, $data['transfer_sld'])) {
-                throw new \FOSSBilling\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
+                throw new \FOSSBilling\InformationException(':domain can not be transferred!', [':domain' => $domain]);
             }
 
             // return by reference
@@ -518,7 +518,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!$model->allow_transfer) {
-            throw new \FOSSBilling\InformationException('Domain cannot be transferred', null, 403);
+            throw new \FOSSBilling\InformationException('Domain can not be transferred', null, 403);
         }
 
         // @adapterAction
@@ -546,7 +546,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!$model->allow_register) {
-            throw new \FOSSBilling\InformationException('Domain cannot be registered', null, 403);
+            throw new \FOSSBilling\InformationException('Domain can not be registered', null, 403);
         }
 
         // @adapterAction

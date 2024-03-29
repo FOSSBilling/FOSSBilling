@@ -73,9 +73,9 @@
                                     <select class="form-select" name="required[]" multiple size="13">
                                         <optgroup label="General">
                                             <option value="last_name" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Last Name'|trans }}</option>
-                                            <option value="company" {% if 'company' in params.required %}selected{% endif %}>{{ 'Company'|trans }}</option>
+{#                                            <option value="company" {% if 'company' in params.required %}selected{% endif %}>{{ 'Company'|trans }}</option>
                                             <option value="gender" {% if 'gender' in params.required %}selected{% endif %}>{{ 'Gender'|trans }}</option>
-                                            <option value="birthday" {% if 'birthday' in params.required %}selected{% endif %}>{{ 'Birthday'|trans }}</option>
+                                            <option value="birthday" {% if 'birthday' in params.required %}selected{% endif %}>{{ 'Birthday'|trans }}</option>#}
                                         </optgroup>
                                         <optgroup label="Address">
                                             <option value="country" {% if 'country' in params.required %}selected{% endif %}>{{ 'Country'|trans }}</option>
@@ -83,7 +83,7 @@
                                             <option value="state" {% if 'state' in params.required %}selected{% endif %}>{{ 'State'|trans }}</option>
                                             <option value="address_1" {% if 'address_1' in params.required %}selected{% endif %}>{{ 'Address Line 1'|trans }}</option>
                                             <option value="address_2" {% if 'address_2' in params.required %}selected{% endif %}>{{ 'Address Line 2'|trans }}</option>
-                                            <option value="postcode" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Post code'|trans }}</option>
+                                           {# <option value="postcode" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Post code'|trans }}</option>#}
                                             <option value="phone" {% if 'phone' in params.required %}selected{% endif %}>{{ 'Phone'|trans }}</option>
                                         </optgroup>
                                     </select>

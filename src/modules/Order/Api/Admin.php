@@ -1,7 +1,6 @@
 <?php
-
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -126,6 +125,19 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    public function ssl($data)
+    {
+        $order = $this->_getOrder($data);
+
+
+
+        return $this->getService()->sslOrder($order, $data);
+    }
+    /**
+     * Activate order depending on current status.
+     *
+     * @return bool
+     */
     public function renew($data)
     {
         $order = $this->_getOrder($data);
@@ -213,16 +225,15 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
         $delete_addons = isset($data['delete_addons']) ? (bool) $data['delete_addons'] : false;
-        $forceDelete = (bool) ($data['force_delete'] ?? false);
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
             foreach ($list as $addon) {
-                $this->getService()->deleteFromOrder($addon, $forceDelete);
+                $this->getService()->deleteFromOrder($addon);
             }
         }
 
-        return $this->getService()->deleteFromOrder($order, $forceDelete);
+        return $this->getService()->deleteFromOrder($order);
     }
 
     /**

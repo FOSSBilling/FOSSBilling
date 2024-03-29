@@ -16,6 +16,21 @@
 
     {% block opengraph %}{% endblock %}
     <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
+    <style>
+        label {
+            cursor: pointer;
+            filter: grayscale(100%);
+        }
+
+        label:hover {
+
+            filter: grayscale(0);
+        }
+        input[type="radio"]:checked + label {
+            color: rgb(13 202 240);
+            filter: grayscale(0);
+        }
+    </style>
     {{ encore_entry_link_tags('huraga') }}
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
@@ -44,27 +59,33 @@
 {% endif %}
 {% set company = guest.system_company %}
 
+
 <div class="container">
     <header>
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
                 {% if settings.show_company_logo and company.logo_url %}
                     <a class="navbar-brand" href="{{ '/'|link }}">
-                        <img class="d-none d-sm-block" src="{{ company.logo_url }}" alt="{{ company.name }}" height="45px"
+                        <img class="d-sm-block" src="{{ company.logo_url }}" alt="{{ company.name }}" height="45px"
                              title="{{ company.name }}">
-                        <span class="d-sm-none">{{ company.name }}</span>
+                        <span class="d-none d-sm-none">{{ company.name }}</span>
                     </a>
                 {% else %}
                     <a class="navbar-brand" href="{{ '/'|link }}">
                         <span>{{ company.name }}</span>
                     </a>
                 {% endif %}
+
+
+
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    {% include 'partial_menu.html.twig' %}
+
                     <div class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end">
 
 
@@ -118,9 +139,9 @@
                                                    href="{{ 'client/logout'|link }}">{{ 'Sign out'|trans }}</a></li>
                                         </ul>
                                     </div>
-                                {% else %}
+                              {#  {% else %}
                                     <a class="ms-2 btn btn-outline-primary d-none d-md-block"
-                                       href="{{ 'signup'|link }}">{{ 'Sign up'|trans }}</a>
+                                       href="{{ 'signup'|link }}">{{ 'Sign up'|trans }}</a>#}
                                 {% endif %}
                             </li>
                         {% endif %}
@@ -135,10 +156,8 @@
     </header>
     <div class="container">
         <div class="row">
-            <div class="col-3 d-none d-md-block">
-                {% include 'partial_menu.html.twig' %}
-            </div>
-            <div class="col-12 col-md-9">
+
+
                 <div id="wrapper">
                     <section role="main">
                         {% block content_before %}{% endblock %}
@@ -221,16 +240,13 @@
                             </div>
                             {% if guest.extension_is_on({"mod":'branding'}) %}
                                 <div class="d-flex justify-content-center">
-                                    <span>Powered by the&nbsp;</span>
-                                    <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-                                        href="https://fossbilling.org" title="Billing Software"
-                                       target="_blank">{{ 'FOSSBilling Community'|trans }}</a>
+                                    <span>D3S.ONE – Simple, Smart & Solutions</span>
                                 </div>
                             {% endif %}
                         </div>
                     </footer>
                 {% endif %}
-            </div>
+
         </div>
     </div>
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>

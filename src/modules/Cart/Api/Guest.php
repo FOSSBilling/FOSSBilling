@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -93,15 +93,15 @@ class Guest extends \Api_Abstract
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof \Model_Promo) {
-            throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');
+            throw new \FOSSBilling\InformationException('Promo code is expired or does not exist');
         }
 
         if (!$this->getService()->isPromoAvailableForClientGroup($promo)) {
-            throw new \FOSSBilling\InformationException('Promo code cannot be applied to your account');
+            throw new \FOSSBilling\InformationException('Promo can not be applied to your account');
         }
 
         if (!$this->getService()->promoCanBeApplied($promo)) {
-            throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');
+            throw new \FOSSBilling\InformationException('Promo code is expired or does not exist');
         }
 
         $cart = $this->getService()->getSessionCart();
@@ -147,6 +147,7 @@ class Guest extends \Api_Abstract
      */
     public function add_item($data)
     {
+
         $required = [
             'id' => 'Product id not passed',
         ];
@@ -172,7 +173,7 @@ class Guest extends \Api_Abstract
                     $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
 
                     if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
-                        throw new \FOSSBilling\InformationException('One or more of your selected add-ons are invalid for the associated product.');
+                        throw new \FOSSBilling\InformationException('One or more of your selected addons are invalid for the associated product.');
                     }
                 }
             }

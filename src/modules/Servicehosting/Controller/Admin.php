@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -44,6 +44,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/servicehosting', 'get_index', null, static::class);
         $app->get('/servicehosting/plan/:id', 'get_plan', ['id' => '[0-9]+'], static::class);
         $app->get('/servicehosting/server/:id', 'get_server', ['id' => '[0-9]+'], static::class);
+        $app->get('/servicehosting/application/:id', 'get_application', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app)
@@ -55,10 +56,18 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_plan(\Box_App $app, $id)
     {
+
         $api = $this->di['api_admin'];
         $hp = $api->servicehosting_hp_get(['id' => $id]);
 
         return $app->render('mod_servicehosting_hp', ['hp' => $hp]);
+    }
+    public function get_application(\Box_App $app, $id)
+    {
+        $api = $this->di['api_admin'];
+        $apps = $api->servicehosting_application_get(['id' => $id]);
+
+        return $app->render('mod_servicehosting_application', ['app' => $apps]);
     }
 
     public function get_server(\Box_App $app, $id)

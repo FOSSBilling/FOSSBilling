@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -39,5 +39,17 @@ class Guest extends \Api_Abstract
         }
 
         return $this->getService()->getFreeTlds($product);
+    }
+    public function application_get_list($data)
+    {
+        [$sql, $params] = $this->getService()->getApplicationSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        foreach ($pager['list'] as $key => $item) {
+            $model = $this->di['db']->getExistingModelById('ServiceHostingApplication', $item['id'], 'Post not found');
+            $pager['list'][$key] = $this->getService()->toHostingApplicationApiArray($model, false, $this->getIdentity());
+        }
+
+        return $pager;
     }
 }

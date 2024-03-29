@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2023 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -323,6 +323,18 @@ class Admin extends \Api_Abstract
 
         return $pager;
     }
+    public function application_get_list($data)
+    {
+        [$sql, $params] = $this->getService()->getApplicationSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        foreach ($pager['list'] as $key => $item) {
+            $model = $this->di['db']->getExistingModelById('ServiceHostingApplication', $item['id'], 'Post not found');
+            $pager['list'][$key] = $this->getService()->toHostingApplicationApiArray($model, false, $this->getIdentity());
+        }
+
+        return $pager;
+    }
 
     /**
      * Delete hosting plan.
@@ -351,6 +363,26 @@ class Admin extends \Api_Abstract
 
         return (bool) $this->getService()->deleteHp($model);
     }
+    public function application_delete($data)
+    {
+        $required = [
+            'id' => 'Application ID is missing',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->getExistingModelById('ServiceHostingApplication', $data['id'], 'Application not found');
+
+        // check if hosting plan is not used by any service_hostings
+        $hosting_services = $this->di['db']->find('ServiceHosting', 'service_hosting_application_id = :cart_id', [':cart_id' => $data['id']]);
+
+        // Ensure $hosting_services is an array before counting its elements
+        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+        if ($count > 0) {
+            throw new \FOSSBilling\InformationException('Application is used by :count: service hostings', [':count:' => $count], 704);
+        }
+
+        return (bool) $this->getService()->deleteApplication($model);
+    }
 
     /**
      * Get hosting plan details.
@@ -369,6 +401,18 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         return $this->getService()->toHostingHpApiArray($model, true, $this->getIdentity());
+    }
+    public function application_get($data)
+    {
+
+        $required = [
+            'id' => 'Application ID is missing',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->getExistingModelById('ServiceHostingApplication', $data['id'], 'Application not found');
+
+        return $this->getService()->toHostingApplicationApiArray($model, true, $this->getIdentity());
     }
 
     /**
@@ -393,6 +437,19 @@ class Admin extends \Api_Abstract
 
         return (bool) $service->updateHp($model, $data);
     }
+    public function application_update($data)
+    {
+        $required = [
+            'id' => 'Application ID is missing',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->di['db']->getExistingModelById('ServiceHostingApplication', $data['id'], 'Application not found');
+
+        $service = $this->getService();
+
+        return (bool) $service->updateApplication($model, $data);
+    }
 
     /**
      * Update hosting plan details.
@@ -411,6 +468,20 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
 
         return (int) $service->createHp($data['name'], $data);
+    }
+    public function application_create($data)
+    {
+
+        $required = [
+            'name' => 'Application name is missing',
+            'os' => 'OS is missing'
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $service = $this->getService();
+
+
+        return (int) $service->createApplication($data['name'], $data);
     }
 
     public function _getService($data)

@@ -27,6 +27,14 @@
                 {{ 'New hosting plan'|trans }}
             </a>
         </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-application" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New application'|trans }}
+            </a>
+        </li>
     </ul>
 
 <div class="card">
@@ -129,6 +137,50 @@
                         <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
+                </tbody>
+            </table>
+            <div class="card-body">
+                <h5>{{ 'Application'|trans }}</h5>
+            </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <thead>
+                <tr>
+                    <td>{{ 'Name'|trans }}</td>
+                    <td>{{ 'OS'|trans }}</td>
+                    <td>{{ 'Demo'|trans }}</td>
+                    <td></td>
+                    <td class="w-1"></td>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% set apps = admin.servicehosting_application_get_list({ 'per_page': 100 }) %}
+                {% for app in apps.list %}
+                    <tr>
+                        <td>
+                            <a href="{{ '/servicehosting/application'|alink }}/{{ app.id }}">{{ app.name }}</a>
+                        </td>
+                        <td>{{ app.os }}</td>
+                        <td><a href="{{ app.demo }}" target="_blank">{{ app.demo }}</a></td>
+                        <td><img src="{{ app.image }}" style="height: 56px"/></td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/servicehosting/application'|alink }}/{{ app.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'servicehosting'|alink }}" href="{{ 'api/admin/servicehosting/application_delete'|link({ 'id': app.id, 'CSRFToken': CSRFToken }) }}">
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -270,6 +322,42 @@
                     </div>
 
                     <button class="btn btn-primary w-100" type="submit">{{ 'Create hosting plan'|trans }}</button>
+                </form>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="tab-new-application" role="tabpanel">
+            <div class="card-body">
+                <h5>{{ 'Adding new applications'|trans }}</h5>
+                <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters in next step. In this step provide basic hosting plan information.'|trans }}</p>
+
+                <form method="post" action="{{ 'api/admin/servicehosting/application_create'|link}}" class="api-form" data-api-jsonp="onAfterApplicationCreate">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this app'|trans }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'OS'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="os" value="WP">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Image'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="image" value="">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Demo'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="demo" value="https://demo.d3s.one">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create application'|trans }}</button>
                 </form>
             </div>
         </div>
