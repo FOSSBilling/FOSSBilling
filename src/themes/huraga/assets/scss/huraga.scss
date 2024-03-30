@@ -1,7 +1,7 @@
 $primary: #005fc5;
 $warning: #f59e0b;
 $danger: #dc2626;
-$light: #fff;
+$body-bg: #f5f5f5;
 
 $accordion-button-active-bg: rgba($primary, .05);
 $accordion-button-focus-border-color: rgba($primary, .08);
@@ -18,7 +18,6 @@ body {
 
 body {
     font-family: Verdana, sans-serif;
-    background: #f5f5f5;
 }
 
 .fs-7 {
@@ -39,12 +38,6 @@ body {
     >a {
         color: $secondary;
     }
-}
-
-.card,
-.card-header,
-.card-footer {
-    background-color: $light;
 }
 
 .card-body {
@@ -70,7 +63,6 @@ body {
     }
 }
 
-
 .svg-icon {
     height: 20px;
     width: 20px;
@@ -82,7 +74,6 @@ body {
     --#{$prefix}accordion-btn-icon: none;
     --#{$prefix}accordion-btn-active-icon: none;
 }
-
 
 // TomSelect dropdown
 .ts-input {
@@ -152,3 +143,5 @@ body {
         }
     }
 }
+
+// TOOD: Add custom color themes to Huraga. Bootstrap has a great example here: https://getbootstrap.com/docs/5.3/customize/color-modes/#custom-color-modes

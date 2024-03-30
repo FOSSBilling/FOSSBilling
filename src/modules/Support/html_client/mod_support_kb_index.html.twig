@@ -1,6 +1,6 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Knowledge Base'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Knowledge Base Categories'|trans }}{% endblock %}
 
 {% block body_class %}kb-index{% endblock %}
 {% block breadcrumb %}
@@ -11,7 +11,7 @@
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ request.q }}</li>
     {% else %}
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Knowledge base'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Knowledge base categories'|trans }}</li>
     {% endif %}
 {% endblock %}
 
@@ -28,8 +28,8 @@
                 <div class="card-header py-3 py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="mb-1">{{ 'Knowledge base'|trans }}</h5>
-                            <span class="small text-muted">{{ 'Please try to read related topics in knowledge base before contacting support.'|trans }}</span>
+                            <h5 class="mb-1">{{ 'Knowledge base categories'|trans }}</h5>
+                            <span class="small text-muted">{{ 'Below you can find a list of our knowledge base categories and their content.'|trans }}</span>
                         </div>
                         <form method="get" action="" class="form-inline">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
@@ -45,25 +45,26 @@
                         </form>
                     </div>
                 </div>
-                {% for i, category in kbcategories.list %}
-                    <div class="card-body">
-                        <div class="h5 pb-3 pt-1">
-                            <a href="{{ 'support/kb'|link }}/{{ category.slug }}">{{ category.title }}</a>
-                        </div>
-                        <div class="list-group ms-2">
-                            {% for i, article in category.articles %}
-                                <a class="list-group-item list-group-item-action"
-                                   href="{{ 'support/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}">{{ article.title }}</a>
-                            {% endfor %}
-                        </div>
+                <div class="card-body">
+                {% for row in kbcategories.list|batch(3) %}
+                    <div class="row mb-2">
+                        {% for i, category in row %}
+                            <div class="col">
+                                <a href="{{ 'support/kb'|link }}/{{ category.slug }}" class="card link-underline link-underline-opacity-0" style="min-height: 6rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ category.title }}</h5>
+                                        <p class="card-subtitle mb-2 text-muted">{{ category.description }}</p>
+                                    </div>
+                                </a>
+                            </div>                              
+                        {% endfor %}
                     </div>
                 {% else %}
-                    <div class="card-body">
-                        <div class="alert alert-info text-center">
-                            {{ 'No results found for'|trans }}&nbsp;<strong>{{ request.q }}</strong>
-                        </div>
+                    <div class="alert alert-info text-center">
+                        {{ 'No results found for'|trans }}&nbsp;<strong>{{ request.q }}</strong>
                     </div>
                 {% endfor %}
+                </div>
             </div>
         </div>
     </div>
