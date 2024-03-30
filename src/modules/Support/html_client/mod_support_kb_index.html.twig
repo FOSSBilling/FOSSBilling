@@ -50,7 +50,7 @@
                     <div class="row mb-2">
                         {% for i, category in row %}
                             <div class="col">
-                                <a href="{{ 'support/kb'|link }}/{{ category.slug }}" class="card link-underline link-underline-opacity-0">
+                                <a href="{{ 'support/kb'|link }}/{{ category.slug }}" class="card link-underline link-underline-opacity-0" style="min-height: 6rem;">
                                     <div class="card-body">
                                         <h5 class="card-title">{{ category.title }}</h5>
                                         <p class="card-subtitle mb-2 text-muted">{{ category.description }}</p>
