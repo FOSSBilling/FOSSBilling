@@ -46,8 +46,8 @@
         <div>
             <div class="row">
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="h6 m-0 pt-1">{{ 'Profile'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-dark"
@@ -57,19 +57,19 @@
                         <div class="card-body">
                             <div class="row">
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Client ID'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">#{{ profile.id }}</dd>
+                                <dd class="col-sm-8">#{{ profile.id }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Email'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ profile.email }}</dd>
+                                <dd class="col-sm-8">{{ profile.email }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Balance'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ profile.balance | money(profile.currency) }}</dd>
+                                <dd class="col-sm-8">{{ profile.balance | money(profile.currency) }}</dd>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="h6 m-0 pt-1">{{ 'Invoices'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-dark"
@@ -79,11 +79,11 @@
                         <div class="card-body">
                             <div class="row">
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.invoice_get_list().total }}</dd>
+                                <dd class="col-sm-8">{{ client.invoice_get_list().total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Paid'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.invoice_get_list({ "status": "paid" }).total }}</dd>
+                                <dd class="col-sm-8">{{ client.invoice_get_list({ "status": "paid" }).total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Unpaid'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.invoice_get_list({ "status": "unpaid" }).total }}</dd>
+                                <dd class="col-sm-8">{{ client.invoice_get_list({ "status": "unpaid" }).total }}</dd>
                             </div>
                         </div>
                     </div>
@@ -92,8 +92,8 @@
 
             <div class="row">
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="h6 m-0 pt-1">{{ 'Orders'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-primary order-button"
@@ -105,19 +105,19 @@
                         <div class="card-body">
                             <div class="row">
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
+                                <dd class="col-sm-8">{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Active'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "hide_addons": 1, "status": "active" }).total }}</dd>
+                                <dd class="col-sm-8">{{ client.order_get_list({ "hide_addons": 1, "status": "active" }).total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Expiring'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.order_get_list({ "expiring": 1 }).total }}</dd>
+                                <dd class="col-sm-8">{{ client.order_get_list({ "expiring": 1 }).total }}</dd>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="h6 m-0 pt-1">{{ 'Tickets'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-primary"
@@ -128,19 +128,19 @@
                         <div class="card-body">
                             <div class="row">
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list().total }}</dd>
+                                <dd class="col-sm-8">{{ client.support_ticket_get_list().total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Open'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list({ "status": 'open' }).total }}</dd>
+                                <dd class="col-sm-8">{{ client.support_ticket_get_list({ "status": 'open' }).total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'On Hold'|trans }}</dt>
-                                <dd class="col-sm-8 text-dark">{{ client.support_ticket_get_list({ "status": 'on_hold' }).total }}</dd>
+                                <dd class="col-sm-8">{{ client.support_ticket_get_list({ "status": 'on_hold' }).total }}</dd>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white py-3">
+                    <div class="card mb-4">
+                        <div class="card-header py-3">
                             <span class="h6 m-0 pt-1">{{ 'Recent orders'|trans }}</span>
                         </div>
                         <div class="card-body p-1">
@@ -171,8 +171,8 @@
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white py-3">
+                    <div class="card mb-4">
+                        <div class="card-header py-3">
                             <span class="h6 m-0 pt-1">{{ 'Support tickets'|trans }}</span>
                         </div>
                         <div class="card-body p-1">
@@ -206,8 +206,8 @@
     {% else %}
         <div class="row">
             <div class="col-md-6">
-                <div class="card mb-4bg-white">
-                    <div class="card-header bg-white h6 py-3">{{ 'Profile'|trans }}</div>
+                <div class="card mb-4">
+                    <div class="card-header h6 py-3">{{ 'Profile'|trans }}</div>
                     <div class="card-body">
                         <p>{{ 'You are logged out'|trans }}</p>
                         <div class="d-flex gap-2">
@@ -219,8 +219,8 @@
             </div>
 
             <div class="col-md-6">
-                <div class="card mb-4 bg-white">
-                    <div class="card-header bg-white h6 py-3">{{ 'Order'|trans }}</div>
+                <div class="card mb-4">
+                    <div class="card-header h6 py-3">{{ 'Order'|trans }}</div>
                     <div class="card-body">
                         <p>{{ 'Products and services'|trans }}</p>
                         <div class="d-flex gap-2">
@@ -232,8 +232,8 @@
 
             {% if guest.extension_is_on({"mod":"news"}) %}
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white h6 py-3">{{ 'News'|trans }}</div>
+                    <div class="card mb-4">
+                        <div class="card-header h6 py-3">{{ 'News'|trans }}</div>
                         <div class="card-body">
                             <p>{{ 'Latest news and announcements' | trans }}</p>
                             <div class="d-flex gap-2">
@@ -246,8 +246,8 @@
 
             {% if guest.support_kb_enabled() %}
                 <div class="col-md-6">
-                    <div class="card mb-4 bg-white">
-                        <div class="card-header bg-white h6 py-3">{{ 'Knowledge base'|trans }}</div>
+                    <div class="card mb-4">
+                        <div class="card-header h6 py-3">{{ 'Knowledge base'|trans }}</div>
                         <div class="card-body">
                             <p>{{ 'Browse our KB for answers and FAQ' | trans }}</p>
                             <div class="d-flex gap-2">
