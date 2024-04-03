@@ -555,12 +555,18 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        if (method_exists($se, 'generateOrderTitle')) {
+            $generatedOrderTitle = $se->generateOrderTitle($config);
+        } else {
+            $generatedOrderTitle = null;
+        }
+
         $order = $this->di['db']->dispense('ClientOrder');
         $order->client_id = $client->id;
         $order->product_id = $product->id;
         $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
         $order->group_master = ($parent_order) ? 0 : 1;
-        $order->title = $data['title'] ?? $product->title;
+        $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
         $order->currency = $currency->code;
         $order->quantity = $qty;
         $order->service_type = $product->type;
