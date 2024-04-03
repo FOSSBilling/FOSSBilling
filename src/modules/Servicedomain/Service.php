@@ -27,13 +27,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getCartProductTitle($product, array $data)
     {
-        if (isset($data['action']) && $data['action'] == 'register'
+        if (
+            isset($data['action']) && $data['action'] == 'register'
             && isset($data['register_tld']) && isset($data['register_sld'])
         ) {
             return __trans('Domain :domain registration', [':domain' => $data['register_sld'] . $data['register_tld']]);
         }
 
-        if (isset($data['action']) && $data['action'] == 'transfer'
+        if (
+            isset($data['action']) && $data['action'] == 'transfer'
             && isset($data['transfer_tld']) && isset($data['transfer_sld'])
         ) {
             return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
@@ -134,6 +136,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             // return by reference
             $data['period'] = $years . 'Y';
             $data['quantity'] = $years;
+        }
+    }
+
+    public function generateOrderTitle(array $config): ?string
+    {
+        switch ($config['action']) {
+            case 'transfer':
+                return $config['transfer_sld'] . $config['transfer_tld'];
+            case 'register':
+                return $config['register_sld'] . $config['register_tld'];
+            default:
+                return null;
         }
     }
 

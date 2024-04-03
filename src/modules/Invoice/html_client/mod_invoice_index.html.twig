@@ -56,7 +56,7 @@
                                 {% if unpaid_invoices.total > 0 %}
                                     {% for i, invoice in unpaid_invoices.list %}
                                         <tr>
-                                            <td>{{ "Invoice #%05s"|format(invoice.id) }}</td>
+                                            <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.due_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
@@ -89,7 +89,7 @@
                                 {% if paid_invoices.total > 0 %}
                                     {% for i, invoice in paid_invoices.list %}
                                         <tr>
-                                            <td>{{ "Invoice #%05s"|format(invoice.id) }}</td>
+                                            <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.paid_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
