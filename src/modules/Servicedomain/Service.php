@@ -141,14 +141,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function generateOrderTitle(array $config): ?string
     {
-        switch ($config['action']) {
-            case 'transfer':
-                return $config['transfer_sld'] . $config['transfer_tld'];
-            case 'register':
-                return $config['register_sld'] . $config['register_tld'];
-            default:
-                return null;
-        }
+        return match ($config['action']) {
+            'transfer' => $config['transfer_sld'] . $config['transfer_tld'],
+            'register' => $config['register_sld'] . $config['register_tld'],
+            default => null,
+        };
     }
 
     /**
