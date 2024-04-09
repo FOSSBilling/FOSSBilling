@@ -14,7 +14,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->service = new ServiceTax();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetTaxRateForClientByCountryAndState()
+    public function testgetTaxRateForClientByCountryAndState(): void
     {
         $taxRateExpected = 0.21;
         $clientModel = new \Model_Client();
@@ -54,7 +54,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClientByCountry()
+    public function testgetTaxRateForClientByCountry(): void
     {
         $taxRateExpected = 0.21;
         $clientModel = new \Model_Client();
@@ -86,7 +86,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClient()
+    public function testgetTaxRateForClient(): void
     {
         $taxRateExpected = 0.21;
         $clientModel = new \Model_Client();
@@ -118,7 +118,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClientTaxWasNotFound()
+    public function testgetTaxRateForClientTaxWasNotFound(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -146,7 +146,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClientClientIsNotTaxable()
+    public function testgetTaxRateForClientClientIsNotTaxable(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -170,7 +170,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxWhenTaxRateIsZero()
+    public function testgetTaxWhenTaxRateIsZero(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -181,7 +181,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals(0, $result);
     }
 
-    public function testgetTax()
+    public function testgetTax(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -210,7 +210,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testdelete()
+    public function testdelete(): void
     {
         $taxModel = new \Model_Tax();
         $taxModel->loadBean(new \DummyBean());
@@ -229,7 +229,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcreate()
+    public function testcreate(): void
     {
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
@@ -262,7 +262,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $taxModel = new \Model_Tax();
         $taxModel->loadBean(new \DummyBean());
@@ -287,7 +287,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetSearchQuery()
+    public function testgetSearchQuery(): void
     {
         $result = $this->service->getSearchQuery([]);
         $this->assertIsString($result[0]);
@@ -295,7 +295,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals([], $result[1]);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $taxModel = new \Model_Tax();
         $taxModel->loadBean(new \DummyBean());

@@ -12,7 +12,7 @@ class ServiceTest extends ApiTestCase
         }
     }
 
-    public function testUninstallNotPro()
+    public function testUninstallNotPro(): void
     {
         $this->configLicense = $this->di['config']['license'];
         $this->expectException(Exception::class);

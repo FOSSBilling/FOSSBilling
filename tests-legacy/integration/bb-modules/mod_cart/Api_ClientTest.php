@@ -5,7 +5,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_cart.xml';
 
-    public function testCheckout()
+    public function testCheckout(): void
     {
         $this->api_guest->cart_set_currency(['currency' => 'USD']);
 
@@ -33,7 +33,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
         $this->assertTrue(isset($array['order_id']));
     }
 
-    public function testCheckoutEmptyCart()
+    public function testCheckoutEmptyCart(): void
     {
         $this->api_guest->cart_set_currency(['currency' => 'USD']);
 
@@ -53,7 +53,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
     /**
      * If client order total amount is 0 then activate it after placement.
      */
-    public function testPromoOrderActivation()
+    public function testPromoOrderActivation(): void
     {
         $this->api_guest->cart_set_currency(['currency' => 'USD']);
 
@@ -80,7 +80,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
     /**
      * Test if promo code can be applied only once per client.
      */
-    public function testPromoOncePerClient()
+    public function testPromoOncePerClient(): void
     {
         $this->api_guest->cart_set_currency(['currency' => 'USD']);
 
@@ -107,7 +107,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
     /**
      * checkout cart with product with addon and client has insufficient funds to cover.
      */
-    public function testAddonActivatedWhileOrderInvoiceUnpaid()
+    public function testAddonActivatedWhileOrderInvoiceUnpaid(): void
     {
         $this->api_guest->cart_reset();
         $data = [
@@ -144,7 +144,7 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
     /**
      * checkout cart with product with addon and client has sufficient funds to cover.
      */
-    public function testOrderWithAddonCoverFromAccountBalance()
+    public function testOrderWithAddonCoverFromAccountBalance(): void
     {
         $this->api_guest->cart_reset();
         $data = [

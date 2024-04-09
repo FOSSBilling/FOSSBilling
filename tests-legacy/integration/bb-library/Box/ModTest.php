@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ModTest extends BBDbApiTestCase
 {
-    public function testConfig()
+    public function testConfig(): void
     {
         $conf = [
             'ext' => 'mod_client',

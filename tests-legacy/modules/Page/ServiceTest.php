@@ -4,7 +4,7 @@ namespace Box\Mod\Page;
 
 class ServiceTest extends \BBTestCase
 {
-    public function testgetPairs()
+    public function testgetPairs(): void
     {
         $service = new Service();
 

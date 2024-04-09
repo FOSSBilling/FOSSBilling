@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new \Box\Mod\Cart\Service();
     }
 
-    public function testDi()
+    public function testDi(): void
     {
         $service = new \Box\Mod\Cart\Service();
 
@@ -27,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testGetSearchQuery()
+    public function testGetSearchQuery(): void
     {
         $service = new \Box\Mod\Cart\Service();
         $result = $service->getSearchQuery([]);
@@ -36,7 +36,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNotFalse(strpos($result[0], 'SELECT cart.id FROM cart'));
     }
 
-    public function testGetSessionCartExists()
+    public function testGetSessionCartExists(): void
     {
         $service = new \Box\Mod\Cart\Service();
 
@@ -88,7 +88,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getSessionCartDoesNotExistProvider')]
-    public function testGetSessionCartDoesNotExist($sessionGetWillReturn, $getCurrencyByClientIdExpects, $getDefaultExpects)
+    public function testGetSessionCartDoesNotExist($sessionGetWillReturn, $getCurrencyByClientIdExpects, $getDefaultExpects): void
     {
         $service = new \Box\Mod\Cart\Service();
 
@@ -142,7 +142,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result->currency_id, $curencyModel->id);
     }
 
-    public function testIsStockAvailable()
+    public function testIsStockAvailable(): void
     {
         $product = new \Model_Product();
         $product->loadBean(new \DummyBean());
@@ -153,7 +153,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testIsStockAvailableNoStockControl()
+    public function testIsStockAvailableNoStockControl(): void
     {
         $product = new \Model_Product();
         $product->loadBean(new \DummyBean());
@@ -164,7 +164,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testIsRecurrentPricing()
+    public function testIsRecurrentPricing(): void
     {
         $productTable = $this->getMockBuilder('\Model_ProductTable')->getMock();
         $productTable->expects($this->atLeastOnce())->method('getPricingArray')
@@ -181,7 +181,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testIsPeriodEnabledForProduct()
+    public function testIsPeriodEnabledForProduct(): void
     {
         $enabled = false;
         $pricingArray = [
@@ -208,7 +208,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $enabled);
     }
 
-    public function testIsPeriodEnabledForProductNotRecurrent()
+    public function testIsPeriodEnabledForProductNotRecurrent(): void
     {
         $enabled = false;
         $pricingArray = [
@@ -235,7 +235,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRemoveProduct()
+    public function testRemoveProduct(): void
     {
         $cartProduct = new \Model_CartProduct();
         $cartProduct->loadBean(new \DummyBean());
@@ -262,7 +262,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRemoveProductCartProductNotFound()
+    public function testRemoveProductCartProductNotFound(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -284,7 +284,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangeCartCurrency()
+    public function testChangeCartCurrency(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -306,7 +306,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testResetCart()
+    public function testResetCart(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -331,7 +331,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRemovePromo()
+    public function testRemovePromo(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -350,7 +350,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testApplyPromo()
+    public function testApplyPromo(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -377,7 +377,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testApplyPromoAlreadyApplied()
+    public function testApplyPromoAlreadyApplied(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -406,7 +406,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testApplyPromoEmptyCartException()
+    public function testApplyPromoEmptyCartException(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -436,7 +436,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRm()
+    public function testRm(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -458,7 +458,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testIsClientAbleToUsePromo()
+    public function testIsClientAbleToUsePromo(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
@@ -482,7 +482,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testClientHadUsedPromo()
+    public function testClientHadUsedPromo(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied'])->getMock();
@@ -510,7 +510,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testIsClientAbleToUsePromoOncePerClient()
+    public function testIsClientAbleToUsePromoOncePerClient(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
@@ -533,7 +533,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testIsClientAbleToUsePromoCanNotBeApplied()
+    public function testIsClientAbleToUsePromoCanNotBeApplied(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
@@ -601,7 +601,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('promoCanBeAppliedProvider')]
-    public function testPromoCanBeApplied($promo, $expectedResult)
+    public function testPromoCanBeApplied($promo, $expectedResult): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -617,7 +617,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 
-    public function testGetCartProducts()
+    public function testGetCartProducts(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -636,7 +636,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_CartProduct', $result[0]);
     }
 
-    public function testCheckoutCart()
+    public function testCheckoutCart(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -698,7 +698,7 @@ class ServiceTest extends \BBTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testCheckoutCartClientIsNotAbleToUsePromoException()
+    public function testCheckoutCartClientIsNotAbleToUsePromoException(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -736,7 +736,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('orders', $result);
     }
 
-    public function testUsePromo()
+    public function testUsePromo(): void
     {
         $promo = new \Model_Promo();
         $promo->loadBean(new \DummyBean());
@@ -755,7 +755,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testFindActivePromoByCode()
+    public function testFindActivePromoByCode(): void
     {
         $promo = new \Model_Promo();
         $promo->loadBean(new \DummyBean());
@@ -774,7 +774,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_Promo', $result);
     }
 
-    public function testaddItemmRecurringPaymentPeriodParamMissing()
+    public function testaddItemmRecurringPaymentPeriodParamMissing(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -813,7 +813,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
-    public function testaddItemmRecurringPaymentPeriodIsNotEnabled()
+    public function testaddItemmRecurringPaymentPeriodIsNotEnabled(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -856,7 +856,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
-    public function testaddItemmOutOfStock()
+    public function testaddItemmOutOfStock(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -895,7 +895,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
-    public function testaddItemmTypeHosting()
+    public function testaddItemmTypeHosting(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -947,7 +947,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaddItemmTypeLicense()
+    public function testaddItemmTypeLicense(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -1000,7 +1000,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaddItemmTypeCustom()
+    public function testaddItemmTypeCustom(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -1055,7 +1055,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -1110,7 +1110,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetProductDiscount()
+    public function testgetProductDiscount(): void
     {
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());
@@ -1157,7 +1157,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($discountSetup, $result[1]);
     }
 
-    public function testgetProductDiscountNoPromo()
+    public function testgetProductDiscountNoPromo(): void
     {
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());
@@ -1193,7 +1193,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(0, $result[1]);
     }
 
-    public function testgetProductDiscountProductQtyIsSetAndFreeSetup()
+    public function testgetProductDiscountProductQtyIsSetAndFreeSetup(): void
     {
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());
@@ -1297,7 +1297,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('isPromoAvailableForClientGroupProvider')]
-    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult)
+    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult): void
     {
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())

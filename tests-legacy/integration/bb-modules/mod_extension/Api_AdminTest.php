@@ -5,7 +5,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extensions.xml';
 
-    public function testSetup()
+    public function testSetup(): void
     {
         $data = [
             'code' => 'extension',
@@ -28,7 +28,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         }
     }
 
-    public function testUninstall()
+    public function testUninstall(): void
     {
         $data = [
             'type' => 'mod',
@@ -39,7 +39,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $versions = [
             'version_old' => '1.1.1',
@@ -69,7 +69,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $this->assertEquals($arr, $versions);
     }
 
-    public function testConfigs()
+    public function testConfigs(): void
     {
         $data = [
             'ext' => 'mod_email',
@@ -90,7 +90,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $this->assertEquals($data, $array);
     }
 
-    public function testActivations()
+    public function testActivations(): void
     {
         $data = [
             'id' => 'news',
@@ -107,7 +107,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $this->assertFalse($bool);
     }
 
-    public function testLists()
+    public function testLists(): void
     {
         $data = [
             'type' => 'server-manager',
@@ -137,13 +137,13 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testUpdateCore()
+    public function testUpdateCore(): void
     {
         $bool = $this->api_admin->extension_update_core();
         $this->assertTrue($bool);
     }
 
-    public function testInstall()
+    public function testInstall(): void
     {
         $extension = new Model_Extension();
         $extension->loadBean(new RedBeanPHP\OODBBean());

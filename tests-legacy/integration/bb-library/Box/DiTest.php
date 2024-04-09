@@ -8,7 +8,7 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->di = clone $di;
     }
 
-    public function testInjector()
+    public function testInjector(): void
     {
         $di = $this->di;
         $this->assertInstanceOf('Box_Mod', $di['mod']('admin'));

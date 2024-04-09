@@ -14,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testfreeTlds()
+    public function testfreeTlds(): void
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -46,7 +46,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testfreeTldsProductTypeIsNotHosting()
+    public function testfreeTldsProductTypeIsNotHosting(): void
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();

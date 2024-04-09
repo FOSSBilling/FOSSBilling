@@ -6,7 +6,7 @@ class Api_ClientTest extends BBDbApiTestCase
     protected $_mod = 'example';
     protected $_initialSeedFile = 'mod_example.xml';
 
-    public function testExample()
+    public function testExample(): void
     {
         $this->api_admin->extension_activate(['id' => 'example', 'type' => 'mod']);
 

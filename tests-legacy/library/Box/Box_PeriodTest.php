@@ -3,21 +3,21 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_PeriodTest extends PHPUnit\Framework\TestCase
 {
-    public function testException()
+    public function testException(): void
     {
         $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invalid period code. Period definition must be 2 chars length');
         $p = new Box_Period('1');
     }
 
-    public function testException2()
+    public function testException2(): void
     {
         $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Period Error. Unit Z is not defined');
         $p = new Box_Period('1Z');
     }
 
-    public function testOneMonth()
+    public function testOneMonth(): void
     {
         $p = new Box_Period('1M');
 
@@ -30,7 +30,7 @@ class Box_PeriodTest extends PHPUnit\Framework\TestCase
         $this->assertEquals(strtotime('+1 month'), $p->getExpirationTime());
     }
 
-    public function testTwoMonths()
+    public function testTwoMonths(): void
     {
         $p = new Box_Period('2M');
 

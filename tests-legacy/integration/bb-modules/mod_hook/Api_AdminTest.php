@@ -5,7 +5,7 @@ class Box_Mod_Hook_Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_hook.xml';
 
-    public function testHook()
+    public function testHook(): void
     {
         $this->assertTrue($this->api_admin->hook_batch_connect());
         $this->assertFalse($this->api_admin->hook_call());
@@ -15,7 +15,7 @@ class Box_Mod_Hook_Api_AdminTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testEventReturnData()
+    public function testEventReturnData(): void
     {
         $this->api_admin->hook_batch_connect();
         $data = $this->api_admin->hook_call(['event' => 'onBeforeGuestPublicTicketOpen', 'params' => ['message' => 'msg']]);
@@ -23,7 +23,7 @@ class Box_Mod_Hook_Api_AdminTest extends BBDbApiTestCase
         $this->assertTrue(true);
     }
 
-    public function testHookGetList()
+    public function testHookGetList(): void
     {
         $list = $this->api_admin->hook_get_list();
         $this->assertIsArray($list);

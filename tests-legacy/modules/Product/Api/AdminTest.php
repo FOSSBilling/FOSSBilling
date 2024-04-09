@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList()
+    public function testgetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
 
@@ -44,7 +44,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetPairs()
+    public function testgetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
 
@@ -57,7 +57,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget()
+    public function testget(): void
     {
         $data = ['id' => 1];
 
@@ -88,7 +88,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTypes()
+    public function testgetTypes(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -100,7 +100,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testprepareDomainProductAlreadyCreated()
+    public function testprepareDomainProductAlreadyCreated(): void
     {
         $data = [
             'title' => 'testTitle',
@@ -129,7 +129,7 @@ class AdminTest extends \BBTestCase
         $this->api->prepare($data);
     }
 
-    public function testprepareTypeIsNotRecognized()
+    public function testprepareTypeIsNotRecognized(): void
     {
         $data = [
             'title' => 'testTitle',
@@ -163,7 +163,7 @@ class AdminTest extends \BBTestCase
         $this->api->prepare($data);
     }
 
-    public function testprepare()
+    public function testprepare(): void
     {
         $data = [
             'title' => 'testTitle',
@@ -200,7 +200,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $data = ['id' => 1];
         $model = new \Model_Product();
@@ -231,7 +231,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdatePriorityMissingPriorityParam()
+    public function testupdatePriorityMissingPriorityParam(): void
     {
         $data = [];
 
@@ -240,7 +240,7 @@ class AdminTest extends \BBTestCase
         $this->api->update_priority($data);
     }
 
-    public function testupdatePriority()
+    public function testupdatePriority(): void
     {
         $data = [
             'priority' => [],
@@ -258,7 +258,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateConfig()
+    public function testupdateConfig(): void
     {
         $data = ['id' => 1];
         $model = new \Model_Product();
@@ -290,7 +290,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaddonGetPairs()
+    public function testaddonGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -302,7 +302,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaddonCreate()
+    public function testaddonCreate(): void
     {
         $data = ['title' => 'Title4test'];
         $newAddonId = 1;
@@ -327,7 +327,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newAddonId, $result);
     }
 
-    public function testaddonGet()
+    public function testaddonGet(): void
     {
         $data = ['id' => 1];
 
@@ -360,7 +360,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaddonUpdate()
+    public function testaddonUpdate(): void
     {
         $data = ['id' => 1];
 
@@ -396,7 +396,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaddonDelete()
+    public function testaddonDelete(): void
     {
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
             ->onlyMethods(['delete'])
@@ -411,7 +411,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdelete()
+    public function testdelete(): void
     {
         $data = ['id' => 1];
 
@@ -444,7 +444,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcategoryGetPairs()
+    public function testcategoryGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -456,7 +456,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcategoryUpdate()
+    public function testcategoryUpdate(): void
     {
         $data = ['id' => 1];
 
@@ -490,7 +490,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcategoryGet()
+    public function testcategoryGet(): void
     {
         $data = ['id' => 1];
 
@@ -522,7 +522,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcategoryCreate()
+    public function testcategoryCreate(): void
     {
         $data = ['title' => 'test Title'];
         $newCategoryId = 1;
@@ -547,7 +547,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newCategoryId, $result);
     }
 
-    public function testcategoryDelete()
+    public function testcategoryDelete(): void
     {
         $data = ['id' => 1];
 
@@ -580,7 +580,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpromoGetList()
+    public function testpromoGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
 
@@ -602,7 +602,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testpromoCreate()
+    public function testpromoCreate(): void
     {
         $data = [
             'code' => 'test',
@@ -643,7 +643,7 @@ class AdminTest extends \BBTestCase
         $this->api->promo_get($data);
     }
 
-    public function testpromoGet()
+    public function testpromoGet(): void
     {
         $data = ['id' => 1];
 
@@ -675,7 +675,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testpromoUpdate()
+    public function testpromoUpdate(): void
     {
         $data = ['id' => 1];
 
@@ -707,7 +707,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpromoDelete()
+    public function testpromoDelete(): void
     {
         $data = ['id' => 1];
         $model = new \Model_Promo();

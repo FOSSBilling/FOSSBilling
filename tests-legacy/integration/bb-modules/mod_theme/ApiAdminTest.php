@@ -5,7 +5,7 @@ class Api_Admin_ThemeTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_theme.xml';
 
-    public function testLists()
+    public function testLists(): void
     {
         $code = 'boxbilling';
         $array = $this->api_admin->theme_get(['code' => $code]);
@@ -25,12 +25,12 @@ class Api_Admin_ThemeTest extends BBDbApiTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testThemeNotFound()
+    public function testThemeNotFound(): void
     {
         $this->api_admin->theme_get(['code' => 'non-existing-theme']);
     }
 
-    public function testPresets()
+    public function testPresets(): void
     {
         $bool = $this->api_admin->theme_preset_select(['code' => 'boxbilling', 'preset' => 'Default']);
         $this->assertTrue($bool);

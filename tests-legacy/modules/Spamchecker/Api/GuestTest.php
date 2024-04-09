@@ -14,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -72,7 +72,7 @@ class GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('datarecaptchaConfig')]
-    public function testrecaptcha($config, $expected)
+    public function testrecaptcha($config, $expected): void
     {
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn () => $config);

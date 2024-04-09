@@ -5,7 +5,7 @@ class Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'settings.xml';
 
-    public function testActivity()
+    public function testActivity(): void
     {
         $bool = $this->api_admin->activity_log_delete(['id' => 1]);
         $this->assertTrue($bool);
@@ -20,20 +20,20 @@ class Api_AdminTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testLogDeleteIdNotSetException()
+    public function testLogDeleteIdNotSetException(): void
     {
         $this->expectException(FOSSBilling\Exception::class);
 
         $this->api_admin->activity_log_delete([]);
     }
 
-    public function testLogNotFoundException()
+    public function testLogNotFoundException(): void
     {
         $this->expectException(FOSSBilling\Exception::class);
         $this->api_admin->activity_log_delete(['id' => 100]);
     }
 
-    public function testActivityLogGetList()
+    public function testActivityLogGetList(): void
     {
         $array = $this->api_admin->activity_log_get_list();
         $this->assertIsArray($array);
@@ -58,7 +58,7 @@ class Api_AdminTest extends BBDbApiTestCase
         }
     }
 
-    public function testBatchDelete()
+    public function testBatchDelete(): void
     {
         $array = $this->api_admin->activity_log_get_list([]);
 

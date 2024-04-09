@@ -4,7 +4,7 @@ namespace Box\Mod\Client\Api;
 
 class GuestTest extends \BBTestCase
 {
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $client = new Guest();
@@ -13,7 +13,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcreate()
+    public function testcreate(): void
     {
         $configArr = [
             'disable_signup' => false,
@@ -64,7 +64,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($model->id, $result);
     }
 
-    public function testcreateExceptionClientExists()
+    public function testcreateExceptionClientExists(): void
     {
         $configArr = [
             'disable_signup' => false,
@@ -109,7 +109,7 @@ class GuestTest extends \BBTestCase
         $client->create($data);
     }
 
-    public function testCreateSignupDoNotAllowed()
+    public function testCreateSignupDoNotAllowed(): void
     {
         $configArr = [
             'disable_signup' => true,
@@ -131,7 +131,7 @@ class GuestTest extends \BBTestCase
         $client->create($data);
     }
 
-    public function testCreatePasswordsDoNotMatchException()
+    public function testCreatePasswordsDoNotMatchException(): void
     {
         $configArr = [
             'disable_signup' => false,
@@ -157,7 +157,7 @@ class GuestTest extends \BBTestCase
         $client->create($data);
     }
 
-    public function testlogin()
+    public function testlogin(): void
     {
         $data = [
             'email' => 'test@example.com',
@@ -216,7 +216,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($results);
     }
 
-    public function testResetPasswordNewFlow()
+    public function testResetPasswordNewFlow(): void
     {
         $data['email'] = 'John@exmaple.com';
 
@@ -267,7 +267,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testresetPasswordEmailNotFound()
+    public function testresetPasswordEmailNotFound(): void
     {
         $data['email'] = 'joghn@example.eu';
 
@@ -299,7 +299,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdatePassword()
+    public function testUpdatePassword(): void
     {
         $data = [
             'hash' => 'hashedString',
@@ -361,7 +361,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdatePasswordResetNotFound()
+    public function testUpdatePasswordResetNotFound(): void
     {
         $data = [
             'hash' => 'hashedString',
@@ -400,7 +400,7 @@ class GuestTest extends \BBTestCase
         $client->update_password($data);
     }
 
-    public function testrequired()
+    public function testrequired(): void
     {
         $configArr = [];
 

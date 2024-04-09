@@ -14,7 +14,7 @@ class Api_AdminTest extends \BBTestCase
         $this->api = new \Box\Mod\Servicecustom\Api\Admin();
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -33,7 +33,7 @@ class Api_AdminTest extends \BBTestCase
         $this->api->update($data);
     }
 
-    public function testUpdateOrderIdNotSetException()
+    public function testUpdateOrderIdNotSetException(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
@@ -53,7 +53,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateConfigNotSet()
+    public function testUpdateConfigNotSet(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
@@ -70,7 +70,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateConfigIsNotArray()
+    public function testUpdateConfigIsNotArray(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
@@ -88,7 +88,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testCall()
+    public function testCall(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -109,7 +109,7 @@ class Api_AdminTest extends \BBTestCase
         $this->api->__call('delete', $arguments);
     }
 
-    public function testCallArgumentsNotSetException()
+    public function testCallArgumentsNotSetException(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())
@@ -126,7 +126,7 @@ class Api_AdminTest extends \BBTestCase
         $this->api->__call('delete', $arguments);
     }
 
-    public function testCallOrderIdNotSetException()
+    public function testCallOrderIdNotSetException(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())

@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList()
+    public function testgetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
 
@@ -44,7 +44,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget()
+    public function testget(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -75,7 +75,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testmarkAsPaid()
+    public function testmarkAsPaid(): void
     {
         $data = [
             'id' => 1,
@@ -111,7 +111,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testprepare()
+    public function testprepare(): void
     {
         $data = [
             'client_id' => 1,
@@ -150,7 +150,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newInvoiceId, $result);
     }
 
-    public function testapprove()
+    public function testapprove(): void
     {
         $data = [
             'id' => 1,
@@ -184,7 +184,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testrefund()
+    public function testrefund(): void
     {
         $data = [
             'id' => 1,
@@ -218,7 +218,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newNegativeInvoiceId, $result);
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $data = [
             'id' => 1,
@@ -252,7 +252,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testitemDelete()
+    public function testitemDelete(): void
     {
         $data = [
             'id' => 1,
@@ -287,7 +287,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdelete()
+    public function testdelete(): void
     {
         $data = [
             'id' => 1,
@@ -322,7 +322,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testrenewalInvoice()
+    public function testrenewalInvoice(): void
     {
         $data = [
             'id' => 1,
@@ -358,7 +358,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newInvoiceId, $result);
     }
 
-    public function testrenewalInvoiceOrderIsFree()
+    public function testrenewalInvoiceOrderIsFree(): void
     {
         $data = [
             'id' => 1,
@@ -389,7 +389,7 @@ class AdminTest extends \BBTestCase
         $this->api->renewal_invoice($data);
     }
 
-    public function testbatchPayWithCredits()
+    public function testbatchPayWithCredits(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -403,7 +403,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpayWithCredits()
+    public function testpayWithCredits(): void
     {
         $data = [
             'id' => 1,
@@ -438,7 +438,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchGenerate()
+    public function testbatchGenerate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -452,7 +452,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchActivatePaid()
+    public function testbatchActivatePaid(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -466,7 +466,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchSendReminders()
+    public function testbatchSendReminders(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -480,7 +480,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchInvokeDueEvent()
+    public function testbatchInvokeDueEvent(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -494,7 +494,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testsendReminder()
+    public function testsendReminder(): void
     {
         $data = [
             'id' => 1,
@@ -529,7 +529,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetStatuses()
+    public function testgetStatuses(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -542,7 +542,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtransactionProcessAll()
+    public function testtransactionProcessAll(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -558,7 +558,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtransactionProcess()
+    public function testtransactionProcess(): void
     {
         $data = [
             'id' => 1,
@@ -599,7 +599,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtransactionUpdate()
+    public function testtransactionUpdate(): void
     {
         $data = [
             'id' => 1,
@@ -634,7 +634,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtransactionCreate()
+    public function testtransactionCreate(): void
     {
         $newTransactionId = 1;
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
@@ -651,7 +651,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newTransactionId, $result);
     }
 
-    public function testtransactionDelete()
+    public function testtransactionDelete(): void
     {
         $data = [
             'id' => 1,
@@ -686,7 +686,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtransactionGet()
+    public function testtransactionGet(): void
     {
         $data = [
             'id' => 1,
@@ -720,7 +720,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtransactionGetList()
+    public function testtransactionGetList(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -741,7 +741,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtransactionGetStatuses()
+    public function testtransactionGetStatuses(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -757,7 +757,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtransactionGetStatusesPairs()
+    public function testtransactionGetStatusesPairs(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -773,7 +773,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtransactionStatuses()
+    public function testtransactionStatuses(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -789,7 +789,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtransactionGatewayStatuses()
+    public function testtransactionGatewayStatuses(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -805,7 +805,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtransactionTypes()
+    public function testtransactionTypes(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -821,7 +821,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgatewayGetList()
+    public function testgatewayGetList(): void
     {
         $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
@@ -842,7 +842,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgatewayGetPairs()
+    public function testgatewayGetPairs(): void
     {
         $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
@@ -857,7 +857,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgatewayGetAvailable()
+    public function testgatewayGetAvailable(): void
     {
         $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
@@ -872,7 +872,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgatewayInstall()
+    public function testgatewayInstall(): void
     {
         $data = [
             'code' => 'PP',
@@ -897,7 +897,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgatewayGet()
+    public function testgatewayGet(): void
     {
         $data = [
             'id' => 1,
@@ -931,7 +931,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgatewayCopy()
+    public function testgatewayCopy(): void
     {
         $data = [
             'id' => 1,
@@ -966,7 +966,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newGatewayId, $result);
     }
 
-    public function testgatewayUpdate()
+    public function testgatewayUpdate(): void
     {
         $data = [
             'id' => 1,
@@ -1001,7 +1001,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgatewayDelete()
+    public function testgatewayDelete(): void
     {
         $data = [
             'id' => 1,
@@ -1057,7 +1057,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testsubscriptionCreate()
+    public function testsubscriptionCreate(): void
     {
         $data = [
             'client_id' => 1,
@@ -1098,7 +1098,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newSubscriptionId, $result);
     }
 
-    public function testsubscriptionCreateCurrencyMismatch()
+    public function testsubscriptionCreateCurrencyMismatch(): void
     {
         $data = [
             'client_id' => 1,
@@ -1132,7 +1132,7 @@ class AdminTest extends \BBTestCase
         $this->api->subscription_create($data);
     }
 
-    public function testsubscriptionUpdate()
+    public function testsubscriptionUpdate(): void
     {
         $data = [
             'id' => 1,
@@ -1167,7 +1167,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testsubscriptionGet()
+    public function testsubscriptionGet(): void
     {
         $data = [
             'id' => 1,
@@ -1196,7 +1196,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testsubscriptionDelete()
+    public function testsubscriptionDelete(): void
     {
         $data = [
             'id' => 1,
@@ -1231,7 +1231,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtaxDelete()
+    public function testtaxDelete(): void
     {
         $data = [
             'id' => 1,
@@ -1266,7 +1266,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtaxCreate()
+    public function testtaxCreate(): void
     {
         $data = [
             'id' => 1,
@@ -1314,7 +1314,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testBatchDelete()
+    public function testBatchDelete(): void
     {
         $activityMock = $this->getMockBuilder('\\' . Admin::class)->onlyMethods(['delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->
@@ -1333,7 +1333,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchDeleteSubscription()
+    public function testBatchDeleteSubscription(): void
     {
         $activityMock = $this->getMockBuilder('\\' . Admin::class)->onlyMethods(['subscription_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('subscription_delete')->willReturn(true);
@@ -1351,7 +1351,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchDeleteTransaction()
+    public function testBatchDeleteTransaction(): void
     {
         $activityMock = $this->getMockBuilder('\\' . Admin::class)->onlyMethods(['transaction_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('transaction_delete')->willReturn(true);
@@ -1369,7 +1369,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchDeleteTax()
+    public function testBatchDeleteTax(): void
     {
         $activityMock = $this->getMockBuilder('\\' . Admin::class)->onlyMethods(['tax_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('tax_delete')->willReturn(true);
@@ -1387,7 +1387,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetTax()
+    public function testgetTax(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1419,7 +1419,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdateTax()
+    public function testupdateTax(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())

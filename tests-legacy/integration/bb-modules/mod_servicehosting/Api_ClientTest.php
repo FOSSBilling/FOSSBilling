@@ -5,7 +5,7 @@ class Api_Client_ServiceHostingTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
-    public function testLists()
+    public function testLists(): void
     {
         $array = $this->api_client->servicehosting_hp_get_pairs();
         $this->assertIsArray($array);
@@ -20,7 +20,7 @@ class Api_Client_ServiceHostingTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('orders')]
-    public function testServiceHosting($id)
+    public function testServiceHosting($id): void
     {
         $this->api_admin->order_renew(['id' => $id]);
 

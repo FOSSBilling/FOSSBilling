@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new \Box\Mod\Servicecustom\Service();
     }
 
-    public function testDi()
+    public function testDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testValidateCustomForm()
+    public function testValidateCustomForm(): void
     {
         $form = [
             'fields' => [
@@ -57,7 +57,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testValidateCustomFormFieldNameNotSetException()
+    public function testValidateCustomFormFieldNameNotSetException(): void
     {
         $form = [
             'fields' => [
@@ -90,7 +90,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testValidateCustomFormReadonlyFieldChangeException()
+    public function testValidateCustomFormReadonlyFieldChangeException(): void
     {
         $form = [
             'fields' => [
@@ -126,7 +126,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testActionCreate()
+    public function testActionCreate(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -160,7 +160,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ServiceCustom', $result);
     }
 
-    public function testActionActivate()
+    public function testActionActivate(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -184,7 +184,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActionActivateOrderServiceNotCreatedException()
+    public function testActionActivateOrderServiceNotCreatedException(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -203,7 +203,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_activate($order);
     }
 
-    public function testActionRenew()
+    public function testActionRenew(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -233,7 +233,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActiveServiceNotFoundException()
+    public function testActiveServiceNotFoundException(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -254,7 +254,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActionSuspend()
+    public function testActionSuspend(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -284,7 +284,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActionUnsuspend()
+    public function testActionUnsuspend(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -314,7 +314,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActionCancel()
+    public function testActionCancel(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -344,7 +344,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActionUncancel()
+    public function testActionUncancel(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -374,7 +374,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActionDelete()
+    public function testActionDelete(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -404,7 +404,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetConfig()
+    public function testGetConfig(): void
     {
         $decoded = [
             'J' => 5,
@@ -428,7 +428,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $decoded);
     }
 
-    public function testToApiArray()
+    public function testToApiArray(): void
     {
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -457,13 +457,13 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result['created_at'], $model->created_at);
     }
 
-    public function testCustomCallForbiddenMethodException()
+    public function testCustomCallForbiddenMethodException(): void
     {
         $this->expectException(\Exception::class);
         $this->service->customCall(new \Model_ServiceCustom(), 'delete');
     }
 
-    public function testGetServiceCustomByOrderId()
+    public function testGetServiceCustomByOrderId(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -485,7 +485,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ServiceCustom', $result);
     }
 
-    public function testGetServiceCustomByOrderIdOrderServiceNotFoundException()
+    public function testGetServiceCustomByOrderIdOrderServiceNotFoundException(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -505,7 +505,7 @@ class ServiceTest extends \BBTestCase
         $this->service->getServiceCustomByOrderId(random_int(1, 100));
     }
 
-    public function testUpdateConfig()
+    public function testUpdateConfig(): void
     {
         $model = new \Model_ServiceCustom();
         $model->loadBean(new \DummyBean());
@@ -531,7 +531,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testUpdateConfigNotArrayException()
+    public function testUpdateConfigNotArrayException(): void
     {
         $model = new \Model_ServiceCustom();
         $model->loadBean(new \DummyBean());

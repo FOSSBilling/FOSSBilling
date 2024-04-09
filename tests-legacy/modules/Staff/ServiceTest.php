@@ -18,7 +18,7 @@ class PdoStatementMock extends \PDOStatement
 
 class ServiceTest extends \BBTestCase
 {
-    public function testLogin()
+    public function testLogin(): void
     {
         $email = 'email@domain.com';
         $password = 'pass';
@@ -77,7 +77,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testLoginException()
+    public function testLoginException(): void
     {
         $email = 'email@domain.com';
         $password = 'pass';
@@ -108,7 +108,7 @@ class ServiceTest extends \BBTestCase
         $service->login($email, $password, $ip);
     }
 
-    public function testgetAdminCount()
+    public function testgetAdminCount(): void
     {
         $countResult = 3;
 
@@ -129,7 +129,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($countResult, $result);
     }
 
-    public function testhasPermissionRoleAdmin()
+    public function testhasPermissionRoleAdmin(): void
     {
         $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
@@ -141,7 +141,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testhasPermissionRoleStaffWithEmptyPerms()
+    public function testhasPermissionRoleStaffWithEmptyPerms(): void
     {
         $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
@@ -168,7 +168,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testhasPermissionRoleStaffWithNoPerm()
+    public function testhasPermissionRoleStaffWithNoPerm(): void
     {
         $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
@@ -196,7 +196,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testhasPermissionRoleStaffWithNoMethodPerm()
+    public function testhasPermissionRoleStaffWithNoMethodPerm(): void
     {
         $member = new \Model_Admin();
         $member->loadBean(new \DummyBean());
@@ -224,7 +224,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testonAfterClientReplyTicket()
+    public function testonAfterClientReplyTicket(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -264,7 +264,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientReplyTicket($eventMock);
     }
 
-    public function testonAfterClientReplyTicketException()
+    public function testonAfterClientReplyTicketException(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -305,7 +305,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientReplyTicket($eventMock);
     }
 
-    public function testonAfterClientCloseTicket()
+    public function testonAfterClientCloseTicket(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -345,7 +345,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientCloseTicket($eventMock);
     }
 
-    public function testonAfterClientCloseTicketException()
+    public function testonAfterClientCloseTicketException(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -386,7 +386,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientCloseTicket($eventMock);
     }
 
-    public function testonAfterGuestPublicTicketOpen()
+    public function testonAfterGuestPublicTicketOpen(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -426,7 +426,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterGuestPublicTicketOpen($eventMock);
     }
 
-    public function testonAfterGuestPublicTicketOpenException()
+    public function testonAfterGuestPublicTicketOpenException(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -467,7 +467,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterGuestPublicTicketOpen($eventMock);
     }
 
-    public function testonAfterGuestPublicTicketReply()
+    public function testonAfterGuestPublicTicketReply(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -507,7 +507,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterGuestPublicTicketReply($eventMock);
     }
 
-    public function testonAfterGuestPublicTicketReplyException()
+    public function testonAfterGuestPublicTicketReplyException(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -548,7 +548,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterGuestPublicTicketReply($eventMock);
     }
 
-    public function testonAfterClientSignUp()
+    public function testonAfterClientSignUp(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -585,7 +585,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientSignUp($eventMock);
     }
 
-    public function testonAfterClientSignUpException()
+    public function testonAfterClientSignUpException(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -623,7 +623,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientSignUp($eventMock);
     }
 
-    public function testonAfterGuestPublicTicketClose()
+    public function testonAfterGuestPublicTicketClose(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -667,7 +667,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterGuestPublicTicketClose($eventMock);
     }
 
-    public function testonAfterClientOpenTicketModStaffTicketOpen()
+    public function testonAfterClientOpenTicketModStaffTicketOpen(): void
     {
         $di = new \Pimple\Container();
 
@@ -726,7 +726,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientOpenTicket($eventMock);
     }
 
-    public function testonAfterClientOpenTicketModSupportHelpdeskTicketOpen()
+    public function testonAfterClientOpenTicketModSupportHelpdeskTicketOpen(): void
     {
         $di = new \Pimple\Container();
 
@@ -788,7 +788,7 @@ class ServiceTest extends \BBTestCase
         $service->onAfterClientOpenTicket($eventMock);
     }
 
-    public function testgetList()
+    public function testgetList(): void
     {
         $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
         $pagerMock->expects($this->atLeastOnce())
@@ -832,7 +832,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams)
+    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -846,7 +846,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
-    public function testgetCronAdminAlreadyExists()
+    public function testgetCronAdminAlreadyExists(): void
     {
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
@@ -867,7 +867,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Admin', $result);
     }
 
-    public function testgetCronAdminCreateCronAdminAndReturn()
+    public function testgetCronAdminCreateCronAdminAndReturn(): void
     {
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
@@ -901,7 +901,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Admin', $result);
     }
 
-    public function testtoModelAdminApiArray()
+    public function testtoModelAdminApiArray(): void
     {
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
@@ -941,7 +941,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $data = [
             'email' => 'test@example.com',
@@ -981,7 +981,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdelete()
+    public function testdelete(): void
     {
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
@@ -1013,7 +1013,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeleteProtectedAccount()
+    public function testdeleteProtectedAccount(): void
     {
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
@@ -1026,7 +1026,7 @@ class ServiceTest extends \BBTestCase
         $service->delete($adminModel);
     }
 
-    public function testchangePassword()
+    public function testchangePassword(): void
     {
         $plainTextPassword = 'password';
         $adminModel = new \Model_Admin();
@@ -1068,7 +1068,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcreate()
+    public function testcreate(): void
     {
         $data = [
             'email' => 'test@example.com',
@@ -1127,7 +1127,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testcreateException()
+    public function testcreateException(): void
     {
         $data = [
             'email' => 'test@example.com',
@@ -1187,7 +1187,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->create($data);
     }
 
-    public function testcreateAdmin()
+    public function testcreateAdmin(): void
     {
         $data = [
             'email' => 'test@example.com',
@@ -1237,7 +1237,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testgetAdminGroupPair()
+    public function testgetAdminGroupPair(): void
     {
         $rows = [
             [
@@ -1272,7 +1272,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetAdminGroupSearchQuery()
+    public function testgetAdminGroupSearchQuery(): void
     {
         $service = new Service();
 
@@ -1282,7 +1282,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result[1]);
     }
 
-    public function testcreateGroup()
+    public function testcreateGroup(): void
     {
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
@@ -1318,7 +1318,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newGroupId, $result);
     }
 
-    public function testtoAdminGroupApiArray()
+    public function testtoAdminGroupApiArray(): void
     {
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
@@ -1339,7 +1339,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
-    public function testdeleteGroup()
+    public function testdeleteGroup(): void
     {
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
@@ -1368,7 +1368,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeleteGroupDeleteAdminGroup()
+    public function testdeleteGroupDeleteAdminGroup(): void
     {
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
@@ -1385,7 +1385,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->deleteGroup($adminGroupModel);
     }
 
-    public function testdeleteGroupGroupHasMembers()
+    public function testdeleteGroupGroupHasMembers(): void
     {
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
@@ -1411,7 +1411,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->deleteGroup($adminGroupModel);
     }
 
-    public function testupdateGroup()
+    public function testupdateGroup(): void
     {
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
@@ -1460,7 +1460,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('ActivityAdminHistorySearchFilters')]
-    public function testgetActivityAdminHistorySearchQuery($data, $expectedStr, $expectedParams)
+    public function testgetActivityAdminHistorySearchQuery($data, $expectedStr, $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -1474,7 +1474,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
-    public function testtoActivityAdminHistoryApiArray()
+    public function testtoActivityAdminHistoryApiArray(): void
     {
         $adminHistoryModel = new \Model_ActivityAdminHistory();
         $adminHistoryModel->loadBean(new \DummyBean());
@@ -1512,7 +1512,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
-    public function testdeleteLoginHistory()
+    public function testdeleteLoginHistory(): void
     {
         $adminHistoryModel = new \Model_ActivityAdminHistory();
         $adminHistoryModel->loadBean(new \DummyBean());
@@ -1531,7 +1531,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testsetPermissions()
+    public function testsetPermissions(): void
     {
         $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
             ->getMock();
@@ -1558,7 +1558,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetPermissionsPermAreEmpty()
+    public function testgetPermissionsPermAreEmpty(): void
     {
         $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
             ->getMock();
@@ -1585,7 +1585,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals([], $result);
     }
 
-    public function testgetPermissions()
+    public function testgetPermissions(): void
     {
         $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
             ->getMock();
@@ -1614,7 +1614,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testauthorizeAdminDidntFoundEmail()
+    public function testauthorizeAdminDidntFoundEmail(): void
     {
         $email = 'example@fossbilling.vm';
         $password = '123456';
@@ -1635,7 +1635,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testauthorizeAdmin()
+    public function testauthorizeAdmin(): void
     {
         $email = 'example@fossbilling.vm';
         $password = '123456';

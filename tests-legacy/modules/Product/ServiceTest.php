@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetPairs()
+    public function testgetPairs(): void
     {
         $data = [
             'type' => 'domain',
@@ -56,7 +56,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expectArray, $result);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods([
@@ -113,7 +113,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTypes()
+    public function testgetTypes(): void
     {
         $modArray = [
             'servicecustomtest',
@@ -143,7 +143,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expectedArray, $result);
     }
 
-    public function testgetMainDomainProduct()
+    public function testgetMainDomainProduct(): void
     {
         $model = new \Model_Product();
 
@@ -161,7 +161,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Product', $result);
     }
 
-    public function testgetPaymentTypes()
+    public function testgetPaymentTypes(): void
     {
         $expected = [
             'free' => 'Free',
@@ -174,7 +174,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testcreateProduct()
+    public function testcreateProduct(): void
     {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -217,7 +217,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testupdateProductMissngPricingType()
+    public function testupdateProductMissngPricingType(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getPaymentTypes'])
@@ -244,7 +244,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->updateProduct($modelProduct, $data);
     }
 
-    public function testupdateProduct()
+    public function testupdateProduct(): void
     {
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
@@ -321,7 +321,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdatePriority()
+    public function testupdatePriority(): void
     {
         $data = [
             'priority' => [
@@ -351,7 +351,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateConfig()
+    public function testupdateConfig(): void
     {
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
@@ -381,7 +381,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetAddons()
+    public function testgetAddons(): void
     {
         $addonsRows = [
             [
@@ -410,7 +410,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testcreateAddon()
+    public function testcreateAddon(): void
     {
         $newProductId = 1;
 
@@ -444,7 +444,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testdeleteProductActivaOrderException()
+    public function testdeleteProductActivaOrderException(): void
     {
         $model = new \Model_Product();
 
@@ -463,7 +463,7 @@ class ServiceTest extends \BBTestCase
         $this->service->deleteProduct($model);
     }
 
-    public function testgetProductCategoryPairs()
+    public function testgetProductCategoryPairs(): void
     {
         $execArray = [
             [
@@ -490,7 +490,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expectArray, $result);
     }
 
-    public function testupdateCategory()
+    public function testupdateCategory(): void
     {
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
@@ -511,7 +511,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcreateCategory()
+    public function testcreateCategory(): void
     {
         $newCategoryId = 1;
 
@@ -544,7 +544,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newCategoryId, $result);
     }
 
-    public function testremoveProductCategoryCategoryHasProductsException()
+    public function testremoveProductCategoryCategoryHasProductsException(): void
     {
         $modelProductCategory = new \Model_ProductCategory();
         $modelProductCategory->loadBean(new \DummyBean());
@@ -567,7 +567,7 @@ class ServiceTest extends \BBTestCase
         $this->service->removeProductCategory($modelProductCategory);
     }
 
-    public function testremoveProductCategory()
+    public function testremoveProductCategory(): void
     {
         $modelProductCategory = new \Model_ProductCategory();
         $modelProductCategory->loadBean(new \DummyBean());
@@ -593,7 +593,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetPromoSearchQuery()
+    public function testgetPromoSearchQuery(): void
     {
         $data = [
             'search' => 'keyword',
@@ -611,7 +611,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($params);
     }
 
-    public function testcreatePromo()
+    public function testcreatePromo(): void
     {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -641,7 +641,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newPromoId, $result);
     }
 
-    public function testtoPromoApiArray()
+    public function testtoPromoApiArray(): void
     {
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
@@ -663,7 +663,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdatePromo()
+    public function testupdatePromo(): void
     {
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
@@ -698,7 +698,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeletePromo()
+    public function testdeletePromo(): void
     {
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
@@ -719,7 +719,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetProductSearchQuery()
+    public function testgetProductSearchQuery(): void
     {
         $data = [
             'search' => 'keyword',
@@ -738,7 +738,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($params);
     }
 
-    public function testtoProductCategoryApiArray()
+    public function testtoProductCategoryApiArray(): void
     {
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
@@ -778,7 +778,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtoProductCategoryApiArrayStartingFromValueNotZero()
+    public function testtoProductCategoryApiArrayStartingFromValueNotZero(): void
     {
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
@@ -834,7 +834,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($min, $result['price_starting_from']);
     }
 
-    public function testfindOneActiveById()
+    public function testfindOneActiveById(): void
     {
         $model = new \Model_Product();
 
@@ -851,7 +851,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Product', $result);
     }
 
-    public function testfindOneActiveBySlug()
+    public function testfindOneActiveBySlug(): void
     {
         $model = new \Model_Product();
 
@@ -868,7 +868,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Product', $result);
     }
 
-    public function testgetProductCategorySearchQuery()
+    public function testgetProductCategorySearchQuery(): void
     {
         [$sql, $params] = $this->service->getProductCategorySearchQuery([]);
 
@@ -877,7 +877,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals([], $params);
     }
 
-    public function testgetStartingFromPriceTypeFree()
+    public function testgetStartingFromPriceTypeFree(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -902,7 +902,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals('0', $result);
     }
 
-    public function testgetStartingFromPricePaymentNotDefined()
+    public function testgetStartingFromPricePaymentNotDefined(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -912,7 +912,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testgetStartingFromPriceDomainType()
+    public function testgetStartingFromPriceDomainType(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -932,7 +932,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNotNull($result);
     }
 
-    public function testgetUpgradablePairs()
+    public function testgetUpgradablePairs(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -945,7 +945,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetProductTitlesByIds()
+    public function testgetProductTitlesByIds(): void
     {
         $ids = ['1', '2'];
 
@@ -979,7 +979,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetCategoryProducts()
+    public function testgetCategoryProducts(): void
     {
         $productCategoryModel = new \Model_ProductCategory();
         $productCategoryModel->loadBean(new \DummyBean());
@@ -1000,7 +1000,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtoProductPaymentApiArray()
+    public function testtoProductPaymentApiArray(): void
     {
         $productPaymentModel = new \Model_ProductPayment();
         $productPaymentModel->loadBean(new \DummyBean());
@@ -1009,7 +1009,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetStartingPrice()
+    public function testgetStartingPrice(): void
     {
         $productPaymentModel = new \Model_ProductPayment();
         $productPaymentModel->loadBean(new \DummyBean());
@@ -1037,7 +1037,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($minPrice, $result);
     }
 
-    public function testgetSavePath()
+    public function testgetSavePath(): void
     {
         $filename = 'cfg.file';
         $expected = PATH_DATA . '/uploads/' . md5($filename);
@@ -1051,7 +1051,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testcanUpgradeToReturnsTrue()
+    public function testcanUpgradeToReturnsTrue(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getUpgradablePairs'])
@@ -1072,7 +1072,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanUpgradeToUpgradeIsImposible()
+    public function testcanUpgradeToUpgradeIsImposible(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getUpgradablePairs'])
@@ -1093,7 +1093,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testcanUpgradeToSameProducts()
+    public function testcanUpgradeToSameProducts(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());

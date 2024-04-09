@@ -4,7 +4,7 @@ namespace Box\Mod\Cron\Api;
 
 class AdminTest extends \BBTestCase
 {
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $api_admin = new Admin();
@@ -13,7 +13,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testinfo()
+    public function testinfo(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getCronInfo')->willReturn([]);

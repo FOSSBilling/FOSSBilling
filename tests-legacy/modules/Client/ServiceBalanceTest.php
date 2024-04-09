@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Client;
 
 class ServiceBalanceTest extends \BBTestCase
 {
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Client\ServiceBalance();
@@ -13,7 +13,7 @@ class ServiceBalanceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testdeductFunds()
+    public function testdeductFunds(): void
     {
         $di = new \Pimple\Container();
 
@@ -52,7 +52,7 @@ class ServiceBalanceTest extends \BBTestCase
         $this->assertEquals('default', $result->type);
     }
 
-    public function testdeductFundsInvalidDescription()
+    public function testdeductFundsInvalidDescription(): void
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 
@@ -71,7 +71,7 @@ class ServiceBalanceTest extends \BBTestCase
         $service->deductFunds($clientModel, $amount, $description, $extra);
     }
 
-    public function testdeductFundsInvalidAmount()
+    public function testdeductFundsInvalidAmount(): void
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 

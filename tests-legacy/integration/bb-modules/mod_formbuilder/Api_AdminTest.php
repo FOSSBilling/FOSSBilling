@@ -7,7 +7,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
     /**
      *  Box_Exception.
      */
-    public function testFormExceptions()
+    public function testFormExceptions(): void
     {
         try {
             $this->api_admin->formbuilder_get_form(['id' => 10000]);
@@ -157,7 +157,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         }
     }
 
-    public function testFormCreate()
+    public function testFormCreate(): void
     {
         $id = $this->api_admin->formbuilder_create_form([
             'name' => 'New form',
@@ -173,7 +173,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertIsInt($id2);
     }
 
-    public function testFieldAdd()
+    public function testFieldAdd(): void
     {
         $fieldId = $this->api_admin->formbuilder_add_field(['form_id' => 1, 'type' => 'text']);
         $this->assertIsInt($fieldId);
@@ -206,7 +206,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         ]);
     }
 
-    public function testFormGet()
+    public function testFormGet(): void
     {
         $array = $this->api_admin->formbuilder_get_form(['id' => 1]);
         $this->assertIsArray($array);
@@ -214,28 +214,28 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertNotEmpty($array['fields']);
     }
 
-    public function testGetForm()
+    public function testGetForm(): void
     {
         $form = $this->api_admin->formbuilder_get_form(['id' => 1]);
         $this->assertIsArray($form);
         $this->assertNotEmpty($form);
     }
 
-    public function testGetFormFields()
+    public function testGetFormFields(): void
     {
         $test = $this->api_admin->formbuilder_get_form_fields(['form_id' => 1]);
         $this->assertIsArray($test);
         $this->assertNotEmpty($test);
     }
 
-    public function testGetField()
+    public function testGetField(): void
     {
         $test = $this->api_admin->formbuilder_get_field(['id' => 1]);
         $this->assertIsArray($test);
         $this->assertNotEmpty($test);
     }
 
-    public function testGetForms()
+    public function testGetForms(): void
     {
         $arr = $this->api_admin->formbuilder_get_forms();
         $test = $arr[0];
@@ -246,7 +246,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertArrayHasKey('id', $test);
     }
 
-    public function testDeleteForm()
+    public function testDeleteForm(): void
     {
         $forms_before = count($this->api_admin->formbuilder_get_forms());
         $test = $this->api_admin->formbuilder_delete_form(['id' => 1]);
@@ -255,7 +255,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertTrue($test);
     }
 
-    public function testDeleteField()
+    public function testDeleteField(): void
     {
         $fields_before = count($this->api_admin->formbuilder_get_form_fields(['form_id' => 1]));
         $test = $this->api_admin->formbuilder_delete_field(['id' => 1]);
@@ -264,7 +264,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertTrue($test);
     }
 
-    public function testUpdateField()
+    public function testUpdateField(): void
     {
         $test = $this->api_admin->formbuilder_update_field(['id' => 3, 'description' => 'This is very awesome description.', 'name' => 'Form name']);
         $this->assertIsInt($test);
@@ -309,7 +309,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertIsInt($test);
     }
 
-    public function testUpdateFormName()
+    public function testUpdateFormName(): void
     {
         $test = $this->api_admin->formbuilder_update_form_settings([
             'form_id' => 1,
@@ -321,7 +321,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertTrue($test);
     }
 
-    public function testCopyForm()
+    public function testCopyForm(): void
     {
         $test = $this->api_admin->formbuilder_add_field([
             'description' => 'This is awesome description. on create',
@@ -348,7 +348,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $this->assertIsInt($test);
     }
 
-    public function testGetPairs()
+    public function testGetPairs(): void
     {
         $test = $this->api_admin->formbuilder_get_pairs();
         $this->assertIsArray($test);

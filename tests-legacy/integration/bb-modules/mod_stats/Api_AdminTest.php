@@ -5,7 +5,7 @@ class Api_Admin_StatsTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
 
-    public function testSummary()
+    public function testSummary(): void
     {
         $array = $this->api_admin->stats_get_summary();
         $this->assertIsArray($array);
@@ -32,7 +32,7 @@ class Api_Admin_StatsTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testGraphs()
+    public function testGraphs(): void
     {
         $array = $this->api_admin->stats_get_orders();
         $this->assertIsArray($array);

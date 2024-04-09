@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
-    public function testTicketCreateForGuest()
+    public function testTicketCreateForGuest(): void
     {
         $result = Request::makeRequest('guest/support/ticket_create', [
             'name' => 'Name',
@@ -24,7 +24,7 @@ final class GuestTest extends TestCase
         $this->assertLessThanOrEqual(255, strlen($result->getResult()));
     }
 
-    public function testTicketCreateForGuestDisabled()
+    public function testTicketCreateForGuestDisabled(): void
     {
         // Disable public tickets
         Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);

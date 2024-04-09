@@ -5,7 +5,7 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'currencies.xml';
 
-    public function testCurrencies()
+    public function testCurrencies(): void
     {
         $array = $this->api_admin->currency_get_pairs();
         $this->assertIsArray($array);
@@ -39,7 +39,7 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testCurerncyGetList()
+    public function testCurerncyGetList(): void
     {
         $array = $this->api_admin->currency_get_list();
         $this->assertIsArray($array);

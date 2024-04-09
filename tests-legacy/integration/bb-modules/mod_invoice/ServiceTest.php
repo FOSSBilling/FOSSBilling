@@ -6,7 +6,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
     protected $_mod = 'invoice';
     protected $_initialSeedFile = 'mod_invoice.xml';
 
-    public function testEvents()
+    public function testEvents(): void
     {
         $service = new Box\Mod\Invoice\Service();
         $service->setDi($this->di);
@@ -30,7 +30,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
     /**
      * Process Paypal transaction.
      */
-    public function testprocessTransaction()
+    public function testprocessTransaction(): void
     {
         $service = new Box\Mod\Invoice\ServiceTransaction();
         $service->setDi($this->di);
@@ -47,7 +47,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
     /**
      * Process Paypal duplicate transaction.
      */
-    public function testcreateAndProcessTransactionDuplicate()
+    public function testcreateAndProcessTransactionDuplicate(): void
     {
         $service = new Box\Mod\Invoice\ServiceTransaction();
         $service->setDi($this->di);
@@ -79,7 +79,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
         $this->assertInstanceOf('Model_Transaction', $transactionModel);
     }
 
-    public function testonAfterAdminCronRun()
+    public function testonAfterAdminCronRun(): void
     {
         $systemService = $this->di['mod_service']('System');
 
@@ -110,7 +110,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
         $this->assertEquals(0, count($result));
     }
 
-    public function testbatchActivatePaid()
+    public function testbatchActivatePaid(): void
     {
         $invoiceItems = $this->di['mod_service']('Invoice', 'InvoiceItem')->getAllNotExecutePaidItems();
         $this->assertNotEmpty($invoiceItems);

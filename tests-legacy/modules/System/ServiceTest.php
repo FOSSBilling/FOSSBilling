@@ -16,7 +16,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetParamValueMissingKeyParam()
+    public function testgetParamValueMissingKeyParam(): void
     {
         $param = [];
         $this->expectException(\FOSSBilling\Exception::class);
@@ -25,7 +25,7 @@ class ServiceTest extends \BBTestCase
         $this->service->getParamValue($param);
     }
 
-    public function testgetCompany()
+    public function testgetCompany(): void
     {
         $expected = [
             'www' => 'http://localhost/',
@@ -76,13 +76,13 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetLanguages()
+    public function testgetLanguages(): void
     {
         $result = $this->service->getLanguages(true);
         $this->assertIsArray($result);
     }
 
-    public function testgetParams()
+    public function testgetParams(): void
     {
         $expected = [
             'company_name' => 'Inc. Test',
@@ -113,7 +113,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testupdateParams()
+    public function testupdateParams(): void
     {
         $data = [
             'company_name' => 'newValue',
@@ -140,7 +140,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetMessages()
+    public function testgetMessages(): void
     {
         $latestVersion = '1.0.0';
         $type = 'info';
@@ -168,7 +168,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtemplateExistsEmptyPaths()
+    public function testtemplateExistsEmptyPaths(): void
     {
         $getThemeResults = ['paths' => []];
         $systemServiceMock = $this->getMockBuilder('\\' . Service::class)->addMethods(['getThemeConfig'])->getMock();
@@ -185,7 +185,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testrenderStringTemplateException()
+    public function testrenderStringTemplateException(): void
     {
         $vars = [
             '_client_id' => 1,
@@ -217,7 +217,7 @@ class ServiceTest extends \BBTestCase
         $this->service->renderString('test', false, $vars);
     }
 
-    public function testrenderStringTemplate()
+    public function testrenderStringTemplate(): void
     {
         $vars = [
             '_client_id' => 1,
@@ -251,7 +251,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($string, 'test');
     }
 
-    public function testclearCache()
+    public function testclearCache(): void
     {
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -268,7 +268,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetPeriod()
+    public function testgetPeriod(): void
     {
         $code = '1W';
         $expexted = 'Every week';
@@ -278,7 +278,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expexted, $result);
     }
 
-    public function testgetCountries()
+    public function testgetCountries(): void
     {
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -293,7 +293,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetEuCountries()
+    public function testgetEuCountries(): void
     {
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -308,27 +308,27 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetStates()
+    public function testgetStates(): void
     {
         $result = $this->service->getStates();
         $this->assertIsArray($result);
     }
 
-    public function testgetPhoneCodes()
+    public function testgetPhoneCodes(): void
     {
         $data = [];
         $result = $this->service->getPhoneCodes($data);
         $this->assertIsArray($result);
     }
 
-    public function testgetVersion()
+    public function testgetVersion(): void
     {
         $result = $this->service->getVersion();
         $this->assertIsString($result);
         $this->assertEquals(\FOSSBilling\Version::VERSION, $result);
     }
 
-    public function testgetPendingMessages()
+    public function testgetPendingMessages(): void
     {
         $di = new \Pimple\Container();
 
@@ -345,7 +345,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetPendingMessagesGetReturnsNotArray()
+    public function testgetPendingMessagesGetReturnsNotArray(): void
     {
         $di = new \Pimple\Container();
 
@@ -362,7 +362,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testsetPendingMessage()
+    public function testsetPendingMessage(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getPendingMessages'])
@@ -387,7 +387,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testclearPendingMessages()
+    public function testclearPendingMessages(): void
     {
         $di = new \Pimple\Container();
 

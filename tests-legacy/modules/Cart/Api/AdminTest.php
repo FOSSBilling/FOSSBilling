@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->adminApi = new \Box\Mod\Cart\Api\Admin();
     }
 
-    public function testGetList()
+    public function testGetList(): void
     {
         $simpleResultArr = [
             'list' => [
@@ -56,7 +56,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -88,7 +88,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testBatchExpire()
+    public function testBatchExpire(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())

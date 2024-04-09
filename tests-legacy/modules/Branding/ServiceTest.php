@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Branding;
 
 class ServiceTest extends \BBTestCase
 {
-    public function testDi()
+    public function testDi(): void
     {
         $service = new \Box\Mod\Branding\Service();
 

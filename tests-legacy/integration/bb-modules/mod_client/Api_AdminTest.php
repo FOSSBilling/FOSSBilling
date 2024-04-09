@@ -5,7 +5,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'initial.xml';
 
-    public function testClient()
+    public function testClient(): void
     {
         $data = [
             'id' => 1,
@@ -55,7 +55,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testGetPairs()
+    public function testGetPairs(): void
     {
         $data = [
             'search' => 'de',
@@ -65,7 +65,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testGroups()
+    public function testGroups(): void
     {
         $data = [
             'title' => 'testers',
@@ -88,7 +88,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $data = [
             'id' => 1,
@@ -98,7 +98,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertNull($array['auth_type']);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $data = [
             'email' => 'tester@gmail.com',
@@ -113,7 +113,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testLoginHistoryGetList()
+    public function testLoginHistoryGetList(): void
     {
         $array = $this->api_admin->client_login_history_get_list([]);
         $this->assertIsArray($array);
@@ -138,7 +138,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         }
     }
 
-    public function testClientGetList()
+    public function testClientGetList(): void
     {
         $array = $this->api_admin->client_get_list([]);
         $this->assertIsArray($array);
@@ -183,7 +183,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         }
     }
 
-    public function testClientBalanceGetList()
+    public function testClientBalanceGetList(): void
     {
         $bool = $this->api_admin->client_balance_add_funds(['id' => 1, 'amount' => 100, 'description' => 'Added from PHPUnit']);
         $this->assertTrue($bool);
@@ -204,7 +204,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         }
     }
 
-    public function testClientBatchDelete()
+    public function testClientBatchDelete(): void
     {
         $id = $this->api_admin->client_create(
             [
@@ -235,7 +235,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testClientBatchDeleteLog()
+    public function testClientBatchDeleteLog(): void
     {
         $this->api_admin->client_login(['id' => 1]);
         $array = $this->api_admin->client_login_history_get_list([]);

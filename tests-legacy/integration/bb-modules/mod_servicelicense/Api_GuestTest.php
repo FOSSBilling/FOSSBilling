@@ -40,7 +40,7 @@ class Api_Guest_ServiceLicenseTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('variations')]
-    public function testGuestServiceLicense($data, $valid)
+    public function testGuestServiceLicense($data, $valid): void
     {
         $result = $this->api_guest->servicelicense_check($data);
         $this->assertEquals($valid, $result['valid']);

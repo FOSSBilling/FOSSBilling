@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class DatabaseTest extends BBDbApiTestCase
 {
-    public function testModel()
+    public function testModel(): void
     {
         $model = $this->di['db']->dispense('Admin');
         $this->assertInstanceOf(RedBeanPHP\SimpleModel::class, $model);
@@ -30,7 +30,7 @@ class DatabaseTest extends BBDbApiTestCase
         $this->assertNull($this->di['db']->trash($model));
     }
 
-    public function testBean()
+    public function testBean(): void
     {
         $bean = $this->di['db']->dispense('admin');
         $this->assertInstanceOf(RedBeanPHP\OODBBean::class, $bean);

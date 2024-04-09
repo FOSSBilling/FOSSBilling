@@ -5,7 +5,7 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'transactions.xml';
 
-    public function testProformaInvoices()
+    public function testProformaInvoices(): void
     {
         // prepare expiring order
         $data = [
@@ -28,7 +28,7 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testRenewal()
+    public function testRenewal(): void
     {
         $data = [
             'order_id' => 3,
@@ -37,7 +37,7 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
         $this->assertIsString($hash);
     }
 
-    public function testFunds()
+    public function testFunds(): void
     {
         $data = [
             'amount' => 30,
@@ -46,7 +46,7 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
         $this->assertIsString($hash);
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
         $invoices = $this->di['db']->find('Invoice', '1');
         $pf = $invoices[1];
@@ -59,13 +59,13 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testTransactions()
+    public function testTransactions(): void
     {
         $array = $this->api_client->invoice_transaction_get_list();
         $this->assertIsArray($array);
     }
 
-    public function testInvoiceGetList()
+    public function testInvoiceGetList(): void
     {
         $array = $this->api_client->invoice_get_list();
         $this->assertIsArray($array);
@@ -148,7 +148,7 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
         }
     }
 
-    public function testTransactionGetList()
+    public function testTransactionGetList(): void
     {
         $array = $this->api_client->invoice_transaction_get_list();
         $this->assertIsArray($array);

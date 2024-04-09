@@ -12,7 +12,7 @@ class LogTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('logWithoutParamsProvider')]
-    public function testLogWithoutParams($msg)
+    public function testLogWithoutParams($msg): void
     {
         $msg = 'Test message';
         $this->di['logger']->info($msg);
@@ -39,7 +39,7 @@ class LogTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('testLogProvider')]
-    public function testLogWithSingleParam($msg, $param, $expected)
+    public function testLogWithSingleParam($msg, $param, $expected): void
     {
         $this->di['logger']->info($msg, $param);
 
@@ -50,7 +50,7 @@ class LogTest extends BBDbApiTestCase
         $this->assertEquals($expected, $message);
     }
 
-    public function testLogMultipleVariables()
+    public function testLogMultipleVariables(): void
     {
         $msg = '%sMultiple params in message, one param passed%s';
         $rand = random_int(1, 100);

@@ -14,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testget()
+    public function testget(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -53,7 +53,7 @@ class ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetInvoiceNotFound()
+    public function testgetInvoiceNotFound(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -79,7 +79,7 @@ class ClientTest extends \BBTestCase
         $this->api->get($data);
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -111,7 +111,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue(true);
     }
 
-    public function testupdateInvoiceNotFound()
+    public function testupdateInvoiceNotFound(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -137,7 +137,7 @@ class ClientTest extends \BBTestCase
         $this->api->update($data);
     }
 
-    public function testupdateInvoiceIsPaid()
+    public function testupdateInvoiceIsPaid(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -164,7 +164,7 @@ class ClientTest extends \BBTestCase
         $this->api->update($data);
     }
 
-    public function testrenewalInvoice()
+    public function testrenewalInvoice(): void
     {
         $generatedHash = 'generatedHashString';
 
@@ -209,7 +209,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($generatedHash, $result);
     }
 
-    public function testrenewalInvoiceOrderIsFree()
+    public function testrenewalInvoiceOrderIsFree(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -242,7 +242,7 @@ class ClientTest extends \BBTestCase
         $this->api->renewal_invoice($data);
     }
 
-    public function testrenewalInvoiceOrderNotFound()
+    public function testrenewalInvoiceOrderNotFound(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -273,7 +273,7 @@ class ClientTest extends \BBTestCase
         $this->api->renewal_invoice($data);
     }
 
-    public function testfundsInvoice()
+    public function testfundsInvoice(): void
     {
         $generatedHash = 'generatedHashString';
 
@@ -308,7 +308,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($generatedHash, $result);
     }
 
-    public function testdelete()
+    public function testdelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -344,7 +344,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtransactionGetList()
+    public function testtransactionGetList(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -369,7 +369,7 @@ class ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTaxRate()
+    public function testgetTaxRate(): void
     {
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());

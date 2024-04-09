@@ -5,7 +5,7 @@ class Api_GuestTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'currencies.xml';
 
-    public function testFormat()
+    public function testFormat(): void
     {
         $string = $this->api_guest->currency_format(['price' => '2']);
         $this->assertEquals('$2.00', $string);
@@ -20,7 +20,7 @@ class Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals('0.75 EUR', $string);
     }
 
-    public function testCurrency()
+    public function testCurrency(): void
     {
         $array = $this->api_guest->currency_get_pairs();
         $this->assertIsArray($array);

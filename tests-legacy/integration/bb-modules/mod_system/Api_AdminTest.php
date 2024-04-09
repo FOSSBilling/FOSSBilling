@@ -5,7 +5,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'settings.xml';
 
-    public function testUpdateParams()
+    public function testUpdateParams(): void
     {
         $data = [
             'captcha_enabled' => '1',
@@ -20,7 +20,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         $this->assertEquals('pub', $array['captcha_recaptcha_publickey']);
     }
 
-    public function testFiles()
+    public function testFiles(): void
     {
         $bool = $this->api_admin->system_template_exists();
         $this->assertFalse($bool);
@@ -32,7 +32,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testRender()
+    public function testRender(): void
     {
         $vars = [
             '_tpl' => '{{ now|date("Y") }}',
@@ -72,7 +72,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testPermissions()
+    public function testPermissions(): void
     {
         $bool = $this->api_admin->system_is_allowed(['mod' => 'order']);
         $this->assertTrue($bool);
@@ -81,7 +81,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testInfos()
+    public function testInfos(): void
     {
         $array = $this->api_admin->system_env();
         $this->assertIsArray($array);
@@ -99,7 +99,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         $this->assertEquals('2', '2');
     }
 
-    public function testRenderDate()
+    public function testRenderDate(): void
     {
         $result = date($this->di['config']['locale_date_format']);
         $data = [

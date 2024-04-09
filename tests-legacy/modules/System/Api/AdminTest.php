@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetParams()
+    public function testgetParams(): void
     {
         $data = [
         ];
@@ -38,7 +38,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdateParams()
+    public function testupdateParams(): void
     {
         $data = [
         ];
@@ -55,7 +55,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testmessages()
+    public function testmessages(): void
     {
         $data = [
         ];
@@ -75,7 +75,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtemplateExists()
+    public function testtemplateExists(): void
     {
         $data = [
             'file' => 'testing.txt',
@@ -93,7 +93,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function teststringRender()
+    public function teststringRender(): void
     {
         $data = [
             '_tpl' => 'default',
@@ -112,7 +112,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testenv()
+    public function testenv(): void
     {
         $data = [];
 
@@ -130,7 +130,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testisAllowed()
+    public function testisAllowed(): void
     {
         $data = [
             'mod' => 'extension',

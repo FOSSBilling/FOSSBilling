@@ -4,7 +4,7 @@ namespace Box\Mod\Cron\Api;
 
 class GuestTest extends \BBTestCase
 {
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $api = new Guest();
@@ -13,7 +13,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testsettings()
+    public function testsettings(): void
     {
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getConfig')->willReturn([]);
@@ -25,7 +25,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testisLate()
+    public function testisLate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('isLate')->willReturn(true);

@@ -6,7 +6,7 @@ class Box_Mod_Notification_Api_AdminTest extends BBModTestCase
     protected $_mod = 'notification';
     protected $_initialSeedFile = 'mod_notification.xml';
 
-    public function testActions()
+    public function testActions(): void
     {
         $this->api_admin->extension_activate(['id' => 'notification', 'type' => 'mod']);
 

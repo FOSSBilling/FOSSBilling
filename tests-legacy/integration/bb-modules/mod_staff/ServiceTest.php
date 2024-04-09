@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Staff_ServiceTest extends ApiTestCase
 {
-    public function testEvents()
+    public function testEvents(): void
     {
         $params = [
             'id' => 1,

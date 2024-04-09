@@ -5,13 +5,13 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_cart.xml';
 
-    public function testGet()
+    public function testGet(): void
     {
         $cart = $this->api_guest->cart_get();
         $this->assertIsArray($cart);
     }
 
-    public function testCurrency()
+    public function testCurrency(): void
     {
         $data = ['currency' => 'USD'];
         $bool = $this->api_guest->cart_set_currency($data);
@@ -21,13 +21,13 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertIsArray($c);
     }
 
-    public function testReset()
+    public function testReset(): void
     {
         $bool = $this->api_guest->cart_reset();
         $this->assertTrue($bool);
     }
 
-    public function testAddCustomProduct()
+    public function testAddCustomProduct(): void
     {
         $this->api_guest->cart_reset();
 
@@ -39,7 +39,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testAddAddons()
+    public function testAddAddons(): void
     {
         $this->api_guest->cart_reset();
         $pid = 1;
@@ -65,7 +65,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals(2, $cart['items'][1]['quantity']);
     }
 
-    public function testAddAddonsAddonPeriodNotEnabled()
+    public function testAddAddonsAddonPeriodNotEnabled(): void
     {
         $this->api_guest->cart_reset();
         $pid = 1;
@@ -86,7 +86,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $bool = $this->api_guest->cart_add_item($data);
     }
 
-    public function testAddAddonsMissingPeriodParameter()
+    public function testAddAddonsMissingPeriodParameter(): void
     {
         $this->api_guest->cart_reset();
         $pid = 1;
@@ -106,7 +106,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $bool = $this->api_guest->cart_add_item($data);
     }
 
-    public function testAddAddonsAddonNotFoundById()
+    public function testAddAddonsAddonNotFoundById(): void
     {
         $this->api_guest->cart_reset();
         $pid = 1;
@@ -127,7 +127,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testAddDisabledPeriod()
+    public function testAddDisabledPeriod(): void
     {
         $this->api_guest->cart_reset();
 
@@ -138,7 +138,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->api_guest->cart_add_item($data);
     }
 
-    public function testAddDomainRegisterProduct()
+    public function testAddDomainRegisterProduct(): void
     {
         $this->api_guest->cart_reset();
 
@@ -153,7 +153,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testAddDomainTransferProduct()
+    public function testAddDomainTransferProduct(): void
     {
         $this->api_guest->cart_reset();
 
@@ -173,7 +173,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals('year', $item['unit']);
     }
 
-    public function testAddLicenseProduct()
+    public function testAddLicenseProduct(): void
     {
         $this->api_guest->cart_reset();
 
@@ -185,7 +185,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testAddDownloadableProduct()
+    public function testAddDownloadableProduct(): void
     {
         $this->api_guest->cart_reset();
 
@@ -215,7 +215,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     }
     */
 
-    public function testAddResellerHostingProduct()
+    public function testAddResellerHostingProduct(): void
     {
         $this->api_guest->cart_reset();
 
@@ -233,7 +233,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testAddHostingProductWithDomainRegistration()
+    public function testAddHostingProductWithDomainRegistration(): void
     {
         $this->api_guest->cart_reset();
 
@@ -254,7 +254,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue(count($cart['items']) == 2);
     }
 
-    public function testAddHostingProductWithFreeDomainRegistration()
+    public function testAddHostingProductWithFreeDomainRegistration(): void
     {
         $this->api_guest->cart_reset();
 
@@ -276,7 +276,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals(10, $cart['items'][1]['discount'], 'Could not set free domain for hosting product');
     }
 
-    public function testAddHostingProductWithFreeDomainTransfer()
+    public function testAddHostingProductWithFreeDomainTransfer(): void
     {
         $this->api_guest->cart_reset();
 
@@ -298,7 +298,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals(15, $cart['items'][1]['discount'], 'Could not set free transfer for hosting product');
     }
 
-    public function testAddHostingProductWithDomainTransfer()
+    public function testAddHostingProductWithDomainTransfer(): void
     {
         $this->api_guest->cart_reset();
 
@@ -319,7 +319,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue(count($cart['items']) == 2);
     }
 
-    public function testAddHostingProductWithOwnDomainWhenExists()
+    public function testAddHostingProductWithOwnDomainWhenExists(): void
     {
         $this->api_guest->cart_reset();
 
@@ -336,7 +336,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testAddHostingProductWithOwnDomain()
+    public function testAddHostingProductWithOwnDomain(): void
     {
         $this->api_guest->cart_reset();
 
@@ -356,7 +356,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue(count($cart['items']) == 1);
     }
 
-    public function testFreeSetupPromo()
+    public function testFreeSetupPromo(): void
     {
         $this->api_admin->currency_set_default(['code' => 'USD']);
         $this->api_guest->cart_reset();
@@ -394,7 +394,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals(0, $invoice['lines'][1]['price']); // setup price
     }
 
-    public function testApplyPromo()
+    public function testApplyPromo(): void
     {
         $this->api_guest->cart_reset();
 
@@ -420,7 +420,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testRemoveItem()
+    public function testRemoveItem(): void
     {
         $cart = $this->api_guest->cart_get();
         foreach ($cart['items'] as $item) {
@@ -429,7 +429,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         }
     }
 
-    public function testRemoveItemWithAddons()
+    public function testRemoveItemWithAddons(): void
     {
         $this->api_guest->cart_reset();
 
@@ -471,7 +471,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals(1, count($cart['items']));
     }
 
-    public function testMultiple()
+    public function testMultiple(): void
     {
         $res = $this->api_admin->invoice_get_list();
         $this->assertEquals(0, $res['total'], 'Invoice exists in fixture?');
@@ -515,7 +515,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('testApplyPromoForClientProvider')]
-    public function testApplyPromoForClient($discount, $clientGroupId, $ids, $shouldThrowException)
+    public function testApplyPromoForClient($discount, $clientGroupId, $ids, $shouldThrowException): void
     {
         if ($shouldThrowException) {
             $this->expectException(FOSSBilling\Exception::class);

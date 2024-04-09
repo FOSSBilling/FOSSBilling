@@ -5,7 +5,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'serviceboxbillinglicense.xml';
 
-    public function testserviceboxbillinglicense()
+    public function testserviceboxbillinglicense(): void
     {
         $data = [
             'order_id' => 16,
@@ -29,7 +29,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testGetServiceMissingOrderId()
+    public function testGetServiceMissingOrderId(): void
     {
         $data = [];
 
@@ -42,7 +42,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $bool = $clientApi->reset($data);
     }
 
-    public function testGetServiceOrderNotFound()
+    public function testGetServiceOrderNotFound(): void
     {
         $data = [
             'order_id' => 160,
@@ -62,7 +62,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $bool = $clientApi->reset($data);
     }
 
-    public function testGetServiceOrderNotActivated()
+    public function testGetServiceOrderNotActivated(): void
     {
         $data = [
             'order_id' => 17,

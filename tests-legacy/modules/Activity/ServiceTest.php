@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Activity;
 
 class ServiceTest extends \BBTestCase
 {
-    public function testDi()
+    public function testDi(): void
     {
         $service = new \Box\Mod\Activity\Service();
 
@@ -31,7 +31,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
-    public function testgetSearchQuery($filterKey, $search, $expected)
+    public function testgetSearchQuery($filterKey, $search, $expected): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Activity\Service();
@@ -42,7 +42,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(str_contains($result[0], $search), $expected);
     }
 
-    public function testLogEmail()
+    public function testLogEmail(): void
     {
         $service = new \Box\Mod\Activity\Service();
         $data = [
@@ -73,7 +73,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $clientHistoryModel = new \Model_ActivityClientHistory();
         $clientHistoryModel->loadBean(new \DummyBean());
@@ -108,7 +108,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('email', $result['client']);
     }
 
-    public function testrmByClient()
+    public function testrmByClient(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());

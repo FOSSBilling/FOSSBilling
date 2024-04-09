@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testpluginGetPairs()
+    public function testpluginGetPairs(): void
     {
         $licensePluginArray[]['filename'] = 'plugin1';
         $licensePluginArray[]['filename'] = 'plugin2';
@@ -46,7 +46,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $data = [
             'order_id' => 1,
@@ -71,7 +71,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testreset()
+    public function testreset(): void
     {
         $data = [
             'order_id' => 1,
@@ -96,7 +96,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetService()
+    public function testGetService(): void
     {
         $data['order_id'] = 1;
 
@@ -125,7 +125,7 @@ class AdminTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ServiceLicense', $result);
     }
 
-    public function testGetServiceOrderNotActivated()
+    public function testGetServiceOrderNotActivated(): void
     {
         $data['order_id'] = 1;
 

@@ -14,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetWithSetId()
+    public function testgetWithSetId(): void
     {
         $data = [
             'id' => 1,
@@ -46,7 +46,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetWithSetSlug()
+    public function testgetWithSetSlug(): void
     {
         $data = [
             'slug' => 'product/1',
@@ -70,7 +70,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductNotFound()
+    public function testgetProductNotFound(): void
     {
         $data = [
             'slug' => 'product/1',
@@ -92,7 +92,7 @@ class GuestTest extends \BBTestCase
         $this->api->get($data);
     }
 
-    public function testcategoryGetList()
+    public function testcategoryGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -129,7 +129,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcategoryGetPairs()
+    public function testcategoryGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -141,7 +141,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSliderEmptyList()
+    public function testgetSliderEmptyList(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -158,7 +158,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals([], $result);
     }
 
-    public function testgetSlider()
+    public function testgetSlider(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -189,7 +189,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSliderJsonFormat()
+    public function testgetSliderJsonFormat(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());

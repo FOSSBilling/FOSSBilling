@@ -15,7 +15,7 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
         $hookService->batchConnect('paidsupport');
     }
 
-    public function testCreatePaidSupportTicket()
+    public function testCreatePaidSupportTicket(): void
     {
         $ticketPrice = 5.5;
 
@@ -55,7 +55,7 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
         $this->assertEquals(-$ticketPrice, $clientBalanceModel->amount);
     }
 
-    public function testCreatePaidSupportTicketHelpdeskhasPaidSupport()
+    public function testCreatePaidSupportTicketHelpdeskhasPaidSupport(): void
     {
         $ticketPrice = 5.5;
 
@@ -97,7 +97,7 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
         $this->assertEquals(-$ticketPrice, $clientBalanceModel->amount);
     }
 
-    public function testCreatePaidSupportTicketHelpdesHasNotPaidSupport()
+    public function testCreatePaidSupportTicketHelpdesHasNotPaidSupport(): void
     {
         $ticketPrice = 5.5;
 
@@ -136,7 +136,7 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
         $this->assertEquals($beforeBalance, $balance);
     }
 
-    public function testCreatePaidSupportTicketInsufficientFunds()
+    public function testCreatePaidSupportTicketInsufficientFunds(): void
     {
         $balance = $this->api_client->client_balance_get_total();
 

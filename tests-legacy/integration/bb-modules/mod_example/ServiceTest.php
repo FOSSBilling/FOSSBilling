@@ -5,21 +5,21 @@ class ServiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'example.xml';
 
-    public function testUninstall()
+    public function testUninstall(): void
     {
         $service = new Box\Mod\Example\Service();
         $result = $service->uninstall();
         $this->assertTrue($result);
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $service = new Box\Mod\Example\Service();
         $result = $service->update([]);
         $this->assertTrue($result);
     }
 
-    public function testGetSearchQuery()
+    public function testGetSearchQuery(): void
     {
         $service = new Box\Mod\Example\Service();
         $di = new Pimple\Container();
@@ -35,7 +35,7 @@ class ServiceTest extends BBDbApiTestCase
         $this->assertEquals($params[':client_id'], $data['client_id']);
     }
 
-    public function testEvents()
+    public function testEvents(): void
     {
         $service = new Box\Mod\Example\Service();
         $params = [

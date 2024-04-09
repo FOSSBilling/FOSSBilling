@@ -5,7 +5,7 @@ class Api_Guest_ServiceDomainTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
-    public function testGuestServiceDomain()
+    public function testGuestServiceDomain(): void
     {
         $data = [
             'sld' => 'phpunit',
@@ -21,7 +21,7 @@ class Api_Guest_ServiceDomainTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testTlds()
+    public function testTlds(): void
     {
         $array = $this->api_guest->servicedomain_tlds();
         $this->assertIsArray($array);

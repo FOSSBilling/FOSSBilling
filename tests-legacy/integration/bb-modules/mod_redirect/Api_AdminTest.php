@@ -6,7 +6,7 @@ class Box_Mod_Redirect_Api_AdminTest extends BBModTestCase
     protected $_mod = 'redirect';
     protected $_initialSeedFile = 'mod_redirect.xml';
 
-    public function testRedirect()
+    public function testRedirect(): void
     {
         $array = $this->api_admin->redirect_get_list();
         $this->assertIsArray($array);

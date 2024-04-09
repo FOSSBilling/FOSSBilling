@@ -5,13 +5,13 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
-    public function testAdminServiceHosting()
+    public function testAdminServiceHosting(): void
     {
         $array = $this->api_admin->servicehosting_manager_get_pairs();
         $this->assertIsArray($array);
     }
 
-    public function testAccountManagement()
+    public function testAccountManagement(): void
     {
         $data = [
             'order_id' => 8,
@@ -47,7 +47,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testHp()
+    public function testHp(): void
     {
         $array = $this->api_admin->servicehosting_hp_get_list();
         $this->assertIsArray($array);
@@ -73,7 +73,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testServer()
+    public function testServer(): void
     {
         $array = $this->api_admin->servicehosting_server_get_pairs();
         $this->assertIsArray($array);
@@ -101,7 +101,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testServerIps()
+    public function testServerIps(): void
     {
         $data = [
             'id' => 1,
@@ -119,7 +119,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
         $this->assertEquals(2, count($array['assigned_ips']));
     }
 
-    public function testServicehostingServerGetList()
+    public function testServicehostingServerGetList(): void
     {
         $array = $this->api_admin->servicehosting_server_get_list([]);
         $this->assertIsArray($array);
@@ -155,7 +155,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
         }
     }
 
-    public function testServicehostingHpGetList()
+    public function testServicehostingHpGetList(): void
     {
         $array = $this->api_admin->servicehosting_hp_get_list([]);
         $this->assertIsArray($array);

@@ -14,7 +14,7 @@ class Api_ClientTest extends \BBTestCase
         $this->api = new \Box\Mod\Servicecustom\Api\Client();
     }
 
-    public function testCall()
+    public function testCall(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -35,7 +35,7 @@ class Api_ClientTest extends \BBTestCase
         $this->api->__call('delete', $arguments);
     }
 
-    public function testCallArgumentsNotSetException()
+    public function testCallArgumentsNotSetException(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())
@@ -52,7 +52,7 @@ class Api_ClientTest extends \BBTestCase
         $this->api->__call('delete', $arguments);
     }
 
-    public function testCallOrderIdNotSetException()
+    public function testCallOrderIdNotSetException(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())

@@ -14,7 +14,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->service = new ServiceSubscription();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcreate()
+    public function testcreate(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -59,7 +59,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -86,7 +86,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -146,7 +146,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testdelete()
+    public function testdelete(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -208,7 +208,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams)
+    public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -223,7 +223,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue(str_contains($result[0], $expectedSqlPart));
     }
 
-    public function testisSubscribableisNotSusbcribable()
+    public function testisSubscribableisNotSusbcribable(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -241,7 +241,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisSubscribable()
+    public function testisSubscribable(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -266,7 +266,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetSubscriptionPeriod()
+    public function testgetSubscriptionPeriod(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . ServiceSubscription::class)
             ->onlyMethods(['isSubscribable'])
@@ -294,7 +294,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertEquals($period, $result);
     }
 
-    public function testunsubscribe()
+    public function testunsubscribe(): void
     {
         $subscribtionModel = new \Model_Subscription();
         $subscribtionModel->loadBean(new \DummyBean());

@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetSearchQuery()
+    public function testgetSearchQuery(): void
     {
         [$sql, $params] = $this->service->getSearchQuery([]);
 
@@ -33,14 +33,14 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($params, []);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $arrMock = ['testing' => 'okey'];
         $result = $this->service->toApiArray($arrMock);
         $this->assertEquals($arrMock, $result);
     }
 
-    public function testonAfterAdminActivateExtension()
+    public function testonAfterAdminActivateExtension(): void
     {
         $eventParams = [
             'id' => 1,
@@ -82,7 +82,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonAfterAdminActivateExtensionMissingId()
+    public function testonAfterAdminActivateExtensionMissingId(): void
     {
         $eventParams = [];
 
@@ -99,7 +99,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testonAfterAdminDeactivateExtension()
+    public function testonAfterAdminDeactivateExtension(): void
     {
         $eventParams = [
             'type' => 'mod',
@@ -131,7 +131,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchConnect()
+    public function testbatchConnect(): void
     {
         $mod = 'activity';
 

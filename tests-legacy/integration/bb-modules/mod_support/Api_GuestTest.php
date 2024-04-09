@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Guest_SupportTest extends ApiTestCase
 {
-    public function testContact()
+    public function testContact(): void
     {
         $data = [
             'name' => 'This is me',
@@ -31,7 +31,7 @@ class Api_Guest_SupportTest extends ApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testKb()
+    public function testKb(): void
     {
         $array = $this->api_guest->support_kb_article_get_list();
         $this->assertIsArray($array);
@@ -58,13 +58,13 @@ class Api_Guest_SupportTest extends ApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testKbCategoryGetPairs()
+    public function testKbCategoryGetPairs(): void
     {
         $array = $this->api_guest->support_kb_category_get_pairs();
         $this->assertIsArray($array);
     }
 
-    public function testKbArticleGetList()
+    public function testKbArticleGetList(): void
     {
         $array = $this->api_guest->support_kb_article_get_list();
         $this->assertIsArray($array);
@@ -92,7 +92,7 @@ class Api_Guest_SupportTest extends ApiTestCase
         }
     }
 
-    public function testKbCategoryGetList()
+    public function testKbCategoryGetList(): void
     {
         $array = $this->api_admin->support_kb_category_get_list();
         $this->assertIsArray($array);

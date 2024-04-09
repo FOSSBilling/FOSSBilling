@@ -14,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcheckLicenseDetails()
+    public function testcheckLicenseDetails(): void
     {
         $data = [
             'license' => 'license1234',

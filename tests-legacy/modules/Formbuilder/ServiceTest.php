@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetFormFieldsTypes()
+    public function testgetFormFieldsTypes(): void
     {
         $expected = [
             'text' => 'Text input',
@@ -45,7 +45,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('typeValidationData')]
-    public function testtypeValidation($type, $expected)
+    public function testtypeValidation($type, $expected): void
     {
         $result = $this->service->typeValidation($type);
         $this->assertEquals($expected, $result);
@@ -61,13 +61,13 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('isArrayUniqueData')]
-    public function testisArrayUnique($data, $expected)
+    public function testisArrayUnique($data, $expected): void
     {
         $result = $this->service->isArrayUnique($data);
         $this->assertEquals($expected, $result);
     }
 
-    public function testaddNewForm()
+    public function testaddNewForm(): void
     {
         $newFormId = 1;
         $data = [
@@ -99,7 +99,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newFormId, $result);
     }
 
-    public function testaddNewField()
+    public function testaddNewField(): void
     {
         $newFieldId = 1;
         $data = [
@@ -145,7 +145,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('updateFieldTypeData')]
-    public function testupdateField($fieldType)
+    public function testupdateField($fieldType): void
     {
         $updateFIeldId = 2;
         $data = [
@@ -203,7 +203,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($updateFIeldId, $result);
     }
 
-    public function testupdateFieldExists()
+    public function testupdateFieldExists(): void
     {
         $data = [
             'id' => 2,
@@ -229,7 +229,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->updateField($data);
     }
 
-    public function testupdateFieldValuesNotUnique()
+    public function testupdateFieldValuesNotUnique(): void
     {
         $data = [
             'id' => 2,
@@ -258,7 +258,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->updateField($data);
     }
 
-    public function testupdateFieldLabelsNotUnique()
+    public function testupdateFieldLabelsNotUnique(): void
     {
         $data = [
             'id' => 2,
@@ -287,7 +287,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->updateField($data);
     }
 
-    public function testupdateFieldTextAreaSizeException()
+    public function testupdateFieldTextAreaSizeException(): void
     {
         $data = [
             'id' => 2,
@@ -318,7 +318,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->updateField($data);
     }
 
-    public function testgetForm()
+    public function testgetForm(): void
     {
         $modelArray = [
             'style' => '',
@@ -357,7 +357,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetFormFields()
+    public function testgetFormFields(): void
     {
         $formId = 1;
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -373,7 +373,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetFormFieldsCount()
+    public function testgetFormFieldsCount(): void
     {
         $formId = 1;
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -389,7 +389,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetFormPairs()
+    public function testgetFormPairs(): void
     {
         $formId = 1;
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -405,7 +405,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetField()
+    public function testgetField(): void
     {
         $fieldId = 2;
         $modelArray = [
@@ -441,7 +441,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expectedArray, $result);
     }
 
-    public function testremoveForm()
+    public function testremoveForm(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->exactly(4))
@@ -457,7 +457,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testremoveField()
+    public function testremoveField(): void
     {
         $data = ['id' => 1];
 
@@ -481,7 +481,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testformFieldNameExists()
+    public function testformFieldNameExists(): void
     {
         $data = [
             'field_name' => 'testingName',
@@ -502,7 +502,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetForms()
+    public function testgetForms(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -517,7 +517,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testduplicateForm()
+    public function testduplicateForm(): void
     {
         $data = [
             'form_id' => 1,
@@ -555,7 +555,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newFormId, $result);
     }
 
-    public function testupdateFormSettings()
+    public function testupdateFormSettings(): void
     {
         $data = [
             'type' => 'default',

@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_ModTest extends PHPUnit\Framework\TestCase
 {
-    public function testEmptyConfig()
+    public function testEmptyConfig(): void
     {
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -19,7 +19,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $this->assertEquals([], $array);
     }
 
-    public function testCoreMod()
+    public function testCoreMod(): void
     {
         $mod = new Box_Mod('api');
         $this->assertTrue($mod->isCore());
@@ -31,7 +31,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $this->assertFalse($mod->isCore());
     }
 
-    public function testManifest()
+    public function testManifest(): void
     {
         $di = new Pimple\Container();
         $di['url'] = new Box_Url();
@@ -46,7 +46,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($array);
     }
 
-    public function testgetServiceSub()
+    public function testgetServiceSub(): void
     {
         $mod = new Box_Mod('Invoice');
         $subServiceName = 'transaction';

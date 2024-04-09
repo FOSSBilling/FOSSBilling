@@ -5,7 +5,7 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'gateway_PayPal.xml';
 
-    public function testGateway()
+    public function testGateway(): void
     {
         $config = [];
         $config['test_mode'] = true;
@@ -30,7 +30,7 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $adapter->processTransaction($this->api_admin, 1, $refund_ipn, 1);
     }
 
-    public function testGatewayProductionUrl()
+    public function testGatewayProductionUrl(): void
     {
         $config = [];
         $config['email'] = 'example@gmail.com';
@@ -45,7 +45,7 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $this->assertMatchesRegularExpression('/action="https:\/\/www\.paypal\.com\/cgi-bin\/webscr"/', $form);
     }
 
-    public function testGatewayTestmodeUrl()
+    public function testGatewayTestmodeUrl(): void
     {
         $config = [];
         $config['email'] = 'example@gmail.com';

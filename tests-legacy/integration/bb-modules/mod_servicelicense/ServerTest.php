@@ -35,7 +35,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('variations')]
-    public function testLicenseServer($data, $valid, $validation)
+    public function testLicenseServer($data, $valid, $validation): void
     {
         $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
         $service->expects($this->any())
@@ -89,7 +89,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         ];
     }
 
-    public function testLicenseServerProcess()
+    public function testLicenseServerProcess(): void
     {
         $data = [
             'license' => 'valid',
@@ -133,7 +133,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
     /**
      * @expectedException \LogicException
      */
-    public function testLicenseServerProcessNotFound()
+    public function testLicenseServerProcessNotFound(): void
     {
         $data = [
             'license' => 'non_existing',
@@ -201,7 +201,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
      * @expectedException \LogicException
      */
     #[PHPUnit\Framework\Attributes\DataProvider('testLicenseServerProcessValidationFailProvider')]
-    public function testLicenseServerProcessValidationFail($isActive, $validIp, $validHost, $validVersion, $validPath, $called)
+    public function testLicenseServerProcessValidationFail($isActive, $validIp, $validHost, $validVersion, $validPath, $called): void
     {
         $data = [
             'license' => 'valid',

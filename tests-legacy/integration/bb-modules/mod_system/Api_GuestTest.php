@@ -5,7 +5,7 @@ class Api_Guest_SystemTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'settings.xml';
 
-    public function testPhoneCodes()
+    public function testPhoneCodes(): void
     {
         $array = $this->api_guest->system_phone_codes();
         $this->assertIsArray($array);
@@ -18,7 +18,7 @@ class Api_Guest_SystemTest extends BBDbApiTestCase
         }
     }
 
-    public function testCompany()
+    public function testCompany(): void
     {
         $array = $this->api_guest->system_countries();
         $this->assertIsArray($array);
@@ -33,7 +33,7 @@ class Api_Guest_SystemTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testFiles()
+    public function testFiles(): void
     {
         $bool = $this->api_guest->system_template_exists();
         $this->assertFalse($bool);
@@ -45,7 +45,7 @@ class Api_Guest_SystemTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testSystem()
+    public function testSystem(): void
     {
         $string = $this->api_guest->system_version();
         $this->assertIsString($string);

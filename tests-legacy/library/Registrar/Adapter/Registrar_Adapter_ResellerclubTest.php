@@ -13,7 +13,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         return new Registrar_Adapter_Resellerclub($options);
     }
 
-    public function testConstructionMissingUserId()
+    public function testConstructionMissingUserId(): void
     {
         $options = [];
 
@@ -23,7 +23,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $adapter = new Registrar_Adapter_Resellerclub($options);
     }
 
-    public function testConstructionMissingApiKey()
+    public function testConstructionMissingApiKey(): void
     {
         $options = [
             'userid' => '12345',
@@ -35,7 +35,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         new Registrar_Adapter_Resellerclub($options);
     }
 
-    public function testConstruction()
+    public function testConstruction(): void
     {
         $options = [
             'userid' => '12345',
@@ -48,7 +48,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertNull($adapter->config['password']);
     }
 
-    public function testgetConfig()
+    public function testgetConfig(): void
     {
         $adapter = $this->getAdapter();
         $result = $adapter->getConfig();
@@ -59,7 +59,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertArrayHasKey('form', $result);
     }
 
-    public function testisDomainAvailableFoundInArray()
+    public function testisDomainAvailableFoundInArray(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -78,7 +78,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testisDomainAvailableStatusAvailable()
+    public function testisDomainAvailableStatusAvailable(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -97,7 +97,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testisDomainAvailableIsNotAvailable()
+    public function testisDomainAvailableIsNotAvailable(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -116,7 +116,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertFalse($result);
     }
 
-    public function testisDomaincanBeTransferred()
+    public function testisDomaincanBeTransferred(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -136,7 +136,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testmodifyNs()
+    public function testmodifyNs(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -161,7 +161,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testmodifyContact()
+    public function testmodifyContact(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -187,7 +187,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testtransferDomain()
+    public function testtransferDomain(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -212,7 +212,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($result);
     }
 
-    public function testregisterDomain()
+    public function testregisterDomain(): void
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->onlyMethods(['_makeRequest'])
@@ -243,7 +243,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testincludeAuthorizationParamsApiKeyProvided()
+    public function testincludeAuthorizationParamsApiKeyProvided(): void
     {
         $options = [
             'userid' => '12345',
@@ -257,7 +257,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertArrayHasKey('api-key', $result);
     }
 
-    public function testincludeAuthorizationParamsBothProvidedApiKeyIsUsed()
+    public function testincludeAuthorizationParamsBothProvidedApiKeyIsUsed(): void
     {
         $options = [
             'userid' => '12345',
@@ -292,7 +292,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('providerTestArray')]
-    public function testisKeyValueNotEmpty($array, $key, $expected)
+    public function testisKeyValueNotEmpty($array, $key, $expected): void
     {
         $options = [
             'userid' => 'TEST',

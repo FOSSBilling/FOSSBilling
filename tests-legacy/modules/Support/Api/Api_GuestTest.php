@@ -14,7 +14,7 @@ class Api_GuestTest extends \BBTestCase
         $this->guestApi = new \Box\Mod\Support\Api\Guest();
     }
 
-    public function testTicketCreate()
+    public function testTicketCreate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketCreateForGuest'])->getMock();
@@ -44,7 +44,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals(strlen($result), 40);
     }
 
-    public function testTicketCreateMessageTooShortException()
+    public function testTicketCreateMessageTooShortException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketCreateForGuest'])->getMock();
@@ -76,7 +76,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals(strlen($result), 40);
     }
 
-    public function testTicketGet()
+    public function testTicketGet(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicFindOneByHash', 'publicToApiArray'])->getMock();
@@ -104,7 +104,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTicketClose()
+    public function testTicketClose(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicFindOneByHash', 'publicCloseTicket'])->getMock();
@@ -132,7 +132,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTicketReply()
+    public function testTicketReply(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicFindOneByHash', 'publicTicketReplyForGuest'])->getMock();
@@ -165,7 +165,7 @@ class Api_GuestTest extends \BBTestCase
     * Knowledge Base Tests.
     */
 
-    public function testKbArticleGetList()
+    public function testKbArticleGetList(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -196,7 +196,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $willReturn);
     }
 
-    public function testKbArticleGetWithId()
+    public function testKbArticleGetWithId(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -226,7 +226,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbArticleGetWithSlug()
+    public function testKbArticleGetWithSlug(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -256,7 +256,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbArticleGetIdAndSlugNotSetException()
+    public function testKbArticleGetIdAndSlugNotSetException(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -280,7 +280,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbArticleGetNotFoundById()
+    public function testKbArticleGetNotFoundById(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -311,7 +311,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbArticleGetNotFoundBySlug()
+    public function testKbArticleGetNotFoundBySlug(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -343,7 +343,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetList()
+    public function testKbCategoryGetList(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -376,7 +376,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $willReturn);
     }
 
-    public function testKbCategoryGetPairs()
+    public function testKbCategoryGetPairs(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -396,7 +396,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public function testKbCategoryGetWithId()
+    public function testKbCategoryGetWithId(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -423,7 +423,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetWithSlug()
+    public function testKbCategoryGetWithSlug(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -450,7 +450,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetIdAndSlugNotSetException()
+    public function testKbCategoryGetIdAndSlugNotSetException(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -471,7 +471,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetNotFoundById()
+    public function testKbCategoryGetNotFoundById(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 
@@ -500,7 +500,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetNotFoundBySlug()
+    public function testKbCategoryGetNotFoundBySlug(): void
     {
         $guestApi = new \Box\Mod\Support\Api\Guest();
 

@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
 {
-    public function testTemplates()
+    public function testTemplates(): void
     {
         $loader = new Box_TwigLoader([
             'mods' => PATH_MODS,
@@ -17,7 +17,7 @@ class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
         $this->assertIsObject($test2);
     }
 
-    public function testException()
+    public function testException(): void
     {
         $loader = new Box_TwigLoader([
             'type' => 'client',

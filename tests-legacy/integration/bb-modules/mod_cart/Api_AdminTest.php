@@ -5,7 +5,7 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_cart.xml';
 
-    public function testCarts()
+    public function testCarts(): void
     {
         $array = $this->api_admin->cart_get_list();
         $this->assertIsArray($array);
@@ -30,7 +30,7 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
         }
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $data = [
             'id' => 1,
@@ -39,7 +39,7 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
         $this->assertIsArray($cartArr);
     }
 
-    public function testExpire()
+    public function testExpire(): void
     {
         $bool = $this->api_admin->cart_batch_expire();
         $this->assertTrue($bool);

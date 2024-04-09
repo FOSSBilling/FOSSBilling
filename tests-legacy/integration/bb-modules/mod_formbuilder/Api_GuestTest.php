@@ -7,7 +7,7 @@ class Api_GUest_FormbuilderTest extends BBDbApiTestCase
     /**
      *  Box_Exception.
      */
-    public function testFormGetNonExisting()
+    public function testFormGetNonExisting(): void
     {
         try {
             $this->api_guest->formbuilder_get(['id' => 'non-existing']);
@@ -22,7 +22,7 @@ class Api_GUest_FormbuilderTest extends BBDbApiTestCase
         }
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $test = $this->api_guest->formbuilder_get(['id' => 2]);
         $this->assertIsArray($test);

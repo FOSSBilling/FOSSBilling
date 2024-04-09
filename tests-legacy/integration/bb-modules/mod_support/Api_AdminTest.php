@@ -5,7 +5,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_support.xml';
 
-    public function testCanned()
+    public function testCanned(): void
     {
         $array = $this->api_admin->support_canned_pairs();
         $this->assertIsArray($array);
@@ -38,7 +38,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testCannedCategory()
+    public function testCannedCategory(): void
     {
         $array = $this->api_admin->support_canned_category_pairs();
         $this->assertIsArray($array);
@@ -62,7 +62,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testPublicTickets()
+    public function testPublicTickets(): void
     {
         $array = $this->api_admin->support_public_ticket_get_statuses();
         $this->assertIsArray($array);
@@ -107,7 +107,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testSupport()
+    public function testSupport(): void
     {
         $bool = $this->api_admin->support_batch_ticket_auto_close();
         $this->assertTrue($bool);
@@ -161,7 +161,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testHelpdesk()
+    public function testHelpdesk(): void
     {
         $data = [
             'name' => 'title',
@@ -191,7 +191,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testExpirePublicTicket()
+    public function testExpirePublicTicket(): void
     {
         $data = [
             'name' => 'Me',
@@ -215,7 +215,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue(empty($array['list']));
     }
 
-    public function testTicketTask()
+    public function testTicketTask(): void
     {
         $data = [
             'support_helpdesk_id' => 1,
@@ -236,7 +236,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testSupportTicketGetList()
+    public function testSupportTicketGetList(): void
     {
         $array = $this->api_admin->support_ticket_get_list([]);
         $this->assertIsArray($array);
@@ -290,7 +290,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         }
     }
 
-    public function testTicketBatchDelete()
+    public function testTicketBatchDelete(): void
     {
         $array = $this->api_admin->support_ticket_get_list([]);
 
@@ -304,7 +304,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testPublicTicketBatchDelete()
+    public function testPublicTicketBatchDelete(): void
     {
         $array = $this->api_admin->support_public_ticket_get_list([]);
 
@@ -318,7 +318,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testKbCategory()
+    public function testKbCategory(): void
     {
         $array = $this->api_admin->support_kb_category_get_list();
         $this->assertIsArray($array);
@@ -347,7 +347,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testKbArticle()
+    public function testKbArticle(): void
     {
         $array = $this->api_admin->support_kb_article_get_list();
         $this->assertIsArray($array);
@@ -374,7 +374,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testKbArticleGetList()
+    public function testKbArticleGetList(): void
     {
         $array = $this->api_admin->support_kb_article_get_list();
         $this->assertIsArray($array);
@@ -401,7 +401,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         }
     }
 
-    public function testKbCategoryGetList()
+    public function testKbCategoryGetList(): void
     {
         $array = $this->api_admin->support_kb_category_get_list();
         $this->assertIsArray($array);

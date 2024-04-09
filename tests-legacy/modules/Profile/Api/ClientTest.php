@@ -14,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->clientApi = new \Box\Mod\Profile\Api\Client();
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $clientService = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientService->expects($this->atLeastOnce())
@@ -30,7 +30,7 @@ class ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
@@ -46,7 +46,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testApiKeyGet()
+    public function testApiKeyGet(): void
     {
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -57,7 +57,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($result, $client->api_token);
     }
 
-    public function testApiKeyReset()
+    public function testApiKeyReset(): void
     {
         $apiKey = '16047a3e69f5245756d73b419348f0c7';
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
@@ -72,7 +72,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($result, $apiKey);
     }
 
-    public function testChangePassword()
+    public function testChangePassword(): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
@@ -105,7 +105,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePasswordPasswordsDoNotMatchException()
+    public function testChangePasswordPasswordsDoNotMatchException(): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->never())
@@ -133,7 +133,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testLogout()
+    public function testLogout(): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
         $service->expects($this->atLeastOnce())

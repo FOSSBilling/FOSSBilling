@@ -12,13 +12,13 @@ class HandlerTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('api_roles')]
-    public function testInstances($apiName)
+    public function testInstances($apiName): void
     {
         $api = $this->di[$apiName];
         $this->assertInstanceOf('Api_Handler', $api);
     }
 
-    public function testCall()
+    public function testCall(): void
     {
         $api = $this->di['api_guest'];
 
@@ -26,7 +26,7 @@ class HandlerTest extends BBDbApiTestCase
         $this->assertEquals('0.0.1', $version);
     }
 
-    public function testException()
+    public function testException(): void
     {
         $api = $this->di['api_guest'];
         $method = 'methodWithoutUnderscore';
@@ -35,7 +35,7 @@ class HandlerTest extends BBDbApiTestCase
         $api->$method();
     }
 
-    public function testInvalidModuleNameException()
+    public function testInvalidModuleNameException(): void
     {
         $api = $this->di['api_guest'];
         $moduleName = '__';
@@ -44,7 +44,7 @@ class HandlerTest extends BBDbApiTestCase
         $version = $api->$moduleName();
     }
 
-    public function testModuleNotActiveException()
+    public function testModuleNotActiveException(): void
     {
         $api = $this->di['api_guest'];
         $moduleName = 'notActiveModule_version';
