@@ -26,7 +26,28 @@
 {% endmacro %}
 
 {% macro status_name(status) %}
-    {{ status|replace({'_': " "})|title|trans }}
+    {% set status = status|replace({'_': " "})|title|trim %}
+    {% if status == 'Active' %}
+        {{ 'Active'|trans }}
+    {% elseif status == 'Pending Setup' %}
+        {{ 'Pending Setup'|trans }}
+    {% elseif status == 'Failed Setup' %}
+        {{ 'Failed Setup'|trans }}
+    {% elseif status == 'Failed Renew' %}
+        {{ 'Failed Renewal'|trans }}
+    {% elseif status == 'Suspended' %}
+        {{ 'Suspended'|trans }}
+    {% elseif status == 'Canceled' %}
+        {{ 'Canceled'|trans }}
+    {% elseif status == 'Paid' %}
+        {{ 'Paid'|trans }}
+    {% elseif status == 'Unpaid' %}
+        {{ 'Unpaid'|trans }}
+    {% elseif status == 'Refunded' %}
+        {{ 'Refunded'|trans }}
+    {% else %}
+        {{ status|trans }}
+    {% endif %}
 {% endmacro %}
 
 {# deprecated - use period_title filter #}
