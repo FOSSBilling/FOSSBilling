@@ -167,7 +167,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $service);
-        $di['mod_config'] = $di->protect(function ($name) {
+        $di['mod_config'] = $di->protect(function ($name): void {
             ['require_email_confirmation' => false];
         });
         $eventMock->expects($this->atLeastOnce())

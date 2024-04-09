@@ -341,7 +341,7 @@ class PhpConsoleEvent
     public $line;
 }
 
-function debug($message, $tags = 'debug')
+function debug($message, $tags = 'debug'): void
 {
     PhpConsole::debug($message, $tags);
 }
