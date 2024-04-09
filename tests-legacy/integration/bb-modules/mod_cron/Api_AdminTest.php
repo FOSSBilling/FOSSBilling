@@ -5,7 +5,7 @@ class Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
 
-    public function testRun()
+    public function testRun(): void
     {
         $array = $this->api_system->cron_info();
         $this->assertIsArray($array);

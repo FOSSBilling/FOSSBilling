@@ -5,7 +5,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_client.xml';
 
-    public function testProfile()
+    public function testProfile(): void
     {
         $array = $this->api_client->profile_get();
         $this->assertIsArray($array);
@@ -30,7 +30,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testPassword()
+    public function testPassword(): void
     {
         $data = [
             'password' => 'demo11AA1111',
@@ -40,7 +40,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testApi()
+    public function testApi(): void
     {
         $string = $this->api_client->profile_api_key_reset();
         $this->assertIsString($string);
@@ -49,19 +49,19 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
         $this->assertIsString($string);
     }
 
-    public function testBalance()
+    public function testBalance(): void
     {
         $array = $this->api_client->client_balance_get_list();
         $this->assertIsArray($array);
     }
 
-    public function testLogout()
+    public function testLogout(): void
     {
         $bool = $this->api_client->profile_logout();
         $this->assertTrue($bool);
     }
 
-    public function testEmailChange()
+    public function testEmailChange(): void
     {
         // enable email change
         $config = [

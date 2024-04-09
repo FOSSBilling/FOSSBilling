@@ -14,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->guestApi = new \Box\Mod\Cart\Api\Guest();
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'toApiArray'])->getMock();
@@ -30,7 +30,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testReset()
+    public function testReset(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'resetCart'])->getMock();
@@ -46,7 +46,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testSetCurrency()
+    public function testSetCurrency(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'changeCartCurrency'])->getMock();
@@ -80,7 +80,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testSetCurrencyNotFoundException()
+    public function testSetCurrencyNotFoundException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'changeCartCurrency'])->getMock();
@@ -116,7 +116,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetCurrency()
+    public function testGetCurrency(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -154,7 +154,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testGetCurrencyNotFound()
+    public function testGetCurrencyNotFound(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -192,7 +192,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testApplyPromo()
+    public function testApplyPromo(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -230,7 +230,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testApplyPromoNotFoundException()
+    public function testApplyPromoNotFoundException(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -269,7 +269,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testApplyPromoCanNotBeApplied()
+    public function testApplyPromoCanNotBeApplied(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -309,7 +309,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testApplyPromoCanNotBeAppliedForUser()
+    public function testApplyPromoCanNotBeAppliedForUser(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -347,7 +347,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRemovePromo()
+    public function testRemovePromo(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -367,7 +367,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRemoveItem()
+    public function testRemoveItem(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -400,7 +400,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testAddItem()
+    public function testAddItem(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -441,7 +441,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testAddItemSingle()
+    public function testAddItemSingle(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());

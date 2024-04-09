@@ -2,7 +2,7 @@
 
 class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
 {
-    public function testsetAlgo()
+    public function testsetAlgo(): void
     {
         $boxPassword = new FOSSBilling\PasswordManager();
         $algo = PASSWORD_BCRYPT;
@@ -11,7 +11,7 @@ class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
         $this->assertEquals($algo, $result);
     }
 
-    public function testSetOptions()
+    public function testSetOptions(): void
     {
         $boxPassword = new FOSSBilling\PasswordManager();
         $options = [
@@ -22,7 +22,7 @@ class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
         $this->assertEquals($options, $result);
     }
 
-    public function testHashing()
+    public function testHashing(): void
     {
         $boxPassword = new FOSSBilling\PasswordManager();
         $password = '123456';
@@ -39,7 +39,7 @@ class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
         $this->assertFalse($needRehashing);
     }
 
-    public function testNeedsRehashing()
+    public function testNeedsRehashing(): void
     {
         $boxPassword = new FOSSBilling\PasswordManager();
         $password = '123456';

@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testuploadFileNotUploaded()
+    public function testuploadFileNotUploaded(): void
     {
         $data['id'] = 1;
         $model = new \Model_Product();
@@ -47,7 +47,7 @@ class AdminTest extends \BBTestCase
         $this->api->upload($data);
     }
 
-    public function testupload()
+    public function testupload(): void
     {
         $data['id'] = 1;
         $model = new \Model_Product();
@@ -79,7 +79,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateOrderNotActivated()
+    public function testupdateOrderNotActivated(): void
     {
         $data['order_id'] = 1;
         $model = new \Model_ClientOrder();
@@ -108,7 +108,7 @@ class AdminTest extends \BBTestCase
         $this->api->update($data);
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $data['order_id'] = 1;
         $model = new \Model_ClientOrder();

@@ -5,7 +5,7 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'admins.xml';
 
-    public function testProfile()
+    public function testProfile(): void
     {
         $array = $this->api_admin->profile_get();
         $this->assertIsArray($array);
@@ -25,7 +25,7 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testPassword()
+    public function testPassword(): void
     {
         $data = [
             'password' => 'demo12313123A',

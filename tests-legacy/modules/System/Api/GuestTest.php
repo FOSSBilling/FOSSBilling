@@ -14,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testVersionAdmin()
+    public function testVersionAdmin(): void
     {
         $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
         $authorizationMock->expects($this->atLeastOnce())
@@ -45,7 +45,7 @@ class GuestTest extends \BBTestCase
         $this->assertNotEmpty($result);
     }
 
-    public function testVersionShowPublicOn()
+    public function testVersionShowPublicOn(): void
     {
         $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
         $authorizationMock->expects($this->atLeastOnce())
@@ -72,7 +72,7 @@ class GuestTest extends \BBTestCase
         $this->assertNotEmpty($result);
     }
 
-    public function testVersionShowPublicOff()
+    public function testVersionShowPublicOff(): void
     {
         $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
         $authorizationMock->expects($this->atLeastOnce())
@@ -96,7 +96,7 @@ class GuestTest extends \BBTestCase
         $this->assertEmpty($result);
     }
 
-    public function testCompanyShowPublicOn()
+    public function testCompanyShowPublicOn(): void
     {
         $companyData = ['companyName' => 'TestCo'];
 
@@ -123,7 +123,7 @@ class GuestTest extends \BBTestCase
         $this->assertNotEmpty($result);
     }
 
-    public function testCompanyShowPublicOff()
+    public function testCompanyShowPublicOff(): void
     {
         $companyData = [
             'companyName' => 'TestCo',
@@ -167,7 +167,7 @@ class GuestTest extends \BBTestCase
         $this->assertArrayNotHasKey('address_3', $result);
     }
 
-    public function testperiodTitle()
+    public function testperiodTitle(): void
     {
         $data = ['code' => 'periodCode'];
 
@@ -184,7 +184,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testperiodTitleMissingCode()
+    public function testperiodTitleMissingCode(): void
     {
         $data = [];
         $expected = '-';
@@ -196,7 +196,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetPendingMessages()
+    public function testgetPendingMessages(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $messageArr = ['Important message to user'];

@@ -395,8 +395,8 @@ class Server_Manager_Plesk extends Server_Manager
         $ips = ['shared' => [], 'exclusive' => []];
 
         foreach ($response as $ip) {
-            $ips[(string) $ip->type][] = [
-                'ip' => (string) $ip->ipAddress,
+            $ips[$ip->type][] = [
+                'ip' => $ip->ipAddress,
                 'empty' => empty($ip->default),
             ];
         }

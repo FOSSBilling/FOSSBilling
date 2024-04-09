@@ -5,7 +5,7 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'admins.xml';
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $data = [
             'email' => 'admin@fossbilling.org',
@@ -16,7 +16,7 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
         $this->api_guest->staff_create($data);
     }
 
-    public function testCreateException()
+    public function testCreateException(): void
     {
         try {
             $this->api_guest->staff_create();
@@ -26,7 +26,7 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
         }
     }
 
-    public function testLogin()
+    public function testLogin(): void
     {
         $data = [
             'email' => 'admin@fossbilling.org',

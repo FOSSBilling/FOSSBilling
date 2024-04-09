@@ -28,7 +28,7 @@ const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
 /*
  * Check configuration exists, and is valid.
  */
-function checkConfig()
+function checkConfig(): void
 {
     $filesystem = new Filesystem();
     // Check if configuration is available, and redirect to installer if not.
@@ -51,7 +51,7 @@ function checkConfig()
 /*
  * Check if the installer is present.
  */
-function checkInstaller()
+function checkInstaller(): void
 {
     if (!Environment::isProduction()) {
         return;
@@ -77,7 +77,7 @@ function checkInstaller()
 /*
  * Check if any legacy BoxBilling/FOSSBilling files are present.
  */
-function checkLegacyFiles()
+function checkLegacyFiles(): void
 {
     $filesystem = new Filesystem();
 
@@ -101,7 +101,7 @@ function checkLegacyFiles()
 /*
  * Check hard requirements such as PHP version, Composer packages, etc.
  */
-function checkRequirements()
+function checkRequirements(): void
 {
     // Check for Composer packages / vendor folder.
     if (!file_exists(PATH_VENDOR)) {
@@ -112,7 +112,7 @@ function checkRequirements()
 /*
  * Check if SSL required, and enforce if so.
  */
-function checkSSL()
+function checkSSL(): void
 {
     $config = include PATH_CONFIG;
     if (isset($config['security']['force_https']) && $config['security']['force_https'] && !Environment::isCLI()) {
@@ -130,7 +130,7 @@ function checkSSL()
 /*
  * Check the web server config.
  */
-function checkWebServer()
+function checkWebServer(): void
 {
     $filesystem = new Filesystem();
 

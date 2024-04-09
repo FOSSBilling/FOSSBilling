@@ -5,7 +5,7 @@ class Api_Client_SupportTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_support.xml';
 
-    public function testAutoresponder()
+    public function testAutoresponder(): void
     {
         // enable autoresponder
         $config = [
@@ -32,7 +32,7 @@ class Api_Client_SupportTest extends BBDbApiTestCase
         $this->assertEquals(2, count($array['messages']));
     }
 
-    public function testSupport()
+    public function testSupport(): void
     {
         $array = $this->api_client->support_ticket_get_list();
         $this->assertIsArray($array);
@@ -68,7 +68,7 @@ class Api_Client_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testTicketTask()
+    public function testTicketTask(): void
     {
         $data = [
             'subject' => 'Subject',
@@ -85,7 +85,7 @@ class Api_Client_SupportTest extends BBDbApiTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testCanSubmitTicketException()
+    public function testCanSubmitTicketException(): void
     {
         $this->api_admin->extension_config_save(
             [
@@ -102,7 +102,7 @@ class Api_Client_SupportTest extends BBDbApiTestCase
         $this->api_client->support_ticket_create($data); // should throw an exception because 1 ticket per 24 hours is allowed
     }
 
-    public function testCanSubmitTicket()
+    public function testCanSubmitTicket(): void
     {
         $this->api_admin->extension_config_save(
             [

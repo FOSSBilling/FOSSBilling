@@ -5,7 +5,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'transactions.xml';
 
-    public function testGateways()
+    public function testGateways(): void
     {
         $data = [
             'hash' => 'hash',
@@ -29,7 +29,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('gateways')]
-    public function testPayment($id, $iid)
+    public function testPayment($id, $iid): void
     {
         $pf = $this->di['db']->findOne('Invoice', $iid);
         $hash = $pf->hash;
@@ -43,7 +43,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testNewPayment()
+    public function testNewPayment(): void
     {
         $gateway_id = 3;
 
@@ -74,7 +74,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
         $this->assertFalse(empty($form2['result']));
     }
 
-    public function testupdate()
+    public function testupdate(): void
     {
         $data = [
             'hash' => 'hash',

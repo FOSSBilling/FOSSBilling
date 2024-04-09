@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 {
-    public function testgetCurrentThemePreset()
+    public function testgetCurrentThemePreset(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
@@ -13,7 +13,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $this->assertNotEmpty($result);
     }
 
-    public function testgetThemePresets()
+    public function testgetThemePresets(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
@@ -23,7 +23,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $this->assertNotEmpty($result);
     }
 
-    public function testgetThemeSettings()
+    public function testgetThemeSettings(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
@@ -32,7 +32,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdateSettings()
+    public function testupdateSettings(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
@@ -46,7 +46,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testregenerateThemeSettingsDataFile()
+    public function testregenerateThemeSettingsDataFile(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
@@ -57,7 +57,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testregenerateThemeCssAndJsFiles()
+    public function testregenerateThemeCssAndJsFiles(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
@@ -69,7 +69,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetCurrentAdminAreaTheme()
+    public function testgetCurrentAdminAreaTheme(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);
@@ -80,7 +80,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $this->assertEquals(SYSTEM_URL . 'themes/admin_default/', $result['url']);
     }
 
-    public function testgetCurrentClientAreaTheme()
+    public function testgetCurrentClientAreaTheme(): void
     {
         $service = new Box\Mod\Theme\Service();
         $service->setDi($this->di);

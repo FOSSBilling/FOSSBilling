@@ -14,7 +14,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi = new \Box\Mod\Support\Api\Admin();
     }
 
-    public function testTicketGetList()
+    public function testTicketGetList(): void
     {
         $simpleResultArr = [
             'list' => [
@@ -55,7 +55,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTicketGet()
+    public function testTicketGet(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -87,7 +87,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTicketUpdate()
+    public function testTicketUpdate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -119,7 +119,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTicketMessageUpdate()
+    public function testTicketMessageUpdate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -152,7 +152,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTicketDelete()
+    public function testTicketDelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -184,7 +184,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTicketReply()
+    public function testTicketReply(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -217,7 +217,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTicketClose()
+    public function testTicketClose(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -252,7 +252,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTicketCloseAlreadyClosed()
+    public function testTicketCloseAlreadyClosed(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -288,7 +288,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTicketCreate()
+    public function testTicketCreate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -331,7 +331,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($randID, $result);
     }
 
-    public function testBatchTicketAutoClose()
+    public function testBatchTicketAutoClose(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['getExpired', 'autoClose'])->getMock();
@@ -361,7 +361,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchTicketAutoCloseNotClosed()
+    public function testBatchTicketAutoCloseNotClosed(): void
     {
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
@@ -389,7 +389,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchPublicTicketAutoClose()
+    public function testBatchPublicTicketAutoClose(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicGetExpired', 'publicAutoClose'])->getMock();
@@ -405,7 +405,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchPublicTicketAutoCloseNotClosed()
+    public function testBatchPublicTicketAutoCloseNotClosed(): void
     {
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \DummyBean());
@@ -427,7 +427,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTicketGetStatuses()
+    public function testTicketGetStatuses(): void
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
@@ -448,7 +448,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $statuses);
     }
 
-    public function testTicketGetStatusesTitlesSet()
+    public function testTicketGetStatusesTitlesSet(): void
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
@@ -472,7 +472,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $statuses);
     }
 
-    public function testPublicTicketGetList()
+    public function testPublicTicketGetList(): void
     {
         $resultSet = [
             'list' => [
@@ -512,7 +512,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testPublicTicketCreate()
+    public function testPublicTicketCreate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -544,7 +544,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($randID, $result);
     }
 
-    public function testPublicTicketGet()
+    public function testPublicTicketGet(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -577,7 +577,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testPublicTicketDelete()
+    public function testPublicTicketDelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -609,7 +609,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testPublicTicketClose()
+    public function testPublicTicketClose(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -642,7 +642,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testPublicTicketUpdate()
+    public function testPublicTicketUpdate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -675,7 +675,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testPublicTicketReply()
+    public function testPublicTicketReply(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -709,7 +709,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testPublicTicketGetStatuses()
+    public function testPublicTicketGetStatuses(): void
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
@@ -730,7 +730,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $statuses);
     }
 
-    public function testPublicTicketGetStatusesTitlesSet()
+    public function testPublicTicketGetStatusesTitlesSet(): void
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
@@ -754,7 +754,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $statuses);
     }
 
-    public function testHelpdeksGetList()
+    public function testHelpdeksGetList(): void
     {
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
@@ -779,7 +779,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testHelpdeksGetPairs()
+    public function testHelpdeksGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskGetPairs'])->getMock();
@@ -794,7 +794,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testHelpdeskGet()
+    public function testHelpdeskGet(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -827,7 +827,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testHelpdeskUpdate()
+    public function testHelpdeskUpdate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -860,7 +860,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testHelpdeskCreate()
+    public function testHelpdeskCreate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -887,7 +887,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testHelpdeskDelete()
+    public function testHelpdeskDelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -920,7 +920,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testCannedGetList()
+    public function testCannedGetList(): void
     {
         $resultSet = [
             'list' => [
@@ -960,7 +960,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedPairs()
+    public function testCannedPairs(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -977,7 +977,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedGet()
+    public function testCannedGet(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1010,7 +1010,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedDelete()
+    public function testCannedDelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1043,7 +1043,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedCreate()
+    public function testCannedCreate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1073,7 +1073,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testCannedUpdate()
+    public function testCannedUpdate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1106,7 +1106,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testCannedCategoryPairs()
+    public function testCannedCategoryPairs(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1127,7 +1127,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedCategoryGet()
+    public function testCannedCategoryGet(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1160,7 +1160,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedCategoryUpdate()
+    public function testCannedCategoryUpdate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1197,7 +1197,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedCategoryDelete()
+    public function testCannedCategoryDelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1233,7 +1233,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedCategoryCreate()
+    public function testCannedCategoryCreate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1259,7 +1259,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedNoteCreate()
+    public function testCannedNoteCreate(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1293,7 +1293,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCannedNoteDelete()
+    public function testCannedNoteDelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1326,7 +1326,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTaskComplete()
+    public function testTaskComplete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -1358,7 +1358,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchDelete()
+    public function testBatchDelete(): void
     {
         $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Api\Admin::class)->onlyMethods(['ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('ticket_delete')->willReturn(true);
@@ -1376,7 +1376,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchDeletePublic()
+    public function testBatchDeletePublic(): void
     {
         $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Api\Admin::class)->onlyMethods(['public_ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('public_ticket_delete')->willReturn(true);
@@ -1398,7 +1398,7 @@ class Api_AdminTest extends \BBTestCase
     * Knowledge Base Tests.
     */
 
-    public function testKbArticleGetList()
+    public function testKbArticleGetList(): void
     {
         $di = new \Pimple\Container();
 
@@ -1422,7 +1422,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbArticleGet()
+    public function testKbArticleGet(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1460,7 +1460,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbArticleGetNotFoundException()
+    public function testKbArticleGetNotFoundException(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1485,7 +1485,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->kb_article_get($data);
     }
 
-    public function testKbArticleCreate()
+    public function testKbArticleCreate(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1515,7 +1515,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $id);
     }
 
-    public function testKbArticleUpdate()
+    public function testKbArticleUpdate(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1549,7 +1549,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testKbArticleDelete()
+    public function testKbArticleDelete(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1583,7 +1583,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testKbArticleDeleteNotFoundException()
+    public function testKbArticleDeleteNotFoundException(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1613,7 +1613,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testKbCategoryGetList()
+    public function testKbCategoryGetList(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1646,7 +1646,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertEquals($result, $willReturn);
     }
 
-    public function testKbCategoryGet()
+    public function testKbCategoryGet(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1677,7 +1677,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetIdNotSetException()
+    public function testKbCategoryGetIdNotSetException(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1706,7 +1706,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetNotFoundException()
+    public function testKbCategoryGetNotFoundException(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1739,7 +1739,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryCreate()
+    public function testKbCategoryCreate(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1767,7 +1767,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryUpdate()
+    public function testKbCategoryUpdate(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1804,7 +1804,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryUpdateIdNotSet()
+    public function testKbCategoryUpdateIdNotSet(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1835,7 +1835,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryUpdateNotFound()
+    public function testKbCategoryUpdateNotFound(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1871,7 +1871,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryDelete()
+    public function testKbCategoryDelete(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1902,7 +1902,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryDeleteIdNotSet()
+    public function testKbCategoryDeleteIdNotSet(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1932,7 +1932,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryDeleteNotFound()
+    public function testKbCategoryDeleteNotFound(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
@@ -1965,7 +1965,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testKbCategoryGetPairs()
+    public function testKbCategoryGetPairs(): void
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 

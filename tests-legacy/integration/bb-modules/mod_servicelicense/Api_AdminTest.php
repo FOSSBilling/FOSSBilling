@@ -5,7 +5,7 @@ class Api_Admin_ServiceLicenseTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
-    public function testAdminServiceLicense()
+    public function testAdminServiceLicense(): void
     {
         $array = $this->api_admin->servicelicense_plugin_get_pairs();
         $this->assertIsArray($array);

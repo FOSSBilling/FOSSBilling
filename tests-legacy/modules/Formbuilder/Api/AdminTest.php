@@ -25,7 +25,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -33,7 +33,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcreateForm()
+    public function testcreateForm(): void
     {
         $data = ['name' => 'testForm'];
         $createdFormId = 1;
@@ -59,7 +59,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($createdFormId, $result);
     }
 
-    public function testcreateFormTypeIsNotInList()
+    public function testcreateFormTypeIsNotInList(): void
     {
         $data = [
             'name' => 'testName',
@@ -78,7 +78,7 @@ class AdminTest extends \BBTestCase
         $this->api->create_form($data);
     }
 
-    public function testaddField()
+    public function testaddField(): void
     {
         $data = [
             'type' => 'text',
@@ -107,7 +107,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newFieldId, $result);
     }
 
-    public function testaddFieldMissingType()
+    public function testaddFieldMissingType(): void
     {
         $data = [];
         $this->expectException(\FOSSBilling\Exception::class);
@@ -116,7 +116,7 @@ class AdminTest extends \BBTestCase
         $this->api->add_field($data);
     }
 
-    public function testaddFieldOptionsNotUnique()
+    public function testaddFieldOptionsNotUnique(): void
     {
         $data = [
             'type' => 'text',
@@ -130,7 +130,7 @@ class AdminTest extends \BBTestCase
         $this->api->add_field($data);
     }
 
-    public function testaddFieldMissingFormId()
+    public function testaddFieldMissingFormId(): void
     {
         $data = [
             'type' => 'text',
@@ -145,7 +145,7 @@ class AdminTest extends \BBTestCase
         $this->api->add_field($data);
     }
 
-    public function testgetForm()
+    public function testgetForm(): void
     {
         $data['id'] = 1;
 
@@ -168,7 +168,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetFormFields()
+    public function testgetFormFields(): void
     {
         $data['form_id'] = 1;
 
@@ -191,7 +191,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetField()
+    public function testgetField(): void
     {
         $data['id'] = 3;
 
@@ -215,7 +215,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetForms()
+    public function testgetForms(): void
     {
         $serviceMock = $this->getServiceMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -228,7 +228,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testdeleteForm()
+    public function testdeleteForm(): void
     {
         $data['id'] = 1;
 
@@ -252,7 +252,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeleteField()
+    public function testdeleteField(): void
     {
         $data['id'] = 1;
 
@@ -276,7 +276,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateField()
+    public function testupdateField(): void
     {
         $updatedFieldId = 1;
         $data = [
@@ -308,7 +308,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($updatedFieldId, $result);
     }
 
-    public function testgetPairs()
+    public function testgetPairs(): void
     {
         $data = [];
         $serviceMock = $this->getServiceMock();
@@ -322,7 +322,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcopyForm()
+    public function testcopyForm(): void
     {
         $newFormId = 2;
         $data = [
@@ -341,7 +341,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newFormId, $result);
     }
 
-    public function testcopyFormMissingId()
+    public function testcopyFormMissingId(): void
     {
         $data = [];
 
@@ -351,7 +351,7 @@ class AdminTest extends \BBTestCase
         $this->api->copy_form($data);
     }
 
-    public function testcopyFormMissingName()
+    public function testcopyFormMissingName(): void
     {
         $data = ['form_id' => 1];
 
@@ -361,7 +361,7 @@ class AdminTest extends \BBTestCase
         $this->api->copy_form($data);
     }
 
-    public function testupdateFormSettings()
+    public function testupdateFormSettings(): void
     {
         $data = [
             'form_id' => 1,
@@ -390,7 +390,7 @@ class AdminTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('form_settings_data')]
-    public function testupdateFormSettingsExceptions($missingField, $exceptionMessage, $exceptionCode)
+    public function testupdateFormSettingsExceptions($missingField, $exceptionMessage, $exceptionCode): void
     {
         $data = [
             'form_id' => 1,

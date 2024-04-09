@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetSummary()
+    public function testgetSummary(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -35,7 +35,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSummaryIncome()
+    public function testgetSummaryIncome(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -48,7 +48,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetOrdersStatuses()
+    public function testgetOrdersStatuses(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -62,7 +62,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductSummary()
+    public function testgetProductSummary(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -76,7 +76,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductSales()
+    public function testgetProductSales(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -90,7 +90,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetIncomeVsRefunds()
+    public function testgetIncomeVsRefunds(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -104,7 +104,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetRefunds()
+    public function testgetRefunds(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -118,7 +118,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetIncome()
+    public function testgetIncome(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -132,7 +132,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetOrders()
+    public function testgetOrders(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -146,7 +146,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetClients()
+    public function testgetClients(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -160,7 +160,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testclientCountries()
+    public function testclientCountries(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -174,7 +174,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testsalesCountries()
+    public function testsalesCountries(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -188,7 +188,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetInvoices()
+    public function testgetInvoices(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -202,7 +202,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTickets()
+    public function testgetTickets(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())

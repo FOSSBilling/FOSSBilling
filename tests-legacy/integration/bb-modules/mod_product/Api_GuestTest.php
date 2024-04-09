@@ -5,7 +5,7 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
 
-    public function testGetAll()
+    public function testGetAll(): void
     {
         $list = $this->api_guest->product_get_pairs();
         $this->assertIsArray($list);
@@ -26,7 +26,7 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
         $this->assertIsArray($list);
     }
 
-    public function testCategoryGetList()
+    public function testCategoryGetList(): void
     {
         $pager = $this->api_guest->product_category_get_list();
         $this->assertIsArray($pager);
@@ -54,7 +54,7 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
     }
     */
 
-    public function testProductGetList()
+    public function testProductGetList(): void
     {
         $array = $this->api_guest->product_get_list();
         $this->assertIsArray($array);
@@ -103,7 +103,7 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
         $this->assertArrayNotHasKey('category', $item);
     }
 
-    public function testProductStartingFromPriceDomainType()
+    public function testProductStartingFromPriceDomainType(): void
     {
         $array = $this->api_guest->product_get(['id' => 10]);
         $this->assertTrue($array['price_starting_from'] > 0);

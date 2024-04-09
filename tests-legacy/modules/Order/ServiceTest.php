@@ -28,7 +28,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -36,7 +36,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testCounter()
+    public function testCounter(): void
     {
         $counter = [
             \Model_ClientOrder::STATUS_ACTIVE => random_int(1, 100),
@@ -62,7 +62,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey(\Model_ClientOrder::STATUS_CANCELED, $result);
     }
 
-    public function testOnAfterAdminOrderActivate()
+    public function testOnAfterAdminOrderActivate(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -124,7 +124,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderActivate($eventMock);
     }
 
-    public function testOnAfterAdminOrderActivateLogException()
+    public function testOnAfterAdminOrderActivateLogException(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -186,7 +186,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderActivate($eventMock);
     }
 
-    public function testOnAfterAdminOrderRenew()
+    public function testOnAfterAdminOrderRenew(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -246,7 +246,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderRenew($eventMock);
     }
 
-    public function testOnAfterAdminOrderRenewLogException()
+    public function testOnAfterAdminOrderRenewLogException(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -306,7 +306,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderRenew($eventMock);
     }
 
-    public function testOnAfterAdminOrderSuspend()
+    public function testOnAfterAdminOrderSuspend(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -366,7 +366,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderSuspend($eventMock);
     }
 
-    public function testOnAfterAdminOrderSuspendLogException()
+    public function testOnAfterAdminOrderSuspendLogException(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -427,7 +427,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderSuspend($eventMock);
     }
 
-    public function testOnAfterAdminOrderUnsuspend()
+    public function testOnAfterAdminOrderUnsuspend(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -487,7 +487,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderUnsuspend($eventMock);
     }
 
-    public function testOnAfterAdminOrderUnsuspendLogException()
+    public function testOnAfterAdminOrderUnsuspendLogException(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -547,7 +547,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderUnsuspend($eventMock);
     }
 
-    public function testOnAfterAdminOrderCancel()
+    public function testOnAfterAdminOrderCancel(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -605,7 +605,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderCancel($eventMock);
     }
 
-    public function testOnAfterAdminOrderCancelLogException()
+    public function testOnAfterAdminOrderCancelLogException(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -663,7 +663,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderCancel($eventMock);
     }
 
-    public function testOnAfterAdminOrderUncancel()
+    public function testOnAfterAdminOrderUncancel(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -723,7 +723,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderUncancel($eventMock);
     }
 
-    public function testOnAfterAdminOrderUncancelLogException()
+    public function testOnAfterAdminOrderUncancelLogException(): void
     {
         $params = [
             'id' => random_int(1, 100),
@@ -783,7 +783,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->onAfterAdminOrderUncancel($eventMock);
     }
 
-    public function testGetOrderCoreService()
+    public function testGetOrderCoreService(): void
     {
         $service = new \Model_ServiceCustom();
 
@@ -812,7 +812,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ServiceCustom', $result);
     }
 
-    public function testGetOrderNotCoreService()
+    public function testGetOrderNotCoreService(): void
     {
         $service = new \Model_ServiceCustom();
 
@@ -836,7 +836,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ServiceCustom', $result);
     }
 
-    public function testGetOrderServiceIdNotSet()
+    public function testGetOrderServiceIdNotSet(): void
     {
         $service = new \Model_ServiceCustom();
 
@@ -859,7 +859,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testGetServiceOrder()
+    public function testGetServiceOrder(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -886,7 +886,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ClientOrder', $result);
     }
 
-    public function testGetConfig()
+    public function testGetConfig(): void
     {
         $decoded = [
             'key' => 'value',
@@ -918,7 +918,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('productHasOrdersProvider')]
-    public function testProductHasOrders($order, $expectedResult)
+    public function testProductHasOrders($order, $expectedResult): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -938,7 +938,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 
-    public function testSaveStatusChange()
+    public function testSaveStatusChange(): void
     {
         $orderStatus = new \Model_ClientOrderStatus();
         $orderStatus->loadBean(new \DummyBean());
@@ -963,7 +963,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testGetSoonExpiringActiveOrders()
+    public function testGetSoonExpiringActiveOrders(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -984,7 +984,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->getSoonExpiringActiveOrders();
     }
 
-    public function testGetSoonExpiringActiveOrdersQuery()
+    public function testGetSoonExpiringActiveOrdersQuery(): void
     {
         $randId = random_int(1, 100);
 
@@ -1031,7 +1031,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expectedBindings, $result[1]);
     }
 
-    public function testgetRelatedOrderIdByType()
+    public function testgetRelatedOrderIdByType(): void
     {
         $id = 1;
         $model = new \Model_ClientOrder();
@@ -1053,7 +1053,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($id, $result);
     }
 
-    public function testgetRelatedOrderIdByTypeReturnNull()
+    public function testgetRelatedOrderIdByTypeReturnNull(): void
     {
         $id = 1;
         $model = new \Model_ClientOrder();
@@ -1074,7 +1074,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testgetLogger()
+    public function testgetLogger(): void
     {
         $model = new \Model_ClientOrder();
         $model->loadBean(new \DummyBean());
@@ -1104,7 +1104,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Box_Log', $result);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $model = new \Model_ClientOrder();
         $model->loadBean(new \DummyBean());
@@ -1276,7 +1276,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams)
+    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -1290,7 +1290,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
-    public function testcreateOrderMissingOrderCurrency()
+    public function testcreateOrderMissingOrderCurrency(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -1316,7 +1316,7 @@ class ServiceTest extends \BBTestCase
         $this->service->createOrder($modelClient, $modelProduct, []);
     }
 
-    public function testcreateOrderOutOfStock()
+    public function testcreateOrderOutOfStock(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -1363,7 +1363,7 @@ class ServiceTest extends \BBTestCase
         $this->service->createOrder($modelClient, $modelProduct, []);
     }
 
-    public function testcreateOrderGroupIdMissing()
+    public function testcreateOrderGroupIdMissing(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -1411,7 +1411,7 @@ class ServiceTest extends \BBTestCase
         $this->service->createOrder($modelClient, $modelProduct, []);
     }
 
-    public function testcreateOrderParentOrderNotFound()
+    public function testcreateOrderParentOrderNotFound(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -1464,7 +1464,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->createOrder($modelClient, $modelProduct, ['group_id' => 1]);
     }
 
-    public function testcreateOrder()
+    public function testcreateOrder(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -1534,7 +1534,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testgetMasterOrderForClient()
+    public function testgetMasterOrderForClient(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1555,7 +1555,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ClientOrder', $result);
     }
 
-    public function testactivateOrderExceptionPendingOrFailedOrders()
+    public function testactivateOrderExceptionPendingOrFailedOrders(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1565,7 +1565,7 @@ class ServiceTest extends \BBTestCase
         $this->service->activateOrder($clientOrderModel);
     }
 
-    public function testactivateOrder()
+    public function testactivateOrder(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1594,7 +1594,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactivateOrderAddons()
+    public function testactivateOrderAddons(): void
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -1627,7 +1627,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetOrderAddonsList()
+    public function testgetOrderAddonsList(): void
     {
         $modelClientOrder = new \Model_ClientOrder();
         $modelClientOrder->loadBean(new \DummyBean());
@@ -1647,7 +1647,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
     }
 
-    public function teststockSale()
+    public function teststockSale(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -1666,7 +1666,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateOrder()
+    public function testupdateOrder(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1714,7 +1714,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testrenewOrder()
+    public function testrenewOrder(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1744,7 +1744,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testrenewFromOrder()
+    public function testrenewFromOrder(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['_callOnService', 'saveStatusChange'])
@@ -1775,7 +1775,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->renewFromOrder($clientOrderModel);
     }
 
-    public function testsuspendFromOrderExceptionNotActiveOrder()
+    public function testsuspendFromOrderExceptionNotActiveOrder(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1794,7 +1794,7 @@ class ServiceTest extends \BBTestCase
         $this->service->suspendFromOrder($clientOrderModel);
     }
 
-    public function testsuspendFromOrder()
+    public function testsuspendFromOrder(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1827,7 +1827,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testrmByClient()
+    public function testrmByClient(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1847,7 +1847,7 @@ class ServiceTest extends \BBTestCase
         $this->service->rmByClient($clientModel);
     }
 
-    public function testupdatePeriod()
+    public function testupdatePeriod(): void
     {
         $period = '1Y';
         $di = new \Pimple\Container();
@@ -1864,7 +1864,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(1, $result);
     }
 
-    public function testupdatePeriodIsEmpty()
+    public function testupdatePeriodIsEmpty(): void
     {
         $period = '';
         $di = new \Pimple\Container();
@@ -1880,7 +1880,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(2, $result);
     }
 
-    public function testupdatePeriodNotSet()
+    public function testupdatePeriodNotSet(): void
     {
         $period = null;
         $di = new \Pimple\Container();
@@ -1896,7 +1896,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(0, $result);
     }
 
-    public function testupdateOrderMetaIsNotSet()
+    public function testupdateOrderMetaIsNotSet(): void
     {
         $meta = null;
         $clientOrder = new \Model_ClientOrder();
@@ -1905,7 +1905,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(0, $result);
     }
 
-    public function testupdateOrderMetaIsEmpty()
+    public function testupdateOrderMetaIsEmpty(): void
     {
         $meta = [];
         $di = new \Pimple\Container();
@@ -1922,7 +1922,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(1, $result);
     }
 
-    public function testupdateOrderMeta()
+    public function testupdateOrderMeta(): void
     {
         $meta = [
             'key' => 'value',

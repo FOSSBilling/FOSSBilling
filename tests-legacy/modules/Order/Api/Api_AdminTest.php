@@ -12,7 +12,7 @@ class Api_AdminTest extends BBTestCase
         $this->api = new Box\Mod\Order\Api\Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +20,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -45,7 +45,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testGetList()
+    public function testGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['getSearchQuery'])->getMock();
@@ -75,7 +75,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['createOrder'])->getMock();
@@ -107,7 +107,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -133,7 +133,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testActivate()
+    public function testActivate(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -159,7 +159,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRenew()
+    public function testRenew(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -182,7 +182,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRenewPendingSetup()
+    public function testRenewPendingSetup(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -202,7 +202,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testSuspend()
+    public function testSuspend(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -229,7 +229,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUnsuspend()
+    public function testUnsuspend(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -253,7 +253,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUnsuspendNotSuspendedException()
+    public function testUnsuspendNotSuspendedException(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -278,7 +278,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testCancel()
+    public function testCancel(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -304,7 +304,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUncancel()
+    public function testUncancel(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -328,7 +328,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUncancelNotCanceledException()
+    public function testUncancelNotCanceledException(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -353,7 +353,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -376,7 +376,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testDeleteWithAddons()
+    public function testDeleteWithAddons(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -403,7 +403,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchSuspendExpired()
+    public function testBatchSuspendExpired(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['batchSuspendExpired'])->getMock();
@@ -418,7 +418,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testBatchCancelSuspended()
+    public function testBatchCancelSuspended(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['batchCancelSuspended'])->getMock();
@@ -433,7 +433,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateConfig()
+    public function testUpdateConfig(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -458,7 +458,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateConfigNotSetConfigException()
+    public function testUpdateConfigNotSetConfigException(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -482,7 +482,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testService()
+    public function testService(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -511,7 +511,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testStatusHistoryGetList()
+    public function testStatusHistoryGetList(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -544,7 +544,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testStatusHistoryAdd()
+    public function testStatusHistoryAdd(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['orderStatusAdd'])->getMock();
@@ -578,7 +578,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testStatusHistoryDelete()
+    public function testStatusHistoryDelete(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['orderStatusRm'])->getMock();
@@ -606,7 +606,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetStatuses()
+    public function testGetStatuses(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['counter'])->getMock();
@@ -619,19 +619,19 @@ class Api_AdminTest extends BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testGetInvoiceOptions()
+    public function testGetInvoiceOptions(): void
     {
         $result = $this->api->get_invoice_options([]);
         $this->assertIsArray($result);
     }
 
-    public function testGetStatusPairs()
+    public function testGetStatusPairs(): void
     {
         $result = $this->api->get_status_pairs([]);
         $this->assertIsArray($result);
     }
 
-    public function testAddons()
+    public function testAddons(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
@@ -659,7 +659,7 @@ class Api_AdminTest extends BBTestCase
         $this->assertIsArray($result[0]);
     }
 
-    public function testGetOrder()
+    public function testGetOrder(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -692,7 +692,7 @@ class Api_AdminTest extends BBTestCase
         $result = $this->api->get($data);
     }
 
-    public function testBatchDelete()
+    public function testBatchDelete(): void
     {
         $activityMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->

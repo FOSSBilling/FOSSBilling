@@ -6,7 +6,7 @@ class Box_Mod_Invoice_Api_ClientTest extends BBModTestCase
     protected $_mod = 'invoice';
     protected $_initialSeedFile = 'mod_invoice.xml';
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $data = [
             'hash' => 'hash2',

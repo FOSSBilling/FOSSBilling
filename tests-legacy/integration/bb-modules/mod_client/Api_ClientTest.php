@@ -5,7 +5,7 @@ class Api_ClientTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'initial.xml';
 
-    public function testClient()
+    public function testClient(): void
     {
         $array = $this->api_client->client_get();
         $this->assertIsArray($array);
@@ -45,7 +45,7 @@ class Api_ClientTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testClientBalanceGetList()
+    public function testClientBalanceGetList(): void
     {
         $array = $this->api_client->client_balance_get_list([]);
         $this->assertIsArray($array);

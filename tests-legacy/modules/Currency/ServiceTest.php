@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Currency;
 
 class ServiceTest extends \BBTestCase
 {
-    public function testDi()
+    public function testDi(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -17,7 +17,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testGetSearchQuery()
+    public function testGetSearchQuery(): void
     {
         $service = new \Box\Mod\Currency\Service();
         $result = $service->getSearchQuery();
@@ -26,7 +26,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals('SELECT * FROM currency WHERE 1', $result[0]);
     }
 
-    public function testGetBaseCurrencyRate()
+    public function testGetBaseCurrencyRate(): void
     {
         $service = new \Box\Mod\Currency\Service();
         $rate = 0.6;
@@ -44,7 +44,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testGetBaseCurrencyRateException()
+    public function testGetBaseCurrencyRateException(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('toBaseCurrencyProvider')]
-    public function testToBaseCurrency($defaultCode, $foreignCode, $amount, $rate, $expected)
+    public function testToBaseCurrency($defaultCode, $foreignCode, $amount, $rate, $expected): void
     {
         $model = new \Model_Currency();
         $bean = new \DummyBean();
@@ -120,7 +120,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getCurrencyByClientIdProvider')]
-    public function testGetCurrencyByClientId($row, $currency, $expectsGetByCode, $getDefaultCalled)
+    public function testGetCurrencyByClientId($row, $currency, $expectsGetByCode, $getDefaultCalled): void
     {
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -148,7 +148,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_Currency', $result);
     }
 
-    public function testGetCurrencyByClientIdNotFounfByCode()
+    public function testGetCurrencyByClientIdNotFounfByCode(): void
     {
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -175,7 +175,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_Currency', $result);
     }
 
-    public function testgetByCode()
+    public function testgetByCode(): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Currency\Service();
@@ -211,7 +211,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getRateByCodeProvider')]
-    public function testGetRateByCode($code, $returns, $expected)
+    public function testGetRateByCode($code, $returns, $expected): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -227,7 +227,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testGetDefault()
+    public function testGetDefault(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -271,7 +271,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('setAsDefaultProvider')]
-    public function testSetAsDefault($model, $expects)
+    public function testSetAsDefault($model, $expects): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -289,7 +289,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testSetAsDefaultException()
+    public function testSetAsDefaultException(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -310,7 +310,7 @@ class ServiceTest extends \BBTestCase
         $service->setAsDefault($model); // Currency code is null, should throw an \FOSSBilling\Exception
     }
 
-    public function testgetPairs()
+    public function testgetPairs(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -332,7 +332,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $pairs);
     }
 
-    public function testGetAvailableCurrencies()
+    public function testGetAvailableCurrencies(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -497,7 +497,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $availableCurrencies);
     }
 
-    public function testRmDefaultCurrencyException()
+    public function testRmDefaultCurrencyException(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -518,7 +518,7 @@ class ServiceTest extends \BBTestCase
         $service->rm($model); // will throw \FOSSBilling\Exception because default currency cannot be removed
     }
 
-    public function testRm()
+    public function testRm(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -540,7 +540,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, null);
     }
 
-    public function testRmMissingCodeException()
+    public function testRmMissingCodeException(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -561,7 +561,7 @@ class ServiceTest extends \BBTestCase
         $service->rm($model); // will throw \FOSSBilling\Exception because currency code is not set
     }
 
-    public function testToApiArray()
+    public function testToApiArray(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -588,7 +588,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public function testCreateCurrency()
+    public function testCreateCurrency(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
@@ -624,7 +624,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $code);
     }
 
-    public function testUpdateCurrency()
+    public function testUpdateCurrency(): void
     {
         $code = 'EUR';
         $format = '€{{price}}';
@@ -653,7 +653,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function testUpdateCurrencyNotFoundException()
+    public function testUpdateCurrencyNotFoundException(): void
     {
         $code = 'EUR';
         $format = '€{{price}}';
@@ -677,7 +677,7 @@ class ServiceTest extends \BBTestCase
         $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); // Expecting \FOSSBilling\Exception every time
     }
 
-    public function testUpdateConversionRateException()
+    public function testUpdateConversionRateException(): void
     {
         $code = 'EUR';
         $format = '€{{price}}';
@@ -703,7 +703,7 @@ class ServiceTest extends \BBTestCase
         $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); // Expecting \FOSSBilling\Exception every time
     }
 
-    public function testUpdateCurrencyRates()
+    public function testUpdateCurrencyRates(): void
     {
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
@@ -745,7 +745,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function testUpdateCurrencyRatesRateNotNumeric()
+    public function testUpdateCurrencyRatesRateNotNumeric(): void
     {
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
@@ -783,7 +783,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
@@ -818,7 +818,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function testDeleteModelNotFoundException()
+    public function testDeleteModelNotFoundException(): void
     {
         $code = 'EUR';
 
@@ -834,7 +834,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, true);
     }
 
-    public function testValidateCurrencyFormatPriceTagMissing()
+    public function testValidateCurrencyFormatPriceTagMissing(): void
     {
         $service = new \Box\Mod\Currency\Service();
 

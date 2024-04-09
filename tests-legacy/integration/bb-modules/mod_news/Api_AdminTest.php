@@ -5,7 +5,7 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extension_news.xml';
 
-    public function testNews()
+    public function testNews(): void
     {
         $array = $this->api_admin->news_get_list();
         $this->assertIsArray($array);
@@ -34,7 +34,7 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
         $this->assertTrue(is_numeric($id));
     }
 
-    public function testNewsgetList()
+    public function testNewsgetList(): void
     {
         $array = $this->api_admin->news_get_list();
         $this->assertIsArray($array);
@@ -67,7 +67,7 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
         }
     }
 
-    public function testNewsBatchDelete()
+    public function testNewsBatchDelete(): void
     {
         $array = $this->api_admin->news_get_list([]);
 
@@ -98,7 +98,7 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('testNewsMoreTagProvider')]
-    public function testNewsMoreTag($content, $expectedExcerpt)
+    public function testNewsMoreTag($content, $expectedExcerpt): void
     {
         $data = [
             'title' => 'News Title',

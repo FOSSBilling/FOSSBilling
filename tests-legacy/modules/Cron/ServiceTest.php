@@ -4,7 +4,7 @@ namespace Box\Mod\Cron;
 
 class ServiceTest extends \BBTestCase
 {
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $service = new Service();
@@ -13,7 +13,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetCronInfo()
+    public function testgetCronInfo(): void
     {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
@@ -27,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetLastExecutionTime()
+    public function testgetLastExecutionTime(): void
     {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -43,7 +43,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testisLate()
+    public function testisLate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getLastExecutionTime'])

@@ -15,7 +15,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('orders')]
-    public function testDomain($id)
+    public function testDomain($id): void
     {
         $this->api_admin->order_renew(['id' => $id]);
 
@@ -65,7 +65,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testTld()
+    public function testTld(): void
     {
         $array = $this->api_admin->servicedomain_tld_get_list();
         $this->assertIsArray($array);
@@ -92,7 +92,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testRegistrar()
+    public function testRegistrar(): void
     {
         $array = $this->api_admin->servicedomain_registrar_get_pairs();
         $this->assertIsArray($array);
@@ -117,7 +117,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testInstall()
+    public function testInstall(): void
     {
         $array = $this->api_admin->servicedomain_registrar_get_available();
         $this->assertIsArray($array);
@@ -132,7 +132,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
         $this->assertFalse(count($array) == count($array_after));
     }
 
-    public function testRegistrarGetList()
+    public function testRegistrarGetList(): void
     {
         $array = $this->api_admin->servicedomain_registrar_get_list();
         $this->assertIsArray($array);
@@ -152,7 +152,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
         }
     }
 
-    public function testTldGetList()
+    public function testTldGetList(): void
     {
         $array = $this->api_admin->servicedomain_tld_get_list();
         $this->assertIsArray($array);

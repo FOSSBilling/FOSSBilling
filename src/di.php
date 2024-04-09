@@ -482,7 +482,7 @@ $di['loggedin_admin'] = function () use ($di) {
     }
 };
 
-$di['set_return_uri'] = function () use ($di) {
+$di['set_return_uri'] = function () use ($di): void {
     $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
     unset($_GET['_url']);
 
@@ -810,7 +810,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
  * @param int $limit Optional limit of the number of rows to export from the table
  * @return void
  */
-$di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di) {
+$di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di): void {
     if ($limit > 0) {
         $beans = $di['db']->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
     } else {

@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetRequestCount()
+    public function testgetRequestCount(): void
     {
         $since = 674_690_401; // timestamp == '1991-05-20 00:00:01';
         $ip = '1.2.3.4';

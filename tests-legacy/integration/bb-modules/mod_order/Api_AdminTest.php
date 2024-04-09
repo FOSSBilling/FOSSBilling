@@ -5,7 +5,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
 
-    public function testMetaUpdate()
+    public function testMetaUpdate(): void
     {
         $meta = [
             'unique' => 'search by this field',
@@ -46,7 +46,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('orders')]
-    public function testOrdersStatuses($id)
+    public function testOrdersStatuses($id): void
     {
         $data['id'] = $id;
 
@@ -107,7 +107,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testLists()
+    public function testLists(): void
     {
         $array = $this->api_admin->order_get_invoice_options();
         $this->assertIsArray($array);
@@ -119,26 +119,26 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testSuspension()
+    public function testSuspension(): void
     {
         $bool = $this->api_admin->order_batch_suspend_expired();
         $this->assertTrue($bool);
     }
 
-    public function testCancellationOfSuspendedOrders()
+    public function testCancellationOfSuspendedOrders(): void
     {
         $bool = $this->api_admin->order_batch_cancel_suspended();
         $this->assertTrue($bool);
     }
 
-    public function testLicense()
+    public function testLicense(): void
     {
         $data['id'] = 3;
         $bool = $this->api_admin->order_renew($data);
         $this->assertTrue($bool);
     }
 
-    public function testDeleteAddons()
+    public function testDeleteAddons(): void
     {
         $data['id'] = 1;
         $addons = $this->api_admin->order_addons($data);
@@ -156,7 +156,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         }
     }
 
-    public function testOrderExpiration()
+    public function testOrderExpiration(): void
     {
         $data = [
             'id' => 8,
@@ -171,7 +171,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertEquals(2, date('Y', strtotime($oa['expires_at'])) - date('Y', strtotime($ob['expires_at'])));
     }
 
-    public function testOrderExpirationSettingFromToday()
+    public function testOrderExpirationSettingFromToday(): void
     {
         $data = [
             'id' => 8,
@@ -193,7 +193,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertEquals($expectedExpireDate, date('Y-m-d', strtotime($order['expires_at'])));
     }
 
-    public function testOrderExpirationSettingFromGreaterFromTodayIsGreater()
+    public function testOrderExpirationSettingFromGreaterFromTodayIsGreater(): void
     {
         $orderExpireDate = strtotime('2012-01-10');
         $data = [
@@ -216,7 +216,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertEquals($expectedExpiryDate, date('Y-m-d', strtotime($order['expires_at'])));
     }
 
-    public function testOrderExpirationSettingFromGreaterExpireIsGreater()
+    public function testOrderExpirationSettingFromGreaterExpireIsGreater(): void
     {
         $orderExpireDate = strtotime('+1 week');
         $data = [
@@ -240,7 +240,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertEquals($expectedExpiryDate, date('Y-m-d', strtotime($order['expires_at'])));
     }
 
-    public function testDomainOrderExpiration()
+    public function testDomainOrderExpiration(): void
     {
         $data['id'] = 7;
         $bool = $this->api_admin->order_renew($data);
@@ -269,7 +269,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('products')]
-    public function testCreate($pid, $config)
+    public function testCreate($pid, $config): void
     {
         $data['client_id'] = 1;
         $data['product_id'] = $pid;
@@ -290,7 +290,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
      * 1. If promo is recurrent then new invoice is generated with discount
      * 2. If promo is not recurrent then new invoice is generated for order total price.
      */
-    public function testPromoRec()
+    public function testPromoRec(): void
     {
         $data['id'] = 8; // order with recurring promo
         $id = $this->api_admin->invoice_renewal_invoice($data);
@@ -303,7 +303,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertEquals(30, $invoice['lines'][0]['total']);
     }
 
-    public function testHistory()
+    public function testHistory(): void
     {
         $data = [
             'id' => 1,
@@ -319,7 +319,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testOrderBatchDelete()
+    public function testOrderBatchDelete(): void
     {
         $array = $this->api_admin->order_get_list([]);
 

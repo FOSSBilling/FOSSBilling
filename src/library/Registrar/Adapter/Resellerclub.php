@@ -749,7 +749,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      */
     private function _formatParams($params)
     {
-        foreach ($params as $key => &$param) {
+        foreach ($params as &$param) {
             if (is_bool($param)) {
                 $param = ($param) ? 'true' : 'false';
             }

@@ -14,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testsendFileMissingOrderId()
+    public function testsendFileMissingOrderId(): void
     {
         $data = [];
 
@@ -31,7 +31,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFileOrderNotFound()
+    public function testsendFileOrderNotFound(): void
     {
         $data = [
             'order_id' => 1,
@@ -55,7 +55,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFileOrderNotActivated()
+    public function testsendFileOrderNotActivated(): void
     {
         $data = [
             'order_id' => 1,
@@ -85,7 +85,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFile()
+    public function testsendFile(): void
     {
         $data = [
             'order_id' => 1,

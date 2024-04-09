@@ -14,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testchangeUsername()
+    public function testchangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -45,7 +45,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeDomain()
+    public function testchangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -68,7 +68,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePassword()
+    public function testchangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -91,7 +91,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testhpGetPairs()
+    public function testhpGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -103,7 +103,7 @@ class ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testGetService()
+    public function testGetService(): void
     {
         $data = [
             'order_id' => 1,
@@ -137,7 +137,7 @@ class ClientTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ServiceHosting', $result[1]);
     }
 
-    public function testGetServiceOrderNotActivated()
+    public function testGetServiceOrderNotActivated(): void
     {
         $data = [
             'order_id' => 1,
@@ -171,7 +171,7 @@ class ClientTest extends \BBTestCase
         $this->api->_getService($data);
     }
 
-    public function testGetServiceOrderNotFound()
+    public function testGetServiceOrderNotFound(): void
     {
         $data = [
             'order_id' => 1,
@@ -198,7 +198,7 @@ class ClientTest extends \BBTestCase
         $this->api->_getService($data);
     }
 
-    public function testGetServiceMissingOrderId()
+    public function testGetServiceMissingOrderId(): void
     {
         $data = [];
 

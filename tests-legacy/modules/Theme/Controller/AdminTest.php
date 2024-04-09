@@ -4,7 +4,7 @@ namespace Box\Mod\Theme\Controller;
 
 class AdminTest extends \BBTestCase
 {
-    public function testDi()
+    public function testDi(): void
     {
         $controller = new Admin();
 
@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testregister()
+    public function testregister(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->exactly(1))
@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase
         $controller->register($boxAppMock);
     }
 
-    public function testgetTheme()
+    public function testgetTheme(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())

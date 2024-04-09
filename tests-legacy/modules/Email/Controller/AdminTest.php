@@ -4,7 +4,7 @@ namespace Box\Mod\Email\Controller;
 
 class AdminTest extends \BBTestCase
 {
-    public function testDi()
+    public function testDi(): void
     {
         $controller = new Admin();
 
@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testregister()
+    public function testregister(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->exactly(5))
@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase
         $controllerAdmin->register($boxAppMock);
     }
 
-    public function testgetIndex()
+    public function testgetIndex(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())

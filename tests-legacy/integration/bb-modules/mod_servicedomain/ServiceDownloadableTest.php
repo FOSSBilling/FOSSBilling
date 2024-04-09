@@ -5,7 +5,7 @@ class Api_Admin_ServiceDownloadableTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
 
-    public function testAdminServiceDownloadable()
+    public function testAdminServiceDownloadable(): void
     {
         $this->assertTrue(true);
 

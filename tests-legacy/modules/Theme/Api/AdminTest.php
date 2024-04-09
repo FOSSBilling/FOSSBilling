@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList()
+    public function testgetList(): void
     {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -35,7 +35,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget()
+    public function testget(): void
     {
         $data = [
             'code' => 'themeCode',
@@ -60,7 +60,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testselectNotAdminTheme()
+    public function testselectNotAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
@@ -100,7 +100,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testselectAdminTheme()
+    public function testselectAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
@@ -140,7 +140,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetDelete()
+    public function testpresetDelete(): void
     {
         $data = [
             'code' => 'themeCode',
@@ -171,7 +171,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetSelect()
+    public function testpresetSelect(): void
     {
         $data = [
             'code' => 'themeCode',

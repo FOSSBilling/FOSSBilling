@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,13 +22,13 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetTheme()
+    public function testgetTheme(): void
     {
         $result = $this->service->getTheme('huraga');
         $this->assertInstanceOf('\\' . Model\Theme::class, $result);
     }
 
-    public function testgetCurrentThemePreset()
+    public function testgetCurrentThemePreset(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['setCurrentThemePreset'])
@@ -56,7 +56,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testsetCurrentThemePreset()
+    public function testsetCurrentThemePreset(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -78,7 +78,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeletePreset()
+    public function testdeletePreset(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -100,7 +100,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetThemePresets()
+    public function testgetThemePresets(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['updateSettings'])
@@ -141,7 +141,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetThemePresetsThemeDoNotHaveSettingsDataFile()
+    public function testgetThemePresetsThemeDoNotHaveSettingsDataFile(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -171,7 +171,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetThemeSettings()
+    public function testgetThemeSettings(): void
     {
         $extensionMetaModel = new \Model_ExtensionMeta();
         $extensionMetaModel->loadBean(new \DummyBean());
@@ -196,7 +196,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetThemeSettingsWithEmptyPresets()
+    public function testgetThemeSettingsWithEmptyPresets(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getCurrentThemePreset'])
@@ -228,7 +228,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals([], $result);
     }
 
-    public function testupdateSettings()
+    public function testupdateSettings(): void
     {
         $extensionMetaModel = new \Model_ExtensionMeta();
         $extensionMetaModel->loadBean(new \DummyBean());
@@ -259,7 +259,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testregenerateThemeSettingsDataFile()
+    public function testregenerateThemeSettingsDataFile(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getThemePresets', 'getThemeSettings', 'getCurrentThemePreset'])
@@ -299,7 +299,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testregenerateThemeCssAndJsFilesEmptyFiles()
+    public function testregenerateThemeCssAndJsFilesEmptyFiles(): void
     {
         $themeMock = $this->getMockBuilder('\\' . Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -314,7 +314,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetCurrentAdminAreaTheme()
+    public function testgetCurrentAdminAreaTheme(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -330,7 +330,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetCurrentClientAreaTheme()
+    public function testgetCurrentClientAreaTheme(): void
     {
         $themeMock = $this->getMockBuilder('\\' . Model\Theme::class)->disableOriginalConstructor()->getMock();
 
@@ -349,7 +349,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\\' . Model\Theme::class, $result);
     }
 
-    public function testgetCurrentClientAreaThemeCode()
+    public function testgetCurrentClientAreaThemeCode(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

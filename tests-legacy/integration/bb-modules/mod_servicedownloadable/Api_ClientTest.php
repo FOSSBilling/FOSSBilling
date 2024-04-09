@@ -5,7 +5,7 @@ class Api_Client_ServiceDownloadableTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
-    public function testServiceDownload()
+    public function testServiceDownload(): void
     {
         $this->expectException(FOSSBilling\Exception::class);
 

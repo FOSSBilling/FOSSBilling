@@ -199,7 +199,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function getPatches($patchLevel = 0): array
     {
         $patches = [
-            25 => function () {
+            25 => function (): void {
                 // Migrate email templates to be compatible with Twig 3.x.
                 $q = "UPDATE email_template SET content = REPLACE(content, '{% filter markdown %}', '{% apply markdown %}')";
                 $this->executeSql($q);
@@ -207,23 +207,23 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
                 $this->executeSql($q);
             },
-            26 => function () {
+            26 => function (): void {
                 // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
                 $q = "INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES ('company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
                 $this->executeSql($q);
             },
-            27 => function () {
+            27 => function (): void {
                 // Migration steps to create table to allow admin users to do password reset.
                 $q = 'CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
                 $this->executeSql($q);
             },
-            28 => function () {
+            28 => function (): void {
                 // Patch to remove .html from email templates action code.
                 // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
                 $q = "UPDATE email_template SET action_code = REPLACE(action_code, '.html', '')";
                 $this->executeSql($q);
             },
-            29 => function () {
+            29 => function (): void {
                 // Patch to update email templates to use format_date/format_datetime filters
                 // instead of removed bb_date/bb_datetime filters.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
@@ -232,7 +232,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "UPDATE email_template SET content = REPLACE(content, 'bb_datetime', 'format_datetime')";
                 $this->executeSql($q);
             },
-            30 => function () {
+            30 => function (): void {
                 // Patch to remove the old guzzlehttp package, as we no longer
                 // use it. Also serves as an example for how to perform file action.
                 $fileActions = [
@@ -240,7 +240,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            31 => function () {
+            31 => function (): void {
                 // Patch to remove the old htaccess.txt file, and any old config.php backup.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
                 $fileActions = [
@@ -249,7 +249,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            32 => function () {
+            32 => function (): void {
                 // Patch to remove the old phpmailer package, some leftover
                 // admin_default files, and old Box_ classes we've removed or replaced.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1091
@@ -274,7 +274,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            33 => function () {
+            33 => function (): void {
                 // Patch to remove the old FileCache class that was replaced with Symfony's Cache component.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
                 $fileActions = [
@@ -282,17 +282,17 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            34 => function () {
+            34 => function (): void {
                 // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
                 $q = 'ALTER TABLE session ADD fingerprint TEXT;';
                 $this->executeSql($q);
             },
-            35 => function () {
+            35 => function (): void {
                 // Adds the new "created_at" to the session table, to ensure sessions are destroyed after they reach their maximum age.
                 $q = 'ALTER TABLE session ADD created_at int(11);';
                 $this->executeSql($q);
             },
-            36 => function () {
+            36 => function (): void {
                 // Patch to complete merging the Kb and Support modules.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
 
@@ -324,7 +324,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            37 => function () {
+            37 => function (): void {
                 // Patch to complete remove the outdated queue module.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
 
@@ -344,7 +344,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            38 => function () {
+            38 => function (): void {
                 // We need to remove the old ISPConfig3 and Virtualmin server managers from disk or else the leftover files could prevent the "hosting plans and servers" page from being loaded.
                 $fileActions = [
                     PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Server' . DIRECTORY_SEPARATOR . 'Manager' . DIRECTORY_SEPARATOR . 'Ispconfig3.php' => 'unlink',
@@ -352,7 +352,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            39 => function () {
+            39 => function (): void {
                 // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
                 // @see https://github.com/FOSSBilling/locale/issues/212
                 $fileActions = [
@@ -360,17 +360,17 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
-            40 => function () {
+            40 => function (): void {
                 // Added `passwordLength` field to server managers
                 $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
                 $this->executeSql($q);
             },
-            41 => function () {
+            41 => function (): void {
                 // Remove the  `manifest` column from the extensions table since it's no longer used
                 $q = 'ALTER TABLE extension DROP COLUMN manifest;';
                 $this->executeSql($q);
             },
-            42 => function () {
+            42 => function (): void {
                 // This patch will migrate previous currency exchange rate data provider settings to the new ones
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
                 $ext_service = $this->di['mod_service']('extension');

@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Activity\Controller;
 
 class AdminTest extends \BBTestCase
 {
-    public function testDi()
+    public function testDi(): void
     {
         $controller = new \Box\Mod\Activity\Controller\Admin();
 
@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testfetchNavigation()
+    public function testfetchNavigation(): void
     {
         $di = new \Pimple\Container();
         $link = 'activity';
@@ -35,7 +35,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testregister()
+    public function testregister(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
@@ -46,7 +46,7 @@ class AdminTest extends \BBTestCase
         $controllerAdmin->register($boxAppMock);
     }
 
-    public function testgetIndex()
+    public function testgetIndex(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())

@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_Admin_ProductTest extends ApiTestCase
 {
-    public function testLists()
+    public function testLists(): void
     {
         $list = $this->api_admin->product_get_list();
         $this->assertIsArray($list);
@@ -21,7 +21,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testProduct()
+    public function testProduct(): void
     {
         $data = [
             'title' => 'title',
@@ -42,7 +42,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testAddons()
+    public function testAddons(): void
     {
         $array = $this->api_admin->product_addon_get_pairs();
         $this->assertIsArray($array);
@@ -67,7 +67,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testCategory()
+    public function testCategory(): void
     {
         $array = $this->api_admin->product_category_get_pairs();
         $this->assertIsArray($array);
@@ -92,7 +92,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testPromos()
+    public function testPromos(): void
     {
         $array = $this->api_admin->product_promo_get_list();
         $this->assertIsArray($array);
@@ -119,7 +119,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testProductGetList()
+    public function testProductGetList(): void
     {
         $array = $this->api_admin->product_get_list();
         $this->assertIsArray($array);
@@ -169,7 +169,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertIsArray($item['category']);
     }
 
-    public function testProductPromoGetList()
+    public function testProductPromoGetList(): void
     {
         $array = $this->api_admin->product_promo_get_list();
         $this->assertIsArray($array);
@@ -200,7 +200,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertIsArray($item['applies_to']);
     }
 
-    public function testCreateTwoDomainProducts()
+    public function testCreateTwoDomainProducts(): void
     {
         $data = [
             'title' => 'Two domain product check_',

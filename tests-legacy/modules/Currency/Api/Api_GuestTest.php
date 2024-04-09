@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Currency\Api;
 
 class Api_GuestTest extends \BBTestCase
 {
-    public function testGetPairs()
+    public function testGetPairs(): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -52,7 +52,7 @@ class Api_GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
-    public function testGet($data, $model, $expectsGetByCode, $expectsGetDefault)
+    public function testGet($data, $model, $expectsGetByCode, $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -85,7 +85,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $willReturn);
     }
 
-    public function testGetException()
+    public function testGetException(): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -139,7 +139,7 @@ class Api_GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('formatPriceFormatProvider')]
-    public function testFormatPriceFormat($price_format, $expectedResult)
+    public function testFormatPriceFormat($price_format, $expectedResult): void
     {
         $willReturn = [
             'code' => 'EUR',
@@ -200,7 +200,7 @@ class Api_GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('formatProvider')]
-    public function testFormat($data, $expectedResult)
+    public function testFormat($data, $expectedResult): void
     {
         $willReturn = [
             'code' => 'EUR',

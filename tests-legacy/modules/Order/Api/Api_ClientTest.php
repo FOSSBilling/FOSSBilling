@@ -18,7 +18,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api = new Box\Mod\Order\Api\Client();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new Pimple\Container();
         $this->api->setDi($di);
@@ -26,7 +26,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testGetList()
+    public function testGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
@@ -72,7 +72,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($result);
     }
 
-    public function testGetListExpiring()
+    public function testGetListExpiring(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['getSoonExpiringActiveOrdersQuery'])->getMock();
@@ -104,7 +104,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($result);
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -129,7 +129,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($result);
     }
 
-    public function testAddons()
+    public function testAddons(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
@@ -157,7 +157,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($result[0]);
     }
 
-    public function testService()
+    public function testService(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -186,7 +186,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($result);
     }
 
-    public function testUpgradables()
+    public function testUpgradables(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -219,7 +219,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($result);
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -245,7 +245,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testDeleteNotPendingException()
+    public function testDeleteNotPendingException(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -272,7 +272,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($result);
     }
 
-    public function testGetOrder()
+    public function testGetOrder(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -308,7 +308,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->get($data);
     }
 
-    public function testGetOrderNotFoundException()
+    public function testGetOrderNotFoundException(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())

@@ -5,7 +5,7 @@ class Box_Mod_Spamchecker_ServiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'mod_spamchecker.xml';
 
-    public function testOnAfterClientSignUp()
+    public function testOnAfterClientSignUp(): void
     {
         $parameters = [
             'ip' => '127.0.0.1',

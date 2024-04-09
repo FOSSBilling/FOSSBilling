@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_CryptTest extends PHPUnit\Framework\TestCase
 {
-    public function testCrypt()
+    public function testCrypt(): void
     {
         $key = 'le password';
         $text = 'foo bar';

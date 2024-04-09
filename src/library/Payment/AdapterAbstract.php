@@ -182,7 +182,7 @@ abstract class Payment_AdapterAbstract
      */
     public function setTestMode(bool $bool)
     {
-        $this->testMode = (bool) $bool;
+        $this->testMode = $bool;
 
         return $this;
     }

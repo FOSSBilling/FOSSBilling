@@ -14,7 +14,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi = new \Box\Mod\Servicedomain\Api\Client();
     }
 
-    public function testUpdateNameservers()
+    public function testUpdateNameservers(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -45,7 +45,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateContacts()
+    public function testUpdateContacts(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -68,7 +68,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testEnablePrivacyProtection()
+    public function testEnablePrivacyProtection(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -91,7 +91,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testDisablePrivacyProtection()
+    public function testDisablePrivacyProtection(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -114,7 +114,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetTransferCode()
+    public function testGetTransferCode(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -137,7 +137,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testLock()
+    public function testLock(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -160,7 +160,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUnlock()
+    public function testUnlock(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -183,7 +183,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetService()
+    public function testGetService(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('lock')
@@ -213,7 +213,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetServiceOrderIdMissingException()
+    public function testGetServiceOrderIdMissingException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('lock')
@@ -243,7 +243,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetServiceOrderNotFoundException()
+    public function testGetServiceOrderNotFoundException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('lock')
@@ -275,7 +275,7 @@ class Api_ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetServiceOrderNotActivatedException()
+    public function testGetServiceOrderNotActivatedException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('lock')

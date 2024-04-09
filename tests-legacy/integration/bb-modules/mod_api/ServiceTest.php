@@ -6,7 +6,7 @@ class ServiceTest extends BBDbApiTestCase
     protected $_mod = 'api';
     protected $_initialSeedFile = 'mod_api.xml';
 
-    public function testClasses()
+    public function testClasses(): void
     {
         $service = $this->di['mod_service']('api');
 

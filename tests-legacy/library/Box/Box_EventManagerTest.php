@@ -4,13 +4,13 @@
 class Box_EventManagerTest extends PHPUnit\Framework\TestCase
 {
     #[PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
-    public function testEmptyFire()
+    public function testEmptyFire(): void
     {
         $manager = new Box_EventManager();
         $manager->fire([]);
     }
 
-    public function testFire()
+    public function testFire(): void
     {
         $db_mock = $this->getMockBuilder('Box_Database')->getMock();
         $db_mock->expects($this->atLeastOnce())

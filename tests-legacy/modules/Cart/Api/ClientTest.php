@@ -14,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->clientApi = new \Box\Mod\Cart\Api\Client();
     }
 
-    public function testCheckout()
+    public function testCheckout(): void
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());

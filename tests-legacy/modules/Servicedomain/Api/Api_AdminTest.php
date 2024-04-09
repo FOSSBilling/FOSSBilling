@@ -14,7 +14,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi = new \Box\Mod\Servicedomain\Api\Admin();
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -37,7 +37,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateNameservers()
+    public function testUpdateNameservers(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -60,7 +60,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateContacts()
+    public function testUpdateContacts(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -83,7 +83,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testEnablePrivacyProtection()
+    public function testEnablePrivacyProtection(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -106,7 +106,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testDisablePrivacyProtection()
+    public function testDisablePrivacyProtection(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -129,7 +129,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetTransferCode()
+    public function testGetTransferCode(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -152,7 +152,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testLock()
+    public function testLock(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -175,7 +175,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUnlock()
+    public function testUnlock(): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -198,7 +198,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTldGetList()
+    public function testTldGetList(): void
     {
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
@@ -223,7 +223,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTldGet()
+    public function testTldGet(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
@@ -250,7 +250,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTldGetTldNotFoundException()
+    public function testTldGetTldNotFoundException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
@@ -276,7 +276,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->tld_get($data);
     }
 
-    public function testTldDelete()
+    public function testTldDelete(): void
     {
         $tldMock = new \Model_Tld();
         $tldMock->loadBean(new \DummyBean());
@@ -313,7 +313,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTldDeleteTldNotFoundException()
+    public function testTldDeleteTldNotFoundException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
@@ -340,7 +340,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->tld_delete($data);
     }
 
-    public function testTldCreate()
+    public function testTldCreate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
@@ -371,7 +371,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testTldCreateAlreadyRegisteredException()
+    public function testTldCreateAlreadyRegisteredException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
@@ -397,7 +397,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testTldUpdate()
+    public function testTldUpdate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
@@ -424,7 +424,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testTldUpdateTldNotFoundException()
+    public function testTldUpdateTldNotFoundException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
@@ -451,7 +451,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->tld_update($data);
     }
 
-    public function testRegistrarGetList()
+    public function testRegistrarGetList(): void
     {
         $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
@@ -482,7 +482,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testRegistrarGetPairs()
+    public function testRegistrarGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetPairs')
@@ -495,7 +495,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testRegistrarGetAvailable()
+    public function testRegistrarGetAvailable(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetAvailable')
@@ -508,7 +508,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testRegistrarInstall()
+    public function testRegistrarInstall(): void
     {
         $registrars = [
             'ResellerClub', 'Custom',
@@ -539,7 +539,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRegistrarInstallRegistrarNotAvailableException()
+    public function testRegistrarInstallRegistrarNotAvailableException(): void
     {
         $registrars = [
             'Custom',
@@ -571,7 +571,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRegistrarDeleteIdNotSetException()
+    public function testRegistrarDeleteIdNotSetException(): void
     {
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
@@ -604,7 +604,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRegistrarCopy()
+    public function testRegistrarCopy(): void
     {
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
@@ -637,7 +637,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRegistrarCopyIdNotSetException()
+    public function testRegistrarCopyIdNotSetException(): void
     {
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
@@ -670,7 +670,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRegistrarGet()
+    public function testRegistrarGet(): void
     {
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
@@ -703,7 +703,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testRegistrarGetIdNotSetException()
+    public function testRegistrarGetIdNotSetException(): void
     {
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
@@ -736,7 +736,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testBatchSyncExpirationDates()
+    public function testBatchSyncExpirationDates(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('batchSyncExpirationDates')
@@ -749,7 +749,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRegistrarUpdate()
+    public function testRegistrarUpdate(): void
     {
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
@@ -782,7 +782,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRegistrarUpdateIdNotSetException()
+    public function testRegistrarUpdateIdNotSetException(): void
     {
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
@@ -815,7 +815,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetService()
+    public function testGetService(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateDomain')
@@ -851,7 +851,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetServiceOrderIdMissingException()
+    public function testGetServiceOrderIdMissingException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('updateDomain')
@@ -887,7 +887,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetServiceOrderNotActivatedException()
+    public function testGetServiceOrderNotActivatedException(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('updateDomain')

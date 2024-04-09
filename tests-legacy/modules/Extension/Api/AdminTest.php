@@ -20,7 +20,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -28,7 +28,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList()
+    public function testgetList(): void
     {
         $data = [];
 
@@ -43,7 +43,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetLatest()
+    public function testgetLatest(): void
     {
         $data = [];
 
@@ -61,7 +61,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetLatestException()
+    public function testgetLatestException(): void
     {
         $data = ['type' => 'mod'];
 
@@ -80,7 +80,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals([], $result);
     }
 
-    public function testgetNavigation()
+    public function testgetNavigation(): void
     {
         $data = ['url' => 'billing'];
 
@@ -97,13 +97,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testlanguages()
+    public function testlanguages(): void
     {
         $result = $this->api->languages([]);
         $this->assertIsArray($result);
     }
 
-    public function testupdateExtensionNotFound()
+    public function testupdateExtensionNotFound(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -129,7 +129,7 @@ class AdminTest extends \BBTestCase
         $this->api->update($data);
     }
 
-    public function testactivate()
+    public function testactivate(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -156,7 +156,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testdeactivate()
+    public function testdeactivate(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -195,7 +195,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testuninstall()
+    public function testuninstall(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -233,7 +233,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testinstall()
+    public function testinstall(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -275,7 +275,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testinstallExceptionActivate()
+    public function testinstallExceptionActivate(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -321,7 +321,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testconfigGet()
+    public function testconfigGet(): void
     {
         $data = [
             'ext' => 'extensionName',
@@ -347,7 +347,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testconfigSave()
+    public function testconfigSave(): void
     {
         $data = [
             'ext' => 'extensionName',

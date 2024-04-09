@@ -5,7 +5,7 @@ class Api_Client_ServiceLicenseTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
-    public function testServiceLicense()
+    public function testServiceLicense(): void
     {
         $id = 2;
 

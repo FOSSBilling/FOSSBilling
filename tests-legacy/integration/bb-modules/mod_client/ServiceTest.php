@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_Mod_Client_ServiceTest extends ApiTestCase
 {
-    public function testEvents()
+    public function testEvents(): void
     {
         $service = new Box\Mod\Client\Service();
         $service->setDi($this->di);
@@ -17,7 +17,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testGenerateEmailConfirmationLink()
+    public function testGenerateEmailConfirmationLink(): void
     {
         $service = new Box\Mod\Client\Service();
         $service->setDi($this->di);
@@ -26,7 +26,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $this->assertEquals(strpos($link, 'http://'), 0);
     }
 
-    public function testRemove()
+    public function testRemove(): void
     {
         // We have a client
         $data = [

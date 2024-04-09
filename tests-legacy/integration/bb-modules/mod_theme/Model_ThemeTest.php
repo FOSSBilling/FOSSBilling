@@ -10,7 +10,7 @@ class Mode_ThemeTest extends PHPUnit\Framework\TestCase
         $this->model = new Box\Mod\Theme\Model\Theme('boxbilling');
     }
 
-    public function testTypes()
+    public function testTypes(): void
     {
         $theme1 = new Box\Mod\Theme\Model\Theme('boxbilling');
         $this->assertFalse($theme1->isAdminAreaTheme());
@@ -19,7 +19,7 @@ class Mode_ThemeTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($theme2->isAdminAreaTheme());
     }
 
-    public function testFolder()
+    public function testFolder(): void
     {
         $this->model->isAssetsPathWritable();
         $this->model->getUrl();

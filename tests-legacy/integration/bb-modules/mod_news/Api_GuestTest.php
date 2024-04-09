@@ -5,7 +5,7 @@ class Api_Guest_NewsTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extension_news.xml';
 
-    public function testNews()
+    public function testNews(): void
     {
         $data = [
             'page' => 1,
@@ -23,7 +23,7 @@ class Api_Guest_NewsTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testNewsgetList()
+    public function testNewsgetList(): void
     {
         $array = $this->api_admin->news_get_list();
         $this->assertIsArray($array);

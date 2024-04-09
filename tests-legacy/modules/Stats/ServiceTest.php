@@ -27,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -35,7 +35,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetOrdersStatuses()
+    public function testgetOrdersStatuses(): void
     {
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -51,7 +51,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductSummary()
+    public function testgetProductSummary(): void
     {
         $data = [];
 
@@ -68,7 +68,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSummary()
+    public function testgetSummary(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -117,7 +117,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetSummaryIncome()
+    public function testgetSummaryIncome(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -148,7 +148,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetProductSales()
+    public function testgetProductSales(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -179,7 +179,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testincomeAndRefundStats()
+    public function testincomeAndRefundStats(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -210,7 +210,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($res[0], $result);
     }
 
-    public function testgetRefunds()
+    public function testgetRefunds(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -239,7 +239,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetIncome()
+    public function testgetIncome(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -268,7 +268,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetClientCountries()
+    public function testgetClientCountries(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -293,7 +293,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSalesByCountry()
+    public function testgetSalesByCountry(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -318,7 +318,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTableStats()
+    public function testgetTableStats(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();

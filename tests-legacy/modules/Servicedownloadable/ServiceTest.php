@@ -14,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testattachOrderConfig()
+    public function testattachOrderConfig(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -45,7 +45,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testactionCreate()
+    public function testactionCreate(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -76,7 +76,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ServiceDownloadable', $result);
     }
 
-    public function testactionDelete()
+    public function testactionDelete(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
 
@@ -97,7 +97,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_delete($clientOrderModel);
     }
 
-    public function testhitDownload()
+    public function testhitDownload(): void
     {
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
@@ -114,7 +114,7 @@ class ServiceTest extends \BBTestCase
         $this->service->hitDownload($model);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
@@ -144,7 +144,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testuploadProductFileErrorUploadingFile()
+    public function testuploadProductFileErrorUploadingFile(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -162,7 +162,7 @@ class ServiceTest extends \BBTestCase
         $this->service->uploadProductFile($productModel);
     }
 
-    public function testuploadProductFile()
+    public function testuploadProductFile(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -204,7 +204,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateProductFile()
+    public function testupdateProductFile(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -248,7 +248,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateProductFileFileNotUploaded()
+    public function testupdateProductFileFileNotUploaded(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -270,7 +270,7 @@ class ServiceTest extends \BBTestCase
         $this->service->updateProductFile($serviceDownloadableModel, $orderModel);
     }
 
-    public function testsendFileFileDoesNotExists()
+    public function testsendFileFileDoesNotExists(): void
     {
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
         $serviceDownloadableModel->loadBean(new \DummyBean());

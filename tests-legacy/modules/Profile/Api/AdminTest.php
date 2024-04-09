@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Profile\Api;
 
 class AdminTest extends \BBTestCase
 {
-    public function testGet()
+    public function testGet(): void
     {
         $service = new \Box\Mod\Profile\Service();
 
@@ -39,7 +39,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testLogout()
+    public function testLogout(): void
     {
         $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
             ->disableOriginalConstructor()
@@ -55,7 +55,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $model = new \Model_Admin();
 
@@ -72,7 +72,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGenerateApiKey()
+    public function testGenerateApiKey(): void
     {
         $model = new \Model_Admin();
 
@@ -106,7 +106,7 @@ class AdminTest extends \BBTestCase
         $this->fail('password confirmation should be passed');
     }
 
-    public function testChangePassword()
+    public function testChangePassword(): void
     {
         $di = new \Pimple\Container();
         $di['validator'] = new \FOSSBilling\Validate();

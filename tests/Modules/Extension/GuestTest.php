@@ -34,14 +34,14 @@ final class GuestTest extends TestCase
         $this->assertEquals('Parameter ext is missing', $result->getErrorMessage());
     }
 
-    public function testExtensionIsActive()
+    public function testExtensionIsActive(): void
     {
         $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'index']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
     }
 
-    public function testExtensionIsNotActive()
+    public function testExtensionIsNotActive(): void
     {
         $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'serviceapikey']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());

@@ -5,7 +5,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'initial.xml';
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $this->api_admin->extension_config_save([
             'ext' => 'mod_client',
@@ -40,7 +40,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testRequiredFields()
+    public function testRequiredFields(): void
     {
         $this->api_admin->extension_config_save([
             'ext' => 'mod_client',
@@ -59,7 +59,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         $id = $this->api_guest->client_create($data);
     }
 
-    public function testPasswordReset()
+    public function testPasswordReset(): void
     {
         $data = [
             'email' => 'client@fossbilling.org',
@@ -74,7 +74,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testVat()
+    public function testVat(): void
     {
         $data = [
             'country' => 'GB',
@@ -84,7 +84,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         // $this->assertTrue($bool);
     }
 
-    public function testClientLogin()
+    public function testClientLogin(): void
     {
         $data = [
             'email' => 'client@fossbilling.org',
@@ -101,13 +101,13 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         $this->assertNull($this->session->get('admin'));
     }
 
-    public function testRequired()
+    public function testRequired(): void
     {
         $array = $this->api_guest->client_required();
         $this->assertIsArray($array);
     }
 
-    public function testCreateWithCustom()
+    public function testCreateWithCustom(): void
     {
         $this->api_admin->extension_config_save([
             'ext' => 'mod_client',
@@ -151,7 +151,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testCreateWithCustomRequiredException()
+    public function testCreateWithCustomRequiredException(): void
     {
         $this->api_admin->extension_config_save([
             'ext' => 'mod_client',

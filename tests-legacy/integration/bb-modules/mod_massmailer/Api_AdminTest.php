@@ -6,7 +6,7 @@ class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
     protected $_mod = 'massmailer';
     protected $_initialSeedFile = 'mod_massmailer.xml';
 
-    public function testActions()
+    public function testActions(): void
     {
         $int = $this->api_admin->massmailer_create(['subject' => 'Subject', 'content' => 'content']);
         $this->assertIsInt($int);
@@ -50,7 +50,7 @@ class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
         $this->assertTrue($bool);
     }
 
-    public function testFilter()
+    public function testFilter(): void
     {
         $filter = [
             'client_status' => ['suspended', 'canceled'],
@@ -64,7 +64,7 @@ class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
         $this->assertTrue(is_array($filter));
     }
 
-    public function testMassmailerGetList()
+    public function testMassmailerGetList(): void
     {
         $array = $this->api_admin->massmailer_get_list();
         $this->assertIsArray($array);

@@ -5,7 +5,7 @@ class Api_Client_EmailTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'emails.xml';
 
-    public function testEmails()
+    public function testEmails(): void
     {
         $array = $this->api_client->email_get_list();
         $this->assertIsArray($array);
@@ -17,7 +17,7 @@ class Api_Client_EmailTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testResend()
+    public function testResend(): void
     {
         $data = [
             'id' => 1,
@@ -29,7 +29,7 @@ class Api_Client_EmailTest extends BBDbApiTestCase
         $this->assertEquals(2, $array['total']);
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
         $data = [
             'id' => 1,
@@ -42,7 +42,7 @@ class Api_Client_EmailTest extends BBDbApiTestCase
         $this->assertEquals(0, $array['total']);
     }
 
-    public function testEmailEmailGetList()
+    public function testEmailEmailGetList(): void
     {
         $array = $this->api_client->email_get_list();
         $this->assertIsArray($array);

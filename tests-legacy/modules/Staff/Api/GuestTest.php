@@ -14,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new \Box\Mod\Staff\Api\Guest();
     }
 
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $adminId = 1;
 
@@ -65,7 +65,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testCreateException()
+    public function testCreateException(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -91,7 +91,7 @@ class GuestTest extends \BBTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testLoginWithoutEmail()
+    public function testLoginWithoutEmail(): void
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
@@ -106,7 +106,7 @@ class GuestTest extends \BBTestCase
     /**
      * @expectedException \FOSSBilling\Exception
      */
-    public function testLoginWithoutPassword()
+    public function testLoginWithoutPassword(): void
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
@@ -118,7 +118,7 @@ class GuestTest extends \BBTestCase
         $guestApi->login(['email' => 'email@domain.com']);
     }
 
-    public function testSuccessfulLogin()
+    public function testSuccessfulLogin(): void
     {
         $modMock = $this->getMockBuilder('Box_Mod')
             ->disableOriginalConstructor()
@@ -157,7 +157,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testLoginCheckIpException()
+    public function testLoginCheckIpException(): void
     {
         $modMock = $this->getMockBuilder('\Box_Mod')
             ->disableOriginalConstructor()

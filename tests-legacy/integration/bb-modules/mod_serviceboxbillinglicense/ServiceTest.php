@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
-    public function testService()
+    public function testService(): void
     {
         $service = new Box\Mod\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
@@ -21,7 +21,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $this->assertEquals($data['param'], $config['param']);
     }
 
-    public function testActions()
+    public function testActions(): void
     {
         $service = new Box\Mod\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
@@ -73,7 +73,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $this->assertTrue($result);
     }
 
-    public function testUninstall()
+    public function testUninstall(): void
     {
         $service = new Box\Mod\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);

@@ -5,7 +5,7 @@ class Api_Admin_ServiceCustomTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'services.xml';
 
-    public function testServiceCustom()
+    public function testServiceCustom(): void
     {
         $data = [
             'order_id' => 10,

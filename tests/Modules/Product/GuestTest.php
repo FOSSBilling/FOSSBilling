@@ -9,21 +9,21 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
-    public function testGetList()
+    public function testGetList(): void
     {
         $result = Request::makeRequest('guest/product/get_list');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertIsArray($result->getResult());
     }
 
-    public function testGetPairs()
+    public function testGetPairs(): void
     {
         $result = Request::makeRequest('guest/product/get_pairs');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertIsArray($result->getResult());
     }
 
-    public function testGetMissingRequiredParams()
+    public function testGetMissingRequiredParams(): void
     {
         $result = Request::makeRequest('guest/product/get');
         $this->assertFalse($result->wasSuccessful(), 'The request succeeded when it should not have');

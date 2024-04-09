@@ -20,13 +20,13 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('domains')]
-    public function testValidator($domain, $valid)
+    public function testValidator($domain, $valid): void
     {
         $v = new FOSSBilling\Validate();
         $this->assertEquals($valid, $v->isSldValid($domain));
     }
 
-    public function testCheckRequiredParamsForArray()
+    public function testCheckRequiredParamsForArray(): void
     {
         $data = [
             'id' => random_int(1, 10),
@@ -40,7 +40,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $this->assertNull($v->checkRequiredParamsForArray($required, $data));
     }
 
-    public function testCheckRequiredParamsForArrayNotExist()
+    public function testCheckRequiredParamsForArrayNotExist(): void
     {
         $data = [];
         $required = [
@@ -53,7 +53,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data);
     }
 
-    public function testCheckRequiredParamsForArrayOneKeyNotExists()
+    public function testCheckRequiredParamsForArrayOneKeyNotExists(): void
     {
         $data = [
             'id' => random_int(1, 10),
@@ -69,7 +69,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data);
     }
 
-    public function testCheckRequiredParamsForArrayMessagePlaceholder()
+    public function testCheckRequiredParamsForArrayMessagePlaceholder(): void
     {
         $data = [
             'id' => random_int(1, 10),
@@ -87,7 +87,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data, $variables);
     }
 
-    public function testCheckRequiredParamsForArrayMessagePlaceholders()
+    public function testCheckRequiredParamsForArrayMessagePlaceholders(): void
     {
         $data = [
             'id' => random_int(1, 10),
@@ -108,7 +108,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data, $variables);
     }
 
-    public function testCheckRequiredParamsForArrayErrorCode()
+    public function testCheckRequiredParamsForArrayErrorCode(): void
     {
         $data = [
             'id' => random_int(1, 10),
@@ -126,7 +126,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data, $variables, 12345);
     }
 
-    public function testCheckRequiredParamsForArrayErrorCodeVariablesNotSet()
+    public function testCheckRequiredParamsForArrayErrorCodeVariablesNotSet(): void
     {
         $data = [
             'id' => random_int(1, 10),
@@ -143,7 +143,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data, [], 54321);
     }
 
-    public function testcheckRequiredParamsForArrayKeyValueIsZero()
+    public function testcheckRequiredParamsForArrayKeyValueIsZero(): void
     {
         $data = [
             'amount' => 0,
@@ -159,7 +159,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $this->assertTrue(true);
     }
 
-    public function testcheckRequiredParamsForArrayEmptyString()
+    public function testcheckRequiredParamsForArrayEmptyString(): void
     {
         $data = [
             'message' => '',
@@ -176,7 +176,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data);
     }
 
-    public function testcheckRequiredParamsForArrayEmptyStringFilledWithSpaces()
+    public function testcheckRequiredParamsForArrayEmptyStringFilledWithSpaces(): void
     {
         $data = [
             'message' => '    ',

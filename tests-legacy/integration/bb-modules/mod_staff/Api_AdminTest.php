@@ -5,7 +5,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'admins.xml';
 
-    public function testStaff()
+    public function testStaff(): void
     {
         $array = $this->api_admin->staff_get_list(['status' => 'active']);
         $this->assertIsArray($array);
@@ -48,7 +48,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->isNull();
     }
 
-    public function testChangePasswordException()
+    public function testChangePasswordException(): void
     {
         $this->expectException(FOSSBilling\Exception::class);
 
@@ -64,7 +64,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testPermissions()
+    public function testPermissions(): void
     {
         $data = [
             'id' => 1,
@@ -87,7 +87,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertEquals($perms, $array);
     }
 
-    public function testGroups()
+    public function testGroups(): void
     {
         $data = [
             'name' => 'Support',
@@ -115,7 +115,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testHistory()
+    public function testHistory(): void
     {
         $array = $this->api_admin->staff_login_history_get_list();
         $this->assertIsArray($array);
@@ -130,7 +130,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testStaffActivityHistoryList()
+    public function testStaffActivityHistoryList(): void
     {
         $array = $this->api_admin->staff_login_history_get_list(['status' => 'active']);
         $this->assertIsArray($array);
@@ -152,7 +152,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         }
     }
 
-    public function testStaffGroupGetList()
+    public function testStaffGroupGetList(): void
     {
         $array = $this->api_admin->staff_group_get_list([]);
         $this->assertIsArray($array);
@@ -168,7 +168,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertArrayHasKey('updated_at', $item);
     }
 
-    public function testBatchDelete()
+    public function testBatchDelete(): void
     {
         $array = $this->api_admin->staff_login_history_get_list([]);
 

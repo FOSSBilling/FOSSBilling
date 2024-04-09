@@ -5,7 +5,7 @@ class Api_Guest_ExtensionTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'extensions.xml';
 
-    public function testLists()
+    public function testLists(): void
     {
         $array = $this->api_guest->extension_languages();
         $this->assertIsArray($array);

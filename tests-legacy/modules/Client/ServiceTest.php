@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Client;
 
 class ServiceTest extends \BBTestCase
 {
-    public function testgetDi()
+    public function testgetDi(): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Client\Service();
@@ -13,7 +13,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testapproveClientEmailByHash()
+    public function testapproveClientEmailByHash(): void
     {
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())
@@ -31,7 +31,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testapproveClientEmailByHashException()
+    public function testapproveClientEmailByHashException(): void
     {
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())
@@ -48,7 +48,7 @@ class ServiceTest extends \BBTestCase
         $clientService->approveClientEmailByHash('');
     }
 
-    public function testgenerateEmailConfirmationLink()
+    public function testgenerateEmailConfirmationLink(): void
     {
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \DummyBean());
@@ -78,7 +78,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(str_contains($result, '/client/confirm-email/'));
     }
 
-    public function testonAfterClientSignUp()
+    public function testonAfterClientSignUp(): void
     {
         $eventParams = [
             'password' => 'testPassword',
@@ -109,7 +109,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testRequireEmailConfirmonAfterClientSignUp()
+    public function testRequireEmailConfirmonAfterClientSignUp(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
         $eventParams = [
@@ -150,7 +150,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testExceptiononAfterClientSignUp()
+    public function testExceptiononAfterClientSignUp(): void
     {
         $eventParams = [
             'password' => 'testPassword',
@@ -167,7 +167,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $service);
-        $di['mod_config'] = $di->protect(function ($name) {
+        $di['mod_config'] = $di->protect(function ($name): void {
             ['require_email_confirmation' => false];
         });
         $eventMock->expects($this->atLeastOnce())
@@ -249,7 +249,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams)
+    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
     {
         $clientService = new \Box\Mod\Client\Service();
         $result = $clientService->getSearchQuery($data);
@@ -260,7 +260,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
-    public function testgetSearchQueryChangeSelect()
+    public function testgetSearchQueryChangeSelect(): void
     {
         $data = [];
         $selectStmt = 'c.id, CONCAT(c.first_name, c.last_name) as full_name';
@@ -272,7 +272,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(str_contains($result[0], $selectStmt), $result[0]);
     }
 
-    public function testgetPairs()
+    public function testgetPairs(): void
     {
         $data = [];
 
@@ -289,7 +289,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtoSessionArray()
+    public function testtoSessionArray(): void
     {
         $expectedArrayKeys = [
             'id' => 1,
@@ -307,7 +307,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($result, $expectedArrayKeys) == []);
     }
 
-    public function testemailAlreadyRegistered()
+    public function testemailAlreadyRegistered(): void
     {
         $email = 'test@example.com';
         $model = new \Model_Client();
@@ -326,7 +326,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsBool($result);
     }
 
-    public function testEmailAlreadyRegWithModel()
+    public function testEmailAlreadyRegWithModel(): void
     {
         $email = 'test@example.com';
         $model = new \Model_Client();
@@ -340,7 +340,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testcanChangeCurrency()
+    public function testcanChangeCurrency(): void
     {
         $currency = 'EUR';
         $model = new \Model_Client();
@@ -361,7 +361,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanChangeCurrencyModelCurrencyNotSet()
+    public function testcanChangeCurrencyModelCurrencyNotSet(): void
     {
         $currency = 'EUR';
         $model = new \Model_Client();
@@ -377,7 +377,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanChangeCurrencyIdenticalCurrencies()
+    public function testcanChangeCurrencyIdenticalCurrencies(): void
     {
         $currency = 'EUR';
         $model = new \Model_Client();
@@ -394,7 +394,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testcanChangeCurrencyHasInvoice()
+    public function testcanChangeCurrencyHasInvoice(): void
     {
         $currency = 'EUR';
         $model = new \Model_Client();
@@ -421,7 +421,7 @@ class ServiceTest extends \BBTestCase
         $clientService->canChangeCurrency($model, $currency);
     }
 
-    public function testcanChangeCurrencyHasOrder()
+    public function testcanChangeCurrencyHasOrder(): void
     {
         $currency = 'EUR';
         $model = new \Model_Client();
@@ -473,7 +473,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchBalanceQueryData')]
-    public function testgetBalanceSearchQuery($data, $expectedStr, $expectedParams)
+    public function testgetBalanceSearchQuery($data, $expectedStr, $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -488,7 +488,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 
-    public function testaddFunds()
+    public function testaddFunds(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -514,7 +514,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaddFundsCurrencyNotDefined()
+    public function testaddFundsCurrencyNotDefined(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -529,7 +529,7 @@ class ServiceTest extends \BBTestCase
         $clientService->addFunds($modelClient, $amount, $description);
     }
 
-    public function testaddFundsAmountMissing()
+    public function testaddFundsAmountMissing(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -545,7 +545,7 @@ class ServiceTest extends \BBTestCase
         $clientService->addFunds($modelClient, $amount, $description);
     }
 
-    public function testaddFundsInvalidDescription()
+    public function testaddFundsInvalidDescription(): void
     {
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -562,7 +562,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetExpiredPasswordReminders()
+    public function testgetExpiredPasswordReminders(): void
     {
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())->method('find')
@@ -599,7 +599,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchHistoryQueryData')]
-    public function testgetHistorySearchQuery($data, $expectedStr, $expectedParams)
+    public function testgetHistorySearchQuery($data, $expectedStr, $expectedParams): void
     {
         $clientService = new \Box\Mod\Client\Service();
         $di = new \Pimple\Container();
@@ -614,7 +614,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 
-    public function testcounter()
+    public function testcounter(): void
     {
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())->method('getAssoc')
@@ -637,7 +637,7 @@ class ServiceTest extends \BBTestCase
         ];
     }
 
-    public function testgetGroupPairs()
+    public function testgetGroupPairs(): void
     {
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())->method('getAssoc')
@@ -653,7 +653,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testclientAlreadyExists()
+    public function testclientAlreadyExists(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -671,7 +671,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetByLoginDetails()
+    public function testgetByLoginDetails(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -698,7 +698,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
-    public function testget($fieldName, $fieldValue)
+    public function testget($fieldName, $fieldValue): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -718,7 +718,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    public function testgetClientNotFound()
+    public function testgetClientNotFound(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -736,7 +736,7 @@ class ServiceTest extends \BBTestCase
         $service->get($data);
     }
 
-    public function testgetClientBalance()
+    public function testgetClientBalance(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -755,7 +755,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsNumeric($result);
     }
 
-    public function testtoApiArray()
+    public function testtoApiArray(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -811,7 +811,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('testIsClientTaxableProvider')]
-    public function testIsClientTaxable($getParamValueReturn, $tax_exempt, $expected)
+    public function testIsClientTaxable($getParamValueReturn, $tax_exempt, $expected): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
@@ -832,7 +832,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testadminCreateClient()
+    public function testadminCreateClient(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -873,7 +873,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testguestCreateClient()
+    public function testguestCreateClient(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -923,7 +923,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($ip, $result->ip, 'IP address is not saved while creating client');
     }
 
-    public function testdeleteGroup()
+    public function testdeleteGroup(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -944,7 +944,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeleteGroupGroupHasClients()
+    public function testdeleteGroupGroupHasClients(): void
     {
         $clientModel = new \Model_Client();
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -965,7 +965,7 @@ class ServiceTest extends \BBTestCase
         $service->deleteGroup($model);
     }
 
-    public function testauthorizeClientDidntFoundEmail()
+    public function testauthorizeClientDidntFoundEmail(): void
     {
         $email = 'example@fossbilling.vm';
         $password = '123456';
@@ -986,7 +986,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testauthorizeClient()
+    public function testauthorizeClient(): void
     {
         $email = 'example@fossbilling.vm';
         $password = '123456';
@@ -1017,7 +1017,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    public function testauthorizeClientEmailRequiredConfirmed()
+    public function testauthorizeClientEmailRequiredConfirmed(): void
     {
         $email = 'example@fossbilling.vm';
         $password = '123456';
@@ -1049,7 +1049,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    public function testcanChangeEmail()
+    public function testcanChangeEmail(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1068,7 +1068,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanChangeEmailEmailAreTheSame()
+    public function testcanChangeEmailEmailAreTheSame(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1089,7 +1089,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanChangeEmailEmptyConfig()
+    public function testcanChangeEmailEmptyConfig(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1106,7 +1106,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanChangeEmailCanntChangeEmail()
+    public function testcanChangeEmailCanntChangeEmail(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1126,7 +1126,7 @@ class ServiceTest extends \BBTestCase
         $service->canChangeEmail($clientModel, $email);
     }
 
-    public function testcheckExtraRequiredFields()
+    public function testcheckExtraRequiredFields(): void
     {
         $required = ['id'];
         $data = [];
@@ -1142,7 +1142,7 @@ class ServiceTest extends \BBTestCase
         $service->checkExtraRequiredFields($data);
     }
 
-    public function testcheckCustomFields()
+    public function testcheckCustomFields(): void
     {
         $custom_field = [
             'custom_field_name' => [
@@ -1163,7 +1163,7 @@ class ServiceTest extends \BBTestCase
         $service->checkCustomFields($data);
     }
 
-    public function testcheckCustomFieldsNotRequired()
+    public function testcheckCustomFieldsNotRequired(): void
     {
         $custom_field = [
             'custom_field_name' => [

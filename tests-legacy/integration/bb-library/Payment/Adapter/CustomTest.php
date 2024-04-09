@@ -5,7 +5,7 @@ class Payment_Adapter_CustomTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'gateway_Custom.xml';
 
-    public function testCustom()
+    public function testCustom(): void
     {
         $config = [
             'single' => 'test',

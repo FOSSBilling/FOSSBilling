@@ -5,7 +5,7 @@ class Api_Client_OrderTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'orders.xml';
 
-    public function testOrders()
+    public function testOrders(): void
     {
         $data = [
             'page' => 1,
@@ -32,7 +32,7 @@ class Api_Client_OrderTest extends BBDbApiTestCase
         $this->assertIsArray($array);
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
         $data = [
             'id' => 9,
@@ -42,7 +42,7 @@ class Api_Client_OrderTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
 
-    public function testService()
+    public function testService(): void
     {
         $data = [
             'id' => 8,
@@ -63,7 +63,7 @@ class Api_Client_OrderTest extends BBDbApiTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testupgradablesNoUpgradablesFound()
+    public function testupgradablesNoUpgradablesFound(): void
     {
         $data = [
             'id' => 8,
