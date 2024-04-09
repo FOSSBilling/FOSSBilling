@@ -75,15 +75,15 @@
                         <tr>
                             <td>PHP extension: <strong>{{ ext }}</strong></td>
                             <td class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'OK' : 'FAIL'}}</td>
-                            <td>{% if not loaded %}Contact your server administrator to enable <strong>{{ ext }}</strong> PHP extension{% endif %}</td>
+                            <td>{% if not loaded %}Contact your server administrator to enable the <strong>{{ ext }}</strong> PHP extension{% endif %}</td>
                         </tr>
                     {% endfor %}
-                    {% for ext, loaded in compatibility.suggested_extensions %}
+                    {% for ext, info in compatibility.suggested_extensions %}
                         {% if not loaded %}
                             <tr>
                                 <td>PHP extension: <strong>{{ ext }}</strong></td>
-                                <td class="{{ loaded ? 'green' : 'orange'}}">{{ loaded ? 'OK' : 'WARN'}}</td>
-                                <td>{% if not loaded %}We recommend enabling the <strong>{{ ext }}</strong> PHP extension for improved performance / compatibility{% endif %}</td>
+                                <td class="{{ info.loaded ? 'green' : 'orange'}}">{{ info.loaded ? 'OK' : 'WARN'}}</td>
+                                <td>{% if not info.loaded %}We recommend enabling the <strong>{{ ext }}</strong> PHP extension for: {{ info.message }}.{% endif %}</td>
                             </tr>
                         {% endif %}
                     {% endfor %}
