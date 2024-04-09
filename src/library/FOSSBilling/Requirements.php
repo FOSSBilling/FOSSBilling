@@ -30,12 +30,12 @@ class Requirements
             'gd',
         ],
         'suggested_extensions' => [
-            'mbstring',
-            'opcache',
-            'imagick',
-            'bz2',
-            'simplexml',
-            'xml',
+            'mbstring' => 'improved performance',
+            'opcache' => 'improved performance',
+            'imagick' => 'improved performance',
+            'bz2' => 'optional support for bzip2 archives',
+            'simplexml' => 'the Plesk integration',
+            'xml' => 'the Plesk integration',
         ],
         'min_version' => '8.1',
     ];
@@ -114,17 +114,26 @@ class Requirements
             }
         }
 
-        foreach ($this->php_reqs['suggested_extensions'] as $ext) {
+        foreach ($this->php_reqs['suggested_extensions'] as $ext => $message) {
             if ($ext === 'opcache') {
                 if (!function_exists('opcache_get_status')) {
-                    $result['suggested_extensions'][$ext] = false;
+                    $result['suggested_extensions'][$ext] = [
+                        'loaded' => false,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
                 $status = opcache_get_status();
-                $result['suggested_extensions'][$ext] = is_array($status) && $status['opcache_enabled'];
+                $result['suggested_extensions'][$ext] = [
+                    'loaded' => is_array($status) && $status['opcache_enabled'],
+                    'message' => $message,
+                ];
             } else {
-                $result['suggested_extensions'][$ext] = extension_loaded($ext);
+                $result['suggested_extensions'][$ext] = [
+                    'loaded' => extension_loaded($ext),
+                    'message' => $message,
+                ];
             }
         }
 
