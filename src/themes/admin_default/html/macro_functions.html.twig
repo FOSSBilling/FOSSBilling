@@ -101,7 +101,30 @@
     {{ c.format|replace({'{{price}}': p }) }}
 {% endmacro %}
 
-{% macro status_name(status) %}{% if status %}{{ status|replace({'_': " "})|title|trans }}{% else %}-{% endif %}{% endmacro %}
+{% macro status_name(status) %}
+    {% set status = status|replace({'_': " "})|title|trim %}
+    {% if status == 'Active' %}
+        {{ 'Active'|trans }}
+    {% elseif status == 'Pending Setup' %}
+        {{ 'Pending Setup'|trans }}
+    {% elseif status == 'Failed Setup' %}
+        {{ 'Failed Setup'|trans }}
+    {% elseif status == 'Failed Renew' %}
+        {{ 'Failed Renewal'|trans }}
+    {% elseif status == 'Suspended' %}
+        {{ 'Suspended'|trans }}
+    {% elseif status == 'Canceled' %}
+        {{ 'Canceled'|trans }}
+    {% elseif status == 'Paid' %}
+        {{ 'Paid'|trans }}
+    {% elseif status == 'Unpaid' %}
+        {{ 'Unpaid'|trans }}
+    {% elseif status == 'Refunded' %}
+        {{ 'Refunded'|trans }}
+    {% else %}
+        {{ status|trans }}
+    {% endif %}
+{% endmacro %}
 
 {% macro period_name(period) %}
     {{ guest.system_period_title({"code":period}) }}
