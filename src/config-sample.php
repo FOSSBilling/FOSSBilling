@@ -48,26 +48,44 @@ return [
         'report_errors' => false,
     ],
 
+    'system' => [
+        /*
+         * Full URL where FOSSBilling is installed with trailing slash.
+         */
+        'url' => 'http://localhost/',
+
+        /*
+         * The URL prefix to access the BB admin area. Ex: '/admin' for https://example.com/admin.
+         */
+        'admin_area_prefix' => '/admin',
+
+        /*
+         * Configure the update branch for the automatic updater.
+         * Currently acceptable options are "release" or "preview".
+         */
+        'update_branch' => 'release',
+
+        /*
+         * FOSSBilling will automatically execute cron when you login to the admin panel if it hasn't been executed in awhile. You can disable this fallback here.
+         */
+        'disable_auto_cron' => false,
+
+        /*
+         * Set location to store sensitive data.
+         */
+        'path_data' => __DIR__ . '/data',
+
+        /*
+         * FOSSBilling will automatically perform zstd, brotli, gzip, or deflate output compression depending on installed extensions and the client connecting.
+         * Disable this here if you want to not use output compression or control it outside of FOSSBilling itself (such as your webserver)
+         */
+        'do_output_compression' => true,
+    ],
+
     'info' => [
         'salt' => bin2hex(random_bytes(16)),
         'instance_id' => 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX',
     ],
-
-    /*
-     * Full URL where FOSSBilling is installed with trailing slash.
-     */
-    'url' => 'http://localhost/',
-
-    /*
-     * The URL prefix to access the BB admin area. Ex: '/admin' for https://example.com/admin.
-     */
-    'admin_area_prefix' => '/admin',
-
-    /*
-     * Configure the update branch for the automatic updater.
-     * Currently acceptable options are "release" or "preview".
-     */
-    'update_branch' => 'release',
 
     'maintenance_mode' => [
         /*
@@ -90,11 +108,6 @@ return [
         'allowed_ips' => [],
     ],
 
-    /*
-     * FOSSBilling will automatically execute cron when you login to the admin panel if it hasn't been executed in awhile. You can disable this fallback here.
-     */
-    'disable_auto_cron' => false,
-
     /* 
      * These configuration options allow you to configure the default localisation.
      */
@@ -111,11 +124,6 @@ return [
         // @see https://unicode-org.github.io/icu/userguide/format_parse/datetime/#datetime-format-syntax
         'datetime_pattern' => '',
     ],
-
-    /*
-     * Set location to store sensitive data.
-     */
-    'path_data' => __DIR__ . '/data',
 
     'db' => [
         /*
@@ -168,7 +176,7 @@ return [
         // How many requests allowed per time span
         'rate_limit' => 1000,
 
-        /**
+        /*
          * Note about rate-limiting login attempts:
          * When the limit is reached, a default delay of 2 seconds is added to the request.
          * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
@@ -184,13 +192,13 @@ return [
         'rate_limit_login' => 20,
 
         /*
-        * This enables the usage of a token to protect the system from CSRF attacks.
-        * Disabling this is highly discouraged and opens your instance to a known vulnerability.
-        * This option is only here for backwards compatibility.
-        */
+         * This enables the usage of a token to protect the system from CSRF attacks.
+         * Disabling this is highly discouraged and opens your instance to a known vulnerability.
+         * This option is only here for backwards compatibility.
+         */
         'CSRFPrevention' => true,
 
-        /**
+        /*
          * Any IP address within this list will not be put through the rate-limiter system.
          * This is useful if you have an application with a static IP address that needs to make frequent API requests to FOSSBilling.
          */

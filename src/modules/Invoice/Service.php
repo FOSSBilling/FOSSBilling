@@ -1231,6 +1231,7 @@ class Service implements InjectionAwareInterface
         $pdf->loadHtml($html);
         $pdf->render();
         $pdf->stream($invoice['serie_nr'], ['Attachment' => false]);
+        ob_end_flush();
         exit(0);
     }
 

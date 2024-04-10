@@ -34,6 +34,7 @@ class Box_AppAdmin extends Box_App
             http_response_code(403);
             $e = new FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
             echo $this->render('error', ['exception' => $e]);
+            ob_end_flush();
             exit;
         }
     }
@@ -49,6 +50,7 @@ class Box_AppAdmin extends Box_App
     {
         $location = $this->di['url']->adminLink($path);
         header("Location: $location");
+        ob_end_flush();
         exit;
     }
 

@@ -96,7 +96,9 @@ class Service
         $ex = $this->di['pdo']->prepare('SELECT id from custom_pages WHERE slug = ? AND id <> ?');
         $ex->execute([$slug, $id]);
         if ($ex->rowCount() > 0) {
-            exit(json_encode(['result' => null, 'error' => ['message' => 'You need to set unique slug.', 'code' => 9999]]));
+            echo json_encode(['result' => null, 'error' => ['message' => 'You need to set unique slug.', 'code' => 9999]]);
+            ob_end_flush();
+            exit;
         }
         $this->di['pdo']->prepare('UPDATE custom_pages SET title = ?, description = ?, keywords = ?, content = ?, slug = ? WHERE id = ?')->execute([$title, $description, $keywords, $content, $slug, $id]);
         $this->di['logger']->info('Updated custom page #%s', $id);

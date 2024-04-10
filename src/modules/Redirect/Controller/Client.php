@@ -51,6 +51,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $target = $service->getRedirectByPath($app->uri);
         header('HTTP/1.1 301 Moved Permanently');
         header('Location: ' . $target);
+        ob_end_flush();
         exit;
     }
 }

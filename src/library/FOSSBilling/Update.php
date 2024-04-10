@@ -42,7 +42,7 @@ class Update implements InjectionAwareInterface
      */
     public function getUpdateBranch(): string
     {
-        return Config::getProperty('update_branch', 'release');
+        return Config::getProperty('system.update_branch', 'release');
     }
 
     /**

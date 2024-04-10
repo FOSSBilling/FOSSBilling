@@ -1,4 +1,5 @@
 <?php
+use HostByBelle\CompressionBuffer;
 
 /**
  * Copyright 2022-2024 FOSSBilling
@@ -38,10 +39,11 @@ if ($url === '/run-patcher') {
         $patcher->applyCorePatches();
         $di['tools']->emptyFolder(PATH_CACHE);
 
-        exit('Any missing config migrations or database patches have been applied and the cache has been cleared');
+        echo 'Any missing config migrations or database patches have been applied and the cache has been cleared';
     } catch (Exception $e) {
-        exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
+        echo 'An error occurred while attempting to apply patches: <br>' . $e->getMessage();
     }
+    exit;
 }
 
 $debugBar['time']->startMeasure('session_start', 'Starting / restoring the session');
@@ -90,6 +92,9 @@ if (!is_null($http_err_code)) {
     exit;
 }
 
-// If no HTTP error passed, run the app.
-echo $app->run();
+// Start output buffering & run the app
+ob_start(CompressionBuffer::handler(...));
+header('X-Accel-Buffering: no');
+$app->run();
+ob_end_flush();
 exit;

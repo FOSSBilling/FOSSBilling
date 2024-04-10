@@ -28,6 +28,7 @@
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
         "geoip2/geoip2": "^3.0.0",
+        "hostbybelle/compressionbuffer": "^1.0",
         "io-developer/php-whois": "^4.1",
         "lcharette/webpack-encore-twig": "^1.2.0",
         "league/commonmark": "^2.3",

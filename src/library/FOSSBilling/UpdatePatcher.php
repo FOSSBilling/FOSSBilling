@@ -52,38 +52,64 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig = $currentConfig;
         $newConfig['security']['mode'] ??= 'strict';
         $newConfig['security']['force_https'] ??= true;
-        $newConfig['security']['session_lifespan'] ??= $newConfig['security']['cookie_lifespan'] ?? 7200;
+        $newConfig['security']['session_lifespan'] ??= $currentConfig['security']['cookie_lifespan'] ?? 7200;
         $newConfig['security']['perform_session_fingerprinting'] ??= true;
         $newConfig['security']['debug_fingerprint'] ??= false;
-        $newConfig['update_branch'] ??= 'release';
-        $newConfig['log_stacktrace'] ??= true;
-        $newConfig['stacktrace_length'] ??= 25;
+
+        $newConfig['system']['url'] ??= $currentConfig['url'];
+        $newConfig['system']['admin_area_prefix'] ??= $currentConfig['admin_area_prefix'] ?? '/admin';
+        $newConfig['system']['update_branch'] ??= $currentConfig['update_branch'] ?? 'release';
+        $newConfig['system']['disable_auto_cron'] ??= $currentConfig['disable_auto_cron'] ?? false;
+        $newConfig['system']['path_data'] ??= $currentConfig['path_data'];
+        $newConfig['system']['do_output_compression'] ??= true;
+
         $newConfig['maintenance_mode']['enabled'] ??= false;
         $newConfig['maintenance_mode']['allowed_urls'] ??= [];
         $newConfig['maintenance_mode']['allowed_ips'] ??= [];
-        $newConfig['disable_auto_cron'] ??= false;
+
         $newConfig['i18n']['locale'] ??= $currentConfig['locale'] ?? 'en_US';
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
+
         $newConfig['db']['port'] ??= '3306';
+
         $newConfig['api']['throttle_delay'] ??= 2;
         $newConfig['api']['rate_span_login'] ??= 60;
         $newConfig['api']['rate_limit_login'] ??= 20;
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
-        $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+
+        $newConfig['debug_and_monitoring']['debug'] ??= $currentConfig['debug'] ?? false;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $currentConfig['log_stacktrace'] ?? true;
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $currentConfig['stacktrace_length'] ?? 25;
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
+
         if (!class_exists('Uuid')) {
             $this->registerFallbackAutoloader();
         }
         $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
-        $newConfig['info']['salt'] ??= $newConfig['salt'];
+        $newConfig['info']['salt'] ??= $currentConfig['salt'];
 
         // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
+        $depreciatedConfigKeys = [
+            'guzzle',
+            'locale',
+            'locale_date_format',
+            'locale_time_format',
+            'timezone',
+            'sef_urls',
+            'salt',
+            'path_logs',
+            'log_to_db',
+            'update_branch',
+            'log_stacktrace',
+            'stacktrace_length',
+            'disable_auto_cron',
+            'path_data',
+            'admin_area_prefix',
+            'url'
+        ];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
         ];
@@ -295,7 +321,7 @@ class UpdatePatcher implements InjectionAwareInterface
             36 => function (): void {
                 // Patch to complete merging the Kb and Support modules.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
-
+    
                 // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
                 $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
                 $this->executeSql($q);
@@ -327,7 +353,7 @@ class UpdatePatcher implements InjectionAwareInterface
             37 => function (): void {
                 // Patch to complete remove the outdated queue module.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
-
+    
                 try {
                     $ext_service = $this->di['mod_service']('extension');
                     // If the queue extension exists, uninstall it.
@@ -378,7 +404,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $config = $ext_service->getConfig('mod_currency');
 
                 $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
-
+    
                 // Migrate the old currency exchange rate sync settings
                 $key = $pairs['currencylayer'] ?? '';
                 if ($key) {
@@ -399,7 +425,7 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 
     /**

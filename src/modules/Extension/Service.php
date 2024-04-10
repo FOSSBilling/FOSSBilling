@@ -745,6 +745,7 @@ class Service implements InjectionAwareInterface
             $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
             if (!is_null($app)) {
                 echo $app->render('error', ['exception' => $e]);
+                ob_end_flush();
                 exit;
             } else {
                 throw $e;
@@ -759,6 +760,7 @@ class Service implements InjectionAwareInterface
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
                 echo $app->render('error', ['exception' => $e]);
+                ob_end_flush();
                 exit;
             } else {
                 throw $e;

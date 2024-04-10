@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "08b744c6a4c8e1a0f880570457a581cb",
+    "content-hash": "9b6fd56ed203486b5a99e3ed8887b12d",
     "packages": [
         {
             "name": "antcms/antloader",
@@ -52,6 +52,61 @@
                 "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.4"
             },
             "time": "2024-03-12T22:17:58+00:00"
+        },
+        {
+            "name": "asispts/http-accept",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/asispts/http-accept.git",
+                "reference": "7beca5a724ef329bb5a0094b5aef7bfeab1193ae"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/asispts/http-accept/zipball/7beca5a724ef329bb5a0094b5aef7bfeab1193ae",
+                "reference": "7beca5a724ef329bb5a0094b5aef7bfeab1193ae",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2|^8.0"
+            },
+            "require-dev": {
+                "asispts/ptscs": "^1.0",
+                "phpstan/phpstan": "^1.4",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "phpunit/phpunit": "^8.5|^9.5|^10.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "HttpAccept\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Asis Pattisahusiwa",
+                    "email": "asispts@gmail.com"
+                }
+            ],
+            "description": "PHP Parser to deal with HTTP Accept, Accept-Language, Accept-Encoding, and Content-Type headers",
+            "homepage": "https://github.com/asispts/http-accept",
+            "keywords": [
+                "accept",
+                "accept-encoding",
+                "accept-language",
+                "content-type",
+                "http-header-parser",
+                "http-headers"
+            ],
+            "support": {
+                "issues": "https://github.com/asispts/http-accept/issues",
+                "source": "https://github.com/asispts/http-accept/tree/v1.0.0"
+            },
+            "time": "2023-04-28T02:59:23+00:00"
         },
         {
             "name": "brick/math",
@@ -898,6 +953,56 @@
                 }
             ],
             "time": "2023-12-03T20:05:35+00:00"
+        },
+        {
+            "name": "hostbybelle/compressionbuffer",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/HostByBelle/CompressionBuffer.git",
+                "reference": "a5ed8b63c9657a235f5551db1b2b7de37801f253"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/HostByBelle/CompressionBuffer/zipball/a5ed8b63c9657a235f5551db1b2b7de37801f253",
+                "reference": "a5ed8b63c9657a235f5551db1b2b7de37801f253",
+                "shasum": ""
+            },
+            "require": {
+                "asispts/http-accept": "^1.0",
+                "php": ">=8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.53",
+                "phpstan/phpstan": "^1.10"
+            },
+            "suggest": {
+                "ext-brotli": "For brotli output compression",
+                "ext-zlib": "For gzip & deflate output compression",
+                "ext-zstd": "For zstd output compression"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "HostByBelle\\": "src/HostByBelle"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Belle Aerni",
+                    "email": "belleaerni@gmail.com"
+                }
+            ],
+            "description": "CompressionBuffer provides easy access to zstd, brotli, and gzip output buffering with PHP on any webserver.",
+            "support": {
+                "issues": "https://github.com/HostByBelle/CompressionBuffer/issues",
+                "source": "https://github.com/HostByBelle/CompressionBuffer/tree/1.0.0"
+            },
+            "time": "2024-04-08T22:57:40+00:00"
         },
         {
             "name": "io-developer/php-whois",

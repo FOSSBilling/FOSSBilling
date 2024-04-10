@@ -290,6 +290,7 @@ class Client implements InjectionAwareInterface
             $result = ['result' => $data, 'error' => null];
         }
         echo json_encode($result);
+        ob_end_flush();
         exit;
     }
 

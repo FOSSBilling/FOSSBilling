@@ -49,7 +49,9 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         if (isset($page['id'])) {
             return $app->render('mod_custompages_content', ['page' => $page]);
         } else {
-            exit(header('Location: ' . $this->di['url']->get('')));
+            header('Location: ' . $this->di['url']->get(''));
+            ob_end_flush();
+            exit;
         }
     }
 }

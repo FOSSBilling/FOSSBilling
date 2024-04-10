@@ -324,6 +324,7 @@ class ErrorPage
             </body>
         </html>';
         echo $page;
+        ob_end_flush();
         exit;
     }
 }

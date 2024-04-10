@@ -112,7 +112,7 @@ class Box_App
         $this->event('delete', $url, $methodName, $conditions, $class);
     }
 
-    public function run(): string
+    public function run(): void
     {
         $this->debugBar['time']->startMeasure('registerModule', 'Registering module routes');
         $this->registerModule();
@@ -126,7 +126,7 @@ class Box_App
         $this->checkPermission();
         $this->debugBar['time']->stopMeasure('checkperm');
 
-        return $this->processRequest();
+        echo $this->processRequest();
     }
 
     /**
@@ -136,6 +136,7 @@ class Box_App
     {
         $location = $this->di['url']->link($path);
         header("Location: $location");
+        ob_end_flush();
         exit;
     }
 

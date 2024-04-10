@@ -36,6 +36,8 @@ class Requirements
             'bz2' => 'optional support for bzip2 archives',
             'simplexml' => 'the Plesk integration',
             'xml' => 'the Plesk integration',
+            'brotli' => 'output compression using brotli',
+            'zstd' => 'output compression using zstd',
         ],
         'min_version' => '8.1',
     ];

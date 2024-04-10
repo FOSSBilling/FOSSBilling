@@ -77,7 +77,7 @@ class CentralAlerts implements InjectionAwareInterface
         }
 
         if ($version) {
-            if (Config::getProperty('update_branch', 'release') === 'preview') {
+            if (Config::getProperty('system.update_branch', 'release') === 'preview') {
                 $alerts = array_filter($alerts, fn ($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function ($alert) use ($version) {

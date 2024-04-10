@@ -406,6 +406,7 @@ $di['is_admin_logged'] = function () use ($di) {
         $di['set_return_uri'];
 
         header(sprintf('Location: %s', $di['url']->adminLink('staff/login')));
+        ob_end_flush();
         exit;
     }
 
@@ -439,6 +440,7 @@ $di['loggedin_client'] = function () use ($di) {
             // Redirect to login page if browser request
             $login_url = $di['url']->link('login');
             header("Location: $login_url");
+            ob_end_flush();
             exit;
         }
     }
@@ -477,6 +479,7 @@ $di['loggedin_admin'] = function () use ($di) {
             // Redirect to login page if browser request
             $login_url = $di['url']->adminLink('staff/login');
             header("Location: $login_url");
+            ob_end_flush();
             exit;
         }
     }
@@ -528,6 +531,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
             // If they aren't attempting to access their profile, redirect them to it.
             $login_url = $di['url']->link('client/profile');
             header("Location: $login_url");
+            ob_end_flush();
             exit;
         }
     }
@@ -834,6 +838,7 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
     $csv->output($outputName);
 
     // Prevent further output from being added to the end of the CSV
+    ob_end_flush();
     exit;
 });
 

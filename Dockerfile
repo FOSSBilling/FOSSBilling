@@ -14,6 +14,10 @@ RUN apt-get update \
   && docker-php-ext-install -j$(nproc) opcache \
   && docker-php-ext-configure pdo_mysql \
   && docker-php-ext-install -j$(nproc) pdo_mysql \
+  && pecl install brotli \
+  && docker-php-ext-enable brotli \
+  && pecl install zstd \
+  && docker-php-ext-enable zstd \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 

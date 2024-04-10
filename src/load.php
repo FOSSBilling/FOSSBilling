@@ -15,6 +15,7 @@ use FOSSBilling\SentryHelper;
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
+use HostByBelle\CompressionBuffer;
 
 const PATH_ROOT = __DIR__;
 const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
@@ -245,12 +246,12 @@ require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR
 
 // Set globals and relevant settings based on the config.
 date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
-define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
+define('ADMIN_PREFIX', Config::getProperty('system.admin_area_prefix'));
 define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
-define('PATH_DATA', Config::getProperty('path_data'));
+define('PATH_DATA', Config::getProperty('system.path_data'));
 define('PATH_CACHE', PATH_DATA . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
-define('SYSTEM_URL', Config::getProperty('url'));
+define('SYSTEM_URL', Config::getProperty('system.url'));
 define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
 // Initial setup and checks passed, now we setup our custom autoloader.
@@ -284,4 +285,10 @@ if (DEBUG) {
 } else {
     ini_set('display_errors', '0');
     ini_set('display_startup_errors', '0');
+}
+
+// Setup output handling and then disable it if needed
+CompressionBuffer::setUp();
+if (!Config::getProperty('system.do_output_compression', true)) {
+    CompressionBuffer::disable();
 }
