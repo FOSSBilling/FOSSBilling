@@ -72,7 +72,7 @@ class Update implements InjectionAwareInterface
     /**
      * Builds a complete changelog for all updates between the the newest FOSSBilling version and an ending version number.
      *
-     * @param string|null $end      What version number to end on. Defaults to the current version of this installation if `null` is passed.
+     * @param string $end (optional) What version number to end on. Defaults to the current version.
      */
     private function buildCompleteChangelog(string $end = Version::VERSION): string
     {
