@@ -32,6 +32,7 @@
         "lcharette/webpack-encore-twig": "^1.2.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
+        "liborm85/composer-vendor-cleaner": "^1.7",
         "mattketmo/email-checker": "^2.2",
         "maximebf/debugbar": "^1.19",
         "monolog/monolog": "^3.5",
@@ -73,7 +74,8 @@
         "sort-packages": true,
         "allow-plugins": {
             "phpstan/extension-installer": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "liborm85/composer-vendor-cleaner": true
         },
         "vendor-dir": "src/vendor"
     },
@@ -82,5 +84,25 @@
         "symfony/polyfill-php72": "*",
         "symfony/polyfill-php80": "*",
         "symfony/polyfill-php81": "*"
+    },
+    "extra": {
+        "dev-files": {
+            "/": [
+                "tests/",
+                "docs/",
+                ".travis.yml",
+                ".github/",
+                ".devcontainer/"
+            ],
+            "gabordemooij/redbean": [
+                "testing/"
+            ],
+            "mattketmo/email-checker": [
+                "res/"
+            ],
+            "maxmind-db/reader": [
+                "ext"
+            ]
+        }
     }
 }
