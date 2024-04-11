@@ -72,8 +72,8 @@ final class Version
         }
     }
 
-    public static function isPreviewVersion(): bool
+    public static function isPreviewVersion(string $version = Version::VERSION): bool
     {
-        return (preg_match(self::semverRegex, Version::VERSION, $matches) !== 0) ? false : true;
+        return ($version !== '0.0.1' && preg_match(self::semverRegex, $version, $matches) !== 0) ? false : true;
     }
 }

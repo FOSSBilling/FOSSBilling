@@ -12,7 +12,12 @@
         </div>
         <div class="card-body">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <h2 class="card-title">{{ 'Update release notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h2>
+                {% if update_info['branch'] == 'preview' %}
+                    <h2 class="card-title">{{ 'Update release notes'|trans }}</h2>
+                {% else %}
+                    <h2 class="card-title mb-0">{{ 'Update release notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h2>
+                    <span>{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</span>
+                {% endif %}
                 {% if update_info['update_type'] == 2 %}
                     <div class="alert alert-danger" role="alert">
                         <span>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}</span>

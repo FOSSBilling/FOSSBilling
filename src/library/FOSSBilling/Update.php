@@ -24,6 +24,11 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 class Update implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private array $allowedDownloadPrefixes = [
+        'https://github.com/FOSSBilling/FOSSBilling/releases/',
+        'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/',
+        'https://s4-fossb-2.fi-hel2.upcloudobjects.com/releases/'
+    ];
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -72,23 +77,23 @@ class Update implements InjectionAwareInterface
     /**
      * Builds a complete changelog for all updates between the the newest FOSSBilling version and an ending version number.
      *
-     * @param array       $releases the GitHub API release info JSON represented as an array
-     * @param string|null $end      What version number to end on. Defaults to the current version of this installation if `null` is passed.
+     * @param string $end (optional) What version number to end on. Defaults to the current version.
      */
-    private function buildCompleteChangelog(array $releases, string $end = null): string
+    private function buildCompleteChangelog(string $end = Version::VERSION): string
     {
-        $end ??= Version::VERSION;
-        $completedChangelog = [];
-
-        foreach ($releases as $release) {
-            if (version_compare($release['tag_name'], $end, 'gt')) {
-                $completedChangelog[] = $release['body'];
-            } else {
-                break;
-            }
+        if (Version::isPreviewVersion($end)) {
+            return 'Changelogs are not available when updating from a preview release';
         }
 
-        return implode(PHP_EOL, $completedChangelog);
+        return $this->di['cache']->get("changelog_from_$end", function (ItemInterface $item) use ($end) {
+            $item->expiresAfter(3600);
+
+            $httpClient = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $httpClient->request('GET', "https://api.fossbilling.org/versions/build_changelog/$end");
+            $result = $response->toArray();
+
+            return $result['result'];
+        });
     }
 
     /**
@@ -96,7 +101,6 @@ class Update implements InjectionAwareInterface
      *
      * @param string $branch  the branch to return the latest information for;
      *                        valid values are: 'preview' or 'release'
-     * @param bool   $refetch Set to `true` to have FOSSBilling invalidate the update cache and fetch the latest info
      * @param bool   $refetch Set to `true` to have FOSSBilling invalidate the update cache and fetch the latest info
      *
      * @throws Exception if there is an error downloading the latest
@@ -120,6 +124,7 @@ class Update implements InjectionAwareInterface
                 'last_check' => time(),
                 'next_check' => time() + 3600,
                 'branch' => 'preview',
+                'minimum_php_version' => 'unknown',
             ];
         } else {
             $key = "Update.latest_{$branch}_version_info";
@@ -133,27 +138,26 @@ class Update implements InjectionAwareInterface
                 $item->expiresAfter(3600);
 
                 try {
-                    $releaseInfoUrl = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases';
+                    $releaseInfoUrl = 'https://api.fossbilling.org/versions/latest';
                     $httpClient = HttpClient::create(['bindto' => BIND_TO]);
                     $response = $httpClient->request('GET', $releaseInfoUrl);
-                    $releases = $response->toArray();
+                    $releaseInfo = $response->toArray()['result'];
                 } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
                     error_log($e->getMessage());
 
                     throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
                 }
 
-                $releaseInfo = $releases[0];
-
                 return [
-                    'version' => $releaseInfo['tag_name'] ?: Version::VERSION,
-                    'download_url' => $releaseInfo['assets'][0]['browser_download_url'],
-                    'release_date' => $releaseInfo['published_at'],
-                    'release_notes' => $this->buildCompleteChangelog($releases) ?: '**Error: Release notes unavailable.**',
-                    'update_type' => Version::getUpdateType($releaseInfo['tag_name'] ?: Version::VERSION),
+                    'version' => $releaseInfo['version'] ?: Version::VERSION,
+                    'download_url' => $releaseInfo['download_url'],
+                    'release_date' => $releaseInfo['released_on'],
+                    'release_notes' => $this->buildCompleteChangelog() ?: '**Error: Release notes unavailable.**',
+                    'update_type' => Version::getUpdateType($releaseInfo['version'] ?: Version::VERSION),
                     'last_check' => date('Y-m-d H:i:s'),
                     'next_check' => date('Y-m-d H:i:s', time() + 3600),
                     'branch' => $branch,
+                    'minimum_php_version' => $releaseInfo['minimum_php_version'],
                 ];
             });
         }
@@ -213,6 +217,30 @@ class Update implements InjectionAwareInterface
         $latestVersionNum = $this->getLatestVersion();
         $archiveFile = PATH_CACHE . DIRECTORY_SEPARATOR . $latestVersionNum . '.zip';
 
+        $releaseInfo = $this->getLatestVersionInfo($updateBranch);
+
+        // Validate the required PHP version is met
+        $requiredPHPVersion = $releaseInfo['minimum_php_version'];
+        if ($requiredPHPVersion !== 'unknown' && version_compare(PHP_VERSION, $requiredPHPVersion, '<')) {
+            throw new InformationException('FOSSBilling :version: requires at least PHP :min_php:, but you are running :current_php:.', [
+                ':version:' => $latestVersionNum,
+                ':min_php:' => $requiredPHPVersion,
+                ':current_php:' => PHP_VERSION,
+            ]);
+        }
+
+        // Perform a sanity check that the download URL is a trusted one
+        if ($updateBranch !== 'preview') {
+            $allowed = false;
+            foreach($this->allowedDownloadPrefixes as $prefix){
+                $allowed = $allowed ? true : str_starts_with($releaseInfo['download_url'], $prefix);
+            }
+
+            if(!$allowed){
+                throw new InformationException("The download URL for this release was not specified as a trusted one. Update canceled for security reasons.");
+            }
+        }
+
         // Download latest version archive for configured update branch.
         try {
             $httpClient = HttpClient::create([
@@ -220,7 +248,7 @@ class Update implements InjectionAwareInterface
                 'max_duration' => 120,
                 'bindto' => BIND_TO,
             ]);
-            $response = $httpClient->request('GET', $this->getLatestVersionInfo($updateBranch)['download_url']);
+            $response = $httpClient->request('GET', $releaseInfo['download_url']);
 
             $fileHandler = fopen($archiveFile, 'w');
             foreach ($httpClient->stream($response) as $chunk) {
