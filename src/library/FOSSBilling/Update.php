@@ -158,7 +158,6 @@ class Update implements InjectionAwareInterface
                     'next_check' => date('Y-m-d H:i:s', time() + 3600),
                     'branch' => $branch,
                     'minimum_php_version' => $releaseInfo['minimum_php_version'],
-                    ''
                 ];
             });
         }
