@@ -6,6 +6,7 @@
     <li class="breadcrumb-item active" aria-current="page">{{ 'Profile'|trans }}</li>{% endblock %}
 
 {% block body_class %}client-profile{% endblock %}
+{% set required = guest.client_required %}
 {% block content %}
     {% if (guest.client_is_email_validation_required) and (not profile.email_approved) %}
         <div class="alert alert-block alert-danger">
