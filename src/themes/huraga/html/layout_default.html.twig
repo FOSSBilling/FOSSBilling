@@ -43,21 +43,18 @@
     {% set profile = client.profile_get %}
 {% endif %}
 {% set company = guest.system_company %}
-
 {% if settings.theme == 'dark' and settings.show_company_logo %}
     {% set logo_url =  company.logo_url_dark %}
 {% else %}
     {% set logo_url =  company.logo_url %}
 {% endif %}
-
 <div class="container">
     <header>
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
                 {% if logo_url %}
                     <a class="navbar-brand" href="{{ '/'|link }}">
-                        <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}"
-                             height="45px"
+                        <img class="d-none d-sm-block" src="{{ company.logo_url }}" alt="{{ company.name }}" height="45px"
                              title="{{ company.name }}">
                         <span class="d-sm-none">{{ company.name }}</span>
                     </a>
@@ -80,9 +77,7 @@
                             <li class="nav-item">
                                 <select name="lang" class="form-select js-language-selector">
                                     {% for lang in languages %}
-                                        <option value="{{ lang.locale }}"
-                                                data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;">
-                                            &nbsp;{{ lang.title }}</option>
+                                        <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;">&nbsp;{{ lang.title }}</option>
                                     {% endfor %}
                                 </select>
                             </li>
@@ -112,11 +107,8 @@
                             <li class="nav-item d-none d-md-block">
                                 {% if client %}
                                     <div class="dropdown">
-                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                                aria-expanded="false">
-                                            <img class="img-fluid rounded-circle"
-                                                 alt="{{ profile.first_name }} {{ profile.last_name }} gravatar"
-                                                 src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
+                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
                                             {% if profile.company %}
                                                 <span>{{ profile.first_name }} {{ profile.last_name }}|{{ profile.company }}</span>
                                             {% else %}
@@ -186,7 +178,7 @@
                                 <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}
                                     {% if company.bank_info_pagebottom == 1 %}
                                         <br/>
-                                        <b>{{ 'Payment Information'|trans }}</b> - {{ 'Bank Name'|trans }}: {{ company.bank_name }} | {{ 'BIC / SWIFT Code'|trans }}: {{ company.bic }} | {{ 'Account Number'|trans }}: {{ company.account_number }}
+                                        <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -235,7 +227,7 @@
                                 <div class="d-flex justify-content-center">
                                     <span>Powered by the&nbsp;</span>
                                     <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-                                       href="https://fossbilling.org" title="Billing Software"
+                                        href="https://fossbilling.org" title="Billing Software"
                                        target="_blank">{{ 'FOSSBilling Community'|trans }}</a>
                                 </div>
                             {% endif %}
@@ -254,9 +246,7 @@
         <div class="spinner-border"
              style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
     </div>
-    <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's
-        preference settings.
-    </noscript>
+    <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 
     {% endblock %}
 
