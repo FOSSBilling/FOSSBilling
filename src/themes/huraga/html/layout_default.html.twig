@@ -43,7 +43,8 @@
     {% set profile = client.profile_get %}
 {% endif %}
 {% set company = guest.system_company %}
-{% if settings.theme == 'dark' and settings.show_company_logo %}
+
+{% if settings.theme == 'dark' %}
     {% set logo_url =  company.logo_url_dark %}
 {% else %}
     {% set logo_url =  company.logo_url %}
@@ -52,7 +53,7 @@
     <header>
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
-                {% if logo_url %}
+                {% if logo_url and settings.show_company_logo %}
                     <a class="navbar-brand" href="{{ '/'|link }}">
                         <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" height="45px"
                              title="{{ company.name }}">
