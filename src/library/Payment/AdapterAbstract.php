@@ -122,7 +122,7 @@ abstract class Payment_AdapterAbstract
      */
     public function getInvoiceId($data)
     {
-        return isset($data['get']['bb_invoice_id']) ? (int) $data['get']['bb_invoice_id'] : null;
+        return $data['invoice_id'] ?? null;
     }
 
     public function setLog(Box_Log $log)

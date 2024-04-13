@@ -84,7 +84,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         $tx = $this->di['db']->load('Transaction', $id);
 
-        $invoice_id = $data['get']['bb_invoice_id'] ?? 0;
+        $invoice_id = $data['invoice_id'] ?? 0;
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
         $invoiceService = $this->di['mod_service']('Invoice');

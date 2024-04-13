@@ -80,7 +80,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
         if (!$tx['invoice_id']) {
-            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $data['get']['bb_invoice_id']]);
+            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $data['invoice_id']]);
         }
 
         if (!$tx['type'] && isset($ipn['txn_type'])) {
@@ -103,7 +103,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             $api_admin->invoice_transaction_update(['id' => $id, 'currency' => $ipn['mc_currency']]);
         }
 
-        $invoice = $api_admin->invoice_get(['id' => $data['get']['bb_invoice_id']]);
+        $invoice = $api_admin->invoice_get(['id' => $data['invoice_id']]);
         $client_id = $invoice['client']['id'];
 
         switch ($ipn['txn_type']) {

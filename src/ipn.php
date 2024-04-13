@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,14 +12,17 @@ require_once __DIR__ . '/load.php';
 $di = include __DIR__ . '/di.php';
 $di['translate']();
 
-$bb_invoice_id = $_POST['bb_invoice_id'] ?? $_GET['bb_invoice_id'] ?? null;
+$invoiceID = $_POST['invoice_id'] ?? $_GET['invoice_id'] ?? $_POST['bb_invoice_id'] ?? $_GET['bb_invoice_id'] ?? null;
 
-$bb_gateway_id = $_POST['bb_gateway_id'] ?? $_GET['bb_gateway_id'] ?? null;
+$gatewayID = $_POST['gateway_id'] ?? $_GET['gateway_id'] ?? $_POST['bb_gateway_id'] ?? $_GET['bb_gateway_id'] ?? null;
+
+$_GET['bb_invoice_id'] = $invoiceID;
+$_GET['bb_gateway_id'] = $gatewayID;
 
 $ipn = [
     'skip_validation' => true,
-    'bb_invoice_id' => $bb_invoice_id,
-    'bb_gateway_id' => $bb_gateway_id,
+    'invoice_id' => $invoiceID,
+    'gateway_id' => $gatewayID,
     'get' => $_GET,
     'post' => $_POST,
     'server' => $_SERVER,
@@ -35,8 +39,9 @@ try {
 }
 
 // redirect to invoice if gateways requires
-if (isset($_GET['bb_redirect'], $_GET['bb_invoice_hash'])) {
-    $url = $di['url']->link('invoice/' . $_GET['bb_invoice_hash']);
+if (isset($_GET['redirect'], $_GET['invoice_hash']) || isset($_GET['bb_redirect'], $_GET['bb_invoice_hash'])) {
+    $hash = $_GET['invoice_hash'] ?? $_GET['bb_invoice_hash'];
+    $url = $di['url']->link('invoice/' . $hash);
     header("Location: $url");
     exit;
 }

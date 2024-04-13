@@ -355,10 +355,10 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getCallbackUrl(\Model_PayGateway $pg, $model = null)
     {
         $p = [
-            'bb_gateway_id' => $pg->id,
+            'gateway_id' => $pg->id,
         ];
         if ($model instanceof \Model_Invoice) {
-            $p['bb_invoice_id'] = $model->id;
+            $p['invoice_id'] = $model->id;
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);
@@ -394,13 +394,13 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getCallbackRedirect(\Model_PayGateway $pg, $model = null)
     {
         $p = [
-            'bb_gateway_id' => $pg->id,
+            'gateway_id' => $pg->id,
         ];
 
         if ($model instanceof \Model_Invoice) {
-            $p['bb_invoice_id'] = $model->id;
-            $p['bb_invoice_hash'] = $model->hash;
-            $p['bb_redirect'] = 1;
+            $p['invoice_id'] = $model->id;
+            $p['invoice_hash'] = $model->hash;
+            $p['redirect'] = 1;
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);
