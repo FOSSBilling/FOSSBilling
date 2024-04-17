@@ -71,9 +71,18 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         return $result['status'] == 'AVAILABLE';
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain): never
+    public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
-        throw new Registrar_Exception(':type: does not support :action:', [':type:' => 'Internet.bs', ':action:' => __trans('checking domain transferability')]);
+        $params = [
+            'domain' => $domain->getName(),
+        ];
+
+        $result = $this->_process('/Domain/Check', $params);
+    
+        //return true if status is UNAVAILABLE
+        //For not supported TLDs, the status will be 'FAILURE'
+        return $result['status'] == 'UNAVAILABLE';
+    
     }
 
     public function modifyNs(Registrar_Domain $domain)
