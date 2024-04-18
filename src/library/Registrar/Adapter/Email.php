@@ -51,11 +51,6 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         ];
     }
 
-    public function getTlds()
-    {
-        return [];
-    }
-
     public function isDomainAvailable(Registrar_Domain $domain)
     {
         $this->getLog()->debug('Checking domain availability: ' . $domain->getName());

@@ -69,17 +69,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
     }
 
-    /**
-     * Tells what TLDs can be registered via this adapter.
-     *
-     * @return string[]
-     */
-    public function getTlds()
-    {
-        return [];
-    }
-
-    public function isDomainAvailable(Registrar_Domain $domain)
+  public function isDomainAvailable(Registrar_Domain $domain)
     {
         $params = [
             'domain-name' => $domain->getSld(),

@@ -86,27 +86,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         ];
     }
 
-    /**
-     * Tells what TLDs can be registered via this adapter.
-     *
-     * @return string[]
-     */
-    public function getTlds()
-    {
-        $params = [
-            'Command' => 'namecheap.domains.getTldList',
-        ];
-
-        $result = $this->_makeRequest($params);
-        $strTlds = [];
-        $xmlTlds = $result->CommandResponse->Tlds;
-        foreach ($xmlTlds->tld as $tld) {
-            $strTlds[] = '.' . $tld['Name'];
-        }
-
-        return $strTlds;
-    }
-
     public function isDomainAvailable(Registrar_Domain $domain)
     {
         $params = [

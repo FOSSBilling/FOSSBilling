@@ -23,11 +23,6 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         }
     }
 
-    public function getTlds()
-    {
-        return [];
-    }
-
     public static function getConfig()
     {
         return [
