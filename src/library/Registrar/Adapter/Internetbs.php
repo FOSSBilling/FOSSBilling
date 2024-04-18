@@ -78,11 +78,10 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         ];
 
         $result = $this->_process('/Domain/Check', $params);
-    
-        //return true if status is UNAVAILABLE
-        //For not supported TLDs, the status will be 'FAILURE'
+
+        // return true if status is UNAVAILABLE
+        // For not supported TLDs, the status will be 'FAILURE'
         return $result['status'] == 'UNAVAILABLE';
-    
     }
 
     public function modifyNs(Registrar_Domain $domain)
