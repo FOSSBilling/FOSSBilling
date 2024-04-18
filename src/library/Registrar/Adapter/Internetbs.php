@@ -4,6 +4,9 @@ use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 {
+    # API Documentation
+    # https://internetbs.net/internet-bs-api.pdf
+
     public $config = [
         'apikey' => null,
         'password' => null,
@@ -48,16 +51,23 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     public function getTlds()
     {
-        return [
-            '.co', '.com', '.net', '.eu',
-            '.org', '.it', '.fr', '.info',
-            '.tel', '.us', '.biz', '.co.uk',
-            '.in', '.mobi', '.asia', '.tv',
-            '.re', '.be', '.cc', '.com.fr',
-            '.com.re', '.org.uk', '.me.uk', '.com.co',
-            '.net.co', '.nom.co', '.co.in', '.net.in',
-            '.org.in', '.firm.in', '.gen.in', '.ind.in',
+        $params = [
+            "version" => "5"
         ];
+
+        $result = $this->_process("/Account/PriceList/Get", $params);
+        if ($result["status"] !== "SUCCESS") {
+            return [];
+        }
+
+        $i = 0;
+        $extensions = [];
+        while (isset($result["product_" . $i . "_tld"])) {
+            $extensions[] = "." . $result["product_" . $i . "_tld"];
+            $i++;
+        }
+
+        return $extensions;
     }
 
     public function isDomainAvailable(Registrar_Domain $domain)
