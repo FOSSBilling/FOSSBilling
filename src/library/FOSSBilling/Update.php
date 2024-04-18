@@ -27,7 +27,7 @@ class Update implements InjectionAwareInterface
     private array $allowedDownloadPrefixes = [
         'https://github.com/FOSSBilling/FOSSBilling/releases/',
         'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/',
-        'https://s4-fossb-2.fi-hel2.upcloudobjects.com/releases/'
+        'https://s4-fossb-2.fi-hel2.upcloudobjects.com/releases/',
     ];
 
     public function setDi(\Pimple\Container $di): void
@@ -222,22 +222,18 @@ class Update implements InjectionAwareInterface
         // Validate the required PHP version is met
         $requiredPHPVersion = $releaseInfo['minimum_php_version'];
         if ($requiredPHPVersion !== 'unknown' && version_compare(PHP_VERSION, $requiredPHPVersion, '<')) {
-            throw new InformationException('FOSSBilling :version: requires at least PHP :min_php:, but you are running :current_php:.', [
-                ':version:' => $latestVersionNum,
-                ':min_php:' => $requiredPHPVersion,
-                ':current_php:' => PHP_VERSION,
-            ]);
+            throw new InformationException('FOSSBilling :version: requires at least PHP :min_php:, but you are running :current_php:.', [':version:' => $latestVersionNum, ':min_php:' => $requiredPHPVersion, ':current_php:' => PHP_VERSION]);
         }
 
         // Perform a sanity check that the download URL is a trusted one
         if ($updateBranch !== 'preview') {
             $allowed = false;
-            foreach($this->allowedDownloadPrefixes as $prefix){
+            foreach ($this->allowedDownloadPrefixes as $prefix) {
                 $allowed = $allowed ? true : str_starts_with($releaseInfo['download_url'], $prefix);
             }
 
-            if(!$allowed){
-                throw new InformationException("The download URL for this release was not specified as a trusted one. Update canceled for security reasons.");
+            if (!$allowed) {
+                throw new InformationException('The download URL for this release was not specified as a trusted one. Update canceled for security reasons.');
             }
         }
 
