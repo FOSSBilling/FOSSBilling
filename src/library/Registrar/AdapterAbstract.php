@@ -33,15 +33,6 @@ abstract class Registrar_AdapterAbstract
     abstract public static function getConfig();
 
     /**
-     * Returns an array of top-level domains (TLDs) that the registrar is capable of registering.
-     *
-     * If the function returns an empty array, the registrar can register any TLD.
-     *
-     * @return array array of TLDs that the registrar is capable of registering
-     */
-    abstract public function getTlds();
-
-    /**
      * Checks if a domain is available for registration.
      *
      * @param Registrar_Domain $domain domain object containing the details of the domain to check
