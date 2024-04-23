@@ -69,13 +69,11 @@ class Service implements InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('system');
 
-        $result = [
+        return [
             'sitemap_url' => SYSTEM_URL . 'sitemap.xml',
             'last_exec' => $systemService->getParamValue('mod_seo_last_sitemap_submit'),
             'engines' => $this->_getEngineDetails(),
         ];
-
-        return $result;
     }
 
     /**

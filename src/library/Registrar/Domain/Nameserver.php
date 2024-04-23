@@ -40,8 +40,7 @@ class Registrar_Domain_Nameserver implements Stringable
     {
         $c = '';
         $c .= sprintf('Host: %s', $this->getHost()) . PHP_EOL;
-        $c .= sprintf('Ip: %s', $this->getIp()) . PHP_EOL;
 
-        return $c;
+        return $c . (sprintf('Ip: %s', $this->getIp()) . PHP_EOL);
     }
 }

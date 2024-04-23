@@ -72,7 +72,7 @@ class CentralAlerts implements InjectionAwareInterface
     {
         $alerts = $this->getAlerts();
 
-        if (is_array($type) && !empty($type)) {
+        if (!empty($type)) {
             $alerts = array_filter($alerts, fn ($alert) => in_array($alert['type'], $type));
         }
 

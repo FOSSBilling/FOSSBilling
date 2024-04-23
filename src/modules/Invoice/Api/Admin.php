@@ -942,9 +942,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
-
-        return $model;
+        return $this->di['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
     }
 
     /**

@@ -43,7 +43,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $service = $mod->getService();
         $t = $service->getTheme($theme);
 
-        $isNewPreset = isset($_POST['save-current-setting']) ? (bool) $_POST['save-current-setting'] : false;
+        $isNewPreset = isset($_POST['save-current-setting']) && (bool) $_POST['save-current-setting'];
         $preset = $service->getCurrentThemePreset($t);
         if ($isNewPreset && isset($_POST['save-current-setting-preset']) && !empty($_POST['save-current-setting-preset'])) {
             $preset = $_POST['save-current-setting-preset'];

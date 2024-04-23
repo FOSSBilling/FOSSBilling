@@ -351,7 +351,8 @@ class Service implements InjectionAwareInterface
         }
 
         $currencyService = $this->di['mod_service']('currency');
-        $result = [
+
+        return [
             'promocode' => $promocode,
             'discount' => $items_discount,
             'subtotal' => $total,
@@ -359,8 +360,6 @@ class Service implements InjectionAwareInterface
             'items' => $items,
             'currency' => $currencyService->toApiArray($currency),
         ];
-
-        return $result;
     }
 
     public function isClientAbleToUsePromo(\Model_Client $client, \Model_Promo $promo)
@@ -786,7 +785,7 @@ class Service implements InjectionAwareInterface
             $discount_price = $subtotal;
         }
 
-        $data = array_merge($config, [
+        return array_merge($config, [
             'id' => $model->id,
             'product_id' => $product->id,
             'form_id' => $product->form_id,
@@ -801,8 +800,6 @@ class Service implements InjectionAwareInterface
             'discount_setup' => $discount_setup,
             'total' => $subtotal,
         ]);
-
-        return $data;
     }
 
     public function getProductDiscount(\Model_CartProduct $cartProduct, $setup)

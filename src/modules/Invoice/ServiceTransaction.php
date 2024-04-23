@@ -76,7 +76,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
-        $skip_validation = isset($data['skip_validation']) ? (bool) $data['skip_validation'] : false;
+        $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
         if (!$skip_validation) {
             if (!isset($data['bb_invoice_id'])) {
                 throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');

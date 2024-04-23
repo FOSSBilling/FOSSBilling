@@ -152,9 +152,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT code, title FROM currency';
         $db = $this->di['db'];
 
-        $pairs = $db->getAssoc($sql);
-
-        return $pairs;
+        return $db->getAssoc($sql);
     }
 
     /**

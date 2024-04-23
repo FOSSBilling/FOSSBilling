@@ -106,11 +106,9 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
-        if ($patches) {
-            foreach ($patches as $patchLevel => $patch) {
-                call_user_func($patch);
-                $this->setPatchLevel($patchLevel);
-            }
+        foreach ($patches as $patchLevel => $patch) {
+            call_user_func($patch);
+            $this->setPatchLevel($patchLevel);
         }
     }
 

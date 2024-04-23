@@ -24,12 +24,11 @@ class Guest extends \Api_Abstract
     public function recaptcha($data)
     {
         $config = $this->di['mod_config']('Spamchecker');
-        $result = [
+
+        return [
             'publickey' => $config['captcha_recaptcha_publickey'] ?? null,
             'enabled' => $config['captcha_enabled'] ?? false,
             'version' => $config['captcha_version'] ?? null,
         ];
-
-        return $result;
     }
 }

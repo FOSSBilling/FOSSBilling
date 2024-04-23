@@ -244,9 +244,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $response = $client->request('POST', $url, [
             'body' => $post_contents,
         ]);
-        $data = $response->getContent();
 
-        return $data;
+        return $response->getContent();
     }
 
     /**

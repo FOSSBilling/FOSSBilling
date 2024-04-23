@@ -120,15 +120,13 @@ class Box_Period
         $qty = $this->qty;
         $placeholders = [':number' => $qty];
 
-        $shift = match ($this->unit) {
+        return match ($this->unit) {
             self::UNIT_DAY => __pluralTrans('Every :number day', 'Every :number days', $qty, $placeholders),
             self::UNIT_WEEK => __pluralTrans('Every :number week', 'Every :number weeks', $qty, $placeholders),
             self::UNIT_MONTH => __pluralTrans('Every :number month', 'Every :number months', $qty, $placeholders),
             self::UNIT_YEAR => __pluralTrans('Every :number year', 'Every :number years', $qty, $placeholders),
             default => throw new FOSSBilling\Exception('Unit not defined'),
         };
-
-        return $shift;
     }
 
     public function getDays()
@@ -143,17 +141,13 @@ class Box_Period
      */
     public function getMonths()
     {
-        $qty = 0;
-
-        $qty = match ($this->unit) {
+        return match ($this->unit) {
             self::UNIT_DAY => $this->qty / 30,
             self::UNIT_WEEK => $this->qty / 4,
             self::UNIT_MONTH => $this->qty,
             self::UNIT_YEAR => $this->qty * 12,
             default => throw new FOSSBilling\Exception('Unable to get the number of months for :unit', [':unit' => $this->unit]),
         };
-
-        return $qty;
     }
 
     public function getExpirationTime($now = null)

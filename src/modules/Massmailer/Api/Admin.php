@@ -312,8 +312,6 @@ Order our services at {{ "order"|link }}
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->getExistingModelById('mod_massmailer', $data['id'], 'Message not found');
-
-        return $model;
+        return $this->di['db']->getExistingModelById('mod_massmailer', $data['id'], 'Message not found');
     }
 }

@@ -204,9 +204,7 @@ class Box_App
 
         $this->debugBar['time']->stopMeasure('execute');
 
-        $response = $reflection->invokeArgs($this, $args);
-
-        return $response;
+        return $reflection->invokeArgs($this, $args);
     }
 
     protected function event(string $httpMethod, string $url, string $methodName, ?array $conditions = [], string $classname = null): void

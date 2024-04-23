@@ -73,9 +73,7 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
             $iv
         );
 
-        $result = trim($result);
-
-        return $result;
+        return trim($result);
     }
 
     private function _getSalt($pass = null)

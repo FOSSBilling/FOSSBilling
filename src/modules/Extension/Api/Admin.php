@@ -160,9 +160,8 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
-        $result = $service->activateExistingExtension($data);
 
-        return $result;
+        return $service->activateExistingExtension($data);
     }
 
     /**
@@ -254,9 +253,8 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
-        $config = $service->getConfig($data['ext']);
 
-        return $config;
+        return $service->getConfig($data['ext']);
     }
 
     /**

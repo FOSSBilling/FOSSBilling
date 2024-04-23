@@ -124,7 +124,7 @@ class Client implements InjectionAwareInterface
     private function checkHttpReferer()
     {
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
-        $check_referer_header = isset($this->_api_config['require_referrer_header']) ? (bool) $this->_api_config['require_referrer_header'] : false;
+        $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
             $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower($_SERVER['HTTP_REFERER']) : null;

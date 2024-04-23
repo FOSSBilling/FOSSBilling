@@ -61,9 +61,8 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         $ips_arr = explode(',', $ip);
-        $ip = trim($ips_arr[0]);
 
-        return $ip;
+        return trim($ips_arr[0]);
     }
 
     public function process($data)

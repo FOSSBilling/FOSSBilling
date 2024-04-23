@@ -206,9 +206,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
         $url = 'https://www.gravatar.com/avatar/';
         $url .= md5(strtolower(trim($email)));
-        $url .= "?s=$size&d=mp&r=g";
 
-        return $url;
+        return $url . "?s=$size&d=mp&r=g";
     }
 
     public function twig_autolink_filter($text)
@@ -267,9 +266,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         if ($no != 1) {
             $pds[$v] .= 's';
         }
-        $x = sprintf('%d %s ', $no, $pds[$v]);
 
-        return $x;
+        return sprintf('%d %s ', $no, $pds[$v]);
     }
 
     public function twig_size_filter($value)

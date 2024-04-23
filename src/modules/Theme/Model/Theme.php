@@ -181,7 +181,7 @@ class Theme
         preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', trim($tags), $tags);
         $tags = array_unique($tags[1]);
 
-        if (is_array($tags) && !empty($tags)) {
+        if (!empty($tags)) {
             if ($invert === false) {
                 return preg_replace('@<(?!(?:' . implode('|', $tags) . ')\b)(\w+)\b.*?>.*?</\1>@si', '', $text);
             } else {

@@ -433,9 +433,7 @@ class Service
             }
         }
         if (is_null($tpl)) {
-            $parsed = $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
-
-            return $parsed;
+            return $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
         }
 
         try {

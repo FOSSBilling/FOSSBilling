@@ -1146,7 +1146,7 @@ class Service implements InjectionAwareInterface
             $html = $adapter->getHtml($this->di['api_system'], $invoice->id, $subscribe);
 
             return [
-                'iframe' => isset($pgc['can_load_in_iframe']) ? (bool) $pgc['can_load_in_iframe'] : false,
+                'iframe' => isset($pgc['can_load_in_iframe']) && (bool) $pgc['can_load_in_iframe'],
                 'type' => 'html',
                 'service_url' => '',
                 'subscription' => $subscribe,

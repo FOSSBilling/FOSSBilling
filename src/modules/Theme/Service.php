@@ -29,9 +29,7 @@ class Service implements InjectionAwareInterface
 
     public function getTheme($name)
     {
-        $theme = new Model\Theme($name);
-
-        return $theme;
+        return new Model\Theme($name);
     }
 
     public function getCurrentThemePreset(Model\Theme $theme)

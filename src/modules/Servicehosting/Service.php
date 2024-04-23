@@ -851,7 +851,7 @@ class Service implements InjectionAwareInterface
             $model->config = '';
         }
 
-        $result = [
+        return [
             'id' => $model->id,
 
             'name' => $model->name,
@@ -869,8 +869,6 @@ class Service implements InjectionAwareInterface
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
         ];
-
-        return $result;
     }
 
     public function updateHp(\Model_ServiceHostingHp $model, array $data): bool

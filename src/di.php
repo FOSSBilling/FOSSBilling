@@ -685,11 +685,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
  *
  * @return \FOSSBilling\Requirements
  */
-$di['requirements'] = function () {
-    $r = new FOSSBilling\Requirements();
-
-    return $r;
-};
+$di['requirements'] = fn() => new FOSSBilling\Requirements();
 
 /*
  * Creates a new Box_Period object using the provided period code and returns it.

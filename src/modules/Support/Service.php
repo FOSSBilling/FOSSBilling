@@ -221,13 +221,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getStatuses()
     {
-        $data = [
+        return [
             \Model_SupportTicket::OPENED => 'Open',
             \Model_SupportTicket::ONHOLD => 'On hold',
             \Model_SupportTicket::CLOSED => 'Closed',
         ];
-
-        return $data;
     }
 
     /**
@@ -992,13 +990,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function publicGetStatuses()
     {
-        $data = [
+        return [
             \Model_SupportPTicket::OPENED => 'Open',
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-
-        return $data;
     }
 
     public function publicFindOneByHash($hash)
@@ -1122,9 +1118,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ':status' => \Model_SupportPTicket::ONHOLD,
         ];
 
-        $publicTicket = $this->di['db']->find('SupportPTicket', 'status = :status AND DATE_ADD(updated_at, INTERVAL 48 HOUR) < NOW() ORDER BY id ASC', $bindings);
-
-        return $publicTicket;
+        return $this->di['db']->find('SupportPTicket', 'status = :status AND DATE_ADD(updated_at, INTERVAL 48 HOUR) < NOW() ORDER BY id ASC', $bindings);
     }
 
     public function publicCloseTicket(\Model_SupportPTicket $model, $identity)
@@ -1731,9 +1725,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function kbCategoryGetPairs()
     {
         $sql = 'SELECT id, title FROM support_kb_article_category';
-        $pairs = $this->di['db']->getAssoc($sql);
 
-        return $pairs;
+        return $this->di['db']->getAssoc($sql);
     }
 
     public function kbCategoryRm(\Model_SupportKbArticleCategory $model)

@@ -265,9 +265,8 @@ class Service implements InjectionAwareInterface
     public function getExpiredPasswordReminders()
     {
         $expire_after_hours = 2;
-        $expired = $this->di['db']->find('ClientPasswordReset', 'UNIX_TIMESTAMP() - ? > UNIX_TIMESTAMP(created_at)', [$expire_after_hours * 60 * 60]);
 
-        return $expired;
+        return $this->di['db']->find('ClientPasswordReset', 'UNIX_TIMESTAMP() - ? > UNIX_TIMESTAMP(created_at)', [$expire_after_hours * 60 * 60]);
     }
 
     public function getHistorySearchQuery($data)
@@ -334,9 +333,7 @@ class Service implements InjectionAwareInterface
 
     public function getByLoginDetails($email, $password)
     {
-        $client = $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, \Model_Client::ACTIVE]);
-
-        return $client;
+        return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, \Model_Client::ACTIVE]);
     }
 
     public function toApiArray(\Model_Client $model, $deep = false, $identity = null)
@@ -404,9 +401,7 @@ class Service implements InjectionAwareInterface
                 WHERE client_id = ?
                 GROUP BY client_id';
 
-        $balance = $this->di['db']->getCell($sql, [$c->id]);
-
-        return $balance;
+        return $this->di['db']->getCell($sql, [$c->id]);
     }
 
     public function get($data)

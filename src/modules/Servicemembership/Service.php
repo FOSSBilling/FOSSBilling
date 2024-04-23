@@ -117,8 +117,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function toApiArray(\Model_ServiceMembership $model, $deep = false, $identity = null)
     {
-        $result = $this->di['db']->toArray($model);
-
-        return $result;
+        return $this->di['db']->toArray($model);
     }
 }
