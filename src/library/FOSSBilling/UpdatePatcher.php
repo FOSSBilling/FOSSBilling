@@ -106,11 +106,9 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
-        if ($patches) {
-            foreach ($patches as $patchLevel => $patch) {
-                call_user_func($patch);
-                $this->setPatchLevel($patchLevel);
-            }
+        foreach ($patches as $patchLevel => $patch) {
+            call_user_func($patch);
+            $this->setPatchLevel($patchLevel);
         }
     }
 
@@ -399,7 +397,7 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn ($key): bool => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 
     /**

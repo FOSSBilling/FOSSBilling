@@ -185,9 +185,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             }
         }
 
-        $params = http_build_query($params);
-
-        return $params;
+        return http_build_query($params);
     }
 
     /**

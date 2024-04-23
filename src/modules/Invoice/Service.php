@@ -127,7 +127,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null)
+    public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null): array
     {
         $row = $this->di['db']->toArray($invoice);
 
@@ -1146,7 +1146,7 @@ class Service implements InjectionAwareInterface
             $html = $adapter->getHtml($this->di['api_system'], $invoice->id, $subscribe);
 
             return [
-                'iframe' => isset($pgc['can_load_in_iframe']) ? (bool) $pgc['can_load_in_iframe'] : false,
+                'iframe' => isset($pgc['can_load_in_iframe']) && (bool) $pgc['can_load_in_iframe'],
                 'type' => 'html',
                 'service_url' => '',
                 'subscription' => $subscribe,
@@ -1486,7 +1486,7 @@ class Service implements InjectionAwareInterface
         return [$source, $remote];
     }
 
-    private function getSellerData(array $invoice, int &$lines)
+    private function getSellerData(array $invoice, int &$lines): array
     {
         $sourceData = [
             'Name' => $invoice['seller']['company'],
@@ -1508,7 +1508,7 @@ class Service implements InjectionAwareInterface
         return $sourceData;
     }
 
-    private function getBuyerData(array $invoice, int &$lines)
+    private function getBuyerData(array $invoice, int &$lines): array
     {
         $sourceData = [
             'Company' => $invoice['buyer']['company'],
@@ -1532,7 +1532,7 @@ class Service implements InjectionAwareInterface
         return $sourceData;
     }
 
-    private function getFooterInfo(array $company)
+    private function getFooterInfo(array $company): array
     {
         $sourceData = [
             'company_name' => $company['name'],

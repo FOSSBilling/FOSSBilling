@@ -147,13 +147,9 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(function (...$args) {
-                $value = match ($args[0]) {
-                    'domains/orderid' => 1,
-                    'domains/modify-ns' => ['status' => 'Success']
-                };
-
-                return $value;
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+                'domains/orderid' => 1,
+                'domains/modify-ns' => ['status' => 'Success']
             });
 
         $result = $adapterMock->modifyNs($registrarDomain);
@@ -172,14 +168,10 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(function (...$args) {
-                $value = match ($args[0]) {
-                    'customers/details' => ['customerid' => 1],
-                    'contacts/default' => ['Contact' => ['registrant' => 1]],
-                    'contacts/modify' => ['status' => 'Success']
-                };
-
-                return $value;
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+                'customers/details' => ['customerid' => 1],
+                'contacts/default' => ['Contact' => ['registrant' => 1]],
+                'contacts/modify' => ['status' => 'Success']
             });
 
         $result = $adapterMock->modifyContact($registrarDomain);
@@ -198,14 +190,10 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(function (...$args) {
-                $value = match ($args[0]) {
-                    'customers/details' => ['customerid' => 1],
-                    'contacts/default' => ['Contact' => ['registrant' => 1]],
-                    'domains/transfer' => ['status' => 'Success']
-                };
-
-                return $value;
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+                'customers/details' => ['customerid' => 1],
+                'contacts/default' => ['Contact' => ['registrant' => 1]],
+                'domains/transfer' => ['status' => 'Success']
             });
 
         $result = $adapterMock->transferDomain($registrarDomain);
@@ -224,18 +212,14 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $requestResult = ['status' => 'Success'];
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(function (...$args) {
-                $value = match ($args[0]) {
-                    'domains/orderid' => 1,
-                    'domains/details' => ['currentstatus' => ''],
-                    'customers/details' => ['customerid' => 1],
-                    'contacts/search' => ['recsonpage' => 1, 'result' => [['entity.entityid' => 2]]],
-                    'contacts/delete' => [],
-                    'contacts/add' => 2,
-                    'domains/register' => ['status' => 'Success']
-                };
-
-                return $value;
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+                'domains/orderid' => 1,
+                'domains/details' => ['currentstatus' => ''],
+                'customers/details' => ['customerid' => 1],
+                'contacts/search' => ['recsonpage' => 1, 'result' => [['entity.entityid' => 2]]],
+                'contacts/delete' => [],
+                'contacts/add' => 2,
+                'domains/register' => ['status' => 'Success']
             });
 
         $result = $adapterMock->registerDomain($registrarDomain);

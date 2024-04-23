@@ -101,7 +101,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function toApiArray(\Model_ActivityClientEmail $model, $deep = true)
     {
-        $data = [
+        return [
             'id' => $model->id,
             'client_id' => $model->client_id,
             'sender' => $model->sender,
@@ -112,8 +112,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
         ];
-
-        return $data;
     }
 
     public function setVars($t, $vars)
@@ -310,9 +308,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $str .= 'Example API usage in email template:' . PHP_EOL . PHP_EOL;
         $str .= '{{ FOSSBillingVersion }}' . PHP_EOL . PHP_EOL;
         $str .= "{{ now|date('Y-m-d') }}" . PHP_EOL . PHP_EOL;
-        $str .= '{% endapply %}';
 
-        return $str;
+        return $str . '{% endapply %}';
     }
 
     private function _parse(\Model_EmailTemplate $t, $vars)
@@ -418,7 +415,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function templateToApiArray(\Model_EmailTemplate $model, $deep = false)
+    public function templateToApiArray(\Model_EmailTemplate $model, $deep = false): array
     {
         $data = [
             'id' => $model->id,

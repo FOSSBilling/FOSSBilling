@@ -148,7 +148,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($model);
     }
 
-    public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null): array
     {
         $productService = $this->di['mod_service']('product');
         $result = [
@@ -291,7 +291,7 @@ class Service implements InjectionAwareInterface
     public function saveProductConfig(\Model_Product $productModel, $data)
     {
         $config = [];
-        $config['update_orders'] = isset($data['update_orders']) ? (bool) $data['update_orders'] : false;
+        $config['update_orders'] = isset($data['update_orders']) && (bool) $data['update_orders'];
         $productModel->config = json_encode($config);
         $productModel->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($productModel);

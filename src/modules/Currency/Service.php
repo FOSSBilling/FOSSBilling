@@ -152,9 +152,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT code, title FROM currency';
         $db = $this->di['db'];
 
-        $pairs = $db->getAssoc($sql);
-
-        return $pairs;
+        return $db->getAssoc($sql);
     }
 
     /**
@@ -162,7 +160,7 @@ class Service implements InjectionAwareInterface
      *
      * @return array List of currencies in the "[short code] - [name]" format
      */
-    public function getAvailableCurrencies()
+    public function getAvailableCurrencies(): array
     {
         $options = [
             'AED' => 'United Arab Emirates dirham',
@@ -510,7 +508,7 @@ class Service implements InjectionAwareInterface
      */
     protected function getExchangeRateAPIRates(string $from, int $validFor, string $key): array
     {
-        $result = $this->di['cache']->get("exchangerate.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
+        $result = $this->di['cache']->get("exchangerate.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key): array {
             $from_currency = urlencode($from);
 
             if (!empty($key)) {
@@ -561,7 +559,7 @@ class Service implements InjectionAwareInterface
      */
     protected function getCurrencyDataRates(string $from, int $validFor, string $key)
     {
-        $result = $this->di['cache']->get("currency.data.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
+        $result = $this->di['cache']->get("currency.data.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key): array {
             $item->expiresAfter($validFor);
 
             $from_currency = urlencode($from);
@@ -597,7 +595,7 @@ class Service implements InjectionAwareInterface
      */
     protected function getCurrencyLayerRates(string $from, int $validFor, string $key)
     {
-        $result = $this->di['cache']->get("currencylayer.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key) {
+        $result = $this->di['cache']->get("currencylayer.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key): array {
             $item->expiresAfter($validFor);
 
             $from_currency = urlencode($from);

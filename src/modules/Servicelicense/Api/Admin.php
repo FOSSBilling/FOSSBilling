@@ -17,10 +17,8 @@ class Admin extends \Api_Abstract
 {
     /**
      * Get available licensing plugins.
-     *
-     * @return array
      */
-    public function plugin_get_pairs(array $data)
+    public function plugin_get_pairs(array $data): array
     {
         $plugins = $this->getService()->getLicensePlugins();
         $result = [];

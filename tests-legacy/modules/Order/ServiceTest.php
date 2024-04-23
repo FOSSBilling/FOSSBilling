@@ -1137,12 +1137,8 @@ class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(function (...$args) use ($modelProduct) {
-                $value = match ($args[0]) {
-                    'Product' => $modelProduct
-                };
-
-                return $value;
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+                'Product' => $modelProduct
             });
 
         $exceptionError = 'Client not found';

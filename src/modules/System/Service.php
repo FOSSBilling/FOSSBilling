@@ -128,8 +128,10 @@ class Service
 
     /**
      * @param string[] $params
+     *
+     * @return mixed[]
      */
-    private function _getMultipleParams($params)
+    private function _getMultipleParams($params): array
     {
         if (!is_array($params)) {
             return [];
@@ -229,7 +231,10 @@ class Service
         return \FOSSBilling\i18n::getLocales($deep);
     }
 
-    public function getParams($data)
+    /**
+     * @return mixed[]
+     */
+    public function getParams($data): array
     {
         $query = 'SELECT param, value
                   FROM setting';
@@ -433,9 +438,7 @@ class Service
             }
         }
         if (is_null($tpl)) {
-            $parsed = $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
-
-            return $parsed;
+            return $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
         }
 
         try {
@@ -804,7 +807,10 @@ class Service
         ];
     }
 
-    public function getCountries()
+    /**
+     * @return mixed[]
+     */
+    public function getCountries(): array
     {
         // default countries
         $countries = [
@@ -1071,7 +1077,10 @@ class Service
         return $countries;
     }
 
-    public function getEuCountries()
+    /**
+     * @return mixed[]
+     */
+    public function getEuCountries(): array
     {
         $list = [
             'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
@@ -1667,7 +1676,7 @@ class Service
         return $this->di['db']->getAssoc($query);
     }
 
-    public function getVersion()
+    public function getVersion(): string
     {
         return Version::VERSION;
     }

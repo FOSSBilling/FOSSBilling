@@ -159,12 +159,10 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $data = [
+        return [
             'valid' => $this->isActive($model),
             'config' => $strippedConfig,
         ];
-
-        return $data;
     }
 
     /**

@@ -441,7 +441,7 @@ class Service implements InjectionAwareInterface
 
     public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null): array
     {
-        if ($hp === null) {
+        if (!$hp instanceof \Model_ServiceHostingHp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
 
@@ -851,7 +851,7 @@ class Service implements InjectionAwareInterface
             $model->config = '';
         }
 
-        $result = [
+        return [
             'id' => $model->id,
 
             'name' => $model->name,
@@ -869,8 +869,6 @@ class Service implements InjectionAwareInterface
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
         ];
-
-        return $result;
     }
 
     public function updateHp(\Model_ServiceHostingHp $model, array $data): bool

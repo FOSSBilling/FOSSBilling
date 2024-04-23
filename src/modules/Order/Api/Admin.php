@@ -148,7 +148,7 @@ class Admin extends \Api_Abstract
     public function suspend($data)
     {
         $order = $this->_getOrder($data);
-        $skip_event = isset($data['skip_event']) ? (bool) $data['skip_event'] : false;
+        $skip_event = isset($data['skip_event']) && (bool) $data['skip_event'];
 
         $reason = $data['reason'] ?? null;
 
@@ -180,7 +180,7 @@ class Admin extends \Api_Abstract
     public function cancel($data)
     {
         $order = $this->_getOrder($data);
-        $skip_event = isset($data['skip_event']) ? (bool) $data['skip_event'] : false;
+        $skip_event = isset($data['skip_event']) && (bool) $data['skip_event'];
 
         $reason = $data['reason'] ?? null;
 
@@ -212,7 +212,7 @@ class Admin extends \Api_Abstract
     public function delete($data)
     {
         $order = $this->_getOrder($data);
-        $delete_addons = isset($data['delete_addons']) ? (bool) $data['delete_addons'] : false;
+        $delete_addons = isset($data['delete_addons']) && (bool) $data['delete_addons'];
         $forceDelete = (bool) ($data['force_delete'] ?? false);
 
         if ($delete_addons) {
@@ -368,10 +368,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Return order addons list.
-     *
-     * @return array
      */
-    public function addons($data)
+    public function addons($data): array
     {
         $model = $this->_getOrder($data);
         $list = $this->getService()->getOrderAddonsList($model);
@@ -407,7 +405,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $delete_addons = isset($data['delete_addons']) ? (bool) $data['delete_addons'] : false;
+        $delete_addons = isset($data['delete_addons']) && (bool) $data['delete_addons'];
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id, 'delete_addons' => $delete_addons]);

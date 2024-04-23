@@ -26,7 +26,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSummary()
+    public function getSummary(): array
     {
         $stats = [];
 
@@ -129,7 +129,7 @@ class Service implements InjectionAwareInterface
         return $stats;
     }
 
-    public function getSummaryIncome()
+    public function getSummaryIncome(): array
     {
         $stats = [];
 
@@ -391,8 +391,10 @@ class Service implements InjectionAwareInterface
     /**
      * @param int $time_from
      * @param int $time_to
+     *
+     * @return int[][]
      */
-    private function _genFlotArray($results, $time_from, $time_to)
+    private function _genFlotArray($results, $time_from, $time_to): array
     {
         $data = [];
         // Loop between timestamps, 1 day at a time

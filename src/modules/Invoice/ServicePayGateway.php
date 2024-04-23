@@ -45,7 +45,10 @@ class ServicePayGateway implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function getPairs()
+    /**
+     * @return mixed[]
+     */
+    public function getPairs(): array
     {
         $sql = 'SELECT id, gateway, name
             FROM pay_gateway';
@@ -59,7 +62,10 @@ class ServicePayGateway implements InjectionAwareInterface
         return $result;
     }
 
-    public function getAvailable()
+    /**
+     * @return mixed[]
+     */
+    public function getAvailable(): array
     {
         $sql = 'SELECT id, gateway, name
             FROM pay_gateway';
@@ -113,7 +119,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_PayGateway $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_PayGateway $model, $deep = false, $identity = null): array
     {
         [$single, $recurrent] = $this->_getAllowTuple($model);
 
@@ -189,7 +195,10 @@ class ServicePayGateway implements InjectionAwareInterface
         return true;
     }
 
-    public function getActive(array $data)
+    /**
+     * @return mixed[]
+     */
+    public function getActive(array $data): array
     {
         $format = $data['format'] ?? null;
 

@@ -66,7 +66,7 @@ class Validate
         }
         $tld = strtolower($tld);
 
-        $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item) {
+        $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item): array {
             $item->expiresAfter(86400);
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
@@ -89,7 +89,7 @@ class Validate
                 return [];
             }
 
-            $validTlds = array_filter($database, fn ($tld) => !str_starts_with($tld, '/'));
+            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with($tld, '/'));
 
             $result = [];
             foreach ($validTlds as $tld) {

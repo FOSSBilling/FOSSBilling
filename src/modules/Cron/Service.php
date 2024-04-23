@@ -32,12 +32,10 @@ class Service
     {
         $service = $this->di['mod_service']('system');
 
-        $result = [
+        return [
             'cron_path' => PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php',
             'last_cron_exec' => $service->getParamValue('last_cron_exec'),
         ];
-
-        return $result;
     }
 
     /**
@@ -104,9 +102,8 @@ class Service
     public function getLastExecutionTime()
     {
         $service = $this->di['mod_service']('system');
-        $last_exec = $service->getParamValue('last_cron_exec');
 
-        return $last_exec;
+        return $service->getParamValue('last_cron_exec');
     }
 
     public function isLate()

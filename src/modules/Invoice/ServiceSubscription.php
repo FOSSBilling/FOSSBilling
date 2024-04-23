@@ -65,7 +65,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_Subscription $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_Subscription $model, $deep = false, $identity = null): array
     {
         $result = [
             'id' => $model->id,

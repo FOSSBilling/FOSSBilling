@@ -233,9 +233,8 @@ class Service implements InjectionAwareInterface
         WHERE form_id = :form_id
         ORDER BY ID asc
         ';
-        $result = $this->di['db']->getAll($sql, [':form_id' => $formId]);
 
-        return $result;
+        return $this->di['db']->getAll($sql, [':form_id' => $formId]);
     }
 
     private function fieldsJsonDecode($fields)

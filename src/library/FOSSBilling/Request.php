@@ -71,10 +71,8 @@ class Request implements InjectionAwareInterface
 
     /**
      * Gets attached files as SplFileInfo collection.
-     *
-     * @return array
      */
-    public function getUploadedFiles($onlySuccessful = true)
+    public function getUploadedFiles($onlySuccessful = true): array
     {
         $files = [];
         foreach ($_FILES as $file) {

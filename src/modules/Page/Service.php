@@ -34,7 +34,10 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function getPairs()
+    /**
+     * @return string[]
+     */
+    public function getPairs(): array
     {
         $themeService = $this->di['mod_service']('theme');
         $code = $themeService->getCurrentClientAreaThemeCode();

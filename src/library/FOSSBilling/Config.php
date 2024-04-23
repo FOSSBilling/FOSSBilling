@@ -130,9 +130,8 @@ class Config
             // Extra spacing between each "primary" key for slightly improved readability
             $output .= PHP_EOL . "    '" . $key . "'" . self::recursivelyIdentAndFormat($value);
         }
-        $output .= '];';
 
-        return $output;
+        return $output . '];';
     }
 
     /**
@@ -178,8 +177,7 @@ class Config
             }
             $result .= $additionalIndent . "'" . $key . "'" . self::recursivelyIdentAndFormat($value, $level + 1);
         }
-        $result .= $indent . '],' . PHP_EOL;
 
-        return $result;
+        return $result . ($indent . '],' . PHP_EOL);
     }
 }

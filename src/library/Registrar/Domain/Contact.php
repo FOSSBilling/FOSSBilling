@@ -401,9 +401,8 @@ class Registrar_Domain_Contact implements Stringable
         $c .= sprintf('Fax: %s', $this->getFaxCc() . ' ' . $this->getFax()) . PHP_EOL;
         $c .= PHP_EOL;
         $c .= sprintf('Document type: %s', $this->getDocumentType()) . PHP_EOL;
-        $c .= sprintf('Document nr: %s', $this->getDocumentNr()) . PHP_EOL;
 
-        return $c;
+        return $c . (sprintf('Document nr: %s', $this->getDocumentNr()) . PHP_EOL);
     }
 
     public function toArray()

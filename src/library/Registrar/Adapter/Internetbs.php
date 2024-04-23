@@ -353,10 +353,8 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
      * Parses data returned by request.
      *
      * @param string $data
-     *
-     * @return array
      */
-    private function _parseResult($data)
+    private function _parseResult($data): array
     {
         $lines = explode("\n", $data);
         $result = [];

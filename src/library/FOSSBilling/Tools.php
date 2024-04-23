@@ -206,9 +206,8 @@ class Tools
         $str = strtolower(trim($str));
         $str = preg_replace('/[^a-z0-9-]/', '-', $str);
         $str = preg_replace('/-+/', '-', $str);
-        $str = trim($str, '-');
 
-        return $str;
+        return trim($str, '-');
     }
 
     public function escape($string)
@@ -223,7 +222,7 @@ class Tools
         if ($capitalize_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = fn ($c) => strtoupper($c[1]);
+        $func = fn ($c): string => strtoupper($c[1]);
 
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
@@ -231,7 +230,7 @@ class Tools
     public function from_camel_case($str)
     {
         $str[0] = strtolower($str[0]);
-        $func = fn ($c) => '-' . strtolower($c[1]);
+        $func = fn ($c): string => '-' . strtolower($c[1]);
 
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
@@ -247,7 +246,10 @@ class Tools
         }
     }
 
-    public function sortByOneKey(array $array, $key, $asc = true)
+    /**
+     * @return mixed[]
+     */
+    public function sortByOneKey(array $array, $key, $asc = true): array
     {
         $result = [];
 
@@ -281,7 +283,10 @@ class Tools
         return new $class();
     }
 
-    public function getPairsForTableByIds($table, $ids)
+    /**
+     * @return mixed[]
+     */
+    public function getPairsForTableByIds($table, $ids): array
     {
         if (empty($ids)) {
             return [];

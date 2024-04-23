@@ -467,9 +467,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
 
         $params = [...$optional_params, ...$params];
-        $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
 
-        return $customer_id;
+        return $this->_makeRequest('customers/signup', $params, 'POST');
     }
 
     public function getContactIdForDomain(Registrar_Domain $domain)
@@ -523,9 +522,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['type'] = 'RuContact';
         }
 
-        $id = $this->_makeRequest('contacts/add', $contact, 'POST');
-
-        return $id;
+        return $this->_makeRequest('contacts/add', $contact, 'POST');
     }
 
     private function getResellerDetails()
@@ -746,9 +743,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $params = http_build_query($params);
-        $params = preg_replace('~%5B(\d+)%5D~', '', $params);
 
-        return $params;
+        return preg_replace('~%5B(\d+)%5D~', '', $params);
     }
 
     /**

@@ -122,7 +122,10 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function getExtensionsList($filter)
+    /**
+     * @return mixed[]
+     */
+    public function getExtensionsList($filter): array
     {
         $this->removeNotExistingModules();
 
@@ -230,7 +233,10 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    private function _getAvailable()
+    /**
+     * @return string[]
+     */
+    private function _getAvailable(): array
     {
         $mods = [];
         $handle = opendir(PATH_MODS);
@@ -327,9 +333,7 @@ class Service implements InjectionAwareInterface
      */
     public function findExtension($type, $id)
     {
-        $extension = $this->di['db']->findOne('Extension', 'type = ? and name = ? ', [$type, $id]);
-
-        return $extension;
+        return $this->di['db']->findOne('Extension', 'type = ? and name = ? ', [$type, $id]);
     }
 
     public function update(\Model_Extension $model): never
@@ -339,7 +343,7 @@ class Service implements InjectionAwareInterface
         throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
-    public function activate(\Model_Extension $ext)
+    public function activate(\Model_Extension $ext): array
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
@@ -650,7 +654,10 @@ class Service implements InjectionAwareInterface
         return Config::getProperty('info.salt');
     }
 
-    public function getCoreAndActiveModules()
+    /**
+     * @return mixed[]
+     */
+    public function getCoreAndActiveModules(): array
     {
         $query = "SELECT name, name
                 FROM extension

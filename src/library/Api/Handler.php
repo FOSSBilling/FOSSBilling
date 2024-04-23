@@ -100,8 +100,7 @@ final class Api_Handler implements InjectionAwareInterface
                 throw new FOSSBilling\Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($this->type), ':method' => $method_name, ':module' => $mod], 740);
             }
         }
-        $res = $api->{$method_name}($arguments);
 
-        return $res;
+        return $api->{$method_name}($arguments);
     }
 }

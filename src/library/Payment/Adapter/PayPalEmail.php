@@ -244,9 +244,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $response = $client->request('POST', $url, [
             'body' => $post_contents,
         ]);
-        $data = $response->getContent();
 
-        return $data;
+        return $response->getContent();
     }
 
     /**
@@ -306,7 +305,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return __trans('Payment for invoice :serie:id [:title]', $p);
     }
 
-    public function getSubscriptionFields(array $invoice)
+    public function getSubscriptionFields(array $invoice): array
     {
         $data = [];
         $subs = $invoice['subscription'];
@@ -357,7 +356,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $data;
     }
 
-    public function getOneTimePaymentFields(array $invoice)
+    public function getOneTimePaymentFields(array $invoice): array
     {
         $data = [];
         $data['item_name'] = $this->getInvoiceTitle($invoice);

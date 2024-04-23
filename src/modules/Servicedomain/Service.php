@@ -453,9 +453,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $epp = $adapter->getEpp($domain);
 
-        return $epp;
+        return $adapter->getEpp($domain);
     }
 
     public function lock(\Model_ServiceDomain $model)
@@ -576,7 +575,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // @todo
     }
 
-    public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null): array
     {
         $data = [
             'domain' => $model->sld . $model->tld,
@@ -769,7 +768,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->min_years = isset($data['min_years']) ? (int) $data['min_years'] : 1;
         $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
         $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
-        $model->active = isset($data['active']) ? (bool) $data['active'] : false;
+        $model->active = isset($data['active']) && (bool) $data['active'];
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
 
@@ -904,7 +903,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function registrarGetAvailable()
+    /**
+     * @return mixed[][]|string[]
+     */
+    public function registrarGetAvailable(): array
     {
         $query = "SELECT 'registrar', 'name' FROM tld_registrar GROUP BY registrar";
 

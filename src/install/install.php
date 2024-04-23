@@ -429,9 +429,8 @@ final class FOSSBilling_Installer
 
         // Build and return data
         $output = '<?php ' . PHP_EOL;
-        $output .= 'return ' . var_export($data, true) . ';';
 
-        return $output;
+        return $output . ('return ' . var_export($data, true) . ';');
     }
 
     /**

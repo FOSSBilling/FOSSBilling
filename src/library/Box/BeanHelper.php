@@ -47,7 +47,7 @@ class Box_BeanHelper extends RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper implem
         if ($first_char_caps === true) {
             $string[0] = strtoupper($string[0]);
         }
-        $func = fn ($c) => strtoupper($c[1]);
+        $func = fn ($c): string => strtoupper($c[1]);
 
         return preg_replace_callback('/_([a-z])/', $func, $string);
     }

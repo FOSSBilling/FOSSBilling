@@ -221,13 +221,11 @@ class Service implements InjectionAwareInterface
 
                 return $this->di['db']->load($repo_class, $order->service_id);
             } else {
-                $service = $this->di['db']->findOne(
+                return $this->di['db']->findOne(
                     'service_' . $order->service_type,
                     'id = :id',
                     [':id' => $order->service_id]
                 );
-
-                return $service;
             }
         }
 
