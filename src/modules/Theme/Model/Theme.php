@@ -34,7 +34,10 @@ class Theme
         return is_writable($this->getPathAssets());
     }
 
-    public function getSnippets()
+    /**
+     * @return mixed[][]|string[]
+     */
+    public function getSnippets(): array
     {
         $path = $this->getPathHtml();
         $snippets = glob($path . DIRECTORY_SEPARATOR . 'snippet_*.html.twig');
@@ -46,7 +49,10 @@ class Theme
         return $result;
     }
 
-    public function getUploadedAssets()
+    /**
+     * @return array<mixed, array<'name'|'url', mixed>>
+     */
+    public function getUploadedAssets(): array
     {
         $assets_folder = $this->getPathAssets();
         $files = $this->getSettingsPageFiles();
@@ -63,7 +69,10 @@ class Theme
         return $uploaded;
     }
 
-    private function getSettingsPageFiles()
+    /**
+     * @return mixed[]
+     */
+    private function getSettingsPageFiles(): array
     {
         $str = $this->getSettingsPageHtml();
         if (empty($str)) {

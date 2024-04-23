@@ -514,10 +514,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Get list of canned responses grouped by category.
-     *
-     * @return array
      */
-    public function canned_pairs()
+    public function canned_pairs(): array
     {
         $res = $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
         $list = [];

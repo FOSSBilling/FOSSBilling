@@ -68,7 +68,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function login($email, $password, $ip)
+    public function login($email, $password, $ip): array
     {
         $event_params = [];
         $event_params['email'] = $email;
@@ -454,7 +454,7 @@ class Service implements InjectionAwareInterface
         return $cron;
     }
 
-    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false)
+    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false): array
     {
         $data = [
             'id' => $model->id,
@@ -609,7 +609,10 @@ class Service implements InjectionAwareInterface
         return $newId;
     }
 
-    public function getAdminGroupPair()
+    /**
+     * @return mixed[]
+     */
+    public function getAdminGroupPair(): array
     {
         $sql = 'SELECT id, name
                 FROM  admin_group';
@@ -651,7 +654,7 @@ class Service implements InjectionAwareInterface
         return (int) $groupId;
     }
 
-    public function toAdminGroupApiArray(\Model_AdminGroup $model, $deep = false, $identity = null)
+    public function toAdminGroupApiArray(\Model_AdminGroup $model, $deep = false, $identity = null): array
     {
         $data = [];
         $data['id'] = $model->id;
@@ -733,7 +736,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toActivityAdminHistoryApiArray(\Model_ActivityAdminHistory $model, $deep = false)
+    public function toActivityAdminHistoryApiArray(\Model_ActivityAdminHistory $model, $deep = false): array
     {
         $result = [
             'id' => $model->id,

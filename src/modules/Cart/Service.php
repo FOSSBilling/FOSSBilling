@@ -434,7 +434,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->find('CartProduct', 'cart_id = :cart_id ORDER BY id ASC', [':cart_id' => $model->id]);
     }
 
-    public function checkoutCart(\Model_Cart $cart, \Model_Client $client, $gateway_id = null)
+    public function checkoutCart(\Model_Cart $cart, \Model_Client $client, $gateway_id = null): array
     {
         if ($cart->promo_id) {
             $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');

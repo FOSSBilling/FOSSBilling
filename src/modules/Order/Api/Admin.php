@@ -368,10 +368,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Return order addons list.
-     *
-     * @return array
      */
-    public function addons($data)
+    public function addons($data): array
     {
         $model = $this->_getOrder($data);
         $list = $this->getService()->getOrderAddonsList($model);

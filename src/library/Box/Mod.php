@@ -70,7 +70,7 @@ class Box_Mod
         return file_exists(Path::normalize($this->_getModPath() . 'manifest.json'));
     }
 
-    public function getManifest()
+    public function getManifest(): array
     {
         if (!$this->hasManifest()) {
             throw new FOSSBilling\Exception('Module :mod manifest file is missing', [':mod' => $this->mod], 5897);

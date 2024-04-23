@@ -692,7 +692,7 @@ class Server_Manager_Plesk extends Server_Manager
      *
      * @return array the array of NS record IDs
      */
-    private function getNs(Server_Account $account, string $domainId)
+    private function getNs(Server_Account $account, string $domainId): array
     {
         $response = $this->_client->dns()->get('domain_id', $domainId);
 

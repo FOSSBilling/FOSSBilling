@@ -77,7 +77,7 @@ class Box_Period
         ];
     }
 
-    public static function getPredefined($simple = true)
+    public static function getPredefined($simple = true): array
     {
         $periods = [
             self::PERIOD_WEEK => ['rec_qty' => 1, 'title' => __trans('Every week'), 'code' => self::PERIOD_WEEK, 'rec_unit' => self::UNIT_WEEK],

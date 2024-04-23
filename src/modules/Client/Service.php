@@ -336,7 +336,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, \Model_Client::ACTIVE]);
     }
 
-    public function toApiArray(\Model_Client $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_Client $model, $deep = false, $identity = null): array
     {
         $details = [
             'id' => $model->id,

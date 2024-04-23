@@ -1137,7 +1137,7 @@ class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'Product' => $modelProduct
             });
 

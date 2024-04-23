@@ -483,7 +483,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (bool) $helpdesk->can_reopen;
     }
 
-    private function _getRelDetails(\Model_SupportTicket $model)
+    /**
+     * @return mixed[]
+     */
+    private function _getRelDetails(\Model_SupportTicket $model): array
     {
         if (!$model->rel_type || !$model->rel_id) {
             return [];
@@ -1363,7 +1366,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function cannedGetGroupedPairs()
+    /**
+     * @return non-empty-array[]
+     */
+    public function cannedGetGroupedPairs(): array
     {
         $query = 'SELECT sp.title as r_title, spc.title as c_title FROM support_pr sp
                 LEFT JOIN support_pr_category spc
@@ -1585,7 +1591,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Deleted knowledge base article #%s', $id);
     }
 
-    public function kbToApiArray(\Model_SupportKbArticle $model, $deep = false, $identity = null)
+    public function kbToApiArray(\Model_SupportKbArticle $model, $deep = false, $identity = null): array
     {
         $data = [
             'id' => $model->id,

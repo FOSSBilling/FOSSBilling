@@ -255,7 +255,10 @@ class Service implements InjectionAwareInterface
         return !empty($theme) ? $theme : 'huraga';
     }
 
-    public function getThemes($client = true)
+    /**
+     * @return mixed[]
+     */
+    public function getThemes($client = true): array
     {
         $list = [];
         $path = $this->getThemesPath();
@@ -309,7 +312,7 @@ class Service implements InjectionAwareInterface
         return PATH_THEMES . DIRECTORY_SEPARATOR;
     }
 
-    private function _loadTheme($theme, $client = true, $mod = null)
+    private function _loadTheme($theme, $client = true, $mod = null): array
     {
         $theme_path = $this->getThemesPath() . $theme;
 

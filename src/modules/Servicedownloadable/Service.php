@@ -148,7 +148,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($model);
     }
 
-    public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null): array
     {
         $productService = $this->di['mod_service']('product');
         $result = [

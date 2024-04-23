@@ -91,10 +91,8 @@ class Service implements InjectionAwareInterface
 
     /**
      * Load engines from the Engines directory.
-     *
-     * @return array
      */
-    private function _getEngines()
+    private function _getEngines(): array
     {
         $engines = [];
         $dir = __DIR__ . '/Engines';
@@ -113,10 +111,8 @@ class Service implements InjectionAwareInterface
 
     /**
      * Get the details of all engines.
-     *
-     * @return array
      */
-    private function _getEngineDetails()
+    private function _getEngineDetails(): array
     {
         $engines = $this->_getEngines();
         $details = [];

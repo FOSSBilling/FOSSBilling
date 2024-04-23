@@ -49,10 +49,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return array
-     */
-    public function getLicensePlugins()
+    public function getLicensePlugins(): array
     {
         $dir = __DIR__ . '/Plugin/';
         $files = [];
@@ -347,7 +344,7 @@ class Service implements InjectionAwareInterface
         return date('Y-m-d H:i:s');
     }
 
-    public function toApiArray(\Model_ServiceLicense $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceLicense $model, $deep = false, $identity = null): array
     {
         $result = [
             'license_key' => $model->license_key,

@@ -40,7 +40,10 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getPairs($data)
+    /**
+     * @return mixed[]
+     */
+    public function getPairs($data): array
     {
         $sql = 'SELECT id, title
                 FROM product
@@ -73,7 +76,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function toApiArray(\Model_Product $model, $deep = true, $identity = null)
+    public function toApiArray(\Model_Product $model, $deep = true, $identity = null): array
     {
         $repo = $model->getTable();
         $addons = $this->getAddonsApiArray($model);
@@ -123,7 +126,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getTypes()
+    public function getTypes(): array
     {
         $data = [
             self::CUSTOM => 'Custom',
@@ -364,7 +367,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getAddons()
+    /**
+     * @return mixed[]
+     */
+    public function getAddons(): array
     {
         $sql = 'SELECT id, title
                 FROM product
@@ -428,7 +434,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getProductCategoryPairs()
+    /**
+     * @return mixed[]
+     */
+    public function getProductCategoryPairs(): array
     {
         $sql = 'SELECT id, title
                 FROM product_category';
@@ -641,7 +650,10 @@ class Service implements InjectionAwareInterface
         return array_key_exists($new->id, $pairs);
     }
 
-    public function getProductTitlesByIds($ids)
+    /**
+     * @return mixed[]
+     */
+    public function getProductTitlesByIds($ids): array
     {
         if (empty($ids)) {
             return [];
@@ -782,7 +794,10 @@ class Service implements InjectionAwareInterface
         return $this->di['tools']->decodeJ($model->products);
     }
 
-    private function getAddonsApiArray(\Model_Product $model)
+    /**
+     * @return mixed[]
+     */
+    private function getAddonsApiArray(\Model_Product $model): array
     {
         $addons = [];
         foreach ($this->getProductAddons($model) as $addon) {

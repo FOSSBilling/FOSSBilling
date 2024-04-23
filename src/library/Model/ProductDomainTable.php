@@ -173,7 +173,10 @@ class Model_ProductDomainTable extends Model_ProductTable
         return isset($item['config']['free_transfer']) && $item['config']['free_transfer'];
     }
 
-    public function getPricingArray(Model_Product $product)
+    /**
+     * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
+     */
+    public function getPricingArray(Model_Product $product): array
     {
         $pricing = [];
 

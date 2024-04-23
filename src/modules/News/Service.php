@@ -71,7 +71,7 @@ class Service
         return [$sql, $params];
     }
 
-    public function toApiArray($row, $role = 'guest', $deep = true)
+    public function toApiArray($row, $role = 'guest', $deep = true): array
     {
         $admin = $this->di['db']->getRow('SELECT name, email FROM admin WHERE id=:id', ['id' => $row->admin_id]);
 

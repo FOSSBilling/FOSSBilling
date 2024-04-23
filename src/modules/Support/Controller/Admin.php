@@ -24,7 +24,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function fetchNavigation()
+    public function fetchNavigation(): array
     {
         $nav = [
             'group' => [

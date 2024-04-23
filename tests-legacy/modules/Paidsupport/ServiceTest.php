@@ -332,7 +332,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'SupportTicket' => $supportTicketModel,
                 'Client' => $clientModel
             });
@@ -389,7 +389,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'SupportTicket' => $supportTicketModel,
                 'Client' => $clientModel
             });

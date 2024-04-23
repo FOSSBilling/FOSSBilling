@@ -128,8 +128,10 @@ class Service
 
     /**
      * @param string[] $params
+     *
+     * @return mixed[]
      */
-    private function _getMultipleParams($params)
+    private function _getMultipleParams($params): array
     {
         if (!is_array($params)) {
             return [];
@@ -229,7 +231,10 @@ class Service
         return \FOSSBilling\i18n::getLocales($deep);
     }
 
-    public function getParams($data)
+    /**
+     * @return mixed[]
+     */
+    public function getParams($data): array
     {
         $query = 'SELECT param, value
                   FROM setting';
@@ -802,7 +807,10 @@ class Service
         ];
     }
 
-    public function getCountries()
+    /**
+     * @return mixed[]
+     */
+    public function getCountries(): array
     {
         // default countries
         $countries = [
@@ -1069,7 +1077,10 @@ class Service
         return $countries;
     }
 
-    public function getEuCountries()
+    /**
+     * @return mixed[]
+     */
+    public function getEuCountries(): array
     {
         $list = [
             'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',

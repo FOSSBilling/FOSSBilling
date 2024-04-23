@@ -415,7 +415,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function templateToApiArray(\Model_EmailTemplate $model, $deep = false)
+    public function templateToApiArray(\Model_EmailTemplate $model, $deep = false): array
     {
         $data = [
             'id' => $model->id,

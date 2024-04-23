@@ -575,7 +575,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // @todo
     }
 
-    public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null): array
     {
         $data = [
             'domain' => $model->sld . $model->tld,
@@ -903,7 +903,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function registrarGetAvailable()
+    /**
+     * @return mixed[][]|string[]
+     */
+    public function registrarGetAvailable(): array
     {
         $query = "SELECT 'registrar', 'name' FROM tld_registrar GROUP BY registrar";
 

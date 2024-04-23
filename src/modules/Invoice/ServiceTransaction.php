@@ -124,7 +124,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_Transaction $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_Transaction $model, $deep = false, $identity = null): array
     {
         $gateway = null;
         if ($model->gateway_id) {

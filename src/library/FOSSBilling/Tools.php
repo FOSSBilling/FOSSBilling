@@ -246,7 +246,10 @@ class Tools
         }
     }
 
-    public function sortByOneKey(array $array, $key, $asc = true)
+    /**
+     * @return mixed[]
+     */
+    public function sortByOneKey(array $array, $key, $asc = true): array
     {
         $result = [];
 
@@ -280,7 +283,10 @@ class Tools
         return new $class();
     }
 
-    public function getPairsForTableByIds($table, $ids)
+    /**
+     * @return mixed[]
+     */
+    public function getPairsForTableByIds($table, $ids): array
     {
         if (empty($ids)) {
             return [];

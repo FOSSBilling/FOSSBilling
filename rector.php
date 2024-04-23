@@ -15,7 +15,7 @@ return RectorConfig::configure()
     ->withSkipPath(__DIR__ . '/src/vendor')
     ->withSkipPath(__DIR__ . '/src/data/cache')
     ->withPhpSets()
-    ->withTypeCoverageLevel(4)
+    ->withTypeCoverageLevel(5)
     ->withDeadCodeLevel(25)
     ->withSets([
         SetList::INSTANCEOF,

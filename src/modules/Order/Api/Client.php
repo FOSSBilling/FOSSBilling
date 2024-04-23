@@ -55,10 +55,8 @@ class Client extends \Api_Abstract
 
     /**
      * Get order addons.
-     *
-     * @return array
      */
-    public function addons($data)
+    public function addons($data): array
     {
         $model = $this->_getOrder($data);
         $list = $this->getService()->getOrderAddonsList($model);

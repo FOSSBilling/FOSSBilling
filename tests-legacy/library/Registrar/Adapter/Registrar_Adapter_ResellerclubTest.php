@@ -147,7 +147,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'domains/orderid' => 1,
                 'domains/modify-ns' => ['status' => 'Success']
             });
@@ -168,7 +168,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'customers/details' => ['customerid' => 1],
                 'contacts/default' => ['Contact' => ['registrant' => 1]],
                 'contacts/modify' => ['status' => 'Success']
@@ -190,7 +190,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'customers/details' => ['customerid' => 1],
                 'contacts/default' => ['Contact' => ['registrant' => 1]],
                 'domains/transfer' => ['status' => 'Success']
@@ -212,7 +212,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $requestResult = ['status' => 'Success'];
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
-            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'domains/orderid' => 1,
                 'domains/details' => ['currentstatus' => ''],
                 'customers/details' => ['customerid' => 1],

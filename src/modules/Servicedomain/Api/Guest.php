@@ -23,7 +23,7 @@ class Guest extends \Api_Abstract
      *
      * @return array - list of TLDs
      */
-    public function tlds($data = [])
+    public function tlds($data = []): array
     {
         $allow_register = $data['allow_register'] ?? null;
         $allow_transfer = $data['allow_transfer'] ?? null;

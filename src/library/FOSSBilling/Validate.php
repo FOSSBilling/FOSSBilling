@@ -66,7 +66,7 @@ class Validate
         }
         $tld = strtolower($tld);
 
-        $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item) {
+        $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item): array {
             $item->expiresAfter(86400);
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
