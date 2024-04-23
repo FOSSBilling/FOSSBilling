@@ -88,10 +88,8 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Return payment gateway type (TYPE_HTML, TYPE_FORM, TYPE_API).
-     *
-     * @return string
      */
-    public function getType()
+    public function getType(): string
     {
         return Payment_AdapterAbstract::TYPE_FORM;
     }

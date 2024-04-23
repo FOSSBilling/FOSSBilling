@@ -749,13 +749,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->exactly(2))
             ->method('find')
-            ->willReturnCallback(function (...$args) {
-                $value = match ($args[0]) {
-                    'SupportTicketNote' => new \Model_SupportTicketNote(),
-                    'SupportTicketMessage' => new \Model_SupportTicketMessage()
-                };
-
-                return $value;
+            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+                'SupportTicketNote' => new \Model_SupportTicketNote(),
+                'SupportTicketMessage' => new \Model_SupportTicketMessage()
             });
 
         $dbMock->expects($this->atLeastOnce())
@@ -787,13 +783,9 @@ class ServiceTest extends \BBTestCase
             ->willReturn($supportTicketMessageModel);
         $dbMock->expects($this->atleastOnce())
             ->method('load')
-            ->willReturnCallback(function (...$args) use ($helpdesk) {
-                $value = match ($args[0]) {
-                    'SupportHelpdesk' => $helpdesk,
-                    'Client' => new \Model_Client()
-                };
-
-                return $value;
+            ->willReturnCallback(fn(...$args) => match ($args[0]) {
+                'SupportHelpdesk' => $helpdesk,
+                'Client' => new \Model_Client()
             });
 
         $dbMock->expects($this->atLeastOnce())

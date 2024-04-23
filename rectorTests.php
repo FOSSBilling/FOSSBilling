@@ -9,16 +9,22 @@ use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Php81\Rector\FuncCall\NullToStrictStringFuncCallArgRector;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector;
+use Rector\Set\ValueObject\SetList;
 
 return RectorConfig::configure()
     ->withPaths([__DIR__ . '/tests', __DIR__ . '/tests-legacy'])
-    ->withSkipPath(__DIR__ . '/src/vendor')
-    ->withSkipPath(__DIR__ . '/src/data/cache')
     ->withPhpSets()
-    ->withSets([PHPUnitSetList::PHPUNIT_100])
     ->withTypeCoverageLevel(2)
-    ->withDeadCodeLevel(5)
-    ->withSkip([JsonThrowOnErrorRector::class, LongArrayToShortArrayRector::class, NullToStrictStringFuncCallArgRector::class])
+    ->withDeadCodeLevel(25)
+    ->withSets([
+        PHPUnitSetList::PHPUNIT_100,
+        SetList::INSTANCEOF,
+    ])
+    ->withSkip([
+        JsonThrowOnErrorRector::class,
+        LongArrayToShortArrayRector::class,
+        NullToStrictStringFuncCallArgRector::class
+    ])
     ->withRules([ExplicitNullableParamTypeRector::class])
     ->withCache('./cache/rector_tests', FileCacheStorage::class)
     ->withParallel(120, 8, 10);

@@ -36,7 +36,7 @@ $di = new Pimple\Container();
  *
  * @return array
  */
-$di['config'] = fn () => Config::getConfig();
+$di['config'] = fn (): array => Config::getConfig();
 
 /*
  * Create a new logger instance and configures it based on the settings in the configuration file.
@@ -252,7 +252,7 @@ $di['request'] = function () use ($di) {
  *
  * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
  */
-$di['cache'] = fn () =>
+$di['cache'] = fn (): \Symfony\Component\Cache\Adapter\FilesystemAdapter =>
 // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
 new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
@@ -262,7 +262,7 @@ new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
  *
  * @return \Box_Authorization
  */
-$di['auth'] = fn () => new Box_Authorization($di);
+$di['auth'] = fn (): \Box_Authorization => new Box_Authorization($di);
 
 /*
  * Creates a new Twig environment that's configured for FOSSBilling.
@@ -647,21 +647,21 @@ $di['updater'] = function () use ($di) {
  *
  * @return Server_Package
  */
-$di['server_package'] = fn () => new Server_Package();
+$di['server_package'] = fn (): \Server_Package => new Server_Package();
 
 /*
  * @param void
  *
  * @return Server_Client
  */
-$di['server_client'] = fn () => new Server_Client();
+$di['server_client'] = fn (): \Server_Client => new Server_Client();
 
 /*
  * @param void
  *
  * @return Server_Account
  */
-$di['server_account'] = fn () => new Server_Account();
+$di['server_account'] = fn (): \Server_Account => new Server_Account();
 
 /*
  * Creates a new server manager object and returns it.
@@ -685,7 +685,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
  *
  * @return \FOSSBilling\Requirements
  */
-$di['requirements'] = fn() => new FOSSBilling\Requirements();
+$di['requirements'] = fn(): \FOSSBilling\Requirements => new FOSSBilling\Requirements();
 
 /*
  * Creates a new Box_Period object using the provided period code and returns it.
@@ -694,7 +694,7 @@ $di['requirements'] = fn() => new FOSSBilling\Requirements();
  *
  * @return \Box_Period The new period object that was just created.
  */
-$di['period'] = $di->protect(fn ($code) => new Box_Period($code));
+$di['period'] = $di->protect(fn ($code): \Box_Period => new Box_Period($code));
 
 /*
  * Gets the current client area theme.
@@ -765,14 +765,14 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \GeoIp2\Database\Reader
  */
-$di['geoip'] = fn () => new GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
+$di['geoip'] = fn (): \GeoIp2\Database\Reader => new GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
 
 /*
  * @param void
  *
  * @return \Box_Password
  */
-$di['password'] = fn () => new FOSSBilling\PasswordManager();
+$di['password'] = fn (): \FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
@@ -817,7 +817,7 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
 
     // If we've been provided a list of headers, use that. Otherwise, pull the keys from the rows and use that for the CSV header
     if ($headers) {
-        $rows = array_map(fn ($row) => array_intersect_key($row, array_flip($headers)), $rows);
+        $rows = array_map(fn ($row): array => array_intersect_key($row, array_flip($headers)), $rows);
     } else {
         $headers = array_keys(reset($rows));
     }

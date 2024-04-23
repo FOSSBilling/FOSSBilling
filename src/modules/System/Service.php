@@ -1665,7 +1665,7 @@ class Service
         return $this->di['db']->getAssoc($query);
     }
 
-    public function getVersion()
+    public function getVersion(): string
     {
         return Version::VERSION;
     }
