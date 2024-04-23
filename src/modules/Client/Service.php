@@ -201,7 +201,7 @@ class Service implements InjectionAwareInterface
 
     public function emailAlreadyRegistered($new_email, \Model_Client $model = null)
     {
-        if ($model && $model->email == $new_email) {
+        if ($model instanceof \Model_Client && $model->email == $new_email) {
             return false;
         }
 

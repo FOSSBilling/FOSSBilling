@@ -441,7 +441,7 @@ class Service implements InjectionAwareInterface
 
     public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null): array
     {
-        if ($hp === null) {
+        if (!$hp instanceof \Model_ServiceHostingHp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
 

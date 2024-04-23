@@ -275,7 +275,7 @@ class Client implements InjectionAwareInterface
         header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
-        if ($e !== null) {
+        if ($e instanceof \Exception) {
             error_log($e->getMessage() . ' ' . $e->getCode());
             $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];

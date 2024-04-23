@@ -18,8 +18,7 @@ return RectorConfig::configure()
     ->withTypeCoverageLevel(2)
     ->withDeadCodeLevel(25)
     ->withSets([
-        //SetList::EARLY_RETURN,
-        //SetList::NAMING,
+        SetList::INSTANCEOF,
     ])
     ->withSkip([
         JsonThrowOnErrorRector::class,

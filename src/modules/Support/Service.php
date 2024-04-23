@@ -875,20 +875,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $rel_id = $data['rel_id'] ?? null;
         $rel_type = $data['rel_type'] ?? null;
 
-        if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
-            $orderService = $this->di['mod_service']('order');
-            $o = $orderService->findForClientById($client, $rel_id);
-            if (!$o instanceof \Model_ClientOrder) {
-                throw new \FOSSBilling\Exception('Order ID does not exist');
-            }
-        }
-
         $rel_task = $data['rel_task'] ?? null;
         $rel_new_value = $data['rel_new_value'] ?? null;
         $rel_status = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
 
         if ($rel_task == 'upgrade') {
-            if (empty($o) || empty($rel_new_value)) {
+            if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
+                $orderService = $this->di['mod_service']('order');
+                $o = $orderService->findForClientById($client, $rel_id);
+                if (!$o instanceof \Model_ClientOrder) {
+                    throw new \FOSSBilling\Exception('Order ID does not exist');
+                }
+            }
+
+            if (!isset($o) || empty($rel_new_value)) {
                 throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
@@ -1506,8 +1506,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /*
-    * Knowledge Base Functions.
-    */
+     * Knowledge Base Functions.
+     */
 
     public function kbEnabled()
     {

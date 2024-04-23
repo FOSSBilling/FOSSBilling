@@ -358,7 +358,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return $array;
         }
 
-        if ($arrow !== null) {
+        if ($arrow instanceof \Closure) {
             uasort($array, $arrow);
         } else {
             asort($array);

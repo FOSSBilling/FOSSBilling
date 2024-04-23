@@ -102,7 +102,7 @@ class SentryHelper
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
-                if ($dsn === null) {
+                if (!$dsn instanceof \Sentry\Dsn) {
                     throw new \RuntimeException('The DSN option must be set to use the HttpClient.');
                 }
 
