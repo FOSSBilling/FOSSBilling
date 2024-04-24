@@ -130,8 +130,8 @@ class ServiceTransactionTest extends \BBTestCase
 
         $data = [
             'skip_validation' => false,
-            'bb_gateway_id' => 1,
-            'bb_invoice_id' => 2,
+            'gateway_id' => 1,
+            'invoice_id' => 2,
         ];
         $result = $this->service->create($data);
         $this->assertIsInt($result);
@@ -151,7 +151,7 @@ class ServiceTransactionTest extends \BBTestCase
 
         $data = [
             'skip_validation' => false,
-            'bb_gateway_id' => 1,
+            'gateway_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -172,7 +172,7 @@ class ServiceTransactionTest extends \BBTestCase
 
         $data = [
             'skip_validation' => false,
-            'bb_invoice_id' => 2,
+            'invoice_id' => 2,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
