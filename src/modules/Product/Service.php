@@ -627,7 +627,10 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    public function getUpgradablePairs(\Model_Product $model)
+    /**
+     * @return mixed[]
+     */
+    public function getUpgradablePairs(\Model_Product $model): array
     {
         if (is_null($model->upgrades)) {
             $model->upgrades = '';
