@@ -182,7 +182,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
                 }
             }
-        } catch (Stripe\Exception\CardException | Stripe\Exception\InvalidRequestException | Stripe\Exception\AuthenticationException | Stripe\Exception\ApiConnectionException | Stripe\Exception\ApiErrorException $e) {
+        } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
 
             throw new FOSSBilling\Exception('There was an error when processing the transaction');
