@@ -1271,6 +1271,8 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
+        $model->config = json_encode($config);
+
         $result = $this->service->getFreeTlds($model);
         $this->assertIsArray($result);
         $this->assertNotEmpty($result);
