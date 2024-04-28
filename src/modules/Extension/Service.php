@@ -593,7 +593,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getConfig($ext)
+    public function getConfig($ext): array
     {
         return $this->di['cache']->get("config_$ext", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
@@ -610,7 +610,12 @@ class Service implements InjectionAwareInterface
                 $config = [];
             } else {
                 $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-                $config = $this->di['tools']->decodeJ($config);
+
+                if (is_string($config) && json_validate($config)) {
+                    $config = json_decode($config, true);
+                } else {
+                    $config = [];
+                }
             }
 
             $config['ext'] = $ext;

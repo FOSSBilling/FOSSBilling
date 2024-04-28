@@ -194,7 +194,7 @@ class Service implements InjectionAwareInterface
         $settings['current'] = $this->getCurrentThemePreset($theme);
         $data_file = $theme->getPathSettingsDataFile();
 
-        $this->di['tools']->file_put_contents(json_encode($settings), $data_file);
+        file_put_contents($data_file, json_encode($settings));
 
         return true;
     }
@@ -218,7 +218,7 @@ class Service implements InjectionAwareInterface
             $systemService = $this->di['mod_service']('system');
             $data = $systemService->renderString($vars['_tpl'], false, $vars);
 
-            $this->di['tools']->file_put_contents($data, $real_file);
+            file_put_contents($real_file, $data);
         }
 
         return true;

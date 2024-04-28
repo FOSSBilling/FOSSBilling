@@ -125,11 +125,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @param \Model_EmailTemplate $t
      */
-    public function getVars($t)
+    public function getVars($t): array
     {
         $json = $this->di['crypt']->decrypt($t->vars, Config::getProperty('info.salt'));
+        if (is_string($json) && json_validate($json)) {
+            return json_decode($json, true);
+        }
 
-        return $this->di['tools']->decodeJ($json);
+        return [];
     }
 
     public function sendTemplate($data)

@@ -308,17 +308,11 @@ class ServicePayGatewayTest extends \BBTestCase
             ->method('getAdapterClassName')
             ->willReturn($expected);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn([]);
-
         $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 
@@ -344,17 +338,11 @@ class ServicePayGatewayTest extends \BBTestCase
             ->method('getAdapterClassName')
             ->willReturn(null);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn([]);
-
         $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 

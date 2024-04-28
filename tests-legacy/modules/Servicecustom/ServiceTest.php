@@ -410,13 +410,8 @@ class ServiceTest extends \BBTestCase
             'J' => 5,
             0 => 'N',
         ];
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn($decoded);
 
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $model = new \Model_ServiceCustom();
@@ -430,13 +425,7 @@ class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn(['config_param' => 'config_value']);
-
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $model = new \Model_ServiceCustom();

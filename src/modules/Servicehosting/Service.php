@@ -1017,7 +1017,12 @@ class Service implements InjectionAwareInterface
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
         $data['tld'] = $tld;
-        $c = $this->di['tools']->decodeJ($product->config);
+
+        if (is_string($product->config) && json_validate($product->config)) {
+            $c = json_decode($product->config, true);
+        } else {
+            $c = [];
+        }
 
         return array_merge($c, $data);
     }
@@ -1026,7 +1031,12 @@ class Service implements InjectionAwareInterface
     {
         $data = $this->prependOrderConfig($product, $data);
         $product->getService()->validateOrderData($data);
-        $c = $this->di['tools']->decodeJ($product->config);
+
+        if (is_string($product->config) && json_validate($product->config)) {
+            $c = json_decode($product->config, true);
+        } else {
+            $c = [];
+        }
 
         $dc = $data['domain'];
         $action = $dc['action'];
@@ -1056,7 +1066,12 @@ class Service implements InjectionAwareInterface
 
     public function getFreeTlds(\Model_Product $product): array
     {
-        $config = $this->di['tools']->decodeJ($product->config);
+        if (is_string($product->config) && json_validate($product->config)) {
+            $config = json_decode($product->config, true);
+        } else {
+            $config = [];
+        }
+
         $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {
