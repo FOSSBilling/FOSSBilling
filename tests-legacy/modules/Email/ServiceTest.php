@@ -239,7 +239,9 @@ class ServiceTest extends \BBTestCase
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
         $cryptMock->expects($this->atLeastOnce())
-            ->method('decrypt');
+            ->method('decrypt')
+            ->willReturn('{"param1":"value1"}');
+
         $expected = ['param1' => 'value1'];
 
         $di['db'] = $db;

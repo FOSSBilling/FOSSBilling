@@ -345,8 +345,11 @@ class ServicePayGatewayTest extends \BBTestCase
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+
         $di = new \Pimple\Container();
         $di['url'] = $urlMock;
+        $di['tools'] = $toolsMock;
         $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);

@@ -240,7 +240,7 @@ $di['session'] = function () use ($di) {
  *
  * @return \FOSSBilling\Request
  */
-$di['request'] = fn(): \FOSSBilling\Request => new FOSSBilling\Request();
+$di['request'] = fn (): \FOSSBilling\Request => new FOSSBilling\Request();
 
 /*
  * @param void
