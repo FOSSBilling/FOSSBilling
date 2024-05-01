@@ -240,12 +240,7 @@ $di['session'] = function () use ($di) {
  *
  * @return \FOSSBilling\Request
  */
-$di['request'] = function () use ($di) {
-    $service = new FOSSBilling\Request();
-    $service->setDi($di);
-
-    return $service;
-};
+$di['request'] = fn (): \FOSSBilling\Request => new FOSSBilling\Request();
 
 /*
  * @param void
@@ -588,19 +583,6 @@ $di['validator'] = function () use ($di) {
     $validator->setDi($di);
 
     return $validator;
-};
-
-/*
- *
- * @param void
- *
- * @return \FOSSBilling\CentralAlerts
- */
-$di['central_alerts'] = function () use ($di) {
-    $centralalerts = new FOSSBilling\CentralAlerts();
-    $centralalerts->setDi($di);
-
-    return $centralalerts;
 };
 
 /*

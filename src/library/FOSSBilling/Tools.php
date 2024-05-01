@@ -32,22 +32,6 @@ class Tools
         return $this->di;
     }
 
-    public function file_put_contents($content, $target, $mode = 'wt')
-    {
-        $fp = @fopen($target, $mode);
-
-        if ($fp) {
-            $bytes = fwrite($fp, $content);
-            fclose($fp);
-
-            return $bytes;
-        } else {
-            $error = error_get_last();
-
-            throw new \RuntimeException(sprintf('Could not write to %s: %s', $target, substr($error['message'], strpos($error['message'], ':') + 2)));
-        }
-    }
-
     /**
      * Return site url.
      *
@@ -233,17 +217,6 @@ class Tools
         $func = fn ($c): string => '-' . strtolower($c[1]);
 
         return preg_replace_callback('/([A-Z])/', $func, $str);
-    }
-
-    public function decodeJ($json_str)
-    {
-        if (isset($json_str) && is_string($json_str)) {
-            $config = json_decode($json_str, true);
-
-            return is_array($config) ? $config : [];
-        } else {
-            return [];
-        }
     }
 
     /**

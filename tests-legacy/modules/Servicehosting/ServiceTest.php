@@ -1236,13 +1236,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetFreeTldsFreeTldsAreNotSet(): void
     {
-        $config = [];
         $di = new \Pimple\Container();
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn($config);
-        $di['tools'] = $toolsMock;
 
         $tldArray = ['tld' => '.com'];
         $serviceDomainServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
@@ -1273,15 +1267,12 @@ class ServiceTest extends \BBTestCase
             'free_tlds' => ['.com'],
         ];
         $di = new \Pimple\Container();
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn($config);
-        $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
+        $model->config = json_encode($config);
+
         $result = $this->service->getFreeTlds($model);
         $this->assertIsArray($result);
         $this->assertNotEmpty($result);

@@ -18,23 +18,11 @@ use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 
-class Mail implements InjectionAwareInterface
+class Mail
 {
-    protected ?\Pimple\Container $di = null;
-
     private readonly Email $email;
     private ?string $transport = null;
     private ?string $dsn = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
 
     /**
      * Constructor for creating an email message. The custom DSN will be used if you either don't provide a transport or use 'custom' for it.

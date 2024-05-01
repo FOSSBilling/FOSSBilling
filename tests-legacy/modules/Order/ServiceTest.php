@@ -891,12 +891,8 @@ class ServiceTest extends \BBTestCase
         $decoded = [
             'key' => 'value',
         ];
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('decodeJ')
-            ->willReturn($decoded);
 
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -1147,11 +1143,6 @@ class ServiceTest extends \BBTestCase
             ->with('Client', $model->client_id, $exceptionError)
             ->willReturn($modelClient);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn([]);
-
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService) {
             if ($serviceName == 'client') {
@@ -1162,7 +1153,6 @@ class ServiceTest extends \BBTestCase
             }
         });
         $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
         $result = $this->service->toApiArray($model, true, new \Model_Admin());

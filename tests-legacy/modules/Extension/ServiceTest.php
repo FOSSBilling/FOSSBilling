@@ -647,15 +647,9 @@ class ServiceTest extends \BBTestCase
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
 
-        $toolsMock = $this->getMockBuilder(\FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn([]);
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['crypt'] = $cryptMock;
-        $di['tools'] = $toolsMock;
         $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
         $this->service->setDi($di);

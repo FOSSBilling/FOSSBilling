@@ -238,7 +238,11 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getPaymentAdapter(\Model_PayGateway $pg, \Model_Invoice $model = null, $optional = [])
     {
-        $config = $this->di['tools']->decodeJ($pg->config);
+        if (is_string($pg->config) && json_validate($pg->config)) {
+            $config = json_decode($pg->config, true);
+        } else {
+            $config = [];
+        }
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['test_mode'] = $pg->test_mode;

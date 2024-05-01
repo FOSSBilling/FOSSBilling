@@ -936,9 +936,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->findOne('TldRegistrar', 'config IS NOT NULL LIMIT 1');
     }
 
-    public function registrarGetConfiguration(\Model_TldRegistrar $model)
+    public function registrarGetConfiguration(\Model_TldRegistrar $model): array
     {
-        return $this->di['tools']->decodeJ($model->config);
+        if (is_string($model->config) && json_validate($model->config)) {
+            return json_decode($model->config, true);
+        }
+
+        return [];
     }
 
     public function registrarGetRegistrarAdapterConfig(\Model_TldRegistrar $model)
