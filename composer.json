@@ -23,7 +23,7 @@
         "ext-pdo": "*",
         "ext-zlib": "*",
         "antcms/antloader": "^2.0.2",
-        "dompdf/dompdf": "^2.0.1",
+        "dompdf/dompdf": "^3.0.0",
         "egulias/email-validator": "^4.0",
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
