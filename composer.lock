@@ -5938,16 +5938,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.56.1",
+            "version": "v3.56.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "69c6168ae8bc96dc656c7f6c7271120a68ae5903"
+                "reference": "e8c12f9501f6b66caf9072404f960b6af5672b2e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/69c6168ae8bc96dc656c7f6c7271120a68ae5903",
-                "reference": "69c6168ae8bc96dc656c7f6c7271120a68ae5903",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/e8c12f9501f6b66caf9072404f960b6af5672b2e",
+                "reference": "e8c12f9501f6b66caf9072404f960b6af5672b2e",
                 "shasum": ""
             },
             "require": {
@@ -6019,7 +6019,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.56.1"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.56.2"
             },
             "funding": [
                 {
@@ -6027,7 +6027,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-05-10T11:31:15+00:00"
+            "time": "2024-05-15T14:37:10+00:00"
         },
         {
             "name": "myclabs/deep-copy",
