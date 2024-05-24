@@ -85,6 +85,12 @@
                         <input class="form-control" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number }}">
                     </div>
                 </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Invoice number zero padding width'|trans }}</label>
+                    <div class="col-md-6">
+                        <input class="form-control" type="text" name="invoice_number_zero_padding" value="{{ params.invoice_number_zero_padding }}">
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <h3 class="card-title">{{ 'Document settings'|trans }}</h3>
