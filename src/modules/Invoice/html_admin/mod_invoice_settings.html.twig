@@ -57,6 +57,13 @@
                         </div>
                     </div>
                 </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Default invoice notes'|trans }}</label>
+                    <div class="col-md-6">
+                        <textarea class="form-control bb-textarea" name="invoice_default_notes" rows="5">{{ params.invoice_default_notes }}</textarea>
+                        <small class="form-hint">{{ 'Supports markdown format.'|trans }}</small>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <h3 class="card-title">{{ 'Invoicing / Sequential Invoice Numbering'|trans }}</h3>

@@ -529,6 +529,8 @@ class Service implements InjectionAwareInterface
         $model->taxname = $taxtitle;
         $model->taxrate = $tax;
 
+        $model->notes = $this->di['mod_service']('system')->getParamValue('invoice_default_notes');
+
         $this->di['db']->store($model);
     }
 
