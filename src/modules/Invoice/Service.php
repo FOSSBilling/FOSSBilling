@@ -164,8 +164,8 @@ class Service implements InjectionAwareInterface
         }
         $tax = $tax_total;
 
-        $invoice_number_zero_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_zero_padding');
-        $invoice_number_zero_padding = !empty($invoice_number_zero_padding) ? $invoice_number_zero_padding : 5;
+        $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
+        $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
 
         $result = [];
         $result['id'] = $row['id'];
@@ -174,7 +174,7 @@ class Service implements InjectionAwareInterface
         $result['client_id'] = $invoice->client_id;
 
         $nr = (is_numeric($result['nr'])) ? $result['nr'] : $result['id'];
-        $result['serie_nr'] = $result['serie'] . sprintf('%0'.$invoice_number_zero_padding.'s', $nr);
+        $result['serie_nr'] = $result['serie'] . sprintf('%0'.$invoice_number_padding.'s', $nr);
 
         $result['hash'] = $row['hash'];
         $result['gateway_id'] = $row['gateway_id'];
@@ -1345,11 +1345,11 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $invoice_number_zero_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_zero_padding');
-        $invoice_number_zero_padding = !empty($invoice_number_zero_padding) ? $invoice_number_zero_padding : 5;
+        $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
+        $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
 
         $params = [
-            ':id' => sprintf('%0'.$invoice_number_zero_padding.'s', $proforma['nr']),
+            ':id' => sprintf('%0'.$invoice_number_padding.'s', $proforma['nr']),
             ':serie' => $proforma['serie'],
             ':title' => $first_title,
         ];
