@@ -48,7 +48,7 @@ jobs:
       contents: read
       actions: write
     needs: [ release-build, check-latest ]
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@8749327430a3e843ec6c1c997d4568575ab2f364
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@b350db44290c4d938df21f1e33c646cc658e042b
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
