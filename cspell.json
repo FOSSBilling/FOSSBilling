@@ -393,7 +393,8 @@
         "intval",
         "thisfiledoesnotexist",
         "exchangerate",
-        "currencydata"
+        "currencydata",
+        "oninput"
     ],
     "ignorePaths": [
         "tests-legacy/**",
