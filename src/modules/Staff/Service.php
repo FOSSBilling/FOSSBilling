@@ -140,10 +140,9 @@ class Service implements InjectionAwareInterface
     /**
      * Determines  if a staff member has the required permissions.
      *
-     * @param \Model_Admin|null $member     The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
-     * @param string            $module     what module to check permission for
-     * @param string|null       $key        the permission key for the associated module
-     * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
+     * @param \Model_Admin|null $member The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
+     * @param string            $module what module to check permission for
+     * @param string|null       $key    the permission key for the associated module
      */
     public function hasPermission(?\Model_Admin $member, string $module, string $key = null, mixed $constraint = null): bool
     {
@@ -186,9 +185,8 @@ class Service implements InjectionAwareInterface
     /**
      * Acts as an alias to `hasPermission`, but it'll also throw an exception stating the staff member doesn't have permission if they don't.
      *
-     * @param string      $module     what module to check permission for
-     * @param string|null $key        the permission key for the associated module
-     * @param mixed       $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
+     * @param string      $module what module to check permission for
+     * @param string|null $key    the permission key for the associated module
      */
     public function checkPermissionsAndThrowException(string $module, string $key = null, mixed $constraint = null): void
     {

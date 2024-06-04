@@ -16,7 +16,6 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
     /**
      * Constructs a new sfEvent.
      *
-     * @param mixed  $subject    The subject
      * @param string $name       The event name
      * @param array  $parameters An array of parameters
      */
@@ -66,8 +65,6 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
 
     /**
      * Sets the return value for this event.
-     *
-     * @param mixed $value The return value
      */
     public function setReturnValue(mixed $value)
     {
@@ -145,8 +142,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
     /**
      * Sets a parameter (implements the ArrayAccess interface).
      *
-     * @param string $name  The parameter name
-     * @param mixed  $value The parameter value
+     * @param string $name The parameter name
      */
     public function offsetSet(mixed $name, mixed $value): void
     {

@@ -14,8 +14,7 @@ class Box_EventDispatcher
     /**
      * Connects a listener to a given event name.
      *
-     * @param string $name     An event name
-     * @param mixed  $listener A PHP callable
+     * @param string $name An event name
      */
     public function connect($name, mixed $listener)
     {
@@ -30,8 +29,7 @@ class Box_EventDispatcher
      * TODO: Unsused?
      * Disconnects a listener for a given event name.
      *
-     * @param string $name     An event name
-     * @param mixed  $listener A PHP callable
+     * @param string $name An event name
      *
      * @return false|null false if listener does not exist, null otherwise
      */
@@ -111,7 +109,6 @@ class Box_EventDispatcher
      * Filters a value by calling all listeners of a given event.
      *
      * @param Box_Event $event A Box_Event instance
-     * @param mixed     $value The value to be filtered
      *
      * @return Box_Event The Box_Event instance
      */

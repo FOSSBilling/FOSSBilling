@@ -20,8 +20,6 @@ class Payment_Invoice
     /**
      * Set the invoice ID.
      *
-     * @param mixed $param the invoice ID
-     *
      * @return $this the current object, for method chaining
      */
     public function setId(mixed $param)
@@ -43,8 +41,6 @@ class Payment_Invoice
 
     /**
      * Set the invoice number.
-     *
-     * @param mixed $param the invoice number
      *
      * @return $this the current object, for method chaining
      */

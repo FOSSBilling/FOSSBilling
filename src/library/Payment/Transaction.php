@@ -29,8 +29,6 @@ class Payment_Transaction
     /**
      * Set the transaction ID.
      *
-     * @param mixed $param the transaction ID
-     *
      * @return $this the current object, for method chaining
      */
     public function setId(mixed $param)

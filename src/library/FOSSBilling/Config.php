@@ -29,7 +29,6 @@ class Config
      * Fetches a property from the config file using dot notation.
      *
      * @param string $property the property to pull from the database. Example: `debug_and_monitoring.report_errors`
-     * @param mixed  $default  sets a default value to return if this property doesn't exist
      */
     public static function getProperty(string $property, mixed $default = null): mixed
     {
@@ -50,7 +49,6 @@ class Config
      * Updates or adds a new property to the config file using dot notation.
      *
      * @param string $property   the property to update. Example: `debug_and_monitoring.report_errors`
-     * @param mixed  $newValue   the new value to set the property to
      * @param bool   $clearCache if the function should clear the FOSSBilling cache after updating the config file
      *
      * @throws Exception
