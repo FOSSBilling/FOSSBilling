@@ -22,8 +22,8 @@
           <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
             {% for code, prices in addon.pricing.recurrent %}
             {% if prices.enabled %}
-            <option value="{{ code }}">{{ periods[code] }} {{ prices.price | money_convert }} {% if prices.setup !=
-              '0.00' %}{{ 'Setup:'|trans }} {{ prices.setup | money_convert }}{% endif %}</option>
+            <option value="{{ code }}">{{ prices.price | money_convert }} {% if prices.setup !=
+              '0.00' %}{{ 'Setup:'|trans }} {{ prices.setup | money_convert }}{% endif %} ({{ periods[code] }})</option>
             {% endif %}
             {% endfor %}
           </select>

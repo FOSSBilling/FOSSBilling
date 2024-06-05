@@ -41,7 +41,7 @@
                                     <select class="form-select" name="period" id="period-selector">
                                         {% for code,prices in product.pricing.recurrent %}
                                             {% if prices.enabled %}
-                                                <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ periods[code] }} - {{ prices.price | money_convert }}</option>
+                                                <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ prices.price | money_convert }} ({{ periods[code] }})</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
