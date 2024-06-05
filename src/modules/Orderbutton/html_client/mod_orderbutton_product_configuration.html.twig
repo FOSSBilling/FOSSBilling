@@ -18,23 +18,40 @@
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% set product_details %}
                         <div class="well">
-                            <strong>{{ product.title }}</strong>
-                            {{ product.description | markdown }}
-
-                            {% if product.pricing.type == 'recurrent' %}
-                                {% set periods = guest.system_periods %}
-                                <select class="form-select" name="period" id="period-selector">
-                                    {% for code,prices in product.pricing.recurrent %}
-                                        {% if prices.enabled %}
-                                            <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ periods[code] }} - {{ prices.price | money_convert }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
-                            {% elseif product.pricing.type == 'free' %}
-                                <span class="badge bg-success">{{ 'FREE'|trans }}</span>
-                            {% else %}
-                                <span class="badge bg-success">{{ product.pricing.once.price | money_convert }}</span>
+                            <h3>{{ product.title }}</h3>
+                            {% if product.description %}
+                                {{ product.description | markdown }}
                             {% endif %}
+
+                            <hr>
+
+                            <h5 class="mt-4 mb-1"><strong>{{ 'Billing'|trans }}</strong></h5>
+
+                            <div class="row">
+                                <div class="col-12 col-md-4 col-xl-3">
+                                    {% if product.pricing.type == 'recurrent' %}
+                                    <span>{{ 'Billing cycle'|trans }}</span>
+                                    {% else %}
+                                    <span>{{ 'One-time payment'|trans }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col">
+                                    {% if product.pricing.type == 'recurrent' %}
+                                    {% set periods = guest.system_periods %}
+                                    <select class="form-select" name="period" id="period-selector">
+                                        {% for code,prices in product.pricing.recurrent %}
+                                            {% if prices.enabled %}
+                                                <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ prices.price | money_convert }} ({{ periods[code] }})</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    {% elseif product.pricing.type == 'free' %}
+                                    <span class="badge bg-success">{{ 0 | money_convert }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">{{ product.pricing.once.price | money_convert }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                     {% endset %}
 
@@ -53,7 +70,7 @@
 
                     <input type="hidden" name="multiple" value="1" />
                     <input type="hidden" name="id" value="{{ product.id }}" />
-                    <div class="mb-0">
+                    <div class="mt-2 mb-0">
                         <button type="submit" class="btn btn-primary" id="config-next">{{ 'Next'|trans }}</button>
                     </div>
                 </form>

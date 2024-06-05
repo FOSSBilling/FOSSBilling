@@ -394,7 +394,8 @@
         "thisfiledoesnotexist",
         "exchangerate",
         "currencydata",
-        "oninput"
+        "oninput",
+        "evenodd"
     ],
     "ignorePaths": [
         "tests-legacy/**",

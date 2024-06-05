@@ -179,7 +179,7 @@ class Service implements InjectionAwareInterface
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
             if ($field['type'] == 'textarea') {
-                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count((array) array_filter($field['textarea_size'], 'is_numeric'))) {
+                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count(array_filter($field['textarea_size'], 'is_numeric'))) {
                     throw new \FOSSBilling\InformationException('Textarea size options must be integer values', null, 3510);
                 }
                 $field['options'] = array_combine($field['textarea_option'], $field['textarea_size']);
