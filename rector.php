@@ -9,6 +9,7 @@ use Rector\Php81\Rector\FuncCall\NullToStrictStringFuncCallArgRector;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector;
 use Rector\Set\ValueObject\SetList;
+use Rector\Php80\Rector\FunctionLike\MixedTypeRector;
 
 return RectorConfig::configure()
     ->withPaths([__DIR__ . '/src'])
@@ -23,7 +24,8 @@ return RectorConfig::configure()
     ->withSkip([
         JsonThrowOnErrorRector::class,
         LongArrayToShortArrayRector::class,
-        NullToStrictStringFuncCallArgRector::class
+        NullToStrictStringFuncCallArgRector::class,
+        MixedTypeRector::class,
     ])
     ->withRules([ExplicitNullableParamTypeRector::class])
     ->withCache('./cache/rector', FileCacheStorage::class)

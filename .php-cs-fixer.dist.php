@@ -44,4 +44,5 @@ return (new PhpCsFixer\Config())
             ->notPath(
                 'config-sample.php'
             )
-    );
+    )
+    ->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect());

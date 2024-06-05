@@ -222,7 +222,7 @@ class Service
     }
 
     /**
-     * @depricated Please use the \FOSSBilling\i18n::getLocales function, which provides the same functionality.
+     * @deprecated please use the \FOSSBilling\i18n::getLocales function, which provides the same functionality
      *
      * @param bool $deep
      */
