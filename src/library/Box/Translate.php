@@ -56,8 +56,6 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
         }
 
         $codeset = 'UTF-8';
-        @putenv('LANG=' . $locale . '.' . $codeset);
-        @putenv('LANGUAGE=' . $locale . '.' . $codeset);
         // set locale
         if (!defined('LC_MESSAGES')) {
             define('LC_MESSAGES', 5);

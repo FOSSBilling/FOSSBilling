@@ -112,7 +112,7 @@ class Server_Package
      *
      * @return string returns the quota
      */
-    public function getQuota(): string
+    public function getQuota(): ?string
     {
         return $this->quota;
     }
@@ -136,7 +136,7 @@ class Server_Package
      *
      * @return string returns the bandwidth
      */
-    public function getBandwidth(): string
+    public function getBandwidth(): ?string
     {
         return $this->bandwidth;
     }
@@ -160,7 +160,7 @@ class Server_Package
      *
      * @return string returns the maximum number of domains
      */
-    public function getMaxDomains(): string
+    public function getMaxDomains(): ?string
     {
         return $this->maxDomains;
     }
@@ -184,7 +184,7 @@ class Server_Package
      *
      * @return string returns the maximum number of subdomains
      */
-    public function getMaxSubdomains(): string
+    public function getMaxSubdomains(): ?string
     {
         return $this->maxSubdomains;
     }
@@ -208,7 +208,7 @@ class Server_Package
      *
      * @return string returns the maximum number of parked domains
      */
-    public function getMaxParkedDomains(): string
+    public function getMaxParkedDomains(): ?string
     {
         return $this->maxParkedDomains;
     }
@@ -232,7 +232,7 @@ class Server_Package
      *
      * @return string returns the maximum number of FTP accounts
      */
-    public function getMaxFtp(): string
+    public function getMaxFtp(): ?string
     {
         return $this->maxFtp;
     }
@@ -256,7 +256,7 @@ class Server_Package
      *
      * @return string returns the maximum number of SQL databases
      */
-    public function getMaxSql(): string
+    public function getMaxSql(): ?string
     {
         return $this->maxSql;
     }
