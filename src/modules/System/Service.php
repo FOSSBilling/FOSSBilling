@@ -485,7 +485,7 @@ class Service
             }
         }
 
-        $r = $this->di['requirements'];
+        $r = new \FOSSBilling\Requirements();
         $data = $r->checkCompat();
         $data['last_patch'] = $this->getParamValue('last_patch');
 

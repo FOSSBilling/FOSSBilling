@@ -7,10 +7,8 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_Translate implements FOSSBilling\InjectionAwareInterface
+class Box_Translate
 {
-    protected ?Pimple\Container $di = null;
-
     protected $domain = 'messages';
 
     protected $locale = 'en_US';
@@ -33,16 +31,6 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
         $this->locale = $locale;
 
         return $this;
-    }
-
-    public function setDi(Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?Pimple\Container
-    {
-        return $this->di;
     }
 
     public function setup()

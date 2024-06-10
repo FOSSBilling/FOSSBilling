@@ -1151,7 +1151,6 @@ class ServiceTest extends \BBTestCase
         $model->config = '{}';
 
         $di = new \Pimple\Container();
-        $di['server_package'] = new \Server_Package();
 
         $this->service->setDi($di);
         $result = $this->service->getServerPackage($model);
