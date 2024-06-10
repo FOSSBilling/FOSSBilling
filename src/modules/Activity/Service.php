@@ -104,19 +104,28 @@ class Service implements InjectionAwareInterface
     public static function onBeforeAdminCronRun(\Box_Event $event): void
     {
         $di = $event->getDi();
-        $retention = $di['mod_service']('extension')->getConfig('mod_activity') ?? 90;
+        $config = $di['mod_service']('extension')->getConfig('mod_activity');
 
-        if (intval($retention) === 0) {
+        $retention = intval($config['max_age'] ?? 90);
+        $emailRetention = intval($config['email_max_age'] ?? 0);
+
+        if ($retention === 0 && $emailRetention === 0) {
             return;
         }
 
         $ageInSeconds = intval($retention) * 86_400;
+        $emailAgeInSeconds = intval($emailRetention) * 86_400;
 
         try {
-            $di['db']->exec('DELETE FROM activity_admin_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
-            $di['db']->exec('DELETE FROM activity_client_email WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
-            $di['db']->exec('DELETE FROM activity_client_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
-            $di['db']->exec('DELETE FROM activity_system WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+            if ($retention !== 0) {
+                $di['db']->exec('DELETE FROM activity_admin_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+                $di['db']->exec('DELETE FROM activity_client_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+                $di['db']->exec('DELETE FROM activity_system WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+            }
+
+            if ($emailRetention !== 0) {
+                $di['db']->exec('DELETE FROM activity_client_email WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $emailAgeInSeconds)]);
+            }
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
