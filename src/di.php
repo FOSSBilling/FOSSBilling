@@ -245,9 +245,9 @@ $di['request'] = fn (): \FOSSBilling\Request => new FOSSBilling\Request();
 /*
  * @param void
  *
- * @return \Symfony\Component\Cache\Adapter\FilesystemAdapter
+ * @return FilesystemAdapter
  */
-$di['cache'] = fn (): \Symfony\Component\Cache\Adapter\FilesystemAdapter =>
+$di['cache'] = fn (): FilesystemAdapter =>
 // Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
 new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
@@ -255,9 +255,9 @@ new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
  *
  * @param void
  *
- * @return \Box_Authorization
+ * @return Box_Authorization
  */
-$di['auth'] = fn (): \Box_Authorization => new Box_Authorization($di);
+$di['auth'] = fn (): Box_Authorization => new Box_Authorization($di);
 
 /*
  * Creates a new Twig environment that's configured for FOSSBilling.
@@ -625,27 +625,6 @@ $di['updater'] = function () use ($di) {
 };
 
 /*
- * @param void
- *
- * @return Server_Package
- */
-$di['server_package'] = fn (): \Server_Package => new Server_Package();
-
-/*
- * @param void
- *
- * @return Server_Client
- */
-$di['server_client'] = fn (): \Server_Client => new Server_Client();
-
-/*
- * @param void
- *
- * @return Server_Account
- */
-$di['server_account'] = fn (): \Server_Account => new Server_Account();
-
-/*
  * Creates a new server manager object and returns it.
  *
  * @param string $manager The name of the server manager to create.
@@ -661,13 +640,6 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
 
     return $s;
 });
-
-/*
- * @param void
- *
- * @return \FOSSBilling\Requirements
- */
-$di['requirements'] = fn (): \FOSSBilling\Requirements => new FOSSBilling\Requirements();
 
 /*
  * Creates a new Box_Period object using the provided period code and returns it.
@@ -763,7 +735,7 @@ $di['password'] = fn (): \FOSSBilling\PasswordManager => new FOSSBilling\Passwor
  *
  * @return \Box_Translate The new translation object that was just created.
  */
-$di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
+$di['translate'] = $di->protect(function ($textDomain = '') {
     $tr = new Box_Translate();
 
     if (!empty($textDomain)) {
@@ -772,7 +744,6 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
 
     $locale = FOSSBilling\i18n::getActiveLocale();
 
-    $tr->setDi($di);
     $tr->setLocale($locale);
     $tr->setup();
 
@@ -829,10 +800,10 @@ $di['parse_markdown'] = $di->protect(function (?string $content, bool $addAttrib
     // If we are defining the default attributes, build the list and add them to the config
     if ($addAttributes) {
         $attributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes();
-        foreach ($attributes as $class => $attributes) {
+        foreach ($attributes as $class => $classAttributes) {
             $reflectionClass = new ReflectionClass($class);
             $fqcn = $reflectionClass->getName();
-            $defaultAttributes[$fqcn] = $attributes;
+            $defaultAttributes[$fqcn] = $classAttributes;
         }
     }
 

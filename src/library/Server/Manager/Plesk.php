@@ -187,13 +187,7 @@ class Server_Manager_Plesk extends Server_Manager
      */
     public function suspendAccount(Server_Account $account, bool $suspend = true): bool
     {
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['status' => 16]);
-        } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 16]);
-        }
-
-        return $result;
+        return $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 16]);
     }
 
     /**
@@ -206,13 +200,7 @@ class Server_Manager_Plesk extends Server_Manager
      */
     public function unsuspendAccount(Server_Account $account): bool
     {
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['status' => 0]);
-        } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 0]);
-        }
-
-        return $result;
+        return $this->_client->customer()->setProperties('login', $account->getUsername(), ['status' => 0]);
     }
 
     /**
@@ -292,13 +280,7 @@ class Server_Manager_Plesk extends Server_Manager
     {
         $this->getLog()->info('Changing password for account ' . $account->getUsername());
 
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), ['passwd' => $newPassword]);
-        } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), ['passwd' => $newPassword]);
-        }
-
-        return $result;
+        return $this->_client->customer()->setProperties('login', $account->getUsername(), ['passwd' => $newPassword]);
     }
 
     /**
@@ -534,10 +516,6 @@ class Server_Manager_Plesk extends Server_Manager
                             'value' => $package->getMaxEmailLists() ?: 0,
                         ],
                         [
-                            'name' => 'max_maillists',
-                            'value' => $package->getMaxEmailLists() ?: 0,
-                        ],
-                        [
                             'name' => 'max_box',
                             'value' => $package->getMaxPop() ?: 0,
                         ],
@@ -632,13 +610,7 @@ class Server_Manager_Plesk extends Server_Manager
      */
     private function modifyClient(Server_Account $account): mixed
     {
-        if ($account->getReseller()) {
-            $result = $this->_client->reseller()->setProperties('login', $account->getUsername(), $this->createClientProps($account));
-        } else {
-            $result = $this->_client->customer()->setProperties('login', $account->getUsername(), $this->createClientProps($account));
-        }
-
-        return $result;
+        return $this->_client->customer()->setProperties('login', $account->getUsername(), $this->createClientProps($account));
     }
 
     /**

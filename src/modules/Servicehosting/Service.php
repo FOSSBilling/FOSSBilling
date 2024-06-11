@@ -450,7 +450,7 @@ class Service implements InjectionAwareInterface
 
         $hp_config = $hp->config;
 
-        $server_client = $this->di['server_client'];
+        $server_client = new \Server_Client();
         $server_client
             ->setEmail($client->email)
             ->setFullName($client->getFullName())
@@ -463,7 +463,7 @@ class Service implements InjectionAwareInterface
             ->setTelephone($client->phone);
 
         $package = $this->getServerPackage($hp);
-        $server_account = $this->di['server_account'];
+        $server_account = new \Server_Account();
         $server_account
             ->setClient($server_client)
             ->setPackage($package)
@@ -949,9 +949,8 @@ class Service implements InjectionAwareInterface
             $config = [];
         }
 
-        $p = $this->di['server_package'];
-        $p
-            ->setCustomValues($config)
+        $p = new \Server_Package();
+        $p->setCustomValues($config)
             ->setMaxFtp($model->max_ftp)
             ->setMaxSql($model->max_sql)
             ->setMaxPop($model->max_pop)

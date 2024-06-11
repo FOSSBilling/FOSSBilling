@@ -170,7 +170,7 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler(Exception|Error $e)
 {
-    if (getenv('APP_ENV') === 'test') {
+    if (Environment::isTesting()) {
         echo $e->getMessage() . PHP_EOL;
 
         return;
