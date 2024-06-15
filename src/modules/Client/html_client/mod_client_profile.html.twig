@@ -57,7 +57,7 @@
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="last_name">{{ 'Last Name'|trans }}</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ profile.last_name }}" {% if last_name in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ profile.last_name }}" {% if "last_name" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
@@ -70,11 +70,11 @@
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="birthday">{{ 'Birthdate'|trans }}</label>
                                     <input type="date" class="form-control" id="birthday" name="birthday"
-                                           value="{{ profile.birthday }}" {% if birthday in required|keys %} required {% endif %}>
+                                           value="{{ profile.birthday }}" {% if "birthday" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="gender">{{ 'Gender'|trans }}</label>
-                                    <select class="form-select" name="gender" id="gender" {% if gender in required|keys %} required {% endif %}>
+                                    <select class="form-select" name="gender" id="gender" {% if "gender" in required %} required {% endif %}>
                                         <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>Male
                                         </option>
                                         <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>
@@ -94,7 +94,7 @@
                             <div class="row">
                                 <div class="mb-3 col-md-10">
                                     <label class="form-label" for="company">{{ 'Company Name'|trans }}</label>
-                                    <input type="text" class="form-control" name="company" id="company" value="{{ profile.company }}" {% if company in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" name="company" id="company" value="{{ profile.company }}" {% if "company" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
@@ -110,31 +110,31 @@
                             <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone_cc">{{ 'Phone Country Code'|trans }}</label>
-                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" {% if phone in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" {% if "phone" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
-                                    <input type="text" class="form-control" name="phone" id="phone" value="{{ profile.phone }}" {% if phone in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" name="phone" id="phone" value="{{ profile.phone }}" {% if "phone" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="address_1">{{ 'Address'|trans }}</label>
-                                    <input type="text" class="form-control" name="address_1" id="address_1" value="{{ profile.address_1 }}" {% if address_1 in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" name="address_1" id="address_1" value="{{ profile.address_1 }}" {% if "address_1" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="address_2">{{ 'Address 2'|trans }}</label>
-                                    <input type="text" class="form-control" name="address_2" id="address_2" value="{{ profile.address_2 }}" {% if address_2 in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" name="address_2" id="address_2" value="{{ profile.address_2 }}" {% if "address_2" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="city">{{ 'City'|trans }}</label>
-                                    <input type="text" class="form-control" name="city" id="city" value="{{ profile.city }}" {% if city in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" name="city" id="city" value="{{ profile.city }}" {% if "city" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
-                                    <select class="form-select" id="country" name="country" {% if country in required|keys %} required {% endif %}>
+                                    <select class="form-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
                                         <option value="">{{ '-- Select country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}"
@@ -146,11 +146,11 @@
                             <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="state">{{ 'State'|trans }}</label>
-                                    <input type="text" class="form-control" name="state" id="state" value="{{ profile.state }}" {% if state in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" name="state" id="state" value="{{ profile.state }}" {% if "state" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
-                                    <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if postcode in required|keys %} required {% endif %}>
+                                    <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="document_nr">{{ 'Passport number'|trans }}</label>
@@ -178,7 +178,7 @@
                             <div class="mb-3">
                                 <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
                                 <input class="form-control" type="password" name="current_password"
-                                       id="current_password" required>
+                                       id="current_password" required
                             </div>
                             <div class="mb-3">
                                 <label class="form-label" for="new_password">{{ 'New Password'|trans }}</label>
