@@ -53,6 +53,7 @@
     "npm": ">=9"
   },
   "overrides": {
+    "braces": "^3.0.3",
     "postcss": "^8.4.31",
     "@melloware/coloris": "^0.24.0",
     "imask": "^7.1.3"
