@@ -319,7 +319,7 @@ class AdminTest extends \BBTestCase
 
         $result = $this->api->delete($data);
         $this->assertIsBool($result);
-        $this->assertTrue($result);
+        $this->assertFalse($result);
     }
 
     public function testrenewalInvoice(): void
