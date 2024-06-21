@@ -44,7 +44,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             ],
             'form' => [
                 'email' => [
-                    'text', [
+                    'text',
+                    [
                         'label' => 'PayPal email address for payments',
                         'validators' => ['EmailAddress'],
                     ],
@@ -79,8 +80,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
+        // Set the invoice ID if it's not set
         if (!$tx['invoice_id']) {
-            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $data['invoice_id']]);
+            $invoiceID = $data['get']['invoice_id'];
+            $tx['invoiceID'] = $invoiceID;
+            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $invoiceID]);
         }
 
         if (!$tx['type'] && isset($ipn['txn_type'])) {
@@ -103,7 +107,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             $api_admin->invoice_transaction_update(['id' => $id, 'currency' => $ipn['mc_currency']]);
         }
 
-        $invoice = $api_admin->invoice_get(['id' => $data['invoice_id']]);
+        $invoice = $api_admin->invoice_get(['id' => $tx['invoice_id']]);
         $client_id = $invoice['client']['id'];
 
         switch ($ipn['txn_type']) {

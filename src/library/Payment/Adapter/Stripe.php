@@ -143,7 +143,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         if ($tx->invoice_id) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
         } else {
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $data['invoice_id']);
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['invoice_id']);
             $tx->invoice_id = $invoice->id;
         }
 
