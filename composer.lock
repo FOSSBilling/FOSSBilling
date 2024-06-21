@@ -6858,16 +6858,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "10.5.22",
+            "version": "10.5.24",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "8afb89b399b17c2ce2618015bdc9f81a117c5ee1"
+                "reference": "5f124e3e3e561006047b532fd0431bf5bb6b9015"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8afb89b399b17c2ce2618015bdc9f81a117c5ee1",
-                "reference": "8afb89b399b17c2ce2618015bdc9f81a117c5ee1",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/5f124e3e3e561006047b532fd0431bf5bb6b9015",
+                "reference": "5f124e3e3e561006047b532fd0431bf5bb6b9015",
                 "shasum": ""
             },
             "require": {
@@ -6939,7 +6939,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.22"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.24"
             },
             "funding": [
                 {
@@ -6955,7 +6955,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-06-19T05:29:34+00:00"
+            "time": "2024-06-20T13:09:54+00:00"
         },
         {
             "name": "react/cache",
