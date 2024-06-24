@@ -40,6 +40,9 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         self::DEBUG => 'DEBUG',
     ];
 
+    // List of keys whose values are to be masked in the log
+    protected array $_maskKeys = ['password', 'pass', 'token', 'key','apisecret','secret','api_token'];
+
     protected ?Pimple\Container $di = null;
     protected $_min_priority;
 
@@ -80,6 +83,20 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
                     }
 
                     break;
+            }
+             // Check if any of the keys in the params array match the keys in the maskKeys array
+             foreach ($params as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $k => $v) {
+                        if (in_array($k, $this->_maskKeys)) {
+                            $params[$key][$k] = '********';
+                        } else {
+                            $params[$key][$k] = $v;
+                        }
+                    }
+                } else if (in_array($key, $this->_maskKeys)) {
+                    $params[$key] = '********';
+                }
             }
             $this->log($message, $priority, $params);
         } else {
