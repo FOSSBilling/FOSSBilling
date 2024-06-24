@@ -22,7 +22,7 @@
 <html>
 	<head>
 		<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
-		<title>{{ invoice.serie_nr }}</title>
+		<title>{{ invoice.nr }}</title>
 		<style>
 			{{css}}
 		</style>
@@ -33,7 +33,7 @@
 		{% endif %}
 		<hr class='Rounded'>
 		<div class='InvoiceInfo'>
-			<p>{{document_title}} {{ 'number'|trans }}: {{ invoice.serie_nr }}</p>
+			<p>{{document_title}} {{ 'number'|trans }}: {{ invoice.nr }}</p>
 			<p>{{document_title}} {{ 'date'|trans }}: {{ invoice.created_at|format_date }}</p>
 			<p>{{ 'Due date'|trans }}: {{ invoice.due_at|format_date }}</p>
 			<p>{{document_title}} {{ 'status'|trans }}: {{ invoice.status|capitalize }}</p>

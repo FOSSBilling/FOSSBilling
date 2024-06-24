@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Invoice'|trans }} {{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}{% endblock %}
+{% block meta_title %}{{ 'Invoice'|trans }} {{invoice.nr}}{% endblock %}
 
 {% set active_menu = 'invoice' %}
 
@@ -18,7 +18,7 @@
     <li class="breadcrumb-item">
         <a href="{{ 'invoice'|alink }}">{{ 'Invoices'|trans }}</a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page">{{ invoice.serie }}{{ '%05s'|format(invoice.nr) }}</li>
+    <li class="breadcrumb-item active" aria-current="page">{{ invoice.nr }}</li>
 </ol>
 {% endblock %}
 
@@ -69,13 +69,13 @@
                     </tr>
                     <tr>
                         <td class="w-10 text-start">{{ 'ID'|trans }}:</td>
-                        <td>#{{ invoice.id }}</td>
+                        <td>#{{ invoice.nr }}</td>
                         <td class="w-15 text-start">{{ 'First name'|trans }}:</td>
                         <td>{{ invoice.buyer.first_name }}</td>
                     </tr>
                     <tr>
                         <td class="w-15 text-start">{{ 'Number'|trans }}:</td>
-                        <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
+                        <td>{{ invoice.nr }}</td>
                         <td class="w-15 text-start">{{ 'Last name'|trans }}:</td>
                         <td>{{ invoice.buyer.last_name  }}</td>
                     </tr>
@@ -179,7 +179,7 @@
                 </a>
                 <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
                     <svg class="icon" width="24" height="24">
-                        <use xlink:href="#check" />
+                        <use xlink:href="#currency-dollar" />
                     </svg>
                     <span>{{ 'Mark as paid'|trans }}</span>
                 </a>
@@ -238,17 +238,16 @@
                     {% if invoice.status == 'unpaid' %}
                     <div class="mb-3 row">
                         <div class="mb-3 row">
-                            <div class="col">
-                                <label class="form-label col-3 col-form-label">{{ 'Approved'|trans }}:</label>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioApprovedYes" type="radio" name="approved" value="1"{% if invoice.approved  %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioApprovedYes">{{ 'Yes'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioApprovedNo" type="radio" name="approved" value="0"{% if not invoice.approved %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioApprovedNo">{{ 'No'|trans }}</label>
-                                </div>
-                            </div>
+                        {% if invoice.approved == 1 %}
+                            <span class="badge bg-success text-white">
+                            {{ 'Approved'|trans }}
+                        {% endif %}
+                        {% if invoice.approved == 0 %}
+                            <span class="badge bg-secondary text-white">
+                            {{ 'Pending Approval'|trans }}
+                        {% endif %}
+                        
+                        </span>
                         </div>
                         <div class="mb-3 row">
                             <div class="col">
@@ -343,7 +342,20 @@
                     
                 </div>
                 <div class="card-footer text-center">
-                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#edit" />
+                        </svg>
+                        <span>{{ 'Update'|trans }}</span>
+                    </button>
+                    {% if invoice.approved == 0 %}
+                    <a href="{{ 'api/admin/invoice/approve'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken}) }}" class="btn btn-primary api-link" data-api-msg="Invoice Approved">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#check" />
+                        </svg>
+                        <span>{{ 'Approve'|trans }}</span>
+                    </a>
+                    {% endif %}
                 </div>
             </form>
         </div>
@@ -378,9 +390,7 @@
 <div class="card mb-3">
     <div class="card-body">
         <h5>{{ 'Invoice items'|trans }}</h5>
-    </div>
-
-    {% if not invoice.approved %}
+    {% if invoice.approved == 0 %}
     <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-reload="1">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -464,16 +474,7 @@
         <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-25">
     </form>
     {% else %}
-    <div class="card-footer d-flex gap-2">
-    {% if not invoice.approved %}
-    <a class="btn btn-success w-100 api-link" href="{{ 'api/admin/invoice/approve'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" data-api-reload="{{ 'invoices'|alink }}">
-        <svg class="icon">
-            <use xlink:href="#check" />
-        </svg>
-        {{ 'Approve'|trans }}
-    </a>
-    {% endif %}
-    {% endif %}
+    </div>
 </div>
 <div class="card mb-3">
     <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -544,6 +545,7 @@
         </tfoot>
     </table>
 </div>
+{% endif %}
 
 {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
 {% if transactions|length > 0 %}

@@ -35,10 +35,10 @@ class Service implements InjectionAwareInterface
             FROM invoice p
             LEFT JOIN invoice_item pi ON (p.id = pi.invoice_id)
             LEFT JOIN client cl ON (cl.id = p.client_id)
-            WHERE 1 ';
+            WHERE 1';
 
         $params = [];
-
+        
         $search = $data['search'] ?? null;
         $order_id = $data['order_id'] ?? null;
         $id = $data['id'] ?? null;
@@ -52,6 +52,7 @@ class Service implements InjectionAwareInterface
         $status = $data['status'] ?? null;
         $approved = $data['approved'] ?? null;
         $currency = $data['currency'] ?? null;
+        $type = $data['type'] ?? null;
 
         if ($order_id) {
             $sql .= ' AND pi.type = :item_type AND pi.rel_id = :order_id';
@@ -84,7 +85,7 @@ class Service implements InjectionAwareInterface
             $params['currency'] = $currency;
         }
 
-        if ($client_id !== null) {
+        if ($client_id != null) {
             $sql .= ' AND p.client_id = :client_id';
             $params['client_id'] = $client_id;
         }
@@ -115,6 +116,11 @@ class Service implements InjectionAwareInterface
             $params['paid_at'] = date('Y-m-d', strtotime($paid_at));
         }
 
+        if ($type) {
+            $sql .= ' AND p.type = :type';
+            $params['type'] = $type;
+        }
+
         if ($search) {
             $sql .= ' AND (p.id = :int OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
             $params['int'] = (int) preg_replace('/[^0-9]/', '', $search);
@@ -123,7 +129,6 @@ class Service implements InjectionAwareInterface
         }
 
         $sql .= ' GROUP BY p.id ORDER BY p.id DESC';
-
         return [$sql, $params];
     }
 
@@ -244,6 +249,7 @@ class Service implements InjectionAwareInterface
         $result['income'] = $row['base_income'] - $row['base_refund'];
         $result['refund'] = $row['refund'];
         $result['credit'] = $row['credit'];
+        $result['type'] = $row['type'];
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $result['subscribable'] = $subscriptionService->isSubscribable($row['id']);
@@ -380,8 +386,16 @@ class Service implements InjectionAwareInterface
 
         $systemService = $this->di['mod_service']('system');
         $ctable = $this->di['mod_service']('Currency');
-
+        $unpaid_serie = $invoice->serie;
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
+        $unpaid_invoice_nr = $invoice->nr;
+        if (($systemService->getParamValue('use_proforma_invoice')) && ($invoice->type == \Model_Invoice::TYPE_PROFORMA)) {
+            $invoice->type = \Model_Invoice::TYPE_INVOICE;
+            $next_nr = $systemService->getParamValue('paid_invoice_starting_number');
+            $systemService->setParamValue('paid_invoice_starting_number', intval($next_nr) + 1);
+            $invoice->nr = $invoice->serie . sprintf('%0' . $systemService->getParamValue('invoice_number_padding') . 's', $next_nr);
+        }
+            
         $invoice->approved = true;
         $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
         $invoice->status = \Model_Invoice::STATUS_PAID;
@@ -408,10 +422,26 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getNextInvoiceNumber()
+    public function getNextInvoiceNumber($serie = null)
     {
         $systemService = $this->di['mod_service']('system');
-        $next_nr = $systemService->getParamValue('invoice_starting_number');
+        // check if the next number is a proforma or invoice nr.
+        if ($systemService->getParamValue('use_proforma_invoice')) {
+            $newserie = $systemService->getParamValue('invoice_series');
+            $next_nr = $systemService->getParamValue('invoice_starting_number');
+            $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
+        } else {
+            $newserie = $systemService->getParamValue('invoice_series_paid');
+            $next_nr = $systemService->getParamValue('paid_invoice_starting_number');
+            $systemService->setParamValue('paid_invoice_starting_number', intval($next_nr) + 1);
+        }
+        
+
+        $padding = $systemService->getParamValue('invoice_number_padding') ?? 5;
+        if ($serie != null) {
+            $newserie = $serie;
+        }
+       
 
         if (empty($next_nr)) {
             // In theory this code should never need to be called, but is provided as a fallback
@@ -423,9 +453,54 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
+        
 
-        return $next_nr;
+        // Combine Series, padding and number
+        $newnr = $newserie . sprintf('%0' . $padding . 's', $next_nr);
+
+        // Check if the new number is already in use
+        $r = $this->di['db']->findOne('Invoice', 'nr = ?', [$newnr]);
+        error_log('New nr: ' . $newnr);
+        error_log('Old nr: ' . $next_nr);
+        error_log('Invoice: ' . $r);
+        if ($r instanceof \Model_Invoice) {
+            // If the number is already in use, try again
+            return $this->getNextInvoiceNumber($serie);
+        }
+        return $newnr;
+    
+    }
+
+    public function getNextCreditNoteNumber()
+    {
+        $systemService = $this->di['mod_service']('system');
+        $newserie = $systemService->getParamValue('invoice_cn_series');
+        $next_nr = $systemService->getParamValue('invoice_cn_starting_number');
+        $systemService->setParamValue('invoice_cn_starting_number', intval($next_nr) + 1);
+        $padding = $systemService->getParamValue('cn_number_padding') ?? 5;
+
+        // Combine Series, padding and number
+        $newnr = $newserie . sprintf('%0' . $padding . 's', $next_nr);
+
+        // Check if the new number is already in use
+        $r = $this->di['db']->findOne('Invoice', 'nr = ?', [$newnr]);
+        if ($r instanceof \Model_Invoice) {
+            // If the number is already in use, try again
+            return $this->getNextCreditNoteNumber();
+        }
+
+        return $newnr;
+    }
+
+    public function transformInvoiceNumber($unpaid_nr, $unpaid_serie, $paid_serie)
+    {
+        // remove $unpaid serie from $unpaid_nr and get only the number
+        $invoice_nr = substr($unpaid_nr, strlen($unpaid_serie));
+        // combine $paid_serie and $invoice_nr
+        $new_nr = $paid_serie . $invoice_nr;
+
+        return $new_nr;
+        
     }
 
     public function countIncome(\Model_Invoice $invoice)
@@ -448,10 +523,11 @@ class Service implements InjectionAwareInterface
         }
 
         $model = $this->di['db']->dispense('Invoice');
+
         $model->client_id = $client->id;
         $model->status = \Model_Invoice::STATUS_UNPAID;
         $model->currency = $client->currency;
-        $model->approved = 0;
+        $model->approved = $this->_isAutoApproved();
 
         $model->gateway_id = $data['gateway_id'] ?? $model->gateway_id;
         $model->text_1 = $data['text_1'] ?? $model->text_1;
@@ -471,7 +547,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Prepared new invoice "%s"', $invoiceId);
 
-        if (isset($data['approve']) && $data['approve']) {
+        if ($model->approved) {
             try {
                 $this->approveInvoice($model, ['id' => $invoiceId]);
                 $this->di['logger']->info('Approved invoice %s instantly', $invoiceId);
@@ -519,8 +595,17 @@ class Service implements InjectionAwareInterface
         $due_time = strtotime('+' . $invoice_due_days . ' day');
         $model->due_at = date('Y-m-d H:i:s', $due_time);
 
-        $model->serie = $systemService->getParamValue('invoice_series');
         $model->nr = $this->getNextInvoiceNumber();
+        // Check if proforma or invoice
+        
+        $use_proforma = $systemService->getParamValue('use_proforma_invoice');
+        if ($use_proforma) {
+            $model->serie = $this->di['mod_service']('system')->getParamValue('invoice_series');
+            $model->type = \Model_Invoice::TYPE_PROFORMA;
+        } else {
+            $model->serie = $this->di['mod_service']('system')->getParamValue('invoice_series_paid');
+            $model->type = \Model_Invoice::TYPE_INVOICE;
+        }
         $model->hash = bin2hex(random_bytes(random_int(100, 127)));
 
         $taxtitle = '';
@@ -538,7 +623,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceApprove', 'params' => ['id' => $invoice->id]]);
 
-        $invoice->approved = 1;
+        $invoice->approved = true;
         $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
@@ -625,95 +710,63 @@ class Service implements InjectionAwareInterface
     public function refundInvoice(\Model_Invoice $invoice, $note = null)
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceRefund', 'params' => ['id' => $invoice->id]]);
-
+        $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
+        $clientBalanceService->setDi($this->di);
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
+        error_log('Refund logic: ' . $logic);
         $result = null;
+        $new = $this->di['db']->dispense('Invoice');
+        $total = $this->getTotalWithTax($invoice);
+        if ($total <= 0) {
+            throw new \FOSSBilling\InformationException('Cannot refund invoice with negative amount');
+        }
+        $client = $this->di['db']->load('Client', $invoice->client_id);
+        $new->client_id = $invoice->client_id;
+        $new->hash = bin2hex(random_bytes(random_int(100, 127)));
+        $new->status = \Model_Invoice::STATUS_REFUNDED;
+        $new->currency = $invoice->currency;
+        $new->approved = true;
+        $new->taxname = $invoice->taxname;
+        $new->taxrate = $invoice->taxrate;
 
+        $new->seller_company = $invoice->seller_company;
+        $new->seller_address = $invoice->seller_address;
+        $new->seller_phone = $invoice->seller_phone;
+        $new->seller_email = $invoice->seller_email;
+        
+        $new->buyer_first_name = $invoice->buyer_first_name;
+        $new->buyer_last_name = $invoice->buyer_last_name;
+        $new->buyer_company = $invoice->buyer_company;
+        $new->buyer_address = $invoice->buyer_address;
+        $new->buyer_city = $invoice->buyer_city;
+        $new->buyer_state = $invoice->buyer_state;
+        $new->buyer_country = $invoice->buyer_country;
+        $new->buyer_phone = $invoice->buyer_phone;
+        $new->buyer_email = $invoice->buyer_email;
+        $new->buyer_zip = $invoice->buyer_zip;
+
+        $new->paid_at = date('Y-m-d H:i:s');
+        $new->created_at = date('Y-m-d H:i:s');
+        $new->updated_at = date('Y-m-d H:i:s');
+        
         switch ($logic) {
             case 'credit_note':
-            case 'negative_invoice':
-                $total = $this->getTotalWithTax($invoice);
-                if ($total <= 0) {
-                    throw new \FOSSBilling\InformationException('Cannot refund invoice with negative amount');
-                }
-
-                $new = $this->di['db']->dispense('Invoice');
-                $new->client_id = $invoice->client_id;
-                $new->hash = bin2hex(random_bytes(random_int(100, 127)));
-                $new->status = \Model_Invoice::STATUS_REFUNDED;
-                $new->currency = $invoice->currency;
-                $new->approved = true;
-                $new->taxname = $invoice->taxname;
-                $new->taxrate = $invoice->taxrate;
-
-                $new->seller_company = $invoice->seller_company;
-                $new->seller_address = $invoice->seller_address;
-                $new->seller_phone = $invoice->seller_phone;
-                $new->seller_email = $invoice->seller_email;
-
-                $new->buyer_first_name = $invoice->buyer_first_name;
-                $new->buyer_last_name = $invoice->buyer_last_name;
-                $new->buyer_company = $invoice->buyer_company;
-                $new->buyer_address = $invoice->buyer_address;
-                $new->buyer_city = $invoice->buyer_city;
-                $new->buyer_state = $invoice->buyer_state;
-                $new->buyer_country = $invoice->buyer_country;
-                $new->buyer_phone = $invoice->buyer_phone;
-                $new->buyer_email = $invoice->buyer_email;
-                $new->buyer_zip = $invoice->buyer_zip;
-
-                $new->paid_at = date('Y-m-d H:i:s');
-                $new->created_at = date('Y-m-d H:i:s');
-                $new->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($new);
-
-                $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
-                foreach ($invoiceItems as $item) {
-                    $pi = $this->di['db']->dispense('InvoiceItem');
-                    $pi->invoice_id = $new->id;
-                    $pi->type = $item->type;
-                    $pi->rel_id = $item->rel_id;
-                    $pi->task = $item->task;
-                    $pi->status = \Model_InvoiceItem::STATUS_EXECUTED; // ark refund invoice as executed
-                    $pi->title = $item->title;
-                    $pi->period = $item->period;
-                    $pi->quantity = $item->quantity;
-                    $pi->unit = $item->unit;
-                    $pi->charged = 1;
-                    $pi->price = -$item->price;
-                    $pi->taxed = $item->taxed;
-                    $pi->created_at = date('Y-m-d H:i:s');
-                    $pi->updated_at = date('Y-m-d H:i:s');
-                    $this->di['db']->store($pi);
-                }
-
-                $this->countIncome($new);
-
-                $this->addNote($invoice, sprintf('Refund invoice #%s generated', $new->id));
-                $this->addNote($new, sprintf('Refund for #%s invoice', $invoice->id));
-                if (!empty($note)) {
-                    $this->addNote($new, $note);
-                }
-
-                if ($logic == 'negative_invoice') {
-                    $new->serie = $systemService->getParamValue('invoice_series_paid');
-                    $this->di['db']->store($new);
-                }
-
-                if ($logic == 'credit_note') {
-                    $next_nr = $systemService->getParamValue('invoice_cn_starting_number', 1);
-                    $new->serie = $systemService->getParamValue('invoice_cn_series', 'CN-');
-                    $new->nr = $next_nr;
-                    $this->di['db']->store($new);
-
-                    // update next credit note starting number
-                    $systemService->setParamValue('invoice_cn_starting_number', ++$next_nr, true);
-                }
-                $result = (int) $new->id;
-
+                error_log('Credit note');
+                $new->serie = $systemService->getParamValue('invoice_cn_series', 'CN');
+                $new->nr = $this->getNextCreditNoteNumber();
+                // update next credit note starting number
+                $new->type = \Model_Invoice::TYPE_CREDITNOTE;
+                $new->refund = $total;
                 break;
-
+            case 'negative_invoice':
+                error_log('Negative Invoice');
+                $new->serie = $systemService->getParamValue('invoice_series_paid');
+                $new->nr = $this->getNextInvoiceNumber();
+                $new->type = \Model_Invoice::TYPE_INVOICE;
+                $new->refund = -$total;
+                error_log('Negative Invoice: ' . $new->nr . ' Serie: ' . $new->serie);
+                break;
             case 'manual':
                 if (DEBUG) {
                     error_log('Refunds are managed manually. No actions performed');
@@ -724,6 +777,54 @@ class Service implements InjectionAwareInterface
                 break;
         }
 
+        $this->di['db']->store($new);
+        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        foreach ($invoiceItems as $item) {
+            $pi = $this->di['db']->dispense('InvoiceItem');
+            $pi->invoice_id = $new->id;
+            $pi->type = $item->type;
+            $pi->rel_id = $item->rel_id;
+            $pi->task = $item->task;
+            $pi->status = \Model_InvoiceItem::STATUS_EXECUTED; // mark refund invoice as executed
+            $pi->title = $item->title;
+            $pi->period = $item->period;
+            $pi->quantity = $item->quantity;
+            $pi->unit = $item->unit;
+            $pi->charged = 1;
+            switch ($logic) {
+                case 'negative_invoice':
+                    $pi->price = -$item->price;
+                    
+                case 'credit_note':
+                    $pi->price = $item->price;
+
+                default:
+                    break;
+                }
+            $refunddata = [];
+            $refunddata['type'] = 'refund';
+            $refunddata['rel_id'] = $item->rel_id;
+            $pi->taxed = $item->taxed;
+            $pi->created_at = date('Y-m-d H:i:s');
+            $pi->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($pi);
+            
+        }
+        $clientBalanceService->addFunds($client, $total, 'Refund invoice / CN #' . $new->id);
+        $this->countIncome($new);
+
+        $invoice->status = \Model_Invoice::STATUS_REVOKED;
+        $this->di['db']->store($invoice);
+        
+        $this->addNote($invoice, sprintf('Refund invoice #%s generated', $new->id));
+        $this->addNote($new, sprintf('Refund for invoice #%s ', $invoice->id));
+        if (!empty($note)) {
+            $this->addNote($new, $note);
+        }
+
+       
+
+        $result = (int) $new->id;
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRefund', 'params' => ['id' => $invoice->id]]);
 
         $this->di['logger']->info('Refunded invoice #%s', $invoice->id);
@@ -977,7 +1078,7 @@ class Service implements InjectionAwareInterface
         $proforma->client_id = $client->id;
         $proforma->status = \Model_Invoice::STATUS_UNPAID;
         $proforma->currency = $order->currency;
-        $proforma->approved = false;
+        $proforma->approved = $this->_isAutoApproved();
         $proforma->created_at = date('Y-m-d H:i:s');
         $proforma->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($proforma);
@@ -1122,6 +1223,24 @@ class Service implements InjectionAwareInterface
             \Model_Invoice::STATUS_REFUNDED => $data[\Model_Invoice::STATUS_REFUNDED] ?? 0,
             \Model_Invoice::STATUS_CANCELED => $data[\Model_Invoice::STATUS_CANCELED] ?? 0,
             \Model_Invoice::STATUS_REVOKED => $data[\Model_Invoice::STATUS_REVOKED] ?? 0,
+        ];
+    }
+
+    public function approval_counter()
+    {
+        $sql = 'SELECT approved, count(id) as counter
+                 FROM invoice
+                 group by approved';
+        $rows = $this->di['db']->getAll($sql);
+        $data = [];
+        foreach ($rows as $row) {
+            $data[$row['approved']] = $row['counter'];
+        }
+
+        return [
+            'total' => array_sum($data),
+            'approved' => $data[1] ?? 0,
+            'pending' => $data[0] ?? 0,
         ];
     }
 
@@ -1354,7 +1473,7 @@ class Service implements InjectionAwareInterface
          */
         $systemService = $this->di['mod_service']('system');
 
-        return (bool) $systemService->getParamValue('invoice_auto_approval', true);
+        return (bool) $systemService->getParamValue('invoice_auto_approval', false);
     }
 
     /**

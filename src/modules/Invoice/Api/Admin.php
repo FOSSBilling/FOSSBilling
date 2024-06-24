@@ -27,6 +27,32 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         $service = $this->getService();
+        $data['type'] = 'invoice';
+        [$sql, $params] = $service->getSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
+        $data['type'] = 'proforma';
+        [$sql2, $params2] = $service->getSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $pager2 = $this->di['pager']->getAdvancedResultSet($sql2, $params2, $per_page);
+        $pager['list'] = array_merge($pager['list'], $pager2['list']);
+        foreach ($pager['list'] as $key => $item) {
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
+            $pager['list'][$key] = $this->getService()->toApiArray($invoice, true, $this->getIdentity());
+        }
+
+        return $pager;
+    }
+
+    /**
+     * Returns paginated list of invoices.
+     *
+     * @return array
+     */
+    public function get_cn_list($data)
+    {
+        $service = $this->getService();
+        $data['type'] = 'creditnote';
         [$sql, $params] = $service->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
@@ -37,6 +63,7 @@ class Admin extends \Api_Abstract
 
         return $pager;
     }
+
 
     /**
      * Get invoice details.
@@ -371,6 +398,19 @@ class Admin extends \Api_Abstract
     {
         return $this->getService()->counter();
     }
+
+    
+    /**
+     * Return invoice approval with counter.
+    *
+    * @return array
+    */
+    public function get_approvals($data)
+    {
+        return $this->getService()->approval_counter();
+    }
+
+
 
     /**
      * Process all received transactions.

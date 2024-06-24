@@ -2,7 +2,7 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set nr = invoice.nr %}
 
 {% if invoice.status != 'refunded' %}
     {% set document_title = 'Invoice'|trans %}

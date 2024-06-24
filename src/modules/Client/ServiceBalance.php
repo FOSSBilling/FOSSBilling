@@ -141,4 +141,36 @@ class ServiceBalance implements InjectionAwareInterface
 
         return $credit;
     }
+
+    /** 
+     * 
+     * @param float  $amount
+     * @param string $description
+     * 
+     * @return \Model_ClientBalance
+     * 
+     * @throws \FOSSBilling\InformationException
+     */
+    public function addFunds(\Model_Client $client, $amount, $description, array $data = null)
+    {
+        if (!is_numeric($amount)) {
+            throw new \FOSSBilling\InformationException('Funds amount is invalid');
+        }
+
+        if (strlen(trim($description)) == 0) {
+            throw new \FOSSBilling\InformationException('Funds description is invalid');
+        }
+
+        $credit = $this->di['db']->dispense('ClientBalance');
+        $credit->client_id = $client->id;
+        $credit->type = $data['type'] ?? 'default';
+        $credit->rel_id = $data['rel_id'] ?? null;
+        $credit->description = $description;
+        $credit->amount = $amount;
+        $credit->created_at = date('Y-m-d H:i:s');
+        $credit->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($credit);
+
+        return $credit;
+    }
 }

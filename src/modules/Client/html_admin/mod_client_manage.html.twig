@@ -532,7 +532,7 @@
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.nr }}</a>
                             </td>
                             <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>

@@ -308,6 +308,7 @@ CREATE TABLE `client_group` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `client_order` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `type` varchar(255) DEFAULT NULL,
   `client_id` bigint(20) DEFAULT NULL,
   `product_id` bigint(20) DEFAULT NULL,
   `form_id` bigint(20) DEFAULT NULL,

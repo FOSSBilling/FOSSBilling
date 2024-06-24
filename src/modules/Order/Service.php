@@ -1000,6 +1000,14 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
+        // Check if this is a master order and suspend all addons
+        if ($order->group_master) {
+            $list = $this->getOrderAddonsList($order);
+            foreach ($list as $addon) {
+                $this->suspendFromOrder($addon, $reason, true);
+            }
+        }
+
         $note = ($reason === null) ? 'Order suspended' : 'Order suspended for ' . $reason;
         $this->saveStatusChange($order, $note);
 
@@ -1024,6 +1032,14 @@ class Service implements InjectionAwareInterface
         $order->unsuspended_at = date('Y-m-d H:i:s');
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
+
+        // Check if this is a master order and unsuspend all addons
+        if ($order->group_master) {
+            $list = $this->getOrderAddonsList($order);
+            foreach ($list as $addon) {
+                $this->unsuspendFromOrder($addon);
+            }
+        }
 
         $this->saveStatusChange($order, 'Order unsuspended');
 
@@ -1057,6 +1073,14 @@ class Service implements InjectionAwareInterface
         $note = ($reason === null) ? 'Order canceled' : 'Canceled order for ' . $reason;
         $this->saveStatusChange($order, $note);
 
+        // Check if this is a master order and cancel all addons
+        if ($order->group_master) {
+            $list = $this->getOrderAddonsList($order);
+            foreach ($list as $addon) {
+                $this->cancelFromOrder($addon, $reason, true);
+            }
+        }
+
         if (!$skipEvent) {
             $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCancel', 'params' => ['id' => $order->id]]);
         }
@@ -1087,6 +1111,14 @@ class Service implements InjectionAwareInterface
         $order->canceled_at = null;
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
+
+        // activate all addons on initial activation
+        if ($order->group_master) {
+            $list = $this->getOrderAddonsList($order);
+            foreach ($list as $addon) {
+                $this->uncancelFromOrder($addon);
+            }
+        }
 
         $this->saveStatusChange($order, 'Activated canceled order');
 
@@ -1156,6 +1188,28 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $id]]);
         $this->di['logger']->info('Deleted order #%s', $id);
 
+        return true;
+    }
+
+    public function disableRenewal(\Model_ClientOrder $order)
+    {
+        // check if the order has a period
+        if (empty($order->period)) {
+            throw new \FOSSBilling\Exception('Order is not a recurring order');
+        }
+
+        $order->period = null;
+        $this->di['db']->store($order);
+        // Check if this is a master order and disable renewal for all addons
+        if ($order->group_master) {
+            $list = $this->getOrderAddonsList($order);
+            foreach ($list as $addon) {
+                // set exipres_at to the parent order expires_at
+                $addon->expires_at = $order->expires_at;
+                $this->disableRenewal($addon);
+            }
+        }
+        
         return true;
     }
 

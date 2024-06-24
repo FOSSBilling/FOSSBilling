@@ -70,7 +70,7 @@
                                 {% if unpaid_invoices.total > 0 %}
                                     {% for i, invoice in unpaid_invoices.list %}
                                         <tr>
-                                            <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
+                                            <td>{{ 'Invoice'|trans }} #{{invoice.nr}}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.due_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
@@ -103,7 +103,7 @@
                                 {% if paid_invoices.total > 0 %}
                                     {% for i, invoice in paid_invoices.list %}
                                         <tr>
-                                            <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
+                                            <td>{{ 'Invoice'|trans }} #{{invoice.nr}}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.paid_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
@@ -135,7 +135,7 @@
                                 {% if revoked_invoices.total > 0 %}
                                     {% for i, invoice in revoked_invoices.list %}
                                         <tr>
-                                            <td>{{ "Invoice #%05s"|format(invoice.id) }}</td>
+                                            <td>{{'Invoice'|trans }} #{{ invoice.id }}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.paid_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
@@ -167,7 +167,7 @@
                                 {% if refunded_invoices.total > 0 %}
                                     {% for i, invoice in refunded_invoices.list %}
                                         <tr>
-                                            <td>{{ "Credit Note #%05s"|format(invoice.id) }}</td>
+                                            <td>{{ "Credit Note"|trans}} #{{invoice.nr}}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.paid_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>

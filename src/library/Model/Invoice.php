@@ -14,4 +14,8 @@ class Model_Invoice extends RedBeanPHP\SimpleModel
     final public const STATUS_REFUNDED = 'refunded';
     final public const STATUS_CANCELED = 'canceled';
     final public const STATUS_REVOKED = 'revoked';
+
+    final public const TYPE_PROFORMA = 'proforma';
+    final public const TYPE_INVOICE = 'invoice';
+    final public const TYPE_CREDITNOTE = 'creditnote';
 }
