@@ -11,7 +11,7 @@ class Box_LogTest extends PHPUnit\Framework\TestCase
     // Setup mask params for testing
     protected function setUp(): void
     {
-        $this->log = new Box_Log();        
+        $this->log = new Box_Log('DEBUG');        
         $valid_params = [
             'foo' => 'bar',
             'baz' => 'qux',
