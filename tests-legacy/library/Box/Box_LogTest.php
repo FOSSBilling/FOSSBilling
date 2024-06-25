@@ -3,6 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Box_LogTest extends PHPUnit\Framework\TestCase
 {
+    protected Box_Log $log;
     protected array $valid_params;
     protected array $regression_test_params;
     protected int $regression_limit;
@@ -10,6 +11,7 @@ class Box_LogTest extends PHPUnit\Framework\TestCase
     // Setup mask params for testing
     protected function setUp(): void
     {
+        $this->log = new Box_Log();
         $valid_params = [
             'foo' => 'bar',
             'baz' => 'qux',
@@ -46,6 +48,7 @@ class Box_LogTest extends PHPUnit\Framework\TestCase
     // test maskParams method
     public function testMaskParams(): void
     {
+        $log = new Box_Log();
         // test normal masking
         $params = $this->valid_params;
 
@@ -64,6 +67,7 @@ class Box_LogTest extends PHPUnit\Framework\TestCase
     // test maskParams method with regression limit
     public function testMaskParamsWithRegressionLimit(): void
     {
+        $log = new Box_Log();
         // test masking with regression limit
         $params = $this->regression_test_params;
 
