@@ -68,14 +68,10 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
      * @param int $limit The regression limit
      * @return array The masked log parameters
      */
-    private function maskParams(array $params, int $depth = 0, int $limit = 10): array
+    public function maskParams(array $params, int $depth = 0, int $limit = 10): array
     {
         if ($depth >= $limit) {
-            error_log('Log parameter masking recursion limit reached. Masking all parameters.');
-            // return all parameters masked if the recursion limit has been reached.
-            return array_map(function($value) {
-                return '********';
-            }, $params);
+            throw new FOSSBilling\Exception('Recursion limit reached. Unable to mask parameters.');
         }
     
         foreach ($params as $key => $value) {
@@ -88,6 +84,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     
         return $params;
     }
+
 
     /**
      * @throws FOSSBilling\Exception
