@@ -61,6 +61,35 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     }
 
     /**
+     * Recursive function to mask sensitive information in the log parameters.
+     *
+     * @param array $params The log parameters
+     * @param int $depth The current recursion depth
+     * @param int $limit The regression limit
+     * @return array The masked log parameters
+     */
+    private function maskParams(array $params, int $depth = 0, int $limit = 10): array
+    {
+        if ($depth >= $limit) {
+            error_log('Log parameter masking recursion limit reached. Masking all parameters.');
+            // return all parameters masked if the recursion limit has been reached.
+            return array_map(function($value) {
+                return '********';
+            }, $params);
+        }
+    
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $params[$key] = $this->maskParams($value, $depth + 1, $limit);
+            } elseif (in_array(strtolower($key), array_map('strtolower', $this->_maskKeys))) {
+                $params[$key] = '********';
+            }
+        }
+    
+        return $params;
+    }
+
+    /**
      * @throws FOSSBilling\Exception
      */
     public function __call($method, $params): void
@@ -83,21 +112,8 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
                     }
 
                     break;
-            }
-             // Check if any of the keys in the params array match the keys in the maskKeys array
-             foreach ($params as $key => $value) {
-                if (is_array($value)) {
-                    foreach ($value as $k => $v) {
-                        if (in_array($k, $this->_maskKeys)) {
-                            $params[$key][$k] = '********';
-                        } else {
-                            $params[$key][$k] = $v;
-                        }
-                    }
-                } else if (in_array($key, $this->_maskKeys)) {
-                    $params[$key] = '********';
                 }
-            }
+            $params = $this->maskParams($params);
             $this->log($message, $priority, $params);
         } else {
             throw new FOSSBilling\Exception('Bad log priority');
