@@ -12,7 +12,7 @@ final class AdminTest extends TestCase
     public function testGetAvailableCurrencies()
     {
         $result = Request::makeRequest('admin/currency/get_pairs');
-        $this->assertFalse($result->wasSuccessful());
+        $this->assertTrue($result->wasSuccessful());
 
         $list = $result->getResult();
         // These for sure should exist

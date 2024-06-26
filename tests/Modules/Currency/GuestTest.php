@@ -12,7 +12,7 @@ final class GuestTest extends TestCase
     public function testCurrencyDefaults()
     {
         $result = Request::makeRequest('guest/currency/get_currency_defaults', ['code' => 'USD']);
-        $this->assertFalse($result->wasSuccessful());
+        $this->assertTrue($result->wasSuccessful());
 
         $defaults = $result->getResult();
         $this->assertEquals($defaults['code'], 'USD');
