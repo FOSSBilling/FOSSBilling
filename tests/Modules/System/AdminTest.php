@@ -72,8 +72,10 @@ final class AdminTest extends TestCase
         // Only test each found interface if ipify.org is functioning
         if ($this->ipLookupWorking()) {
             foreach ($result->getResult() as $ip) {
-                $result = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => $ip]);
-                $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+                $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => $ip]);
+                $this->assertTrue($testResult->wasSuccessful(), $result->generatePHPUnitMessage());
+
+                sleep(2);
 
                 $result = Request::makeRequest('admin/system/env', ['ip' => true]);
                 $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
@@ -94,6 +96,7 @@ final class AdminTest extends TestCase
 
         // Now we validate that the system is discarding it for not being one of the local interface IPs, ensuring that outbound communication still works
         if ($this->ipLookupWorking()) {
+            sleep(2);
             $result = Request::makeRequest('admin/system/env', ['ip' => true]);
             $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
             $this->assertTrue((bool) filter_var($result->getResult(), FILTER_VALIDATE_IP));
@@ -109,6 +112,7 @@ final class AdminTest extends TestCase
 
         // And since we don't (can't) perform any checks against the custom interface, it should now be in use despite not being valid and as a result the system will be unable to get its IP address
         if ($this->ipLookupWorking()) {
+            sleep(2);
             $result = Request::makeRequest('admin/system/env', ['ip' => true]);
             $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
             $this->assertNotEmpty($result->getResult());
