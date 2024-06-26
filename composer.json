@@ -40,6 +40,7 @@
         "phpmyadmin/motranslator": "^5.3.0",
         "pimple/pimple": "^3.3",
         "plesk/api-php-lib": "^2.0.0",
+        "prinsfrank/standards": "^3.8",
         "psr/log": "^3.0.0",
         "ramsey/uuid": "^4.7",
         "sentry/sentry": "^4",
