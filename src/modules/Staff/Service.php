@@ -533,8 +533,9 @@ class Service implements InjectionAwareInterface
         } else {
             $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
         }
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
+        $event_params = [];
+        $event_params['id'] = $model->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => $event_params]);
 
         $model->pass = $this->di['password']->hashIt($password);
         $model->updated_at = date('Y-m-d H:i:s');
@@ -543,7 +544,8 @@ class Service implements InjectionAwareInterface
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', $model->id);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
+        $event_params['password'] = $password;
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => $event_params]);
 
         $this->di['logger']->info('Changed staff member %s password', $model->id);
 

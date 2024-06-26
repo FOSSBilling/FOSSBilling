@@ -117,7 +117,8 @@ class Guest extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-        $event_params = $data;
+        $event_params = [];
+        $event_params['email'] = $data['email'];
         $event_params['ip'] = $this->ip;
         $this->di['events_manager']->fire(['event' => 'onBeforeClientLogin', 'params' => $event_params]);
 

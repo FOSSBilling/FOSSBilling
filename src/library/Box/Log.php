@@ -40,6 +40,9 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         self::DEBUG => 'DEBUG',
     ];
 
+    // List of keys whose values are to be masked in the log
+    protected array $_maskKeys = ['password', 'pass', 'token', 'key','apisecret','secret','api_token'];
+
     protected ?Pimple\Container $di = null;
     protected $_min_priority;
 
@@ -56,6 +59,32 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     {
         return $this->di;
     }
+
+    /**
+     * Recursive function to mask sensitive information in the log parameters.
+     *
+     * @param array $params The log parameters
+     * @param int $depth The current recursion depth
+     * @param int $limit The regression limit
+     * @return array The masked log parameters
+     */
+    public function maskParams(array $params, int $depth = 0, int $limit = 10): array
+    {
+        if ($depth >= $limit) {
+            throw new FOSSBilling\Exception('Recursion limit reached. Unable to mask parameters.');
+        }
+    
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $params[$key] = $this->maskParams($value, $depth + 1, $limit);
+            } elseif (in_array(strtolower($key), array_map('strtolower', $this->_maskKeys))) {
+                $params[$key] = '********';
+            }
+        }
+    
+        return $params;
+    }
+
 
     /**
      * @throws FOSSBilling\Exception
@@ -80,7 +109,8 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
                     }
 
                     break;
-            }
+                }
+            $params = $this->maskParams($params);
             $this->log($message, $priority, $params);
         } else {
             throw new FOSSBilling\Exception('Bad log priority');
