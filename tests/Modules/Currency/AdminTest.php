@@ -25,11 +25,12 @@ final class AdminTest extends TestCase
         $this->assertArrayHasKey('CAD', $list);
         $this->assertArrayHasKey('NZD', $list);
         $this->assertArrayHasKey('INR', $list);
-        $this->assertArrayHasKey('BZR', $list);
+        $this->assertArrayHasKey('HKD', $list);
 
         // These should not exist
         $this->assertArrayNotHasKey('XXX', $list);
         $this->assertArrayNotHasKey('XTS', $list);
         $this->assertArrayNotHasKey('VES', $list);
+        $this->assertArrayNotHasKey('BZR', $list);
     }
 }
