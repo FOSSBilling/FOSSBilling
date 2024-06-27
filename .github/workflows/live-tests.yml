@@ -156,7 +156,7 @@ jobs:
           http://localhost/install/install.php?a=install
 
       - name: Run Cron
-        run: php /var/www/localhost/cron.php
+        run: php /var/www/localhost/console.php cron:run
 
       - name: Run the API test suite
         run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
