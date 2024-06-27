@@ -55,7 +55,7 @@ class Version extends Command implements \FOSSBilling\InjectionAwareInterface
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->info("FossBilling version : ".$this->di['mod_service']('system')->getVersion());
+        $this->info("FOSSBilling version : ".$this->di['mod_service']('system')->getVersion());
         return Command::SUCCESS;
     }
 }

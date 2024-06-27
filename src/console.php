@@ -23,7 +23,7 @@ $di->register(new \CristianG\PimpleConsole\ServiceProvider(), [
      * Set the console application name. Defaults to 'Console'
      * @param  string
      */
-    'console.name'            => 'FossBilling Console Commands',
+    'console.name'            => 'FOSSBilling Console Commands',
     /**
      * Set the console application version. Defaults to '2.0'
      * @param  string
