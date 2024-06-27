@@ -56,9 +56,9 @@ $di->register(new \CristianG\PimpleConsole\ServiceProvider(), [
      * Set namespace command --namespace="\Namespace\Run" to be provided on command
      * @param  bool
      */
-    'console.allow_namespace' => true,
+    'console.allow_namespace' => FOSSBilling\Config::getProperty('console.allow_namespace', true),
     /**
-     * Set your DI new Pimple\Container() for your app to be load before execute
+     * Set your DI new Pimple\Container() for your app to be loaded before execute
      */
     'console.di'              => $di
 ]);
