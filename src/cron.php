@@ -22,6 +22,9 @@ try {
         echo "\e[33m- Welcome to FOSSBilling.\n";
         echo "\e[34mLast executed: " . $service->getLastExecutionTime() . ".\e[0m";
     }
+    echo "\n";
+    echo "\e[31mDeprecation Notice: The file cron.php is deprecated and will be removed in a future release.\n";
+    echo "\e[31mPlease use 'php console.php cron:run'\n";
 
     $service->runCrons($interval);
 } catch (Exception $exception) {
