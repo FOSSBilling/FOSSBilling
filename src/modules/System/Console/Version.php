@@ -48,6 +48,11 @@ class Version extends Command implements \FOSSBilling\InjectionAwareInterface
         parent::configure();
     }
 
+    /**
+     * @param  InputInterface  $input
+     * @param  OutputInterface  $output
+     * @return int
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->info("FossBilling version : ".$this->di['mod_service']('system')->getVersion());
