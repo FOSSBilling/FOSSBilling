@@ -11,37 +11,26 @@
 
 namespace Box\Mod\Theme\Console;
 
-use Pimple\Container;
 use CristianG\PimpleConsole\Command;
+use Pimple\Container;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-
 
 class Listing extends Command implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?Container $di = null;
 
-    /**
-     * @param  Container  $di
-     * @return void
-     */
     public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return Container|null
-     */
     public function getDi(): ?Container
     {
         return $this->di;
     }
 
-    /**
-     * @return void
-     */
     protected function configure(): void
     {
         $this->setName('theme:list');
@@ -49,11 +38,6 @@ class Listing extends Command implements \FOSSBilling\InjectionAwareInterface
         parent::configure();
     }
 
-    /**
-     * @param  InputInterface  $input
-     * @param  OutputInterface  $output
-     * @return int
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $admin = $this->di['mod_service']('theme')->getThemes(false);
@@ -67,7 +51,7 @@ class Listing extends Command implements \FOSSBilling\InjectionAwareInterface
         foreach ($admin as $adminTheme) {
             $rows[] = [
                 $adminTheme['name'],
-                "Admin",
+                'Admin',
                 $adminTheme['code'] === $currentAdmin ? 'Yes' : 'No',
             ];
         }
@@ -75,11 +59,11 @@ class Listing extends Command implements \FOSSBilling\InjectionAwareInterface
         foreach ($client as $clientTheme) {
             $rows[] = [
                 $clientTheme['name'],
-                "Client",
+                'Client',
                 $clientTheme['code'] === $currentClient ? 'Yes' : 'No',
             ];
         }
-        $this->table(['Name', 'Scope', 'Active'], $rows, "box-double");
+        $this->table(['Name', 'Scope', 'Active'], $rows, 'box-double');
 
         return Command::SUCCESS;
     }

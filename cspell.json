@@ -37,7 +37,8 @@
         "jhurliman",
         "jambroseclarke",
         "Egulias",
-        "ICANN"
+        "ICANN",
+        "Cristian"
     ],
 
     "ignoreWords": [
@@ -395,7 +396,8 @@
         "exchangerate",
         "currencydata",
         "oninput",
-        "evenodd"
+        "evenodd",
+        "releasenotes"
     ],
     "ignorePaths": [
         "tests-legacy/**",

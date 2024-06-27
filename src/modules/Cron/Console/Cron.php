@@ -11,28 +11,21 @@
 
 namespace Box\Mod\Cron\Console;
 
-use Pimple\Container;
 use CristianG\PimpleConsole\Command;
-use Symfony\Component\Console\Input\InputInterface;
+use Pimple\Container;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Cron extends Command implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?Container $di = null;
 
-    /**
-     * @param  Container  $di
-     * @return void
-     */
     public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    /**
-     * @return Container|null
-     */
     public function getDi(): ?Container
     {
         return $this->di;
@@ -46,11 +39,6 @@ class Cron extends Command implements \FOSSBilling\InjectionAwareInterface
         parent::configure();
     }
 
-    /**
-     * @param  InputInterface  $input
-     * @param  OutputInterface  $output
-     * @return int
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $service = $this->di['mod_service']('cron');
@@ -59,17 +47,19 @@ class Cron extends Command implements \FOSSBilling\InjectionAwareInterface
         $this->line([
             'FOSSBilling Cron Job Runner',
             '============',
-            'Last executed: '.$service->getLastExecutionTime(),
+            'Last executed: ' . $service->getLastExecutionTime(),
             '',
         ]);
 
         try {
             $service->runCrons($interval);
         } catch (Exception $e) {
-            $this->error("An error occurred :".$e->getMessage());
+            $this->error('An error occurred :' . $e->getMessage());
+
             return Command::FAILURE;
         } finally {
-            $this->info("Successfully ran the cron jobs.");
+            $this->info('Successfully ran the cron jobs.');
+
             return Command::SUCCESS;
         }
     }
