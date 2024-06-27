@@ -112,7 +112,7 @@ class Admin extends \Api_Abstract
         }
 
         $title = $data['title'] ?? null;
-        $conversionRate = $data['conversion_rate'] ?? 1;
+        $conversionRate = $data['conversion_rate'] ?? null;
 
         return $service->createCurrency($data['code'] ?? null, $data['format'] ?? null, $title, $conversionRate);
     }

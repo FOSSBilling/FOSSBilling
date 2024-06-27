@@ -51,6 +51,18 @@ class Guest extends \Api_Abstract
     }
 
     /**
+     * Gets the ISO defaults for a given currency code.
+     */
+    public function get_currency_defaults(array $data): array
+    {
+        if (!isset($data['code'])) {
+            throw new \FOSSBilling\InformationException('Currency code not provided');
+        }
+
+        return $this->getService()->getCurrencyDefaults($data['code']);
+    }
+
+    /**
      * Format price by currency settings.
      *
      * @optional bool $convert - covert to default currency rate. Default - true;
