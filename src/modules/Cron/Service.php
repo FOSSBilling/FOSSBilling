@@ -33,7 +33,7 @@ class Service
         $service = $this->di['mod_service']('system');
 
         return [
-            'cron_path' => PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php',
+            'cron_path' => PATH_ROOT . DIRECTORY_SEPARATOR . 'console.php cron:run',
             'last_cron_exec' => $service->getParamValue('last_cron_exec'),
         ];
     }
