@@ -53,7 +53,7 @@ class Cron extends Command implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $service->runCrons($interval);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->error('An error occurred :' . $e->getMessage());
 
             return Command::FAILURE;
