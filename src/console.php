@@ -22,7 +22,7 @@ $di['translate']();
 
 $di['console'] = function () use ($di) {
     $container = [
-        'console.name' => 'FossBilling Console Commands',
+        'console.name' => 'FOSSBilling Console Commands',
         'console.version' => $di['mod_service']('system')->getVersion(),
         'console.allow_namespace' => true,
     ];
