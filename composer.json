@@ -39,7 +39,6 @@
         "nelexa/zip": "^4.0.2",
         "phpmyadmin/motranslator": "^5.3.0",
         "pimple/pimple": "^3.3",
-        "cristiang/pimple-console": "^1.0",
         "plesk/api-php-lib": "^2.0.0",
         "prinsfrank/standards": "^3.8",
         "psr/log": "^3.0.0",
