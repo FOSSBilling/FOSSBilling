@@ -42,7 +42,10 @@ $di['console'] = function () use ($di) {
             return str_starts_with($arg, '--namespace=') ? substr($arg, strlen('--namespace=')) : $carry;
         }, '');
 
-        if (!empty($namespace) && class_exists($namespace)) {
+        if (!empty($namespace)) {
+            if (!class_exists($namespace)) {
+                return $console;
+            }
             $class = new $namespace();
             $class->setDi($di);
             $console->add($class);
