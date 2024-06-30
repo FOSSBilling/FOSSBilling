@@ -11,8 +11,8 @@
 
 namespace Box\Mod\Cron\Console;
 
-use CristianG\PimpleConsole\Command;
 use Pimple\Container;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -44,8 +44,8 @@ class Cron extends Command implements \FOSSBilling\InjectionAwareInterface
         $service = $this->di['mod_service']('cron');
         $interval = $input->getArgument('interval') ?? null;
 
-        $this->line([
-            'FOSSBilling Cron Job Runner',
+        $output->writeln([
+            '<info>FOSSBilling Cron Job Runner</info>',
             '============',
             'Last executed: ' . $service->getLastExecutionTime(),
             '',
@@ -54,11 +54,11 @@ class Cron extends Command implements \FOSSBilling\InjectionAwareInterface
         try {
             $service->runCrons($interval);
         } catch (\Exception $e) {
-            $this->error('An error occurred :' . $e->getMessage());
+            $output->writeln('<error>An error occurred: ' . $e->getMessage() . '</error>');
 
             return Command::FAILURE;
         } finally {
-            $this->info('Successfully ran the cron jobs.');
+            $output->writeln('<info>Successfully ran the cron jobs.</info>');
 
             return Command::SUCCESS;
         }

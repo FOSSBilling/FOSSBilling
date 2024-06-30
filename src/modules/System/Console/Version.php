@@ -11,8 +11,8 @@
 
 namespace Box\Mod\System\Console;
 
-use CristianG\PimpleConsole\Command;
 use Pimple\Container;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -39,7 +39,7 @@ class Version extends Command implements \FOSSBilling\InjectionAwareInterface
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->info('FOSSBilling version : ' . $this->di['mod_service']('system')->getVersion());
+        $output->writeln('<info>FOSSBilling version : ' . $this->di['mod_service']('system')->getVersion() . '</info>');
 
         return Command::SUCCESS;
     }

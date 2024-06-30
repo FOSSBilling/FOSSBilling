@@ -11,8 +11,9 @@
 
 namespace Box\Mod\Theme\Console;
 
-use CristianG\PimpleConsole\Command;
 use Pimple\Container;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -46,24 +47,29 @@ class Listing extends Command implements \FOSSBilling\InjectionAwareInterface
         $currentAdmin = $this->di['mod_service']('theme')->getCurrentAdminAreaTheme()['code'];
         $currentClient = $this->di['mod_service']('theme')->getCurrentClientAreaThemeCode();
 
-        $rows = [];
+        $table = new Table($output);
+
+        $table->setHeaders(['Name', 'Scope', 'Active']);
+
         // The admin themes are listed first, followed by a separator, and then the client themes.
         foreach ($admin as $adminTheme) {
-            $rows[] = [
+            $table->addRow([
                 $adminTheme['name'],
                 'Admin',
                 $adminTheme['code'] === $currentAdmin ? 'Yes' : 'No',
-            ];
+            ]);
         }
-        $rows[] = new TableSeparator();
+        $table->addRow(new TableSeparator());
         foreach ($client as $clientTheme) {
-            $rows[] = [
+            $table->addRow([
                 $clientTheme['name'],
                 'Client',
                 $clientTheme['code'] === $currentClient ? 'Yes' : 'No',
-            ];
+            ]);
         }
-        $this->table(['Name', 'Scope', 'Active'], $rows, 'box-double');
+        $table->setHeaderTitle('Installed FOSSBilling Themes');
+        $table->setStyle('box-double');
+        $table->render();
 
         return Command::SUCCESS;
     }
