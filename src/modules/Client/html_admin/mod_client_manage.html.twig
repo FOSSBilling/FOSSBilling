@@ -520,8 +520,9 @@
                         <tr>
                             <th class="w-1">#</th>
                             <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Issued on'|trans }}</th>
-                            <th>{{ 'Paid on'|trans }}</th>
+                            <th>{{ 'Invoice Date'|trans }}</th>
+                            <th>{{ 'Due Date'|trans }}</th>
+                            <th>{{ 'Paid Date'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -531,10 +532,11 @@
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.nr }}</a>
                             </td>
                             <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
+                            <td>{{ invoice.due_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}

@@ -196,15 +196,22 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        $service = $this->getService();
         $title = $data['title'];
         $status = $data['status'] ?? null;
         $setup = $data['setup'] ?? null;
         $iconUrl = $data['icon_url'] ?? null;
         $description = $data['description'] ?? null;
+        $type = $data['type'] ?? null;
+
+        $types = $service->getTypes();
+        if (!array_key_exists($data['type'], $types)) {
+            throw new \FOSSBilling\Exception('Product type :type is not registered', [':type' => $data['type']], 413);
+        }
 
         $service = $this->getService();
 
-        return $service->createAddon($title, $description, $setup, $status, $iconUrl);
+        return $service->createAddon($title, $description, $setup, $status, $iconUrl, $type);
     }
 
     /**

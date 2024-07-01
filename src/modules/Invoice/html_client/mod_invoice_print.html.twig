@@ -1,8 +1,12 @@
-{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set nr = invoice.nr %}
 {% set seller = invoice.seller %}
 {% set buyer = invoice.buyer %}
 {% set company = guest.system_company %}
-
+{% if invoice.status != 'refunded' %}
+    {% set document_title = 'Invoice'|trans %}
+{% else %}
+    {% set document_title = 'Credit Note'|trans %}
+{% endif %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,7 +19,7 @@
     <div class="row">
         <div class="col-md-10 offset-md-1">
             <div class="text-center">
-                <h2 id="invoice-title">{{ 'Invoice'|trans }} {{ nr }}</h2>
+                <h2 id="invoice-title">{{ document_title }} {{ nr }}</h2>
             </div>
 
             <div class="row">
@@ -26,9 +30,9 @@
                                 <img src="{{ company.logo_url }}" alt="Logo" class="img-fluid">
                             {% endif %}
                             <dl class="row">
-                                <dt class="col-sm-6">{{ 'Invoice number'|trans }}:</dt>
+                                <dt class="col-sm-6">{{document_title}} {{ 'number'|trans }}:</dt>
                                 <dd class="col-sm-6">{{ nr }}</dd>
-                                <dt class="col-sm-6">{{ 'Invoice Date'|trans }}:</dt>
+                                <dt class="col-sm-6">{{document_title}} {{ 'Date'|trans }}:</dt>
                                 <dd class="col-sm-6">
                                     {% if invoice.created_at %}
                                         {{ invoice.created_at | format_date }}
@@ -44,10 +48,10 @@
                                         -----
                                     {% endif %}
                                 </dd>
-                                <dt class="col-sm-6">{{ 'Invoice Status'|trans }}:</dt>
+                                <dt class="col-sm-6">{{document_title}} {{ 'Status'|trans }}:</dt>
                                 <dd class="col-sm-6">
-                                    <span class="badge {% if invoice.status == 'paid' %}badge-success{% elseif invoice.status == 'unpaid' %}badge-warning{% endif %}">
-                                        <span class="{% if invoice.status == 'paid' %}awe-ok-sign{% elseif invoice.status == 'unpaid' %}awe-exclamation-sign{% endif %}"></span>
+                                    <span class="badge {% if invoice.status == 'paid' %} badge-success {% elseif invoice.status == 'refunded' %} badge-success {% elseif invoice.status == 'unpaid' %} badge-warning {% endif %}">
+                                        <span class="{% if invoice.status == 'paid' %} awe-ok-sign {% elseif invoice.status == 'refunded' %} awe-ok-sign {% elseif invoice.status == 'unpaid' %} awe-exclamation-sign {% endif %}"></span>
                                         {{ invoice.status | capitalize }}
                                     </span>
                                 </dd>
@@ -206,3 +210,24 @@
 </div>
 </body>
 </html>
+{% block js%}
+<style>
+
+.awe-ok-sign {
+    color: #fff;
+    background-color: #28a745;
+}
+.awe-exclamation-sign {
+    color: #fff;
+    background-color: #ffc107;
+}
+.badge-success {
+    color: #fff;
+    background-color: #28a745;
+}
+.badge-warning {
+    color: #212529;
+    background-color: #ffc107;
+}
+</style>
+{% endblock %}

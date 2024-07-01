@@ -12,6 +12,8 @@
 
     {% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":100}) %}
     {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
+    {% set revoked_invoices = client.invoice_get_list({"status":"revoked", "per_page":100}) %}
+    {% set refunded_invoices = client.invoice_get_list({"status":"refunded", "per_page":100}) %}
 
     <div class="row">
         <div class="col-md-12">
@@ -36,7 +38,19 @@
                             <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#nav-paid"
                                     type="button" role="tab" aria-controls="nav-paid"
                                     aria-selected="false">{{ 'Paid'|trans }}&nbsp;<span
-                                    class="badge bg-secondary">{{ paid_invoices.total }}</span></button>
+                                    class="badge bg-success">{{ paid_invoices.total }}</span></button>
+                            {% if refunded_invoices.total > 0 %}
+                            <button class="nav-link" id="refunded-tab" data-bs-toggle="tab" data-bs-target="#nav-refunded"
+                                    type="button" role="tab" aria-controls="nav-refunded"
+                                    aria-selected="false">{{ 'Refunded'|trans }}&nbsp;<span
+                                    class="badge bg-warning">{{ refunded_invoices.total }}</span></button>
+                            {% endif %}
+                            {% if revoked_invoices.total > 0 %}
+                            <button class="nav-link" id="revoked-tab" data-bs-toggle="tab" data-bs-target="#nav-revoked"
+                                    type="button" role="tab" aria-controls="nav-revoked"
+                                    aria-selected="false">{{ 'Revoked'|trans }}&nbsp;<span
+                                    class="badge bg-secondary">{{ revoked_invoices.total }}</span></button>
+                            {% endif %}
                         </div>
                     </nav>
                     <div class="tab-content" id="nav-tabContent">
@@ -56,11 +70,11 @@
                                 {% if unpaid_invoices.total > 0 %}
                                     {% for i, invoice in unpaid_invoices.list %}
                                         <tr>
-                                            <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
+                                            <td>{{ 'Invoice'|trans }} #{{invoice.nr}}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.due_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
-                                            <td><a class="btn btn-sm btn-success"
+                                            <td><a class="btn btn-sm btn-primary"
                                                    href="{{ 'invoice'|link }}/{{ invoice.hash }}">{{ 'Pay'|trans }}</a>
                                             </td>
                                         </tr>
@@ -89,7 +103,71 @@
                                 {% if paid_invoices.total > 0 %}
                                     {% for i, invoice in paid_invoices.list %}
                                         <tr>
-                                            <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
+                                            <td>{{ 'Invoice'|trans }} #{{invoice.nr}}</td>
+                                            <td>{{ invoice.created_at|format_date }}</td>
+                                            <td>{{ invoice.paid_at|format_date }}</td>
+                                            <td>{{ invoice.total | money(invoice.currency) }}</td>
+                                            <td><a href="{{ 'invoice'|link }}/{{ invoice.hash }}"
+                                                   class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade table-responsive" id="nav-revoked" role="tabpanel" aria-labelledby="nav-profile-tab"
+                             tabindex="0">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>{{ 'Title'|trans }}</th>
+                                    <th>{{ 'Invoice Date'|trans }}</th>
+                                    <th>{{ 'Paid Date'|trans }}</th>
+                                    <th>{{ 'Total'|trans }}</th>
+                                    <th>{{ 'Actions'|trans }}</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% if revoked_invoices.total > 0 %}
+                                    {% for i, invoice in revoked_invoices.list %}
+                                        <tr>
+                                            <td>{{'Invoice'|trans }} #{{ invoice.id }}</td>
+                                            <td>{{ invoice.created_at|format_date }}</td>
+                                            <td>{{ invoice.paid_at|format_date }}</td>
+                                            <td>{{ invoice.total | money(invoice.currency) }}</td>
+                                            <td><a href="{{ 'invoice'|link }}/{{ invoice.hash }}"
+                                                   class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade table-responsive" id="nav-refunded" role="tabpanel" aria-labelledby="nav-profile-tab"
+                             tabindex="0">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>{{ 'Title'|trans }}</th>
+                                    <th>{{ 'Invoice Date'|trans }}</th>
+                                    <th>{{ 'Paid Date'|trans }}</th>
+                                    <th>{{ 'Total'|trans }}</th>
+                                    <th>{{ 'Actions'|trans }}</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% if refunded_invoices.total > 0 %}
+                                    {% for i, invoice in refunded_invoices.list %}
+                                        <tr>
+                                            <td>{{ "Credit Note"|trans}} #{{invoice.nr}}</td>
                                             <td>{{ invoice.created_at|format_date }}</td>
                                             <td>{{ invoice.paid_at|format_date }}</td>
                                             <td>{{ invoice.total | money(invoice.currency) }}</td>
