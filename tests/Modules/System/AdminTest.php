@@ -15,6 +15,8 @@ final class AdminTest extends TestCase
         foreach ($services as $service) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+            curl_setopt($ch, CURLOPT_FAILONERROR, true);
             curl_setopt($ch, CURLOPT_URL, $service);
             $ip = curl_exec($ch);
             if (filter_var($ip, FILTER_VALIDATE_IP)) {
@@ -72,7 +74,7 @@ final class AdminTest extends TestCase
         // Only test each found interface if ipify.org is functioning
         if ($this->ipLookupWorking()) {
             foreach ($result->getResult() as $ip) {
-                $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => $ip]);
+                $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
                 $this->assertTrue($testResult->wasSuccessful(), $result->generatePHPUnitMessage());
 
                 sleep(2);
@@ -84,13 +86,13 @@ final class AdminTest extends TestCase
         }
 
         // Finally, set it back to the default interface
-        Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => '0']);
+        Request::makeRequest('admin/system/set_interface_ip', ['interface' => '0']);
     }
 
     public function testInterfaceIsIgnoredWhenNotValid(): void
     {
         // Set the network interface to one that's invalid
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface_ip' => '12345']);
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => '12345']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
 
@@ -106,7 +108,7 @@ final class AdminTest extends TestCase
     public function testCustomInterface(): void
     {
         // Validate that we can set the custom network interface without errors
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface_ip' => '12345']);
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '12345']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
 
@@ -119,7 +121,7 @@ final class AdminTest extends TestCase
         }
 
         // Finally reset everything to ensure networking will continue to function
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface_ip' => '', 'interface_ip' => '0']);
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
     }

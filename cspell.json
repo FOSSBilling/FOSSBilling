@@ -396,7 +396,8 @@
         "currencydata",
         "oninput",
         "evenodd",
-        "Retryable"
+        "Retryable",
+        "FAILONERROR"
     ],
     "ignorePaths": [
         "tests-legacy/**",
