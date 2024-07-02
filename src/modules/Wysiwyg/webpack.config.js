@@ -1,9 +1,9 @@
 'use strict';
 
 const path = require('node:path');
-const {styles} = require('@ckeditor/ckeditor5-dev-utils');
+const { styles } = require('@ckeditor/ckeditor5-dev-utils');
 const TerserWebpackPlugin = require('terser-webpack-plugin');
-const {CKEditorTranslationsPlugin} = require('@ckeditor/ckeditor5-dev-translations');
+const { CKEditorTranslationsPlugin } = require('@ckeditor/ckeditor5-dev-translations');
 
 module.exports = {
   performance: {hints: false},
