@@ -17,6 +17,7 @@ use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpClient\RetryableHttpClient;
 
 class Tools
 {
@@ -391,22 +392,20 @@ class Tools
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;
-        foreach ($services as $service) {
-            try {
-                $client = HttpClient::create(['bindto' => $bind]);
-                $response = $client->request('GET', $service, [
-                    'timeout' => 2,
-                ]);
-
-                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-                if ($ip) {
-                    return $ip;
-                }
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
-                if ($throw) {
-                    throw $e;
-                }
+        try {
+            $client = new RetryableHttpClient(HttpClient::create(['bindto' => $bind]));
+            $response = $client->request('GET', '', [
+                'base_uri' => $services,
+                'timeout' => 2
+            ]);
+            $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
+            if ($ip) {
+                return $ip;
+            }
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+            if ($throw) {
+                throw $e;
             }
         }
 
