@@ -16,12 +16,5 @@
   "automergeStrategy": "squash",
   "constraints": {
     "php": "~8.1.*"
-  },
-  "packageRules": [
-    {
-      "groupName": "CKEditor",
-      "matchPackagePrefixes": ["@ckeditor/"],
-      "rangeStrategy": "auto"
-    }
-  ]
+  }
 }
