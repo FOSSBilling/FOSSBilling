@@ -395,7 +395,8 @@
         "exchangerate",
         "currencydata",
         "oninput",
-        "evenodd"
+        "evenodd",
+        "Retryable"
     ],
     "ignorePaths": [
         "tests-legacy/**",
