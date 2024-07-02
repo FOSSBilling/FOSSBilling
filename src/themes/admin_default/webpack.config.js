@@ -24,8 +24,8 @@ Encore
   .enableSourceMaps(!Encore.isProduction())
   .enableVersioning(Encore.isProduction())
   .configureBabel((config) => {
-    config.plugins.push('@babel/plugin-proposal-class-properties');
-    config.plugins.push('@babel/plugin-proposal-object-rest-spread');
+    config.plugins.push('@babel/plugin-transform-class-properties');
+    config.plugins.push('@babel/plugin-transform-object-rest-spread');
   })
   .configureBabelPresetEnv((config) => {
     config.useBuiltIns = 'usage';
