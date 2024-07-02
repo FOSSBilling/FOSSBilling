@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
-    public function testCurrencyDefaults()
+    public function testCurrencyDefaults(): void
     {
         $result = Request::makeRequest('guest/currency/get_currency_defaults', ['code' => 'USD']);
         $this->assertTrue($result->wasSuccessful());

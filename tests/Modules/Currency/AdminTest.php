@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
-    public function testGetAvailableCurrencies()
+    public function testGetAvailableCurrencies(): void
     {
         $result = Request::makeRequest('admin/currency/get_pairs');
         $this->assertTrue($result->wasSuccessful());
