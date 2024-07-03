@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'system:releasenotes',
-    description: 'Returns the release notes for the latest version of FOSSBilling',
+    description: 'Returns the release notes of all newer versions of FOSSBilling',
     hidden: false
 )]
 class ReleaseNotes extends Command implements \FOSSBilling\InjectionAwareInterface
