@@ -397,7 +397,8 @@
         "oninput",
         "evenodd",
         "Retryable",
-        "FAILONERROR"
+        "FAILONERROR",
+        "releasenotes"
     ],
     "ignorePaths": [
         "tests-legacy/**",
