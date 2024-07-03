@@ -533,7 +533,7 @@
                 {% for i, item in invoice.lines %}
                 <tr>
                     <td>
-                        <input class="form-control" type="text" name="items[{{ item.id }}][title]" value="{{ item.title }}">
+                        <textarea class="form-control" name="items[{{ item.id }}][title]" maxlength="1000" rows="3">{{ item.title }}</textarea>
                     </td>
                     <td>
                         <input class="form-control text-center" type="number" name="items[{{ item.id }}][quantity]" value="{{ item.quantity }}" min="1" max="1000" required>
@@ -560,7 +560,7 @@
                 {% endfor %}
                 <tr>
                     <td>
-                        <input class="form-control" type="text" name="new_item[title]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
+                        <textarea class="form-control" name="new_item[title]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''"></textarea>
                     </td>
                     <td>
                         <input class="form-control text-center" type="number" name="new_item[quantity]" min="1" max="1000">
