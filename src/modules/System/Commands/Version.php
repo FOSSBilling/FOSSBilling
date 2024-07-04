@@ -38,6 +38,7 @@ class Version extends Command implements \FOSSBilling\InjectionAwareInterface
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $output->writeln($this->di['mod_service']('system')->getVersion());
+
         return Command::SUCCESS;
     }
 }

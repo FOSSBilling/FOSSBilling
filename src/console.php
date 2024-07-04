@@ -9,9 +9,8 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 if (php_sapi_name() !== 'cli') {
-    die('This script can only be run from the command line.');
+    exit('This script can only be run from the command line.');
 }
 
 require_once __DIR__ . '/load.php';
@@ -34,7 +33,7 @@ if (file_exists(PATH_CONFIG)) {
     // Try to load the modules from the database. If this fails, the database might not initialized yet. We will use the list of the core modules instead.
     try {
         $modules = $di['mod_service']('extension')->getCoreAndActiveModules();
-    } catch (Exception $e) {
+    } catch (Exception) {
         // Do nothing
     }
 }

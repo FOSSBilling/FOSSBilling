@@ -222,8 +222,8 @@ function exceptionHandler(Exception|Error $e)
  */
 
 // Define custom error handlers.
-set_exception_handler('exceptionHandler');
-set_error_handler('errorHandler');
+set_exception_handler(exceptionHandler(...));
+set_error_handler(errorHandler(...));
 
 // Enabled during setup, is then overridden once we have loaded the config.
 ini_set('display_errors', '1');

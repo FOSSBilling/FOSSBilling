@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
         foreach (['ips', 'hosts', 'paths', 'versions'] as $key) {
             if (isset($data[$key])) {
                 $array = explode(PHP_EOL, $data[$key]);
-                $array = array_map('trim', $array);
+                $array = array_map(trim(...), $array);
                 $array = array_diff($array, ['']);
                 $s->{$key} = json_encode($array);
             }

@@ -168,18 +168,18 @@ class Service implements InjectionAwareInterface
 
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
-                if (!$this->isArrayUnique(array_filter($field['values'], 'strlen'))) {
+                if (!$this->isArrayUnique(array_filter($field['values'], strlen(...)))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
-                if (!$this->isArrayUnique(array_filter($field['labels'], 'strlen'))) {
+                if (!$this->isArrayUnique(array_filter($field['labels'], strlen(...)))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
                 $field['options'] = array_combine($field['labels'], $field['values']);
-                $field['options'] = array_filter($field['options'], 'strlen');
+                $field['options'] = array_filter($field['options'], strlen(...));
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
             if ($field['type'] == 'textarea') {
-                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count(array_filter($field['textarea_size'], 'is_numeric'))) {
+                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
                     throw new \FOSSBilling\InformationException('Textarea size options must be integer values', null, 3510);
                 }
                 $field['options'] = array_combine($field['textarea_option'], $field['textarea_size']);

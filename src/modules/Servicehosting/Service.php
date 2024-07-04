@@ -733,7 +733,7 @@ class Service implements InjectionAwareInterface
         $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
             $array = explode(PHP_EOL, $data['assigned_ips']);
-            $array = array_map('trim', $array);
+            $array = array_map(trim(...), $array);
             $array = array_diff($array, ['']);
             $model->assigned_ips = json_encode($array);
         }
