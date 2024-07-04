@@ -55,7 +55,7 @@ class Listing extends Command implements \FOSSBilling\InjectionAwareInterface
         foreach ($admin as $adminTheme) {
             $table->addRow([
                 $adminTheme['name'],
-                "Admin",
+                'Admin',
                 $adminTheme['code'] === $currentAdmin ? 'Yes' : 'No',
             ]);
         }
@@ -65,7 +65,7 @@ class Listing extends Command implements \FOSSBilling\InjectionAwareInterface
         foreach ($client as $clientTheme) {
             $table->addRow([
                 $clientTheme['name'],
-                "Client",
+                'Client',
                 $clientTheme['code'] === $currentClient ? 'Yes' : 'No',
             ]);
         }

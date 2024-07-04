@@ -38,6 +38,7 @@ class ReleaseNotes extends Command implements \FOSSBilling\InjectionAwareInterfa
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $output->writeln($this->di['updater']->getLatestReleaseNotes());
+
         return Command::SUCCESS;
     }
 }

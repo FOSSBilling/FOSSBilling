@@ -16,8 +16,8 @@ namespace Box\Mod\Cron\Commands;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
@@ -60,9 +60,11 @@ class Run extends Command implements \FOSSBilling\InjectionAwareInterface
             $service->runCrons($interval);
         } catch (\Exception $e) {
             $output->writeln('<error>An error occurred: ' . $e->getMessage() . '</error>');
+
             return Command::FAILURE;
         } finally {
             $output->writeln('<info>Successfully ran the cron jobs.</info>');
+
             return Command::SUCCESS;
         }
     }

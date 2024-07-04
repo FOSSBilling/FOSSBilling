@@ -392,11 +392,12 @@ class Tools
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;
+
         try {
             $client = new RetryableHttpClient(HttpClient::create(['bindto' => $bind]));
             $response = $client->request('GET', '', [
                 'base_uri' => $services,
-                'timeout' => 2
+                'timeout' => 2,
             ]);
             $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
             if ($ip) {

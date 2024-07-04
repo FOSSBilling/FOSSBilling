@@ -202,7 +202,7 @@ class i18n
             $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn ($dir): bool => is_dir($dir) && !file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
         }
 
-        $locales = array_map('basename', $locales); // get only the directory name
+        $locales = array_map(basename(...), $locales); // get only the directory name
         sort($locales);
 
         return $locales;

@@ -58,7 +58,7 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
-            $blocked_ips = array_map('trim', $blocked_ips);
+            $blocked_ips = array_map(trim(...), $blocked_ips);
             if (in_array($di['request']->getClientAddress(), $blocked_ips)) {
                 throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
             }

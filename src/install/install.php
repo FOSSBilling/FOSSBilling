@@ -340,7 +340,7 @@ final class FOSSBilling_Installer
         // Read content, parse queries into an array, then loop and execute each query
         $sql .= $sql_content;
         $sql = preg_split('/\;[\r]*\n/ism', $sql);
-        $sql = array_map('trim', $sql);
+        $sql = array_map(trim(...), $sql);
         foreach ($sql as $query) {
             if (!trim($query)) {
                 continue;

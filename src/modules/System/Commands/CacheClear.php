@@ -43,9 +43,11 @@ class CacheClear extends Command implements \FOSSBilling\InjectionAwareInterface
             $service->clearCache();
         } catch (\Exception $e) {
             $output->writeln('<error>An error occurred: ' . $e->getMessage() . '</error>');
+
             return Command::FAILURE;
         } finally {
             $output->writeln('<info>Successfully cleared the cache.</info>');
+
             return Command::SUCCESS;
         }
     }
