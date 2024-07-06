@@ -297,16 +297,16 @@ jobs:
 
       - name: Prepare for Upgrade
         run: |
-          cp ./src/config.php ./config.php
-          rm -rf ./src/*
-          mkdir ./src
-          cp ./config.php ./src/config.php
+          cp /var/www/localhost/config.php ./src/config.php
+          rm -rf /var/www/localhost/*
+          mkdir /var/www/localhost/
+          cp ./src/config.php /var/www/localhost/config.php
 
       - name: Download FOSSBilling CI Build
         uses: actions/download-artifact@v4
         with: 
           name: ci-build
-          path: ./src/
+          path: /var/www/localhost/
 
       - name: Perform the upgrade
         run: |
