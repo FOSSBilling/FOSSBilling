@@ -18,7 +18,7 @@ env:
     TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
 
 jobs:
-  fresh-install:
+  build-fossbilling:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,8 +77,29 @@ jobs:
           cp LICENSE ./src/
           rm translations.zip
 
+      - name: Upload the CI Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-build
+          path: ./src/
+
+  fresh-install:
+    runs-on: ubuntu-latest
+    needs: build-fossbilling
+    steps:
       - name: Start MySQL
         run: sudo systemctl start mysql.service
+
+      - uses: actions/checkout@v4
+
+      - name: Cleanup Folder
+        run: rm -r ./src/*
+
+      - name: Download CI Build
+        uses: actions/download-artifact@v4
+        with: 
+          name: ci-build
+          path: ./src/
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -94,9 +115,8 @@ jobs:
           sudo systemctl start apache2
           sudo a2enmod rewrite
           sudo mkdir /var/www/localhost
-          # sudo unzip "FOSSBilling Preview.zip" -d /var/www/localhost
           sudo cp -r ./src/* /var/www/localhost
-        
+
           # Create a new Apache configuration file
           sudo tee /etc/apache2/sites-available/localhost.conf > /dev/null <<EOF
           <VirtualHost *:80>
@@ -157,6 +177,146 @@ jobs:
 
       - name: Run Cron
         run: php /var/www/localhost/cron.php
+
+      - name: Run the API test suite
+        run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
+
+      - name: Display the FOSSBilling PHP error log
+        if: always()
+        run: cat /var/www/localhost/data/log/php_error.log
+
+      - name: Display the other FOSSBilling logs
+        if: always()
+        working-directory: /var/www/localhost/data/log/
+        run: |
+          # Use find again to get a list of files in the current directory
+          files=$(find . -type f ! -name '*.html' ! -name 'php_error.log')
+
+          # Loop through each file in the current directory and cat its contents
+          for file in $files; do
+            echo "Contents of $file:"
+            cat "$file"
+            echo "--------------------------"
+          done
+
+  preview-upgrade:
+    runs-on: ubuntu-latest
+    needs: build-fossbilling
+    steps:
+      - name: Start MySQL
+        run: sudo systemctl start mysql.service
+
+      - uses: actions/checkout@v4
+
+      - name: Cleanup Folder
+        run: rm -r ./src/*
+
+      - name: Download the FOSSBilling Preview Build
+        working-directory: ./src/
+        run: |
+          wget -O FOSSBilling.zip https://fossbilling.org/downloads/preview
+          unzip -o FOSSBilling.zip
+          tree
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml
+
+      - name: Setup Apache
+        run: |
+          sudo apt-get update
+          sudo apt-get install libapache2-mod-php8.3
+          sudo a2enmod php8.3
+          sudo systemctl start apache2
+          sudo a2enmod rewrite
+          sudo mkdir /var/www/localhost
+          sudo cp -r ./src/* /var/www/localhost
+
+          # Create a new Apache configuration file
+          sudo tee /etc/apache2/sites-available/localhost.conf > /dev/null <<EOF
+          <VirtualHost *:80>
+            ServerAdmin webmaster@localhost
+            ServerName localhost
+            DocumentRoot /var/www/localhost
+        
+            <Directory /var/www/localhost>
+              Options Indexes FollowSymLinks
+              AllowOverride All
+              Require all granted
+              SetEnv APP_ENV ${APP_ENV}
+            </Directory>
+        
+            ErrorLog \${APACHE_LOG_DIR}/error.log
+            CustomLog \${APACHE_LOG_DIR}/access.log combined
+          </VirtualHost>
+          EOF
+        
+          # Enable the new configuration and disable the default one
+          sudo a2ensite localhost.conf
+          sudo a2dissite 000-default.conf
+        
+          # Test the Apache configuration
+          sudo apache2ctl configtest
+        
+          # Restart Apache
+          sudo systemctl restart apache2
+
+          # Finally, set the permissions
+          sudo chown -R www-data:www-data /var/www/localhost*
+          cd /var/www/localhost
+          sudo find . -type d -exec chmod 755 {} \;
+          sudo find . -type f -exec chmod 644 {} \;
+
+      - name: Setup MySQL
+        run: |
+          mysql -u ${{ env.DB_USER }} -p${{ env.DB_PASS }} -e "create database ${{ env.DB_NAME }}";
+          sudo service mysql status
+
+      - name: Install FOSSBilling
+        run: |
+          curl -H "Content-type: multipart/form-data" \
+          -F error_reporting=0 \
+          -F database_hostname="${{ env.DB_HOST }}" \
+          -F database_port="${{ env.DB_PORT }}" \
+          -F database_name="${{ env.DB_NAME }}" \
+          -F database_username="${{ env.DB_USER }}" \
+          -F database_password="${{ env.DB_PASS }}" \
+          -F admin_name="test" \
+          -F admin_email="${{ env.TEST_EMAIL }}" \
+          -F admin_password="${{ env.TEST_PASS }}" \
+          -F currency_code="USD" \
+          -F currency_title="US Dollar" \
+          -F admin_api_token="${{ env.TEST_API_KEY }}" \
+          -X POST \
+          http://localhost/install/install.php?a=install
+
+      - name: Run Cron
+        run: php /var/www/localhost/cron.php
+
+      - name: Prepare for Upgrade
+        working-directory: ./src/
+        run: |
+          find . ! -name 'config.php' -type f -exec rm -f {} +
+          find . -type d -exec rm -rf {} +
+
+      - name: Download FOSSBilling CI Build
+        uses: actions/download-artifact@v4
+        with: 
+          name: ci-build
+          path: ./src/
+
+      - name: Perform the upgrade
+        run: |
+          response=$(curl -s http://localhost/run-patcher)
+          if [[ $response == *"patches have been applied"* ]]; then
+            echo "Patches applied without errors"
+            exit 0
+          else
+            echo "Patches failed to run"
+            exit 1
+          fi
 
       - name: Run the API test suite
         run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
