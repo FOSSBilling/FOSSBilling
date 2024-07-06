@@ -297,10 +297,14 @@ jobs:
 
       - name: Prepare for Upgrade
         run: |
-          cp /var/www/localhost/config.php ./src/config.php
-          rm -rf /var/www/localhost/*
-          mkdir /var/www/localhost/
-          cp ./src/config.php /var/www/localhost/config.php
+          sudo cp /var/www/localhost/config.php ./src/config.php
+          sudo rm -rf /var/www/localhost/*
+          sudo mkdir /var/www/localhost/
+          sudo cp ./src/config.php /var/www/localhost/config.php
+          sudo chown -R www-data:www-data /var/www/localhost*
+          cd /var/www/localhost
+          sudo find . -type d -exec chmod 755 {} \;
+          sudo find . -type f -exec chmod 644 {} \;
 
       - name: Download FOSSBilling CI Build
         uses: actions/download-artifact@v4
