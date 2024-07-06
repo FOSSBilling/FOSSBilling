@@ -296,10 +296,11 @@ jobs:
         run: php /var/www/localhost/cron.php
 
       - name: Prepare for Upgrade
-        working-directory: ./src/
         run: |
-          find . ! -name 'config.php' -type f -exec rm -f {} +
-          find . -type d -exec rm -rf {} +
+          cp ./src/config.php ./config.php
+          rm -rf ./src/*
+          mkdir ./src
+          cp ./config.php ./src/config.php
 
       - name: Download FOSSBilling CI Build
         uses: actions/download-artifact@v4
