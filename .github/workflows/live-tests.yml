@@ -299,7 +299,6 @@ jobs:
         run: |
           sudo cp /var/www/localhost/config.php ./src/config.php
           sudo rm -rf /var/www/localhost/*
-          sudo mkdir /var/www/localhost/
           sudo cp ./src/config.php /var/www/localhost/config.php
           sudo chown -R www-data:www-data /var/www/localhost*
           cd /var/www/localhost
