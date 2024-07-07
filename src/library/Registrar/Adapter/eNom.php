@@ -206,7 +206,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			return true;
 		} catch (Registrar_Exception $e) {
 			error_log("Domain registration failed: " . $e->getMessage());
-			throw new Registrar_Exception("Domain registration failed: {$errorMessage}");
+			throw new Registrar_Exception("Domain registration failed: " . $e->getMessage());
 		}
 	}
 
@@ -223,7 +223,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			return ($result->RRPCode == 210);  // Domain name available
 		} catch (Registrar_Exception $e) {
 			error_log("Checking domain availability failed: " . $e->getMessage());
-			throw new Registrar_Exception("Checking domain availability failed: {$errorMessage}");
+			throw new Registrar_Exception("Checking domain availability failed: " . $e->getMessage());
 		}
 	}
 
@@ -641,3 +641,4 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 		return true;
 	}
 }
+
