@@ -206,7 +206,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			return true;
 		} catch (Registrar_Exception $e) {
 			error_log("Domain registration failed: " . $e->getMessage());
-			return false;
+			throw new Registrar_Exception("Domain registration failed: {$errorMessage}");
 		}
 	}
 
@@ -223,7 +223,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			return ($result->RRPCode == 210);  // Domain name available
 		} catch (Registrar_Exception $e) {
 			error_log("Checking domain availability failed: " . $e->getMessage());
-			return false;
+			throw new Registrar_Exception("Checking domain availability failed: {$errorMessage}");
 		}
 	}
 
@@ -246,7 +246,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			else if ($rrpCode != 211) throw  new Registrar_Exception("RRPCode: " . $rrpCode);
 			
 			//make sure the domain can be transfered
-			if (!$result->Domains->Domain->Properties->Transferable) return false;
+			if (!$result->Domains->Domain->Properties->Transferable) throw  new Registrar_Exception("This domain is not transferable");
 
 			//make sure the domain is not registered in the current registrar
 			$this->transferCondition_domainNotFound($domain); 
@@ -277,7 +277,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			return ($result->RRPCode == 200);  // Nameserver modification successful
 		} catch (Registrar_Exception $e) {
 			error_log("Modifying nameservers failed: " . $e->getMessage());
-			return false;
+			throw  new Registrar_Exception("Modifying nameservers failed: " . $e->getMessage());
 		}
 	}
 
@@ -309,7 +309,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			return $domain;
 		} catch (Registrar_Exception $e) {
 			error_log("Error retrieving domain details: " . $e->getMessage());
-			return false;
+			throw  new Registrar_Exception("Error retrieving domain details: " . $e->getMessage());
 		}
 	}
 
@@ -317,7 +317,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 		$contact = $domain->getContactRegistrar();
 		if (!$contact) {
 			error_log("No contact information available.");
-			return false;
+			throw  new Registrar_Exception("No contact information available.");
 		}
 
 		$params = [
@@ -354,7 +354,6 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			return true;
 		} catch (Registrar_Exception $e) {
 			throw new Registrar_Exception("Error modifying contact details: " . $e->getMessage());
-			return false;
 		}
 	}
 
@@ -445,6 +444,9 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 			}
 		}
 		//now enable the wpps service if its disabled
+		if (!isset($wppsInfoResult->GetWPPSInfo->WPPSEnabled)){
+			throw new Registrar_Exception("Unable to retrieve WPPS information for the domain");
+		}
 		if ($wppsInfoResult->GetWPPSInfo->WPPSEnabled == "0"){
 			$enableParams = [
 				'Command' => 'EnableServices',
@@ -552,7 +554,7 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 		if (isset($result->GetWPPSInfo->WPPSEnabled)) {
 			return $result->GetWPPSInfo->WPPSEnabled == '1';
 		}
-		return false;
+		throw new Registrar_Exception("Could not fetch the privacy status");
 	}
 
 	private function transferCondition_domainNotFound(Registrar_Domain $domain){
@@ -633,10 +635,9 @@ class Registrar_Adapter_eNom extends Registrar_AdapterAbstract
 		$transferOrders = $result->xpath('//TransferOrder/statusid');
 		foreach ($transferOrders as $statusid) {
 			if ((int)$statusid < 6) {
-				return false;
+				throw new Registrar_Exception("Domain transfer order is already in process.");
 			}
 		}
 		return true;
 	}
 }
-
