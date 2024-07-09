@@ -297,9 +297,8 @@ jobs:
 
       - name: Prepare for Upgrade
         run: |
-          sudo cp /var/www/localhost/config.php ./src/config.php
+          sudo mv /var/www/localhost/config.php ./src/config.php
           sudo rm -rf /var/www/localhost/*
-          sudo cp ./src/config.php /var/www/localhost/config.php
 
       - name: Download FOSSBilling CI Build
         uses: actions/download-artifact@v4
@@ -307,8 +306,9 @@ jobs:
           name: ci-build
           path: /var/www/localhost/
 
-      - name: Fix file permissions
+      - name: Restore the config and fix file permissions
         run: |
+          sudo mv ./src/config.php /var/www/localhost/config.php
           sudo chown -R www-data:www-data /var/www/localhost*
           cd /var/www/localhost
           sudo find . -type d -exec chmod 755 {} \;
