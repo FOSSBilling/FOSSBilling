@@ -300,16 +300,19 @@ jobs:
           sudo cp /var/www/localhost/config.php ./src/config.php
           sudo rm -rf /var/www/localhost/*
           sudo cp ./src/config.php /var/www/localhost/config.php
-          sudo chown -R www-data:www-data /var/www/localhost*
-          cd /var/www/localhost
-          sudo find . -type d -exec chmod 755 {} \;
-          sudo find . -type f -exec chmod 644 {} \;
 
       - name: Download FOSSBilling CI Build
         uses: actions/download-artifact@v4
         with: 
           name: ci-build
           path: /var/www/localhost/
+
+      - name: Fix file permissions
+        run: |
+          sudo chown -R www-data:www-data /var/www/localhost*
+          cd /var/www/localhost
+          sudo find . -type d -exec chmod 755 {} \;
+          sudo find . -type f -exec chmod 644 {} \;
 
       - name: Perform the upgrade
         run: |
