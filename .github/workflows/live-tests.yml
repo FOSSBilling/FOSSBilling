@@ -298,7 +298,8 @@ jobs:
       - name: Prepare for Upgrade
         run: |
           sudo mv /var/www/localhost/config.php ./src/config.php
-          sudo rm -rf /var/www/localhost/*
+          sudo rm -rf /var/www/localhost/
+          sudo mkdir /var/www/localhost/
 
       - name: Download FOSSBilling CI Build
         uses: actions/download-artifact@v4
