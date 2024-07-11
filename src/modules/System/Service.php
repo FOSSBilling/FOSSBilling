@@ -960,7 +960,10 @@ class Service
 
         $codes = [];
         foreach (CountryCallingCode::cases() as $code) {
-            $country = $code->getCountriesAlpha2()[0];
+            $country = $code->getCountriesAlpha2()[0] ?? null;
+            if ($country === null) {
+                continue;
+            }
             $codes[$code->value] = $country->getNameInLanguage(LanguageAlpha2::English);
         }
 
