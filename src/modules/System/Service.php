@@ -811,7 +811,7 @@ class Service
     }
 
     /**
-     * Returns a full list of ISO3166-1 Alpha2 countrie codes & their titles.
+     * Returns a full list of ISO3166-1 Alpha2 country codes & their titles.
      *
      * @param bool $translatedTitle set to true to have the title displayed in one of the countries native languages
      *
