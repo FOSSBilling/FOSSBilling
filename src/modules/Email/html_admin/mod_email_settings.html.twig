@@ -182,9 +182,11 @@
 
                 <div class="tab-pane fade show" id="tab-queue" role="tabpanel">
                     {% include 'partial_search.html.twig' %}
-                    <div class="table-responsive">
+                    <div class="ms-1 mt-1 mb-1">
                         <p>{{ 'FOSSBilling queues emails to have them be sent via cron in the background. Here you may find the list of queued emails and how many times the system has tried to send them.'|trans }}</p>
                         <p>{{ 'Emails that have been sent or that failed to be sent will not be listed here.'|trans }}</p>
+                    </div>
+                    <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                             <thead>
                             <tr>
