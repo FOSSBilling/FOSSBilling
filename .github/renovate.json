@@ -16,5 +16,12 @@
   "automergeStrategy": "squash",
   "constraints": {
     "php": "~8.1.*"
-  }
+  },
+  "packageRules": [
+    {
+      "groupName": "CKEditor Development Tools",
+      "matchPackagePatterns": ["^@ckeditor/ckeditor-dev-"],
+      "rangeStrategy": "auto"
+    }
+  ]
 }
