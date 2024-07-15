@@ -3119,16 +3119,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v15.1.0",
+            "version": "v15.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "ce69d019941cf528c036ae0d1a3a9580c7389460"
+                "reference": "29a28251d35dba236ad6e860e1927b3f35cc1b2e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/ce69d019941cf528c036ae0d1a3a9580c7389460",
-                "reference": "ce69d019941cf528c036ae0d1a3a9580c7389460",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/29a28251d35dba236ad6e860e1927b3f35cc1b2e",
+                "reference": "29a28251d35dba236ad6e860e1927b3f35cc1b2e",
                 "shasum": ""
             },
             "require": {
@@ -3172,9 +3172,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v15.1.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v15.2.0"
             },
-            "time": "2024-07-05T18:52:07+00:00"
+            "time": "2024-07-11T18:46:58+00:00"
         },
         {
             "name": "symfony/asset",
@@ -5989,16 +5989,16 @@
         },
         {
             "name": "composer/semver",
-            "version": "3.4.0",
+            "version": "3.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/semver.git",
-                "reference": "35e8d0af4486141bc745f23a29cc2091eb624a32"
+                "reference": "c51258e759afdb17f1fd1fe83bc12baaef6309d6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/semver/zipball/35e8d0af4486141bc745f23a29cc2091eb624a32",
-                "reference": "35e8d0af4486141bc745f23a29cc2091eb624a32",
+                "url": "https://api.github.com/repos/composer/semver/zipball/c51258e759afdb17f1fd1fe83bc12baaef6309d6",
+                "reference": "c51258e759afdb17f1fd1fe83bc12baaef6309d6",
                 "shasum": ""
             },
             "require": {
@@ -6050,7 +6050,7 @@
             "support": {
                 "irc": "ircs://irc.libera.chat:6697/composer",
                 "issues": "https://github.com/composer/semver/issues",
-                "source": "https://github.com/composer/semver/tree/3.4.0"
+                "source": "https://github.com/composer/semver/tree/3.4.2"
             },
             "funding": [
                 {
@@ -6066,7 +6066,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-08-31T09:50:34+00:00"
+            "time": "2024-07-12T11:35:52+00:00"
         },
         {
             "name": "composer/xdebug-handler",
