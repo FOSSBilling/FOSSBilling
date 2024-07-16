@@ -1,0 +1,9 @@
+{
+  "id": "enomtools",
+  "type": "mod",
+  "name": "Enom Tools",
+  "description": "Tools for eNom",
+  "icon_url": "icon.svg",
+  "author": "Globalmcs",
+  "version": "1.0.0"
+}
