@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-dev-translations": "^41.0.0",
-    "@ckeditor/ckeditor5-dev-utils": "^40.0.0",
+    "@ckeditor/ckeditor5-dev-utils": "^41.0.0",
     "ckeditor5": "^42.0.0"
   }
 }
