@@ -366,7 +366,6 @@ class Server_Manager_ISPManager extends Server_Manager
             $field_query = http_build_query($fields);
             $response = $client->request('GET', $url . $field_query);
             $result = $response->toArray();
-            error_log($url . $field_query);
         }
 
         if ($response->getStatusCode() != 200) {
