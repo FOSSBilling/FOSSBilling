@@ -33,7 +33,7 @@
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",
     "sass": "^1.69.5",
-    "sass-loader": "^14.0.0",
+    "sass-loader": "^16.0.0",
     "svg-sprite-loader": "^6.0.11",
     "svgo-loader": "^4.0.0",
     "webpack": "^5.89.0",
