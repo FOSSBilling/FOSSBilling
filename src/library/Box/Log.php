@@ -72,7 +72,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         foreach ($params as $key => $value) {
             if (is_array($value)) {
                 $params[$key] = $this->maskParams($value, $depthLimit - 1);
-            } elseif (in_array(strtolower($key), array_map('strtolower', $this->_maskedKeys))) {
+            } elseif (in_array(strtolower($key), $this->_maskedKeys)) {
                 $params[$key] = '********';
             }
         }
