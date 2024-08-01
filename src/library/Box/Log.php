@@ -47,6 +47,8 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     protected array $_extras = [];
     protected string $_channel = 'application';
 
+    private array $_maskedKeys = ['password', 'pass', 'token', 'key', 'apisecret', 'secret', 'api_token'];
+
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
@@ -57,19 +59,40 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    private function maskParams(array|string $params, int $depthLimit = 15): array|string
+    {
+        if (is_string($params)) {
+            return $params;
+        }
+
+        if ($depthLimit <= 0) {
+            return 'Recursion limit reached while masking event log parameters';
+        }
+
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $params[$key] = $this->maskParams($value, $depthLimit - 1);
+            } elseif (in_array(strtolower($key), array_map('strtolower', $this->_maskedKeys))) {
+                $params[$key] = '********';
+            }
+        }
+
+        return $params;
+    }
+
     /**
      * @throws FOSSBilling\Exception
      */
     public function __call($method, $params): void
     {
         $priority = strtoupper($method);
+        $params = $this->maskParams($params);
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
             switch (is_countable($params) ? count($params) : 0) {
                 case 0:
                     throw new FOSSBilling\Exception('Missing log message');
                 case 1:
                     $message = array_shift($params);
-                    $extras = null;
 
                     break;
                 default:
