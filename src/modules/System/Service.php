@@ -285,7 +285,7 @@ class Service
         }
 
         $last_exec = $this->getParamValue('last_cron_exec');
-        $disableAutoCron = Config::getProperty('disable_auto_cron', false);
+        $disableAutoCron = Config::getProperty('disable_auto_cron', true);
 
         /*
          * Here we check if cron has been run at all or within a recent timeframe.
