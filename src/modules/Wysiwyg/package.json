@@ -7,7 +7,7 @@
     "build": "webpack --mode production"
   },
   "devDependencies": {
-    "@ckeditor/ckeditor5-dev-translations": "^41.0.0",
+    "@ckeditor/ckeditor5-dev-translations": "^42.0.0",
     "@ckeditor/ckeditor5-dev-utils": "^42.0.0",
     "ckeditor5": "^42.0.0"
   }
