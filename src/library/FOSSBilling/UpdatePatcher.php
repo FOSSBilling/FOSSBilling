@@ -293,7 +293,7 @@ class UpdatePatcher implements InjectionAwareInterface
             36 => function (): void {
                 // Patch to complete merging the Kb and Support modules.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
-    
+
                 // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
                 $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
                 $this->executeSql($q);
@@ -325,7 +325,7 @@ class UpdatePatcher implements InjectionAwareInterface
             37 => function (): void {
                 // Patch to complete remove the outdated queue module.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
-    
+
                 try {
                     $ext_service = $this->di['mod_service']('extension');
                     // If the queue extension exists, uninstall it.
@@ -376,7 +376,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $config = $ext_service->getConfig('mod_currency');
 
                 $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
-    
+
                 // Migrate the old currency exchange rate sync settings
                 $key = $pairs['currencylayer'] ?? '';
                 if ($key) {
@@ -397,7 +397,7 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn($key): bool => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn ($key): bool => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 
     /**

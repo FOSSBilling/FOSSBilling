@@ -104,8 +104,8 @@ class Service implements InjectionAwareInterface
                     $p = $method->getParameters();
                     if ($method->isPublic()
                         && isset($p[0])
-                        && $p[0]->getType() && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null // @phpstan-ignore-line (The code is valid)
-                        && in_array($p[0]->getType() && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null, ['Box_Event', '\Box_Event'])) { // @phpstan-ignore-line (The code is valid)
+                        && $p[0]->getType() instanceof \ReflectionType && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null // @phpstan-ignore-line (The code is valid)
+                        && in_array($p[0]->getType() instanceof \ReflectionType && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null, ['Box_Event', '\Box_Event'])) { // @phpstan-ignore-line (The code is valid)
                         $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
                     }
                 }
