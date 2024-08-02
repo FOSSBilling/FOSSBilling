@@ -61,7 +61,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['maintenance_mode']['enabled'] ??= false;
         $newConfig['maintenance_mode']['allowed_urls'] ??= [];
         $newConfig['maintenance_mode']['allowed_ips'] ??= [];
-        $newConfig['disable_auto_cron'] ??= false;
+        $newConfig['disable_auto_cron'] = !Version::isPreviewVersion() && !Environment::isDevelopment();
         $newConfig['i18n']['locale'] ??= $currentConfig['locale'] ?? 'en_US';
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';

@@ -285,43 +285,28 @@ class Service
         }
 
         $last_exec = $this->getParamValue('last_cron_exec');
-        $disableAutoCron = Config::getProperty('disable_auto_cron', false);
+        $disableAutoCron = Config::getProperty('disable_auto_cron', true);
 
-        /*
-         * Here we check if cron has been run at all or within a recent timeframe.
-         * No matter what, a message will be displayed within the dashboard and by default cron will also be performed to ensure functionality, however this can be disabled.
-         * Results are cached so even if `getMessages` is called multiple times it will still display correctly & so it won't go away before it's noticed.
-         */
         if (Environment::isProduction()) {
             $cronService = $this->di['mod_service']('cron');
+            $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
 
-            $result = $this->di['cache']->get('cron_issue', function (ItemInterface $item) use ($cronService, $last_exec, $disableAutoCron) {
-                $item->expiresAfter(15 * 60);
-                $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
+            // Perform the fallback behavior if enabled
+            if (!$disableAutoCron && (!$last_exec || (time() - strtotime($last_exec)) / 60 >= 15)) {
+                $cronService->runCrons();
+            }
 
-                // Perform the fallback behavior if enabled
-                if (!$disableAutoCron && (!$last_exec || (time() - strtotime($last_exec)) / 60 >= 15)) {
-                    $cronService->runCrons();
-                }
-
-                // And now return the correctly message for the given situation
-                if (!$last_exec) {
-                    return [
-                        'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly. (Message will remain for 15 minutes)',
-                        'url' => $cronUrl,
-                    ];
-                } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
-                    return [
-                        'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes. (Message will remain for 15 minutes)',
-                        'url' => $cronUrl,
-                    ];
-                } else {
-                    return [];
-                }
-            });
-
-            if ($result) {
-                $msgs['danger'][] = $result;
+            // And now return the correctly message for the given situation
+            if (!$last_exec) {
+                $msgs['danger'][] = [
+                    'text' => 'Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.',
+                    'url' => $cronUrl,
+                ];
+            } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
+                $msgs['danger'][] = [
+                    'text' => 'FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes.',
+                    'url' => $cronUrl,
+                ];
             }
         }
 

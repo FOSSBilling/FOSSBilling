@@ -93,7 +93,7 @@ return [
     /*
      * FOSSBilling will automatically execute cron when you login to the admin panel if it hasn't been executed in awhile. You can disable this fallback here.
      */
-    'disable_auto_cron' => false,
+    'disable_auto_cron' => true,
 
     /* 
      * These configuration options allow you to configure the default localisation.
