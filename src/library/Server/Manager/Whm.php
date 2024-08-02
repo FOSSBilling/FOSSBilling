@@ -83,11 +83,64 @@ class Server_Manager_Whm extends Server_Manager
      * @return string the login URL
      */
     public function getLoginUrl(Server_Account $account = null): string
-    {
-        $host = $this->_config['host'];
+	{
+		$host = $this->_config['host'];
+		$port = $this->_config['port'];
+		
+		$whmusername = $this->_config['username'];
+		$whmpassword = $this->_config['accesshash'];
+		if($account)
+		{
+			$cpanel_user = $account->getUsername();
+			
+			// Create the API query URL to create a user session
+			$query = "https://" . $host . ":" . $port . "/json-api/create_user_session?api.version=2&user=" . $cpanel_user . "&service=cpaneld";
+			
+			// Initialize cURL
+			$curl = curl_init();
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+			curl_setopt($curl, CURLOPT_HEADER, false);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			
+			// Set the authorization header
+			$header = ["Authorization: WHM $whmusername:" . preg_replace("'(\r|\n)'","",$whmpassword)];
+			curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
+			curl_setopt($curl, CURLOPT_URL, $query);
+			
+			// Execute the cURL request
+			$result = curl_exec($curl);
+			if ($result === false) {
+				error_log("curl_exec threw error \"" . curl_error($curl) . "\" for $query");
+				curl_close($curl);
+				return 'https://curl-error.com';
+			}
+			
+			// Decode the JSON response
+			$decoded_response = json_decode($result, true);
+			curl_close($curl);
+			
+			if (json_last_error() !== JSON_ERROR_NONE) {
+				error_log("json_decode error: " . json_last_error_msg());
+				return '';
+			}
+			
+			if (!isset($decoded_response['data']['url'])) {
+				error_log("Unexpected API response: " . $result);
+				return $whmpassword;
+			}
+			
+			// Get the session URL
+			$session_url = $decoded_response['data']['url'];
+			
+			return $session_url;
+		}
+		else
+		{
+			return "https://" . $host . "/cpanel";
+		}
+	}
 
-        return 'http://' . $host . '/cpanel';
-    }
 
     /**
      * Returns the login URL for a WHM reseller account.
@@ -98,9 +151,7 @@ class Server_Manager_Whm extends Server_Manager
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
-        $host = $this->_config['host'];
-
-        return 'http://' . $host . '/whm';
+        return $this->getLoginUrl();
     }
 
     /**
