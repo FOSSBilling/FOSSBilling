@@ -87,10 +87,15 @@ class Server_Manager_Whm extends Server_Manager
 		if ($account) {
 			// API action for creating a user session
 			$action = 'create_user_session';
+            $service = 'cpaneld';
+            if ($account->getReseller())
+            {
+                $service = 'whostmgrd';
+            }
 			$params = [
 				'api.version' => 2,
 				'user' => $account->getUsername(),
-				'service' => 'cpaneld',
+				'service' => $service,
 			];
 			try {
 				// Call the request function
