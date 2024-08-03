@@ -128,9 +128,16 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain)
     {
-       //create new contact
+        $c = $domain->getContactRegistrar();
+        $old_contact = $this -> getDomainDetails($domain);
+        /*
+        Check if the email address is the same as the one in the domain details
+        Current Fossbilling API uses the email adress of the registrant as "Username" for reseller club account
+        */
+        if($old_contact->getContactAdmin()->getEmail() == $c->getEmail()){
+            throw new Registrar_Exception('Unable to change email address');
+        }
         $contact = $this -> getContactIdForDomain($domain);
-
         $params = [
             'order-id' => $this->_getDomainOrderId($domain),
             'reg-contact-id' => $contact,
@@ -968,8 +975,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             if ($result['recsonpage'] < 1) {
                 throw new Registrar_Exception('Contact not found');
             }
-            $existing_contact_id = $result['result'][0]['entity.entityid'];
-            $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
         } catch (Registrar_Exception $e) {
             $this->getLog()->info($e->getMessage());
         }
