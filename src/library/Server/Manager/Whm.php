@@ -92,9 +92,20 @@ class Server_Manager_Whm extends Server_Manager
 		if($account)
 		{
 			$cpanel_user = $account->getUsername();
-			
+            //New Method using existing functions
+            $action = 'create_user_session';
+            $varHash = [
+                'user' => $account->getUsername(),
+            ];
+    
+            // Send the request to the WHM API
+            $json = $this->request($action, $varHash);
+            $result = ($json->result['data']['url']->status == 1);
+            return $result;
+        }
+        
 			// Create the API query URL to create a user session
-			$query = "https://" . $host . ":" . $port . "/json-api/create_user_session?api.version=2&user=" . $cpanel_user . "&service=cpaneld";
+			$query = "https://" . $host . ":" . $port . "/json-api/create_user_session?user=" . $cpanel_user;
 			
 			// Initialize cURL
 			$curl = curl_init();
