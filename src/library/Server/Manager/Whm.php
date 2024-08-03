@@ -89,15 +89,10 @@ class Server_Manager_Whm extends Server_Manager
 			$action = 'create_user_session';
             $service = 'cpaneld';
             $errorurl = "https://" . $this->_config['host'] . "/cpanel";
-            if ($account->getReseller())
-            {
-                $service = 'whostmgrd';
-                $errorurl = "https://" . $this->_config['host'] . "/whm";
-            }
 			$params = [
 				'api.version' => 2,
 				'user' => $account->getUsername(),
-				'service' => $service,
+				'service' => 'cpaneld',
 			];
 			try {
 				// Call the request function
@@ -107,14 +102,14 @@ class Server_Manager_Whm extends Server_Manager
 					return $response->data->url;
 				} else {
 					$this->getLog()->err("Unexpected API response: " . print_r($response, true));
-					return $errorurl;
+					return "https://" . $this->_config['host'] . "/cpanel";
 				}
 			} catch (Server_Exception $e) {
 				$this->getLog()->err("Failed to get login URL: " . $e->getMessage());
-				return $errorurl;
+				return "https://" . $this->_config['host'] . "/cpanel";
 			}
 		} else {
-			return $errorurl;
+			return "https://" . $this->_config['host'] . "/cpanel";
 		}
 	}
 
@@ -127,7 +122,31 @@ class Server_Manager_Whm extends Server_Manager
      */
     public function getResellerLoginUrl(Server_Account $account = null): string
     {
-        return $this->getLoginUrl();
+        if ($account) {
+			// API action for creating a user session
+			$action = 'create_user_session';
+			$params = [
+				'api.version' => 2,
+				'user' => $account->getUsername(),
+				'service' => 'whostmgrd',
+			];
+			try {
+				// Call the request function
+				$response = $this->request($action, $params);
+				// Check if the response is an object and access it accordingly
+				if (isset($response->data->url)) {
+					return $response->data->url;
+				} else {
+					$this->getLog()->err("Unexpected API response: " . print_r($response, true));
+					return "https://" . $this->_config['host'] . "/whm";
+				}
+			} catch (Server_Exception $e) {
+				$this->getLog()->err("Failed to get login URL: " . $e->getMessage());
+				return "https://" . $this->_config['host'] . "/whm";
+			}
+		} else {
+			return "https://" . $this->_config['host'] . "/whm";
+		}
     }
 
     /**
