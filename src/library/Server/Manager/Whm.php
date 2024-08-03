@@ -88,9 +88,11 @@ class Server_Manager_Whm extends Server_Manager
 			// API action for creating a user session
 			$action = 'create_user_session';
             $service = 'cpaneld';
+            $errorurl = "https://" . $this->_config['host'] . "/cpanel";
             if ($account->getReseller())
             {
                 $service = 'whostmgrd';
+                $errorurl = "https://" . $this->_config['host'] . "/whm";
             }
 			$params = [
 				'api.version' => 2,
@@ -105,14 +107,14 @@ class Server_Manager_Whm extends Server_Manager
 					return $response->data->url;
 				} else {
 					$this->getLog()->err("Unexpected API response: " . print_r($response, true));
-					return "https://" . $this->_config['host'] . "/cpanel";
+					return $errorurl;
 				}
 			} catch (Server_Exception $e) {
 				$this->getLog()->err("Failed to get login URL: " . $e->getMessage());
-				return "https://" . $this->_config['host'] . "/cpanel";
+				return $errorurl;
 			}
 		} else {
-			return "https://" . $this->_config['host'] . "/cpanel";
+			return $errorurl;
 		}
 	}
 
