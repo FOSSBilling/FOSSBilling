@@ -85,6 +85,7 @@ class Server_Manager_Whm extends Server_Manager
     public function getLoginUrl(Server_Account $account = null): string
 	{
 		$host = $this->_config['host'];
+		$port = $this->_config['port'];
 		
 		if ($account) {
 			$cpanel_user = $account->getUsername();
@@ -101,15 +102,16 @@ class Server_Manager_Whm extends Server_Manager
 				// Call the request function
 				$response = $this->request($action, $params);
 
-				if (isset($response['data']['url'])) {
-					return $response['data']['url'];
+				// Check if the response is an object and access it accordingly
+				if (isset($response->data->url)) {
+					return $response->data->url;
 				} else {
 					$this->getLog()->err("Unexpected API response: " . print_r($response, true));
-					return '';
+					return "https://" . $host . "/cpanel";
 				}
 			} catch (Server_Exception $e) {
 				$this->getLog()->err("Failed to get login URL: " . $e->getMessage());
-				return 'https://error.com';
+				return "https://" . $host . "/cpanel";
 			}
 		} else {
 			return "https://" . $host . "/cpanel";
