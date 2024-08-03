@@ -85,69 +85,33 @@ class Server_Manager_Whm extends Server_Manager
     public function getLoginUrl(Server_Account $account = null): string
 	{
 		$host = $this->_config['host'];
-		$port = $this->_config['port'];
 		
-		$whmusername = $this->_config['username'];
-		$whmpassword = $this->_config['accesshash'];
-		if($account)
-		{
+		if ($account) {
 			$cpanel_user = $account->getUsername();
-            //New Method using existing functions
-            $action = 'create_user_session';
-            $varHash = [
-                'user' => $account->getUsername(),
-            ];
-    
-            // Send the request to the WHM API
-            $json = $this->request($action, $varHash);
-            $result = ($json->result['data']['url']->status == 1);
-            return $result;
-        }
-        
-			// Create the API query URL to create a user session
-			$query = "https://" . $host . ":" . $port . "/json-api/create_user_session?user=" . $cpanel_user;
 			
-			// Initialize cURL
-			$curl = curl_init();
-			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-			curl_setopt($curl, CURLOPT_HEADER, false);
-			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-			
-			// Set the authorization header
-			$header = ["Authorization: WHM $whmusername:" . preg_replace("'(\r|\n)'","",$whmpassword)];
-			curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-			curl_setopt($curl, CURLOPT_URL, $query);
-			
-			// Execute the cURL request
-			$result = curl_exec($curl);
-			if ($result === false) {
-				error_log("curl_exec threw error \"" . curl_error($curl) . "\" for $query");
-				curl_close($curl);
-				return 'https://curl-error.com';
+			// API action for creating a user session
+			$action = 'create_user_session';
+			$params = [
+				'api.version' => 2,
+				'user' => $cpanel_user,
+				'service' => 'cpaneld',
+			];
+
+			try {
+				// Call the request function
+				$response = $this->request($action, $params);
+
+				if (isset($response['data']['url'])) {
+					return $response['data']['url'];
+				} else {
+					$this->getLog()->err("Unexpected API response: " . print_r($response, true));
+					return '';
+				}
+			} catch (Server_Exception $e) {
+				$this->getLog()->err("Failed to get login URL: " . $e->getMessage());
+				return 'https://error.com';
 			}
-			
-			// Decode the JSON response
-			$decoded_response = json_decode($result, true);
-			curl_close($curl);
-			
-			if (json_last_error() !== JSON_ERROR_NONE) {
-				error_log("json_decode error: " . json_last_error_msg());
-				return '';
-			}
-			
-			if (!isset($decoded_response['data']['url'])) {
-				error_log("Unexpected API response: " . $result);
-				return $whmpassword;
-			}
-			
-			// Get the session URL
-			$session_url = $decoded_response['data']['url'];
-			
-			return $session_url;
-		}
-		else
-		{
+		} else {
 			return "https://" . $host . "/cpanel";
 		}
 	}
