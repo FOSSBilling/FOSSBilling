@@ -15,5 +15,13 @@
                 })
                 .catch(error => { console.error(error) });
         });
+
+        {% if 'dark' in settings.theme %}
+        setTimeout(() => {
+            document.querySelectorAll('.ck-editor__main').forEach(function (element) {
+                element.style.color="#1d273b";
+            });
+        }, 1000);
+        {% endif %}
     });
 </script>
