@@ -149,13 +149,9 @@ function checkWebServer(): void
 function errorHandler(int $number, string $message, string $file, int $line)
 {
     // Just some housekeeping to ensure a few things we rely on are loaded.
-    if (!class_exists('\\' . FOSSBilling\ErrorPage::class)) {
-        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
-    }
-
-    if (!class_exists('\\' . SentryHelper::class)) {
-        require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
-    }
+    require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+    require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
+    require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Environment.php';
 
     // If it's an exception, handle it. Otherwise we don't need to do anything as PHP will log it for us.
     if ($number === E_RECOVERABLE_ERROR) {
@@ -170,6 +166,11 @@ function errorHandler(int $number, string $message, string $file, int $line)
  */
 function exceptionHandler(Exception|Error $e)
 {
+    // Just some housekeeping to ensure a few things we rely on are loaded.
+    require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
+    require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'SentryHelper.php';
+    require_once PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Environment.php';
+
     if (Environment::isTesting()) {
         echo $e->getMessage() . PHP_EOL;
 
@@ -207,9 +208,6 @@ function exceptionHandler(Exception|Error $e)
 
         echo $whoops->handleException($e);
     } else {
-        if (!class_exists(FOSSBilling\ErrorPage::class)) {
-            require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'ErrorPage.php';
-        }
         $errorPage = new FOSSBilling\ErrorPage();
         $errorPage->generatePage($e->getCode(), $message);
     }
