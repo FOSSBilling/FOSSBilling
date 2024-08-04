@@ -86,7 +86,6 @@ class Server_Manager_Whm extends Server_Manager
 	{
 		if ($account) {
 			// API action for creating a user session
-            $errorurl = "https://" . $this->_config['host'] . "/cpanel";
 			$params = [
 				'api.version' => 2,
 				'user' => $account->getUsername(),
