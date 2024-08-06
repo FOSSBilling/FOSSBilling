@@ -134,7 +134,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         Check if the email address is the same as the one in the domain details
         Current Fossbilling API uses the email adress of the registrant as "Username" for reseller club account
         */
-        if($old_contact->getContactAdmin()->getEmail() == $c->getEmail()){
+        if($old_contact->getContactAdmin()->getEmail() != $c->getEmail()){
             throw new Registrar_Exception('Unable to change email address');
         }
         $contact = $this -> getContactIdForDomain($domain);
