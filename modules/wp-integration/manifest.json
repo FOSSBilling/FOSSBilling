@@ -1,0 +1,21 @@
+{
+  "id": "wp_integration",
+  "type": "mod",
+  "name": "WordPress Integration",
+  "description": "Integrates FOSSBilling with WordPress using RabbitMQ",
+  "icon_url": "",
+  "version": "1.0.0",
+  "author": "Hamza",
+  "author_url": "https://github.com/Hamza-180",
+  "license": "proprietary",
+  "requires": [
+    {
+      "name": "php",
+      "version": ">=8.1.0"
+    },
+    {
+      "name": "php-amqplib/php-amqplib",
+      "version": "^3.0"
+    }
+  ]
+}

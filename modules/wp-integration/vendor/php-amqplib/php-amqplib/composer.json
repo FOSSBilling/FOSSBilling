@@ -1,0 +1,63 @@
+{
+    "name": "php-amqplib/php-amqplib",
+    "replace": {
+        "videlalvaro/php-amqplib": "self.version"
+    },
+    "type": "library",
+    "description": "Formerly videlalvaro/php-amqplib.  This library is a pure PHP implementation of the AMQP protocol. It's been tested against RabbitMQ.",
+    "keywords": ["rabbitmq", "message", "queue"],
+    "homepage": "https://github.com/php-amqplib/php-amqplib/",
+    "authors": [
+        {
+            "name": "Alvaro Videla",
+            "role": "Original Maintainer"
+        },
+        {
+            "name": "Raúl Araya",
+            "email": "nubeiro@gmail.com",
+            "role": "Maintainer"
+        },
+        {
+            "name": "Luke Bakken",
+            "email": "luke@bakken.io",
+            "role": "Maintainer"
+        },
+        {
+            "name": "Ramūnas Dronga",
+            "email": "github@ramuno.lt",
+            "role": "Maintainer"
+        }
+    ],
+    "require": {
+        "php": "^7.2||^8.0",
+        "ext-sockets": "*",
+        "ext-mbstring": "*",
+        "phpseclib/phpseclib": "^2.0|^3.0"
+    },
+    "require-dev": {
+        "ext-curl": "*",
+        "phpunit/phpunit": "^7.5|^9.5",
+        "squizlabs/php_codesniffer": "^3.6",
+        "nategood/httpful": "^0.2.20"
+    },
+    "conflict": {
+        "php": "7.4.0 - 7.4.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhpAmqpLib\\": "PhpAmqpLib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhpAmqpLib\\Tests\\Functional\\": "tests/Functional",
+            "PhpAmqpLib\\Tests\\Unit\\": "tests/Unit"
+        }
+    },
+    "license": "LGPL-2.1-or-later",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "3.0-dev"
+        }
+    }
+}
