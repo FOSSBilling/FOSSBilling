@@ -394,7 +394,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null)
+    public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null, $type = null)
     {
         $modelPayment = $this->di['db']->dispense('ProductPayment');
         $modelPayment->type = \Model_ProductPayment::FREE;
@@ -406,7 +406,7 @@ class Service implements InjectionAwareInterface
         $model->status = $status ?? \Model_Product::STATUS_DISABLED;
         $model->title = $title;
         $model->slug = $this->di['tools']->slug($title);
-        $model->type = self::CUSTOM;
+        $model->type = $type ?? self::CUSTOM;
         $model->setup = $setup ?? self::SETUP_AFTER_PAYMENT;
         $model->is_addon = 1;
 
@@ -792,7 +792,7 @@ class Service implements InjectionAwareInterface
 
     public function getAddonById($id)
     {
-        return $this->di['db']->findOne('Product', "type = 'custom' and is_addon = 1 and id = ?", [$id]);
+        return $this->di['db']->findOne('Product', "is_addon = 1 and id = ?", [$id]);
     }
 
     private function getPeriods(\Model_Promo $model): array
@@ -842,7 +842,7 @@ class Service implements InjectionAwareInterface
         $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
         array_unshift($ids, (int) $model->id); // adding product ID as first param in array
 
-        return $this->di['db']->find('Product', 'type = "custom" and is_addon= 1 and id != ? and id IN (' . $slots . ')', $ids);
+        return $this->di['db']->find('Product', 'is_addon= 1 and id != ? and id IN (' . $slots . ')', $ids);
     }
 
     public function toAddonArray(\Model_Product $model, $deep = true)

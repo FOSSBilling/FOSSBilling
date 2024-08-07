@@ -27,32 +27,58 @@
 
                             <h5 class="mt-4 mb-1"><strong>{{ 'Billing'|trans }}</strong></h5>
 
-                            <div class="row">
-                                <div class="col-12 col-md-4 col-xl-3">
-                                    {% if product.pricing.type == 'recurrent' %}
-                                    <span>{{ 'Billing cycle'|trans }}</span>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th width="25%">{% if product.pricing.type == 'recurrent' %}
+                                    {{ 'Billing cycle'|trans }}
                                     {% else %}
-                                    <span>{{ 'One-time payment'|trans }}</span>
-                                    {% endif %}
-                                </div>
-                                <div class="col">
-                                    {% if product.pricing.type == 'recurrent' %}
-                                    {% set periods = guest.system_periods %}
-                                    <select class="form-select" name="period" id="period-selector">
-                                        {% for code,prices in product.pricing.recurrent %}
-                                            {% if prices.enabled %}
-                                                <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ prices.price | money_convert }} ({{ periods[code] }})</option>
+                                    {{ 'One-time payment'|trans }}
+                                    {% endif %}</th>
+                                    <th width="35%">{{ 'Price'|trans }}</th>
+                                    <th width="12%">{{ 'Setup Fee'|trans }}</th>
+                                    {% if product.allow_quantity_select %}<th width="5%" class="text-center">{{ 'Quantity'|trans }}</th>{% endif %}
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ product.title }}</td>
+                                        <td>
+                                            {% if product.pricing.type == 'recurrent' %}
+                                                {% set periods = guest.system_periods %}
+                                                <select class="form-select" name="period" id="period-selector">
+                                                    {% for code,prices in product.pricing.recurrent %}
+                                                        {% if prices.enabled %}
+                                                            <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" data-bb-setup="{{ prices.setup | money_convert }}" name="period">{{ prices.price | money_convert }} ({{ periods[code] }}) </option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                            {% elseif product.pricing.type == 'free' %}
+                                                {{ 0 | money_convert }}
+                                            {% else %}
+                                                {{ product.pricing.once.price | money_convert }}
+                                                    {% if product.pricing.once.setup %}
+                                                        {% set setup = product.pricing.once.setup %}
+                                                    {% else %}
+                                                        {% set setup = 0 %}
+                                                    {% endif %}
                                             {% endif %}
-                                        {% endfor %}
-                                    </select>
-                                    {% elseif product.pricing.type == 'free' %}
-                                    <span class="badge bg-success">{{ 0 | money_convert }}</span>
-                                    {% else %}
-                                    <span class="badge bg-success">{{ product.pricing.once.price | money_convert }}</span>
-                                    {% endif %}
-                                </div>
+                                        </td>
+                                        <td id='setup-fee-cell'>{% if setup %}{{ setup | money_convert }}{% else %}{{ 0 | money_convert }}{% endif %}</td>
+
+                                        {% if product.allow_quantity_select %}
+                                            <td class="text-center">
+                                                <input type="text" name="quantity" value="1" style="width:30px;"/>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                </tbody>
+                                </table>
                             </div>
                         </div>
+
+
                     {% endset %}
 
                     {% set tpl = "mod_service"~product.type~"_order_form.html.twig" %}
@@ -79,3 +105,19 @@
     </div>
     {% endif %}
 </div>
+{% block js%}
+<script>
+    // display initial setup fee when page is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        var price = document.getElementById('period-selector').options[document.getElementById('period-selector').selectedIndex].getAttribute('data-bb-price');
+        var setup = document.getElementById('period-selector').options[document.getElementById('period-selector').selectedIndex].getAttribute('data-bb-setup');
+        document.getElementById('setup-fee-cell').innerHTML = setup;
+    });
+    // change setup fee and price when period is changed in product configuration
+    document.getElementById('period-selector').addEventListener('change', function() {
+        var price = this.options[this.selectedIndex].getAttribute('data-bb-price');
+        var setup = this.options[this.selectedIndex].getAttribute('data-bb-setup');
+        document.getElementById('setup-fee-cell').innerHTML = setup;
+    });
+</script>
+{% endblock %}
