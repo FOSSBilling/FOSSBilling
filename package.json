@@ -30,7 +30,7 @@
     "autoprefixer": "^10.4.16",
     "core-js": "^3.33.3",
     "cypress": "^13.5.1",
-    "postcss": "^8.4.31",
+    "postcss": "^8.4.41",
     "postcss-loader": "^7.3.3",
     "sass": "^1.69.5",
     "sass-loader": "^14.0.0",
@@ -54,7 +54,7 @@
   },
   "overrides": {
     "braces": "^3.0.3",
-    "postcss": "^8.4.31",
+    "postcss": "^8.4.41",
     "@melloware/coloris": "^0.24.0",
     "imask": "^7.1.3"
   }
