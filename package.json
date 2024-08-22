@@ -54,7 +54,7 @@
   },
   "overrides": {
     "braces": "^3.0.3",
-    "postcss": "^8.4.31",
+    "postcss": "$postcss",
     "@melloware/coloris": "^0.24.0",
     "imask": "^7.1.3"
   }
