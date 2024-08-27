@@ -30,7 +30,7 @@ class HandlerTest extends BBDbApiTestCase
     {
         $api = $this->di['api_guest'];
         $method = 'methodWithoutUnderscore';
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionCode(710);
         $api->$method();
     }
@@ -39,7 +39,7 @@ class HandlerTest extends BBDbApiTestCase
     {
         $api = $this->di['api_guest'];
         $moduleName = '__';
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionCode(714);
         $version = $api->$moduleName();
     }
@@ -48,7 +48,7 @@ class HandlerTest extends BBDbApiTestCase
     {
         $api = $this->di['api_guest'];
         $moduleName = 'notActiveModule_version';
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionCode(715);
         $version = $api->$moduleName();
     }

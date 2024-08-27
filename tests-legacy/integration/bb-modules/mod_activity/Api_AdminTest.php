@@ -22,14 +22,14 @@ class Api_AdminTest extends BBDbApiTestCase
 
     public function testLogDeleteIdNotSetException(): void
     {
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
 
         $this->api_admin->activity_log_delete([]);
     }
 
     public function testLogNotFoundException(): void
     {
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $this->api_admin->activity_log_delete(['id' => 100]);
     }
 

@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Extension\Controller;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

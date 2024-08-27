@@ -197,7 +197,7 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Passwords do not match');
         $this->api->change_password($data);
     }

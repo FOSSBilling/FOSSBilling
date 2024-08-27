@@ -1,7 +1,7 @@
 <?php
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_TranslateTest extends PHPUnit\Framework\TestCase
+class Box_TranslateTest extends TestCase
 {
     public function testsetLocale(): void
     {

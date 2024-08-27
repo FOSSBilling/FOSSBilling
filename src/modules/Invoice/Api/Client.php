@@ -79,7 +79,7 @@ class Client extends \Api_Abstract
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
         if ($invoice->status == 'paid') {
-            throw new \FOSSBilling\InformationException('Paid Invoice cannot be modified');
+            throw new InformationException('Paid Invoice cannot be modified');
         }
 
         $updateParams = [];
@@ -110,7 +110,7 @@ class Client extends \Api_Abstract
             throw new \FOSSBilling\Exception('Order not found');
         }
         if ($model->price <= 0) {
-            throw new \FOSSBilling\InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
+            throw new InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
         }
         $service = $this->getService();
         $invoice = $service->generateForOrder($model);
@@ -135,7 +135,7 @@ class Client extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!is_numeric($data['amount'])) {
-            throw new \FOSSBilling\InformationException('You need to enter numeric value');
+            throw new InformationException('You need to enter numeric value');
         }
 
         $service = $this->getService();

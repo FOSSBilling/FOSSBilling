@@ -145,7 +145,7 @@ abstract class Payment_AdapterAbstract
      */
     public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
-        return Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+        return HttpClient::create(['bindto' => BIND_TO]);
     }
 
     /**

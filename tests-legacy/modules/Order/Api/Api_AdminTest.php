@@ -272,7 +272,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $result = $apiMock->unsuspend($data);
 
         $this->assertTrue($result);
@@ -347,7 +347,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $result = $apiMock->uncancel($data);
 
         $this->assertTrue($result);
@@ -476,7 +476,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $result = $apiMock->update_config($data);
 
         $this->assertTrue($result);

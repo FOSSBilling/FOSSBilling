@@ -1,7 +1,7 @@
 <?php
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_ModTest extends PHPUnit\Framework\TestCase
+class Box_ModTest extends TestCase
 {
     public function testEmptyConfig(): void
     {

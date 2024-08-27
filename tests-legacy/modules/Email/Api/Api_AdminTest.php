@@ -635,7 +635,7 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn(['vars' => [], 'content' => 'content']);
 
         $loader = new \Twig\Loader\ArrayLoader();
-        $twig = $this->getMockBuilder(\Twig\Environment::class)->setConstructorArgs([$loader, ['debug' => false]])->getMock();
+        $twig = $this->getMockBuilder(Environment::class)->setConstructorArgs([$loader, ['debug' => false]])->getMock();
 
         $di = new \Pimple\Container();
         $di['twig'] = $twig;

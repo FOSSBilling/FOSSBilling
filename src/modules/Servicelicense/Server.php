@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Servicelicense;
 
-class Server implements \FOSSBilling\InjectionAwareInterface
+class Server implements InjectionAwareInterface
 {
     private array $_result = [
         'licensed_to' => null,

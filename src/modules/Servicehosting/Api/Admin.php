@@ -233,7 +233,7 @@ class Admin extends \Api_Abstract
         $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
 
         if ($count > 0) {
-            throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
+            throw new InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
         }
 
         return (bool) $this->getService()->deleteServer($model);
@@ -329,7 +329,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws InformationException
      */
     public function hp_delete($data)
     {
@@ -346,7 +346,7 @@ class Admin extends \Api_Abstract
         // Ensure $hosting_services is an array before counting its elements
         $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
         if ($count > 0) {
-            throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
+            throw new InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
         }
 
         return (bool) $this->getService()->deleteHp($model);

@@ -16,7 +16,7 @@ $debugBar = new DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
 $debugBar['messages']->useHtmlVarDumper();
 
-$config = FOSSBilling\Config::getConfig();
+$config = Config::getConfig();
 $config['info']['salt'] = '********';
 $config['db'] = array_fill_keys(array_keys($config['db']), '********');
 

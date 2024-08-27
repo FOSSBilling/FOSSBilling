@@ -6,7 +6,7 @@ class AdminTest extends \BBTestCase
 {
     public function testGet(): void
     {
-        $service = new \Box\Mod\Profile\Service();
+        $service = new Service();
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -59,7 +59,7 @@ class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('updateAdmin')
@@ -76,7 +76,7 @@ class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('generateNewApiKey')
@@ -116,7 +116,7 @@ class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->pass = $di['password']->hashIt('oldpw');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('changeAdminPassword')

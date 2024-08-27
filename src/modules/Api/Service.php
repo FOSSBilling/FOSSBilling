@@ -10,7 +10,7 @@
 
 namespace Box\Mod\Api;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

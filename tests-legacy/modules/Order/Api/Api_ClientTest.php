@@ -266,7 +266,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             'id' => random_int(1, 100),
         ];
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $result = $apiMock->delete($data);
 
         $this->assertTrue($result);
@@ -339,7 +339,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             'id' => random_int(1, 100),
         ];
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(Exception::class);
         $this->api->get($data);
     }
 }

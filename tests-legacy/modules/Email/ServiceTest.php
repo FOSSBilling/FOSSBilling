@@ -338,7 +338,7 @@ class ServiceTest extends \BBTestCase
             ->method('getParamValue')
             ->willReturn('value');
 
-        $twig = $this->getMockBuilder('\\' . \Twig\Environment::class)->disableOriginalConstructor()->getMock();
+        $twig = $this->getMockBuilder('\\' . Environment::class)->disableOriginalConstructor()->getMock();
 
         $di['api_admin'] = function () use ($di) {
             $api = new \Api_Handler(new \Model_Admin());
@@ -467,7 +467,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($clientApiArray);
 
         $loader = new \Twig\Loader\ArrayLoader();
-        $twig = $this->getMockBuilder(\Twig\Environment::class)->setConstructorArgs([$loader, ['debug' => false]])->getMock();
+        $twig = $this->getMockBuilder(Environment::class)->setConstructorArgs([$loader, ['debug' => false]])->getMock();
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
             ->disableOriginalConstructor()
@@ -745,7 +745,7 @@ class ServiceTest extends \BBTestCase
             ->method('decrypt');
         $configMock = ['salt' => md5(random_bytes(13))];
 
-        $twigMock = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
+        $twigMock = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->getMock();
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
@@ -996,7 +996,7 @@ class ServiceTest extends \BBTestCase
             ->method('decrypt');
         $configMock = ['salt' => md5(random_bytes(13))];
 
-        $twigMock = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
+        $twigMock = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->getMock();
 
         $di = new \Pimple\Container();
         $di['db'] = $db;

@@ -1,6 +1,6 @@
 <?php
 
-class BBTestCase extends PHPUnit\Framework\TestCase
+class BBTestCase extends TestCase
 {
     protected function tearDown(): void
     {

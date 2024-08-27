@@ -1,7 +1,7 @@
 <?php
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
+class Box_TwigLoaderTest extends TestCase
 {
     public function testTemplates(): void
     {

@@ -1,7 +1,7 @@
 <?php
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
+class FOSSBilling_ValidateTest extends TestCase
 {
     public static function domains()
     {

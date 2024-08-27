@@ -1,7 +1,7 @@
 <?php
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_EventManagerTest extends PHPUnit\Framework\TestCase
+class Box_EventManagerTest extends TestCase
 {
     #[PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testEmptyFire(): void

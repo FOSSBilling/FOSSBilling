@@ -1,6 +1,6 @@
 <?php
 
-class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
+class FOSSBilling_PasswordManagerTest extends TestCase
 {
     public function testsetAlgo(): void
     {

@@ -15,7 +15,7 @@
 
 namespace Box\Mod\Custompages\Controller;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Client implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

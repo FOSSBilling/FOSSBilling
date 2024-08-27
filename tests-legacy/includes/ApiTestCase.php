@@ -1,6 +1,6 @@
 <?php
 
-class ApiTestCase extends PHPUnit\Framework\TestCase
+class ApiTestCase extends TestCase
 {
     protected ?Pimple\Container $di;
     protected $session;
