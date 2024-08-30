@@ -5,7 +5,7 @@
 {% block meta_title %}{{ 'Invoices'|trans }}{% endblock %}
 
 {% set active_menu = 'invoice' %}
-
+{% set params = admin.system_get_params %}
 {% block top_content %}
     {% if request.show_filter %}
     <section class="card mb-3">
@@ -52,7 +52,7 @@
                     <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                     <div class="col">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value="0"{% if not request.status %} checked{% endif %}>
+                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value="0" {% if not request.status %} checked{% endif %}>
                             <label class="form-check-label" for="radioStatusAll">{{ 'All statuses'|trans }}</label>
                         </div>
                         <div class="form-check form-check-inline">
@@ -69,25 +69,14 @@
                         </div>
                     </div>
                 </div>
-                {# <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Approved'|trans }}</label>
-                        <div class="col">
-                            <input type="radio" name="approved" value=""{% if not request.approved %} checked{% endif %}>
-                            <label>All</label>
-                            <input type="radio" name="approved" value="0"{% if request.approved == "1"%} checked{% endif %}>
-                            <label>Pending approval</label>
-                            <input type="radio" name="approved" value="1"{% if request.approved == "0" %} checked{% endif %}>
-                            <label>Approved</label>
-                        </div>
-                </div> #}
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Issue date'|trans }}</label>
+                    <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Invoice date'|trans }}</label>
                     <div class="col">
                         <div class="input-group">
                             <div class="input-icon w-100">
                                 <input class="form-control datepicker"
                                        id="issue_date"
-                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                       value="{% if request.date_from %}{{ request.date_from|format_date }}{% endif %}{% if request.date_to %} to {{ request.date_to|format_date }}{% endif %}"
                                        data-name-from="date_from"
                                        data-name-to="date_to"
                                 >
@@ -118,13 +107,28 @@
     </section>
 {% else %}
     {% set statuses = admin.invoice_get_statuses %}
-    <section class="row row-cards mb-3">
-        <div class="col-sm-6 col-lg-3">
+    {% set approval = admin.invoice_get_approvals %}
+    <section class="row row-cards mb-3 align-items-center">
+        <div class="col">
+            <a class="card card-sm card-link" href="{{ 'invoice'|alink({ 'status': 'Pending Approval' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-secondary text-white avatar">{{ approval.pending }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Pending Approval'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
             <a class="card card-sm card-link" href="{{ 'invoice'|alink({ 'status': 'unpaid' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
-                            <span class="bg-danger text-white avatar">{{ statuses.unpaid }}</span>
+                            <span class="bg-danger text-white avatar">{{ statuses.unpaid - approval.pending }}</span>
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ 'Unpaid'|trans }}</div>
@@ -133,7 +137,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-sm-6 col-lg-3">
+        <div class="col">
             <a class="card card-sm card-link" href="{{ 'invoice'|alink({ 'status': 'paid' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
@@ -147,12 +151,12 @@
                 </div>
             </a>
         </div>
-        <div class="col-sm-6 col-lg-3">
+        <div class="col">
             <a class="card card-sm card-link" href="{{ 'invoice'|alink({ 'status': 'refunded' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
-                            <span class="bg-secondary text-white avatar">{{ statuses.refunded }}</span>
+                            <span class="bg-warning text-white avatar">{{ statuses.refunded }}</span>
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ 'Refunded'|trans }}</div>
@@ -161,12 +165,12 @@
                 </div>
             </a>
         </div>
-        <div class="col-sm-6 col-lg-3">
+        <div class="col">
             <a class="card card-sm card-link" href="{{ 'invoice'|alink }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
-                            <span class="bg-blue text-white avatar">{{ statuses.paid + statuses.unpaid + statuses.refunded }}</span>
+                            <span class="bg-blue text-white avatar">{{ statuses.paid + statuses.unpaid + statuses.refunded}}</span>
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ 'Total'|trans }}</div>
@@ -192,6 +196,14 @@
                 {{ 'New Invoice'|trans }}
             </button>
         </li>
+        {% if params.invoice_refund_logic == 'credit_note' %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-creditnote" role="tab">{{ 'Credit Notes'|trans }}</button>
+        </li>
+        {% endif %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-archive" role="tab">{{ 'Archive'|trans }}</button>
+        </li>
     </ul>
 
     <div class="card">
@@ -209,8 +221,8 @@
                             <th class="w-1"></th>
                             <th>{{ 'Name'|trans }}</th>
                             <th class="text-center">{{ 'Amount'|trans }}</th>
-                            <th class="text-center">{{ 'Issued at'|trans }}</th>
-                            <th class="text-center">{{ 'Paid at'|trans }}</th>
+                            <th class="text-center">{{ 'Invoice Date'|trans }}</th>
+                            <th class="text-center">{{ 'Due Date'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -218,12 +230,13 @@
                     <tbody>
                         {% set invoices = admin.invoice_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                         {% for invoice in invoices.list %}
+                        {% if invoice.status != 'revoked' %}
                         <tr>
                             <td>
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ invoice.id }}">
                             </td>
                             <td>
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.nr }}</a>
                             </td>
                             <td>
                                 <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
@@ -234,22 +247,29 @@
                                 <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
                             <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
-                            <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
-                            <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
+                            <td class="text-center">{{ invoice.created_at|format_date }}</td>
+                            <td class="text-center">{{ invoice.due_at|format_date }}</td>
                             <td>
-                                {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
+                                {% if invoice.approved %}
+                                    {% if invoice.status == 'paid' %}
+                                        <span class="badge bg-success text-white">
+                                    {% endif %}
+                                    {% if invoice.status == 'unpaid' %}
+                                        <span class="badge bg-danger text-white">
+                                    {% endif %}
+                                    {% if invoice.status == 'refunded' %}
+                                        <span class="badge bg-warning text-white">
+                                    {% endif %}
+                                    {% if invoice.status == 'canceled' %}
+                                        <span class="badge bg-secondary text-white">
+                                    {% endif %}
+                                    {% if invoice.status == 'revoked' %}
+                                        <span class="badge bg-secondary text-white">
+                                    {% endif %}
+                                    {{ mf.status_name(invoice.status) }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary text-white">{{ 'Pending'|trans }}</span>
                                 {% endif %}
-                                {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(invoice.status) }}
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
@@ -257,16 +277,19 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
+                                {% if invoice.status == 'unpaid' %}
                                 <a class="btn btn-icon api-link"
                                     href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
-                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                    data-api-confirm="{{ 'Are you sure you want to delete this invoice?'|trans }}"
                                     data-api-reload="1">
                                     <svg class="icon">
-                                        <use xlink:href="#delete" />
+                                        <use xlink:href="#close" />
                                     </svg>
                                 </a>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% endif %}
                         {% else %}
                         <tr>
                             <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
@@ -315,6 +338,208 @@
                         </div>
                         <input type="submit" value="{{ 'Prepare'|trans }}" class="btn btn-primary">
                     </form>
+                </div>
+            </div>
+            <div class="tab-pane show" id="tab-creditnote" role="tabpanel">
+                {% include 'partial_search.html.twig' %}
+              <div class="table-responsive">
+                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                    <thead>
+                        <tr>
+                            <th class="w-1 no-sort">
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
+                            </th>
+                            <th class="w-1">#</th>
+                            <th class="w-1"></th>
+                            <th>{{ 'Name'|trans }}</th>
+                            <th class="text-center">{{ 'Amount'|trans }}</th>
+                            <th class="text-center">{{ 'Invoice Date'|trans }}</th>
+                            <th class="text-center">{{ 'Due Date'|trans }}</th>
+                            <th>{{ 'Status'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set creditnotes = admin.invoice_get_cn_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                        {% for cn in creditnotes.list %}
+                        {% if cn.type == 'creditnote' %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ cn.id }}">
+                            </td>
+                            <td>
+                                <a href="{{ '/invoice/manage'|alink }}/{{ cn.id }}">{{ cn.nr }}</a>
+                            </td>
+                            <td>
+                                <a href="{{ 'client'|alink }}/manage/{{ cn.client.id }}">
+                                    <span class="avatar avatar-xs" style="background-image: url({{ cn.buyer.email|gravatar }}&size=24"></span>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ 'client'|alink }}/manage/{{ cn.client.id }}">{{ cn.buyer.first_name }} {{ cn.buyer.last_name }}</a>
+                            </td>
+                            <td class="text-center">{{ mf.currency_format(cn.total, cn.currency) }}</td>
+                            <td class="text-center">{{ cn.created_at|format_date }}</td>
+                            <td class="text-center">{{ cn.due_at|format_date }}</td>
+                            <td>
+                                {% if cn.status == 'paid' %}
+                                    <span class="badge bg-success text-white">
+                                {% endif %}
+                                {% if cn.status == 'unpaid' %}
+                                    <span class="badge bg-danger text-white">
+                                {% endif %}
+                                {% if cn.status == 'refunded' %}
+                                    <span class="badge bg-warning text-white">
+                                {% endif %}
+                                {% if cn.status == 'canceled' %}
+                                    <span class="badge bg-secondary text-white">
+                                {% endif %}
+                                {% if cn.status == 'revoked' %}
+                                    <span class="badge bg-secondary text-white">
+                                {% endif %}
+                                {{ mf.status_name(cn.status) }}</span>
+                            </td>
+                            <td>
+                                <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ cn.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                                {% if cn.status == 'unpaid' %}
+                                <a class="btn btn-icon api-link"
+                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': cn.id, 'CSRFToken': CSRFToken }) }}"
+                                    data-api-confirm="{{ 'Are you sure you want to delete this invoice?'|trans }}"
+                                    data-api-reload="1">
+                                    <svg class="icon">
+                                        <use xlink:href="#close" />
+                                    </svg>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% else %}
+                        <tr>
+                            <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+              </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <div>
+                        {% include "partial_batch_delete.html.twig" with { 'action': 'admin/invoice/batch_delete' } %}
+                        {% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
+                    </div>
+                    <div>
+                        <a class="btn btn-secondary" href="{{ '/api/admin/invoice/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
+                            <svg class="icon">
+                                <use xlink:href="#download" />
+                            </svg>
+                            {{ 'Export Invoices'|trans }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane show" id="tab-archive" role="tabpanel">
+                {% include 'partial_search.html.twig' %}
+              <div class="table-responsive">
+                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                    <thead>
+                        <tr>
+                            <th class="w-1 no-sort">
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
+                            </th>
+                            <th class="w-1">#</th>
+                            <th class="w-1"></th>
+                            <th>{{ 'Name'|trans }}</th>
+                            <th class="text-center">{{ 'Amount'|trans }}</th>
+                            <th class="text-center">{{ 'Invoice Date'|trans }}</th>
+                            <th class="text-center">{{ 'Due Date'|trans }}</th>
+                            <th>{{ 'Status'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        {% for invoice in invoices.list %}
+                        {% if invoice.status == 'revoked' %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ invoice.id }}">
+                            </td>
+                            <td>
+                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.nr }}</a>
+                            </td>
+                            <td>
+                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
+                                    <span class="avatar avatar-xs" style="background-image: url({{ invoice.buyer.email|gravatar }}&size=24"></span>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
+                            </td>
+                            <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
+                            <td class="text-center">{{ invoice.created_at|format_date }}</td>
+                            <td class="text-center">{{ invoice.due_at|format_date }}</td>
+                            <td>
+                                {% if invoice.status == 'paid' %}
+                                    <span class="badge bg-success text-white">
+                                {% endif %}
+                                {% if invoice.status == 'unpaid' %}
+                                    <span class="badge bg-danger text-white">
+                                {% endif %}
+                                {% if invoice.status == 'refunded' %}
+                                    <span class="badge bg-warning text-white">
+                                {% endif %}
+                                {% if invoice.status == 'canceled' %}
+                                    <span class="badge bg-secondary text-white">
+                                {% endif %}
+                                {% if invoice.status == 'revoked' %}
+                                    <span class="badge bg-secondary text-white">
+                                {% endif %}
+                                {{ mf.status_name(invoice.status) }}</span>
+                            </td>
+                            <td>
+                                <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                                {% if invoice.status == 'unpaid' %}
+                                <a class="btn btn-icon api-link"
+                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
+                                    data-api-confirm="{{ 'Are you sure you want to delete this invoice?'|trans }}"
+                                    data-api-reload="1">
+                                    <svg class="icon">
+                                        <use xlink:href="#close" />
+                                    </svg>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% else %}
+                        <tr>
+                            <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+              </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <div>
+                        {% include "partial_batch_delete.html.twig" with { 'action': 'admin/invoice/batch_delete' } %}
+                        {% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
+                    </div>
+                    <div>
+                        <a class="btn btn-secondary" href="{{ '/api/admin/invoice/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
+                            <svg class="icon">
+                                <use xlink:href="#download" />
+                            </svg>
+                            {{ 'Export Invoices'|trans }}
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

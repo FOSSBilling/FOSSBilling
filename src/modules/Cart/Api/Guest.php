@@ -168,11 +168,14 @@ class Guest extends \Api_Abstract
             }
 
             foreach ($data['addons'] as $addon => $properties) {
-                if ($properties['selected']) {
-                    $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
+                // check if the addon has the property "selected"
+                if (isset($properties['selected'])){
+                    if ($properties['selected']) {
+                        $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
 
-                    if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
-                        throw new \FOSSBilling\InformationException('One or more of your selected add-ons are invalid for the associated product.');
+                        if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
+                            throw new \FOSSBilling\InformationException('One or more of your selected add-ons are invalid for the associated product.');
+                        }
                     }
                 }
             }

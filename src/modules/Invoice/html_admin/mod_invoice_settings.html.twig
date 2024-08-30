@@ -75,21 +75,43 @@
                     </div>
                 </div>
                 <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Use Proforma Invoice'|trans }}</label>
+                    <div class="col-md-6">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="radioUseProformaYes" type="radio" name="use_proforma_invoice" value="1"{% if params.use_proforma_invoice == "1" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioUseProformaYes">{{ 'Yes'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="radioUseProformaNo" type="radio" name="use_proforma_invoice" value="0"{% if params.use_proforma_invoice == "0" %} checked{% endif %}>
+                            <label class="form-check-label" for="radioUseProformaNo">{{ 'No'|trans }}</label>
+                        </div>
+                    <small class="form-hint">{{ 'If yes, invoies are generated with Invoice prefix/series, then finalized with the Paid invoice prefix/series.'|trans }}</small>
+                    </div>
+                </div>
+                <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Invoice prefix/series'|trans }}</label>
                     <div class="col-md-6">
                         <input class="form-control" type="text" name="invoice_series" value="{{ params.invoice_series }}">
                     </div>
                 </div>
                 <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Next invoice number'|trans }}</label>
+                    <div class="col-md-6">
+                        <input class="form-control" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number }}">
+                    </div>
+                </div>
+                <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Paid invoice prefix/series'|trans }}</label>
                     <div class="col-md-6">
                         <input class="form-control" type="text" name="invoice_series_paid" value="{{ params.invoice_series_paid }}">
+                    <small class="form-hint">{{'If "Use Proforma Invoice" is not enabled, this Series is used by default.'|trans }}</small>
                     </div>
+                    
                 </div>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Next paid invoice number'|trans }}</label>
                     <div class="col-md-6">
-                        <input class="form-control" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number }}">
+                        <input class="form-control" type="text" name="paid_invoice_starting_number" value="{{ params.paid_invoice_starting_number }}">
                     </div>
                 </div>
                 <div class="mb-3 row">
@@ -146,6 +168,27 @@
                             <input class="form-check-input" id="radioInvoiceRefundLogic" type="radio" name="invoice_refund_logic" value="manual"{% if params.invoice_refund_logic == "manual" %} checked{% endif %}>
                             <label class="form-check-label" for="radioInvoiceRefundLogic">{{ 'Manual. No actions performed'|trans }}</label>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">{{ 'Credit Note Numbering'|trans }}</h3>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Credit note prefix/series'|trans }}</label>
+                    <div class="col-md-6">
+                        <input class="form-control" type="text" name="invoice_cn_series" value="{{ params.invoice_cn_series }}">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Next credit note number'|trans }}</label>
+                    <div class="col-md-6">
+                        <input class="form-control" type="text" name="invoice_cn_starting_number" value="{{ params.invoice_cn_starting_number }}">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Credit Note padding length'|trans }}</label>
+                    <div class="col-md-6">
+                        <input class="form-control" type="number" name="cn_number_padding" value="{{ params.cn_number_padding|default(5) }}" min="0" max="20">
                     </div>
                 </div>
             </div>

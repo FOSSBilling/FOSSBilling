@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Error;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -393,6 +394,38 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
 
                 $ext_service->setConfig($config);
+            },
+            43 => function (): void {
+                // alter the invoice table to add a column for the invoice type
+                $q = 'ALTER TABLE invoice ADD COLUMN `type` ENUM("proforma", "invoice", "creditnote") DEFAULT "invoice";';
+                $this->executeSql($q);
+                // This patch will migrate all invoice numbers to be stored in full, instead of only the id, making it immutable after creation.
+                $pairs = $this->di['db']->getAssoc('SELECT `param`, `value` FROM setting');
+                // get invoice series
+                $series = $pairs['invoice_series'] ?? '';
+                $series_paid = $pairs['invoice_series_paid'] ?? '';
+                // get padding 
+                $padding = intval($pairs['invoice_number_padding']) ?? 5;
+                $invoices = $this->di['db']->getAll('SELECT id, nr, paid_at FROM invoice');
+                foreach ($invoices as $invoice) {
+                    if ($invoice['paid_at'] === NULL) {
+                        $invoiceNumber = $series . str_pad($invoice['nr'], $padding, '0', STR_PAD_LEFT);
+
+                    } else {
+                        $invoiceNumber = $series_paid . str_pad($invoice['nr'], $padding, '0', STR_PAD_LEFT);
+                    }
+                    
+                    $invoicetopatch = $this->di['db']->getExistingModelById('Invoice', $invoice['id']);
+                    // if invoice is paid and refund is issued, we need to set the type to creditnote
+                    if ($invoicetopatch->status === 'refunded') {
+                        $invoicetopatch->type = 'creditnote';
+                    }
+                    
+                    $invoicetopatch->nr = $invoiceNumber;
+                    $this->di['db']->store($invoicetopatch);
+                }
+                
+                
             },
         ];
         ksort($patches, SORT_NATURAL);
