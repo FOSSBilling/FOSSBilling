@@ -1086,7 +1086,7 @@ class ServiceTest extends \BBTestCase
             ->willReturnCallback(function (...$args) use ($matcher, $loggerMock) {
                 match ($matcher->numberOfInvocations()) {
                     1 => $this->assertEquals($args[0], 'client_order_id'),
-                    2 => $this->assertEquals($args[0], 'status')
+                    2 => $this->assertEquals($args[0], 'status'),
                 };
 
                 return $loggerMock;
@@ -1134,7 +1134,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnCallback(fn (...$args) => match ($args[0]) {
-                'Product' => $modelProduct
+                'Product' => $modelProduct,
             });
 
         $exceptionError = 'Client not found';

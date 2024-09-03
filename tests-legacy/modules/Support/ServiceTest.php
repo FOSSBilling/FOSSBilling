@@ -751,7 +751,7 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'SupportTicketNote' => new \Model_SupportTicketNote(),
-                'SupportTicketMessage' => new \Model_SupportTicketMessage()
+                'SupportTicketMessage' => new \Model_SupportTicketMessage(),
             });
 
         $dbMock->expects($this->atLeastOnce())
@@ -785,7 +785,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'SupportHelpdesk' => $helpdesk,
-                'Client' => new \Model_Client()
+                'Client' => new \Model_Client(),
             });
 
         $dbMock->expects($this->atLeastOnce())

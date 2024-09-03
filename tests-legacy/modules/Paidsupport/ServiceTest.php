@@ -334,7 +334,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'SupportTicket' => $supportTicketModel,
-                'Client' => $clientModel
+                'Client' => $clientModel,
             });
         $di['db'] = $dbMock;
 
@@ -391,7 +391,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturnCallback(fn (...$args) => match ($args[0]) {
                 'SupportTicket' => $supportTicketModel,
-                'Client' => $clientModel
+                'Client' => $clientModel,
             });
         $di['db'] = $dbMock;
 
