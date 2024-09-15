@@ -1658,16 +1658,16 @@
         },
         {
             "name": "maximebf/debugbar",
-            "version": "v1.22.5",
+            "version": "v1.23.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/maximebf/php-debugbar.git",
-                "reference": "1b5cabe0ce013134cf595bfa427bbf2f6abcd989"
+                "reference": "0143b7c17daad5336ebd406c279333c84723cc41"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/1b5cabe0ce013134cf595bfa427bbf2f6abcd989",
-                "reference": "1b5cabe0ce013134cf595bfa427bbf2f6abcd989",
+                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/0143b7c17daad5336ebd406c279333c84723cc41",
+                "reference": "0143b7c17daad5336ebd406c279333c84723cc41",
                 "shasum": ""
             },
             "require": {
@@ -1689,7 +1689,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.22-dev"
+                    "dev-master": "1.23-dev"
                 }
             },
             "autoload": {
@@ -1720,9 +1720,9 @@
             ],
             "support": {
                 "issues": "https://github.com/maximebf/php-debugbar/issues",
-                "source": "https://github.com/maximebf/php-debugbar/tree/v1.22.5"
+                "source": "https://github.com/maximebf/php-debugbar/tree/v1.23.0"
             },
-            "time": "2024-09-09T08:05:55+00:00"
+            "time": "2024-09-10T17:28:47+00:00"
         },
         {
             "name": "maxmind-db/reader",
