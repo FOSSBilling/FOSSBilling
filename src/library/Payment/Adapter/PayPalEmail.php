@@ -204,7 +204,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         // use http_raw_post_data instead of post due to encoding
         parse_str($data['http_raw_post_data'], $post);
         $req = 'cmd=_notify-validate';
-        foreach ((array) $post as $key => $value) {
+        foreach ($post as $key => $value) {
             $value = urlencode(stripslashes($value));
             $req .= "&$key=$value";
         }
