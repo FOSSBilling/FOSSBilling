@@ -73,7 +73,7 @@ jobs:
               run: php src/vendor/bin/php-cs-fixer fix
 
             - name: Create a Pull Request
-              uses: peter-evans/create-pull-request@v6
+              uses: peter-evans/create-pull-request@v7
               with:
                   title: Apply PHP Code Styling & Quality Changes
                   commit-message: Apply PHP Code Styling & Quality Changes
