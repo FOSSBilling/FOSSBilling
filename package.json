@@ -26,7 +26,7 @@
     "tom-select": "^2.2.2"
   },
   "devDependencies": {
-    "@symfony/webpack-encore": "^4.5.0",
+    "@symfony/webpack-encore": "^5.0.0",
     "autoprefixer": "^10.4.16",
     "core-js": "^3.33.3",
     "cypress": "^13.5.1",
