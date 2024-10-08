@@ -35,7 +35,7 @@ class Box_Period
     ];
 
     private readonly string $unit;
-    private int $qty;
+    private readonly int $qty;
 
     public function __construct($code)
     {
