@@ -37,7 +37,7 @@
 <body>
 	<h1>Invoice past-due</h1>
 	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
-	<p>This is a payment reminder that your invoice <strong>{{ invoice.serie_nr }}</strong> is past-due by {{ days_passed }} days.</p>
+	<p>This is a payment reminder that your invoice <strong>{{ invoice.nr }}</strong> is past-due by {{ days_passed }} days.</p>
     <ul>
         <li><strong>Amount Due:</strong> {{ invoice.total | money(invoice.currency) }}</li>
         <li><strong>Due Date:</strong>  {{ invoice.due_at|format_date }}</li>

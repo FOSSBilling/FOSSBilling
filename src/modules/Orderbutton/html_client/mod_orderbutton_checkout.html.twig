@@ -14,34 +14,34 @@
                     <thead>
                     <tr>
                         <th>{{ 'Product'|trans }}</th>
-                        <th>{{ 'Price'|trans }}</th>
-                        <th style="width: 3%; text-align: center"></th>
+                        <th class="text-end">{{ 'Price'|trans }}</th>
+                        <th class="text-center">{{ 'Quantity'|trans}}</th>
+                        <th width="20%" class="text-end">{{ 'Total'|trans}}</th>
+                        <th width="5%" ></th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for i, item in cart.items %}
+
                         <tr>
-                            <td>
+                            <td >
                                 {{ item.title }}
-                                {% if item.quantity > 1 %}
-                                    x {{ item.quantity }}
-                                {% endif %}
 
                                 {% if item.period %}
                                     ({{ item.period | period_title }})
                                 {% endif %}
                             </td>
-                            <td>
-                                {% if item.discount_price %}
-                                    <del>{{ item.total | money_convert }}</del>
-                                    <strong class="text-success">{{ (item.total-item.discount_price) | money_convert }}</strong>
-
-
-                                {% else %}
-                                    {{ (item.total) | money_convert }}
-                                {% endif %}
+                            <td class="text-end">{{ item.price | money_convert }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">
+                            {% if item.discount_price %}
+                                <del>{{ item.total | money_convert }}</del>
+                                <strong class="text-success">{{ (item.total-item.discount_price) | money_convert }}</strong>
+                            {% else %}
+                                {{ (item.total) | money_convert }}
+                            {% endif %}
                             </td>
-                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><strong><i class="awe-remove"></i></strong></button></td>
+                            <td class="text-center"><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><strong><i class="awe-remove"></i></strong></button></td>
                         </tr>
 
                         {% if request.show_custom_form_values %}
@@ -93,13 +93,21 @@
                         {% if item.setup_price != 0 %}
                             <tr>
                                 <td>{{ item.title }} {{ 'setup'|trans }}</td>
-                                <td>
+                                <td class="text-end">
                                     {% if item.discount_setup %}
                                     <del>{{ item.setup_price | money_convert }}</del>
                                     {{ (item.setup_price - item.discount_setup) | money_convert }}
                                     {% else %}
                                     {{ item.setup_price | money_convert }}</td>
                                 {% endif %}
+                                <td class="text-center">1</td>
+                                <td class="text-end">
+                                    {% if item.discount_setup %}
+                                        <del>{{ item.setup_price | money_convert }}</del>
+                                        <strong class="text-success">{{ (item.setup_price - item.discount_setup) | money_convert }}</strong>
+                                    {% else %}
+                                        {{ item.setup_price | money_convert }}
+                                    {% endif %}
                             </tr>
                         {% endif %}
 
@@ -110,15 +118,16 @@
                 <div class="row-fluid">
                     <div class="span6">
                         {% if not cart.promocode %}
-                            <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
+                        <div style="padding-bottom: 10px;">
+                            <a href="#" id="show-promo-field" >{{ 'Have a coupon code?'|trans }}</a>
+                        </div>
                         {% endif %}
-
                         <form action="{{ 'api/guest/cart/apply_promo'|link }}" method="post" class="api-form well" data-api-msg="{{ 'Promo code was applied for your order'|trans }}"
                             data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <div class="control-group">
                                 <div class="form-controls">
-                                    <div class="input-append">
+                                    <div class="input-append" style="padding-bottom: 10px;">
                                         <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
                                             <a class="btn btn-warning btn-sm mb-1 api-link" href="{{ 'api/guest/cart/remove_promo'|link({ 'CSRFToken': CSRFToken }) }}" type="button" data-api-reload="1">{{ 'Remove'|trans }}</a>
@@ -132,16 +141,17 @@
                     </div>
 
                     <div class="span6">
-                        <table class="table table-bordered table-striped">
-
+                        <table class="table table-striped" style="empty-cells: hide;">
+                        <tr>
+                            <td class="text-end table-bordered"><strong>{{ 'Subtotal:'|trans }}</strong></td>
+                            <td class="text-end table-bordered "><strong>{{ (cart.subtotal)| money_convert }}</strong></td>
+                            <td width="5%" style="visbility: hidden; border-collapse: collapse; opacity: 0; border-color: transparent;"></td>
+                        </tr>
                             {% if cart.discount >0 %}
                                 <tr>
-                                    <td><strong>{{ 'Subtotal:'|trans }}</strong></td>
-                                    <td><strong>{{ (cart.subtotal)| money_convert }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>{{ 'Discount:'|trans }}</strong></td>
-                                    <td><strong>- {{ cart.discount | money_convert }}</strong></td>
+                                    <td class="text-end table-bordered ">{{ 'Discount:'|trans }}</td>
+                                    <td class="text-end table-bordered ">- {{ cart.discount | money_convert }}</td>
+                                    <td width="5%" style="visbility: hidden; border-collapse: collapse; opacity: 0; border-color: transparent; border: None;"></td>
                                 </tr>
                             {% endif %}
 
@@ -150,13 +160,15 @@
                                 {% set tax_rate = client.invoice_get_tax_rate %}
                                 {% set tax_amount = cart.total * tax_rate / 100 %}
                                 <tr>
-                                    <td><strong>{{ 'VAT'|trans }} ({{ tax_rate }}%) :</strong></td>
-                                    <td><strong>{{ tax_amount | money_convert }}</strong></td>
+                                    <td width="75%" class="text-end table-bordered ">{{ 'VAT'|trans }} ({{ tax_rate }}%) :</td>
+                                    <td width="20%" class="text-end table-bordered ">{{ tax_amount | money_convert }}</td>
+                                    <td width="5%" style="visbility: hidden; border-collapse: collapse; opacity: 0; border-color: transparent;"></td>
                                 </tr>
                             {% endif %}
                             <tr>
-                                <td><strong>{{ 'Total:'|trans }}</strong></td>
-                                <td><strong>{{ (cart.total + tax_amount) | money_convert }}</strong></td>
+                                <td class="text-end table-bordered "><strong>{{ 'Total:'|trans }}</strong></td>
+                                <td class="text-end table-bordered "><strong>{{ (cart.total + tax_amount) | money_convert }}</strong></td>
+                                <td width="5%" style="visbility: hidden; border-collapse: collapse; opacity: 0; border-color: transparent;"></td>
                             </tr>
 
                         </table>

@@ -94,6 +94,19 @@ class Client extends \Api_Abstract
         return $productService->getUpgradablePairs($product);
     }
 
+    /** 
+     * Disable renewal for the order.
+     * 
+     * @return array
+     */
+    public function disable_renewal($data)
+    {
+        $model = $this->_getOrder($data);
+        $this->getService()->disableRenewal($model);
+
+        return ['status' => 'success'];
+    }
+
     /**
      * Can delete only pending setup and failed setup orders.
      */

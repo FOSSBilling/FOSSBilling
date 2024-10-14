@@ -40,7 +40,14 @@
                             <td><label>{{ 'Product name'|trans }}</label></td>
                             <td><strong>{{ order.title }}</strong></td>
                         </tr>
-
+                        <tr>
+                            <td><label>{{ 'Unit Price'|trans }}</label></td>
+                            <td>{{ order.price|money(order.currency) }}</td>
+                        </tr>
+                        <tr>
+                            <td><label>{{ 'Quantity'|trans }}</label></td>
+                            <td>{{ order.quantity }}</td>
+                        </tr>
                         <tr>
                             <td><label>{{ 'Payment amount'|trans }}</label></td>
                             <td>{{ order.total|money(order.currency) }}</td>
@@ -73,6 +80,13 @@
                         {% if order.period %}
                             <tr>
                                 <td><label>{{ 'Renewal date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
+                                <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
+                            </tr>
+                        {% endif %}
+
+                        {% if not order.period and order.expires_at %}
+                            <tr>
+                                <td><label>{{ 'Expiration date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
                                 <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
                             </tr>
                         {% endif %}
@@ -171,24 +185,17 @@
                         <form action="" method="post" id="cancel-request-form" class="request-cancellation">
                             <div class="modal-body">
                                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                                <input type="hidden" name="rel_type" value="order">
-                                <input type="hidden" name="rel_id" value="{{ order.id }}">
-                                <input type="hidden" name="rel_task" value="cancel">
+                                <input type="hidden" name="id" value="{{ order.id }}">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help desk'|trans }}</label>
-                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
-                                </div>
-                                <div class="mb-3">
-                                    <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                                    <input class="form-control" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required/>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="content" class="form-label">{{ 'Reason'|trans }}</label>
-                                    <textarea class="form-control" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
+                                    <span >{{ 'The service will be terminated on the next renewal date:'|trans }}</span><br>
+                                    <span >{{ order.expires_at|format_date }}</span><br>
+                                    <span class="text-danger">{{ 'Please note that this action will cancel the service and all related data will be lost.'|trans }}</span><br>
+
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-danger">{{ 'Request'|trans }}</button>
+                        <button class="btn btn-secondary" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Cancel'|trans }}</button>
+                    <button type="submit" class="btn btn-danger">{{ 'Disable renewal'|trans }}</button>
                             </div>
                         </form>
                     </div>
@@ -281,12 +288,14 @@
 
             cancelRequestForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                API.client.post('support/ticket_create',
+                API.client.post('order/disable_renewal',
                     new FormData(cancelRequestForm).serializeObject(),
                     () => {
-                        FOSSBilling.message('Service cancellation request received');
+                        FOSSBilling.message('Service renewal disabled');
                         const cancelRequestModal = bootstrap.Modal.getInstance(document.getElementById('cancel-request-modal'))
                         cancelRequestModal.hide();
+                        // Reload page
+                        location.reload();
                     },
                     (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error')
                 )

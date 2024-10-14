@@ -27,6 +27,32 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         $service = $this->getService();
+        $data['type'] = 'invoice';
+        [$sql, $params] = $service->getSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
+        $data['type'] = 'proforma';
+        [$sql2, $params2] = $service->getSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $pager2 = $this->di['pager']->getAdvancedResultSet($sql2, $params2, $per_page);
+        $pager['list'] = array_merge($pager['list'], $pager2['list']);
+        foreach ($pager['list'] as $key => $item) {
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
+            $pager['list'][$key] = $this->getService()->toApiArray($invoice, true, $this->getIdentity());
+        }
+
+        return $pager;
+    }
+
+    /**
+     * Returns paginated list of invoices.
+     *
+     * @return array
+     */
+    public function get_cn_list($data)
+    {
+        $service = $this->getService();
+        $data['type'] = 'creditnote';
         [$sql, $params] = $service->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
@@ -37,6 +63,7 @@ class Admin extends \Api_Abstract
 
         return $pager;
     }
+
 
     /**
      * Get invoice details.
@@ -197,6 +224,21 @@ class Admin extends \Api_Abstract
         return $this->getService()->updateInvoice($model, $data);
     }
 
+    /** 
+     * Update buyer details.
+     * 
+     * @return bool
+     */
+    public function update_client_address($data)
+    {
+        $model = $this->_getInvoice($data);
+        // check if invoice is unpaid 
+        if ($model->status != 'unpaid') {
+            throw new \FOSSBilling\InformationException('Invoice must be unpaid to update buyer details');
+        }
+        return $this->getService()->updateClientAddress($model);
+    }
+
     /**
      * Remove one line from invoice.
      *
@@ -223,8 +265,17 @@ class Admin extends \Api_Abstract
     public function delete($data)
     {
         $model = $this->_getInvoice($data);
-
-        return $this->getService()->deleteInvoiceByAdmin($model);
+        // check if invoice is unpaid and not approved
+        if ($model->status == 'unpaid') {
+            // if invoice is approved, then revoke it
+            if ($model->approved == '1') {
+                return $this->getService()->revokeInvoiceByAdmin($model);
+            } else {
+                return $this->getService()->deleteInvoiceByAdmin($model);
+            }
+        } else {
+            throw new \FOSSBilling\InformationException('Only unpaid invoices can be deleted');
+        }
     }
 
     /**
@@ -347,6 +398,19 @@ class Admin extends \Api_Abstract
     {
         return $this->getService()->counter();
     }
+
+    
+    /**
+     * Return invoice approval with counter.
+    *
+    * @return array
+    */
+    public function get_approvals($data)
+    {
+        return $this->getService()->approval_counter();
+    }
+
+
 
     /**
      * Process all received transactions.

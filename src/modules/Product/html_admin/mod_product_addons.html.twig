@@ -1,5 +1,5 @@
 {% extends 'layout_default.html.twig' %}
-
+{% import 'macro_functions.html.twig' as mf %}
 {% set active_menu = 'products' %}
 
 {% block meta_title %}{{ 'Addons'|trans }}{% endblock %}
@@ -83,6 +83,12 @@
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/product/addon_create'|link }}" class="api-form" data-api-jsonp="onAfterAddonCreate">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
+                        <div class="col">
+                            {{ mf.selectbox('type', admin.product_get_types, request.type, 1) }}
+                        </div>
+                    </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                         <div class="col">
