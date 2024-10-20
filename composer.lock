@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "29abd61f42affd3e7c10b76d375eb38d",
+    "content-hash": "690ca01e90dcf04f57f09acec9f78f19",
     "packages": [
         {
             "name": "antcms/antloader",
@@ -2332,20 +2332,20 @@
         },
         {
             "name": "prinsfrank/enums",
-            "version": "v1.2",
+            "version": "v1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/enums.git",
-                "reference": "2317cc220875c8e227f75dca0ffd6d392ddeab72"
+                "reference": "532e5d53a1fbd2d1a9bb0757887bbf5632a7b615"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/enums/zipball/2317cc220875c8e227f75dca0ffd6d392ddeab72",
-                "reference": "2317cc220875c8e227f75dca0ffd6d392ddeab72",
+                "url": "https://api.github.com/repos/PrinsFrank/enums/zipball/532e5d53a1fbd2d1a9bb0757887bbf5632a7b615",
+                "reference": "532e5d53a1fbd2d1a9bb0757887bbf5632a7b615",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.1 || ^8.2 || ^8.3"
+                "php": "^8.1 || ^8.2 || ^8.3 || ^8.4"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.43",
@@ -2366,7 +2366,7 @@
             "description": "Adds missing strictly typed methods to work with enums",
             "support": {
                 "issues": "https://github.com/PrinsFrank/enums/issues",
-                "source": "https://github.com/PrinsFrank/enums/tree/v1.2"
+                "source": "https://github.com/PrinsFrank/enums/tree/v1.3"
             },
             "funding": [
                 {
@@ -2374,7 +2374,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-02-01T14:15:16+00:00"
+            "time": "2024-10-17T19:29:31+00:00"
         },
         {
             "name": "prinsfrank/standards",
@@ -5312,6 +5312,82 @@
                 }
             ],
             "time": "2024-09-09T11:45:10+00:00"
+        },
+        {
+            "name": "symfony/polyfill-php84",
+            "version": "v1.31.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-php84.git",
+                "reference": "e5493eb51311ab0b1cc2243416613f06ed8f18bd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-php84/zipball/e5493eb51311ab0b1cc2243416613f06ed8f18bd",
+                "reference": "e5493eb51311ab0b1cc2243416613f06ed8f18bd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "name": "symfony/polyfill",
+                    "url": "https://github.com/symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php84\\": ""
+                },
+                "classmap": [
+                    "Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 8.4+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php84/tree/v1.31.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2024-09-09T12:04:04+00:00"
         },
         {
             "name": "symfony/sendgrid-mailer",
@@ -8927,17 +9003,17 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": ">=8.1",
         "ext-curl": "*",
+        "ext-intl": "*",
         "ext-mbstring": "*",
         "ext-pdo": "*",
-        "ext-zlib": "*",
-        "ext-intl": "*"
+        "ext-zlib": "*"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "plugin-api-version": "2.6.0"
 }
