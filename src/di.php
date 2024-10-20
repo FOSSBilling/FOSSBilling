@@ -772,7 +772,7 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
     $csv->insertOne($headers);
     $csv->insertAll($rows);
 
-    $csv->output($outputName);
+    $csv->download($outputName);
 
     // Prevent further output from being added to the end of the CSV
     exit;
