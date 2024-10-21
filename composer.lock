@@ -2332,20 +2332,20 @@
         },
         {
             "name": "prinsfrank/enums",
-            "version": "v1.2",
+            "version": "v1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/enums.git",
-                "reference": "2317cc220875c8e227f75dca0ffd6d392ddeab72"
+                "reference": "532e5d53a1fbd2d1a9bb0757887bbf5632a7b615"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/enums/zipball/2317cc220875c8e227f75dca0ffd6d392ddeab72",
-                "reference": "2317cc220875c8e227f75dca0ffd6d392ddeab72",
+                "url": "https://api.github.com/repos/PrinsFrank/enums/zipball/532e5d53a1fbd2d1a9bb0757887bbf5632a7b615",
+                "reference": "532e5d53a1fbd2d1a9bb0757887bbf5632a7b615",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.1 || ^8.2 || ^8.3"
+                "php": "^8.1 || ^8.2 || ^8.3 || ^8.4"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.43",
@@ -2366,7 +2366,7 @@
             "description": "Adds missing strictly typed methods to work with enums",
             "support": {
                 "issues": "https://github.com/PrinsFrank/enums/issues",
-                "source": "https://github.com/PrinsFrank/enums/tree/v1.2"
+                "source": "https://github.com/PrinsFrank/enums/tree/v1.3"
             },
             "funding": [
                 {
@@ -2374,7 +2374,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-02-01T14:15:16+00:00"
+            "time": "2024-10-17T19:29:31+00:00"
         },
         {
             "name": "prinsfrank/standards",
