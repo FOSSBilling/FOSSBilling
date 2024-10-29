@@ -711,7 +711,7 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \GeoIp2\Database\Reader
  */
-$di['geoip'] = fn (): \GeoIp2\Database\Reader => new GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb');
+$di['geoip'] = fn (): \GeoIp2\Database\Reader => new GeoIp2\Database\Reader(PATH_LIBRARY . '/CC0-CountryDB.mmdb');
 
 /*
  * @param void
