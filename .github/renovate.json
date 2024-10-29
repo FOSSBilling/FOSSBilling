@@ -12,7 +12,9 @@
     ":maintainLockFilesWeekly",
     ":rebaseStalePrs"
   ],
-  "automergeSchedule": ["at any time"],
+  "automergeSchedule": [
+    "at any time"
+  ],
   "automergeStrategy": "squash",
   "constraints": {
     "php": "~8.1.*"
@@ -20,8 +22,10 @@
   "packageRules": [
     {
       "groupName": "CKEditor Development Tools",
-      "matchPackagePatterns": ["^@ckeditor/ckeditor-dev-"],
-      "rangeStrategy": "auto"
+      "rangeStrategy": "auto",
+      "matchPackageNames": [
+        "/^@ckeditor/ckeditor-dev-/"
+      ]
     }
   ]
 }
