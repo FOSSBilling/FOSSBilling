@@ -69,6 +69,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'money_convert' => new TwigFilter('money_convert', $this->twig_money_convert(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', $this->money_convert_without_currency(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
+            'iplookup' => new TwigFilter('iplookup', $this->ipLookupLink(...), ['is_safe' => ['html']]),
+
             // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
             'filter' => new TwigFilter('filter', $this->filteredFilter(...)),
             'map' => new TwigFilter('map', $this->filteredMap(...)),
@@ -365,5 +367,16 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $array;
+    }
+
+    public function ipLookupLink(?string $ip)
+    {
+        if ($ip === null || $ip === '') {
+            return '';
+        }
+
+        $link = $this->di['url']->adminLink('security/iplookup', ['ip' => $ip]);
+
+        return "<a href='{$link}' target='_blank' class='iplookuplink'>{$ip}</a>";
     }
 }

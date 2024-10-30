@@ -58,7 +58,7 @@
                 {% endif %}
             </td>
             <td>{{ event.message }}</td>
-            <td>{{ event.ip }}</td>
+            <td>{{ event.ip|iplookup }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
             <td>

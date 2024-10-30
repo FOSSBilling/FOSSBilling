@@ -15,7 +15,7 @@ namespace FOSSBilling\GeoIP;
 use PrinsFrank\Standards\Country\CountryAlpha2;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
 
-class Country
+class Country implements \JsonSerializable
 {
     /**
      * Country name, translated based on the LanguageAlpha2 provided.
@@ -44,5 +44,14 @@ class Country
         }
 
         $this->currencies = $currencies ?? [];
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            'name' => $this->name,
+            'flag' => $this->flag,
+            'currencies' => $this->currencies,
+        ];
     }
 }
