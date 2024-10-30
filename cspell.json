@@ -398,7 +398,9 @@
         "evenodd",
         "Retryable",
         "FAILONERROR",
-        "releasenotes"
+        "releasenotes",
+        "Prins",
+        "iplookup"
     ],
     "ignorePaths": [
         "tests-legacy/**",
