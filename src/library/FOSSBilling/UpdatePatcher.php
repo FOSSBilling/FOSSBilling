@@ -399,7 +399,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     PATH_LIBRARY . DIRECTORY_SEPARATOR . 'GeoLite2-Country.mmdb' => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
-            }
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

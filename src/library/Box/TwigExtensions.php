@@ -96,7 +96,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         try {
             $record = $this->di['geoip']->country($value);
 
-            return $record->country->name;
+            return $record->name;
         } catch (Exception) {
             return '';
         }
