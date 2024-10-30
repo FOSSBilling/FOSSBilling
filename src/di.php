@@ -709,14 +709,14 @@ $di['license_server'] = function () use ($di) {
 /*
  * @param void
  *
- * @return \GeoIp2\Database\Reader
+ * @return \FOSSBilling\GeoIP\Reader
  */
-$di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader(PATH_LIBRARY . '/CC0-CountryDB.mmdb');
+$di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader(PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/CC0-Country.mmdb');
 
 /*
  * @param void
  *
- * @return \Box_Password
+ * @return \FOSSBilling\PasswordManager
  */
 $di['password'] = fn (): \FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
 

@@ -39,14 +39,16 @@ class Service
             throw new \InvalidArgumentException('The provided input was not a valid IP address');
         }
 
-        $reader = $this->di['geoip'];
+        $countryReader = $this->di['geoip'];
+        $asnReader = new \FOSSBilling\GeoIP\Reader(PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb');
 
         return [
             'ip' => [
                 'address' => $ip,
                 'type' => filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? 'IPv4' : 'IPv6',
             ],
-            'country' => $array = json_decode(json_encode($reader->country($ip)), true),
+            'country' => json_decode(json_encode($countryReader->country($ip)), true),
+            'asn' => json_decode(json_encode($asnReader->asn($ip)), true),
         ];
     }
 }

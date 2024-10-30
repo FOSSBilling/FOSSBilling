@@ -78,4 +78,11 @@ class Reader
 
         return new Country($record['country'], $this->language);
     }
+
+    public function asn(string $ipAddress): ASN
+    {
+        $record = $this->get($ipAddress);
+
+        return new ASN($record);
+    }
 }

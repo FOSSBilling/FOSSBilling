@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'IP Address Lookup'|trans }}{% endblock %}
+{% block meta_title %}{{ 'IP lookup'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -10,11 +10,11 @@
 <div class="card">
     <div class="card-header">
         <div>
-            <h3 class="card-title">{{ 'IP Address Lookup'|trans }}</h3>
+            <h3 class="card-title">{{ 'IP lookup'|trans }}</h3>
         </div>
     </div>
     <div class="card-body border-bottom">
-        <span class="card-subtitle">{{ 'Use this tool to lookup IP addresses and info about them'|trans }}</span>
+        <span class="card-subtitle">{{ 'Lookup & discover info about IP addresses.'|trans }}</span>
     </div>
     <div class="card-body container">
         <form method="post" action="{{'api/admin/security/ip_lookup'|link({ 'CSRFToken': CSRFToken }) }}"
@@ -29,8 +29,10 @@
             <table class="table table-striped" id="results">
                 <thead>
                     <tr>
-                        <th scope="col">IP Address</th>
-                        <th scope="col">Country</th>
+                        <th scope="col">{{ 'IP Address'|trans }}</th>
+                        <th scope="col">{{ 'Country'|trans }}</th>
+                        <th scope="col">ASN #</th>
+                        <th scope="col">{{ 'ASN Organization'|trans }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,6 +40,8 @@
                     <tr>
                         <td>{{ record.ip.address }} ({{ record.ip.type }})</td>
                         <td>{{ record.country.flag }} {{ record.country.name }}</td>
+                        <td>{{ record.asn.asnNumber }}</td>
+                        <td>{{ record.asn.asnOrg }}</td>
                     </tr>
                     {% endif %}
                 </tbody>
@@ -45,7 +49,7 @@
         </div>
     </div>
     <div class="card-footer text-center">
-
+        <p>{{ 'ASN stands for autonomous system number. IP address info may not always be accurate.'|trans }}</p>
     </div>
 </div>
 {% endblock %}
@@ -56,14 +60,22 @@
         const tableBody = document.querySelector('#results tbody');
         const newRow = document.createElement('tr');
 
-        const nameCell = document.createElement('td');
-        nameCell.textContent =  `${result.ip.address} (${result.ip.type})`;
+        const addressCell = document.createElement('td');
+        addressCell.textContent =  `${result.ip.address} (${result.ip.type})`;
 
-        const ageCell = document.createElement('td');
-        ageCell.textContent = `${result.country.flag} ${result.country.name}`;
+        const countryCell = document.createElement('td');
+        countryCell.textContent = `${result.country.flag} ${result.country.name}`;
 
-        newRow.appendChild(nameCell);
-        newRow.appendChild(ageCell);
+        const asnNumCell = document.createElement('td');
+        asnNumCell.textContent = `${result.asn.asnNumber}`;
+
+        const asnOrgCell = document.createElement('td');
+        asnOrgCell.textContent = `${result.asn.asnOrg}`;
+
+        newRow.appendChild(addressCell);
+        newRow.appendChild(countryCell);
+        newRow.appendChild(asnNumCell);
+        newRow.appendChild(asnOrgCell);
 
         tableBody.insertBefore(newRow, tableBody.firstChild);
     }
