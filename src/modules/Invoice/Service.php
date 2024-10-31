@@ -1447,8 +1447,12 @@ class Service implements InjectionAwareInterface
         return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
     }
 
-    private function checkInvoiceAuth(int $invoiceClientId)
+    private function checkInvoiceAuth(?int $invoiceClientId)
     {
+        if ($invoiceClientId === null) {
+            return;
+        }
+
         $systemService = $this->di['mod_service']('system');
         $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
 
