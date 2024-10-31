@@ -34,6 +34,10 @@ class Country implements \JsonSerializable
 
     public function __construct(array $countyRecord, LanguageAlpha2 $language)
     {
+        if (!array_key_exists('iso_code', $countyRecord)) {
+            throw new IncompleteRecord('The is no country information for the provided IP address');
+        }
+
         // Instance the language
         $country = CountryAlpha2::from($countyRecord['iso_code']);
         $this->name = $country->getNameInLanguage($language);

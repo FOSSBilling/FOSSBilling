@@ -27,7 +27,7 @@ class Reader
      * Constructs a new GeoIP reader instance.
      *
      * @param string $database a path to the database to load
-     * @param string  $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
+     * @param string $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
      *
      * @throws \InvalidArgumentException for invalid database path or unknown arguments
      * @throws InvalidDatabaseException  if the database is invalid or there is an error reading from it
@@ -65,6 +65,7 @@ class Reader
      *
      * @return Country A country object for the associated record
      *
+     * @throws IncompleteRecord          if the record for the given IP address does not contain the needed information
      * @throws \InvalidArgumentException if something other than a single IP address is passed to the method
      * @throws InvalidDatabaseException  if the database is invalid or there is an error reading from it
      */
@@ -72,13 +73,20 @@ class Reader
     {
         $record = $this->get($ipAddress);
 
-        if (!array_key_exists('country', $record) || !array_key_exists('iso_code', $record['country'])) {
-            throw new IncompleteRecord('The is no country information for the provided IP address');
-        }
-
-        return new Country($record['country'], $this->language);
+        return new Country($record['country'] ?? [], $this->language);
     }
 
+    /**
+     * Returns the ASN information for an IP address.
+     *
+     * @param string $ipAddress the IP address to look up
+     *
+     * @return ASN the ASN object for the associated record
+     *
+     * @throws IncompleteRecord          if the record for the given IP address does not contain the needed information
+     * @throws \InvalidArgumentException if something other than a single IP address is passed to the method
+     * @throws InvalidDatabaseException  if the database is invalid or there is an error reading from it
+     */
     public function asn(string $ipAddress): ASN
     {
         $record = $this->get($ipAddress);

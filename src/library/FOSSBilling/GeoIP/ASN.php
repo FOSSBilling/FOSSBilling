@@ -19,8 +19,12 @@ class ASN implements \JsonSerializable
 
     public function __construct(array $asnRecord)
     {
-        $this->asnNumber = $asnRecord['autonomous_system_number'] ?? 'Unknown';
-        $this->asnOrg = $asnRecord['autonomous_system_organization'] ?? 'Unknown';
+        if (!array_key_exists('autonomous_system_number', $asnRecord) || !array_key_exists('autonomous_system_organization', $asnRecord)) {
+            throw new IncompleteRecord('The is no ASN information for the provided IP address');
+        }
+
+        $this->asnNumber = $asnRecord['autonomous_system_number'];
+        $this->asnOrg = $asnRecord['autonomous_system_organization'];
     }
 
     public function jsonSerialize(): array

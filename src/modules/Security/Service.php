@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Security;
 
+use FOSSBilling\GeoIP\IncompleteRecord;
+
 class Service
 {
     protected ?\Pimple\Container $di = null;
@@ -39,16 +41,26 @@ class Service
             throw new \InvalidArgumentException('The provided input was not a valid IP address');
         }
 
-        $countryReader = $this->di['geoip'];
-        $asnReader = new \FOSSBilling\GeoIP\Reader(PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb');
+        try {
+            $countryInfo = $this->di['geoip']->country($ip);
+        } catch (IncompleteRecord) {
+            $countryInfo = [];
+        }
+
+        try {
+            $asnReader = new \FOSSBilling\GeoIP\Reader(PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb');
+            $asnInfo = $asnReader->asn($ip);
+        } catch (IncompleteRecord) {
+            $asnInfo = [];
+        }
 
         return [
             'ip' => [
                 'address' => $ip,
                 'type' => filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? 'IPv4' : 'IPv6',
             ],
-            'country' => json_decode(json_encode($countryReader->country($ip)), true),
-            'asn' => json_decode(json_encode($asnReader->asn($ip)), true),
+            'country' => json_decode(json_encode($countryInfo), true),
+            'asn' => json_decode(json_encode($asnInfo), true),
         ];
     }
 }
