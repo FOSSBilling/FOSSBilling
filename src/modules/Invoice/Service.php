@@ -12,6 +12,7 @@
 namespace Box\Mod\Invoice;
 
 use Dompdf\Dompdf;
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Twig\Loader\FilesystemLoader;
 
@@ -129,6 +130,8 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null): array
     {
+        $this->checkInvoiceAuth($invoice->client_id);
+
         $row = $this->di['db']->toArray($invoice);
 
         $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
@@ -635,7 +638,7 @@ class Service implements InjectionAwareInterface
             case 'negative_invoice':
                 $total = $this->getTotalWithTax($invoice);
                 if ($total <= 0) {
-                    throw new \FOSSBilling\InformationException('Cannot refund invoice with negative amount');
+                    throw new InformationException('Cannot refund invoice with negative amount');
                 }
 
                 $new = $this->di['db']->dispense('Invoice');
@@ -850,7 +853,7 @@ class Service implements InjectionAwareInterface
         $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
         foreach ($invoiceItem as $item) {
             if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
-                throw new \FOSSBilling\InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
+                throw new InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
             }
         }
 
@@ -917,7 +920,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->price <= 0) {
-            throw new \FOSSBilling\InformationException('Invoices are not generated for 0 amount orders');
+            throw new InformationException('Invoices are not generated for 0 amount orders');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
@@ -1077,7 +1080,7 @@ class Service implements InjectionAwareInterface
     public function generateFundsInvoice(\Model_Client $client, $amount)
     {
         if (!$client->currency) {
-            throw new \FOSSBilling\InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+            throw new InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
         $systemService = $this->di['mod_service']('system');
@@ -1086,11 +1089,11 @@ class Service implements InjectionAwareInterface
         $max_amount = $systemService->getParamValue('funds_max_amount', null);
 
         if ($min_amount && $amount < $min_amount) {
-            throw new \FOSSBilling\InformationException('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
+            throw new InformationException('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
         }
 
         if ($max_amount && $amount > $max_amount) {
-            throw new \FOSSBilling\InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
+            throw new InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
         $proforma = $this->di['db']->dispense('Invoice');
@@ -1442,6 +1445,32 @@ class Service implements InjectionAwareInterface
         }
 
         return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
+    }
+
+    private function checkInvoiceAuth(int $invoiceClientId)
+    {
+        $systemService = $this->di['mod_service']('system');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
+
+        // If hash_access is not 0 or if a client is logged in, get the logged-in client
+        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
+            $client = $this->di['loggedin_client'];
+            if ($invoiceClientId != $client->id) {
+                // Then either give an appropriate API response or redirect to the login page.
+                $api_str = '/api/';
+                $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+                if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+                    // Throw Exception if api request
+                    throw new InformationException('You do not have permission to perform this action', [], 403);
+                } else {
+                    // Redirect to login page if browser request
+                    $invoiceLink = $this->di['url']->link('invoice');
+                    header("Location: $invoiceLink");
+                    echo __trans('You do not have permission to perform this action');
+                    exit;
+                }
+            }
+        }
     }
 
     // Start of PDF related functions
