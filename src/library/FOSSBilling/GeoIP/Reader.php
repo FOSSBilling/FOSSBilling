@@ -27,7 +27,7 @@ class Reader
      * Constructs a new GeoIP reader instance.
      *
      * @param string $database a path to the database to load
-     * @param mixed  $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
+     * @param string  $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
      *
      * @throws \InvalidArgumentException for invalid database path or unknown arguments
      * @throws InvalidDatabaseException  if the database is invalid or there is an error reading from it
