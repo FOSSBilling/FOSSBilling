@@ -398,7 +398,9 @@
         "evenodd",
         "Retryable",
         "FAILONERROR",
-        "releasenotes"
+        "releasenotes",
+        "Prins",
+        "iplookup"
     ],
     "ignorePaths": [
         "tests-legacy/**",
@@ -414,7 +416,7 @@
         "phpunit.xml.dist",
         "phpunit-live.xml",
         "bin/**",
-        "src/library/GeoLite2-Country.mmdb",
+        "*.mmdb",
         "cspell.json",
         "package.json",
         "src/library/Registrar/**",

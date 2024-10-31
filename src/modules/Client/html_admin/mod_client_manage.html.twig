@@ -115,7 +115,7 @@
                         {% endif %}
                         <tr>
                             <td class="text-end">IP:</td>
-                            <td>{{ client.ip|default('-') }} {{ client.ip|ipcountryname|default('Unknown') }}</td>
+                            <td>{%if client.ip %}{{ client.ip|iplookup }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'API Key'|trans }}:</td>
@@ -724,7 +724,7 @@
 
         <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
             <div class="card-body">
-                <h5>{{ 'Logins history'|trans }}</h5>
+                <h5>{{ 'Login history'|trans }}</h5>
             </div>
 
             <div class="table-responsive">
@@ -741,7 +741,7 @@
                         {% set logins = admin.client_login_history_get_list({ 'per_page': 10, 'page': request.page, 'client_id': client.id }) %}
                         {% for i, login in logins.list %}
                         <tr>
-                            <td>{{ login.ip }}</td>
+                            <td>{{ login.ip|iplookup }}</td>
                             <td>{{ login.ip|ipcountryname|default('Unknown') }}</td>
                             <td>{{ login.created_at|format_datetime }}</td>
                         </tr>

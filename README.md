@@ -85,7 +85,6 @@ FOSSBilling is open source software and is released under the Apache v2.0 licens
 
 This product includes the following third party work:
 
-- GeoLite2 data created by MaxMind, available from [https://www.maxmind.com](https://www.maxmind.com).
 - Open Source Iconography by [Pictogrammers](https://pictogrammers.com/) licensed under the [Pictogrammers Free License](https://pictogrammers.com/docs/general/license/).
 
 ## Links
