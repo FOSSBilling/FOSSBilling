@@ -28,7 +28,7 @@ jobs:
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
-          php-version: 8.1
+          php-version: 8.2
 
       - name: Make Needed Directories
         run: |
@@ -83,7 +83,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml
 
       - name: Setup Apache
