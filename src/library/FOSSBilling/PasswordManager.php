@@ -87,7 +87,7 @@ class PasswordManager
 
     /**
      * Performs a random `password_verify` check.
-     * Does not serve a purpose other than to spend some CPU time equal & eliminate timing differences between login attempts on accounts that do and do not exist.
+     * Does not serve a purpose other than to spend some CPU & eliminate timing differences between login attempts on accounts that do and do not exist.
      * 
      * @return void
      */
