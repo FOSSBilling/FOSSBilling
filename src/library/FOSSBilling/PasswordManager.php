@@ -88,8 +88,6 @@ class PasswordManager
     /**
      * Performs a random `password_verify` check.
      * Does not serve a purpose other than to spend some CPU & eliminate timing differences between login attempts on accounts that do and do not exist.
-     * 
-     * @return void
      */
     public function dummyVerify(string $password): void
     {

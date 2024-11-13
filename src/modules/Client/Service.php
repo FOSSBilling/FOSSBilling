@@ -592,6 +592,7 @@ class Service implements InjectionAwareInterface
     public function authorizeClient($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$email, \Model_Client::ACTIVE]);
+
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 

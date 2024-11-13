@@ -26,15 +26,16 @@ class Box_Authorization
         return (bool) $this->session->get('admin');
     }
 
-    public function authorizeUser(object|null $user, string $plainTextPassword)
+    public function authorizeUser(?object $user, string $plainTextPassword)
     {
-        if($user === null){
+        if ($user === null) {
             // 25 to 100ms delay
             usleep(random_int(25000, 100000));
             $this->di['password']->dummyVerify($plainTextPassword);
+
             return null;
         }
-    
+
         $user = $this->passwordBackwardCompatibility($user, $plainTextPassword);
         if ($this->di['password']->verify($plainTextPassword, $user->pass)) {
             if ($this->di['password']->needsRehash($user->pass)) {
