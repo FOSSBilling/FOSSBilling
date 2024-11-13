@@ -50,6 +50,7 @@ jobs:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
           phpstan-php-version: 8.3
+          phpstan-version: 'composer'
           phpunit-enable: 'true'
           phpunit-version: 10
 
