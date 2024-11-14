@@ -765,9 +765,6 @@ class Service implements InjectionAwareInterface
     public function authorizeAdmin($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, \Model_Admin::STATUS_ACTIVE]);
-        if ($model == null) {
-            return null;
-        }
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }

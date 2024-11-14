@@ -978,8 +978,15 @@ class ServiceTest extends \BBTestCase
             ->with('Client')
             ->willReturn(null);
 
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('authorizeUser')
+            ->with(null, $password)
+            ->willReturn(null);
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
+        $di['auth'] = $authMock;
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);

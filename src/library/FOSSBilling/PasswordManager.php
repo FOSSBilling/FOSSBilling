@@ -84,4 +84,13 @@ class PasswordManager
     {
         return password_needs_rehash($hash, $this->algo, $this->options);
     }
+
+    /**
+     * Performs a random `password_verify` check.
+     * Does not serve a purpose other than to spend some CPU & eliminate timing differences between login attempts on accounts that do and do not exist.
+     */
+    public function dummyVerify(string $password): void
+    {
+        password_verify($password, '$2y$10$v5x5RsGeA.HJebQ2XPMCuO/ae3nws6oA1B.dOvnGxN6f8mNdYMzHe');
+    }
 }

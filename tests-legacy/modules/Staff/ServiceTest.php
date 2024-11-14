@@ -95,9 +95,16 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(null);
 
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('authorizeUser')
+            ->with(null, $password)
+            ->willReturn(null);
+
         $di = new \Pimple\Container();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
+        $di['auth'] = $authMock;
 
         $service = new Service();
         $service->setDi($di);
@@ -1625,8 +1632,15 @@ class ServiceTest extends \BBTestCase
             ->with('Admin', 'email = ? AND status = ?')
             ->willReturn(null);
 
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('authorizeUser')
+            ->with(null, $password)
+            ->willReturn(null);
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
+        $di['auth'] = $authMock;
 
         $service = new Service();
         $service->setDi($di);

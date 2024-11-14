@@ -102,10 +102,14 @@ class Client implements InjectionAwareInterface
         }
 
         $isLoginMethod = false;
+
         if ($method == 'staff_login' || $method == 'client_login') {
+            $isLoginMethod = true;
             $rate_span = $this->_api_config['rate_span_login'];
             $rate_limit = $this->_api_config['rate_limit_login'];
-            $isLoginMethod = true;
+
+            // 25 to 250ms delay to help prevent email enumeration.
+            usleep(random_int(25000, 250000));
         } else {
             $rate_span = $this->_api_config['rate_span'];
             $rate_limit = $this->_api_config['rate_limit'];
