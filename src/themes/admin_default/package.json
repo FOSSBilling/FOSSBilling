@@ -21,6 +21,6 @@
     "jquery": "^3.7.1",
     "litepicker": "^2.0.12",
     "select2": "^4.0.13",
-    "sortable-tablesort": "^3.2.3"
+    "sortable-tablesort": "^4.0.0"
   }
 }
