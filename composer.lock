@@ -2147,16 +2147,16 @@
         },
         {
             "name": "prinsfrank/enums",
-            "version": "v1.3",
+            "version": "v1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/enums.git",
-                "reference": "532e5d53a1fbd2d1a9bb0757887bbf5632a7b615"
+                "reference": "1d348588bf224e6da99d3ff189d3903dfe5e064b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/enums/zipball/532e5d53a1fbd2d1a9bb0757887bbf5632a7b615",
-                "reference": "532e5d53a1fbd2d1a9bb0757887bbf5632a7b615",
+                "url": "https://api.github.com/repos/PrinsFrank/enums/zipball/1d348588bf224e6da99d3ff189d3903dfe5e064b",
+                "reference": "1d348588bf224e6da99d3ff189d3903dfe5e064b",
                 "shasum": ""
             },
             "require": {
@@ -2181,7 +2181,7 @@
             "description": "Adds missing strictly typed methods to work with enums",
             "support": {
                 "issues": "https://github.com/PrinsFrank/enums/issues",
-                "source": "https://github.com/PrinsFrank/enums/tree/v1.3"
+                "source": "https://github.com/PrinsFrank/enums/tree/v1.4"
             },
             "funding": [
                 {
@@ -2189,27 +2189,27 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-10-17T19:29:31+00:00"
+            "time": "2024-11-18T21:10:59+00:00"
         },
         {
             "name": "prinsfrank/standards",
-            "version": "v3.10.4",
+            "version": "v3.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/standards.git",
-                "reference": "3c2b71bc8fe6207fd937a01f9bdf076a8d79505a"
+                "reference": "44157e57a81eb729f39a21eae3a52c559116814b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/3c2b71bc8fe6207fd937a01f9bdf076a8d79505a",
-                "reference": "3c2b71bc8fe6207fd937a01f9bdf076a8d79505a",
+                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/44157e57a81eb729f39a21eae3a52c559116814b",
+                "reference": "44157e57a81eb729f39a21eae3a52c559116814b",
                 "shasum": ""
             },
             "require": {
                 "ext-intl": "*",
                 "ext-mbstring": "*",
                 "php": "~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0",
-                "prinsfrank/enums": "^1.2"
+                "prinsfrank/enums": "^1.4"
             },
             "require-dev": {
                 "composer/composer": "^2.3",
@@ -2240,7 +2240,7 @@
             "description": "A collection of standards as PHP Enums: ISO3166, ISO4217, ISO639...",
             "support": {
                 "issues": "https://github.com/PrinsFrank/standards/issues",
-                "source": "https://github.com/PrinsFrank/standards/tree/v3.10.4"
+                "source": "https://github.com/PrinsFrank/standards/tree/v3.11.0"
             },
             "funding": [
                 {
@@ -2248,7 +2248,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-11-11T23:24:04+00:00"
+            "time": "2024-11-18T21:47:27+00:00"
         },
         {
             "name": "psr/cache",
