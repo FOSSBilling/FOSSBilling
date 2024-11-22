@@ -40,17 +40,15 @@ class Admin extends \Api_Abstract
 
     public function run_check(array $data): array
     {
-        $throw = $data['throw'] ?? false;
         if (!isset($data['id'])) {
             throw new InformationException('You must specify a check ID to run.');
         }
 
-        $result = $this->getService()->runCheck($data['id']);
+        return $this->getService()->runCheck($data['id']);
+    }
 
-        if ($throw && $result['result'] !== 'passed') {
-            throw new InformationException('Check result: :checkResult:. Message: :checkMessage:', [':checkResult:' => $result['result'], ':checkMessage:' => $result['message']]);
-        }
-
-        return $result;
+    public function run_checks(array $data): array
+    {
+        return $this->getService()->runAllChecks();
     }
 }

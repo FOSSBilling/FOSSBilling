@@ -68,37 +68,42 @@ class Service
      */
     public function runAllChecks(): array
     {
-        $result = [];
+        $results = [];
         $checks = $this->getAllChecks();
-        foreach ($checks as $check) {
+        foreach ($checks as $id => $check) {
             $checkResult = $check->performCheck();
-            $result[] = [
-                'name' => $check->getName(),
-                'checkResult' => json_decode(json_encode($checkResult), true),
-            ];
+
+            $result = json_decode(json_encode($checkResult), true);
+            $result['id'] = $id;
+            $result['name'] = $check->getName();
+
+            $results[] = $result;
         }
 
-        return $result;
+        return $results;
     }
 
     /**
      * Runs a given check.
      *
-     * @throws InformationException If the check does not exist or if it does not impliment the correct interface
+     * @throws InformationException If the check does not exist or if it does not implement the correct interface
      */
-    public function runCheck(string $checkName): array
+    public function runCheck(string $checkID): array
     {
-        $className = "Box\Mod\Security\Checks\\$checkName";
-        if (!class_exists($className)) {
-            throw new InformationException('The check :checkName: does not exist.', [':checkName:' => $checkName]);
+        $class = "Box\Mod\Security\Checks\\$checkID";
+        if (!class_exists($class)) {
+            throw new InformationException('The check :checkName: does not exist.', [':checkName:' => $checkID]);
         }
 
-        $check = new $className();
+        $check = new $class();
         if (!$check instanceof SecurityCheckInterface) {
-            throw new InformationException('The check :checkName: does not seem to be a valid check.', [':checkName:' => $checkName]);
+            throw new InformationException('The check :checkName: does not seem to be a valid check.', [':checkName:' => $checkID]);
         }
 
-        return json_decode(json_encode($check->performCheck()), true);
+        $result = json_decode(json_encode($check->performCheck()), true);
+        $result['id'] = $checkID;
+
+        return $result;
     }
 
     /**

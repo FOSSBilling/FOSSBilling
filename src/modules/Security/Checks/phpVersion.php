@@ -12,6 +12,7 @@ namespace Box\Mod\Security\Checks;
 
 use FOSSBilling\Enums\SecurityCheckResultEnum;
 use FOSSBilling\SecurityCheckResult;
+use Symfony\Component\HttpClient\HttpClient;
 
 class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
 {
@@ -27,6 +28,27 @@ class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
 
     public function performCheck(): SecurityCheckResult
     {
-        return new SecurityCheckResult(SecurityCheckResultEnum::PASS, '');
+        $phpVersionString = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+
+        try {
+            $client = HttpClient::create();
+            $response = $client->request('GET', 'https://php.watch/api/v1/versions');
+            $data = $response->toArray();
+
+            foreach ($data['data'] as $version) {
+                if ($phpVersionString == $version['name']) {
+                    if ($version['isLatestVersion']) {
+                        return new SecurityCheckResult(SecurityCheckResultEnum::PASS, "PHP $phpVersionString is the latest version of PHP.");
+                    } elseif ($version['isSecureVersion']) {
+                        return new SecurityCheckResult(SecurityCheckResultEnum::WARN, "PHP $phpVersionString isn't the latest, but is still supported.");
+                    } else {
+                        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, "PHP $phpVersionString is out of date and does not get security patches.");
+                    }
+                }
+            }
+        } catch (\Exception) {
+        }
+
+        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, 'Failed to lookup PHP version status.');
     }
 }
