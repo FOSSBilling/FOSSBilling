@@ -32,7 +32,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'location' => 'system',
                 'label' => __trans('System'),
                 'class' => 'settings',
-                'sprite_class' => 'dark-sprite-icon sprite-cog3',
             ],
             'subpages' => [
                 [

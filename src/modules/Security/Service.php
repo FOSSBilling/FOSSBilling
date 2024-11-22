@@ -12,6 +12,8 @@
 namespace Box\Mod\Security;
 
 use FOSSBilling\GeoIP\IncompleteRecord;
+use FOSSBilling\InformationException;
+use FOSSBilling\Interfaces\SecurityCheckInterface;
 
 class Service
 {
@@ -35,6 +37,77 @@ class Service
         ];
     }
 
+    /**
+     * Returns a list of all security checks.
+     *
+     * @return SecurityCheckInterface[]
+     */
+    public function getAllChecks(): array
+    {
+        $checks = [];
+        foreach (scandir(__DIR__ . DIRECTORY_SEPARATOR . 'Checks') as $check) {
+            $checkID = substr($check, 0, -4) ?: '';
+            $className = "Box\Mod\Security\Checks\\$checkID";
+            if (!class_exists($className)) {
+                continue;
+            }
+
+            $newCheck = new $className();
+            if ($newCheck instanceof SecurityCheckInterface) {
+                $checks[$checkID] = $newCheck;
+            } else {
+                error_log("$className does not implement the SecurityCheckInterface interface.");
+            }
+        }
+
+        return $checks;
+    }
+
+    /**
+     * Runs all available security checks.
+     */
+    public function runAllChecks(): array
+    {
+        $result = [];
+        $checks = $this->getAllChecks();
+        foreach ($checks as $check) {
+            $checkResult = $check->performCheck();
+            $result[] = [
+                'name' => $check->getName(),
+                'checkResult' => json_decode(json_encode($checkResult), true),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Runs a given check.
+     *
+     * @throws InformationException If the check does not exist or if it does not impliment the correct interface
+     */
+    public function runCheck(string $checkName): array
+    {
+        $className = "Box\Mod\Security\Checks\\$checkName";
+        if (!class_exists($className)) {
+            throw new InformationException('The check :checkName: does not exist.', [':checkName:' => $checkName]);
+        }
+
+        $check = new $className();
+        if (!$check instanceof SecurityCheckInterface) {
+            throw new InformationException('The check :checkName: does not seem to be a valid check.', [':checkName:' => $checkName]);
+        }
+
+        return json_decode(json_encode($check->performCheck()), true);
+    }
+
+    /**
+     * Looks up an IP address.
+     *
+     * @return array{ip: array{address: string, type: string}, country: mixed, asn: mixed}
+     *
+     * @throws \InvalidArgumentException
+     */
     public function lookupIP(string $ip)
     {
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {

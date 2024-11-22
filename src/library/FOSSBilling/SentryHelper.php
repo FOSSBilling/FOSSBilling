@@ -58,6 +58,7 @@ class SentryHelper
         'product',
         'profile',
         'redirect',
+        'security',
         'seo',
         'serviceapikey',
         'servicecustom',
