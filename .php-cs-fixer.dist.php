@@ -19,7 +19,6 @@ return (new PhpCsFixer\Config())
         '@Symfony' => true,
         'concat_space' => ['spacing' => 'one'],
         'protected_to_private' => false,
-        'nullable_type_declaration_for_default_null_value' => ['use_nullable_type_declaration' => true],
         'yoda_style' => ['equal' => false, 'identical' => false, 'less_and_greater' => false], // Enforce non-Yoda style.
         'blank_line_before_statement' => ['statements' => ['break', 'continue', 'return', 'throw', 'try']], // Removed 'declare' from the default list.
         /* Risky */

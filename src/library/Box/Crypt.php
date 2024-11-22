@@ -52,7 +52,7 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         return base64_encode($iv . $ciphertext);
     }
 
-    public function decrypt(string $text, ?string $pass = null)
+    public function decrypt(?string $text, ?string $pass = null)
     {
         if (is_null($text)) {
             return false;
