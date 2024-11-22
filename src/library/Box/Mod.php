@@ -34,6 +34,7 @@ class Box_Mod
         'page',
         'product',
         'profile',
+        'security',
         'servicecustom',
         'servicedomain',
         'servicedownloadable',
