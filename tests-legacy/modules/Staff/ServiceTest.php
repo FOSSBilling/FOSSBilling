@@ -1629,7 +1629,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->with('Admin', 'email = ? AND status = ?')
+            ->with('Admin', 'email = ? AND status = ? AND role != ?')
             ->willReturn(null);
 
         $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
@@ -1660,7 +1660,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->with('Admin', 'email = ? AND status = ?')
+            ->with('Admin', 'email = ? AND status = ? AND role != ?')
             ->willReturn($model);
 
         $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
