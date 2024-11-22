@@ -17,7 +17,7 @@ return RectorConfig::configure()
     ->withTypeCoverageLevel(2)
     ->withDeadCodeLevel(25)
     ->withSets([
-        PHPUnitSetList::PHPUNIT_100,
+        PHPUnitSetList::PHPUNIT_110,
         SetList::INSTANCEOF,
         SetList::PHP_POLYFILLS
     ])
