@@ -34,7 +34,7 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function encrypt($text, $pass = null)
+    public function encrypt(string $text, ?string $pass = null)
     {
         $key = $this->_getSalt($pass);
 
@@ -52,7 +52,7 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         return base64_encode($iv . $ciphertext);
     }
 
-    public function decrypt($text, $pass = null)
+    public function decrypt(?string $text, ?string $pass = null)
     {
         if (is_null($text)) {
             return false;
@@ -76,7 +76,7 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         return trim($result);
     }
 
-    private function _getSalt($pass = null)
+    private function _getSalt(?string $pass = null)
     {
         if ($pass == null) {
             $pass = Config::getProperty('info.salt');

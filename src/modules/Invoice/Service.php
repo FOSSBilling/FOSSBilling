@@ -1258,7 +1258,7 @@ class Service implements InjectionAwareInterface
      *
      * @return array
      */
-    public function findAllUnpaid(array $filter = null)
+    public function findAllUnpaid(?array $filter = null)
     {
         $sql = 'SELECT m.*
                 FROM invoice as m

@@ -33,7 +33,7 @@ class Box_Pagination implements InjectionAwareInterface
         return $this->per_page;
     }
 
-    public function getSimpleResultSet($q, $values, ?int $per_page = 100, int $page = null)
+    public function getSimpleResultSet($q, $values, ?int $per_page = 100, ?int $page = null)
     {
         if (is_null($page)) {
             $page = $_GET['page'] ?? 1;

@@ -150,7 +150,7 @@ class Box_Period
         };
     }
 
-    public function getExpirationTime($now = null)
+    public function getExpirationTime(?int $now = null)
     {
         if ($now === null) {
             $now = time();

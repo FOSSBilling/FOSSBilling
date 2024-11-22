@@ -119,7 +119,7 @@ class ServiceBalance implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\InformationException
      */
-    public function deductFunds(\Model_Client $client, $amount, $description, array $data = null)
+    public function deductFunds(\Model_Client $client, $amount, $description, ?array $data = null)
     {
         if (!is_numeric($amount)) {
             throw new \FOSSBilling\InformationException('Funds amount is invalid');

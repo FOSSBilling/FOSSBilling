@@ -388,7 +388,7 @@ class Tools
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
-    public static function getExternalIP(bool $throw = true, string $bind = null): ?string
+    public static function getExternalIP(bool $throw = true, ?string $bind = null): ?string
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;

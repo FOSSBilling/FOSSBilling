@@ -13,7 +13,7 @@ class Request
      * @param string|null $apiKey   (optional) the API key to authenticate with
      * @param string|null $baseUrl  (optional) the base instance URL to make requests against (Example: `http://localhost/`)
      */
-    public static function makeRequest(string $endpoint, array $payload = [], string $role = null, string $apiKey = null, string $method = 'POST', string $baseUrl = null): Response
+    public static function makeRequest(string $endpoint, array $payload = [], ?string $role = null, ?string $apiKey = null, string $method = 'POST', ?string $baseUrl = null): Response
     {
         $cookie = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cookie.txt';
         if (!$role) {

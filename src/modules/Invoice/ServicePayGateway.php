@@ -236,7 +236,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return (bool) $model->allow_recurrent;
     }
 
-    public function getPaymentAdapter(\Model_PayGateway $pg, \Model_Invoice $model = null, $optional = [])
+    public function getPaymentAdapter(\Model_PayGateway $pg, ?\Model_Invoice $model = null, $optional = [])
     {
         if (is_string($pg->config) && json_validate($pg->config)) {
             $config = json_decode($pg->config, true);

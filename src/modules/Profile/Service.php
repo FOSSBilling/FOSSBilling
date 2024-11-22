@@ -225,7 +225,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function invalidateSessions(string $type = null, int $id = null): bool
+    public function invalidateSessions(?string $type = null, ?int $id = null): bool
     {
         if (empty($type)) {
             $auth = new \Box_Authorization($this->di);

@@ -32,7 +32,7 @@ class Reader
      * @throws \InvalidArgumentException for invalid database path or unknown arguments
      * @throws InvalidDatabaseException  if the database is invalid or there is an error reading from it
      */
-    public function __construct(string $database, string $locale = null)
+    public function __construct(string $database, ?string $locale = null)
     {
         $this->reader = new MaxMindReader($database);
 

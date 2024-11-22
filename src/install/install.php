@@ -251,7 +251,6 @@ final class FOSSBilling_Installer
             $this->session->get('database_username'),
             $this->session->get('database_password'),
             [
-                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]

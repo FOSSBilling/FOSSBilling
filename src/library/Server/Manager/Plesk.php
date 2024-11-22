@@ -45,7 +45,7 @@ class Server_Manager_Plesk extends Server_Manager
      *
      * @return string the login URL for the reseller account
      */
-    public function getResellerLoginUrl(Server_Account $account = null): string
+    public function getResellerLoginUrl(?Server_Account $account = null): string
     {
         return $this->getLoginUrl();
     }
@@ -58,7 +58,7 @@ class Server_Manager_Plesk extends Server_Manager
      *
      * @return string the login URL for the account
      */
-    public function getLoginUrl(Server_Account $account = null): string
+    public function getLoginUrl(?Server_Account $account = null): string
     {
         $protocol = $this->_config['secure'] ? 'https' : 'http';
         $url = $protocol . '://' . $this->_config['host'] . ':' . $this->_config['port'];

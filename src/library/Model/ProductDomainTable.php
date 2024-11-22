@@ -210,7 +210,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $pricing;
     }
 
-    public function getProductPrice(Model_Product $product, array $config = null)
+    public function getProductPrice(Model_Product $product, ?array $config = null)
     {
         $rtable = $this->di['mod_service']('servicedomain', 'Tld');
         $tld = '';
@@ -247,7 +247,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
-    public function getProductSetupPrice(Model_Product $product, array $config = null)
+    public function getProductSetupPrice(Model_Product $product, ?array $config = null)
     {
         return 0;
     }

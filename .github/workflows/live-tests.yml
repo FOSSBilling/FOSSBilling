@@ -28,7 +28,7 @@ jobs:
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
-          php-version: 8.1
+          php-version: 8.2
 
       - name: Make Needed Directories
         run: |
@@ -84,7 +84,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml
+          extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml, pdo, pdo_mysql
 
       - name: Setup Apache
         run: |
@@ -154,6 +154,16 @@ jobs:
           -F admin_api_token="${{ env.TEST_API_KEY }}" \
           -X POST \
           http://localhost/install/install.php?a=install
+
+      - name: Display the installer error log if it exists
+        run: |
+          LOG_PATH="/var/www/localhost/install/php_error.log"
+            
+          if [ -f "$LOG_PATH" ]; then
+            cat "$LOG_PATH"
+          else
+            echo "The installer error log does not exist."
+          fi
 
       - name: Run Cron
         run: php /var/www/localhost/cron.php

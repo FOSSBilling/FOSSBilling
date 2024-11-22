@@ -73,7 +73,7 @@ class Box_Database implements InjectionAwareInterface
         return $this->orm->getAssoc($sql, $values);
     }
 
-    public function findOne($modelName, $sql = null, $values = [])
+    public function findOne(string $modelName, ?string $sql = null, $values = [])
     {
         $type = $this->_getTypeFromModelName($modelName);
         $bean = $this->orm->findOne($type, $sql, $values);
@@ -87,7 +87,7 @@ class Box_Database implements InjectionAwareInterface
         return null;
     }
 
-    public function find($modelName, $sql = null, $values = [])
+    public function find(string $modelName, ?string $sql = null, $values = [])
     {
         $type = $this->_getTypeFromModelName($modelName);
         $beans = $this->orm->find($type, $sql, $values);
@@ -101,7 +101,7 @@ class Box_Database implements InjectionAwareInterface
         return $beans;
     }
 
-    public function findAll(string $table, string $sql = null, array $bindings = [])
+    public function findAll(string $table, ?string $sql = null, array $bindings = [])
     {
         if (is_null($sql)) {
             return $this->orm->findAll($table);

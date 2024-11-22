@@ -39,13 +39,11 @@ class Service
     }
 
     /**
-     * @param null $interval - parameter from CLI, pass to filter crons to run
-     *
      * @return bool
      *
-     * @todo finish fixing, time to sleep
+     * @todo finish fixing, time to sleep (note: idk what exactly this is referring to. It predates FOSSBilling and is from BoxBilling well before we touched this code)
      */
-    public function runCrons($interval = null)
+    public function runCrons()
     {
         $api = $this->di['api_system'];
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs');
