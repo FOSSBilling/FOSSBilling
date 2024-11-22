@@ -17,7 +17,7 @@
     ],
     "homepage": "https://fossbilling.org",
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "ext-curl": "*",
         "ext-intl": "*",
         "ext-mbstring": "*",
@@ -51,8 +51,8 @@
         "symfony/filesystem": "^6.4",
         "symfony/http-client": "^6.4",
         "symfony/mailer": "^6.4",
-        "symfony/polyfill-php82": "^1.29",
         "symfony/polyfill-php83": "^1.29",
+        "symfony/polyfill-php84": "^1.31",
         "symfony/sendgrid-mailer": "^6.4",
         "symfony/webpack-encore-bundle": "^2.1",
         "twig/intl-extra": "^3.5",
@@ -81,6 +81,7 @@
         "symfony/polyfill-php72": "*",
         "symfony/polyfill-php80": "*",
         "symfony/polyfill-php81": "*",
+        "symfony/polyfill-php82": "*",
         "symfony/polyfill-intl-icu": "*",
         "symfony/polyfill-intl-idn": "*"
     },
