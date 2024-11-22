@@ -20,6 +20,7 @@ return RectorConfig::configure()
     ->withDeadCodeLevel(25)
     ->withSets([
         SetList::INSTANCEOF,
+        SetList::PHP_POLYFILLS
     ])
     ->withSkip([
         JsonThrowOnErrorRector::class,

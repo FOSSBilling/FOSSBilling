@@ -155,6 +155,16 @@ jobs:
           -X POST \
           http://localhost/install/install.php?a=install
 
+      - name: Display the installer error log if it exists
+        run: |
+          LOG_PATH="/var/www/localhost/install/php_error.log"
+            
+          if [ -f "$LOG_PATH" ]; then
+            cat "$LOG_PATH"
+          else
+            echo "The installer error log does not exist."
+          fi
+
       - name: Run Cron
         run: php /var/www/localhost/cron.php
 

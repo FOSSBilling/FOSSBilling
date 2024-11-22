@@ -19,6 +19,7 @@ return RectorConfig::configure()
     ->withSets([
         PHPUnitSetList::PHPUNIT_100,
         SetList::INSTANCEOF,
+        SetList::PHP_POLYFILLS
     ])
     ->withSkip([
         JsonThrowOnErrorRector::class,
