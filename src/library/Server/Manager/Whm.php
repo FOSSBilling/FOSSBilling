@@ -82,7 +82,7 @@ class Server_Manager_Whm extends Server_Manager
      *
      * @return string the login URL
      */
-    public function getLoginUrl(Server_Account $account = null): string
+    public function getLoginUrl(?Server_Account $account = null): string
     {
         if ($account) {
             // API action for creating a user session
@@ -120,7 +120,7 @@ class Server_Manager_Whm extends Server_Manager
      *
      * @return string the login URL
      */
-    public function getResellerLoginUrl(Server_Account $account = null): string
+    public function getResellerLoginUrl(?Server_Account $account = null): string
     {
         if ($account) {
             // API action for creating a user session

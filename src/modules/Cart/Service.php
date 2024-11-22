@@ -56,7 +56,7 @@ class Service implements InjectionAwareInterface
     /**
      * @return \Model_Cart
      */
-    public function getSessionCart(string $sessionID = null)
+    public function getSessionCart(?string $sessionID = null)
     {
         $sessionID ??= $this->di['session']->getId();
         $sqlBindings = [':session_id' => $sessionID];

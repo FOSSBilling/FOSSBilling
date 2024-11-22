@@ -114,7 +114,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @example https://extensions.fossbilling.org/api/list An example of the API response
      */
-    public function getExtensionList($type = null): array
+    public function getExtensionList(?string $type = null): array
     {
         $params = [];
 

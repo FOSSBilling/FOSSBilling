@@ -36,7 +36,7 @@ class Mail
      *
      * @return void
      */
-    public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, ?string $transport, string $dsn = null)
+    public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, ?string $transport, ?string $dsn = null)
     {
         if (isset($from['email']) && isset($from['name'])) {
             $fromAddress = new Address($from['email'], $from['name']);
@@ -127,7 +127,7 @@ class Mail
      *
      * @throws InformationException If the transport method is unknown or if required options for the selected transport aren't defined
      */
-    public function send(array $options = null): void
+    public function send(?array $options = null): void
     {
         switch ($this->transport) {
             case 'sendmail':

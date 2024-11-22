@@ -16,7 +16,7 @@ class Payment_Exception extends FOSSBilling\Exception
      * @param array|null $variables translation variables
      * @param int        $code      the exception code
      */
-    public function __construct(string $message, array $variables = null, int $code = 0)
+    public function __construct(string $message, ?array $variables = null, int $code = 0)
     {
         parent::__construct($message, $variables, $code, true);
     }

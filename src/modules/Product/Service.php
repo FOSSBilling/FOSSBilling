@@ -1049,7 +1049,7 @@ class Service implements InjectionAwareInterface
         return in_array($product->id, $products);
     }
 
-    public function getProductDiscount(\Model_Product $product, \Model_Promo $promo, array $config = null)
+    public function getProductDiscount(\Model_Product $product, \Model_Promo $promo, ?array $config = null)
     {
         if (!$this->isPromoLinkedToProduct($promo, $product)) {
             return 0;

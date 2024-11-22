@@ -162,7 +162,7 @@ class Validate
      *
      * @throws InformationException
      */
-    public function checkRequiredParamsForArray(array $required, array $data, array $variables = null, $code = 0)
+    public function checkRequiredParamsForArray(array $required, array $data, ?array $variables = null, $code = 0)
     {
         foreach ($required as $key => $msg) {
             if (!isset($data[$key])) {

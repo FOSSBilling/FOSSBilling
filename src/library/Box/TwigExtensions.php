@@ -104,7 +104,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
     }
 
-    public function twig_bb_client_link_filter($link, $params = null)
+    public function twig_bb_client_link_filter($link, ?array $params = null)
     {
         if ($this->di['url'] === null) {
             return null;
@@ -113,7 +113,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $this->di['url']->link($link, $params);
     }
 
-    public function twig_bb_admin_link_filter($link, $params = null)
+    public function twig_bb_admin_link_filter($link, ?array $params = null)
     {
         return $this->di['url']->adminLink($link, $params);
     }
@@ -126,7 +126,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->system_period_title(['code' => $period]);
     }
 
-    public function twig_money_convert(Twig\Environment $env, $price, $currency = null)
+    public function twig_money_convert(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -138,7 +138,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true]);
     }
 
-    public function money_convert_without_currency(Twig\Environment $env, $price, $currency = null, $without_currency = false)
+    public function money_convert_without_currency(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];

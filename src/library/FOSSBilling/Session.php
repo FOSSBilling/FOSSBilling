@@ -39,14 +39,7 @@ class Session implements InjectionAwareInterface
         $this->canUseSession();
 
         if (!headers_sent()) {
-            session_set_save_handler(
-                $this->handler->open(...),
-                $this->handler->close(...),
-                $this->handler->read(...),
-                $this->handler->write(...),
-                $this->handler->destroy(...),
-                $this->handler->gc(...)
-            );
+            session_set_save_handler($this->handler);
         }
 
         $currentCookieParams = session_get_cookie_params();

@@ -263,7 +263,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    public function renderJson($data = null, \Exception $e = null)
+    public function renderJson($data = null, ?\Exception $e = null)
     {
         // do not emit response if headers already sent
         if (headers_sent()) {

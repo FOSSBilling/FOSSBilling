@@ -79,7 +79,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
      *
      * @return float
      */
-    public function getProductSetupPrice(Model_Product $product, array $config = null)
+    public function getProductSetupPrice(Model_Product $product, ?array $config = null)
     {
         $pp = $this->di['db']->load('ProductPayment', $product->product_payment_id);
 
@@ -109,7 +109,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
      *
      * @return float
      */
-    public function getProductPrice(Model_Product $product, array $config = null)
+    public function getProductPrice(Model_Product $product, ?array $config = null)
     {
         $pp = $this->di['db']->load('ProductPayment', $product->product_payment_id);
 

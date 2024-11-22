@@ -24,7 +24,7 @@ class Exception extends \Exception
      * @param int        $code      the exception code
      * @param bool       $protected if the variables in this should be considered protect, if so, hide them from the stack trace
      */
-    public function __construct(string $message, array $variables = null, int $code = 0, bool $protected = false)
+    public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
     {
         $logStack = Config::getProperty('debug_and_monitoring.log_stacktrace', true);
         $stackLength = Config::getProperty('debug_and_monitoring.stacktrace_length', 25);

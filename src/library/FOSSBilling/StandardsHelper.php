@@ -16,7 +16,7 @@ use PrinsFrank\Standards\Language\LanguageAlpha2;
 
 class StandardsHelper
 {
-    public static function getLanguageObject(bool $exactMatch = false, string $locale = null): LanguageAlpha2
+    public static function getLanguageObject(bool $exactMatch = false, ?string $locale = null): LanguageAlpha2
     {
         // Automatically select the locale that's currently in use if not otherwise specified.
         if ($locale === null) {

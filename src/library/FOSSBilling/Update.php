@@ -106,7 +106,7 @@ class Update implements InjectionAwareInterface
      * @throws Exception if there is an error downloading the latest
      *                   version information
      */
-    public function getLatestVersionInfo(string $branch = null, bool $refetch = false): array
+    public function getLatestVersionInfo(?string $branch = null, bool $refetch = false): array
     {
         $branch ??= $this->getUpdateBranch();
         $branch = (in_array($branch, ['release', 'preview'])) ? $branch : 'release';

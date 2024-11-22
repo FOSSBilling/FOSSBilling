@@ -113,7 +113,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     /**
      * @throws FOSSBilling\Exception
      */
-    public function log($message, $priority, $extras = null): void
+    public function log($message, $priority, array|string|null $extras = null): void
     {
         // sanity checks
         if (empty($this->_writers)) {

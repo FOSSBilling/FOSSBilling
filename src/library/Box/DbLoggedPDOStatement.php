@@ -9,7 +9,7 @@
  */
 class Box_DbLoggedPDOStatement extends PDOStatement
 {
-    public function execute($input_parameters = null): bool
+    public function execute(?array $input_parameters = null): bool
     {
         error_log($this->queryString);
 

@@ -237,7 +237,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function createCurrency(string $code, string $format, string $title = null, string|float|null $conversionRate = 1): string
+    public function createCurrency(string $code, string $format, ?string $title = null, string|float|null $conversionRate = 1): string
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Currency', 2);
