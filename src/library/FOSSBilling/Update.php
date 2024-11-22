@@ -27,7 +27,6 @@ class Update implements InjectionAwareInterface
     private array $allowedDownloadPrefixes = [
         'https://github.com/FOSSBilling/FOSSBilling/releases/',
         'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/',
-        'https://s4-fossb-2.fi-hel2.upcloudobjects.com/releases/',
     ];
 
     public function setDi(\Pimple\Container $di): void
