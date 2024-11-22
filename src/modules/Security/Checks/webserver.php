@@ -45,7 +45,7 @@ class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
             $response = $client->request('GET', $url);
             if ($response->getStatusCode() === 200) {
                 $isOkay = false;
-                $result .= "\n$url returned HTTP 200 when it shouldn't have.";
+                $result .= "$url returned HTTP 200 when it shouldn't have.\n";
             }
         }
 
