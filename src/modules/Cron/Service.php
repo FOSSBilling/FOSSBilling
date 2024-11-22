@@ -41,7 +41,7 @@ class Service
     /**
      * @return bool
      *
-     * @todo finish fixing, time to sleep (note: idk what exactly this is refering to. It predates FOSSBilling and is from BoxBilling well before we touched this code)
+     * @todo finish fixing, time to sleep (note: idk what exactly this is referring to. It predates FOSSBilling and is from BoxBilling well before we touched this code)
      */
     public function runCrons()
     {
