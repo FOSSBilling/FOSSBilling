@@ -26,12 +26,12 @@ class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
 
     public function getName(): string
     {
-        return 'Webserver Check';
+        return __trans('Webserver Check');
     }
 
     public function getDescription(): string
     {
-        return 'Performs simple checks to validate your if webserver blocks access to sensitive files.';
+        return __trans('Performs simple checks to validate your if webserver blocks access to sensitive files.');
     }
 
     public function performCheck(): SecurityCheckResult
@@ -45,12 +45,12 @@ class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
             $response = $client->request('GET', $url);
             if ($response->getStatusCode() === 200) {
                 $isOkay = false;
-                $result .= "$url returned HTTP 200 when it shouldn't have.\n";
+                $result .= __trans(":url: returned HTTP 200 when it shouldn't have.", [':url:' => $url]) . "\n";
             }
         }
 
         if ($result === '') {
-            $result = 'All tested URLs were inaccessible.';
+            $result = __trans('All tested URLs were inaccessible.');
         }
 
         return new SecurityCheckResult($isOkay ? SecurityCheckResultEnum::PASS : SecurityCheckResultEnum::FAIL, $result);

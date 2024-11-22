@@ -10,7 +10,7 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Security dashboard</h3>
+            <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -33,7 +33,7 @@
                             <a class="btn btn-small btn-primary api-link"
                                 href="{{ 'api/admin/security/run_check'|link({ 'id': check.id, 'throw': true, 'CSRFToken': CSRFToken }) }}"
                                 data-api-jsonp="setResult"
-                                >Run check</a>
+                                >{{ 'Run check'|trans }}</a>
                         </th>
                         <th id="{{ check.id }}" scope="row"><div class="alert alert-info">?</div></th>
                     </tr>
