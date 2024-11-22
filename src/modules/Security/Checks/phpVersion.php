@@ -18,12 +18,12 @@ class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
 {
     public function getName(): string
     {
-        return 'PHP Version Check';
+        return __trans('PHP Version Check');
     }
 
     public function getDescription(): string
     {
-        return 'Checks if the PHP version FOSSBilling is running on is still receiving security support.';
+        return __trans('Checks if the PHP version FOSSBilling is running on is still receiving security support.');
     }
 
     public function performCheck(): SecurityCheckResult
@@ -38,17 +38,17 @@ class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
             foreach ($data['data'] as $version) {
                 if ($phpVersionString == $version['name']) {
                     if ($version['isLatestVersion']) {
-                        return new SecurityCheckResult(SecurityCheckResultEnum::PASS, "PHP $phpVersionString is the latest version of PHP.");
+                        return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans('PHP :version: is the latest version of PHP.', [':version:' => $phpVersionString]));
                     } elseif ($version['isSecureVersion']) {
-                        return new SecurityCheckResult(SecurityCheckResultEnum::WARN, "PHP $phpVersionString isn't the latest, but is still supported.");
+                        return new SecurityCheckResult(SecurityCheckResultEnum::WARN, __trans("PHP :version: isn't the latest, but is still supported.", [':version:' => $phpVersionString]));
                     } else {
-                        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, "PHP $phpVersionString is out of date and does not get security patches.");
+                        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, __trans('PHP :version: is out of date and does not get security patches.', [':version:' => $phpVersionString]));
                     }
                 }
             }
         } catch (\Exception) {
         }
 
-        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, 'Failed to lookup PHP version status.');
+        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, __trans('Failed to lookup PHP version status.'));
     }
 }
