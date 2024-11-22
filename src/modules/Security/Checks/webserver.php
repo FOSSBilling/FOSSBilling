@@ -31,7 +31,7 @@ class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
 
     public function getDescription(): string
     {
-        return 'Perfoms simple checks to validate your if webserver blocks access to sensitive files.';
+        return 'Performs simple checks to validate your if webserver blocks access to sensitive files.';
     }
 
     public function performCheck(): SecurityCheckResult
