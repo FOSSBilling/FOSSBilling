@@ -19,8 +19,10 @@
                     <tr>
                         <th scope="col">{{ "Name"|trans }}</th>
                         <th scope="col">{{ "Description"|trans }}</th>
-                        <th scope="col">{{ "Run check"|trans }}</th>
-                    </tr>                  
+                        <th scope="col" class="no-sort">{{ "Run check"|trans }}</th>
+                        <th scope="col">{{ "Result"|trans }}</th>
+                    </tr>
+                    <a class="btn btn-primary api-link" href="{{ 'api/admin/security/run_checks'|link({ 'CSRFToken': CSRFToken }) }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
                   </thead>
                   <tbody>
                     {% for check in admin.security_list_checks() %}
@@ -30,9 +32,10 @@
                         <th scope="row">
                             <a class="btn btn-small btn-primary api-link"
                                 href="{{ 'api/admin/security/run_check'|link({ 'id': check.id, 'throw': true, 'CSRFToken': CSRFToken }) }}"
-                                data-api-msg="{{ 'Check passed'|trans }}"
+                                data-api-jsonp="setRestult"
                                 >Run check</a>
                         </th>
+                        <th id="{{ check.id }}" scope="row"><div class="alert alert-info">?</div></th>
                     </tr>
                     {% endfor %}
                   </tbody>
@@ -42,4 +45,31 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function setResults(results){
+        Object.entries(results).forEach(([id, result]) => {
+            setRestult(result)
+        });
+    }
+    function setRestult(result){
+        const alertDiv = document.createElement('div');
+
+        if(result.result == "passed"){
+            alertDiv.classList.add('alert', 'alert-success');
+        } else if (result.result == "warning") {
+            alertDiv.classList.add('alert', 'alert-warning');
+        } else {
+            alertDiv.classList.add('alert', 'alert-danger');
+        }
+        
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerText = result.message;
+        const existingDiv = document.getElementById(result.id);
+        existingDiv.innerHTML = "";
+        existingDiv.appendChild(alertDiv);
+    }
+</script>
 {% endblock %}
