@@ -53,7 +53,7 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
          * API settings
          */
         if (!$config['api']['CSRFPrevention']) {
-            $message .= __trans('Warning: CRSF prevention is not enabled for the API.') . "\n";
+            $message .= __trans('Warning: CSRF prevention is not enabled for the API.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
 
