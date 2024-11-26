@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.4-apache
 
 # Install required packages, configure Apache, install PHP exensions, and clean-up.
 RUN apt-get update \
