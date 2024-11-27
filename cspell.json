@@ -442,6 +442,7 @@
         ".gitignore",
         "src/.htaccess",
         "phpstan-baseline.neon",
-        "Dockerfile"
+        "Dockerfile",
+        ".ddev/**"
     ]
 }
