@@ -422,7 +422,7 @@ final class FOSSBilling_Installer
         $data = require PATH_CONFIG_SAMPLE;
 
         // Handle dynamic configs
-        $data['security']['protocol'] = FOSSBilling\Tools::isHTTPS() ? 'https' : 'auto';
+        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
