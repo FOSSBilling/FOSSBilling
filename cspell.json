@@ -400,7 +400,8 @@
         "FAILONERROR",
         "releasenotes",
         "Prins",
-        "iplookup"
+        "iplookup",
+        "DDEV"
     ],
     "ignorePaths": [
         "tests-legacy/**",
