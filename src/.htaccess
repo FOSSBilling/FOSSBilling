@@ -28,13 +28,10 @@ Options -Indexes +SymLinksIfOwnerMatch
     RewriteCond %{REQUEST_URI} /?.*(composer.json|README.md|CHANGELOG.md) [NC]
     RewriteRule ^(.*)$ index.php?_url=/$1&_errcode=404 [L]
 
-    # Rewrite to allow custom pages to function correctly
-    RewriteRule ^page/(.*)$ index.php?_url=/custompages/$1
-
     # Rewrite non-existent file/directory names to index.php.
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
+    RewriteRule ^(.*)$ index.php [QSA,L]
 
 </IfModule>
 # END FOSSBilling

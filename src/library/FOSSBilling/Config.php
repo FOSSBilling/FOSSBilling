@@ -106,7 +106,7 @@ class Config
 
             try {
                 $filesystem->remove(PATH_CACHE);
-                $filesystem->mkdir(PATH_CACHE, 0755);
+                $filesystem->mkdir(PATH_CACHE, 0o755);
             } catch (\Exception) {
                 // We shouldn't need to halt execution if there was an error when clearing the cache
             }

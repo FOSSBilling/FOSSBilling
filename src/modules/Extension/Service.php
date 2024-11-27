@@ -452,7 +452,7 @@ class Service implements InjectionAwareInterface
         $zipPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid()) . '.zip';
 
         // Create a temporary directory to extract the extension
-        mkdir($extractedPath, 0755, true);
+        mkdir($extractedPath, 0o755, true);
 
         // Download the extension archive and save it to the cache folder
         $fileHandler = fopen($zipPath, 'w');

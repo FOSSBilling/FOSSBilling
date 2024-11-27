@@ -121,11 +121,11 @@
 
                     <fieldset>
                         <label for="database_hostname">Database hostname <span class="red">*</span></label>
-                        <input type="text" id="database_hostname" name="database_hostname" value="{{ database_hostname|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
+                        <input type="text" id="database_hostname" name="database_hostname" value="{{ request.database_hostname|default(database_hostname)|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
                         <small>Usually <strong>localhost</strong>. For Docker, use <strong>mysql</strong>.</small>
     
                         <label for="database_port">Database port <span class="red">*</span></label>
-                        <input type="number" id="database_port" name="database_port" value="{{ database_port|default('3306') }}" placeholder="Usually 3306." required>
+                        <input type="number" id="database_port" name="database_port" value="{{ request.database_port|default('3306') }}" placeholder="Usually 3306." required>
     
                         <label for="database_name">Database name <span class="red">*</span></label>
                         <input type="text" id="database_name" name="database_name" value="{{ request.database_name|default(database_name) }}" placeholder="Enter the name of the database." required>

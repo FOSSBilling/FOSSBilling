@@ -89,11 +89,24 @@ final class FOSSBilling_Installer
 {
     private readonly Session $session;
     private PDO $pdo;
+    private bool $isDebug = false;
 
     public function __construct()
     {
         require_once 'session.php';
         $this->session = new Session();
+
+        if (file_exists(PATH_CONFIG)) {
+            $config = require PATH_CONFIG;
+            $this->isDebug = $config['debug_and_monitoring']['debug'];
+        }
+
+        if (getenv('IS_DDEV') === 'true' && ($_GET['a'] ?? 'index') === 'index') {
+            $this->session->set('database_hostname', 'db');
+            $this->session->set('database_name', 'db');
+            $this->session->set('database_username', 'db');
+            $this->session->set('database_password', 'db');
+        }
     }
 
     /**
@@ -114,7 +127,7 @@ final class FOSSBilling_Installer
                 // Installer validation
                 try {
                     // Make sure we are not already installed. Prevents tampered requests from being able to trigger the installer.
-                    if ($this->isAlreadyInstalled()) {
+                    if (!$this->isDebug && $this->isAlreadyInstalled()) {
                         throw new Exception('FOSSBilling is already installed.');
                     }
 
@@ -165,8 +178,7 @@ final class FOSSBilling_Installer
                     // Try to remove install folder
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
-                        $config = require PATH_CONFIG;
-                        if (!$config['debug_and_monitoring']['debug']) {
+                        if (!$this->isDebug) {
                             unlink(__DIR__ . DIRECTORY_SEPARATOR . 'install.php');
                         }
                     } catch (Exception) {
@@ -321,7 +333,7 @@ final class FOSSBilling_Installer
      */
     public function isAlreadyInstalled(): bool
     {
-        return file_exists(PATH_CONFIG) ? true : false;
+        return !$this->isDebug && file_exists(PATH_CONFIG) ? true : false;
     }
 
     /**
@@ -410,11 +422,12 @@ final class FOSSBilling_Installer
         $data = require PATH_CONFIG_SAMPLE;
 
         // Handle dynamic configs
-        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
+        $data['security']['protocol'] = FOSSBilling\Tools::isHTTPS() ? 'https' : 'auto';
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
+        $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
         $data['info']['instance_id'] = Uuid::uuid4()->toString();
-        $data['url'] = SYSTEM_URL;
+        $data['url'] = str_replace(['https://', 'http://'], '', SYSTEM_URL);
         $data['path_data'] = PATH_ROOT . DIRECTORY_SEPARATOR . 'data';
         $data['db'] = [
             'type' => 'mysql',

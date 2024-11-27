@@ -12,6 +12,7 @@
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\SentryHelper;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
@@ -116,7 +117,7 @@ function checkSSL(): void
 {
     $config = include PATH_CONFIG;
     if (isset($config['security']['force_https']) && $config['security']['force_https'] && !Environment::isCLI()) {
-        if (!FOSSBilling\Tools::isHTTPS()) {
+        if (!Tools::isHTTPS()) {
             $hostname = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '';
             if (!empty($hostname) && !empty($_SERVER['REQUEST_URI'])) {
                 $url = 'https://' . $hostname . $_SERVER['REQUEST_URI'];
@@ -248,7 +249,6 @@ define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false))
 define('PATH_DATA', Config::getProperty('path_data'));
 define('PATH_CACHE', PATH_DATA . DIRECTORY_SEPARATOR . 'cache');
 define('PATH_LOG', PATH_DATA . DIRECTORY_SEPARATOR . 'log');
-define('SYSTEM_URL', Config::getProperty('url'));
 define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
 // Initial setup and checks passed, now we setup our custom autoloader.
@@ -256,7 +256,11 @@ require PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
-define('BIND_TO', FOSSBilling\Tools::getDefaultInterface());
+// Set the system URL
+$protocol = Config::getProperty('security.force_https', true) || Tools::isHTTPS() ? 'https://' : 'http://';
+define('SYSTEM_URL', $protocol . Config::getProperty('url'));
+
+define('BIND_TO', Tools::getDefaultInterface());
 
 // Now that the config file is loaded, we can enable Sentry
 SentryHelper::registerSentry();
