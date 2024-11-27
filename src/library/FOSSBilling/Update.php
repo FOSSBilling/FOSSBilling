@@ -278,7 +278,7 @@ class Update implements InjectionAwareInterface
         try {
             $filesystem = new Filesystem();
             $filesystem->remove(PATH_CACHE);
-            $filesystem->mkdir(PATH_CACHE, 0755);
+            $filesystem->mkdir(PATH_CACHE, 0o755);
         } catch (\Exception) {
             // This step is rarely important, we can safely ignore an error here
         }
@@ -291,7 +291,7 @@ class Update implements InjectionAwareInterface
         try {
             $filesystem = new Filesystem();
             $filesystem->remove([PATH_CACHE, PATH_ROOT . '/install']);
-            $filesystem->mkdir(PATH_CACHE, 0755);
+            $filesystem->mkdir(PATH_CACHE, 0o755);
         } catch (IOException $e) {
             error_log($e->getMessage());
 

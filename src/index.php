@@ -25,8 +25,16 @@ $configCollector->useHtmlVarDumper();
 
 $debugBar->addCollector($configCollector);
 
-// Now move onto the actual process of setting up the app & routing
-$url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
+// Get the request URL
+$url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// Rewrite for custom pages
+if (str_starts_with($url, '/page/')) {
+    $url = substr_replace($url, '/custompages/', 0, 6);
+}
+
+// Set the final URL
+$_GET['_url'] = $url;
 $http_err_code = $_GET['_errcode'] ?? null;
 
 if ($url === '/run-patcher') {

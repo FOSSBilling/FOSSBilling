@@ -28,7 +28,7 @@ class ServiceTest extends \BBTestCase
     public function testgetCompany(): void
     {
         $expected = [
-            'www' => 'http://localhost/',
+            'www' => 'https://localhost/',
             'name' => 'Inc. Test',
             'email' => 'work@example.eu',
             'tel' => null,

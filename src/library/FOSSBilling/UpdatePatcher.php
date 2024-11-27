@@ -76,11 +76,16 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
         $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
+
+        // Instance ID handling
         if (!class_exists('Uuid')) {
             $this->registerFallbackAutoloader();
         }
         $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
+
+        // Remove the hardcoded protocol
+        $newConfig['url'] = str_replace(['https://', 'http://'], '', $newConfig['url']);
 
         // Remove depreciated config keys/subkeys.
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];

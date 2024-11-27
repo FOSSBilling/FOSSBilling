@@ -400,7 +400,8 @@
         "FAILONERROR",
         "releasenotes",
         "Prins",
-        "iplookup"
+        "iplookup",
+        "DDEV"
     ],
     "ignorePaths": [
         "tests-legacy/**",
@@ -442,6 +443,7 @@
         ".gitignore",
         "src/.htaccess",
         "phpstan-baseline.neon",
-        "Dockerfile"
+        "Dockerfile",
+        ".ddev/**"
     ]
 }

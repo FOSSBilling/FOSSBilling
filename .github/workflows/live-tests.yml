@@ -165,8 +165,8 @@ jobs:
             echo "The installer error log does not exist."
           fi
 
-      - name: Run Cron
-        run: php /var/www/localhost/cron.php
+      - name: Display the admin page
+        run: curl http://localhost/admin
 
       - name: Run the API test suite
         run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
