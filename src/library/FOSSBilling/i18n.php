@@ -122,7 +122,7 @@ class i18n
         }
 
         foreach ($locales as $locale) {
-            $title = ($array[$locale] ?? $locale) . "($locale)";
+            $title = ($array[$locale] ?? $locale) . " ($locale)";
             $details[] = [
                 'locale' => $locale,
                 'title' => $title,
