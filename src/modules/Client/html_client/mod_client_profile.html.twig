@@ -110,7 +110,7 @@
                             <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone_cc">{{ 'Phone Country Code'|trans }}</label>
-                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" {% if "phone" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="+{{ profile.phone_cc }}" {% if "phone" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
