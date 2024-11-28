@@ -214,7 +214,7 @@ class Guest extends \Api_Abstract
         }
 
         if (!$model instanceof \Model_SupportKbArticleCategory) {
-            throw new \FOSSBilling\InformationException('Knowledge base category not found');
+            throw new \FOSSBilling\InformationException('Knowledge Base category not found');
         }
 
         return $this->getService()->kbCategoryToApiArray($model, $this->getIdentity());

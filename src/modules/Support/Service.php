@@ -1588,7 +1588,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $id = $model->id;
         $this->di['db']->trash($model);
-        $this->di['logger']->info('Deleted knowledge base article #%s', $id);
+        $this->di['logger']->info('Deleted Knowledge Base article #%s', $id);
     }
 
     public function kbToApiArray(\Model_SupportKbArticle $model, $deep = false, $identity = null): array
@@ -1603,7 +1603,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'updated_at' => $model->updated_at,
         ];
 
-        $cat = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $model->kb_article_category_id, 'Knowledge base category not found');
+        $cat = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $model->kb_article_category_id, 'Knowledge Base category not found');
         $data['category'] = [
             'id' => $cat->id,
             'slug' => $cat->slug,
@@ -1822,14 +1822,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['db']->store($model);
 
-        $this->di['logger']->info('Updated knowledge base category #%s', $model->id);
+        $this->di['logger']->info('Updated Knowledge Base category #%s', $model->id);
 
         return true;
     }
 
     public function kbFindCategoryById($id)
     {
-        return $this->di['db']->getExistingModelById('SupportKbArticleCategory', $id, 'Knowledge base category not found');
+        return $this->di['db']->getExistingModelById('SupportKbArticleCategory', $id, 'Knowledge Base category not found');
     }
 
     public function kbFindCategoryBySlug($slug)
