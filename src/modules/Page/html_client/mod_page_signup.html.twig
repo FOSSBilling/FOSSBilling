@@ -2,7 +2,7 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'Sign up'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Register'|trans }}{% endblock %}
 
 {% set company = guest.system_company %}
 
@@ -179,7 +179,7 @@
                             {% endif %}
 
                             <div class="form-actions mb-3">
-                                <button class="btn btn-primary w-100" type="submit">{{ 'Sign up'|trans }}</button>
+                                <button class="btn btn-primary w-100" type="submit">{{ 'Register'|trans }}</button>
                             </div>
 
                             {% if settings.signup_tos == 'implicit' %}
