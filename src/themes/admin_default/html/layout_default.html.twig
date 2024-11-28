@@ -214,7 +214,13 @@
 
             <footer class="footer footer-transparent d-print-none">
                 <div class="container-xl">
-                    <div>Copyright &copy; {{ now|format_date(pattern='yyyy') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="Billing system" target="_blank" rel="noopener">FOSSBilling {{ FOSSBillingVersion }}</a></div>
+                    <p>
+                        &copy; {{ now|format_date(pattern='yyyy') }} <a href="https://github.com/FOSSBilling">FOSSBilling contributors</a>. 
+                        Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>.
+                    </p>
+                    <p>
+                        Running version <code>c0ee8d3</code>.
+                    </p>
                 </div>
             </footer>
         </div>
