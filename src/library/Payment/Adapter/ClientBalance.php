@@ -84,7 +84,12 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         $tx = $this->di['db']->load('Transaction', $id);
 
-        $invoice_id = $data['invoice_id'] ?? 0;
+        if($tx->invoice_id){
+            $invoice_id = $tx->invoice_id;
+        } else {
+            $invoice_id = $data['get']['invoice_id'] ?? 0;
+        }
+
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
         $invoiceService = $this->di['mod_service']('Invoice');
@@ -98,7 +103,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->client_id]);
 
         $tx->error = '';
-        $tx->error_code = '';
+        $tx->error_code = null;
         $tx->status = 'processed';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
