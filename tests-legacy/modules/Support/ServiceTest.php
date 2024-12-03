@@ -2866,10 +2866,9 @@ class ServiceTest extends \BBTestCase
         return [
             [
                 [],
-                '
-                SELECT kac.*
+                'SELECT kac.*
                 FROM support_kb_article_category kac
-                LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id GROUP BY kac.id ORDER BY kac.id DESC',
+                LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id GROUP BY kac.id ORDER BY kac.title',
                 [],
             ],
             [
@@ -2879,7 +2878,7 @@ class ServiceTest extends \BBTestCase
                 'SELECT kac.*
                  FROM support_kb_article_category kac
                  LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id
-                 WHERE ka.status = :status GROUP BY kac.id ORDER BY kac.id DESC',
+                 WHERE ka.status = :status GROUP BY kac.id ORDER BY kac.title',
                 [
                     ':status' => 'active',
                 ],
@@ -2891,7 +2890,7 @@ class ServiceTest extends \BBTestCase
                 'SELECT kac.*
                  FROM support_kb_article_category kac
                  LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id
-                 WHERE (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.id DESC',
+                 WHERE (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.title',
                 [
                     ':title' => '%search query%',
                     ':content' => '%search query%',
@@ -2905,7 +2904,7 @@ class ServiceTest extends \BBTestCase
                 'SELECT kac.*
                  FROM support_kb_article_category kac
                  LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id
-                 WHERE ka.status = :status AND (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.id DESC',
+                 WHERE ka.status = :status AND (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.title',
                 [
                     ':title' => '%search query%',
                     ':content' => '%search query%',
