@@ -1712,7 +1712,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $sql = $sql . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $sql .= ' GROUP BY kac.id ORDER BY kac.id DESC';
+        $sql .= ' GROUP BY kac.id ORDER BY kac.title';
 
         return [$sql, $bindings];
     }
@@ -1770,11 +1770,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($query) {
-            $sql .= 'AND (title LIKE :title OR content LIKE :content)';
+            $sql .= ' AND (title LIKE :title OR content LIKE :content)';
             $query = "%$query%";
             $bindings[':content'] = $query;
             $bindings[':title'] = $query;
         }
+
+        $sql .=" ORDER BY title";
 
         $articles = $this->di['db']->find('SupportKbArticle', $sql, $bindings);
 
