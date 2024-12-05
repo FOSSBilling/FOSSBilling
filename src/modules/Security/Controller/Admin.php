@@ -24,9 +24,46 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function fetchNavigation()
+    {
+        return [
+            'group' => [
+                'index' => 650,
+                'location' => 'security',
+                'label' => __trans('Security'),
+                'class' => 'lock-closed',
+            ],
+            'subpages' => [
+                [
+                    'location' => 'security',
+                    'label' => __trans('Security dashboard'),
+                    'index' => 100,
+                    'uri' => $this->di['url']->adminLink('security'),
+                    'class' => '',
+                ],
+                [
+                    'location' => 'security',
+                    'label' => __trans('IP lookup'),
+                    'index' => 200,
+                    'uri' => $this->di['url']->adminLink('security/iplookup'),
+                    'class' => '',
+                ],
+            ],
+        ];
+    }
+
     public function register(\Box_App &$app)
     {
+        $app->get('/security', 'get_index', [], static::class);
+        $app->get('/security/', 'get_index', [], static::class);
         $app->get('/security/iplookup', 'ip_lookup', [], static::class);
+    }
+
+    public function get_index(\Box_App $app)
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_security_index');
     }
 
     public function ip_lookup(\Box_App $app)

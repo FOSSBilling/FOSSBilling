@@ -401,7 +401,8 @@
         "releasenotes",
         "Prins",
         "iplookup",
-        "DDEV"
+        "DDEV",
+        "CSRF"
     ],
     "ignorePaths": [
         "tests-legacy/**",
