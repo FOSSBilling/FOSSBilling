@@ -26,7 +26,7 @@ $configCollector->useHtmlVarDumper();
 $debugBar->addCollector($configCollector);
 
 // Get the request URL
-$url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$url = $_GET['_url'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Rewrite for custom pages
 if (str_starts_with($url, '/page/')) {

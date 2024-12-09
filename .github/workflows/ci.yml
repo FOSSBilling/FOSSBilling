@@ -121,7 +121,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@056f54ad57b0145ffbeedb7f1d778f174cfc13fb
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@605d1f1e293f72a5809b6eebcc6c4fb510055c91
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
