@@ -1243,16 +1243,16 @@
         },
         {
             "name": "league/csv",
-            "version": "9.19.0",
+            "version": "9.20.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/csv.git",
-                "reference": "f81df48a012a9e86d077e74eaff666fd15bfab88"
+                "reference": "553579df208641ada6ffb450b3a151e2fcfa4f31"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/csv/zipball/f81df48a012a9e86d077e74eaff666fd15bfab88",
-                "reference": "f81df48a012a9e86d077e74eaff666fd15bfab88",
+                "url": "https://api.github.com/repos/thephpleague/csv/zipball/553579df208641ada6ffb450b3a151e2fcfa4f31",
+                "reference": "553579df208641ada6ffb450b3a151e2fcfa4f31",
                 "shasum": ""
             },
             "require": {
@@ -1326,7 +1326,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-12-08T08:09:35+00:00"
+            "time": "2024-12-13T15:49:27+00:00"
         },
         {
             "name": "liborm85/composer-vendor-cleaner",
