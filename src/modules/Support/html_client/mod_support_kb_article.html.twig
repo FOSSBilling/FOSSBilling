@@ -5,7 +5,7 @@
 {% block body_class %}kb-article{% endblock %}
 {% block breadcrumb %}
 <li class="breadcrumb-item">
-    <a href="{{ 'support/kb'|link }}">{{ 'Knowledge base'|trans }}</a>
+    <a href="{{ 'support/kb'|link }}">{{ 'Knowledge Base'|trans }}</a>
 </li>
 <li class="breadcrumb-item">
     <a href="{{ 'support/kb'|link }}/{{ article.category.slug }}">{{ article.category.title }}</a>
@@ -29,7 +29,7 @@
                 </div>
             </div>
             <div class="card-footer">
-                <a href="{{ 'support/kb'|link }}" class="btn btn-primary btn-sm" type="button">{{ 'Back to all knowledge base articles'|trans }}</a>
+                <a href="{{ 'support/kb'|link }}" class="btn btn-primary btn-sm" type="button">{{ 'Go back'|trans }}</a>
 
                 <a href="{{ 'support/kb'|link }}/{{ article.category.slug }}" class="btn btn-primary btn-sm" type="button">{{ 'Similar articles'|trans }}</a>
             </div>
