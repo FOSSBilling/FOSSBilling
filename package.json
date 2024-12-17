@@ -56,6 +56,10 @@
     "braces": "^3.0.3",
     "postcss": "$postcss",
     "@melloware/coloris": "^0.24.0",
-    "imask": "^7.6.1"
+    "imask": "^7.6.1",
+    "flat": "^6.0.0",
+    "minimatch": "^3.1.2",
+    "micromatch": "^4.0.8",
+    "debug": "^4.0.0"
   }
 }
