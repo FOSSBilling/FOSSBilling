@@ -61,7 +61,7 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.8",
         "phpstan/extension-installer": "^1.2",
-        "phpstan/phpstan-deprecation-rules": "^1.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpunit/phpunit": "^11.4.3",
         "rector/rector": "^1.0.0",
         "symfony/deprecation-contracts": "^3.0.0",
