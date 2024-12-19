@@ -33,7 +33,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'label' => 'Products',
                 'uri' => $this->di['url']->adminLink('products'),
                 'class' => 'pic',
-                'sprite_class' => 'dark-sprite-icon sprite-blocks',
             ],
             'subpages' => [
                 [
