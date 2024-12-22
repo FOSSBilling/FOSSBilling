@@ -20,8 +20,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         'userid' => null,
         'password' => null,
         'api-key' => null,
-        'default_ns_1' => null, 
-        'default_ns_2' => null, 
+        'default-ns1' => null, 
+        'default-ns2' => null, 
     ];
 
 
@@ -52,14 +52,14 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
     
         // Assign default name servers if provided in the options
-        if (isset($options['default_ns_1']) && !empty($options['default_ns_1'])) {
-            $this->config['default_ns_1'] = $options['default_ns_1'];
-            unset($options['default_ns_1']);
+        if (isset($options['default-ns1']) && !empty($options['default-ns1'])) {
+            $this->config['default-ns1'] = $options['default-ns1'];
+            unset($options['default-ns1']);
         }
     
-        if (isset($options['default_ns_2']) && !empty($options['default_ns_2'])) {
-            $this->config['default_ns_2'] = $options['default_ns_2'];
-            unset($options['default_ns_2']);
+        if (isset($options['default-ns2']) && !empty($options['default-ns2'])) {
+            $this->config['default-ns2'] = $options['default-ns2'];
+            unset($options['default-ns2']);
         }
     }
     
@@ -84,7 +84,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                         'required' => false,
                     ],
                 ],
-                'default_ns_1' => [
+                'default-ns1' => [
                     'text',
                     [
                         'label' => 'Default NS1',
@@ -92,7 +92,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                         'required' => false,
                     ],
                 ],
-                'default_ns_2' => [
+                'default-ns2' => [
                     'text',
                     [
                         'label' => 'Default NS2',
@@ -333,11 +333,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     // Use default name servers if no NS values are provided
     if (empty($ns)) {
-        if (!empty($this->config['default_ns_1'])) {
-            $ns[] = $this->config['default_ns_1'];
+        if (!empty($this->config['default-ns1'])) {
+            $ns[] = $this->config['default-ns1'];
         }
-        if (!empty($this->config['default_ns_2'])) {
-            $ns[] = $this->config['default_ns_2'];
+        if (!empty($this->config['default-ns2'])) {
+            $ns[] = $this->config['default-ns2'];
         }
     }
 
