@@ -20,7 +20,10 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         'userid' => null,
         'password' => null,
         'api-key' => null,
+        'default_ns_1' => null, 
+        'default_ns_2' => null, 
     ];
+
 
     public function isKeyValueNotEmpty($array, $key)
     {
@@ -40,14 +43,26 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'ResellerClub', ':missing' => 'ResellerClub Reseller ID'], 3001);
         }
-
+    
         if (isset($options['api-key']) && !empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
             unset($options['api-key']);
         } else {
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'ResellerClub', ':missing' => 'ResellerClub API Key'], 3001);
         }
+    
+        // Assign default name servers if provided in the options
+        if (isset($options['default_ns_1']) && !empty($options['default_ns_1'])) {
+            $this->config['default_ns_1'] = $options['default_ns_1'];
+            unset($options['default_ns_1']);
+        }
+    
+        if (isset($options['default_ns_2']) && !empty($options['default_ns_2'])) {
+            $this->config['default_ns_2'] = $options['default_ns_2'];
+            unset($options['default_ns_2']);
+        }
     }
+    
 
     public static function getConfig()
     {
@@ -69,6 +84,23 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                         'required' => false,
                     ],
                 ],
+                'default_ns_1' => [
+                    'text',
+                    [
+                        'label' => 'Default NS1',
+                        'description' => 'NS1 to be used if no custom NS is provided.',
+                        'required' => false,
+                    ],
+                ],
+                'default_ns_2' => [
+                    'text',
+                    [
+                        'label' => 'Default NS2',
+                        'description' => 'NS2 to be used if no custom NS is provided.',
+                        'required' => false,
+                    ],
+                ],
+
             ],
         ];
     }
@@ -273,69 +305,102 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     }
 
     public function registerDomain(Registrar_Domain $domain)
-    {
-        if ($this->_hasCompletedOrder($domain)) {
-            return true;
-        }
-
-        $tld = $domain->getTld();
-        $customer = $this->_getCustomerDetails($domain);
-        $customer_id = $customer['customerid'];
-
-        $ns = [];
-        $ns[] = $domain->getNs1();
-        $ns[] = $domain->getNs2();
-        if ($domain->getNs3()) {
-            $ns[] = $domain->getNs3();
-        }
-        if ($domain->getNs4()) {
-            $ns[] = $domain->getNs4();
-        }
-
-        [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id] = $this->_getAllContacts($tld, $customer_id, $domain->getContactRegistrar());
-
-        $params = [
-            'domain-name' => $domain->getName(),
-            'years' => $domain->getRegistrationPeriod(),
-            'ns' => $ns,
-            'customer-id' => $customer_id,
-            'reg-contact-id' => $reg_contact_id,
-            'admin-contact-id' => $admin_contact_id,
-            'tech-contact-id' => $tech_contact_id,
-            'billing-contact-id' => $billing_contact_id,
-            'invoice-option' => 'NoInvoice',
-            'protect-privacy' => false,
-        ];
-
-        if ($tld == '.asia') {
-            $params['attr-name1'] = 'cedcontactid';
-            $params['attr-value1'] = 'default';
-        }
-
-        if ($tld == '.de') {
-            $params['ns'] = ['dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com'];
-        }
-
-        if ($tld == '.au' || $tld == '.net.au' || $tld == '.com.au') {
-            $contact = $domain->getContactRegistrar();
-
-            if (strlen(trim($contact->getCompanyNumber())) == 0) {
-                throw new Registrar_Exception('A valid contact company number is mandatory for registering an .AU domain name');
-            }
-            $params['attr-name1'] = 'id-type';
-            $params['attr-value1'] = 'ACN';
-            $params['attr-name2'] = 'id';
-            $params['attr-value2'] = $contact->getCompanyNumber();
-            $params['attr-name3'] = 'policyReason';
-            $params['attr-value3'] = '1';
-            $params['attr-name4'] = 'isAUWarranty';
-            $params['attr-value4'] = '1';
-        }
-
-        $result = $this->_makeRequest('domains/register', $params, 'POST');
-
-        return $result['status'] == 'Success';
+{
+    // Check if the domain order has already been completed
+    if ($this->_hasCompletedOrder($domain)) {
+        return true;
     }
+
+    // Extract TLD and customer details
+    $tld = $domain->getTld();
+    $customer = $this->_getCustomerDetails($domain);
+    $customer_id = $customer['customerid'];
+
+    // Gather name servers from the domain object
+    $ns = [];
+    if ($domain->getNs1()) {
+        $ns[] = $domain->getNs1();
+    }
+    if ($domain->getNs2()) {
+        $ns[] = $domain->getNs2();
+    }
+    if ($domain->getNs3()) {
+        $ns[] = $domain->getNs3();
+    }
+    if ($domain->getNs4()) {
+        $ns[] = $domain->getNs4();
+    }
+
+    // Use default name servers if no NS values are provided
+    if (empty($ns)) {
+        if (!empty($this->config['default_ns_1'])) {
+            $ns[] = $this->config['default_ns_1'];
+        }
+        if (!empty($this->config['default_ns_2'])) {
+            $ns[] = $this->config['default_ns_2'];
+        }
+    }
+
+    // Ensure at least two name servers are set
+    if (count($ns) < 2) {
+        throw new Registrar_Exception('At least two name servers must be provided to register the domain.');
+    }
+
+    // Retrieve all contact IDs
+    [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id] = $this->_getAllContacts(
+        $tld,
+        $customer_id,
+        $domain->getContactRegistrar()
+    );
+
+    // Prepare API request parameters
+    $params = [
+        'domain-name' => $domain->getName(),
+        'years' => $domain->getRegistrationPeriod(),
+        'ns' => $ns,
+        'customer-id' => $customer_id,
+        'reg-contact-id' => $reg_contact_id,
+        'admin-contact-id' => $admin_contact_id,
+        'tech-contact-id' => $tech_contact_id,
+        'billing-contact-id' => $billing_contact_id,
+        'invoice-option' => 'NoInvoice',
+        'protect-privacy' => false,
+    ];
+
+    // Add specific attributes for certain TLDs
+    if ($tld == '.asia') {
+        $params['attr-name1'] = 'cedcontactid';
+        $params['attr-value1'] = 'default';
+    }
+
+    if ($tld == '.de') {
+        $params['ns'] = ['dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com'];
+    }
+
+    if (in_array($tld, ['.au', '.net.au', '.com.au'])) {
+        $contact = $domain->getContactRegistrar();
+
+        if (strlen(trim($contact->getCompanyNumber())) == 0) {
+            throw new Registrar_Exception('A valid contact company number is mandatory for registering an .AU domain name');
+        }
+
+        $params['attr-name1'] = 'id-type';
+        $params['attr-value1'] = 'ACN';
+        $params['attr-name2'] = 'id';
+        $params['attr-value2'] = $contact->getCompanyNumber();
+        $params['attr-name3'] = 'policyReason';
+        $params['attr-value3'] = '1';
+        $params['attr-name4'] = 'isAUWarranty';
+        $params['attr-value4'] = '1';
+    }
+
+    // Make the API request to register the domain
+    $result = $this->_makeRequest('domains/register', $params, 'POST');
+
+    // Return success status
+    return $result['status'] == 'Success';
+}
+
 
     public function renewDomain(Registrar_Domain $domain)
     {
