@@ -7,64 +7,10 @@ parameters:
 			path: src/library/Box/BeanHelper.php
 
 		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src\\config\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/Config.php
-
-		-
 			message: '#^Call to an undefined method Monolog\\Handler\\HandlerInterface\:\:setFormatter\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/library/FOSSBilling/Monolog.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src/locale/completion\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src/locale/locales\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src/locale\\completion\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src/locale\\locales\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src\\locale/completion\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src\\locale/locales\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src\\locale\\completion\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
-
-		-
-			message: '#^Path in include\(\) "/home/belle/Documents/GitHub/FOSSBilling/src\\locale\\locales\.php" is not a file or it does not exist\.$#'
-			identifier: include.fileNotFound
-			count: 1
-			path: src/library/FOSSBilling/i18n.php
 
 		-
 			message: '#^Method Registrar_Adapter_Namecheap\:\:getPrivacyInfo\(\) should return array\<string\> but returns array\<string, bool\|string\>\.$#'
