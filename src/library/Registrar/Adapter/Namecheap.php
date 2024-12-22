@@ -6,10 +6,11 @@ use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 {
     public $config = [
-        'api-user-id' => null,
+        'userid' => null,
+        'password' => null,
         'api-key' => null,
-        'username' => null,
-        'ip' => null,
+        'default_ns_1' => null, 
+        'default_ns_2' => null, 
     ];
 
     public function isKeyValueNotEmpty($array, $key)
@@ -52,36 +53,40 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     public static function getConfig()
     {
         return [
-            'label' => 'Manages domains on Namecheap via API. Namecheap requires your server IP in order to work.',
+            'label' => 'Manages domains on ResellerClub via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where FOSSBilling is installed to authorize it for API access.',
             'form' => [
-                'api-user-id' => [
-                    'text', [
-                        'label' => 'Reseller ID',
-                        'description' => 'Namecheap Reseller ID. If you don\'t have one, leave this blank.',
-                        'required' => false,
+                'userid' => [
+                    'text',
+                    [
+                        'label' => 'Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID',
+                        'description' => 'ResellerClub Reseller ID',
                     ],
                 ],
                 'api-key' => [
-                    'password', [
-                        'label' => 'API Key',
-                        'description' => 'You can get this at Namecheap control panel.',
-                        'required' => true,
+                    'password',
+                    [
+                        'label' => 'ResellerClub API Key',
+                        'description' => 'You can get this at ResellerClub control panel, go to Settings -> API',
+                        'required' => false,
                     ],
                 ],
-                'username' => [
-                    'text', [
-                        'label' => 'Namecheap Username',
-                        'description' => 'The username you use to login to the Namecheap control panel.',
-                        'required' => true,
+                'default_ns_1' => [
+                    'text',
+                    [
+                        'label' => 'Default NS1',
+                        'description' => 'NS1 to be used if no custom NS is provided.',
+                        'required' => false,
                     ],
                 ],
-                'ip' => [
-                    'text', [
-                        'label' => 'Server\'s Public IP Address',
-                        'description' => 'Public IP address of this server. Ensure that this IP is whitelisted under your NameCheap settings.',
-                        'required' => true,
+                'default_ns_2' => [
+                    'text',
+                    [
+                        'label' => 'Default NS2',
+                        'description' => 'NS2 to be used if no custom NS is provided.',
+                        'required' => false,
                     ],
                 ],
+
             ],
         ];
     }
