@@ -55,7 +55,7 @@ class Reader
      */
     public function get(string $ipAddress)
     {
-        return $this->reader->get($ipAddress);
+        return $this->reader->get($ipAddress) ?? [];
     }
 
     /**
