@@ -40,8 +40,8 @@ class Country implements \JsonSerializable
 
         // Instance the language
         $country = CountryAlpha2::from($countyRecord['iso_code']);
-        $this->name = $country->getNameInLanguage($language);
-        $this->flag = $country->getFlagEmoji();
+        $this->name = $country->getNameInLanguage($language) ?? 'Unknown';
+        $this->flag = $country->getFlagEmoji()  ?? '';
 
         foreach ($country->getCurrenciesAlpha3() as $currency) {
             $currencies[] = $currency->value;
