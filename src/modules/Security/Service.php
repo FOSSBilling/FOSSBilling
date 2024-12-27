@@ -34,6 +34,11 @@ class Service
         return [
             'can_always_access' => true,
             'hide_permissions' => true,
+            'run_checks' => [
+                'type' => 'bool',
+                'display_name' => __trans('Run security checks'),
+                'description' => __trans('Allows the staff member to run security checks on the FOSSBilling installation.'),
+            ],
         ];
     }
 
@@ -68,6 +73,8 @@ class Service
      */
     public function runAllChecks(): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+
         $results = [];
         $checks = $this->getAllChecks();
         foreach ($checks as $id => $check) {
@@ -90,6 +97,8 @@ class Service
      */
     public function runCheck(string $checkID): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+
         $class = "Box\Mod\Security\Checks\\$checkID";
         if (!class_exists($class)) {
             throw new InformationException('The check :checkName: does not exist.', [':checkName:' => $checkID]);
