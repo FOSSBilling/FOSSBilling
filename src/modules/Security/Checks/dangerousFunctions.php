@@ -49,7 +49,7 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
 
     public function getDescription(): string
     {
-        return __trans('Checks to see if potentially dangerous PHP functions are enabled or not.');
+        return __trans('Checks to see if potentially dangerous PHP functions are enabled.');
     }
 
     public function performCheck(): SecurityCheckResult
