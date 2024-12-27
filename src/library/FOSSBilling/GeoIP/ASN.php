@@ -14,8 +14,8 @@ namespace FOSSBilling\GeoIP;
 
 class ASN implements \JsonSerializable
 {
-    private readonly int|float $asnNumber;
-    private readonly string $asnOrg;
+    public readonly int|float $asnNumber;
+    public readonly string $asnOrg;
 
     public function __construct(array $asnRecord)
     {
