@@ -12,6 +12,7 @@
 namespace Box\Mod\Security;
 
 use FOSSBilling\GeoIP\IncompleteRecord;
+use FOSSBilling\GeoIP\Reader;
 
 class Service
 {
@@ -48,7 +49,8 @@ class Service
         }
 
         try {
-            $asnReader = new \FOSSBilling\GeoIP\Reader(PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb');
+            $asnPath = Reader::getAsnDatabase();
+            $asnReader = new Reader($asnPath);
             $asnInfo = $asnReader->asn($ip);
         } catch (IncompleteRecord) {
             $asnInfo = [];

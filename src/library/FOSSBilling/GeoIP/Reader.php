@@ -24,16 +24,34 @@ class Reader
     private readonly LanguageAlpha2 $language;
 
     /**
+     * Returns the path to the system's `country` database
+     */
+    public static function getCountryDatabase(): string
+    {
+        return PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/CC0-Country.mmdb';
+    }
+
+    /**
+     * Returns the path to the system's `asn` database
+     */
+    public static function getAsnDatabase(): string
+    {
+        return PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb';
+    }
+
+    /**
      * Constructs a new GeoIP reader instance.
      *
-     * @param string $database a path to the database to load
-     * @param string $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
+     * @param string|null $database (Optional) a path to the database to load> Will default to the system's country database.
+     * @param string|null $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
      *
      * @throws \InvalidArgumentException for invalid database path or unknown arguments
      * @throws InvalidDatabaseException  if the database is invalid or there is an error reading from it
      */
-    public function __construct(string $database, ?string $locale = null)
+    public function __construct(?string $database = null, ?string $locale = null)
     {
+        $database ??= self::getCountryDatabase();
+
         $this->reader = new MaxMindReader($database);
 
         if ($locale === null) {

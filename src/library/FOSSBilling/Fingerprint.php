@@ -76,10 +76,14 @@ class Fingerprint
                 'source' => $_SERVER['HTTP_SEC_CH_UA_MOBILE'] ?? '',
                 'weight' => 2,
             ],
-            'cloudFlareCountry' => [
-                'source' => $_SERVER['HTTP_CF_IPCOUNTRY'] ?? '', // "IP Geolocation" must be enabled under Cloudflare's "network" settings
+            'geoIpCountry' => [
+                'source' =>  $this->getIpCountry() ?? '',
                 'weight' => 4,
             ],
+            'asn' => [
+                'source' => $this->getIpAsn() ?? '',
+                'weight' => 1, // Things like Cloudflare, VPNs, or failovers might cause the ASN to change. Otherwise this would be a really strong indicator.
+            ]
         ];
     }
 
@@ -140,7 +144,7 @@ class Fingerprint
          * Here we calculate how confident we are in our ability to fingerprint a device without causing issues for legitimate sessions.
          * The less confident we are, the more wrong the current fingerprint needs to be when compared against the session's before it is invalidated.
          *
-         * In the event that less that 70% of the possible values are in the fingerprint, we use the percentage off we are to calculate a higher percentage before failure.
+         * In the event that less that 70% of the possible values are in the fingerprint, we calculate a higher failure point for fingerprints due to reduced confidence.
          * For example:
          *  If we have 13 possible fingerprint properties and only 9 are available, that's only 69% of the possible properties and the failure threshold will be calculated as follows.
          *  Negative weight: (1 - 0.69) / 1.25 = `0.24`
@@ -221,5 +225,32 @@ class Fingerprint
             'os' => $os,
             'userAgent' => $userAgent,
         ];
+    }
+
+    private function getIpCountry()
+    {
+        // Use the CF header if it is set.
+        if (isset($_SERVER['HTTP_CF_IPCOUNTRY'])) {
+            return $_SERVER['HTTP_CF_IPCOUNTRY'];
+        }
+
+        // Otherwise, instance the system's GeoIP reader and read the country from there.
+        try {
+            $reader = new GeoIP\Reader();
+            return $reader->country($_SERVER['REMOTE_ADDR'])->name;
+        } catch (\Exception) {
+            return '';
+        }
+    }
+
+    private function getIpAsn()
+    {
+        try {
+            $asnDb = GeoIP\Reader::getAsnDatabase();
+            $reader = new GeoIP\Reader($asnDb);
+            return $reader->asn($_SERVER['REMOTE_ADDR'])->asnNumber;
+        } catch (\Exception) {
+            return '';
+        }
     }
 }
