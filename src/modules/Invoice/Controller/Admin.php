@@ -33,7 +33,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'label' => __trans('Invoices'),
                 'uri' => 'invoice',
                 'class' => 'invoices',
-                'sprite_class' => 'dark-sprite-icon sprite-money',
             ],
             'subpages' => [
                 [
