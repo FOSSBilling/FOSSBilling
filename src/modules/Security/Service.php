@@ -12,6 +12,8 @@
 namespace Box\Mod\Security;
 
 use FOSSBilling\GeoIP\IncompleteRecord;
+use FOSSBilling\InformationException;
+use FOSSBilling\Interfaces\SecurityCheckInterface;
 
 class Service
 {
@@ -32,9 +34,94 @@ class Service
         return [
             'can_always_access' => true,
             'hide_permissions' => true,
+            'run_checks' => [
+                'type' => 'bool',
+                'display_name' => __trans('Run security checks'),
+                'description' => __trans('Allows the staff member to run security checks on the FOSSBilling installation.'),
+            ],
         ];
     }
 
+    /**
+     * Returns a list of all security checks.
+     *
+     * @return SecurityCheckInterface[]
+     */
+    public function getAllChecks(): array
+    {
+        $checks = [];
+        foreach (scandir(__DIR__ . DIRECTORY_SEPARATOR . 'Checks') as $check) {
+            $checkID = substr($check, 0, -4) ?: '';
+            $className = "Box\Mod\Security\Checks\\$checkID";
+            if (!class_exists($className)) {
+                continue;
+            }
+
+            $newCheck = new $className();
+            if ($newCheck instanceof SecurityCheckInterface) {
+                $checks[$checkID] = $newCheck;
+            } else {
+                error_log("$className does not implement the SecurityCheckInterface interface.");
+            }
+        }
+
+        return $checks;
+    }
+
+    /**
+     * Runs all available security checks.
+     */
+    public function runAllChecks(): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+
+        $results = [];
+        $checks = $this->getAllChecks();
+        foreach ($checks as $id => $check) {
+            $checkResult = $check->performCheck();
+
+            $result = json_decode(json_encode($checkResult), true);
+            $result['id'] = $id;
+            $result['name'] = $check->getName();
+
+            $results[] = $result;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Runs a given check.
+     *
+     * @throws InformationException If the check does not exist or if it does not implement the correct interface
+     */
+    public function runCheck(string $checkID): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+
+        $class = "Box\Mod\Security\Checks\\$checkID";
+        if (!class_exists($class)) {
+            throw new InformationException('The check :checkName: does not exist.', [':checkName:' => $checkID]);
+        }
+
+        $check = new $class();
+        if (!$check instanceof SecurityCheckInterface) {
+            throw new InformationException('The check :checkName: does not seem to be a valid check.', [':checkName:' => $checkID]);
+        }
+
+        $result = json_decode(json_encode($check->performCheck()), true);
+        $result['id'] = $checkID;
+
+        return $result;
+    }
+
+    /**
+     * Looks up an IP address.
+     *
+     * @return array{ip: array{address: string, type: string}, country: mixed, asn: mixed}
+     *
+     * @throws \InvalidArgumentException
+     */
     public function lookupIP(string $ip)
     {
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {

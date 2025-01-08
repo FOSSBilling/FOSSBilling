@@ -14,12 +14,41 @@ use FOSSBilling\InformationException;
 
 class Admin extends \Api_Abstract
 {
-    public function ip_lookup($data)
+    public function ip_lookup(array $data): array
     {
         if (!isset($data['ip'])) {
             throw new InformationException('You must specify an IP address to lookup.');
         }
 
         return $this->getService()->lookupIP($data['ip']);
+    }
+
+    public function list_checks(array $data): array
+    {
+        $result = [];
+        $checkInterfaces = $this->getService()->getAllChecks();
+        foreach ($checkInterfaces as $id => $interface) {
+            $result[] = [
+                'id' => $id,
+                'name' => $interface->getName(),
+                'description' => $interface->getDescription(),
+            ];
+        }
+
+        return $result;
+    }
+
+    public function run_check(array $data): array
+    {
+        if (!isset($data['id'])) {
+            throw new InformationException('You must specify a check ID to run.');
+        }
+
+        return $this->getService()->runCheck($data['id']);
+    }
+
+    public function run_checks(array $data): array
+    {
+        return $this->getService()->runAllChecks();
     }
 }

@@ -1,0 +1,75 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Security dashboard'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+{% set params = admin.system_get_params %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table sortable">
+                  <thead>
+                    <tr>
+                        <th scope="col">{{ "Name"|trans }}</th>
+                        <th scope="col">{{ "Description"|trans }}</th>
+                        <th scope="col" class="no-sort">{{ "Run check"|trans }}</th>
+                        <th scope="col">{{ "Result"|trans }}</th>
+                    </tr>
+                    <a class="btn btn-primary api-link mb-3" href="{{ 'api/admin/security/run_checks'|link({ 'CSRFToken': CSRFToken }) }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
+                  </thead>
+                  <tbody>
+                    {% for check in admin.security_list_checks() %}
+                    <tr>
+                        <th scope="row">{{ check.name }}</th>
+                        <th scope="row">{{ check.description }}</th>
+                        <th scope="row">
+                            <a class="btn btn-small btn-primary api-link"
+                                href="{{ 'api/admin/security/run_check'|link({ 'id': check.id, 'throw': true, 'CSRFToken': CSRFToken }) }}"
+                                data-api-jsonp="setResult"
+                                >{{ 'Run check'|trans }}</a>
+                        </th>
+                        <th id="{{ check.id }}" scope="row"><div class="alert alert-info">?</div></th>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            <div class="table">
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function setResults(results){
+        Object.entries(results).forEach(([id, result]) => {
+            setResult(result)
+        });
+    }
+    function setResult(result){
+        const alertDiv = document.createElement('div');
+
+        if(result.result == "passed"){
+            alertDiv.classList.add('alert', 'alert-success');
+        } else if (result.result == "warning") {
+            alertDiv.classList.add('alert', 'alert-warning');
+        } else {
+            alertDiv.classList.add('alert', 'alert-danger');
+        }
+        
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerText = result.message;
+        const existingDiv = document.getElementById(result.id);
+        existingDiv.innerHTML = "";
+        existingDiv.appendChild(alertDiv);
+    }
+</script>
+{% endblock %}
