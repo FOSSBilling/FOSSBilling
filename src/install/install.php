@@ -98,7 +98,7 @@ final class FOSSBilling_Installer
 
         if (file_exists(PATH_CONFIG)) {
             $config = require PATH_CONFIG;
-            $this->isDebug = $config['debug_and_monitoring']['debug'];
+            $this->isDebug = $config['debug_and_monitoring']['debug'] || !Environment::isProduction();
         }
 
         if (getenv('IS_DDEV') === 'true' && ($_GET['a'] ?? 'index') === 'index') {
