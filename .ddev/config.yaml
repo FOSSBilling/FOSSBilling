@@ -13,6 +13,7 @@ use_dns_when_possible: true
 composer_version: "2"
 web_environment:
     - IS_DDEV=true
+    - APP_ENV=dev
 corepack_enable: false
 
 # Key features of DDEV's config.yaml:
