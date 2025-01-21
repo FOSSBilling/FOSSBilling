@@ -711,7 +711,7 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \FOSSBilling\GeoIP\Reader
  */
-$di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader(PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/CC0-Country.mmdb');
+$di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader();
 
 /*
  * @param void
