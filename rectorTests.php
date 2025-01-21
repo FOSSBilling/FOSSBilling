@@ -22,7 +22,6 @@ return RectorConfig::configure()
         SetList::PHP_POLYFILLS
     ])
     ->withSkip([
-        JsonThrowOnErrorRector::class,
         LongArrayToShortArrayRector::class,
         NullToStrictStringFuncCallArgRector::class
     ])

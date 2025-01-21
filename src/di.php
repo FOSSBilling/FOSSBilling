@@ -240,7 +240,7 @@ $di['session'] = function () use ($di) {
  *
  * @return \FOSSBilling\Request
  */
-$di['request'] = fn (): \FOSSBilling\Request => new FOSSBilling\Request();
+$di['request'] = fn (): FOSSBilling\Request => new FOSSBilling\Request();
 
 /*
  * @param void
@@ -640,7 +640,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
  *
  * @return \Box_Period The new period object that was just created.
  */
-$di['period'] = $di->protect(fn ($code): \Box_Period => new Box_Period($code));
+$di['period'] = $di->protect(fn ($code): Box_Period => new Box_Period($code));
 
 /*
  * Gets the current client area theme.
@@ -718,7 +718,7 @@ $di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader()
  *
  * @return \FOSSBilling\PasswordManager
  */
-$di['password'] = fn (): \FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
+$di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
