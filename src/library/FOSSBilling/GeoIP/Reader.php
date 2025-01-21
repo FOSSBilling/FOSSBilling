@@ -24,7 +24,7 @@ class Reader
     private readonly LanguageAlpha2 $language;
 
     /**
-     * Returns the path to the system's `country` database
+     * Returns the path to the system's `country` database.
      */
     public static function getCountryDatabase(): string
     {
@@ -32,7 +32,7 @@ class Reader
     }
 
     /**
-     * Returns the path to the system's `asn` database
+     * Returns the path to the system's `asn` database.
      */
     public static function getAsnDatabase(): string
     {
@@ -42,7 +42,7 @@ class Reader
     /**
      * Constructs a new GeoIP reader instance.
      *
-     * @param string|null $database (Optional) a path to the database to load> Will default to the system's country database.
+     * @param string|null $database (Optional) a path to the database to load> Will default to the system's country database
      * @param string|null $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
      *
      * @throws \InvalidArgumentException for invalid database path or unknown arguments

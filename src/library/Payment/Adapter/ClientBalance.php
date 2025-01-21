@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -84,7 +85,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         $tx = $this->di['db']->load('Transaction', $id);
 
-        if($tx->invoice_id){
+        if ($tx->invoice_id) {
             $invoice_id = $tx->invoice_id;
         } else {
             $invoice_id = $data['get']['invoice_id'] ?? 0;

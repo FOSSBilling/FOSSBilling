@@ -12,9 +12,9 @@
 namespace Box\Mod\Security;
 
 use FOSSBilling\GeoIP\IncompleteRecord;
+use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\InformationException;
 use FOSSBilling\Interfaces\SecurityCheckInterface;
-use FOSSBilling\GeoIP\Reader;
 
 class Service
 {

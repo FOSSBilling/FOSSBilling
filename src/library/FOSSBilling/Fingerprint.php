@@ -77,13 +77,13 @@ class Fingerprint
                 'weight' => 2,
             ],
             'geoIpCountry' => [
-                'source' =>  $this->getIpCountry() ?? '',
+                'source' => $this->getIpCountry() ?? '',
                 'weight' => 4,
             ],
             'asn' => [
                 'source' => $this->getIpAsn() ?? '',
                 'weight' => 1, // Things like Cloudflare, VPNs, or failovers might cause the ASN to change. Otherwise this would be a really strong indicator.
-            ]
+            ],
         ];
     }
 
@@ -237,6 +237,7 @@ class Fingerprint
         // Otherwise, instance the system's GeoIP reader and read the country from there.
         try {
             $reader = new GeoIP\Reader();
+
             return $reader->country($_SERVER['REMOTE_ADDR'])->name;
         } catch (\Exception) {
             return '';
@@ -248,6 +249,7 @@ class Fingerprint
         try {
             $asnDb = GeoIP\Reader::getAsnDatabase();
             $reader = new GeoIP\Reader($asnDb);
+
             return $reader->asn($_SERVER['REMOTE_ADDR'])->asnNumber;
         } catch (\Exception) {
             return '';

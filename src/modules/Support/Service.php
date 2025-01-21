@@ -1776,7 +1776,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $bindings[':title'] = $query;
         }
 
-        $sql .=" ORDER BY title";
+        $sql .= ' ORDER BY title';
 
         $articles = $this->di['db']->find('SupportKbArticle', $sql, $bindings);
 

@@ -23,10 +23,8 @@ return RectorConfig::configure()
         SetList::PHP_POLYFILLS
     ])
     ->withSkip([
-        JsonThrowOnErrorRector::class,
         LongArrayToShortArrayRector::class,
         NullToStrictStringFuncCallArgRector::class,
-        MixedTypeRector::class,
     ])
     ->withRules([ExplicitNullableParamTypeRector::class])
     ->withCache('./cache/rector', FileCacheStorage::class)
