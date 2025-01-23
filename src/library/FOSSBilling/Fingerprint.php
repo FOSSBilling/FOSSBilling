@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -96,7 +96,7 @@ class Fingerprint
 
         foreach ($this->fingerprintProperties as $name => $properties) {
             if (!empty($properties['source'])) {
-                $fingerprint[$name] = hash('md5', $properties['source']);
+                $fingerprint[$name] = hash('md5', (string) $properties['source']);
             }
         }
 
@@ -131,7 +131,7 @@ class Fingerprint
                 // Do nothing in this case, as the property isn't in either fingerprint.
             } else {
                 ++$itemCount;
-                $hashedData = hash('md5', $properties['source']);
+                $hashedData = hash('md5', (string) $properties['source']);
 
                 if ($fingerprint[$name] !== $hashedData) {
                     $scoreSubtract += $properties['weight'];

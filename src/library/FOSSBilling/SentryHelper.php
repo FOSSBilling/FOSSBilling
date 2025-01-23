@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -85,9 +85,6 @@ class SentryHelper
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
     private static array $blacklistedInstances = [
-        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => '2024-07-01', // Low quality modifications causing lots of errors
-        'f7cf66d8-112c-45cd-ae90-21427cc787a3' => '2025-0-1', // Noisy errors that are out of our control
-        '3ce3f723-c6e0-492c-a4d8-24630ce978b3' => '2025-0-1', // Noisy errors that are out of our control
     ];
 
     private static string $placeholderFirstHalf = '--replace--this--';
