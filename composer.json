@@ -34,7 +34,7 @@
         "league/csv": "^9.8",
         "liborm85/composer-vendor-cleaner": "^1.7",
         "mattketmo/email-checker": "^2.2",
-        "maximebf/debugbar": "^1.19",
+        "maximebf/debugbar": "^2.0",
         "maxmind-db/reader": "^1.11",
         "monolog/monolog": "^3.5",
         "nelexa/zip": "^4.0.2",
