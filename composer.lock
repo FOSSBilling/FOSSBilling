@@ -5610,16 +5610,16 @@
         },
         {
             "name": "twig/intl-extra",
-            "version": "v3.18.0",
+            "version": "v3.19.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/intl-extra.git",
-                "reference": "4eeab2a3f8d04d1838be7251ab2d183f817aea7b"
+                "reference": "79a1bea7254783b540d51de10dc5e9f310110794"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/intl-extra/zipball/4eeab2a3f8d04d1838be7251ab2d183f817aea7b",
-                "reference": "4eeab2a3f8d04d1838be7251ab2d183f817aea7b",
+                "url": "https://api.github.com/repos/twigphp/intl-extra/zipball/79a1bea7254783b540d51de10dc5e9f310110794",
+                "reference": "79a1bea7254783b540d51de10dc5e9f310110794",
                 "shasum": ""
             },
             "require": {
@@ -5658,7 +5658,7 @@
                 "twig"
             ],
             "support": {
-                "source": "https://github.com/twigphp/intl-extra/tree/v3.18.0"
+                "source": "https://github.com/twigphp/intl-extra/tree/v3.19.0"
             },
             "funding": [
                 {
@@ -5670,7 +5670,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-11-20T13:19:52+00:00"
+            "time": "2025-01-24T20:20:33+00:00"
         },
         {
             "name": "twig/twig",
