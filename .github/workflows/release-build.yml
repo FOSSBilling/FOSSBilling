@@ -45,7 +45,7 @@ jobs:
 
       - name: 'Download Latest Translations'
         run: |
-          wget https://github.com/FOSSBilling/locale/releases/download/latest/translations.zip -O translations.zip
+          wget https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip -O translations.zip
           mkdir -p ./src/locale
           unzip -o translations.zip -d ./src/locale
 
