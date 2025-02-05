@@ -26,7 +26,7 @@ class Box_LogDb
      */
     public function write(array $event, string $channel = 'application'): void
     {
-        // TOOD: Temporary! Redo logging stuff in more depth for a major release.
+        // TODO: Temporary! Redo logging stuff in more depth for a major release.
         if (in_array($channel, $this->ignoredChannels)) {
             return;
         }
