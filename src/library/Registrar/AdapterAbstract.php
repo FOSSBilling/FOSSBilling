@@ -27,7 +27,7 @@ abstract class Registrar_AdapterAbstract
     /**
      * Return array with configuration.
      *
-     * Must be overriden in adapter class
+     * Must be overridden in adapter class
      *
      * @return array
      */
