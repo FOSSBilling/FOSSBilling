@@ -1524,16 +1524,16 @@
         },
         {
             "name": "maximebf/debugbar",
-            "version": "v2.1.0",
+            "version": "v2.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-debugbar/php-debugbar.git",
-                "reference": "35e7209b9f77e27ee12edb2203d0f8116080ec95"
+                "reference": "e044ee885e5e0ba54da1138ce49c9096f6e3facb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/35e7209b9f77e27ee12edb2203d0f8116080ec95",
-                "reference": "35e7209b9f77e27ee12edb2203d0f8116080ec95",
+                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/e044ee885e5e0ba54da1138ce49c9096f6e3facb",
+                "reference": "e044ee885e5e0ba54da1138ce49c9096f6e3facb",
                 "shasum": ""
             },
             "require": {
@@ -1588,9 +1588,9 @@
             ],
             "support": {
                 "issues": "https://github.com/php-debugbar/php-debugbar/issues",
-                "source": "https://github.com/php-debugbar/php-debugbar/tree/v2.1.0"
+                "source": "https://github.com/php-debugbar/php-debugbar/tree/v2.1.1"
             },
-            "time": "2025-02-01T16:26:14+00:00"
+            "time": "2025-02-13T12:08:20+00:00"
         },
         {
             "name": "maxmind-db/reader",
