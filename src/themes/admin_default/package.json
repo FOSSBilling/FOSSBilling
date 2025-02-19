@@ -24,6 +24,8 @@
     "sortable-tablesort": "^4.0.0"
   },
   "overrides": {
-    "apexcharts": "^4.3.0"
+    "@tabler/core": {
+      "apexcharts": "^4.3.0"
+    }
   }
 }
