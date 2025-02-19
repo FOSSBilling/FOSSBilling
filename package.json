@@ -61,6 +61,9 @@
     "minimatch": "^10.0.0",
     "micromatch": "^4.0.8",
     "debug": "^4.0.0",
-    "autosize": "^6.0.1"
+    "autosize": "^6.0.1",
+    "@tabler/core": {
+      "apexcharts": "^4.3.0"
+    }
   }
 }
