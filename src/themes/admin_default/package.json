@@ -22,10 +22,5 @@
     "litepicker": "^2.0.12",
     "select2": "^4.0.13",
     "sortable-tablesort": "^4.0.0"
-  },
-  "overrides": {
-    "@tabler/core": {
-      "apexcharts": "^4.3.0"
-    }
   }
 }
