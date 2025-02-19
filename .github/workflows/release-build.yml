@@ -54,7 +54,7 @@ jobs:
           cp README.md ./src/
           cp LICENSE ./src/
           rm translations.zip
-          rm -r ./src/themes/admin_default/node_modules/
+          rm -rf ./src/themes/admin_default/node_modules/
 
       - name: 'Add Short Commit Hash as the Release Vesion'
         if: ${{ inputs.preview }}
