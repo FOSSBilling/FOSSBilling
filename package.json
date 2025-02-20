@@ -53,17 +53,20 @@
     "npm": ">=10"
   },
   "overrides": {
-    "braces": "^3.0.3",
-    "postcss": "$postcss",
+    "@ckeditor/ckeditor5-dev-utils": {
+      "serialize-javascript": "^6.0.2"
+    },
     "@melloware/coloris": "^0.24.0",
-    "imask": "^7.6.1",
-    "flat": "^6.0.0",
-    "minimatch": "^10.0.0",
-    "micromatch": "^4.0.8",
-    "debug": "^4.0.0",
-    "autosize": "^6.0.1",
     "@tabler/core": {
       "apexcharts": "^4.3.0"
-    }
+    },
+    "autosize": "^6.0.1",
+    "braces": "^3.0.3",
+    "debug": "^4.0.0",
+    "flat": "^6.0.0",
+    "imask": "^7.6.1",
+    "micromatch": "^4.0.8",
+    "minimatch": "^10.0.0",
+    "postcss": "$postcss"
   }
 }

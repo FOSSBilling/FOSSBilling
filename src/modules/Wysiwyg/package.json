@@ -10,10 +10,5 @@
     "@ckeditor/ckeditor5-dev-translations": "^43.0.0",
     "@ckeditor/ckeditor5-dev-utils": "^43.0.0",
     "ckeditor5": "^44.0.0"
-  },
-  "overrides": {
-    "@ckeditor/ckeditor5-dev-utils": {
-      "serialize-javascript": "^6.0.2"
-    }
   }
 }
