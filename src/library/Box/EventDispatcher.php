@@ -28,7 +28,7 @@ class Box_EventDispatcher
     }
 
     /**
-     * TODO: Unsused?
+     * TODO: Unused?
      * Disconnects a listener for a given event name.
      *
      * @param string $name     An event name
@@ -52,7 +52,7 @@ class Box_EventDispatcher
     }
 
     /**
-     * TODO: Unsused?
+     * TODO: Unused?
      * Disconnects all listeners for a given event name.
      *
      * @param string $name An event name
