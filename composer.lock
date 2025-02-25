@@ -2092,16 +2092,16 @@
         },
         {
             "name": "plesk/api-php-lib",
-            "version": "v2.1.1",
+            "version": "v2.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/plesk/api-php-lib.git",
-                "reference": "81150a0937032bec42f7e7a8cd7a0411896e9fee"
+                "reference": "272d4e8b42477420d0b7624d00b31193327d183d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/plesk/api-php-lib/zipball/81150a0937032bec42f7e7a8cd7a0411896e9fee",
-                "reference": "81150a0937032bec42f7e7a8cd7a0411896e9fee",
+                "url": "https://api.github.com/repos/plesk/api-php-lib/zipball/272d4e8b42477420d0b7624d00b31193327d183d",
+                "reference": "272d4e8b42477420d0b7624d00b31193327d183d",
                 "shasum": ""
             },
             "require": {
@@ -2109,7 +2109,7 @@
                 "ext-dom": "*",
                 "ext-simplexml": "*",
                 "ext-xml": "*",
-                "php": "^7.4 || ^8.0 || ^8.2"
+                "php": "^7.4 || ^8.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "^9",
@@ -2145,9 +2145,9 @@
             "description": "PHP object-oriented library for Plesk XML-RPC API",
             "support": {
                 "issues": "https://github.com/plesk/api-php-lib/issues",
-                "source": "https://github.com/plesk/api-php-lib/tree/v2.1.1"
+                "source": "https://github.com/plesk/api-php-lib/tree/v2.2.0"
             },
-            "time": "2024-07-08T21:57:49+00:00"
+            "time": "2025-02-13T13:59:40+00:00"
         },
         {
             "name": "prinsfrank/enums",
