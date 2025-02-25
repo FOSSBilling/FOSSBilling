@@ -1,6 +1,6 @@
 FROM php:8.4-apache
 
-# Install required packages, configure Apache, install PHP exensions, and clean-up.
+# Install required packages, configure Apache, install PHP extensions, and clean-up.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends wget unzip zlib1g-dev libpng-dev libicu-dev libbz2-dev \
   && a2enmod rewrite \
