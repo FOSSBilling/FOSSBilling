@@ -169,9 +169,9 @@
 
                                             {% if buyer.address|trim %}
                                                 <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.address }}</dd>
-                                                <dd class="col-sm-4">{{ buyer.city }}, {{ buyer.state }}</dd>
-                                                <dd class="col-sm-8">{{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}</dd>
+                                                <dd class="col-sm-8">{{ buyer.address }} <br>{{ buyer.zip }} {{ buyer.city }}, {{ buyer.state}} <br> {{ guest.system_countries[buyer.country] }}</dd>
+                                                <!--- <dd class="col-sm-4">{{ buyer.city }}, {{ buyer.state }}</dd>
+                                                <dd class="col-sm-8">{{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}</dd> --->
                                             {% endif %}
 
                                             {% if buyer.phone|trim %}
