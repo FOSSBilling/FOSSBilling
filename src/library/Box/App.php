@@ -232,7 +232,6 @@ class Box_App
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix) {
-            // @phpstan-ignore offsetAccess.notFound
             $realAdminApiUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . $adminApiPrefix : SYSTEM_URL . $adminApiPrefix;
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
         }
@@ -272,7 +271,6 @@ class Box_App
     {
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
 
-        // @phpstan-ignore offsetAccess.notFound
         $realAdminUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 

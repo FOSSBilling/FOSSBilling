@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@605d1f1e293f72a5809b6eebcc6c4fb510055c91
+        uses: FOSSBilling/.workflows/.github/actions/php-build@3e9ace8872ed7d0961a73e7677d19cd9f58846df
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,12 +45,12 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@605d1f1e293f72a5809b6eebcc6c4fb510055c91
+        uses: FOSSBilling/.workflows/.github/actions/php-test@3e9ace8872ed7d0961a73e7677d19cd9f58846df
         with:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
           phpstan-php-version: 8.4
-          phpstan-version: 'composer'
+          phpstan-version: 'latest'
           phpunit-enable: 'true'
           phpunit-version: 10
 
@@ -121,7 +121,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@605d1f1e293f72a5809b6eebcc6c4fb510055c91
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@3e9ace8872ed7d0961a73e7677d19cd9f58846df
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
