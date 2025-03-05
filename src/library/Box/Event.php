@@ -144,17 +144,6 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Sets a parameter (implements the ArrayAccess interface).
-     *
-     * @param string $name  The parameter name
-     * @param mixed  $value The parameter value
-     */
-    public function offsetSet(mixed $name, mixed $value): void
-    {
-        $this->parameters[$name] = $value;
-    }
-
-    /**
      * Removes a parameter (implements the ArrayAccess interface).
      * (doesn't actually remove anything).
      *
