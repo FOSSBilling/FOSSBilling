@@ -8,8 +8,9 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-require_once __DIR__ . '/load.php';
-$di = include __DIR__ . '/di.php';
+
+require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
+global $di;
 
 // Setting up the debug bar
 $debugBar = new DebugBar\StandardDebugBar();
@@ -37,22 +38,8 @@ if (str_starts_with($url, '/page/')) {
 $_GET['_url'] = $url;
 $http_err_code = $_GET['_errcode'] ?? null;
 
-if ($url === '/run-patcher') {
-    $patcher = new FOSSBilling\UpdatePatcher();
-    $patcher->setDi($di);
-
-    try {
-        $patcher->applyConfigPatches();
-        $patcher->applyCorePatches();
-        $di['tools']->emptyFolder(PATH_CACHE);
-
-        exit('Any missing config migrations or database patches have been applied and the cache has been cleared');
-    } catch (Exception $e) {
-        exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
-    }
-}
-
 $debugBar['time']->startMeasure('session_start', 'Starting / restoring the session');
+
 /*
  * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
  * Internally the return and cancel URLs get a restore_session GET parameter attached to them with the proper session ID to restore, so we do so here.
