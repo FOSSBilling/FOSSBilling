@@ -44,26 +44,6 @@ class Box_EventDispatcher
     }
 
     /**
-     * Notifies all listeners of a given event until one returns a non null value.
-     *
-     * @param Box_Event $event A Box_Event instance
-     *
-     * @return Box_Event The Box_Event instance
-     */
-    public function notifyUntil(Box_Event $event)
-    {
-        foreach ($this->getListeners($event->getName()) as $listener) {
-            if (call_user_func($listener, $event)) {
-                $event->setProcessed(true);
-
-                break;
-            }
-        }
-
-        return $event;
-    }
-
-    /**
      * Filters a value by calling all listeners of a given event.
      *
      * @param Box_Event $event A Box_Event instance
