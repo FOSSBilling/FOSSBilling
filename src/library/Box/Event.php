@@ -156,11 +156,12 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
 
     /**
      * Removes a parameter (implements the ArrayAccess interface).
+     * This doesn't do anything!
      *
      * @param string $name The parameter name
      */
     public function offsetUnset(mixed $name): void
     {
-        unset($this->parameters[$name]);
+        return;
     }
 }
