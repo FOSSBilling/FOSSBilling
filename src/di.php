@@ -28,17 +28,6 @@ use Twig\Extra\Intl\IntlExtension;
 $di = new Pimple\Container();
 
 /*
- * Returns the current FOSSBilling config.
- *
- * @param void
- *
- * @deprecated
- *
- * @return array
- */
-$di['config'] = fn (): array => Config::getConfig();
-
-/*
  * Create a new logger instance and configures it based on the settings in the configuration file.
  *
  * @param void
