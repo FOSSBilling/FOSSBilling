@@ -25,7 +25,7 @@
 {% block content %}
     {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
     {% set params = admin.system_get_params %}
-    {% set enviroment = admin.system_env %}
+    {% set environment = admin.system_env %}
     {% set external_ip = admin.system_env({ 'ip': true }) %}
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
