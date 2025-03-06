@@ -66,6 +66,7 @@ function checkLegacyFiles(): void
     foreach ($toCheck as $path) {
         if ($filesystem->exists(Path::normalize($path))) {
             $legacyFound = true;
+
             break;
         }
     }
@@ -85,7 +86,7 @@ function checkSSL(): void
 
     if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
         if (!$request->isSecure()) {
-            header('Location: ' . 'https://' . $request->getHost() . $request->getRequestUri());
+            header('Location: https://' . $request->getHost() . $request->getRequestUri());
             exit;
         }
     }
@@ -99,8 +100,7 @@ function checkUpdatePatcher(): void
     global $di, $request;
 
     $version = FOSSBilling\Version::VERSION;
-    if ($di['cache']->getItem('updatePatcher')->isHit() && $version === $di['cache']->getItem('updatePatcher')->get())
-    {
+    if ($di['cache']->getItem('updatePatcher')->isHit() && $version === $di['cache']->getItem('updatePatcher')->get()) {
         exit('The update patcher has already been run for this version.');
     }
 
@@ -202,7 +202,7 @@ function exceptionHandler(Exception|Error $e)
 /*
  * Pre-initialization.
  */
-function preInit() : void
+function preInit(): void
 {
     // Define root path.
     define('PATH_ROOT', __DIR__);
@@ -233,7 +233,7 @@ function preInit() : void
 /*
  * Initialize the application.
  */
-function init() : void
+function init(): void
 {
     // Define custom error handlers.
     set_exception_handler(exceptionHandler(...));
@@ -254,7 +254,7 @@ function init() : void
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
     define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
     define('PATH_DATA', Path::normalize(Config::getProperty('path_data')));
-    define('PATH_CACHE',Path::normalize(PATH_DATA . '/cache'));
+    define('PATH_CACHE', Path::normalize(PATH_DATA . '/cache'));
     define('PATH_LOG', Path::normalize(PATH_DATA . '/log'));
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
@@ -281,7 +281,7 @@ function init() : void
 /*
  * Post-initialization.
  */
-function postInit() : void
+function postInit(): void
 {
     // Set error and exception handlers, and default logging settings.
     ini_set('log_errors', '1');

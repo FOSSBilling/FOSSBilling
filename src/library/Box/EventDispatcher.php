@@ -28,7 +28,6 @@ class Box_EventDispatcher
     }
 
     /**
-
      * Notifies all listeners of a given event.
      *
      * @param Box_Event $event A Box_Event instance
