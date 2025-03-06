@@ -35,6 +35,15 @@
             {% endfor %}
             </select>
         </div>
+        {% elseif element[0] == 'multiselect' %}
+        <label class="form-label col-3 col-form-label">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
+        <div class="col">
+            <select class="form-select" name="config[{{ name }}]" multiple>
+            {% for k, v in element[1].multiOptions %}
+                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}/><label>{{ v }}</label>
+            {% endfor %}
+            </select>
+        </div>
         {% elseif element[0] == 'radio' %}
         <label class="form-label col-3 col-form-label">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
         <div class="col">
