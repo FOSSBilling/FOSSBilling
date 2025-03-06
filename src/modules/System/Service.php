@@ -325,7 +325,7 @@ class Service
                 if (!$lastErrorReportingNudge) {
                     // The user upgraded from a version that didn't have error reporting functionality, so let's nudge them about it now.
                     return [
-                        'text' => 'We\'d apreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
+                        'text' => 'We\'d appreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)',
                         'url' => $url,
                     ];
                 } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && Config::getProperty('debug_and_monitoring.report_errors', false) && !Version::isPreviewVersion()) {
@@ -1006,7 +1006,7 @@ class Service
         $di = $event->getDi();
 
         try {
-            // Prune the classmap to remove classes which are no logner on the disk or that have moved.
+            // Prune the classmap to remove classes which are no longer on the disk or that have moved.
             $loader = new \FOSSBilling\AutoLoader();
             $loader->getAntLoader()->pruneClassmap();
 

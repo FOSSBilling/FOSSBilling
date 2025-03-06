@@ -23,7 +23,7 @@ class Box_Exception extends FOSSBilling\Exception
     public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
     {
         // Pass the message to the parent
-        trigger_error('Box_Exception is deprectated and soon to be removed.', E_USER_DEPRECATED);
+        trigger_error('Box_Exception is deprecated and soon to be removed.', E_USER_DEPRECATED);
         parent::__construct($message, $variables, $code, $protected);
     }
 }

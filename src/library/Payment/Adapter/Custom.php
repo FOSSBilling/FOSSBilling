@@ -107,7 +107,7 @@ class Payment_Adapter_Custom
             $tx->currency = $invoice->currency;
             $tx->updated_at = date('Y-m-d H:i:s');
 
-            // Store the updated transaction and use its return to indicate a sucsess or failure.
+            // Store the updated transaction and use its return to indicate a success or failure.
             return $this->di['db']->store($tx);
         } catch (Exception) {
             return false;
