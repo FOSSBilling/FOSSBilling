@@ -156,7 +156,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
 
     /**
      * Removes a parameter (implements the ArrayAccess interface).
-     * This doesn't do anything!
+     * (doesn't actually remove anything).
      *
      * @param string $name The parameter name
      */

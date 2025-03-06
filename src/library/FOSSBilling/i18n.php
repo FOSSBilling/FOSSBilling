@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Path;
+
 class i18n
 {
     /**
@@ -115,8 +117,8 @@ class i18n
         $details = [];
 
         // Handle when FOSSBilling is running with a dummy locale folder.
-        if (file_exists(PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php')) {
-            $array = include PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php';
+        if (file_exists(Path::normalize(PATH_LANGS . '/locales.php'))) {
+            $array = include Path::normalize(PATH_LANGS . '/locales.php');
         } else {
             $array = ['en_US' => 'English'];
         }
@@ -175,7 +177,7 @@ class i18n
             return 100;
         }
 
-        $completionFile = PATH_LANGS . DIRECTORY_SEPARATOR . 'completion.php';
+        $completionFile = Path::normalize(PATH_LANGS . '/completion.php');
         if (!file_exists($completionFile)) {
             return 0;
         }
