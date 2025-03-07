@@ -273,7 +273,7 @@ LOCK TABLES `support_kb_article` WRITE;
 
 INSERT INTO `support_kb_article` (`id`, `kb_article_category_id`, `views`, `title`, `content`, `slug`, `status`, `created_at`, `updated_at`)
 VALUES
-	(1,1,0,'Live demo instructions','Please note that there may be other users logged into the demo at the\nsame time as you, who may be editing and changing settings at the same\ntime as your testing.\n\nSome features have been intentionally disabled in this demo instance.\n\nAdmin area can be accesed at:\n\n> [https://demo.fossbilling.org/admin](https://demo.fossbilling.org/admin/staff/login?email=admin@fossbilling.org&password=demo)\n>\n> Username: admin@fossbilling.org\n>\n> Password: demo\n\nClient area can be accesed at:\n> [https://demo.fossbilling.org/login](https://demo.fossbilling.org/login?email=client@fossbilling.org&password=demo)\n>\n>   Username: client@fossbilling.org\n>\n>   Password: demo\n','live-demo','active','2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(1,1,0,'Live demo instructions','Please note that there may be other users logged into the demo at the\nsame time as you, who may be editing and changing settings at the same\ntime as your testing.\n\nSome features have been intentionally disabled in this demo instance.\n\nAdmin area can be accessed at:\n\n> [https://demo.fossbilling.org/admin](https://demo.fossbilling.org/admin/staff/login?email=admin@fossbilling.org&password=demo)\n>\n> Username: admin@fossbilling.org\n>\n> Password: demo\n\nClient area can be accessed at:\n> [https://demo.fossbilling.org/login](https://demo.fossbilling.org/login?email=client@fossbilling.org&password=demo)\n>\n>   Username: client@fossbilling.org\n>\n>   Password: demo\n','live-demo','active','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `support_kb_article` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -332,7 +332,7 @@ LOCK TABLES `product` WRITE;
 
 INSERT INTO `product` (`id`, `product_category_id`, `product_payment_id`, `form_id`, `title`, `slug`, `description`, `unit`, `active`, `status`, `hidden`, `is_addon`, `setup`, `addons`, `icon_url`, `allow_quantity_select`, `stock_control`, `quantity_in_stock`, `plugin`, `plugin_config`, `upgrades`, `priority`, `config`, `created_at`, `updated_at`, `type`)
 VALUES
-	(1,4,1,1,'SSL Certificate','ssl-certificate','SSL cetificate information','product',1,'enabled',0,0,'after_payment','[4,5,6]',NULL,0,0,0,NULL,NULL,NULL,100,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00','custom'),
+	(1,4,1,1,'SSL Certificate','ssl-certificate','SSL certificate information','product',1,'enabled',0,0,'after_payment','[4,5,6]',NULL,0,0,0,NULL,NULL,NULL,100,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00','custom'),
 	(2,4,2,NULL,'Custom product with plugin','custom-product','Default product description','product',1,'enabled',0,0,'after_payment','[4,5,6]',NULL,0,0,0,'Plugin_Demo',NULL,NULL,90,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00','custom'),
 	(3,4,3,NULL,'Samsung tv set','samsung-tv-set','Default product description','product',1,'enabled',0,0,'after_payment',NULL,NULL,1,1,10,NULL,NULL,NULL,80,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00','custom'),
 	(4,4,4,NULL,'Free Addon',NULL,'Sold only as an addon','product',1,'enabled',0,1,'after_payment',NULL,NULL,0,0,0,NULL,NULL,NULL,110,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00','custom'),
