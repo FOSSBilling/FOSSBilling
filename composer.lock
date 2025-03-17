@@ -1986,26 +1986,30 @@
         },
         {
             "name": "phpmyadmin/motranslator",
-            "version": "5.3.1",
+            "version": "5.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpmyadmin/motranslator.git",
-                "reference": "d03b4d9c608e7265091bf6decc05323d16c7c047"
+                "reference": "6aca7c750ce27328c56b8d66f9883e9ec7357a0e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/d03b4d9c608e7265091bf6decc05323d16c7c047",
-                "reference": "d03b4d9c608e7265091bf6decc05323d16c7c047",
+                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/6aca7c750ce27328c56b8d66f9883e9ec7357a0e",
+                "reference": "6aca7c750ce27328c56b8d66f9883e9ec7357a0e",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.1 || ^8.0",
-                "symfony/expression-language": "^4.0 || ^5.0 || ^6.0"
+                "php": "^7.2 || ^8.0",
+                "symfony/expression-language": "^5.0 || ^6.0 || ^7.0"
             },
             "require-dev": {
                 "phpmyadmin/coding-standard": "^3.0.0",
-                "phpstan/phpstan": "^1.4.6",
-                "phpunit/phpunit": "^7.4 || ^8 || ^9"
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^1.12",
+                "phpstan/phpstan-deprecation-rules": "^1.2",
+                "phpstan/phpstan-phpunit": "^1.4",
+                "phpstan/phpstan-strict-rules": "^1.6",
+                "phpunit/phpunit": "^8.5 || ^9.6 || ^10.5"
             },
             "suggest": {
                 "ext-apcu": "Needed for ACPu-backed translation cache"
@@ -2039,7 +2043,7 @@
                 "issues": "https://github.com/phpmyadmin/motranslator/issues",
                 "source": "https://github.com/phpmyadmin/motranslator"
             },
-            "time": "2023-08-23T18:32:07+00:00"
+            "time": "2025-03-16T04:01:14+00:00"
         },
         {
             "name": "pimple/pimple",
@@ -3784,21 +3788,21 @@
         },
         {
             "name": "symfony/expression-language",
-            "version": "v6.4.13",
+            "version": "v7.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/expression-language.git",
-                "reference": "3524904fb026356a5230cd197f9a4e6a61e0e7df"
+                "reference": "26f4884a455e755e630a5fc372df124a3578da2e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/expression-language/zipball/3524904fb026356a5230cd197f9a4e6a61e0e7df",
-                "reference": "3524904fb026356a5230cd197f9a4e6a61e0e7df",
+                "url": "https://api.github.com/repos/symfony/expression-language/zipball/26f4884a455e755e630a5fc372df124a3578da2e",
+                "reference": "26f4884a455e755e630a5fc372df124a3578da2e",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.1",
-                "symfony/cache": "^5.4|^6.0|^7.0",
+                "php": ">=8.2",
+                "symfony/cache": "^6.4|^7.0",
                 "symfony/deprecation-contracts": "^2.5|^3",
                 "symfony/service-contracts": "^2.5|^3"
             },
@@ -3828,7 +3832,7 @@
             "description": "Provides an engine that can compile and evaluate expressions",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/expression-language/tree/v6.4.13"
+                "source": "https://github.com/symfony/expression-language/tree/v7.2.0"
             },
             "funding": [
                 {
@@ -3844,7 +3848,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-10-09T08:40:40+00:00"
+            "time": "2024-10-15T11:52:45+00:00"
         },
         {
             "name": "symfony/filesystem",
