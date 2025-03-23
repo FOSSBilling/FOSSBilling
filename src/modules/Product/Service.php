@@ -766,30 +766,6 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    public function getSavePath($filename = null)
-    {
-        $path = PATH_DATA . '/uploads/';
-        if ($filename !== null) {
-            $path .= md5($filename);
-        }
-
-        return $path;
-    }
-
-    public function removeOldFile($config)
-    {
-        if (isset($config['filename'])) {
-            $f = $this->getSavePath($config['filename']);
-            if (file_exists($f)) {
-                unlink($f);
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public function getAddonById($id)
     {
         return $this->di['db']->findOne('Product', "type = 'custom' and is_addon = 1 and id = ?", [$id]);
