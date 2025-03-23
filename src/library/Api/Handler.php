@@ -89,7 +89,7 @@ final class Api_Handler implements InjectionAwareInterface
         $api->setDi($this->di);
         $api->setMod($bb_mod);
         $api->setIdentity($this->identity);
-        $api->setIp($this->di['request']->getClientAddress());
+        $api->setIp($this->di['request']->getClientIp());
         if ($bb_mod->hasService()) {
             $api->setService($this->di['mod_service']($mod));
         }
