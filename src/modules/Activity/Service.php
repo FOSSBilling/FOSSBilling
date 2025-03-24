@@ -44,7 +44,7 @@ class Service implements InjectionAwareInterface
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             $ip = null;
         } else {
-            $ip = $this->di['request']->getClientAddress();
+            $ip = $this->di['request']->getClientIp();
         }
 
         $entry = $this->di['db']->dispense('ActivitySystem');
