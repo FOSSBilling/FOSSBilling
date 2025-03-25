@@ -17,6 +17,7 @@ use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
@@ -25,14 +26,7 @@ use Whoops\Run;
  */
 function checkInstaller(): void
 {
-    global $filesystem, $request;
-
-    // Check if /install directory exists before installation has been completed.
-    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install/install.php'))) {
-        // Redirect to the installer.
-        header('Location: ' . $request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', true, 307);
-        exit;
-    }
+    global $filesystem;
 
     // Ignore this check if not in production environment.
     if (!Environment::isProduction()) {
@@ -244,8 +238,15 @@ function init(): void
     $filesystem = new Filesystem();
     $request = Request::createFromGlobals();
 
-    // Check config exists and throw exception unless installer exists.
-    if (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::normalize('install/install.php'))) {
+    // Check config exists, redirecting to installer or throwing an exception if not.
+    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install/install.php')))
+    {
+        $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
+        $response->send();
+        exit;
+    }
+    elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::normalize('install/install.php')))
+    {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
 
