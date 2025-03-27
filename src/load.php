@@ -16,8 +16,8 @@ use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
@@ -239,14 +239,11 @@ function init(): void
     $request = Request::createFromGlobals();
 
     // Check config exists, redirecting to installer or throwing an exception if not.
-    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install/install.php')))
-    {
+    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install/install.php'))) {
         $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
-    }
-    elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::normalize('install/install.php')))
-    {
+    } elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::normalize('install/install.php'))) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
 
