@@ -43,7 +43,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             VALUES(:ip, :request, NOW())
         ';
         $values = [
-            'ip' => $request->getClientAddress(),
+            'ip' => $request->getClientIp(),
             'request' => $_SERVER['REQUEST_URI'] ?? null,
         ];
 

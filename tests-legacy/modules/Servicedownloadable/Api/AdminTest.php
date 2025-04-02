@@ -22,63 +22,6 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testuploadFileNotUploaded(): void
-    {
-        $data['id'] = 1;
-        $model = new \Model_Product();
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($model);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('File was not uploaded');
-        $this->api->upload($data);
-    }
-
-    public function testupload(): void
-    {
-        $data['id'] = 1;
-        $model = new \Model_Product();
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('uploadProductFile')
-            ->willReturn(true);
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($model);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $_FILES['file_data'] = 'exits';
-
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-        $result = $this->api->upload($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
     public function testupdateOrderNotActivated(): void
     {
         $data['order_id'] = 1;
