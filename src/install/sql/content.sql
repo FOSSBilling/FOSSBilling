@@ -462,7 +462,8 @@ INSERT INTO `tld_registrar` (`id`, `name`, `registrar`, `test_mode`, `config`)
 VALUES
 	(1,'Custom','Custom',0,NULL),
 	(2,'Reseller Club','Resellerclub',0,NULL),
-	(3,'Internet.bs','Internetbs',0,NULL);
+	(3,'Internet.bs','Internetbs',0,NULL)
+	(4,'Moniker','Moniker',0,NULL);
 
 /*!40000 ALTER TABLE `tld_registrar` ENABLE KEYS */;
 UNLOCK TABLES;

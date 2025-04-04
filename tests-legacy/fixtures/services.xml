@@ -19,8 +19,9 @@
     <tld id="1" tld_registrar_id="1" tld=".com" allow_register="1" allow_transfer="1"/>
     <tld_registrar id="1" name="Custom" registrar="Custom"/>
     <tld_registrar id="2" name="Resellerclub" registrar="Resellerclub"/>
-    <tld_registrar id="3" name="Internetbs" registrar="Internetbs"/>
-    <tld_registrar id="4" name="Email" registrar="Email"/>
+    <tld_registrar id="3" name="Moniker" registrar="Moniker"/>
+    <tld_registrar id="4" name="Internetbs" registrar="Internetbs"/>
+    <tld_registrar id="5" name="Email" registrar="Email"/>
 
     <service_hosting_server id="1" name="Server PHPUnit" ip="144.144.144.144" manager="Custom" assigned_ips='["127.123.123.123", "155.123.258.369"]'/>
     <service_hosting_server id="2" manager="Whm" name="Leopard" hostname="64.120.140.227" ip="64.120.140.227" username="ilifelt" accesshash="028bd180b91ccf04d5ea1c39466276897345e4326558dbb55796e4d88ddca407ab75adb892288e0df921f7cda2a21b89fe776d6be4f2e20ba0457ba41a79ce22e760c45ae5beff6132948dcb660324fd0001a26e2caa9fb6a596bd04b68eb72ffebc80efa8e46de328d5470d75648001cd8cc95ee82b8668439f3989ad05b50ae10535267a3accaee4561ef048668bdf9dcd20966fc2a80b68a5e4bd9b3f6c978f10132cc16716b8da6237a85f262a9f3288b0ec75144995abb3b8fed072834eb5d351e0a65534a02e4965333f57cc24adc60d2e10334a32828825f44f80b05b980a7e6349ada595a3b68a7e814f2d8ad2804c974e9d8256d2b348146aba8c80c518fa3262fd943bfa6801bffa9e0532f177921f034be4705320868c1c834bd43b1b60d08d422f679c542d495d949ddb760e33e7709f1555f96ace5dce22b98690e616dffe00c1e7ea9c427980227a0483f01ec426e5b030a1382163647c74e0f3665ff6519adda5182cbc378b5fa36e74f45fdfe6bbf40cbbf00dbfba07ceeac8b6dd000451378fbb1eef3d85d307c8aaa7e2b59e4c3a8082811bd3de9c471d93f444232a075d07cd0df4767e413837c8d11c3d0c7efe0d776abf3e51958d0c0c7b56d005dfe4d64c13fa6180793e68" />
