@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -34,7 +35,10 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function getPairs()
+    /**
+     * @return string[]
+     */
+    public function getPairs(): array
     {
         $themeService = $this->di['mod_service']('theme');
         $code = $themeService->getCurrentClientAreaThemeCode();

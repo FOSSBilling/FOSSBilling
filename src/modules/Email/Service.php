@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -101,7 +101,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function toApiArray(\Model_ActivityClientEmail $model, $deep = true)
     {
-        $data = [
+        return [
             'id' => $model->id,
             'client_id' => $model->client_id,
             'sender' => $model->sender,
@@ -112,8 +112,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
         ];
-
-        return $data;
     }
 
     public function setVars($t, $vars)
@@ -127,11 +125,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @param \Model_EmailTemplate $t
      */
-    public function getVars($t)
+    public function getVars($t): array
     {
         $json = $this->di['crypt']->decrypt($t->vars, Config::getProperty('info.salt'));
+        if (is_string($json) && json_validate($json)) {
+            return json_decode($json, true);
+        }
 
-        return $this->di['tools']->decodeJ($json);
+        return [];
     }
 
     public function sendTemplate($data)
@@ -310,9 +311,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $str .= 'Example API usage in email template:' . PHP_EOL . PHP_EOL;
         $str .= '{{ FOSSBillingVersion }}' . PHP_EOL . PHP_EOL;
         $str .= "{{ now|date('Y-m-d') }}" . PHP_EOL . PHP_EOL;
-        $str .= '{% endapply %}';
 
-        return $str;
+        return $str . '{% endapply %}';
     }
 
     private function _parse(\Model_EmailTemplate $t, $vars)
@@ -418,7 +418,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function templateToApiArray(\Model_EmailTemplate $model, $deep = false)
+    public function templateToApiArray(\Model_EmailTemplate $model, $deep = false): array
     {
         $data = [
             'id' => $model->id,

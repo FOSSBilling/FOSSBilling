@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -82,9 +82,7 @@ class Admin extends \Api_Abstract
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $newtx = $transactionService->create([
                 'invoice_id' => $invoice->id,
-                'bb_invoice_id' => $invoice->id,
                 'gateway_id' => $invoice->gateway_id,
-                'bb_gateway_id' => $invoice->gateway_id,
                 'currency' => $invoice->currency,
                 'status' => 'received',
                 'txn_id' => $data['transactionId'],
@@ -420,7 +418,7 @@ class Admin extends \Api_Abstract
      * @optional array $server - $_SERVER data
      * @optional array $http_raw_post_data - file_get_contents("php://input")
      * @optional string $txn_id - transaction id on payment gateway
-     * @optional bool $skip_validation - makes params bb_invoice_id and bb_gateway_id optional
+     * @optional bool $skip_validation - makes params invoice_id and gateway_id optional
      *
      * @return int $id - new transaction id
      */
@@ -942,9 +940,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
-
-        return $model;
+        return $this->di['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
     }
 
     /**

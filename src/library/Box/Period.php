@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -35,7 +36,7 @@ class Box_Period
     ];
 
     private readonly string $unit;
-    private int $qty;
+    private readonly int $qty;
 
     public function __construct($code)
     {
@@ -77,7 +78,7 @@ class Box_Period
         ];
     }
 
-    public static function getPredefined($simple = true)
+    public static function getPredefined($simple = true): array
     {
         $periods = [
             self::PERIOD_WEEK => ['rec_qty' => 1, 'title' => __trans('Every week'), 'code' => self::PERIOD_WEEK, 'rec_unit' => self::UNIT_WEEK],
@@ -120,15 +121,13 @@ class Box_Period
         $qty = $this->qty;
         $placeholders = [':number' => $qty];
 
-        $shift = match ($this->unit) {
+        return match ($this->unit) {
             self::UNIT_DAY => __pluralTrans('Every :number day', 'Every :number days', $qty, $placeholders),
             self::UNIT_WEEK => __pluralTrans('Every :number week', 'Every :number weeks', $qty, $placeholders),
             self::UNIT_MONTH => __pluralTrans('Every :number month', 'Every :number months', $qty, $placeholders),
             self::UNIT_YEAR => __pluralTrans('Every :number year', 'Every :number years', $qty, $placeholders),
             default => throw new FOSSBilling\Exception('Unit not defined'),
         };
-
-        return $shift;
     }
 
     public function getDays()
@@ -143,20 +142,16 @@ class Box_Period
      */
     public function getMonths()
     {
-        $qty = 0;
-
-        $qty = match ($this->unit) {
+        return match ($this->unit) {
             self::UNIT_DAY => $this->qty / 30,
             self::UNIT_WEEK => $this->qty / 4,
             self::UNIT_MONTH => $this->qty,
             self::UNIT_YEAR => $this->qty * 12,
             default => throw new FOSSBilling\Exception('Unable to get the number of months for :unit', [':unit' => $this->unit]),
         };
-
-        return $qty;
     }
 
-    public function getExpirationTime($now = null)
+    public function getExpirationTime(?int $now = null)
     {
         if ($now === null) {
             $now = time();

@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -119,7 +120,7 @@ class ServiceBalance implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\InformationException
      */
-    public function deductFunds(\Model_Client $client, $amount, $description, array $data = null)
+    public function deductFunds(\Model_Client $client, $amount, $description, ?array $data = null)
     {
         if (!is_numeric($amount)) {
             throw new \FOSSBilling\InformationException('Funds amount is invalid');

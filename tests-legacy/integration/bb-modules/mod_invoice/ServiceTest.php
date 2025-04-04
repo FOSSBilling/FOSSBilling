@@ -64,8 +64,8 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
         $ipn = [
             'skip_validation' => true,
-            'bb_invoice_id' => $transactionModel->invoice_id,
-            'bb_gateway_id' => $transactionModel->gateway_id,
+            'invoice_id' => $transactionModel->invoice_id,
+            'gateway_id' => $transactionModel->gateway_id,
             'get' => $transactionIpn['get'],
             'post' => $transactionIpn['post'],
         ];

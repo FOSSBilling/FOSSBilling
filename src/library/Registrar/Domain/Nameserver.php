@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -40,8 +41,7 @@ class Registrar_Domain_Nameserver implements Stringable
     {
         $c = '';
         $c .= sprintf('Host: %s', $this->getHost()) . PHP_EOL;
-        $c .= sprintf('Ip: %s', $this->getIp()) . PHP_EOL;
 
-        return $c;
+        return $c . (sprintf('Ip: %s', $this->getIp()) . PHP_EOL);
     }
 }

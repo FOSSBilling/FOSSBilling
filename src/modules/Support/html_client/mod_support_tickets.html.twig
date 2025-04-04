@@ -8,6 +8,10 @@
 {% block body_class %}support-tickets{% endblock %}
 {% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Support tickets'|trans }}</li>{% endblock %}
 
+{% block head %}
+    {{ mf.wysiwyg('.editor-textarea') }}
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-12">
@@ -69,7 +73,7 @@
 </div>
 
 
-<div class="modal fade" id="open-ticket-modal" tabindex="-1" aria-labelledby="open-ticket-modal" aria-hidden="true">
+<div class="modal modal-lg fade" id="open-ticket-modal" tabindex="-1" aria-labelledby="open-ticket-modal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -91,7 +95,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="message" class="form-label">{{ 'Message'|trans }}</label>
-                        <textarea name="content" class="form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
+                        <textarea name="content" class="editor-textarea form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

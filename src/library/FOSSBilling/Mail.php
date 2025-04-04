@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -18,23 +18,11 @@ use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 
-class Mail implements InjectionAwareInterface
+class Mail
 {
-    protected ?\Pimple\Container $di = null;
-
     private readonly Email $email;
     private ?string $transport = null;
     private ?string $dsn = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
 
     /**
      * Constructor for creating an email message. The custom DSN will be used if you either don't provide a transport or use 'custom' for it.
@@ -48,7 +36,7 @@ class Mail implements InjectionAwareInterface
      *
      * @return void
      */
-    public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, ?string $transport, string $dsn = null)
+    public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, ?string $transport, ?string $dsn = null)
     {
         if (isset($from['email']) && isset($from['name'])) {
             $fromAddress = new Address($from['email'], $from['name']);
@@ -139,7 +127,7 @@ class Mail implements InjectionAwareInterface
      *
      * @throws InformationException If the transport method is unknown or if required options for the selected transport aren't defined
      */
-    public function send(array $options = null): void
+    public function send(?array $options = null): void
     {
         switch ($this->transport) {
             case 'sendmail':

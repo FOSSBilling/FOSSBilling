@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -439,9 +439,9 @@ class Service implements InjectionAwareInterface
         return $this->getServerManager($server);
     }
 
-    public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null): array
+    public function _getAM(\Model_ServiceHosting $model, ?\Model_ServiceHostingHp $hp = null): array
     {
-        if ($hp === null) {
+        if (!$hp instanceof \Model_ServiceHostingHp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
 
@@ -450,7 +450,7 @@ class Service implements InjectionAwareInterface
 
         $hp_config = $hp->config;
 
-        $server_client = $this->di['server_client'];
+        $server_client = new \Server_Client();
         $server_client
             ->setEmail($client->email)
             ->setFullName($client->getFullName())
@@ -463,7 +463,7 @@ class Service implements InjectionAwareInterface
             ->setTelephone($client->phone);
 
         $package = $this->getServerPackage($hp);
-        $server_account = $this->di['server_account'];
+        $server_account = new \Server_Account();
         $server_account
             ->setClient($server_client)
             ->setPackage($package)
@@ -733,7 +733,7 @@ class Service implements InjectionAwareInterface
         $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
             $array = explode(PHP_EOL, $data['assigned_ips']);
-            $array = array_map('trim', $array);
+            $array = array_map(trim(...), $array);
             $array = array_diff($array, ['']);
             $model->assigned_ips = json_encode($array);
         }
@@ -851,7 +851,7 @@ class Service implements InjectionAwareInterface
             $model->config = '';
         }
 
-        $result = [
+        return [
             'id' => $model->id,
 
             'name' => $model->name,
@@ -869,8 +869,6 @@ class Service implements InjectionAwareInterface
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
         ];
-
-        return $result;
     }
 
     public function updateHp(\Model_ServiceHostingHp $model, array $data): bool
@@ -951,9 +949,8 @@ class Service implements InjectionAwareInterface
             $config = [];
         }
 
-        $p = $this->di['server_package'];
-        $p
-            ->setCustomValues($config)
+        $p = new \Server_Package();
+        $p->setCustomValues($config)
             ->setMaxFtp($model->max_ftp)
             ->setMaxSql($model->max_sql)
             ->setMaxPop($model->max_pop)
@@ -1019,7 +1016,12 @@ class Service implements InjectionAwareInterface
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
         $data['tld'] = $tld;
-        $c = $this->di['tools']->decodeJ($product->config);
+
+        if (is_string($product->config) && json_validate($product->config)) {
+            $c = json_decode($product->config, true);
+        } else {
+            $c = [];
+        }
 
         return array_merge($c, $data);
     }
@@ -1028,7 +1030,12 @@ class Service implements InjectionAwareInterface
     {
         $data = $this->prependOrderConfig($product, $data);
         $product->getService()->validateOrderData($data);
-        $c = $this->di['tools']->decodeJ($product->config);
+
+        if (is_string($product->config) && json_validate($product->config)) {
+            $c = json_decode($product->config, true);
+        } else {
+            $c = [];
+        }
 
         $dc = $data['domain'];
         $action = $dc['action'];
@@ -1058,7 +1065,12 @@ class Service implements InjectionAwareInterface
 
     public function getFreeTlds(\Model_Product $product): array
     {
-        $config = $this->di['tools']->decodeJ($product->config);
+        if (is_string($product->config) && json_validate($product->config)) {
+            $config = json_decode($product->config, true);
+        } else {
+            $config = [];
+        }
+
         $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {

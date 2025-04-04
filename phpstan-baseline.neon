@@ -1,176 +1,126 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Call to an undefined method Monolog\\\\Handler\\\\HandlerInterface\\:\\:setFormatter\\(\\)\\.$#"
+			message: '#^PHPDoc tag @phpstan\-ignore\-next\-line has invalid value \(\(No matter what I put for the return type of this function, PHPStan is unhappy\)\)\: Unexpected token "matter", expected ''\)'' at offset 34 on line 1$#'
+			identifier: phpDoc.parseError
 			count: 1
-			path: src/library/FOSSBilling/Monolog.php
+			path: src/library/Box/BeanHelper.php
 
 		-
-			message: "#^Access to an undefined property object\\:\\:\\$DomainGetRegistrarLockResult\\.$#"
-			count: 2
+			message: '#^Call to an undefined method Monolog\\Handler\\HandlerInterface\:\:setFormatter\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/library/FOSSBilling/Monolog.php
+		-
+			message: '#^Method Registrar_Adapter_Namecheap\:\:getPrivacyInfo\(\) should return array\<string\> but returns array\<string, bool\|string\>\.$#'
+			identifier: return.type
+			count: 1
 			path: src/library/Registrar/Adapter/Namecheap.php
 
 		-
-			message: "#^Method Registrar_Adapter_Resellerclub\\:\\:_makeRequest\\(\\) should return string but returns array\\.$#"
+			message: '#^Method Registrar_Adapter_Resellerclub\:\:addSubReseller\(\) should return stdClass but returns array\|string\.$#'
+			identifier: return.type
 			count: 1
 			path: src/library/Registrar/Adapter/Resellerclub.php
 
 		-
-			message: "#^Method Registrar_Adapter_Resellerclub\\:\\:addSubReseller\\(\\) should return stdClass but returns string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Method Registrar_Adapter_Resellerclub\\:\\:transferDomain\\(\\) should return bool but returns string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'actionstatus' does not exist on string\\.$#"
-			count: 3
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'admincontact' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'creationtime' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'currentstatus' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'domsecret' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'endtime' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'isprivacyprotected' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'recsonpage' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'result' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'status' does not exist on non\\-falsy\\-string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'status' does not exist on string\\.$#"
-			count: 6
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Offset 'version' does not exist on string\\.$#"
-			count: 1
-			path: src/library/Registrar/Adapter/Resellerclub.php
-
-		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasAnonymousFtp\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasAnonymousFtp\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasCatchAll\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasCatchAll\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasCgi\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasCgi\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasCron\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasCron\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasPhp\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasPhp\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasShell\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasShell\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasSll\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasSll\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasSpamFilter\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasSpamFilter\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailAutoresponders\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getMaxEmailAutoresponders\(\)\.$#'
+			identifier: method.notFound
 			count: 3
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailForwarders\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getMaxEmailForwarders\(\)\.$#'
+			identifier: method.notFound
 			count: 3
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailLists\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getMaxEmailLists\(\)\.$#'
+			identifier: method.notFound
 			count: 3
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: "#^Access to an undefined property PleskX\\\\Api\\\\Struct\\\\Dns\\\\Info\\:\\:\\$dns\\.$#"
+			message: '#^Access to an undefined property PleskX\\Api\\Struct\\Dns\\Info\:\:\$dns\.$#'
+			identifier: property.notFound
 			count: 1
 			path: src/library/Server/Manager/Plesk.php
 
 		-
-			message: "#^Call to an undefined method PleskX\\\\Api\\\\Operator\\\\Reseller\\:\\:setProperties\\(\\)\\.$#"
-			count: 4
-			path: src/library/Server/Manager/Plesk.php
-
-		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasAnonymousFtp\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasAnonymousFtp\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Plesk.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasCron\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasCron\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Plesk.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasShell\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasShell\(\)\.$#'
+			identifier: method.notFound
 			count: 2
 			path: src/library/Server/Manager/Plesk.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getHasSpamFilter\\(\\)\\.$#"
+			message: '#^Call to an undefined method Server_Package\:\:getHasSpamFilter\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Plesk.php
 
 		-
-			message: "#^Call to an undefined method Server_Package\\:\\:getMaxEmailLists\\(\\)\\.$#"
-			count: 3
+			message: '#^Call to an undefined method Server_Package\:\:getMaxEmailLists\(\)\.$#'
+			identifier: method.notFound
+			count: 2
 			path: src/library/Server/Manager/Plesk.php

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -61,7 +61,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['maintenance_mode']['enabled'] ??= false;
         $newConfig['maintenance_mode']['allowed_urls'] ??= [];
         $newConfig['maintenance_mode']['allowed_ips'] ??= [];
-        $newConfig['disable_auto_cron'] ??= false;
+        $newConfig['disable_auto_cron'] = !Version::isPreviewVersion() && !Environment::isDevelopment();
         $newConfig['i18n']['locale'] ??= $currentConfig['locale'] ?? 'en_US';
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
@@ -76,11 +76,16 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
         $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
+
+        // Instance ID handling
         if (!class_exists('Uuid')) {
             $this->registerFallbackAutoloader();
         }
         $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
+
+        // Remove the hardcoded protocol
+        $newConfig['url'] = str_replace(['https://', 'http://'], '', $newConfig['url']);
 
         // Remove depreciated config keys/subkeys.
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
@@ -106,11 +111,9 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
-        if ($patches) {
-            foreach ($patches as $patchLevel => $patch) {
-                call_user_func($patch);
-                $this->setPatchLevel($patchLevel);
-            }
+        foreach ($patches as $patchLevel => $patch) {
+            call_user_func($patch);
+            $this->setPatchLevel($patchLevel);
         }
     }
 
@@ -396,10 +399,16 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 $ext_service->setConfig($config);
             },
+            43 => function (): void {
+                $fileActions = [
+                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'GeoLite2-Country.mmdb' => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn ($key) => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        return array_filter($patches, fn ($key): bool => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
     }
 
     /**

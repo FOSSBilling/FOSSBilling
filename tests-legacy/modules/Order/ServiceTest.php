@@ -891,12 +891,8 @@ class ServiceTest extends \BBTestCase
         $decoded = [
             'key' => 'value',
         ];
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('decodeJ')
-            ->willReturn($decoded);
 
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -1090,7 +1086,7 @@ class ServiceTest extends \BBTestCase
             ->willReturnCallback(function (...$args) use ($matcher, $loggerMock) {
                 match ($matcher->numberOfInvocations()) {
                     1 => $this->assertEquals($args[0], 'client_order_id'),
-                    2 => $this->assertEquals($args[0], 'status')
+                    2 => $this->assertEquals($args[0], 'status'),
                 };
 
                 return $loggerMock;
@@ -1137,12 +1133,8 @@ class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(function (...$args) use ($modelProduct) {
-                $value = match ($args[0]) {
-                    'Product' => $modelProduct
-                };
-
-                return $value;
+            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+                'Product' => $modelProduct,
             });
 
         $exceptionError = 'Client not found';
@@ -1150,11 +1142,6 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->with('Client', $model->client_id, $exceptionError)
             ->willReturn($modelClient);
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService) {
@@ -1166,7 +1153,6 @@ class ServiceTest extends \BBTestCase
             }
         });
         $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
         $result = $this->service->toApiArray($model, true, new \Model_Admin());

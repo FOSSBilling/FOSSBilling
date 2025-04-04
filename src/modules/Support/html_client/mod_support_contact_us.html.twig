@@ -6,7 +6,13 @@
 
 {% block body_class %}support-contact-us{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item active" aria-current="page">{{ 'Contact us'|trans }}</li>{% endblock %}
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Contact us'|trans }}</li>
+{% endblock %}
+
+{% block head %}
+    {{ mf.wysiwyg('.editor-textarea') }}
+{% endblock %}
+
 {% block content %}
     {% set company = guest.system_company %}
     <div class="row">
@@ -37,7 +43,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="message">{{ 'Message'|trans }}</label>
-                            <textarea class="form-control" name="message" cols="5" rows="5" required="required" id="message">{{ request.message }}</textarea>
+                            <textarea class="editor-textarea form-control" name="message" cols="5" rows="5" required="required" id="message">{{ request.message }}</textarea>
                         </div>
 
                         {{ mf.recaptcha }}

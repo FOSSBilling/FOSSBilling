@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -168,18 +168,18 @@ class Service implements InjectionAwareInterface
 
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
-                if (!$this->isArrayUnique(array_filter($field['values'], 'strlen'))) {
+                if (!$this->isArrayUnique(array_filter($field['values'], strlen(...)))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
-                if (!$this->isArrayUnique(array_filter($field['labels'], 'strlen'))) {
+                if (!$this->isArrayUnique(array_filter($field['labels'], strlen(...)))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
                 $field['options'] = array_combine($field['labels'], $field['values']);
-                $field['options'] = array_filter($field['options'], 'strlen');
+                $field['options'] = array_filter($field['options'], strlen(...));
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
             if ($field['type'] == 'textarea') {
-                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count((array) array_filter($field['textarea_size'], 'is_numeric'))) {
+                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
                     throw new \FOSSBilling\InformationException('Textarea size options must be integer values', null, 3510);
                 }
                 $field['options'] = array_combine($field['textarea_option'], $field['textarea_size']);
@@ -233,9 +233,8 @@ class Service implements InjectionAwareInterface
         WHERE form_id = :form_id
         ORDER BY ID asc
         ';
-        $result = $this->di['db']->getAll($sql, [':form_id' => $formId]);
 
-        return $result;
+        return $this->di['db']->getAll($sql, [':form_id' => $formId]);
     }
 
     private function fieldsJsonDecode($fields)

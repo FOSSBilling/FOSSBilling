@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -453,9 +453,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $epp = $adapter->getEpp($domain);
 
-        return $epp;
+        return $adapter->getEpp($domain);
     }
 
     public function lock(\Model_ServiceDomain $model)
@@ -576,7 +575,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // @todo
     }
 
-    public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null): array
     {
         $data = [
             'domain' => $model->sld . $model->tld,
@@ -769,7 +768,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->min_years = isset($data['min_years']) ? (int) $data['min_years'] : 1;
         $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
         $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
-        $model->active = isset($data['active']) ? (bool) $data['active'] : false;
+        $model->active = isset($data['active']) && (bool) $data['active'];
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
 
@@ -904,7 +903,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function registrarGetAvailable()
+    /**
+     * @return mixed[][]|string[]
+     */
+    public function registrarGetAvailable(): array
     {
         $query = "SELECT 'registrar', 'name' FROM tld_registrar GROUP BY registrar";
 
@@ -934,9 +936,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->findOne('TldRegistrar', 'config IS NOT NULL LIMIT 1');
     }
 
-    public function registrarGetConfiguration(\Model_TldRegistrar $model)
+    public function registrarGetConfiguration(\Model_TldRegistrar $model): array
     {
-        return $this->di['tools']->decodeJ($model->config);
+        if (is_string($model->config) && json_validate($model->config)) {
+            return json_decode($model->config, true);
+        }
+
+        return [];
     }
 
     public function registrarGetRegistrarAdapterConfig(\Model_TldRegistrar $model)
@@ -960,7 +966,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $class;
     }
 
-    public function registrarGetRegistrarAdapter(\Model_TldRegistrar $r, \Model_ClientOrder $order = null)
+    public function registrarGetRegistrarAdapter(\Model_TldRegistrar $r, ?\Model_ClientOrder $order = null)
     {
         $config = $this->registrarGetConfiguration($r);
         $class = $this->registrarGetRegistrarAdapterClassName($r);

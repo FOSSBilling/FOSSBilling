@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -12,6 +12,7 @@
 namespace Box\Mod\Invoice;
 
 use Dompdf\Dompdf;
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Twig\Loader\FilesystemLoader;
 
@@ -127,8 +128,10 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null)
+    public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null): array
     {
+        $this->checkInvoiceAuth($invoice->client_id);
+
         $row = $this->di['db']->toArray($invoice);
 
         $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
@@ -164,6 +167,9 @@ class Service implements InjectionAwareInterface
         }
         $tax = $tax_total;
 
+        $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
+        $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
+
         $result = [];
         $result['id'] = $row['id'];
         $result['serie'] = $row['serie'];
@@ -171,7 +177,7 @@ class Service implements InjectionAwareInterface
         $result['client_id'] = $invoice->client_id;
 
         $nr = (is_numeric($result['nr'])) ? $result['nr'] : $result['id'];
-        $result['serie_nr'] = $result['serie'] . sprintf('%05s', $nr);
+        $result['serie_nr'] = $result['serie'] . sprintf('%0' . $invoice_number_padding . 's', $nr);
 
         $result['hash'] = $row['hash'];
         $result['gateway_id'] = $row['gateway_id'];
@@ -526,6 +532,8 @@ class Service implements InjectionAwareInterface
         $model->taxname = $taxtitle;
         $model->taxrate = $tax;
 
+        $model->notes = $this->di['mod_service']('system')->getParamValue('invoice_default_note');
+
         $this->di['db']->store($model);
     }
 
@@ -630,7 +638,7 @@ class Service implements InjectionAwareInterface
             case 'negative_invoice':
                 $total = $this->getTotalWithTax($invoice);
                 if ($total <= 0) {
-                    throw new \FOSSBilling\InformationException('Cannot refund invoice with negative amount');
+                    throw new InformationException('Cannot refund invoice with negative amount');
                 }
 
                 $new = $this->di['db']->dispense('Invoice');
@@ -845,7 +853,7 @@ class Service implements InjectionAwareInterface
         $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
         foreach ($invoiceItem as $item) {
             if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
-                throw new \FOSSBilling\InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
+                throw new InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
             }
         }
 
@@ -912,7 +920,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($order->price <= 0) {
-            throw new \FOSSBilling\InformationException('Invoices are not generated for 0 amount orders');
+            throw new InformationException('Invoices are not generated for 0 amount orders');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
@@ -1072,7 +1080,7 @@ class Service implements InjectionAwareInterface
     public function generateFundsInvoice(\Model_Client $client, $amount)
     {
         if (!$client->currency) {
-            throw new \FOSSBilling\InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+            throw new InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
         $systemService = $this->di['mod_service']('system');
@@ -1081,11 +1089,11 @@ class Service implements InjectionAwareInterface
         $max_amount = $systemService->getParamValue('funds_max_amount', null);
 
         if ($min_amount && $amount < $min_amount) {
-            throw new \FOSSBilling\InformationException('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
+            throw new InformationException('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
         }
 
         if ($max_amount && $amount > $max_amount) {
-            throw new \FOSSBilling\InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
+            throw new InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
         $proforma = $this->di['db']->dispense('Invoice');
@@ -1146,7 +1154,7 @@ class Service implements InjectionAwareInterface
             $html = $adapter->getHtml($this->di['api_system'], $invoice->id, $subscribe);
 
             return [
-                'iframe' => isset($pgc['can_load_in_iframe']) ? (bool) $pgc['can_load_in_iframe'] : false,
+                'iframe' => isset($pgc['can_load_in_iframe']) && (bool) $pgc['can_load_in_iframe'],
                 'type' => 'html',
                 'service_url' => '',
                 'subscription' => $subscribe,
@@ -1250,7 +1258,7 @@ class Service implements InjectionAwareInterface
      *
      * @return array
      */
-    public function findAllUnpaid(array $filter = null)
+    public function findAllUnpaid(?array $filter = null)
     {
         $sql = 'SELECT m.*
                 FROM invoice as m
@@ -1342,8 +1350,11 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
+        $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
+
         $params = [
-            ':id' => sprintf('%05s', $proforma['nr']),
+            ':id' => sprintf('%0' . $invoice_number_padding . 's', $proforma['nr']),
             ':serie' => $proforma['serie'],
             ':title' => $first_title,
         ];
@@ -1436,6 +1447,36 @@ class Service implements InjectionAwareInterface
         return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
     }
 
+    private function checkInvoiceAuth(?int $invoiceClientId)
+    {
+        if ($invoiceClientId === null) {
+            return;
+        }
+
+        $systemService = $this->di['mod_service']('system');
+        $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
+
+        // If hash_access is not 0 or if a client is logged in, get the logged-in client
+        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
+            $client = $this->di['loggedin_client'];
+            if ($invoiceClientId != $client->id) {
+                // Then either give an appropriate API response or redirect to the login page.
+                $api_str = '/api/';
+                $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+                if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+                    // Throw Exception if api request
+                    throw new InformationException('You do not have permission to perform this action', [], 403);
+                } else {
+                    // Redirect to login page if browser request
+                    $invoiceLink = $this->di['url']->link('invoice');
+                    header("Location: $invoiceLink");
+                    echo __trans('You do not have permission to perform this action');
+                    exit;
+                }
+            }
+        }
+    }
+
     // Start of PDF related functions
     private function getPdfCss(): string
     {
@@ -1486,7 +1527,7 @@ class Service implements InjectionAwareInterface
         return [$source, $remote];
     }
 
-    private function getSellerData(array $invoice, int &$lines)
+    private function getSellerData(array $invoice, int &$lines): array
     {
         $sourceData = [
             'Name' => $invoice['seller']['company'],
@@ -1508,7 +1549,7 @@ class Service implements InjectionAwareInterface
         return $sourceData;
     }
 
-    private function getBuyerData(array $invoice, int &$lines)
+    private function getBuyerData(array $invoice, int &$lines): array
     {
         $sourceData = [
             'Company' => $invoice['buyer']['company'],
@@ -1532,7 +1573,7 @@ class Service implements InjectionAwareInterface
         return $sourceData;
     }
 
-    private function getFooterInfo(array $company)
+    private function getFooterInfo(array $company): array
     {
         $sourceData = [
             'company_name' => $company['name'],

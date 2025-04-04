@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -221,13 +221,11 @@ class Service implements InjectionAwareInterface
 
                 return $this->di['db']->load($repo_class, $order->service_id);
             } else {
-                $service = $this->di['db']->findOne(
+                return $this->di['db']->findOne(
                     'service_' . $order->service_type,
                     'id = :id',
                     [':id' => $order->service_id]
                 );
-
-                return $service;
             }
         }
 
@@ -255,7 +253,11 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(\Model_ClientOrder $model)
     {
-        return $this->di['tools']->decodeJ($model->config);
+        if (is_string($model->config) && json_validate($model->config)) {
+            return json_decode($model->config, true);
+        }
+
+        return [];
     }
 
     public function productHasOrders(\Model_Product $product)

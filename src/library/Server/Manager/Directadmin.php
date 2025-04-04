@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -359,7 +360,7 @@ class Server_Manager_Directadmin extends Server_Manager
      *
      * @throws Server_Exception
      */
-    public function getResellerLoginUrl(Server_Account $account = null): string
+    public function getResellerLoginUrl(?Server_Account $account = null): string
     {
         return $this->getLoginUrl();
     }
@@ -376,7 +377,7 @@ class Server_Manager_Directadmin extends Server_Manager
      *
      * @throws Server_Exception
      */
-    public function getLoginUrl(Server_Account $account = null): string
+    public function getLoginUrl(?Server_Account $account = null): string
     {
         $protocol = $this->_config['secure'] ? 'https://' : 'http://';
 

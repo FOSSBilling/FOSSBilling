@@ -286,12 +286,7 @@ class ServiceTest extends \BBTestCase
             ->method('getPathSettingsDataFile')
             ->willReturn('location/Of/Assets/file');
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('file_put_contents');
-
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->regenerateThemeSettingsDataFile($themeMock);

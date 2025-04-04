@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -40,7 +40,10 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getPairs($data)
+    /**
+     * @return mixed[]
+     */
+    public function getPairs($data): array
     {
         $sql = 'SELECT id, title
                 FROM product
@@ -73,11 +76,15 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function toApiArray(\Model_Product $model, $deep = true, $identity = null)
+    public function toApiArray(\Model_Product $model, $deep = true, $identity = null): array
     {
         $repo = $model->getTable();
         $addons = $this->getAddonsApiArray($model);
-        $config = $this->di['tools']->decodeJ($model->config, 1);
+        if (is_string($model->config) && json_validate($model->config)) {
+            $config = json_decode($model->config, true);
+        } else {
+            $config = [];
+        }
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
 
@@ -123,7 +130,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getTypes()
+    public function getTypes(): array
     {
         $data = [
             self::CUSTOM => 'Custom',
@@ -264,7 +271,11 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $current = $this->di['tools']->decodeJ($model->config);
+            if (is_string($model->config) && json_validate($model->config)) {
+                $current = json_decode($model->config, true);
+            } else {
+                $current = [];
+            }
             $c = array_merge($current, $data['config']);
             $model->config = json_encode($c);
         }
@@ -364,7 +375,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getAddons()
+    /**
+     * @return mixed[]
+     */
+    public function getAddons(): array
     {
         $sql = 'SELECT id, title
                 FROM product
@@ -428,7 +442,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getProductCategoryPairs()
+    /**
+     * @return mixed[]
+     */
+    public function getProductCategoryPairs(): array
     {
         $sql = 'SELECT id, title
                 FROM product_category';
@@ -618,7 +635,10 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    public function getUpgradablePairs(\Model_Product $model)
+    /**
+     * @return mixed[]
+     */
+    public function getUpgradablePairs(\Model_Product $model): array
     {
         if (is_null($model->upgrades)) {
             $model->upgrades = '';
@@ -641,7 +661,10 @@ class Service implements InjectionAwareInterface
         return array_key_exists($new->id, $pairs);
     }
 
-    public function getProductTitlesByIds($ids)
+    /**
+     * @return mixed[]
+     */
+    public function getProductTitlesByIds($ids): array
     {
         if (empty($ids)) {
             return [];
@@ -772,17 +795,28 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Product', "type = 'custom' and is_addon = 1 and id = ?", [$id]);
     }
 
-    private function getPeriods(\Model_Promo $model)
+    private function getPeriods(\Model_Promo $model): array
     {
-        return $this->di['tools']->decodeJ($model->periods);
+        if (is_string($model->periods) && json_validate($model->periods)) {
+            return json_decode($model->periods, true);
+        }
+
+        return [];
     }
 
-    private function getProducts(\Model_Promo $model)
+    private function getProducts(\Model_Promo $model): array
     {
-        return $this->di['tools']->decodeJ($model->products);
+        if (is_string($model->products) && json_validate($model->products)) {
+            return json_decode($model->products, true);
+        }
+
+        return [];
     }
 
-    private function getAddonsApiArray(\Model_Product $model)
+    /**
+     * @return mixed[]
+     */
+    private function getAddonsApiArray(\Model_Product $model): array
     {
         $addons = [];
         foreach ($this->getProductAddons($model) as $addon) {
@@ -795,8 +829,13 @@ class Service implements InjectionAwareInterface
 
     public function getProductAddons(\Model_Product $model)
     {
-        $ids = $this->di['tools']->decodeJ($model->addons);
-        if (empty($ids)) {
+        if (is_string($model->addons) && json_validate($model->addons)) {
+            $ids = json_decode($model->addons, true);
+        } else {
+            $ids = [];
+        }
+
+        if ($ids === []) {
             return [];
         }
 
@@ -811,7 +850,11 @@ class Service implements InjectionAwareInterface
         $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
         $pricing = $this->toProductPaymentApiArray($productPayment);
 
-        $config = $this->di['tools']->decodeJ($model->config);
+        if (is_string($model->config) && json_validate($model->config)) {
+            $config = json_decode($model->config, true);
+        } else {
+            $config = [];
+        }
 
         return [
             'id' => $model->id,
@@ -1006,7 +1049,7 @@ class Service implements InjectionAwareInterface
         return in_array($product->id, $products);
     }
 
-    public function getProductDiscount(\Model_Product $product, \Model_Promo $promo, array $config = null)
+    public function getProductDiscount(\Model_Product $product, \Model_Promo $promo, ?array $config = null)
     {
         if (!$this->isPromoLinkedToProduct($promo, $product)) {
             return 0;
@@ -1068,8 +1111,7 @@ class Service implements InjectionAwareInterface
     {
         // return type Model_ClientOrder that have product_id = $product->id
         $sql = 'SELECT * FROM client_order WHERE product_id = :product_id';
-        $orders = $this->di['db']->getAll($sql, [':product_id' => $product->id], '\Model_ClientOrder');
 
-        return $orders;
+        return $this->di['db']->getAll($sql, [':product_id' => $product->id], '\Model_ClientOrder');
     }
 }

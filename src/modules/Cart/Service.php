@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -56,7 +56,7 @@ class Service implements InjectionAwareInterface
     /**
      * @return \Model_Cart
      */
-    public function getSessionCart(string $sessionID = null)
+    public function getSessionCart(?string $sessionID = null)
     {
         $sessionID ??= $this->di['session']->getId();
         $sqlBindings = [':session_id' => $sessionID];
@@ -351,7 +351,8 @@ class Service implements InjectionAwareInterface
         }
 
         $currencyService = $this->di['mod_service']('currency');
-        $result = [
+
+        return [
             'promocode' => $promocode,
             'discount' => $items_discount,
             'subtotal' => $total,
@@ -359,8 +360,6 @@ class Service implements InjectionAwareInterface
             'items' => $items,
             'currency' => $currencyService->toApiArray($currency),
         ];
-
-        return $result;
     }
 
     public function isClientAbleToUsePromo(\Model_Client $client, \Model_Promo $promo)
@@ -399,7 +398,11 @@ class Service implements InjectionAwareInterface
 
     public function isPromoAvailableForClientGroup(\Model_Promo $promo)
     {
-        $clientGroups = $this->di['tools']->decodeJ($promo->client_groups);
+        if (is_string($promo->client_groups) && json_validate($promo->client_groups)) {
+            $clientGroups = json_decode($promo->client_groups, true);
+        } else {
+            $clientGroups = [];
+        }
 
         if (empty($clientGroups)) {
             return true;
@@ -435,7 +438,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->find('CartProduct', 'cart_id = :cart_id ORDER BY id ASC', [':cart_id' => $model->id]);
     }
 
-    public function checkoutCart(\Model_Cart $cart, \Model_Client $client, $gateway_id = null)
+    public function checkoutCart(\Model_Cart $cart, \Model_Client $client, $gateway_id = null): array
     {
         if ($cart->promo_id) {
             $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');
@@ -764,7 +767,11 @@ class Service implements InjectionAwareInterface
 
     public function getItemConfig(\Model_CartProduct $model)
     {
-        return $this->di['tools']->decodeJ($model->config);
+        if (is_string($model->config) && json_validate($model->config)) {
+            return json_decode($model->config, true);
+        }
+
+        return [];
     }
 
     public function cartProductToApiArray(\Model_CartProduct $model)
@@ -786,7 +793,7 @@ class Service implements InjectionAwareInterface
             $discount_price = $subtotal;
         }
 
-        $data = array_merge($config, [
+        return array_merge($config, [
             'id' => $model->id,
             'product_id' => $product->id,
             'form_id' => $product->form_id,
@@ -801,8 +808,6 @@ class Service implements InjectionAwareInterface
             'discount_setup' => $discount_setup,
             'total' => $subtotal,
         ]);
-
-        return $data;
     }
 
     public function getProductDiscount(\Model_CartProduct $cartProduct, $setup)

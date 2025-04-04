@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -69,13 +70,11 @@ class Service implements InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('system');
 
-        $result = [
+        return [
             'sitemap_url' => SYSTEM_URL . 'sitemap.xml',
             'last_exec' => $systemService->getParamValue('mod_seo_last_sitemap_submit'),
             'engines' => $this->_getEngineDetails(),
         ];
-
-        return $result;
     }
 
     /**
@@ -93,10 +92,8 @@ class Service implements InjectionAwareInterface
 
     /**
      * Load engines from the Engines directory.
-     *
-     * @return array
      */
-    private function _getEngines()
+    private function _getEngines(): array
     {
         $engines = [];
         $dir = __DIR__ . '/Engines';
@@ -115,10 +112,8 @@ class Service implements InjectionAwareInterface
 
     /**
      * Get the details of all engines.
-     *
-     * @return array
      */
-    private function _getEngineDetails()
+    private function _getEngineDetails(): array
     {
         $engines = $this->_getEngines();
         $details = [];

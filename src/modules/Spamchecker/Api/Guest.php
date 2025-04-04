@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -24,12 +25,11 @@ class Guest extends \Api_Abstract
     public function recaptcha($data)
     {
         $config = $this->di['mod_config']('Spamchecker');
-        $result = [
+
+        return [
             'publickey' => $config['captcha_recaptcha_publickey'] ?? null,
             'enabled' => $config['captcha_enabled'] ?? false,
             'version' => $config['captcha_version'] ?? null,
         ];
-
-        return $result;
     }
 }

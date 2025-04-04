@@ -1,15 +1,16 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-require_once __DIR__ . '/load.php';
-$di = include __DIR__ . '/di.php';
+
+require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
+global $di;
 
 // Setting up the debug bar
 $debugBar = new DebugBar\StandardDebugBar();
@@ -25,26 +26,20 @@ $configCollector->useHtmlVarDumper();
 
 $debugBar->addCollector($configCollector);
 
-// Now move onto the actual process of setting up the app & routing
-$url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
-$http_err_code = $_GET['_errcode'] ?? null;
+// Get the request URL
+$url = $_GET['_url'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-if ($url === '/run-patcher') {
-    $patcher = new FOSSBilling\UpdatePatcher();
-    $patcher->setDi($di);
-
-    try {
-        $patcher->applyConfigPatches();
-        $patcher->applyCorePatches();
-        $di['tools']->emptyFolder(PATH_CACHE);
-
-        exit('Any missing config migrations or database patches have been applied and the cache has been cleared');
-    } catch (Exception $e) {
-        exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
-    }
+// Rewrite for custom pages
+if (str_starts_with($url, '/page/')) {
+    $url = substr_replace($url, '/custompages/', 0, 6);
 }
 
+// Set the final URL
+$_GET['_url'] = $url;
+$http_err_code = $_GET['_errcode'] ?? null;
+
 $debugBar['time']->startMeasure('session_start', 'Starting / restoring the session');
+
 /*
  * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
  * Internally the return and cancel URLs get a restore_session GET parameter attached to them with the proper session ID to restore, so we do so here.

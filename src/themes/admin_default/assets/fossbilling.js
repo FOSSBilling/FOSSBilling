@@ -12,7 +12,7 @@ import './js/datepicker'
 import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
 import './js/fossbilling';
-import 'sortable-tablesort/sortable.min.js';
+import 'sortable-tablesort/dist/sortable.min.js';
 
 globalThis.ApexCharts = ApexCharts;
 globalThis.$ = globalThis.jQuery = $;

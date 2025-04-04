@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -69,6 +70,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'money_convert' => new TwigFilter('money_convert', $this->twig_money_convert(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', $this->money_convert_without_currency(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
+            'iplookup' => new TwigFilter('iplookup', $this->ipLookupLink(...), ['is_safe' => ['html']]),
+
             // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
             'filter' => new TwigFilter('filter', $this->filteredFilter(...)),
             'map' => new TwigFilter('map', $this->filteredMap(...)),
@@ -96,13 +99,13 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         try {
             $record = $this->di['geoip']->country($value);
 
-            return $record->country->name;
+            return $record->name;
         } catch (Exception) {
             return '';
         }
     }
 
-    public function twig_bb_client_link_filter($link, $params = null)
+    public function twig_bb_client_link_filter($link, ?array $params = null)
     {
         if ($this->di['url'] === null) {
             return null;
@@ -111,7 +114,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $this->di['url']->link($link, $params);
     }
 
-    public function twig_bb_admin_link_filter($link, $params = null)
+    public function twig_bb_admin_link_filter($link, ?array $params = null)
     {
         return $this->di['url']->adminLink($link, $params);
     }
@@ -124,7 +127,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->system_period_title(['code' => $period]);
     }
 
-    public function twig_money_convert(Twig\Environment $env, $price, $currency = null)
+    public function twig_money_convert(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -136,7 +139,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true]);
     }
 
-    public function money_convert_without_currency(Twig\Environment $env, $price, $currency = null, $without_currency = false)
+    public function money_convert_without_currency(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -206,9 +209,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
         $url = 'https://www.gravatar.com/avatar/';
         $url .= md5(strtolower(trim($email)));
-        $url .= "?s=$size&d=mp&r=g";
 
-        return $url;
+        return $url . "?s=$size&d=mp&r=g";
     }
 
     public function twig_autolink_filter($text)
@@ -267,9 +269,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         if ($no != 1) {
             $pds[$v] .= 's';
         }
-        $x = sprintf('%d %s ', $no, $pds[$v]);
 
-        return $x;
+        return sprintf('%d %s ', $no, $pds[$v]);
     }
 
     public function twig_size_filter($value)
@@ -360,12 +361,23 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return $array;
         }
 
-        if ($arrow !== null) {
+        if ($arrow instanceof Closure) {
             uasort($array, $arrow);
         } else {
             asort($array);
         }
 
         return $array;
+    }
+
+    public function ipLookupLink(?string $ip)
+    {
+        if ($ip === null || $ip === '') {
+            return '';
+        }
+
+        $link = $this->di['url']->adminLink('security/iplookup', ['ip' => $ip]);
+
+        return "<a href='{$link}' target='_blank' class='iplookuplink'>{$ip}</a>";
     }
 }

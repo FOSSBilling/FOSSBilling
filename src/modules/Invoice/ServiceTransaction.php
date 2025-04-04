@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -76,17 +77,17 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
-        $skip_validation = isset($data['skip_validation']) ? (bool) $data['skip_validation'] : false;
+        $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
         if (!$skip_validation) {
-            if (!isset($data['bb_invoice_id'])) {
+            if (!isset($data['invoice_id'])) {
                 throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');
             }
 
-            if (!isset($data['bb_gateway_id'])) {
+            if (!isset($data['gateway_id'])) {
                 throw new \FOSSBilling\InformationException('Payment gateway ID is missing');
             }
-            $this->di['db']->getExistingModelById('Invoice', $data['bb_invoice_id'], 'Invoice was not found');
-            $this->di['db']->getExistingModelById('PayGateway', $data['bb_gateway_id'], 'Gateway was not found');
+            $this->di['db']->getExistingModelById('Invoice', $data['invoice_id'], 'Invoice was not found');
+            $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
         }
 
         $ipn = [
@@ -97,8 +98,8 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
 
         $transaction = $this->di['db']->dispense('Transaction');
-        $transaction->gateway_id = $data['bb_gateway_id'] ?? null;
-        $transaction->invoice_id = $data['bb_invoice_id'] ?? null;
+        $transaction->gateway_id = $data['gateway_id'] ?? null;
+        $transaction->invoice_id = $data['invoice_id'] ?? null;
         $transaction->txn_id = $data['txn_id'] ?? null;
         $transaction->status = 'received';
         $transaction->ip = $this->di['request']->getClientAddress();
@@ -124,7 +125,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_Transaction $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_Transaction $model, $deep = false, $identity = null): array
     {
         $gateway = null;
         if ($model->gateway_id) {
@@ -465,7 +466,12 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        $ipn = $this->di['tools']->decodeJ($tx->ipn);
+
+        if (is_string($tx->ipn) && json_validate($tx->ipn)) {
+            $ipn = json_decode($tx->ipn, true);
+        } else {
+            $ipn = [];
+        }
 
         if (empty($tx->gateway_id)) {
             throw new \FOSSBilling\Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);

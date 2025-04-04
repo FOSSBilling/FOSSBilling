@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -44,7 +45,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             ],
             'form' => [
                 'email' => [
-                    'text', [
+                    'text',
+                    [
                         'label' => 'PayPal email address for payments',
                         'validators' => ['EmailAddress'],
                     ],
@@ -79,8 +81,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
+        // Set the invoice ID if it's not set
         if (!$tx['invoice_id']) {
-            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $data['get']['bb_invoice_id']]);
+            $invoiceID = $data['get']['invoice_id'];
+            $tx['invoiceID'] = $invoiceID;
+            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $invoiceID]);
         }
 
         if (!$tx['type'] && isset($ipn['txn_type'])) {
@@ -103,7 +108,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             $api_admin->invoice_transaction_update(['id' => $id, 'currency' => $ipn['mc_currency']]);
         }
 
-        $invoice = $api_admin->invoice_get(['id' => $data['get']['bb_invoice_id']]);
+        $invoice = $api_admin->invoice_get(['id' => $tx['invoice_id']]);
         $client_id = $invoice['client']['id'];
 
         switch ($ipn['txn_type']) {
@@ -200,7 +205,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         // use http_raw_post_data instead of post due to encoding
         parse_str($data['http_raw_post_data'], $post);
         $req = 'cmd=_notify-validate';
-        foreach ((array) $post as $key => $value) {
+        foreach ($post as $key => $value) {
             $value = urlencode(stripslashes($value));
             $req .= "&$key=$value";
         }
@@ -244,9 +249,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $response = $client->request('POST', $url, [
             'body' => $post_contents,
         ]);
-        $data = $response->getContent();
 
-        return $data;
+        return $response->getContent();
     }
 
     /**
@@ -306,7 +310,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return __trans('Payment for invoice :serie:id [:title]', $p);
     }
 
-    public function getSubscriptionFields(array $invoice)
+    public function getSubscriptionFields(array $invoice): array
     {
         $data = [];
         $subs = $invoice['subscription'];
@@ -357,7 +361,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $data;
     }
 
-    public function getOneTimePaymentFields(array $invoice)
+    public function getOneTimePaymentFields(array $invoice): array
     {
         $data = [];
         $data['item_name'] = $this->getInvoiceTitle($invoice);

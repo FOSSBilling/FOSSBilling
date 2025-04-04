@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -36,7 +36,7 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
         return $this->baseUri . $uri;
     }
 
-    public function link(string $uri = null, ?array $params = []): string
+    public function link(?string $uri = null, ?array $params = []): string
     {
         $uri ??= '';
         $uri = trim($uri, '/');

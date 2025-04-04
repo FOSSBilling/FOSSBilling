@@ -1,16 +1,15 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_Translate implements FOSSBilling\InjectionAwareInterface
+class Box_Translate
 {
-    protected ?Pimple\Container $di = null;
-
     protected $domain = 'messages';
 
     protected $locale = 'en_US';
@@ -35,16 +34,6 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
         return $this;
     }
 
-    public function setDi(Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?Pimple\Container
-    {
-        return $this->di;
-    }
-
     public function setup()
     {
         PhpMyAdmin\MoTranslator\Loader::loadFunctions();
@@ -56,8 +45,6 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
         }
 
         $codeset = 'UTF-8';
-        @putenv('LANG=' . $locale . '.' . $codeset);
-        @putenv('LANGUAGE=' . $locale . '.' . $codeset);
         // set locale
         if (!defined('LC_MESSAGES')) {
             define('LC_MESSAGES', 5);
@@ -71,7 +58,7 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);
 
-        function __trans(string $msgid, array $values = null)
+        function __trans(string $msgid, ?array $values = null)
         {
             $translated = _gettext($msgid);
 
@@ -82,7 +69,7 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
             return $translated;
         }
 
-        function __pluralTrans(string $msgid, string $msgidPlural, int $number, array $values = null)
+        function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null)
         {
             $translated = _ngettext($msgid, $msgidPlural, $number);
 
@@ -112,7 +99,7 @@ class Box_Translate implements FOSSBilling\InjectionAwareInterface
         return $this;
     }
 
-    public function __($msgid, array $values = null)
+    public function __($msgid, ?array $values = null)
     {
         return __trans($msgid, $values);
     }

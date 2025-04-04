@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -17,10 +18,8 @@ class Admin extends \Api_Abstract
 {
     /**
      * Get available licensing plugins.
-     *
-     * @return array
      */
-    public function plugin_get_pairs(array $data)
+    public function plugin_get_pairs(array $data): array
     {
         $plugins = $this->getService()->getLicensePlugins();
         $result = [];

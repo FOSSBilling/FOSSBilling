@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -68,7 +69,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function login($email, $password, $ip)
+    public function login($email, $password, $ip): array
     {
         $event_params = [];
         $event_params['email'] = $email;
@@ -145,7 +146,7 @@ class Service implements InjectionAwareInterface
      * @param string|null       $key        the permission key for the associated module
      * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
      */
-    public function hasPermission(?\Model_Admin $member, string $module, string $key = null, mixed $constraint = null): bool
+    public function hasPermission(?\Model_Admin $member, string $module, ?string $key = null, mixed $constraint = null): bool
     {
         $alwaysAllowed = ['index', 'dashboard', 'profile'];
 
@@ -190,7 +191,7 @@ class Service implements InjectionAwareInterface
      * @param string|null $key        the permission key for the associated module
      * @param mixed       $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
      */
-    public function checkPermissionsAndThrowException(string $module, string $key = null, mixed $constraint = null): void
+    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null): void
     {
         if (!$this->hasPermission(null, $module, $key, $constraint)) {
             throw new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
@@ -454,7 +455,7 @@ class Service implements InjectionAwareInterface
         return $cron;
     }
 
-    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false)
+    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false): array
     {
         $data = [
             'id' => $model->id,
@@ -609,7 +610,10 @@ class Service implements InjectionAwareInterface
         return $newId;
     }
 
-    public function getAdminGroupPair()
+    /**
+     * @return mixed[]
+     */
+    public function getAdminGroupPair(): array
     {
         $sql = 'SELECT id, name
                 FROM  admin_group';
@@ -651,7 +655,7 @@ class Service implements InjectionAwareInterface
         return (int) $groupId;
     }
 
-    public function toAdminGroupApiArray(\Model_AdminGroup $model, $deep = false, $identity = null)
+    public function toAdminGroupApiArray(\Model_AdminGroup $model, $deep = false, $identity = null): array
     {
         $data = [];
         $data['id'] = $model->id;
@@ -733,7 +737,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toActivityAdminHistoryApiArray(\Model_ActivityAdminHistory $model, $deep = false)
+    public function toActivityAdminHistoryApiArray(\Model_ActivityAdminHistory $model, $deep = false): array
     {
         $result = [
             'id' => $model->id,
@@ -761,10 +765,7 @@ class Service implements InjectionAwareInterface
 
     public function authorizeAdmin($email, $plainTextPassword)
     {
-        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, \Model_Admin::STATUS_ACTIVE]);
-        if ($model == null) {
-            return null;
-        }
+        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ? AND role != ?', [$email, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }

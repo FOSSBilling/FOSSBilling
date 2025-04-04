@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -39,14 +39,7 @@ class Session implements InjectionAwareInterface
         $this->canUseSession();
 
         if (!headers_sent()) {
-            session_set_save_handler(
-                $this->handler->open(...),
-                $this->handler->close(...),
-                $this->handler->read(...),
-                $this->handler->write(...),
-                $this->handler->destroy(...),
-                $this->handler->gc(...)
-            );
+            session_set_save_handler($this->handler);
         }
 
         $currentCookieParams = session_get_cookie_params();

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -15,11 +15,10 @@ if (!file_exists(__DIR__ . '/src')) {
 
 return (new PhpCsFixer\Config())
     ->setRules([
-        '@PHP80Migration' => true,
+        '@PHP84Migration' => true,
         '@Symfony' => true,
         'concat_space' => ['spacing' => 'one'],
         'protected_to_private' => false,
-        'nullable_type_declaration_for_default_null_value' => ['use_nullable_type_declaration' => false],
         'yoda_style' => ['equal' => false, 'identical' => false, 'less_and_greater' => false], // Enforce non-Yoda style.
         'blank_line_before_statement' => ['statements' => ['break', 'continue', 'return', 'throw', 'try']], // Removed 'declare' from the default list.
         /* Risky */
@@ -44,4 +43,5 @@ return (new PhpCsFixer\Config())
             ->notPath(
                 'config-sample.php'
             )
-    );
+    )
+    ->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect());

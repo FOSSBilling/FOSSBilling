@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -72,8 +72,8 @@ class CentralAlerts implements InjectionAwareInterface
     {
         $alerts = $this->getAlerts();
 
-        if (is_array($type) && !empty($type)) {
-            $alerts = array_filter($alerts, fn ($alert) => in_array($alert['type'], $type));
+        if (!empty($type)) {
+            $alerts = array_filter($alerts, fn ($alert): bool => in_array($alert['type'], $type));
         }
 
         if ($version) {

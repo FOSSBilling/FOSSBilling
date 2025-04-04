@@ -198,8 +198,8 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testTransactions(): void
     {
         $tx = [
-            'bb_invoice_id' => 1,
-            'bb_gateway_id' => 1,
+            'invoice_id' => 1,
+            'gateway_id' => 1,
         ];
         $tx_id = $this->api_admin->invoice_transaction_create($tx);
 

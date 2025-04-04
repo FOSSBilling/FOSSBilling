@@ -36,12 +36,12 @@ jobs:
               if: steps.composer-cache.outputs.cache-hit != 'true'
               uses: php-actions/composer@v6
               with:
-                  php_version: 8.2
+                  php_version: 8.3
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
               with:
-                  php-version: "8.2"
+                  php-version: 8.3
 
             - name: Restore Rector Cache
               uses: actions/cache@v4
@@ -73,7 +73,7 @@ jobs:
               run: php src/vendor/bin/php-cs-fixer fix
 
             - name: Create a Pull Request
-              uses: peter-evans/create-pull-request@v6
+              uses: peter-evans/create-pull-request@v7
               with:
                   title: Apply PHP Code Styling & Quality Changes
                   commit-message: Apply PHP Code Styling & Quality Changes

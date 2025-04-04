@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -41,9 +42,8 @@ class Service
         $desc = mb_convert_encoding($content, 'UTF-8');
         $desc = strip_tags($desc);
         $desc = str_replace(["\n", "\r", "\t"], ' ', $desc);
-        $desc = substr($desc, 0, 125);
 
-        return $desc;
+        return substr($desc, 0, 125);
     }
 
     public function getSearchQuery($data)
@@ -72,7 +72,7 @@ class Service
         return [$sql, $params];
     }
 
-    public function toApiArray($row, $role = 'guest', $deep = true)
+    public function toApiArray($row, $role = 'guest', $deep = true): array
     {
         $admin = $this->di['db']->getRow('SELECT name, email FROM admin WHERE id=:id', ['id' => $row->admin_id]);
 

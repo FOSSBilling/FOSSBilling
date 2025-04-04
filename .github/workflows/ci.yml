@@ -29,12 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [8.1, 8.2, 8.3]
+        php: [8.2, 8.3, 8.4]
     steps:
       - uses: actions/checkout@v4
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@8749327430a3e843ec6c1c997d4568575ab2f364
+        uses: FOSSBilling/.workflows/.github/actions/php-build@3e9ace8872ed7d0961a73e7677d19cd9f58846df
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,11 +45,12 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@8749327430a3e843ec6c1c997d4568575ab2f364
+        uses: FOSSBilling/.workflows/.github/actions/php-test@3e9ace8872ed7d0961a73e7677d19cd9f58846df
         with:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
-          phpstan-php-version: 8.3
+          phpstan-php-version: 8.4
+          phpstan-version: 'latest'
           phpunit-enable: 'true'
           phpunit-version: 10
 
@@ -102,8 +103,9 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
+          AWS_REGION: 'auto'
           SOURCE_DIR: './dist'
-
+    
       - name: 'Upload Downloadable Preview to GitHub'
         uses: actions/upload-artifact@v4
         with:
@@ -119,7 +121,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@8749327430a3e843ec6c1c997d4568575ab2f364
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@3e9ace8872ed7d0961a73e7677d19cd9f58846df
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}

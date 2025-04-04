@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -112,7 +112,7 @@ class Admin extends \Api_Abstract
         }
 
         $title = $data['title'] ?? null;
-        $conversionRate = $data['conversion_rate'] ?? 1;
+        $conversionRate = $data['conversion_rate'] ?? null;
 
         return $service->createCurrency($data['code'] ?? null, $data['format'] ?? null, $title, $conversionRate);
     }

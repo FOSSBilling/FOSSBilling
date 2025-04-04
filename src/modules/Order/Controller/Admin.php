@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -33,7 +34,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'label' => __trans('Orders'),
                 'uri' => $this->di['url']->adminLink('order'),
                 'class' => 'orders',
-                'sprite_class' => 'dark-sprite-icon sprite-basket',
             ],
             'subpages' => [
                 [

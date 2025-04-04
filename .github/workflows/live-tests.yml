@@ -23,12 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@8749327430a3e843ec6c1c997d4568575ab2f364
+      - name: 'PHP Build'
+        uses: FOSSBilling/.workflows/.github/actions/php-build@3e9ace8872ed7d0961a73e7677d19cd9f58846df
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
-          php-version: 8.1
+          php-version: 8.2
 
       - name: Make Needed Directories
         run: |
@@ -84,7 +84,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml
+          extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml, pdo, pdo_mysql
 
       - name: Setup Apache
         run: |
@@ -155,8 +155,18 @@ jobs:
           -X POST \
           http://localhost/install/install.php?a=install
 
-      - name: Run Cron
-        run: php /var/www/localhost/cron.php
+      - name: Display the installer error log if it exists
+        run: |
+          LOG_PATH="/var/www/localhost/install/php_error.log"
+            
+          if [ -f "$LOG_PATH" ]; then
+            cat "$LOG_PATH"
+          else
+            echo "The installer error log does not exist."
+          fi
+
+      - name: Display the admin page
+        run: curl http://localhost/admin
 
       - name: Run the API test suite
         run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml

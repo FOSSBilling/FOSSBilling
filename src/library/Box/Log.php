@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -47,6 +48,8 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     protected array $_extras = [];
     protected string $_channel = 'application';
 
+    private array $_maskedKeys = ['password', 'pass', 'token', 'key', 'apisecret', 'secret', 'api_token'];
+
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
@@ -57,19 +60,40 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    private function maskParams(array|string $params, int $depthLimit = 15): array|string
+    {
+        if (is_string($params)) {
+            return $params;
+        }
+
+        if ($depthLimit <= 0) {
+            return 'Recursion limit reached while masking event log parameters';
+        }
+
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $params[$key] = $this->maskParams($value, $depthLimit - 1);
+            } elseif (in_array(strtolower($key), $this->_maskedKeys)) {
+                $params[$key] = '********';
+            }
+        }
+
+        return $params;
+    }
+
     /**
      * @throws FOSSBilling\Exception
      */
     public function __call($method, $params): void
     {
         $priority = strtoupper($method);
+        $params = $this->maskParams($params);
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
             switch (is_countable($params) ? count($params) : 0) {
                 case 0:
                     throw new FOSSBilling\Exception('Missing log message');
                 case 1:
                     $message = array_shift($params);
-                    $extras = null;
 
                     break;
                 default:
@@ -90,7 +114,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     /**
      * @throws FOSSBilling\Exception
      */
-    public function log($message, $priority, $extras = null): void
+    public function log($message, $priority, array|string|null $extras = null): void
     {
         // sanity checks
         if (empty($this->_writers)) {
@@ -127,7 +151,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         }
 
         // do not log debug level messages if debug is OFF
-        if (!DEBUG && $event['priority'] > self::INFO) {
+        if ($event['priority'] > self::INFO && DEBUG === false) {
             return;
         }
 

@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -65,7 +66,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_Subscription $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_Subscription $model, $deep = false, $identity = null): array
     {
         $result = [
             'id' => $model->id,

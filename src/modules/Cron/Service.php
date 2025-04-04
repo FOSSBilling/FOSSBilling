@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -32,22 +32,18 @@ class Service
     {
         $service = $this->di['mod_service']('system');
 
-        $result = [
+        return [
             'cron_path' => PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php',
             'last_cron_exec' => $service->getParamValue('last_cron_exec'),
         ];
-
-        return $result;
     }
 
     /**
-     * @param null $interval - parameter from CLI, pass to filter crons to run
-     *
      * @return bool
      *
-     * @todo finish fixing, time to sleep
+     * @todo finish fixing, time to sleep (note: idk what exactly this is referring to. It predates FOSSBilling and is from BoxBilling well before we touched this code)
      */
-    public function runCrons($interval = null)
+    public function runCrons()
     {
         $api = $this->di['api_system'];
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs');
@@ -104,9 +100,8 @@ class Service
     public function getLastExecutionTime()
     {
         $service = $this->di['mod_service']('system');
-        $last_exec = $service->getParamValue('last_cron_exec');
 
-        return $last_exec;
+        return $service->getParamValue('last_cron_exec');
     }
 
     public function isLate()

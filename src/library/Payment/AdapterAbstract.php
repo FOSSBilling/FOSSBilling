@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -88,10 +88,8 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Return payment gateway type (TYPE_HTML, TYPE_FORM, TYPE_API).
-     *
-     * @return string
      */
-    public function getType()
+    public function getType(): string
     {
         return Payment_AdapterAbstract::TYPE_FORM;
     }
@@ -124,7 +122,7 @@ abstract class Payment_AdapterAbstract
      */
     public function getInvoiceId($data)
     {
-        return isset($data['get']['bb_invoice_id']) ? (int) $data['get']['bb_invoice_id'] : null;
+        return $data['invoice_id'] ?? null;
     }
 
     public function setLog(Box_Log $log)

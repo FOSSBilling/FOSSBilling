@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -114,7 +114,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @example https://extensions.fossbilling.org/api/list An example of the API response
      */
-    public function getExtensionList($type = null): array
+    public function getExtensionList(?string $type = null): array
     {
         $params = [];
 

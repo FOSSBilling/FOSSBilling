@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -539,8 +540,6 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
-
-        return $model;
+        return $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
     }
 }

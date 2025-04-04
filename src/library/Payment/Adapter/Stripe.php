@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -142,7 +143,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         if ($tx->invoice_id) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
         } else {
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['bb_invoice_id']);
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['invoice_id']);
             $tx->invoice_id = $invoice->id;
         }
 
@@ -253,7 +254,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                     const {error} = await stripe.confirmPayment({
                         elements,
                         confirmParams: {
-                            return_url: \':callbackUrl&bb_redirect=true&bb_invoice_hash=:invoice_hash\',
+                            return_url: \':callbackUrl&redirect=true&invoice_hash=:invoice_hash\',
                             payment_method_data: {
                                 billing_details: {
                                     name: \':buyer_name\',

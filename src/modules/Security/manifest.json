@@ -1,0 +1,8 @@
+{
+  "id": "security",
+  "type": "mod",
+  "name": "Security",
+  "description": "FOSSBilling core module",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
+}

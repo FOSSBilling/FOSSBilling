@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -11,6 +11,8 @@ declare(strict_types=1);
  */
 
 namespace FOSSBilling;
+
+use Symfony\Component\Filesystem\Path;
 
 class i18n
 {
@@ -115,14 +117,14 @@ class i18n
         $details = [];
 
         // Handle when FOSSBilling is running with a dummy locale folder.
-        if (file_exists(PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php')) {
-            $array = include PATH_LANGS . DIRECTORY_SEPARATOR . 'locales.php';
+        if (file_exists(Path::normalize(PATH_LANGS . '/locales.php'))) {
+            $array = include Path::normalize(PATH_LANGS . '/locales.php');
         } else {
             $array = ['en_US' => 'English'];
         }
 
         foreach ($locales as $locale) {
-            $title = ($array[$locale] ?? $locale) . "($locale)";
+            $title = ($array[$locale] ?? $locale) . " ($locale)";
             $details[] = [
                 'locale' => $locale,
                 'title' => $title,
@@ -175,7 +177,7 @@ class i18n
             return 100;
         }
 
-        $completionFile = PATH_LANGS . DIRECTORY_SEPARATOR . 'completion.php';
+        $completionFile = Path::normalize(PATH_LANGS . '/completion.php');
         if (!file_exists($completionFile)) {
             return 0;
         }
@@ -196,13 +198,13 @@ class i18n
     {
         if ($disabled) {
             // Only get a list of the disabled locales
-            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn ($dir) => is_dir($dir) && file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
+            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn ($dir): bool => is_dir($dir) && file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
         } else {
             // Only get a list of the enabled locales
-            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn ($dir) => is_dir($dir) && !file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
+            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn ($dir): bool => is_dir($dir) && !file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
         }
 
-        $locales = array_map('basename', $locales); // get only the directory name
+        $locales = array_map(basename(...), $locales); // get only the directory name
         sort($locales);
 
         return $locales;

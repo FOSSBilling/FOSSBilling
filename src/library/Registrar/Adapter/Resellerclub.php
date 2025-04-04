@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -54,29 +55,23 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return [
             'label' => 'Manages domains on ResellerClub via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where FOSSBilling is installed to authorize it for API access.',
             'form' => [
-                'userid' => ['text', [
-                    'label' => 'Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID',
-                    'description' => 'ResellerClub Reseller ID',
+                'userid' => [
+                    'text',
+                    [
+                        'label' => 'Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID',
+                        'description' => 'ResellerClub Reseller ID',
+                    ],
                 ],
-                ],
-                'api-key' => ['password', [
-                    'label' => 'ResellerClub API Key',
-                    'description' => 'You can get this at ResellerClub control panel, go to Settings -> API',
-                    'required' => false,
-                ],
+                'api-key' => [
+                    'password',
+                    [
+                        'label' => 'ResellerClub API Key',
+                        'description' => 'You can get this at ResellerClub control panel, go to Settings -> API',
+                        'required' => false,
+                    ],
                 ],
             ],
         ];
-    }
-
-    /**
-     * Tells what TLDs can be registered via this adapter.
-     *
-     * @return string[]
-     */
-    public function getTlds()
-    {
-        return [];
     }
 
     public function isDomainAvailable(Registrar_Domain $domain)
@@ -199,7 +194,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $required_params['attr-value1'] = 'default';
         }
 
-        return $this->_makeRequest('domains/transfer', $required_params, 'POST');
+        $result = $this->_makeRequest('domains/transfer', $required_params, 'POST');
+
+        return $result['status'] == 'Success';
     }
 
     private function _getDomainOrderId(Registrar_Domain $d)
@@ -477,9 +474,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
 
         $params = [...$optional_params, ...$params];
-        $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
 
-        return $customer_id;
+        return $this->_makeRequest('customers/signup', $params, 'POST');
     }
 
     public function getContactIdForDomain(Registrar_Domain $domain)
@@ -533,9 +529,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['type'] = 'RuContact';
         }
 
-        $id = $this->_makeRequest('contacts/add', $contact, 'POST');
-
-        return $id;
+        return $this->_makeRequest('contacts/add', $contact, 'POST');
     }
 
     private function getResellerDetails()
@@ -670,11 +664,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @param array  $params
      * @param string $method
      *
-     * @return string
-     *
      * @throws Registrar_Exception
      */
-    protected function _makeRequest($url, $params = [], $method = 'GET', $type = 'json')
+    protected function _makeRequest($url, $params = [], $method = 'GET', $type = 'json'): array|string
     {
         $params = $this->includeAuthorizationParams($params);
 
@@ -756,9 +748,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $params = http_build_query($params);
-        $params = preg_replace('~%5B(\d+)%5D~', '', $params);
 
-        return $params;
+        return preg_replace('~%5B(\d+)%5D~', '', $params);
     }
 
     /**

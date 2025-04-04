@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -26,20 +27,11 @@ abstract class Registrar_AdapterAbstract
     /**
      * Return array with configuration.
      *
-     * Must be overriden in adapter class
+     * Must be overridden in adapter class
      *
      * @return array
      */
     abstract public static function getConfig();
-
-    /**
-     * Returns an array of top-level domains (TLDs) that the registrar is capable of registering.
-     *
-     * If the function returns an empty array, the registrar can register any TLD.
-     *
-     * @return array array of TLDs that the registrar is capable of registering
-     */
-    abstract public function getTlds();
 
     /**
      * Checks if a domain is available for registration.

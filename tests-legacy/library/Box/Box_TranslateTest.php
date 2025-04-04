@@ -13,15 +13,6 @@ class Box_TranslateTest extends PHPUnit\Framework\TestCase
         $this->assertEquals($locale, $result);
     }
 
-    public function testDi(): void
-    {
-        $di = new Pimple\Container();
-        $translateObj = new Box_Translate();
-        $translateObj->setDi($di);
-        $getDi = $translateObj->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testDomainSetterAndGetter(): void
     {
         $translateObj = new Box_Translate();

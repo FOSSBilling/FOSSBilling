@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -27,51 +28,6 @@ class Box_EventDispatcher
     }
 
     /**
-     * TODO: Unsused?
-     * Disconnects a listener for a given event name.
-     *
-     * @param string $name     An event name
-     * @param mixed  $listener A PHP callable
-     *
-     * @return false|null false if listener does not exist, null otherwise
-     */
-    public function disconnect($name, mixed $listener)
-    {
-        if (!isset($this->listeners[$name])) {
-            return false;
-        }
-
-        foreach ($this->listeners[$name] as $i => $callable) {
-            if ($listener === $callable) {
-                unset($this->listeners[$name][$i]);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * TODO: Unsused?
-     * Disconnects all listeners for a given event name.
-     *
-     * @param string $name An event name
-     *
-     * @return false|null false if listener does not exist, null otherwise
-     */
-    public function disconnectAll($name)
-    {
-        if (!isset($this->listeners[$name])) {
-            return false;
-        }
-
-        foreach ($this->listeners[$name] as $i => $callable) {
-            unset($this->listeners[$name][$i]);
-        }
-
-        return null;
-    }
-
-    /**
      * Notifies all listeners of a given event.
      *
      * @param Box_Event $event A Box_Event instance
@@ -82,26 +38,6 @@ class Box_EventDispatcher
     {
         foreach ($this->getListeners($event->getName()) as $listener) {
             call_user_func($listener, $event);
-        }
-
-        return $event;
-    }
-
-    /**
-     * Notifies all listeners of a given event until one returns a non null value.
-     *
-     * @param Box_Event $event A Box_Event instance
-     *
-     * @return Box_Event The Box_Event instance
-     */
-    public function notifyUntil(Box_Event $event)
-    {
-        foreach ($this->getListeners($event->getName()) as $listener) {
-            if (call_user_func($listener, $event)) {
-                $event->setProcessed(true);
-
-                break;
-            }
         }
 
         return $event;

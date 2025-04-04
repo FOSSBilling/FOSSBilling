@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -104,8 +105,8 @@ class Service implements InjectionAwareInterface
                     $p = $method->getParameters();
                     if ($method->isPublic()
                         && isset($p[0])
-                        && $p[0]->getType() && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null // @phpstan-ignore-line (The code is valid)
-                        && in_array($p[0]->getType() && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null, ['Box_Event', '\Box_Event'])) { // @phpstan-ignore-line (The code is valid)
+                        && $p[0]->getType() instanceof \ReflectionType && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null // @phpstan-ignore-line (The code is valid)
+                        && in_array($p[0]->getType() instanceof \ReflectionType && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null, ['Box_Event', '\Box_Event'])) { // @phpstan-ignore-line (The code is valid)
                         $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
                     }
                 }

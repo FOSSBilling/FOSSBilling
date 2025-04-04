@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -24,7 +25,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function fetchNavigation()
+    public function fetchNavigation(): array
     {
         $nav = [
             'group' => [
@@ -32,7 +33,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'index' => 500,
                 'label' => __trans('Support'),
                 'class' => 'support',
-                'sprite_class' => 'dark-sprite-icon sprite-dialog',
             ],
             'subpages' => [
                 [

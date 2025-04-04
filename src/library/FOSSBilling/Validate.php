@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -66,7 +66,7 @@ class Validate
         }
         $tld = strtolower($tld);
 
-        $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item) {
+        $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item): array {
             $item->expiresAfter(86400);
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
@@ -89,7 +89,7 @@ class Validate
                 return [];
             }
 
-            $validTlds = array_filter($database, fn ($tld) => !str_starts_with($tld, '/'));
+            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with($tld, '/'));
 
             $result = [];
             foreach ($validTlds as $tld) {
@@ -162,7 +162,7 @@ class Validate
      *
      * @throws InformationException
      */
-    public function checkRequiredParamsForArray(array $required, array $data, array $variables = null, $code = 0)
+    public function checkRequiredParamsForArray(array $required, array $data, ?array $variables = null, $code = 0)
     {
         foreach ($required as $key => $msg) {
             if (!isset($data[$key])) {

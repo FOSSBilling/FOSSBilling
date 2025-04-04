@@ -24,7 +24,7 @@ class FakeTemplateWrapper
         /**
          * Body text to return from the render() method.
          */
-        protected $body
+        protected $body,
     ) {
     }
 

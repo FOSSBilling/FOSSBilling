@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -221,13 +221,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getStatuses()
     {
-        $data = [
+        return [
             \Model_SupportTicket::OPENED => 'Open',
             \Model_SupportTicket::ONHOLD => 'On hold',
             \Model_SupportTicket::CLOSED => 'Closed',
         ];
-
-        return $data;
     }
 
     /**
@@ -485,7 +483,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (bool) $helpdesk->can_reopen;
     }
 
-    private function _getRelDetails(\Model_SupportTicket $model)
+    /**
+     * @return mixed[]
+     */
+    private function _getRelDetails(\Model_SupportTicket $model): array
     {
         if (!$model->rel_type || !$model->rel_id) {
             return [];
@@ -877,20 +878,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $rel_id = $data['rel_id'] ?? null;
         $rel_type = $data['rel_type'] ?? null;
 
-        if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
-            $orderService = $this->di['mod_service']('order');
-            $o = $orderService->findForClientById($client, $rel_id);
-            if (!$o instanceof \Model_ClientOrder) {
-                throw new \FOSSBilling\Exception('Order ID does not exist');
-            }
-        }
-
         $rel_task = $data['rel_task'] ?? null;
         $rel_new_value = $data['rel_new_value'] ?? null;
         $rel_status = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
 
         if ($rel_task == 'upgrade') {
-            if (empty($o) || empty($rel_new_value)) {
+            if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
+                $orderService = $this->di['mod_service']('order');
+                $o = $orderService->findForClientById($client, $rel_id);
+                if (!$o instanceof \Model_ClientOrder) {
+                    throw new \FOSSBilling\Exception('Order ID does not exist');
+                }
+            }
+
+            if (!isset($o) || empty($rel_new_value)) {
                 throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
@@ -992,13 +993,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function publicGetStatuses()
     {
-        $data = [
+        return [
             \Model_SupportPTicket::OPENED => 'Open',
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-
-        return $data;
     }
 
     public function publicFindOneByHash($hash)
@@ -1122,9 +1121,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ':status' => \Model_SupportPTicket::ONHOLD,
         ];
 
-        $publicTicket = $this->di['db']->find('SupportPTicket', 'status = :status AND DATE_ADD(updated_at, INTERVAL 48 HOUR) < NOW() ORDER BY id ASC', $bindings);
-
-        return $publicTicket;
+        return $this->di['db']->find('SupportPTicket', 'status = :status AND DATE_ADD(updated_at, INTERVAL 48 HOUR) < NOW() ORDER BY id ASC', $bindings);
     }
 
     public function publicCloseTicket(\Model_SupportPTicket $model, $identity)
@@ -1369,7 +1366,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function cannedGetGroupedPairs()
+    /**
+     * @return non-empty-array[]
+     */
+    public function cannedGetGroupedPairs(): array
     {
         $query = 'SELECT sp.title as r_title, spc.title as c_title FROM support_pr sp
                 LEFT JOIN support_pr_category spc
@@ -1512,8 +1512,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /*
-    * Knowledge Base Functions.
-    */
+     * Knowledge Base Functions.
+     */
 
     public function kbEnabled()
     {
@@ -1588,10 +1588,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $id = $model->id;
         $this->di['db']->trash($model);
-        $this->di['logger']->info('Deleted knowledge base article #%s', $id);
+        $this->di['logger']->info('Deleted Knowledge Base article #%s', $id);
     }
 
-    public function kbToApiArray(\Model_SupportKbArticle $model, $deep = false, $identity = null)
+    public function kbToApiArray(\Model_SupportKbArticle $model, $deep = false, $identity = null): array
     {
         $data = [
             'id' => $model->id,
@@ -1603,7 +1603,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'updated_at' => $model->updated_at,
         ];
 
-        $cat = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $model->kb_article_category_id, 'Knowledge base category not found');
+        $cat = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $model->kb_article_category_id, 'Knowledge Base category not found');
         $data['category'] = [
             'id' => $cat->id,
             'slug' => $cat->slug,
@@ -1712,7 +1712,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $sql = $sql . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $sql .= ' GROUP BY kac.id ORDER BY kac.id DESC';
+        $sql .= ' GROUP BY kac.id ORDER BY kac.title';
 
         return [$sql, $bindings];
     }
@@ -1731,9 +1731,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function kbCategoryGetPairs()
     {
         $sql = 'SELECT id, title FROM support_kb_article_category';
-        $pairs = $this->di['db']->getAssoc($sql);
 
-        return $pairs;
+        return $this->di['db']->getAssoc($sql);
     }
 
     public function kbCategoryRm(\Model_SupportKbArticleCategory $model)
@@ -1771,11 +1770,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($query) {
-            $sql .= 'AND (title LIKE :title OR content LIKE :content)';
+            $sql .= ' AND (title LIKE :title OR content LIKE :content)';
             $query = "%$query%";
             $bindings[':content'] = $query;
             $bindings[':title'] = $query;
         }
+
+        $sql .= ' ORDER BY title';
 
         $articles = $this->di['db']->find('SupportKbArticle', $sql, $bindings);
 
@@ -1823,14 +1824,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['db']->store($model);
 
-        $this->di['logger']->info('Updated knowledge base category #%s', $model->id);
+        $this->di['logger']->info('Updated Knowledge Base category #%s', $model->id);
 
         return true;
     }
 
     public function kbFindCategoryById($id)
     {
-        return $this->di['db']->getExistingModelById('SupportKbArticleCategory', $id, 'Knowledge base category not found');
+        return $this->di['db']->getExistingModelById('SupportKbArticleCategory', $id, 'Knowledge Base category not found');
     }
 
     public function kbFindCategoryBySlug($slug)

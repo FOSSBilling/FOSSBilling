@@ -290,7 +290,7 @@
 </div>
 
 <div class="card" id="reply-box">
-    <form method="post" action="{{ 'api/admin/support/ticket_reply'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
+    <form method="post" action="{{ 'api/admin/support/ticket_reply'|link }}" class="api-form" data-api-reload="1">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="d-flex">

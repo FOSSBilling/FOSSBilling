@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -9,7 +10,7 @@
  */
 class Box_DbLoggedPDOStatement extends PDOStatement
 {
-    public function execute($input_parameters = null): bool
+    public function execute(?array $input_parameters = null): bool
     {
         error_log($this->queryString);
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -102,10 +102,14 @@ class Client implements InjectionAwareInterface
         }
 
         $isLoginMethod = false;
+
         if ($method == 'staff_login' || $method == 'client_login') {
+            $isLoginMethod = true;
             $rate_span = $this->_api_config['rate_span_login'];
             $rate_limit = $this->_api_config['rate_limit_login'];
-            $isLoginMethod = true;
+
+            // 25 to 250ms delay to help prevent email enumeration.
+            usleep(random_int(25000, 250000));
         } else {
             $rate_span = $this->_api_config['rate_span'];
             $rate_limit = $this->_api_config['rate_limit'];
@@ -124,7 +128,7 @@ class Client implements InjectionAwareInterface
     private function checkHttpReferer()
     {
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
-        $check_referer_header = isset($this->_api_config['require_referrer_header']) ? (bool) $this->_api_config['require_referrer_header'] : false;
+        $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
             $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower($_SERVER['HTTP_REFERER']) : null;
@@ -259,7 +263,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    public function renderJson($data = null, \Exception $e = null)
+    public function renderJson($data = null, ?\Exception $e = null)
     {
         // do not emit response if headers already sent
         if (headers_sent()) {
@@ -275,7 +279,7 @@ class Client implements InjectionAwareInterface
         header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
-        if ($e !== null) {
+        if ($e instanceof \Exception) {
             error_log($e->getMessage() . ' ' . $e->getCode());
             $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];

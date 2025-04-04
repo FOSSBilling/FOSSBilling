@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -43,7 +43,7 @@ final class Version
      *
      * @return int 0-2 to indicate the type of update
      */
-    public static function getUpdateType(string $new, string $current = null): int
+    public static function getUpdateType(string $new, ?string $current = null): int
     {
         // Report patch as a dummy value as we can't properly compare version numbers when the current version is a preview build
         if (self::isPreviewVersion()) {

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -45,7 +45,10 @@ class ServicePayGateway implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function getPairs()
+    /**
+     * @return mixed[]
+     */
+    public function getPairs(): array
     {
         $sql = 'SELECT id, gateway, name
             FROM pay_gateway';
@@ -59,7 +62,10 @@ class ServicePayGateway implements InjectionAwareInterface
         return $result;
     }
 
-    public function getAvailable()
+    /**
+     * @return mixed[]
+     */
+    public function getAvailable(): array
     {
         $sql = 'SELECT id, gateway, name
             FROM pay_gateway';
@@ -113,7 +119,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_PayGateway $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_PayGateway $model, $deep = false, $identity = null): array
     {
         [$single, $recurrent] = $this->_getAllowTuple($model);
 
@@ -189,7 +195,10 @@ class ServicePayGateway implements InjectionAwareInterface
         return true;
     }
 
-    public function getActive(array $data)
+    /**
+     * @return mixed[]
+     */
+    public function getActive(array $data): array
     {
         $format = $data['format'] ?? null;
 
@@ -227,9 +236,13 @@ class ServicePayGateway implements InjectionAwareInterface
         return (bool) $model->allow_recurrent;
     }
 
-    public function getPaymentAdapter(\Model_PayGateway $pg, \Model_Invoice $model = null, $optional = [])
+    public function getPaymentAdapter(\Model_PayGateway $pg, ?\Model_Invoice $model = null, $optional = [])
     {
-        $config = $this->di['tools']->decodeJ($pg->config);
+        if (is_string($pg->config) && json_validate($pg->config)) {
+            $config = json_decode($pg->config, true);
+        } else {
+            $config = [];
+        }
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['test_mode'] = $pg->test_mode;
@@ -346,10 +359,10 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getCallbackUrl(\Model_PayGateway $pg, $model = null)
     {
         $p = [
-            'bb_gateway_id' => $pg->id,
+            'gateway_id' => $pg->id,
         ];
         if ($model instanceof \Model_Invoice) {
-            $p['bb_invoice_id'] = $model->id;
+            $p['invoice_id'] = $model->id;
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);
@@ -385,13 +398,13 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getCallbackRedirect(\Model_PayGateway $pg, $model = null)
     {
         $p = [
-            'bb_gateway_id' => $pg->id,
+            'gateway_id' => $pg->id,
         ];
 
         if ($model instanceof \Model_Invoice) {
-            $p['bb_invoice_id'] = $model->id;
-            $p['bb_invoice_hash'] = $model->hash;
-            $p['bb_redirect'] = 1;
+            $p['invoice_id'] = $model->id;
+            $p['invoice_hash'] = $model->hash;
+            $p['redirect'] = 1;
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);

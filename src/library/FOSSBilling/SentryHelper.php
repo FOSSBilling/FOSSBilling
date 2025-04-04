@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -58,6 +58,7 @@ class SentryHelper
         'product',
         'profile',
         'redirect',
+        'security',
         'seo',
         'serviceapikey',
         'servicecustom',
@@ -84,8 +85,6 @@ class SentryHelper
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
     private static array $blacklistedInstances = [
-        '82766452-ff2f-43ff-953a-3cbe3c3973ea' => '2024-07-01', // Low quality modifications causing lots of errors
-        'fd26d5bc-95f4-4c9f-9807-28577f43c811' => '2024-05-01', // Low quality modifications causing lots of errors
     ];
 
     private static string $placeholderFirstHalf = '--replace--this--';
@@ -98,11 +97,11 @@ class SentryHelper
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
-        $httpClient = new class() implements HttpClientInterface {
+        $httpClient = new class implements HttpClientInterface {
             public function sendRequest(Request $request, Options $options): Response
             {
                 $dsn = $options->getDsn();
-                if ($dsn === null) {
+                if (!$dsn instanceof \Sentry\Dsn) {
                     throw new \RuntimeException('The DSN option must be set to use the HttpClient.');
                 }
 
@@ -243,7 +242,7 @@ class SentryHelper
         }
     }
 
-    public static function skipReporting(string $module = null, string $theme = null): bool
+    public static function skipReporting(?string $module = null, ?string $theme = null): bool
     {
         if (!defined('INSTANCE_ID') || !INSTANCE_ID || INSTANCE_ID === 'Unknown' || INSTANCE_ID === 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX') {
             return true;

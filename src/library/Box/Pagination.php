@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -33,7 +34,7 @@ class Box_Pagination implements InjectionAwareInterface
         return $this->per_page;
     }
 
-    public function getSimpleResultSet($q, $values, ?int $per_page = 100, int $page = null)
+    public function getSimpleResultSet($q, $values, ?int $per_page = 100, ?int $page = null)
     {
         if (is_null($page)) {
             $page = $_GET['page'] ?? 1;

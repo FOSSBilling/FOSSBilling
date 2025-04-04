@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -117,8 +118,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function toApiArray(\Model_ServiceMembership $model, $deep = false, $identity = null)
     {
-        $result = $this->di['db']->toArray($model);
-
-        return $result;
+        return $this->di['db']->toArray($model);
     }
 }

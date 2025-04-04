@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -173,7 +174,10 @@ class Model_ProductDomainTable extends Model_ProductTable
         return isset($item['config']['free_transfer']) && $item['config']['free_transfer'];
     }
 
-    public function getPricingArray(Model_Product $product)
+    /**
+     * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
+     */
+    public function getPricingArray(Model_Product $product): array
     {
         $pricing = [];
 
@@ -207,7 +211,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $pricing;
     }
 
-    public function getProductPrice(Model_Product $product, array $config = null)
+    public function getProductPrice(Model_Product $product, ?array $config = null)
     {
         $rtable = $this->di['mod_service']('servicedomain', 'Tld');
         $tld = '';
@@ -244,7 +248,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
-    public function getProductSetupPrice(Model_Product $product, array $config = null)
+    public function getProductSetupPrice(Model_Product $product, ?array $config = null)
     {
         return 0;
     }

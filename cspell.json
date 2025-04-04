@@ -37,7 +37,8 @@
         "jhurliman",
         "jambroseclarke",
         "Egulias",
-        "ICANN"
+        "ICANN",
+        "failovers"
     ],
 
     "ignoreWords": [
@@ -394,7 +395,16 @@
         "intval",
         "thisfiledoesnotexist",
         "exchangerate",
-        "currencydata"
+        "currencydata",
+        "oninput",
+        "evenodd",
+        "Retryable",
+        "FAILONERROR",
+        "releasenotes",
+        "Prins",
+        "iplookup",
+        "DDEV",
+        "CSRF"
     ],
     "ignorePaths": [
         "tests-legacy/**",
@@ -410,7 +420,7 @@
         "phpunit.xml.dist",
         "phpunit-live.xml",
         "bin/**",
-        "src/library/GeoLite2-Country.mmdb",
+        "*.mmdb",
         "cspell.json",
         "package.json",
         "src/library/Registrar/**",
@@ -436,6 +446,7 @@
         ".gitignore",
         "src/.htaccess",
         "phpstan-baseline.neon",
-        "Dockerfile"
+        "Dockerfile",
+        ".ddev/**"
     ]
 }

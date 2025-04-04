@@ -46,20 +46,6 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         ];
     }
 
-    public function getTlds()
-    {
-        return [
-            '.co', '.com', '.net', '.eu',
-            '.org', '.it', '.fr', '.info',
-            '.tel', '.us', '.biz', '.co.uk',
-            '.in', '.mobi', '.asia', '.tv',
-            '.re', '.be', '.cc', '.com.fr',
-            '.com.re', '.org.uk', '.me.uk', '.com.co',
-            '.net.co', '.nom.co', '.co.in', '.net.in',
-            '.org.in', '.firm.in', '.gen.in', '.ind.in',
-        ];
-    }
-
     public function isDomainAvailable(Registrar_Domain $domain)
     {
         $params = [
@@ -78,11 +64,10 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         ];
 
         $result = $this->_process('/Domain/Check', $params);
-    
-        //return true if status is UNAVAILABLE
-        //For not supported TLDs, the status will be 'FAILURE'
+
+        // return true if status is UNAVAILABLE
+        // For not supported TLDs, the status will be 'FAILURE'
         return $result['status'] == 'UNAVAILABLE';
-    
     }
 
     public function modifyNs(Registrar_Domain $domain)
@@ -368,10 +353,8 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
      * Parses data returned by request.
      *
      * @param string $data
-     *
-     * @return array
      */
-    private function _parseResult($data)
+    private function _parseResult($data): array
     {
         $lines = explode("\n", $data);
         $result = [];

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -106,7 +106,7 @@ class Config
 
             try {
                 $filesystem->remove(PATH_CACHE);
-                $filesystem->mkdir(PATH_CACHE, 0755);
+                $filesystem->mkdir(PATH_CACHE, 0o755);
             } catch (\Exception) {
                 // We shouldn't need to halt execution if there was an error when clearing the cache
             }
@@ -130,9 +130,8 @@ class Config
             // Extra spacing between each "primary" key for slightly improved readability
             $output .= PHP_EOL . "    '" . $key . "'" . self::recursivelyIdentAndFormat($value);
         }
-        $output .= '];';
 
-        return $output;
+        return $output . '];';
     }
 
     /**
@@ -178,8 +177,7 @@ class Config
             }
             $result .= $additionalIndent . "'" . $key . "'" . self::recursivelyIdentAndFormat($value, $level + 1);
         }
-        $result .= $indent . '],' . PHP_EOL;
 
-        return $result;
+        return $result . ($indent . '],' . PHP_EOL);
     }
 }

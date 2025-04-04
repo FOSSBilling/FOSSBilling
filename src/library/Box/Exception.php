@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -19,10 +20,10 @@ class Box_Exception extends FOSSBilling\Exception
      * @param int        $code      the exception code
      * @param bool       $protected if the variables in this should be considered protect, if so, hide them from the stack trace
      */
-    public function __construct(string $message, array $variables = null, int $code = 0, bool $protected = false)
+    public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
     {
         // Pass the message to the parent
-        trigger_error('Box_Exception is deprectated and soon to be removed.', E_USER_DEPRECATED);
+        trigger_error('Box_Exception is deprecated and soon to be removed.', E_USER_DEPRECATED);
         parent::__construct($message, $variables, $code, $protected);
     }
 }

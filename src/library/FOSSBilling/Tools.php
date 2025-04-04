@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -17,6 +17,7 @@ use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpClient\RetryableHttpClient;
 
 class Tools
 {
@@ -30,22 +31,6 @@ class Tools
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
-    }
-
-    public function file_put_contents($content, $target, $mode = 'wt')
-    {
-        $fp = @fopen($target, $mode);
-
-        if ($fp) {
-            $bytes = fwrite($fp, $content);
-            fclose($fp);
-
-            return $bytes;
-        } else {
-            $error = error_get_last();
-
-            throw new \RuntimeException(sprintf('Could not write to %s: %s', $target, substr($error['message'], strpos($error['message'], ':') + 2)));
-        }
     }
 
     /**
@@ -206,9 +191,8 @@ class Tools
         $str = strtolower(trim($str));
         $str = preg_replace('/[^a-z0-9-]/', '-', $str);
         $str = preg_replace('/-+/', '-', $str);
-        $str = trim($str, '-');
 
-        return $str;
+        return trim($str, '-');
     }
 
     public function escape($string)
@@ -223,7 +207,7 @@ class Tools
         if ($capitalize_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = fn ($c) => strtoupper($c[1]);
+        $func = fn ($c): string => strtoupper($c[1]);
 
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
@@ -231,23 +215,15 @@ class Tools
     public function from_camel_case($str)
     {
         $str[0] = strtolower($str[0]);
-        $func = fn ($c) => '-' . strtolower($c[1]);
+        $func = fn ($c): string => '-' . strtolower($c[1]);
 
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
-    public function decodeJ($json_str)
-    {
-        if (isset($json_str) && is_string($json_str)) {
-            $config = json_decode($json_str, true);
-
-            return is_array($config) ? $config : [];
-        } else {
-            return [];
-        }
-    }
-
-    public function sortByOneKey(array $array, $key, $asc = true)
+    /**
+     * @return mixed[]
+     */
+    public function sortByOneKey(array $array, $key, $asc = true): array
     {
         $result = [];
 
@@ -281,7 +257,10 @@ class Tools
         return new $class();
     }
 
-    public function getPairsForTableByIds($table, $ids)
+    /**
+     * @return mixed[]
+     */
+    public function getPairsForTableByIds($table, $ids): array
     {
         if (empty($ids)) {
             return [];
@@ -409,26 +388,25 @@ class Tools
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
-    public static function getExternalIP(bool $throw = true, string $bind = null): ?string
+    public static function getExternalIP(bool $throw = true, ?string $bind = null): ?string
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;
-        foreach ($services as $service) {
-            try {
-                $client = HttpClient::create(['bindto' => $bind]);
-                $response = $client->request('GET', $service, [
-                    'timeout' => 2,
-                ]);
 
-                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-                if ($ip) {
-                    return $ip;
-                }
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
-                if ($throw) {
-                    throw $e;
-                }
+        try {
+            $client = new RetryableHttpClient(HttpClient::create(['bindto' => $bind]));
+            $response = $client->request('GET', '', [
+                'base_uri' => $services,
+                'timeout' => 2,
+            ]);
+            $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
+            if ($ip) {
+                return $ip;
+            }
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+            if ($throw) {
+                throw $e;
             }
         }
 

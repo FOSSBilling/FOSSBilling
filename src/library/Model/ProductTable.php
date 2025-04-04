@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -55,7 +56,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
                 '12M' => 'a',
                 '1Y' => 'a',
                 '2Y' => 'bia',
-                '3Y' => 'tria'
+                '3Y' => 'tria',
             };
         } catch (UnhandledMatchError) {
             throw new FOSSBilling\Exception('Unknown period selected ' . $code);
@@ -79,7 +80,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
      *
      * @return float
      */
-    public function getProductSetupPrice(Model_Product $product, array $config = null)
+    public function getProductSetupPrice(Model_Product $product, ?array $config = null)
     {
         $pp = $this->di['db']->load('ProductPayment', $product->product_payment_id);
 
@@ -109,7 +110,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
      *
      * @return float
      */
-    public function getProductPrice(Model_Product $product, array $config = null)
+    public function getProductPrice(Model_Product $product, ?array $config = null)
     {
         $pp = $this->di['db']->load('ProductPayment', $product->product_payment_id);
 

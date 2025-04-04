@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -12,20 +12,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-class Request implements InjectionAwareInterface
+class Request
 {
-    protected ?\Pimple\Container $di = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
     /**
      * Gets most possible client IPv4 Address. This method search in $_SERVER[‘REMOTE_ADDR’] and optionally in $_SERVER[‘HTTP_X_FORWARDED_FOR’].
      *
@@ -71,10 +59,8 @@ class Request implements InjectionAwareInterface
 
     /**
      * Gets attached files as SplFileInfo collection.
-     *
-     * @return array
      */
-    public function getUploadedFiles($onlySuccessful = true)
+    public function getUploadedFiles($onlySuccessful = true): array
     {
         $files = [];
         foreach ($_FILES as $file) {

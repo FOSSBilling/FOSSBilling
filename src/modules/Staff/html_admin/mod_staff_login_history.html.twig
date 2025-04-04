@@ -9,7 +9,7 @@
 {% block content %}
 <div class="card overflow-auto">
     <div class="card-body">
-        <h5>{{ 'Staff members logins history'|trans }}</h5>
+        <h5>{{ 'Staff members login history'|trans }}</h5>
     </div>
 
     {% include 'partial_search.html.twig' %}
@@ -45,7 +45,7 @@
                     {{ event.staff.name }}
                 </a>
             </td>
-            <td>{{ event.ip }}</td>
+            <td>{{ event.ip|iplookup }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
             <td>

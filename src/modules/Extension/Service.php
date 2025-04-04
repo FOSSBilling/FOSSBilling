@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -122,7 +122,10 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function getExtensionsList($filter)
+    /**
+     * @return mixed[]
+     */
+    public function getExtensionsList($filter): array
     {
         $this->removeNotExistingModules();
 
@@ -230,7 +233,10 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    private function _getAvailable()
+    /**
+     * @return string[]
+     */
+    private function _getAvailable(): array
     {
         $mods = [];
         $handle = opendir(PATH_MODS);
@@ -327,9 +333,7 @@ class Service implements InjectionAwareInterface
      */
     public function findExtension($type, $id)
     {
-        $extension = $this->di['db']->findOne('Extension', 'type = ? and name = ? ', [$type, $id]);
-
-        return $extension;
+        return $this->di['db']->findOne('Extension', 'type = ? and name = ? ', [$type, $id]);
     }
 
     public function update(\Model_Extension $model): never
@@ -339,7 +343,7 @@ class Service implements InjectionAwareInterface
         throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
-    public function activate(\Model_Extension $ext)
+    public function activate(\Model_Extension $ext): array
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
@@ -448,7 +452,7 @@ class Service implements InjectionAwareInterface
         $zipPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid()) . '.zip';
 
         // Create a temporary directory to extract the extension
-        mkdir($extractedPath, 0755, true);
+        mkdir($extractedPath, 0o755, true);
 
         // Download the extension archive and save it to the cache folder
         $fileHandler = fopen($zipPath, 'w');
@@ -589,7 +593,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getConfig($ext)
+    public function getConfig($ext): array
     {
         return $this->di['cache']->get("config_$ext", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
@@ -606,7 +610,12 @@ class Service implements InjectionAwareInterface
                 $config = [];
             } else {
                 $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-                $config = $this->di['tools']->decodeJ($config);
+
+                if (is_string($config) && json_validate($config)) {
+                    $config = json_decode($config, true);
+                } else {
+                    $config = [];
+                }
             }
 
             $config['ext'] = $ext;
@@ -650,7 +659,10 @@ class Service implements InjectionAwareInterface
         return Config::getProperty('info.salt');
     }
 
-    public function getCoreAndActiveModules()
+    /**
+     * @return mixed[]
+     */
+    public function getCoreAndActiveModules(): array
     {
         $query = "SELECT name, name
                 FROM extension
@@ -730,7 +742,7 @@ class Service implements InjectionAwareInterface
     }
 
     // Checks if the current user has permission to edit a module's settings
-    public function hasManagePermission(string $module, \Box_App $app = null): void
+    public function hasManagePermission(string $module, ?\Box_App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
 

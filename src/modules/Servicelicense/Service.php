@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -49,10 +50,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return array
-     */
-    public function getLicensePlugins()
+    public function getLicensePlugins(): array
     {
         $dir = __DIR__ . '/Plugin/';
         $files = [];
@@ -347,7 +345,7 @@ class Service implements InjectionAwareInterface
         return date('Y-m-d H:i:s');
     }
 
-    public function toApiArray(\Model_ServiceLicense $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceLicense $model, $deep = false, $identity = null): array
     {
         $result = [
             'license_key' => $model->license_key,
@@ -412,7 +410,7 @@ class Service implements InjectionAwareInterface
         foreach (['ips', 'hosts', 'paths', 'versions'] as $key) {
             if (isset($data[$key])) {
                 $array = explode(PHP_EOL, $data[$key]);
-                $array = array_map('trim', $array);
+                $array = array_map(trim(...), $array);
                 $array = array_diff($array, ['']);
                 $s->{$key} = json_encode($array);
             }

@@ -96,14 +96,8 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->onConsecutiveCalls($modelProductPayment, $modelProductCategory));
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn([]);
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
         $di['mod_service'] = $di->protect(fn () => $serviceMock);
 
         $model->setDi($di);
@@ -305,14 +299,8 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn([]);
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['tools'] = $toolMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);

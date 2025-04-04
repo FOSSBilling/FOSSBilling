@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -48,6 +48,18 @@ class Guest extends \Api_Abstract
         }
 
         return $service->toApiArray($model);
+    }
+
+    /**
+     * Gets the ISO defaults for a given currency code.
+     */
+    public function get_currency_defaults(array $data): array
+    {
+        if (!isset($data['code'])) {
+            throw new \FOSSBilling\InformationException('Currency code not provided');
+        }
+
+        return $this->getService()->getCurrencyDefaults($data['code']);
     }
 
     /**

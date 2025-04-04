@@ -37,6 +37,6 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
         $this->assertIsArray($this->session->get('admin'));
 
         $bool = $this->api_admin->staff_profile_logout($data);
-        $this->assertFalse(isset($this->session->admin));
+        $this->assertObjectNotHasProperty('admin', $this->session);
     }
 }

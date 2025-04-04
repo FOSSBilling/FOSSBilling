@@ -523,6 +523,7 @@
             <thead>
                 <tr>
                     <th>{{ 'Title'|trans }}</th>
+                    <th class="text-center w-10">{{ 'Quantity'|trans }}</th>
                     <th class="text-center w-25">{{ 'Price'|trans }}</th>
                     <th class="w-1">{{ 'Tax'|trans }}</th>
                     <th class="w-1"></th>
@@ -533,6 +534,9 @@
                 <tr>
                     <td>
                         <input class="form-control" type="text" name="items[{{ item.id }}][title]" value="{{ item.title }}">
+                    </td>
+                    <td>
+                        <input class="form-control text-center" type="number" name="items[{{ item.id }}][quantity]" value="{{ item.quantity }}" min="1" max="1000" required>
                     </td>
                     <td>
                         <div class="input-group">
@@ -556,11 +560,14 @@
                 {% endfor %}
                 <tr>
                     <td>
-                        <input class="form-control" type="text" name="new_item[title]">
+                        <input class="form-control" type="text" name="new_item[title]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
+                    </td>
+                    <td>
+                        <input class="form-control text-center" type="number" name="new_item[quantity]" min="1" max="1000">
                     </td>
                     <td class="text-center">
                         <div class="input-group">
-                            <input class="form-control" type="text" name="new_item[price]">
+                            <input class="form-control" type="text" name="new_item[price]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
                             <span class="input-group-text">{{ invoice.currency }}</span>
                         </div>
                     </td>
@@ -572,17 +579,17 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="4" class="currency">
+                    <td colspan="5" class="currency">
                         {{ 'Subtotal'|trans }}: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="4" class="currency">
+                    <td colspan="5" class="currency">
                         {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ mf.currency_format(invoice.tax, invoice.currency) }}
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="4" class="currency">
+                    <td colspan="5" class="currency">
                         {{ 'Total'|trans }}: {{ mf.currency_format(invoice.total, invoice.currency) }}
                     </td>
                 </tr>

@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -225,7 +226,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function invalidateSessions(string $type = null, int $id = null): bool
+    public function invalidateSessions(?string $type = null, ?int $id = null): bool
     {
         if (empty($type)) {
             $auth = new \Box_Authorization($this->di);
@@ -267,9 +268,8 @@ class Service implements InjectionAwareInterface
     private function getSessions(): array
     {
         $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
-        $sessions = $this->di['db']->getAll($query);
 
-        return $sessions;
+        return $this->di['db']->getAll($query);
     }
 
     private function deleteSessionIfMatching(array $session, string $type, int $id): void

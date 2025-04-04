@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -58,7 +58,7 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
-            $blocked_ips = array_map('trim', $blocked_ips);
+            $blocked_ips = array_map(trim(...), $blocked_ips);
             if (in_array($di['request']->getClientAddress(), $blocked_ips)) {
                 throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
             }
@@ -224,7 +224,7 @@ class Service implements InjectionAwareInterface
                 return [];
             }
 
-            return array_filter($database, fn ($domain) => !str_starts_with($domain, '#') && filter_var($domain, FILTER_VALIDATE_DOMAIN));
+            return array_filter($database, fn ($domain): bool => !str_starts_with($domain, '#') && filter_var($domain, FILTER_VALIDATE_DOMAIN));
         });
     }
 }

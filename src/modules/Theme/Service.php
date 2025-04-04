@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -29,9 +29,7 @@ class Service implements InjectionAwareInterface
 
     public function getTheme($name)
     {
-        $theme = new Model\Theme($name);
-
-        return $theme;
+        return new Model\Theme($name);
     }
 
     public function getCurrentThemePreset(Model\Theme $theme)
@@ -196,7 +194,7 @@ class Service implements InjectionAwareInterface
         $settings['current'] = $this->getCurrentThemePreset($theme);
         $data_file = $theme->getPathSettingsDataFile();
 
-        $this->di['tools']->file_put_contents(json_encode($settings), $data_file);
+        file_put_contents($data_file, json_encode($settings));
 
         return true;
     }
@@ -220,7 +218,7 @@ class Service implements InjectionAwareInterface
             $systemService = $this->di['mod_service']('system');
             $data = $systemService->renderString($vars['_tpl'], false, $vars);
 
-            $this->di['tools']->file_put_contents($data, $real_file);
+            file_put_contents($real_file, $data);
         }
 
         return true;
@@ -257,7 +255,10 @@ class Service implements InjectionAwareInterface
         return !empty($theme) ? $theme : 'huraga';
     }
 
-    public function getThemes($client = true)
+    /**
+     * @return mixed[]
+     */
+    public function getThemes($client = true): array
     {
         $list = [];
         $path = $this->getThemesPath();
@@ -311,7 +312,7 @@ class Service implements InjectionAwareInterface
         return PATH_THEMES . DIRECTORY_SEPARATOR;
     }
 
-    private function _loadTheme($theme, $client = true, $mod = null)
+    private function _loadTheme($theme, $client = true, $mod = null): array
     {
         $theme_path = $this->getThemesPath() . $theme;
 

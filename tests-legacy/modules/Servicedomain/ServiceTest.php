@@ -1597,13 +1597,7 @@ class ServiceTest extends \BBTestCase
             'config_param' => 'config_value',
         ];
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('decodeJ')
-            ->willReturn($config);
-
         $di = new \Pimple\Container();
-        $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
         $model = new \Model_TldRegistrar();

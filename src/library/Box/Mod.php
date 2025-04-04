@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -34,6 +34,7 @@ class Box_Mod
         'page',
         'product',
         'profile',
+        'security',
         'servicecustom',
         'servicedomain',
         'servicedownloadable',
@@ -70,7 +71,7 @@ class Box_Mod
         return file_exists(Path::normalize($this->_getModPath() . 'manifest.json'));
     }
 
-    public function getManifest()
+    public function getManifest(): array
     {
         if (!$this->hasManifest()) {
             throw new FOSSBilling\Exception('Module :mod manifest file is missing', [':mod' => $this->mod], 5897);
@@ -251,7 +252,11 @@ class Box_Mod
         $c = $db->findOne('extension_meta', 'extension = :ext AND meta_key = :key', [':ext' => $modName, ':key' => 'config']);
         if ($c) {
             $config = $this->di['crypt']->decrypt($c->meta_value, Config::getProperty('info.salt'));
-            $config = $this->di['tools']->decodeJ($config);
+            if (json_validate($config)) {
+                $config = json_decode($config, true);
+            } else {
+                $config = [];
+            }
         }
 
         return $config;

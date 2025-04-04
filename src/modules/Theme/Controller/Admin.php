@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2022-2024 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -43,7 +44,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $service = $mod->getService();
         $t = $service->getTheme($theme);
 
-        $isNewPreset = isset($_POST['save-current-setting']) ? (bool) $_POST['save-current-setting'] : false;
+        $isNewPreset = isset($_POST['save-current-setting']) && (bool) $_POST['save-current-setting'];
         $preset = $service->getCurrentThemePreset($t);
         if ($isNewPreset && isset($_POST['save-current-setting-preset']) && !empty($_POST['save-current-setting-preset'])) {
             $preset = $_POST['save-current-setting-preset'];

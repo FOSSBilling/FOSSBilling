@@ -57,6 +57,13 @@
                         </div>
                     </div>
                 </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Default invoice note'|trans }}</label>
+                    <div class="col-md-6">
+                        <textarea class="form-control bb-textarea" name="invoice_default_note" rows="5">{{ params.invoice_default_note }}</textarea>
+                        <small class="form-hint">{{ 'Supports markdown format.'|trans }}</small>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <h3 class="card-title">{{ 'Invoicing / Sequential Invoice Numbering'|trans }}</h3>
@@ -85,6 +92,12 @@
                         <input class="form-control" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number }}">
                     </div>
                 </div>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label">{{ 'Invoice number padding length'|trans }}</label>
+                    <div class="col-md-6">
+                        <input class="form-control" type="number" name="invoice_number_padding" value="{{ params.invoice_number_padding|default(5) }}" min="0" max="20">
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <h3 class="card-title">{{ 'Document settings'|trans }}</h3>
@@ -92,7 +105,7 @@
                     <label class="col-md-3 col-form-label">{{ 'Document format'|trans }}</label>
                     <div class="col-md-6">
                         <div class="form-check">
-                            <input class="form-check-input" id="radioLetter" type="radio" name="invoice_document_format" value="Letter"{% if params.invoice_document_format == "letter" %} checked{% endif %}>
+                            <input class="form-check-input" id="radioLetter" type="radio" name="invoice_document_format" value="Letter"{% if params.invoice_document_format == "Letter" %} checked{% endif %}>
                             <label class="form-check-label" for="radioLetter">{{ 'Letter'|trans }}</label>
                         </div>
                         <div class="form-check">
