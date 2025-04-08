@@ -1946,7 +1946,6 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $di['tools'] = $toolsMock;
         $this->service->setDi($di);
@@ -2015,7 +2014,6 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -2050,7 +2048,6 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 

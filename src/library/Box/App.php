@@ -247,7 +247,7 @@ class Box_App
     protected function checkAllowedIPs(): bool
     {
         $allowedIPs = Config::getProperty('maintenance_mode.allowed_ips', []);
-        $visitorIP = $this->di['request']->getClientAddress();
+        $visitorIP = $this->di['request']->getClientIp();
 
         // Check if the visitor is in using of the allowed IPs/networks
         foreach ($allowedIPs as $network) {

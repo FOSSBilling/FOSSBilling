@@ -748,7 +748,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $msg->client_id = $identity->id;
         }
         $msg->content = $content;
-        $msg->ip = $this->di['request']->getClientAddress();
+        $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
         $msgId = $this->di['db']->store($msg);
@@ -792,7 +792,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->admin_id = $identity->id;
         $msg->support_ticket_id = $ticketId;
         $msg->content = $data['content'];
-        $msg->ip = $this->di['request']->getClientAddress();
+        $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
@@ -816,7 +816,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
         $event_params = $data;
-        $event_params['ip'] = $this->di['request']->getClientAddress();
+        $event_params['ip'] = $this->di['request']->getClientIp();
         $altered = $this->di['events_manager']->fire(['event' => 'onBeforeGuestPublicTicketOpen', 'params' => $event_params]);
 
         $status = 'open';
@@ -842,7 +842,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg = $this->di['db']->dispense('SupportPTicketMessage');
         $msg->support_p_ticket_id = $ticket->id;
         $msg->content = $message;
-        $msg->ip = $this->di['request']->getClientAddress();
+        $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
@@ -984,7 +984,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Identity is invalid');
         }
         $msg->content = $content;
-        $msg->ip = $this->di['request']->getClientAddress();
+        $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
 
@@ -1240,7 +1240,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->support_p_ticket_id = $ticketId;
         $msg->admin_id = $identity->id;
         $msg->content = $data['message'];
-        $msg->ip = $this->di['request']->getClientAddress();
+        $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
@@ -1270,7 +1270,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->support_p_ticket_id = $ticket->id;
         $msg->admin_id = $identity->id;
         $msg->content = $content;
-        $msg->ip = $this->di['request']->getClientAddress();
+        $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
         $messageId = $this->di['db']->store($msg);
@@ -1291,7 +1291,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg = $this->di['db']->dispense('SupportPTicketMessage');
         $msg->support_p_ticket_id = $ticket->id;
         $msg->content = $message;
-        $msg->ip = $this->di['request']->getClientAddress();
+        $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);

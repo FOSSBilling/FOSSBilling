@@ -546,10 +546,10 @@ class Service implements InjectionAwareInterface
     public function guestCreateClient(array $data)
     {
         $event_params = $data;
-        $event_params['ip'] = $this->di['request']->getClientAddress();
+        $event_params['ip'] = $this->di['request']->getClientIp();
         $this->di['events_manager']->fire(['event' => 'onBeforeClientSignUp', 'params' => $event_params]);
 
-        $data['ip'] = $this->di['request']->getClientAddress();
+        $data['ip'] = $this->di['request']->getClientIp();
         $data['status'] = \Model_Client::ACTIVE;
         $client = $this->createClient($data);
 
