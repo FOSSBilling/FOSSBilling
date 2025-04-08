@@ -11,8 +11,9 @@
     <tld id="1" tld_registrar_id="1" tld=".com" allow_register="1" allow_transfer="1"/>
     <tld_registrar id="1" name="Custom" registrar="Custom"/>
     <tld_registrar id="2" name="Resellerclub" registrar="Resellerclub"/>
-    <tld_registrar id="3" name="Internetbs" registrar="Internetbs"/>
-    <tld_registrar id="4" name="Email" registrar="Email"/>
+    <tld_registrar id="3" name="Moniker" registrar="Moniker"/>
+    <tld_registrar id="4" name="Internetbs" registrar="Internetbs"/>
+    <tld_registrar id="5" name="Email" registrar="Email"/>
 
     <service_domain id="1" client_id="1" tld_registrar_id="1" sld='mynedomain' tld=".com"/>
     
