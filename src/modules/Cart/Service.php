@@ -237,10 +237,16 @@ class Service implements InjectionAwareInterface
         }
 
         if ($removeAddons) {
+            $config_main = json_decode($cartProduct->config, true);
+            $domain_name = $config_main['domain_name'] ?? '';
             $allCartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
             foreach ((array) $allCartProducts as $cProduct) {
                 $config = json_decode($cProduct->config, true);
                 if (isset($config['parent_id']) && $config['parent_id'] == $cartProduct->product_id) {
+                    $domain_name_addon = $config['domain_name'] ?? '';
+                    if ($domain_name && $domain_name != $domain_name_addon) {
+                        continue; // Delete addons only for the domain name
+                    }
                     $this->di['db']->trash($cProduct);
                     $this->di['logger']->info('Removed product addon from shopping cart');
                 }
