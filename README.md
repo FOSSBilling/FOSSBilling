@@ -26,7 +26,7 @@
 </div>
 
 > [!WARNING]
-> FOSSBilling is under active development but is currently very much beta software. This means that there may be stability or security issues and it is not yet recommended for use in active production environments!
+> FOSSBilling is under active development but is currently very much beta software. This means that there may be stability or security issues, support is on an 'as available' basis, and it is not yet officially recommended for use in active production environments!
 
 > [!IMPORTANT]
 > Please be aware that we are not currently strictly following SemVer, and there may be breaking changes at any time. Be careful and make sure you read [changelogs](https://fossbilling.org/docs/changelog) before updates!
