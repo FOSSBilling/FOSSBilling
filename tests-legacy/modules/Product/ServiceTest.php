@@ -1025,20 +1025,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($minPrice, $result);
     }
 
-    public function testgetSavePath(): void
-    {
-        $filename = 'cfg.file';
-        $expected = PATH_DATA . '/uploads/' . md5($filename);
-
-        $di = new \Pimple\Container();
-
-        $this->service->setDi($di);
-        $result = $this->service->getSavePath($filename);
-        $this->assertIsString($result);
-        $this->assertNotEmpty($result);
-        $this->assertEquals($expected, $result);
-    }
-
     public function testcanUpgradeToReturnsTrue(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)

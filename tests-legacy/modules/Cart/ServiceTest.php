@@ -2,6 +2,8 @@
 
 namespace Box\Tests\Mod\Cart;
 
+use Symfony\Component\HttpFoundation\Request;
+
 class ServiceTest extends \BBTestCase
 {
     /**
@@ -659,11 +661,6 @@ class ServiceTest extends \BBTestCase
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
-        $requestMock->expects($this->atLeastOnce())
-            ->method('getClientAddress')
-            ->willReturn('1.1.1.1');
-
         $invoice = new \Model_Invoice();
         $invoice->loadBean(new \DummyBean());
         $invoice->hash = sha1('str');
@@ -683,9 +680,9 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $requestMock;
-        $serviceMock->setDi($di);
+        $di['request'] = new Request();
 
+        $serviceMock->setDi($di);
         $result = $serviceMock->checkoutCart($cart, $client);
 
         $this->assertIsArray($result);

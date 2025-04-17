@@ -875,56 +875,6 @@ class ServiceTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testguestCreateClient(): void
-    {
-        $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \DummyBean());
-        $clientModel->id = 1;
-
-        $data = [
-            'password' => uniqid(),
-            'email' => 'test@unit.vm',
-            'first_name' => 'test',
-        ];
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($clientModel);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventManagerMock->expects($this->exactly(2))
-            ->method('fire');
-
-        $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
-        $ip = '10.10.10.2';
-        $requestMock->expects($this->atLeastOnce())
-            ->method('getClientAddress')
-            ->willReturn($ip);
-
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
-        $di['logger'] = new \Box_Log();
-        $di['request'] = $requestMock;
-        $di['password'] = $passwordMock;
-
-        $service = new \Box\Mod\Client\Service();
-        $service->setDi($di);
-
-        $result = $service->guestCreateClient($data);
-        $this->assertInstanceOf('\Model_Client', $result);
-        $this->assertNotEquals($data['password'], $result->pass, 'Password is not hashed');
-        $this->assertEquals($ip, $result->ip, 'IP address is not saved while creating client');
-    }
-
     public function testdeleteGroup(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();

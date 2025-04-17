@@ -32,8 +32,9 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
-        if (!isset($_FILES['file_data'])) {
-            throw new \FOSSBilling\Exception('File was not uploaded');
+        $request = $this->di['request'];
+        if (!$request->files->has('file_data')) {
+            throw new \FOSSBilling\Exception('File was not uploaded.');
         }
 
         $service = $this->getService();

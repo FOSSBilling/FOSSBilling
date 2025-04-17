@@ -19,6 +19,7 @@ use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
@@ -224,21 +225,24 @@ $di['session'] = function () use ($di) {
 };
 
 /*
+ * Creates a new request object based on the current request.
  *
  * @param void
  *
- * @return \FOSSBilling\Request
+ * @link https://symfony.com/doc/current/components/http_foundation.html
+ *
+ * @return Symfony\Component\HttpFoundation\Request
  */
-$di['request'] = fn (): FOSSBilling\Request => new FOSSBilling\Request();
+$di['request'] = fn (): Request => Request::createFromGlobals();
 
 /*
  * @param void
  *
+ * @link https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+ *
  * @return FilesystemAdapter
  */
-$di['cache'] = fn (): FilesystemAdapter =>
-// Reference: https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
-new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+$di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
 /*
  *

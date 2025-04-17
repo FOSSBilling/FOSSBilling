@@ -102,7 +102,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $transaction->invoice_id = $data['invoice_id'] ?? null;
         $transaction->txn_id = $data['txn_id'] ?? null;
         $transaction->status = 'received';
-        $transaction->ip = $this->di['request']->getClientAddress();
+        $transaction->ip = $this->di['request']->getClientIp();
         $transaction->ipn = json_encode($ipn);
         $transaction->note = $data['note'] ?? null;
         $transaction->created_at = date('Y-m-d H:i:s');

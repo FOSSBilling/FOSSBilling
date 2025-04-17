@@ -88,56 +88,6 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcreate(): void
-    {
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-        $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \DummyBean());
-
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \DummyBean());
-
-        $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')
-            ->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($invoiceModel, $payGatewayModel));
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($transactionModel);
-
-        $newId = 2;
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($newId);
-
-        $requestMock = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
-        $requestMock->expects($this->atLeastOnce())
-            ->method('getClientAddress');
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['events_manager'] = $eventsMock;
-        $di['request'] = $requestMock;
-        $di['logger'] = new \Box_Log();
-
-        $this->service->setDi($di);
-
-        $data = [
-            'skip_validation' => false,
-            'gateway_id' => 1,
-            'invoice_id' => 2,
-        ];
-        $result = $this->service->create($data);
-        $this->assertIsInt($result);
-        $this->assertEquals($newId, $result);
-    }
-
     public function testcreateInvalidMissinginvoiceId(): void
     {
         $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();

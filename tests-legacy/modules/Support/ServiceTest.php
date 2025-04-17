@@ -2,6 +2,8 @@
 
 namespace Box\Tests\Mod\Support;
 
+use Symfony\Component\HttpFoundation\Request;
+
 class ServiceTest extends \BBTestCase
 {
     /**
@@ -1312,7 +1314,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di['request'] = Request::createFromGlobals();
         $di['events_manager'] = $eventMock;
         $this->service->setDi($di);
 
@@ -1344,7 +1346,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di['request'] = Request::createFromGlobals();
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1524,7 +1526,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di['request'] = Request::createFromGlobals();
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -1946,9 +1948,9 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $di['tools'] = $toolsMock;
+        $di['request'] = Request::createFromGlobals();
         $this->service->setDi($di);
 
         $admin = new \Model_Admin();
@@ -2015,8 +2017,8 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
+        $di['request'] = Request::createFromGlobals();
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
@@ -2050,8 +2052,8 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
+        $di['request'] = Request::createFromGlobals();
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();

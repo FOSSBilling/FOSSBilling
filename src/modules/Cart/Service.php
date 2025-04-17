@@ -465,7 +465,7 @@ class Service implements InjectionAwareInterface
             [
                 'event' => 'onBeforeClientCheckout',
                 'params' => [
-                    'ip' => $this->di['request']->getClientAddress(),
+                    'ip' => $this->di['request']->getClientIp(),
                     'client_id' => $client->id,
                     'cart_id' => $cart->id,
                 ],
@@ -482,7 +482,7 @@ class Service implements InjectionAwareInterface
             [
                 'event' => 'onAfterClientOrderCreate',
                 'params' => [
-                    'ip' => $this->di['request']->getClientAddress(),
+                    'ip' => $this->di['request']->getClientIp(),
                     'client_id' => $client->id,
                     'id' => $order->id,
                 ],

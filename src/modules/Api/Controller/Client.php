@@ -299,7 +299,7 @@ class Client implements InjectionAwareInterface
 
     private function _getIp()
     {
-        return $this->di['request']->getClientAddress();
+        return $this->di['request']->getClientIp();
     }
 
     /**
