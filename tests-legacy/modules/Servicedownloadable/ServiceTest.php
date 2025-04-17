@@ -2,8 +2,6 @@
 
 namespace Box\Mod\Servicedownloadable;
 
-use Symfony\Component\HttpFoundation\Request;
-
 class ServiceTest extends \BBTestCase
 {
     /**
