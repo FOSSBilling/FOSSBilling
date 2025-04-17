@@ -72,7 +72,7 @@ class Guest extends \Api_Abstract
         $config = $this->getMod()->getConfig();
 
         // check ip
-        if (isset($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
+        if (!empty($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
             $allowed_ips = explode(PHP_EOL, $config['allowed_ips']);
             if ($allowed_ips) {
                 $allowed_ips = array_map(trim(...), $allowed_ips);
