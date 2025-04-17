@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
         ];
 
         $di = new \Pimple\Container();
-        $di['request'] = Request::createFromGlobals();;
+        $di['request'] = Request::createFromGlobals();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
             if ($modName == 'Spamchecker') {
                 return $modConfig;
