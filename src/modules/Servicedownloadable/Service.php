@@ -13,10 +13,10 @@ namespace Box\Mod\Servicedownloadable;
 
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
-use Symfony\Component\HttpFoundation\HeaderUtils;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
@@ -274,7 +274,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Increase download hit count.
-        $serviceDownloadable->downloads++;
+        ++$serviceDownloadable->downloads;
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($serviceDownloadable);
 
