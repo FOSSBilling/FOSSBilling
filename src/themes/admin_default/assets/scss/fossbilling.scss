@@ -64,6 +64,15 @@ body {
     height: 1.6rem
 }
 
+@media (min-width: 991px) {
+    .sticky-nav {
+        position: sticky;
+        top: 0;
+        overflow: hidden;
+        z-index: 99;
+    }
+}
+
 @media (max-width: 768px) {
     .ts-wrapper.js-language-selector {
         width: 180px
