@@ -128,16 +128,6 @@ class Payment_Invoice_Item
     }
 
     /**
-     * Get the tax amount for the item.
-     *
-     * @return float the tax amount for the item
-     */
-    public function getTax()
-    {
-        return $this->tax;
-    }
-
-    /**
      * Set the quantity of the item.
      *
      * @param int $qty the quantity of the item
@@ -169,15 +159,5 @@ class Payment_Invoice_Item
     public function getTotal()
     {
         return $this->getQuantity() * $this->getPrice();
-    }
-
-    /**
-     * Return the total price for this item including tax.
-     *
-     * @return float the total price for this item including tax
-     */
-    public function getTotalWithTax()
-    {
-        return $this->getTotal() + $this->getTax();
     }
 }

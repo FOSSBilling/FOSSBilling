@@ -164,20 +164,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return floatval($item->price * $item->quantity);
     }
 
-    public function getTax(\Model_InvoiceItem $item)
-    {
-        if (!$item->taxed) {
-            return 0;
-        }
-
-        $rate = $this->di['db']->getCell('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->invoice_id]);
-        if ($rate <= 0) {
-            return 0;
-        }
-
-        return round($item->price * $rate / 100, 2);
-    }
-
     public function update(\Model_InvoiceItem $item, array $data)
     {
         $item->title = $data['title'] ?? $item->title;
@@ -230,7 +216,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function creditInvoiceItem(\Model_InvoiceItem $item)
     {
-        $total = $this->getTotalWithTax($item);
+        $total = $this->getTotal($item);
 
         $invoice = $this->di['db']->getExistingModelById('Invoice', $item->invoice_id, 'Invoice not found');
         $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
@@ -247,11 +233,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->currency, $item->title));
-    }
-
-    public function getTotalWithTax(\Model_InvoiceItem $item)
-    {
-        return $this->getTotal($item) + $this->getTax($item) * $item->quantity;
     }
 
     public function getOrderId(\Model_InvoiceItem $item)

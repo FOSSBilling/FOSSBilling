@@ -198,7 +198,7 @@ class ServiceTaxTest extends \BBTestCase
 
         $invoiceItemService = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)->getMock();
         $invoiceItemService->expects($this->atLeastOnce())
-            ->method('getTax')
+            ->method('getTotal')
             ->willReturn(21);
 
         $di = new \Pimple\Container();
@@ -207,7 +207,7 @@ class ServiceTaxTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getTax($invoiceModel);
-        $this->assertIsInt($result);
+        $this->assertIsFloat($result);
     }
 
     public function testdelete(): void
