@@ -71,11 +71,16 @@ class ServiceTax implements InjectionAwareInterface
         $tax = 0;
         $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+
+        $total = 0;
         foreach ($invoiceItems as $item) {
-            $tax += $invoiceItemService->getTax($item) * $item->quantity;
+            $total += $invoiceItemService->getTotal($item);
         }
 
-        return $tax;
+        // Calculate tax on the total amount, rather than per line item.
+        $tax = $total * $invoice->taxrate / 100;
+
+        return round($tax, 2);
     }
 
     public function delete(\Model_Tax $model)

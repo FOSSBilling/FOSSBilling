@@ -8,8 +8,10 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Payment_Invoice
+class Payment_Invoice implements FOSSBilling\InjectionAwareInterface
 {
+    protected ?Pimple\Container $di = null;
+
     private $id; // FOSSBilling Invoice Id
     private $number; // Invoice number for accounting
     private string $currency = 'USD';
@@ -17,6 +19,16 @@ class Payment_Invoice
     private ?Payment_Invoice_Subscription $subscription = null;
     private ?Payment_Invoice_Buyer $buyer = null;
     private string $title = 'Payment for invoice';
+
+    public function setDi(Pimple\Container $di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?Pimple\Container
+    {
+        return $this->di;
+    }
 
     /**
      * Set the invoice ID.
@@ -222,11 +234,11 @@ class Payment_Invoice
      */
     public function getTax()
     {
-        $tax = 0;
-        foreach ($this->items as $item) {
-            $tax += $item->getTax() * $item->getQuantity();
-        }
+        $invoice = $this->di['db']->find('Invoice', 'invoice_id = ? ', [$this->items[0]->invoice_id]);
 
-        return $tax;
+        // Calculate tax on the total amount, rather than per line item.
+        $tax = $this->getTotal() * $invoice->taxrate / 100;
+
+        return round($tax, 2);
     }
 }
