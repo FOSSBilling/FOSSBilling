@@ -68,7 +68,7 @@ body {
     .sticky-nav {
         position: sticky;
         top: 0;
-        overflow: hidden;
+        overflow: visible;
         z-index: 99;
     }
 }
