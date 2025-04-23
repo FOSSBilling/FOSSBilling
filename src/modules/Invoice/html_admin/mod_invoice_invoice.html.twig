@@ -85,12 +85,12 @@
                     {% if invoice.tax %}
                     <tr>
                         <td class="text-end">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                        <td>{{ mf.currency_format(invoice.tax, invoice.currency) }}</td>
+                        <td>{{ invoice.tax | money(invoice.currency) }}</td>
                     </tr>
                     {% endif %}
                     <tr>
                         <td class="text-end">{{ 'Total'|trans }}:</td>
-                        <td>{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
+                        <td>{{ invoice.total | money(invoice.currency) }}</td>
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Currency'|trans }}:</td>
@@ -580,17 +580,17 @@
             <tfoot>
                 <tr>
                     <td colspan="5" class="currency">
-                        {{ 'Subtotal'|trans }}: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
+                        {{ 'Subtotal'|trans }}: {{ invoice.subtotal | money(invoice.currency) }}
                     </td>
                 </tr>
                 <tr>
                     <td colspan="5" class="currency">
-                        {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ mf.currency_format(invoice.tax, invoice.currency) }}
+                        {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ invoice.tax | money(invoice.currency) }}
                     </td>
                 </tr>
                 <tr>
                     <td colspan="5" class="currency">
-                        {{ 'Total'|trans }}: {{ mf.currency_format(invoice.total, invoice.currency) }}
+                        {{ 'Total'|trans }}: {{ invoice.total | money(invoice.currency) }}
                     </td>
                 </tr>
             </tfoot>
@@ -689,7 +689,7 @@
                     <td>{{ tx.txn_id }}</td>
                     <td>{{ tx.type }}</td>
                     <td>{{ tx.gateway }}</td>
-                    <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
+                    <td>{{ tx.amount | money(tx.currency) }}</td>
                     <td>{{ mf.status_name(tx.status) }}</td>
                     <td>{{ tx.created_at|format_datetime }}</td>
                     <td>
