@@ -49,6 +49,7 @@ class Reader
     /**
      * Handles updating the built-in, default databases.
      * The databases will only be updated if the files do not exist, or if they are over 7 days old.
+     * This will only update 1 database per call as it's intended to be run in the background and have the work spread out VS all at once. 
      *
      * @throws IOException
      */
@@ -59,20 +60,18 @@ class Reader
             self::getAsnDatabase() => 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/pddl-asn-both.mmdb',
         ];
 
-        $updated = false;
-
         foreach ($databases as $path => $url) {
             if (self::shouldUpdate($path)) {
                 try {
                     self::downloadDb($path, $url);
-                    $updated = true;
+                    return true;
                 } catch (\Exception $e) {
                     error_log('There was an error while updating the IP address database: ' . $e->getMessage());
                 }
             }
         }
 
-        return $updated;
+        return false;
     }
 
     /**
