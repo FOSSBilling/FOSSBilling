@@ -17,6 +17,13 @@ use FOSSBilling\StandardsHelper;
 use MaxMind\Db\Reader as MaxMindReader;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class Reader
 {
@@ -37,6 +44,34 @@ class Reader
     public static function getAsnDatabase(): string
     {
         return PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb';
+    }
+
+    /**
+     * Handles updating the built-in, default databases.
+     * The databases will only be updated if the files do not exist, or if they are over 7 days old.
+     * This will only update 1 database per call as it's intended to be run in the background and have the work spread out VS all at once. 
+     *
+     * @throws IOException
+     */
+    public static function updateDefaultDatabases(): bool
+    {
+        $databases = [
+            self::getCountryDatabase() => 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/cc0-both-country.mmdb',
+            self::getAsnDatabase() => 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/pddl-asn-both.mmdb',
+        ];
+
+        foreach ($databases as $path => $url) {
+            if (self::shouldUpdate($path)) {
+                try {
+                    self::downloadDb($path, $url);
+                    return true;
+                } catch (\Exception $e) {
+                    error_log('There was an error while updating the IP address database: ' . $e->getMessage());
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -110,5 +145,46 @@ class Reader
         $record = $this->get($ipAddress);
 
         return new ASN($record);
+    }
+
+    /**
+     * Checks if a database should be updated.
+     *
+     * @param string $path   The path to the database
+     * @param int    $maxAge The maximum age in seconds. The default is 7 days.
+     *
+     * @throws IOException
+     */
+    private static function shouldUpdate(string $path, int $maxAge = 604800): bool
+    {
+        $fs = new Filesystem();
+        if (!$fs->exists($path)) {
+            return true;
+        }
+
+        $dbAge = time() - filemtime($path);
+
+        return $dbAge >= $maxAge;
+    }
+
+    /**
+     * Downloads a database file and saves it to the provided location.
+     *
+     * @return void
+     *
+     * @throws TransportExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ClientExceptionInterface
+     * @throws ServerExceptionInterface
+     */
+    private static function downloadDb(string $path, string $url)
+    {
+        $httpClient = HttpClient::create();
+        $response = $httpClient->request('GET', $url);
+        if ($response->getStatusCode() === 200) {
+            file_put_contents($path, $response->getContent());
+        } else {
+            throw new \Exception('Got a ' . $response->getStatusCode() . ' status code when attempting to download ' . $url);
+        }
     }
 }

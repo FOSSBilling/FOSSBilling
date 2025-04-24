@@ -13,6 +13,7 @@ namespace Box\Mod\System;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Version;
 use Pimple\Container;
@@ -1004,6 +1005,7 @@ class Service
     public static function onBeforeAdminCronRun(\Box_Event $event)
     {
         $di = $event->getDi();
+        Reader::updateDefaultDatabases();
 
         try {
             // Prune the classmap to remove classes which are no longer on the disk or that have moved.
