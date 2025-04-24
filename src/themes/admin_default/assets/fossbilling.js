@@ -6,7 +6,7 @@ import $ from 'jquery';
 import './js/ui/modals';
 import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
-import '@tabler/core/src/js/tabler';
+import { tabler, bootstrap } from '@tabler/core/js/tabler.js';
 import './js/tomselect'
 import './js/datepicker'
 import ApexCharts from 'apexcharts';
@@ -37,12 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Enable Bootstrap Tooltip
    */
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl, {
-      'trigger': 'hover'
-    })
-  });
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
 
   /**
