@@ -142,7 +142,7 @@
                             </div>
                             <div class="mb-3 row" id="check_ip"{% if not params.check_ip %} style="display:none;"{% endif %}>
                                 <div class="alert alert-danger" role="alert">
-                                    {{ 'An incorrect configuration of allowed IPs can lead to a complete lockout of the administrator panel. Only use when you have static IP addresses.'|trans }}
+                                    {{ 'WARNING! Incorrect configuration of allowed IPs can lead to a complete lockout of the administrator panel. Only use when you have static IP addresses.'|trans }}
                                 </div>                                  
                                 <label class="col-md-3 col-form-label">{{ 'Allowed IPs. One per line'|trans }}</label>
                                 <div class="col-md-6">
