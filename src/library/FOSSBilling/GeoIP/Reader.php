@@ -49,7 +49,7 @@ class Reader
     /**
      * Handles updating the built-in, default databases.
      * The databases will only be updated if the files do not exist, or if they are over 7 days old.
-     * This will only update 1 database per call as it's intended to be run in the background and have the work spread out VS all at once. 
+     * This will only update 1 database per call as it's intended to be run in the background and have the work spread out VS all at once.
      *
      * @throws IOException
      */
@@ -64,6 +64,7 @@ class Reader
             if (self::shouldUpdate($path)) {
                 try {
                     self::downloadDb($path, $url);
+
                     return true;
                 } catch (\Exception $e) {
                     error_log('There was an error while updating the IP address database: ' . $e->getMessage());
