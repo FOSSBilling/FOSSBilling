@@ -183,16 +183,17 @@
                     <p id="time-note" class="float-right-margin" hidden="true">Installation may take up to 30 seconds depending on the speed of your system.</p>
                 </div>
         </form>
-
-            <!-- Below is the "learn more" modal for error and performance reporting -->
-            <dialog id="learn-reporting">
-                <article>
-                    <a href="#close"
-                        aria-label="Close"
-                        class="close"
-                        data-target="learn-reporting"
-                        onClick="toggleModal(event)">
-                    </a>
+        {% endif %}
+        
+        <!-- Below is the "learn more" modal for error and performance reporting -->
+        <dialog id="learn-reporting">
+            <article>
+                <a href="#close"
+                    aria-label="Close"
+                    class="close"
+                    data-target="learn-reporting"
+                    onClick="toggleModal(event)">
+                </a>
                 <h3>Error reporting</h3>
                 <p>FOSSBilling optionally includes automated error reporting which allows us to improve the software and offer better technical support.</p>
                 <p>Reports are collected using <a href="https://sentry.io/welcome/" target='_blank' data-tooltip="Opens in a new tab.">Sentry.io</a> and data is <a href="https://sentry.io/security/" target='_blank' data-tooltip="Opens in a new tab.">retained securely</a> for up to 90 days.</p>
@@ -206,9 +207,8 @@
                         Got it
                     </a>
                 </footer>
-                </article>
-            </dialog>
-        {% endif %}
+            </article>
+        </dialog>
     {% endif %}
 {% endblock %}
 

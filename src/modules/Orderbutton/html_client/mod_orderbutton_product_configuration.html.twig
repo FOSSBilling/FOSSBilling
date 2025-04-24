@@ -52,6 +52,18 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            {# TODO: This does not seem to be implemented on the back-end
+                            {% if product.allow_quantity_select %}
+                            <div class="row mt-3"> 
+                                <div class="col-12 col-md-4 col-xl-3"> 
+                                    <span>{{ 'Quantity'|trans }}</span> 
+                                </div> 
+                                <div class="col"> 
+                                    <input type="number" name="quantity" value="1" min="1" class="form-control w-50" style="max-width: 120px; text-align: center;"> 
+                                </div> 
+                            </div> 
+                            {% endif %} 
+                            #}
                         </div>
                     {% endset %}
 
