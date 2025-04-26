@@ -55,7 +55,7 @@ At this moment the Steering Committee includes six members - identified here by 
 * [evrifaessa](https://github.com/evrifaessa)
 * [HunterNyan](https://github.com/HunterNyan)
 * [jaapmarcus](https://github.com/jaapmarcus)
-* [John-S4](https://github.com/John-S4)
+* [j-a-pope](https://github.com/j-a-pope)
 
 Members of the steering committee may recommend and appoint new members from the community at any time. A nomination for a new member will result in a discussion and a vote by the existing committee members. 
 
