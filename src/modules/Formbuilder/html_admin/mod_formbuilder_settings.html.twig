@@ -218,52 +218,72 @@
 {% endblock %}
 
 {% block js %}
-    <script type="text/javascript">
-        $('.new-field').on('click', function () {
-            const p = $(this).closest('.copy-field').prev();
-            p.clone().insertAfter(p);
-            p.next().find('input').val("");
-            return false;
+    <script>
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.new-field') || event.target.closest('.new-field')) {
+                const button = event.target.closest('.new-field');
+                const parentElement = button.closest('.copy-field');
+                const previousElement = parentElement.previousElementSibling;
+
+                // Clone the previous element and insert after it.
+                const clone = previousElement.cloneNode(true);
+                previousElement.after(clone);
+
+                // Clear any input in the clone.
+                const inputs = clone.querySelectorAll('input');
+                inputs.forEach(input => input.value = '');
+
+                event.preventDefault();
+            }
         });
 
-        $('.remove-item').on('click', function () {
-            const fid = $(this).attr('data-field-id');
-            const rm = $(this);
-            Modals.create({
-                type: 'danger',
-                title: '{{ "Delete field?"|trans }}',
-                content: '{{ "Are you sure you want to delete this custom field?"|trans }}',
-                confirmButton: '{{ "Delete"|trans }}',
-                confirmCallback: function () {
-                    API.admin.post('formbuilder/delete_field', {id: fid}, function () {
-                        $(rm).parents('.wrap-field').slideUp("normal", function () {
-                            $(rm).remove();
-                        });
-                    });
-                }
-            });
-            return false;
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.remove-item') || event.target.closest('.remove-item')) {
+                const button = event.target.closest('.remove-item');
+                const fid = button.getAttribute('data-field-id');
+                const wrapField = button.closest('.wrap-field');
+
+                Modals.create({
+                    type: 'danger',
+                    title: 'Delete field?',
+                    content: 'Are you sure you want to delete this custom field?',
+                    confirmButton: 'Delete',
+                    confirmCallback: () => {
+                        API.admin.post('formbuilder/delete_field', { id: fid },
+                            () => {
+                                wrapField.remove();
+                            });
+                    }
+                });
+
+                event.preventDefault();
+            }
         });
 
-        $('.remove-form').on('click', function () {
-            const fid = $(this).data('form-id');
-            console.log(fid)
-            const rm = $(this);
-            Modals.create({
-                type: 'danger',
-                title: '{{ "Delete Form?"|trans }}',
-                content: '{{ "Are you sure you want to delete this form?"|trans }}',
-                confirmButton: '{{ "Delete"|trans }}',
-                confirmCallback: function () {
-                    API.admin.post('formbuilder/delete_form', {id: fid}, function () {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}");
-                    });
-                }
-            });
-            return false;
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.remove-form') || event.target.closest('.remove-form')) {
+                const button = event.target.closest('.remove-form');
+                const fid = button.getAttribute('data-form-id');
+                console.log(fid);
+
+                Modals.create({
+                    type: 'danger',
+                    title: 'Delete Form?',
+                    content: 'Are you sure you want to delete this form?',
+                    confirmButton: 'Delete',
+                    confirmCallback: () => {
+                        API.admin.post('formbuilder/delete_form', { id: fid },
+                            () => {
+                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}";
+                            });
+                    }
+                });
+
+                event.preventDefault();
+            }
         });
 
-        $('#new-form').on('click', function () {
+        document.getElementById('new-form').addEventListener('click', function(event) {
             Modals.create({
                 type: 'prompt',
                 title: '{{ "New form"|trans }}',
@@ -278,27 +298,31 @@
                     });
                 }
             });
-            return false;
+
+            event.preventDefault();
         });
 
-        $('.copy-form').on('click', function () {
-            const fid = $(this).attr('data-form-id');
-            Modals.create({
-                type: 'prompt',
-                title: '{{ "Copy form"|trans }}',
-                label: '{{ "Give your duplicate form a title"|trans }}',
-                value: '{{ "My duplicate form"|trans }}',
-                promptConfirmButton: '{{ "Copy"|trans }}',
-                promptConfirmCallback: function (title) {
-                    API.admin.post('formbuilder/copy_form', {
-                        name: title,
-                        form_id: fid
-                    }, function (id) {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
-                    });
-                }
-            });
-            return false;
-        })
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.copy-form') || event.target.closest('.copy-form')) {
+                const button = event.target.closest('.copy-form');
+                const fid = button.getAttribute('data-form-id');
+
+                Modals.create({
+                    type: 'prompt',
+                    title: 'Copy Form',
+                    label: 'Give your duplicate form a title',
+                    value: 'My duplicate form',
+                    promptConfirmButton: 'Copy',
+                    promptConfirmCallback: (title) => {
+                        API.admin.post('formbuilder/copy_form', { name: title, form_id: fid, CSRFToken: "{{ CSRFToken }}" },
+                            (id) => {
+                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id;
+                            });
+                    }
+                });
+
+                event.preventDefault();
+            }
+        });
     </script>
 {% endblock %}

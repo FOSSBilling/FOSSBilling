@@ -67,68 +67,89 @@
 </div>
 
 {% set currency = guest.cart_get_currency %}
-<script type="text/javascript">
+<script>
     function selectDomainAction(el) {
-        $('.domain_action').hide();
-        $('#' + $(el).val()).show();
+        document.querySelectorAll('.domain_action').forEach(function(element) {
+            element.style.display = 'none';
+        });
+        document.getElementById(el.value).style.display = 'block';
     }
 
-    $(function () {
-        $('#domain-check').on('click', function (event) {
-            var sld = $('input[name="domain[register_sld]"]').val();
-            var tld = $('select[name="domain[register_tld]"]').val();
-            var domain = sld + tld;
-            bb.post(
-                'guest/servicedomain/check',
-                {sld: sld, tld: tld, CSRFToken: "{{ CSRFToken }}"},
-                function (result) {
-                    setRegistrationPricing(tld);
-                    $('#domain-config').fadeIn('slow');
-                }
-            );
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('domain-check').addEventListener('click', function(event) {
+            event.preventDefault();
+            var sld = document.querySelector('input[name="domain[register_sld]"]').value;
+            var tld = document.querySelector('select[name="domain[register_tld]"]').value;
 
-            return false;
+            API.guest.post('servicedomain/check', { sld: sld, tld: tld, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    setRegistrationPricing(tld);
+                    document.getElementById('domain-config').style.display = 'block';
+                });
         });
 
-        if ($(".addons").length && $(".addons").is(':hidden')) {
-            $('#order-button').one('click', function () {
-                $(this).slideUp('fast');
-                $('.addons').slideDown('fast');
-
-                return false;
-            });
-        }
-
-        $('#period-selector').on('change', function () {
-            $('.period').hide();
-            $('.period.' + $(this).val()).show();
-        }).trigger('change');
-
-        $('.addon-period-selector').on('change', function () {
-            var r = $(this).attr('rel');
-            $('#' + r + ' span').hide();
-            $('#' + r + ' span.' + $(this).val()).fadeIn();
-        }).trigger('change');
-
         function setRegistrationPricing(tld) {
-            bb.post(
-                'guest/servicedomain/pricing',
-                {tld: tld, CSRFToken: "{{ CSRFToken }}"},
-                function (result) {
-                    var s = $("select[name='domain[register_years]']");
-
+            API.guest.post('servicedomain/pricing', { tld: tld, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    const s = document.querySelector("select[name='domain[register_years]']");
                     s.find('option').remove();
 
                     for (i = 1; i < 6; i++) {
-                        var price = bb.currency(result.price_registration, {{ currency.conversion_rate }}, "{{ currency.code }}", i);
+                        let price = parseFloat(result.price_registration) * parseFloat( {{ currency.conversion_rate }});
+                        price = price * i;
+                        price = price.toFixed(2) + ' ' + "{{ currency.code }}";
+
                         if (i === 1) {
                             s.append(new Option(i + "{{ ' year @ '|trans }}" + price, i));
                         } else {
                             s.append(new Option(i + "{{ ' years @ '|trans }}" + price, i));
                         }
                     }
-                }
-            );
+                });
         }
+
+        const addons = document.querySelector('.addons');
+        const orderButton = document.getElementById('order-button');
+
+        if (addons && getComputedStyle(addons).display === 'none') {
+            orderButton.addEventListener('click', function handler(event) {
+                event.preventDefault();
+                orderButton.style.display = 'none';
+                addons.style.display = 'block';
+                orderButton.removeEventListener('click', handler);
+                return false;
+            });
+        }
+
+        document.getElementById('period-selector').addEventListener('change', function() {
+            let periodValue = this.value;
+            document.querySelectorAll('.period').forEach(function(element) {
+                element.style.display = 'none';
+            });
+            document.querySelectorAll('.period.' + periodValue).forEach(function(element) {
+                element.style.display = '';
+            });
+        });
+
+        document.getElementById('period-selector').dispatchEvent(new Event('change'));
+
+        document.querySelectorAll('.addon-period-selector').forEach(function(selector) {
+            function updateDisplay() {
+                const rel = selector.getAttribute('rel');
+                const value = selector.value;
+                const container = document.getElementById(rel);
+                if (container) {
+                    container.querySelectorAll('span').forEach(span => {
+                        span.style.display = 'none';
+                    });
+                    container.querySelectorAll('span.' + value).forEach(span => {
+                        span.style.display = '';
+                    });
+                }
+            }
+
+            selector.addEventListener('change', updateDisplay);
+            updateDisplay();
+        });
     });
 </script>

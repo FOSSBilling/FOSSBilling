@@ -169,49 +169,47 @@
 </div>
 
 <script>
-    var free_domain_radios = $('input:radio[name="config[free_domain]"]');
-    var freeTldsRow = $('.free-tlds-row');
-    var freePerdsRow = $('.free-periods-row');
+    const freeDomainRadios = document.querySelectorAll('input[type="radio"][name="config[free_domain]"]');
+    const freeTldsRow = document.querySelector('.free-tlds-row');
+    const freePerdsRow = document.querySelector('.free-periods-row');
+    const freeDomainPeriodInputs = document.querySelectorAll('input[name="config[free_domain_periods][]"]');
+    const freeTldsInputs = document.querySelectorAll('input[name="config[free_tlds][]"]');
 
-    free_domain_radios.on('click', function() {
-        if ($(this).val() == 1){
-            freeTldsRow.fadeIn('slow');
-            freePerdsRow.fadeIn('slow');
-            $('input[name="config[free_domain_periods][]"]').prop('required', true);
-            $('input[name="config[free_tlds][]"]').prop('required', true);
-        }
+    freeDomainRadios.forEach(radio => {
+        radio.addEventListener('click', function() {
+            const isFree = this.value === '1';
 
-        if ($(this).val() == 0){
-            $('input[name="config[free_domain_periods][]"]').prop('required', false);
-            $('input[name="config[free_tlds][]"]').prop('required', false);
-            $('input[name="config[free_tlds][]"]').prop( 'checked', false);
-            $('input[name="config[free_domain_periods][]"]').prop( "checked", false);
-            freeTldsRow.fadeOut('slow');
-            freePerdsRow.fadeOut('slow');
-        }
+            freeTldsRow.style.display = isFree ? 'flex' : 'none';
+            freePerdsRow.style.display = isFree ? 'flex' : 'none';
+
+            freeDomainPeriodInputs.forEach(el => {
+                el.required = isFree;
+                if (!isFree) el.checked = false;
+            });
+
+            freeTldsInputs.forEach(el => {
+                el.required = isFree;
+                if (!isFree) el.checked = false;
+            });
+        });
     });
 
-    $('input[name="config[free_tlds][]"]').on('change', function(){
-        var check = false;
-        $('input[name="config[free_tlds][]"]').each(function (){ if($(this).prop('checked')==true){ check= true;} });
-        if(check == true){
-            $('input[name="config[free_tlds][]"]').prop('required', false);
-        }else{
-            $('input[name="config[free_tlds][]"]').prop('required', true);
-        }
-    });
-    $('input[name="config[free_domain_periods][]"]').on('change', function(){
-        var check = false;
-        $('input[name="config[free_domain_periods][]"]').each(function (){ if($(this).prop('checked')==true){ check= true;} });
-        if(check == true){
-            $('input[name="config[free_domain_periods][]"]').prop('required', false);
-        }else{
-            $('input[name="config[free_domain_periods][]"]').prop('required', true);
-        }
+    freeTldsInputs.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const anyChecked = Array.from(freeTldsInputs).some(el => el.checked);
+            freeTldsInputs.forEach(el => el.required = !anyChecked);
+        });
     });
 
-    if (free_domain_radios.filter('[value=0]:checked').length > 0) {
-        freeTldsRow.hide();
-        freePerdsRow.hide();
+    freeDomainPeriodInputs.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const anyChecked = Array.from(freeDomainPeriodInputs).some(el => el.checked);
+            freeDomainPeriodInputs.forEach(el => el.required = !anyChecked);
+        });
+    });
+
+    if (document.querySelector('input[name="config[free_domain]"][value="0"]:checked')) {
+        freeTldsRow.style.display = 'none';
+        freePerdsRow.style.display = 'none';
     }
 </script>

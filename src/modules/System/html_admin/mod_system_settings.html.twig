@@ -637,7 +637,8 @@ ZW=Zimbabwe
 
                         <form class="api-form" method="post" action="{{ 'api/admin/system/set_interface_ip'|link }}" data-api-jsonp="onAfterInterfaceSet">
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
-                            
+                            {% set interface_ips = admin.system_get_interface_ips %}
+
                             <div class="col-12 col-lg-3">
                                 <label for="interface">{{ 'Select the default network interface:'|trans }}</label>
                                 <select class="form-select" name="interface" id="interface">
@@ -674,7 +675,7 @@ ZW=Zimbabwe
         // Always show a loading state first
         el.innerText = `{{ "Checking external IP..."|trans }}`;
         el.className = 'alert alert-info';
-    
+
         API.admin.get('system/env', { ip: true }, function (ip) {
             if (ip) {
                 el.innerText = `{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}` + ip;

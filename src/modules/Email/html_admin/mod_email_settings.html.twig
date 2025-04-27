@@ -386,37 +386,51 @@
 
 {% block js %}
 <script>
-$(function() {
-    $('#emailTest').on('click', function() {
-        API.admin.post('email/send_test', {}, function(result) {
-            FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
-        },
-        function(result){
-            FOSSBilling.message(result.message, 'error');
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('emailTest').addEventListener('click', function(event) {
+            API.admin.post('email/send_test', {},
+                () => {
+                    FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
+                },
+                (result) => {
+                    FOSSBilling.message(result.message, 'error');
+                });
+
+            event.preventDefault();
         });
 
-        return false;
+        document.addEventListener('DOMContentLoaded', function() {
+            const mailerInputs = document.querySelectorAll('#mailer input');
+
+            mailerInputs.forEach(input => {
+                input.addEventListener('click', function() {
+                    const smtpFieldset = document.querySelector('fieldset.smtp');
+                    const sendgridFieldset = document.querySelector('fieldset.sendgrid');
+                    const customFieldset = document.querySelector('fieldset.custom');
+
+                    // Handle SMTP fieldset.
+                    if (this.value === 'smtp') {
+                        smtpFieldset.style.display = 'block';
+                    } else {
+                        smtpFieldset.style.display = 'none';
+                    }
+
+                    // Handle SendGrid fieldset.
+                    if (this.value === 'sendgrid') {
+                        sendgridFieldset.style.display = 'block';
+                    } else {
+                        sendgridFieldset.style.display = 'none';
+                    }
+
+                    // Handle Custom fieldset.
+                    if (this.value === 'custom') {
+                        customFieldset.style.display = 'block';
+                    } else {
+                        customFieldset.style.display = 'none';
+                    }
+                });
+            });
+        });
     });
-
-    $("#mailer input").on('click', function() {
-        if ($(this).val() == 'smtp') {
-            $('fieldset.smtp').slideDown();
-        } else {
-            $('fieldset.smtp').slideUp();
-        }
-
-        if ($(this).val() == 'sendgrid') {
-            $('fieldset.sendgrid').slideDown();
-        } else {
-            $('fieldset.sendgrid').slideUp();
-        }
-
-        if ($(this).val() == 'custom') {
-            $('fieldset.custom').slideDown();
-        } else {
-            $('fieldset.custom').slideUp();
-        }
-    });
-});
 </script>
 {% endblock %}

@@ -39,10 +39,10 @@
             <a class="nav-link" href="#tab-texts" data-bs-toggle="tab">{{ 'Texts'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-buyer-credentials" data-bs-toggle="tab">{{ 'Client credentials'|trans }}</a>
+            <a class="nav-link" href="#tab-buyer-credentials" data-bs-toggle="tab">{{ 'Client Credentials'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab">{{ 'Company credentials'|trans }}</a>
+            <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab">{{ 'Company Credentials'|trans }}</a>
         </li>
     </ul>
 
@@ -126,7 +126,7 @@
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#eye" />
                     </svg>
-                    <span>{{ 'View as client'|trans }}</span>
+                    <span>{{ 'View as Client'|trans }}</span>
                 </a>
                 <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
                     <svg class="icon" width="24" height="24">
@@ -139,13 +139,13 @@
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#mail" />
                     </svg>
-                    <span>{{ 'Send reminder'|trans }}</span>
+                    <span>{{ 'Send Reminder'|trans }}</span>
                 </a>
                 <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#check" />
                     </svg>
-                    <span>{{ 'Mark as paid'|trans }}</span>
+                    <span>{{ 'Mark as Paid'|trans }}</span>
                 </a>
                 <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -256,13 +256,13 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Payment method'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Payment Method'|trans }}:</label>
                         <div class="col">
                             {{ mf.selectbox('gateway_id', guest.invoice_gateways({ "format": "pairs" }), invoice.gateway_id, 0, 'Select payment method'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Created at'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Date Created'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -287,7 +287,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="due_at">{{ 'Due at'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="due_at">{{ 'Date Due'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -299,7 +299,7 @@
                                     <span class="input-icon-addon">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 -2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
                                             <path d="M16 3l0 4"></path>
                                             <path d="M8 3l0 4"></path>
                                             <path d="M4 11l16 0"></path>
@@ -312,7 +312,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="paid_at">{{ 'Paid at'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="paid_at">{{ 'Date Paid'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -324,7 +324,7 @@
                                     <span class="input-icon-addon">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 -2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
                                             <path d="M16 3l0 4"></path>
                                             <path d="M8 3l0 4"></path>
                                             <path d="M4 11l16 0"></path>
@@ -354,13 +354,13 @@
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Text before invoice items table'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Text Before Invoice Item Table'|trans }}:</label>
                         <div class="col">
                             <textarea class="form-control bb-textarea" name="text_1" rows="6">{{ invoice.text_1 }}</textarea>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Text after invoice items table'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Text After Invoice Item Table'|trans }}:</label>
                         <div class="col">
                             <textarea class="form-control bb-textarea" name="text_2" rows="6">{{ invoice.text_2 }}</textarea>
                         </div>
@@ -374,13 +374,13 @@
 
         <div class="tab-pane fade" id="tab-seller-credentials" role="tabpanel">
             <div class="card-body">
-                <h3>{{ 'Company details at the moment of purchase'|trans }}</h3>
+                <h3>{{ 'Company Details at Time of Purchase'|trans }}</h3>
 
                 {% set seller = invoice.seller %}
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Company'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Company Name'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="seller_company" value="{{ seller.company }}">
                         </div>
@@ -424,25 +424,25 @@
 
         <div class="tab-pane fade" id="tab-buyer-credentials" role="tabpanel">
             <div class="card-body">
-                <h3>{{ 'Client details at the moment of purchase'|trans }}</h3>
+                <h3>{{ 'Client Details at Time of Purchase'|trans }}</h3>
 
                 {% set buyer = invoice.buyer %}
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'First name'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'First Name'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="buyer_first_name" value="{{ buyer.first_name }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Last name'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Last Name'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="buyer_last_name" value="{{ buyer.last_name }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Company'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Company Name'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="buyer_company" value="{{ buyer.company }}">
                         </div>
@@ -513,9 +513,8 @@
 
 <div class="card mb-3">
     <div class="card-body">
-        <h5>{{ 'Invoice items'|trans }}</h5>
+        <h5>{{ 'Invoice Items'|trans }}</h5>
     </div>
-
     {% if not invoice.approved %}
     <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-reload="1">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
@@ -595,7 +594,6 @@
                 </tr>
             </tfoot>
         </table>
-
         <div class="card-footer d-flex gap-2">
             {% if not invoice.approved %}
             <a class="btn btn-success w-100 api-link"
@@ -616,7 +614,6 @@
         <thead>
             <tr>
                 <th class="w-1"></th>
-                <th class="w-1"></th>
                 <th>{{ 'Title'|trans }}</th>
                 <th class="text-center">{{ 'Tax'|trans }}</th>
                 <th class="text-end w-1">{{ 'Total'|trans }}</th>
@@ -626,10 +623,6 @@
             {% for i, item in invoice.lines %}
             <tr>
                 <td>{{ i + 1 }}</td>
-                <td class="d-flex">
-                    <div class="bull task {{ item.status }}" title="Task status: {{ mf.status_name(item.status) }}"></div>
-                    <div class="bull charge {{ item.charged ? 'yes' : 'no' }}" title="{{ item.charged ? 'Charged from client balance' : 'Not charged from client balance' }}"></div>
-                </td>
                 <td>
                 {% if item.order_id %}
                 <a href="{{ 'order/manage'|alink }}/{{ item.order_id }}">{{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}</a>
@@ -662,7 +655,6 @@
     </table>
 {% endif %}
 </div>
-
     {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
     {% if transactions|length > 0 %}
     <div class="card overflow-auto">
@@ -724,20 +716,3 @@
 {% endblock %}
 
 {% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
-
-{% block js %}
-{% autoescape "js" %}
-<script>
-    $(function() {
-        $('input[name=gateway]:first').attr('checked', true);
-        $('#pay-now-button').on('click', function() {
-            var link = $('input[name=gateway]:checked').val();
-            bb.redirect(link);
-
-            return false;
-        });
-    });
-
-</script>
-{% endautoescape %}
-{% endblock %}

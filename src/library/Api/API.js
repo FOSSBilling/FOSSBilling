@@ -84,7 +84,9 @@ const Tools = {
             return url;
         }
         // Return the base URL from the page headers. The theme must have the base URL in the page headers for this to work.
-        return document.querySelector('meta[property="bb:url"]').getAttribute('content') + 'index.php?_url=/api/' + url;
+
+        // Get the base URL from window.location and append the API URL.
+        return new URL(window.location.origin + '/api/' + url);
     },
 
     /**

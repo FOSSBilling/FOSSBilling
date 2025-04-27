@@ -34,8 +34,8 @@
         }
 
         {% if not admin %}
-            $(function () {
-                bb.redirect("{{ 'staff/login'|alink }}");
+            document.addEventListener("DOMContentLoaded", function() {
+                window.location = "{{ 'staff/login'|alink }}";
             });
         {% else %}
     </script>

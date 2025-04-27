@@ -22,7 +22,7 @@
     <h3>{{ 'Upload new file for this order'|trans }}</h3>
     <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
 
-    <form method="post" action="" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+    <form method="post" action="{{ 'api/admin/servicedownloadable/update'|link }}" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
@@ -38,26 +38,35 @@
 </div>
 
 <script>
-$(function() {
-    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
+    document.addEventListener("DOMContentLoaded", function() {
+        const iframe = document.createElement('iframe');
+        iframe.id = 'uploadframe';
+        iframe.name = 'uploadframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
 
-    $('#bb-upload-form').on('submit', function(){
-        $(this).attr('action', bb.restUrl('admin/servicedownloadable/update'));
+        const form = document.getElementById('bb-upload-form');
 
-        iframe = $('#uploadframe').load(function() {
-            response = iframe.contents().find('body');
-            data = $.parseJSON(response.text());
+        form.addEventListener('submit', function() {
+            iframe.addEventListener('load', function handler() {
+                const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+                const response = iframeDocument.body;
+                const data = JSON.parse(response.textContent);
 
-            if (data.error) {
-                bb.error(data.error.message, data.error.code);
-            }
+                if (data.error) {
+                    FOSSBilling.message(`${data.error.message} (${data.error.code})`, "error");
+                }
 
-            if (data.result) {
-                FOSSBilling.message("{{ 'File was uploaded'|trans }}");
-            }
+                if (data.result) {
+                    FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+                }
 
-            setTimeout(function (){	response.html(''); }, 1);
+                setTimeout(function() {
+                    response.innerHTML = '';
+                }, 1);
+
+                iframe.removeEventListener('load', handler);
+            });
         });
     });
-});
 </script>

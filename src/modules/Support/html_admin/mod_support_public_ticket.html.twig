@@ -183,7 +183,7 @@
         </div>
 
         <div class="card-footer d-flex gap-2">
-            <a href="#" class="btn btn-secondary w-25" onclick="$('.conversation .card-body').toggle(); return false;">
+            <a href="#" class="btn btn-secondary w-25">
                 <svg class="icon">
                     <use xlink:href="#eye" />
                 </svg>
@@ -211,13 +211,17 @@
 
 {% block js%}
 <script>
-    $(function() {
-        $('#reply-box textarea').focus();
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('#reply-box textarea').focus();
 
-        $('.conversation .card-header').on('click', function() {
-            $(this).siblings('.card-body').toggle();
-
-            return false;
+        document.querySelectorAll('.conversation .card-header').forEach(function(header) {
+            header.addEventListener('click', function() {
+                const body = this.nextElementSibling;
+                if (body && body.classList.contains('card-body')) {
+                    body.style.display = body.style.display === 'none' ? '' : 'none';
+                }
+            });
+            event.preventDefault();
         });
     });
 </script>

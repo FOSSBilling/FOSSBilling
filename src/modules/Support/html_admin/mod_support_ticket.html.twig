@@ -347,52 +347,57 @@
         }
     }
 
-    $(function() {
-        $('#reply-box textarea').focus();
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelector('#reply-box textarea').focus();
 
         var ta = document.getElementById('rt');
         var pos = ta.innerHTML.indexOf('\n') + 2;
 
         setSelRange(ta, pos, pos);
 
-        $('.shd select').on('change',function(){
-            bb.get('admin/support/ticket_update', {
-                id: {{ ticket.id }},
-                support_helpdesk_id: $(this).val(),
-                CSRFToken: "{{CSRFToken}}"
+        document.querySelectorAll('.shd select').forEach(function(select) {
+            select.addEventListener('change', function() {
+                API.admin.get('support/ticket_update', { id: {{ ticket.id }}, support_helpdesk_id: this.value, CSRFToken: "{{CSRFToken}}" });
             });
         });
 
-        $('input.tst').on('click', function(){
-            bb.get('admin/support/ticket_update', {
-                id: {{ ticket.id }},
-                status: $(this).val(),
-                CSRFToken: "{{CSRFToken}}"
+        document.querySelectorAll('input.tst').forEach(function(element) {
+            element.addEventListener('click', function() {
+                API.admin.get('support/ticket_update', {id: {{ ticket.id }}, status: this.value, CSRFToken: "{{CSRFToken}}" });
             });
         });
 
-        $('.conversation').on('click', '.card-header', function(event) {
-            {# if (event.target !== this) return; #}
-            $(this).siblings('.card-body').toggle();
-
-            {# return false; #}
+        document.querySelector('.conversation').addEventListener('click', function(event) {
+            const cardHeader = event.target.closest('.card-header');
+            if (cardHeader) {
+                const cardBody = cardHeader.nextElementSibling;
+                if (cardBody && cardBody.classList.contains('card-body')) {
+                    cardBody.style.display = (cardBody.style.display === 'none') ? 'block' : 'none';
+                }
+            }
         });
 
-        if ($('#direct-msg').length > 0){
-            $('#direct-msg > .card-body').show();
-            $('html, body').animate({
-                scrollTop: $('#direct-msg').offset().top-50
-            }, 500);
-            $('#direct-msg').css("background-color", "rgb(235, 235, 235)");
+        const directMsg = document.getElementById('direct-msg');
+        if (directMsg) {
+            const msgBody = directMsg.querySelector('.card-body');
+            if (msgBody) msgBody.style.display = 'block';
+
+            window.scrollTo({
+                top: directMsg.offsetTop - 50,
+                behavior: 'smooth'
+            });
+
+            directMsg.style.backgroundColor = 'rgb(235, 235, 235)';
         }
 
         var showAllMessages = false;
-        $('.api-form').on('click', '#toggleMessages', function(event) {
+        document.getElementById('toggleMessages').addEventListener('click', function(event) {
             event.preventDefault();
 
             showAllMessages = !showAllMessages;
-            $('.conversation .card-body').toggle(showAllMessages);
-
+            document.querySelectorAll('.conversation .card-body').forEach(function(element) {
+                element.style.display = showAllMessages ? 'block' : 'none';
+            });
         });
     });
 </script>
