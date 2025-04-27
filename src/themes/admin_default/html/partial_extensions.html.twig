@@ -85,9 +85,10 @@
             readme = document.getElementById("extension-readme");
             readme.innerText = "{{ 'Fetching extension details.'|trans }}";
 
-            API.admin.post('extension/get_extension_readme', {extension_id: extensionID, CSRFToken: "{{ CSRFToken }}"}, function(result){
-                readme.innerHTML = result;
-            });
+            API.admin.post('extension/get_extension_readme', { extension_id: extensionID, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    readme.innerHTML = result;
+                });
         }
     </script>
 </div>

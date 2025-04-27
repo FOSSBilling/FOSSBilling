@@ -849,7 +849,7 @@
 {% block js%}
 <script>
     function onAfterInvoicePrepared(id) {
-        bb.redirect("{{ 'invoice/manage/'|alink }}/" + id);
+        window.location = "{{ 'invoice/manage/'|alink }}/" + id;
     }
 </script>
 {% endblock %}

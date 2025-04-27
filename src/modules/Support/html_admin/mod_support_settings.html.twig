@@ -199,18 +199,18 @@
         let autoRespondToggle = document.querySelector('input[name=autorespond_enable]');
         autoRespondToggle.addEventListener('click', (e) => {
             if (e.target.checked) {
-                $('#autorespond_enable').slideDown();
+                document.getElementById('autorespond_enable').style.display = 'block';
             } else {
-                $('#autorespond_enable').slideUp();
+                document.getElementById('autorespond_enable').style.display = 'none';
             }
         })
 
         let delayToggle = document.querySelector('input[name=delay_enable]');
         delayToggle.addEventListener('click', (e) => {
             if (e.target.checked) {
-                $('#delay_enable').slideDown();
+                document.getElementById('delay_enable').style.display = 'block';
             } else {
-                $('#delay_enable').slideUp();
+                document.getElementById('delay_enable').style.display = 'none';
             }
         })
 

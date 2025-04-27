@@ -8,7 +8,6 @@
 
 {% block content %}
     <div class="card-tabs">
-
         <ul class="nav nav-tabs" data-bs-toggle="tabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <a href="#index" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
@@ -147,11 +146,10 @@
         </div>
     </div>
 {% endblock %}
-
 {% block js %}
-    <script type="text/javascript">
+    <script>
         function onAfterCreateMM(mid) {
-            bb.redirect("{{ 'massmailer/message'|alink }}/" + mid);
+            window.location = "{{ 'massmailer/message'|alink }}/" + mid;
         }
     </script>
 {% endblock %}

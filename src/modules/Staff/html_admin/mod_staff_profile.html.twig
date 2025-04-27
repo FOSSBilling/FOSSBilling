@@ -99,7 +99,7 @@
                         </div>
                     </div>
 
-                    <input type="submit" value="{{ 'Generate new key'|trans }}" class="btn btn-primary w-100">
+                    <input type="submit" value="{{ 'Generate New Key'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>
@@ -119,10 +119,11 @@
 {% block js %}
 <script>
     function onAfterKeyUpdate(result) {
-        API.admin.post('profile/get', {}, function(result) {
-            $('#apikey').val(result.api_token);
-            FOSSBilling.message("{{ 'New API key generated. Applications using old key are now not working.'|trans }}");
-        })
+        API.admin.post('profile/get', {},
+            (result) => {
+                document.getElementById('apikey').value = result.api_token;
+                FOSSBilling.message("{{ 'New API key generated. Applications using old key are now not working.'|trans }}");
+            });
     }
 </script>
 {% endblock %}

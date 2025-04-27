@@ -87,7 +87,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'support/kb'|alink}}" href="{{ 'api/admin/support/kb_article_delete'|link({ 'id': post.id, 'CSRFToken': CSRFToken }) }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/support/kb_article_delete'|link({ 'id': post.id }) }}" data-fb-api='{ "confirm": { "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'support/kb'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

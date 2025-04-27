@@ -30,8 +30,8 @@
                     <input class="btn btn-primary" type="submit" value="{{ 'Please click here to continue if this page does not redirect automatically in 5 seconds'|trans }}" id="payment_button"/>
                 </form>
 
-                <script type="text/javascript">
-                    $(document).ready(function() {
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('payment_button').style.display = 'none';
                         document.forms["payment_form"].submit();
                     });

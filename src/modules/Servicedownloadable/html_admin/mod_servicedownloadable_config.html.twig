@@ -22,7 +22,7 @@
         <input type="hidden" name="id" value="{{ product.id }}">
         <input type="submit" value="{{ 'Save config'|trans }}" class="btn btn-primary w-100" id="bb-upload-button">
     </form>
-    <form method="post" action="" class="" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+    <form method="post" action="{{ 'api/admin/servicedownloadable/upload'|link }}" class="" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         {% if product.config.filename  %}
         <div class="mb-3 row">
@@ -48,28 +48,31 @@
 </div>
 
 <script>
-$(function() {
-    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
+    document.addEventListener("DOMContentLoaded", function() {
+        const iframe = document.createElement('iframe');
+        iframe.id = 'uploadframe';
+        iframe.name = 'uploadframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
 
-    $('#bb-upload-form').on('submit', function() {
-        $(this).attr('action', bb.restUrl('admin/servicedownloadable/upload'));
+        const uploadForm = document.getElementById('bb-upload-form');
+        uploadForm.addEventListener('submit', function() {
+            iframe.onload = function() {
+                const response = iframe.contentDocument.body;
+                const data = JSON.parse(response.textContent);
 
-        iframe = $('#uploadframe').load(function() {
-            response = iframe.contents().find('body');
-            data = $.parseJSON(response.text());
+                if (data.error) {
+                    FOSSBilling.message(`${data.error.message} (${data.error.code})`, "error");
+                }
 
-            if (data.error) {
-                bb.error(data.error.message, data.error.code);
-            }
+                if (data.result) {
+                    FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+                }
 
-            if (data.result) {
-                FOSSBilling.message("{{ 'File was uploaded'|trans }}");
-            }
-
-            setTimeout(function() {
-                response.html('');
-            }, 1);
+                setTimeout(function() {
+                    response.innerHTML = '';
+                }, 1);
+            };
         });
     });
-});
 </script>

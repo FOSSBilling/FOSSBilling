@@ -274,8 +274,8 @@
               </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
-                        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/invoice/batch_delete' }) }}
-                        {{ include('partial_pagination.html.twig', { 'list': invoices, 'url': 'invoice' }) }}
+                        {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete' } %}
+                        {% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
                     </div>
                     <div>
                         <a class="btn btn-secondary" href="{{ '/api/admin/invoice/export_csv'|link }}" title="{{ 'Export Invoices'|trans }}">
@@ -319,7 +319,7 @@
 {% block js%}
 <script>
     function onAfterInvoicePrepared(id) {
-        bb.redirect("{{ 'invoice/manage/'|alink }}/" + id);
+        window.location = "{{ 'invoice/manage/'|alink }}/" + id;
     }
 </script>
 {% endblock %}

@@ -26,7 +26,7 @@ Options -Indexes +SymLinksIfOwnerMatch
     # Block direct access to sensitive files and file types.
     RewriteCond %{REQUEST_URI} /?.+\.(htaccess|htpasswd|bak|conf|inc|ini|lock|log|old|sh|sql|twig|yaml|php) [NC,OR]
     RewriteCond %{REQUEST_URI} /?.*(composer.json|README.md|CHANGELOG.md) [NC]
-    RewriteRule ^(.*)$ index.php?_url=/$1&_errcode=404 [L]
+    RewriteRule ^(.*)$ index.php/$1&_errcode=404 [L]
 
     # Rewrite non-existent file/directory names to index.php.
     RewriteCond %{REQUEST_FILENAME} !-f

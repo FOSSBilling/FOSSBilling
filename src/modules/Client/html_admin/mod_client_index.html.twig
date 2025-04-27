@@ -277,8 +277,8 @@
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
-                        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/client/batch_delete' }) }}
-                        {{ include('partial_pagination.html.twig', { 'list': clients, 'url': 'client' }) }}
+                        {% include 'partial_batch_delete.html.twig' with { 'action': 'client/batch_delete' } %}
+                        {% include 'partial_pagination.html.twig' with { 'list': clients, 'url': 'client' } %}
                     </div>
                     <div>
                         <a class="btn btn-secondary" href="{{ '/api/admin/client/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Clients'|trans }}">

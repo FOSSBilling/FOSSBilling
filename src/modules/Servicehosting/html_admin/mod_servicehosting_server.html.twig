@@ -154,28 +154,34 @@
 
 {% block js%}
 <script>
-    $(function() {
-        $('#test-connection').on('click', function(event){
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('test-connection').addEventListener('click', function(event) {
             event.preventDefault();
-              formElement = document.getElementById('server-update');
-              const formData = new FormData(formElement);
-              if(formElement.getAttribute('method').toLowerCase() != 'get'){
-                 data = formData.serializeJSON();
-              }else{
-                data =  formData.serialize();
-              }
-              API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  data , function (result) {
-                return bb._afterComplete(formElement, result);
-              }, function (error) {
-                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
-              });
+            formElement = document.getElementById('server-update');
+            const formData = new FormData(formElement);
 
-              API.makeRequest(formElement.getAttribute('method'), bb.restUrl('admin/servicehosting/server_test_connection'),  { id: {{ server.id }}, CSRFToken: "{{ CSRFToken }}" }, function (result) {
-                  FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');
-                }, function (error) {
-                  FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+            if(formElement.getAttribute('method').toLowerCase() != 'get') {
+                data = formData.serializeJSON();
+            }
+            else {
+                data =  formData.serialize();
+            }
+
+            API.makeRequest(formElement.getAttribute('method'), Tools.getBaseURL(formElement.getAttribute('action')), data,
+                (result) =>{
+                    return bb._afterComplete(formElement, result);
+                },
+                (error) => {
+                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                 });
-            return false;
+
+            API.makeRequest(formElement.getAttribute('method'), Tools.getBaseURL('admin/servicehosting/server_test_connection'), { id: {{ server.id }}, CSRFToken: "{{ CSRFToken }}" },
+                () => {
+                    FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');
+                },
+                (error) => {
+                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                });
         });
     });
 

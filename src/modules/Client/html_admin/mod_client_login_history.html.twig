@@ -66,8 +66,8 @@
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/client/batch_delete_log' }) }}
-        {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'client/logins' }) }}
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'client/batch_delete_log' } %}
+        {% include 'partial_pagination.html.twig' with { 'list': history, 'url': 'client/logins' } %}
     </div>
 </div>
 {% endblock %}

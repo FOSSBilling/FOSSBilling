@@ -213,7 +213,7 @@
                                         <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
                                         <th>{{ 'Free / paid'|trans }}</th>
                                     </tr>
-                                  </tbody>                                    
+                                  </tbody>
                             </table>
                             <span class="text-muted">{{ 'When using ExchangeRate-API, their API informs FOSSBilling when the next update will occur which makes it more efficient for automated exchange rate syncing.'|trans }}</span>
                             <br/>
@@ -282,14 +282,13 @@
 {% block js %}
 <script>
     function doConvert() {
-        var price = $('input[name="amount"]').val();
-        var code = $('select[name="to"]').val();
+        var price = document.querySelector('input[name="amount"]').value;
+        var code = document.querySelector('select[name="to"]').value;
 
-        bb.post('guest/currency/format', { price: price, code: code, CSRFToken: "{{ CSRFToken }}" }, function(result) {
-            $('#converted_result').val(result);
-        });
-
-        return false;
+        API.guest.post('currency/format', { price: price, code: code, CSRFToken: "{{ CSRFToken }}" },
+            (result) => {
+                document.getElementById('converted_result').value = result;
+            });
     };
 
     function switchKeyBox(value){

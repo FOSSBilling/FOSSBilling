@@ -83,8 +83,8 @@
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/activity/batch_delete' }) }}
-        {{ include('partial_pagination.html.twig', { 'list': events, 'url': 'activity' }) }}
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'activity/batch_delete' } %}
+        {% include 'partial_pagination.html.twig' with { 'list': events, 'url': 'activity' } %}
     </div>
 </div>
 {% endblock %}

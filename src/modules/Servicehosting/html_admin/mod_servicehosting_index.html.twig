@@ -286,10 +286,10 @@
 </div>
 {% endblock %}
 
-{% block js%}
+{% block js %}
 <script>
     function onAfterHostingPlanCreate(id) {
-        bb.redirect("{{ 'servicehosting/plan'|alink }}/" + id);
+        window.location = "{{ 'servicehosting/plan'|alink }}/" + id;
     }
 
     function handleManagerChange (select) {
@@ -357,6 +357,6 @@
 
     window.onload = function () {
         handleManagerChange(document.querySelector('select[name="manager"]'));
-    };
+    }
 </script>
 {% endblock %}

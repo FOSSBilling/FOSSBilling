@@ -68,9 +68,18 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         $ipnUrl = $this->getServiceUrl($invoice_id);
         $invoiceUrl = $this->di['tools']->url('invoice/' . $invoiceModel->hash);
 
-        return "<script type='text/javascript'>
-                $(document).ready(function(){
-                    bb.post('$ipnUrl', null, function(result){
+        return "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    fetch('$ipnUrl', { method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({})
+                    }).then(() => {
+                        window.location.href = '$invoiceUrl';
+                    }).catch((error) => {
+                        console.error('Error during fetch:', error);
+                        alert('An error occurred while processing your request. Please try again.');
                         window.location.href = '$invoiceUrl';
                     });
                 });

@@ -109,21 +109,22 @@
 {% endblock %}
 
 {% block js %}
-    <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", () => {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
             let submitTicket = document.getElementById('ticket-submit');
-            submitTicket.addEventListener('submit', (e) => {
-                e.preventDefault();
-                API.client.post('support/ticket_create',
-                    new FormData(submitTicket).serializeObject(),
-                    (res) => bb.redirect("{{ 'support/ticket'|link }}" + '/' + res),
-                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'),
-                )
-                return false;
+            submitTicket.addEventListener('submit', (event) => {
+                event.preventDefault();
+                API.client.post('support/ticket_create', new FormData(submitTicket).serializeObject(),
+                    (res) => {
+                        window.location = "{{ 'support/ticket'|link }}" + '/' + res
+                    },
+                    (res) => {
+                        FOSSBilling.message(`${res.message} (${res.code})`, 'error')
+                    });
             });
             {% if request.ticket %}
-            const ticketModal = new bootstrap.Modal('#open-ticket-modal')
-            ticketModal.show(submitTicket);
+                const ticketModal = new bootstrap.Modal('#open-ticket-modal')
+                ticketModal.show(submitTicket);
             {% endif %}
         });
     </script>

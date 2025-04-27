@@ -235,13 +235,8 @@
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% endif %}
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/cancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
-                        data-api-prompt-key="reason"
-                        data-api-prompt="1"
-                        data-api-prompt-text="{{ 'Reason of cancellation'|trans }}"
-                        data-api-prompt-title="{{ 'Cancellation reason'|trans }}"
-                        data-api-reload="{{ 'Order canceled'|trans }}">
+                    <a class="btn btn-primary" href="{{ 'api/admin/order/cancel'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "prompt", "title": "{{ 'Cancellation Reason'|trans }}", "label": "{{ 'Reason for Cancellation'|trans }}", "key": "reason" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#close" />
                         </svg>
@@ -699,34 +694,33 @@
 {% block js %}
 <script>
     var susp = {
-        showSuspendPopup: function() {
-            $('#suspend_popup').show();
-
-            return false;
+        showSuspendPopup: () => {
+            document.getElementById('suspend_popup').style.display = 'block';
         },
-        suspendOrder: function(url, name) {
+        suspendOrder: (url, name) => {
             var p = {};
             var inps = document.getElementsByName(name);
             var value = '';
 
-            $.each(inps, function(index, input) {
-                if (input.checked) {
-                    value = input.value;
-
-                }
-            });
+            for (var i = 0; i < inps.length; i++) {
+            if (inps[i].checked) {
+                value = inps[i].value;
+                break;
+            }
+            }
 
             p[name] = value;
-            bb.get(url, p, function(result) {
-                return bb._afterComplete($('#suspend_button'), result);
-            });
+            API.makeRequest('GET', Tools.getBaseURL(url), p,
+                (result) => {
+                    return bb._afterComplete(document.getElementById('suspend_button'), result);
+                });
 
-            $('#suspend_popup').hide();
+            document.getElementById('suspend_popup').style.display = 'none';
 
             return false;
         },
-        suspenderHide: function() {
-            $('#suspend_popup').hide();
+        suspenderHide: () => {
+            document.getElementById('suspend_popup').style.display = 'none';
         }
     };
 </script>

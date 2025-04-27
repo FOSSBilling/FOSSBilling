@@ -67,7 +67,9 @@
     </form>
 </div>
 {% else %}
-<script>location.href = "{{ 'custompages'|alink }}"</script>
+<script>
+    window.location.href = "{{ 'custompages'|alink }}"
+</script>
 {% endif %}
 {% endblock %}
 

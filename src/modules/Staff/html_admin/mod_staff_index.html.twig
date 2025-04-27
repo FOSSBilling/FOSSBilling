@@ -182,7 +182,7 @@
 {% block js %}
 <script>
     function onAfterStaffCreate(id) {
-        bb.redirect("{{ 'staff/manage/'|alink }}/" + id + '#tab-permissions');
+        window.location = "{{ 'staff/manage/'|alink }}/" + id + '#tab-permissions';
     }
 </script>
 {% endblock %}

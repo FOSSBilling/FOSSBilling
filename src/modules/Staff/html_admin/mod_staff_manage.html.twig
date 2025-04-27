@@ -164,51 +164,50 @@
 												</div>
 											{% endif %}
 
-											{% for permissionName, permission in mod.permissions %}
-												<div class="form-group">
-													{% if permission.type == 'bool' %}
-														<div class="mt-2 form-check">
-															<input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1" {% if prms[modName][permissionName] %} checked {% endif %}>
-															<label class="form-check-label" for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}
-																<svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
-															</label>
-														</div>
-													{% endif %}
+                            {% for permissionName, permission in mod.permissions %}
+                                <div class="form-group">
+                                    {% if permission.type == 'bool' %}
+                                        <div class="mt-2 form-check">
+                                            <input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName][permissionName] %} checked {% endif %}>
+                                            <label class="form-check-label" for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}
+                                                <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use xlink:href="#info"/></svg>
+                                            </label>
+                                        </div>
+                                    {% endif %}
 
-													{% if permission.type == 'select' %}
-														<div class="row">
-															<div class="col-3">
-																<div class="d-flex align-items-center">
-																	<label for="input-{{ modName }}-{{ permissionName }}" class="mt-2 text-nowrap" style="margin-right: 10px; margin-left: 5px;">{{ permission.display_name }}</label>
-																	<select class="form-control mt-2 permission-select" name="permissions[{{ modName }}][{{ permissionName }}]" style="margin-right: 5px;">
-																		<option value="">{{ 'None'|trans }}</option>
-																		{% for optionName, option in permission.options %}
-																			<option value="{{ optionName }}" {% if prms[modName][permissionName] == optionName %} selected {% endif %}>
-																		{{ option }}
-																	</option>
-																{% endfor %}
-															</select>
-															<svg class="icon mt-2" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right" style="width: 32px; height: 32px;"><use xlink:href="#info"/></svg>
-														</div>
-													</div>
-												</div>
-											{% endif %}
-										</div>
-									{% endfor %}
-									<hr class="mt-4 mb-4"/>
-								</div>
-							</div>
-						{% endfor %}
+                                    {% if permission.type == 'select' %}
+                                        <div class="row">
+                                            <div class="col-3">
+                                                <div class="d-flex align-items-center">
+                                                    <label for="input-{{ modName }}-{{ permissionName }}" class="mt-2 text-nowrap" style="margin-right: 10px; margin-left: 5px;">{{ permission.display_name }}</label>
+                                                    <select class="form-control mt-2 permission-select" name="permissions[{{ modName }}][{{ permissionName }}]" style="margin-right: 5px;">
+                                                    <option value="">{{ 'None'|trans }}</option>
+                                                        {% for optionName, option in permission.options %}
+                                                            <option value="{{ optionName }}" {% if prms[modName][permissionName] == optionName %} selected {% endif %}>{{ option }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <svg class="icon mt-2" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right" style="width: 32px; height: 32px;"><use xlink:href="#info"/></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <hr class="mt-4 mb-4"/>
+                        </div>
+                    </div>
+                {% endfor %}
 
-						<input type="hidden" name="id" value="{{ staff.id }}">
+                <input type="hidden" name="id" value="{{ staff.id }}">
 
-						<div class="card-footer">
-							<input type="submit" value="{{ 'Save'|trans }}" class="btn btn-primary w-100">
-						</div>
-					</form>
-				{% endif %}
-			</div>
-		</div>
+                <div class="card-footer">
+                    <input type="submit" value="{{ 'Save'|trans }}" class="btn btn-primary w-100">
+                </div>
+            </form>
+
+            </div>
+            {% endif %}
+        </div>
 
 		<div class="tab-pane fade" id="tab-password" role="tabpanel">
 			<div class="card-header">
@@ -241,17 +240,17 @@
 </div>
 {% endblock %}
 
-{% block js%}
+{% block js %}
 <script>
-	function toggleAll(check) {
-		const elements = document.getElementsByClassName('permission-box');
-		Array.from(elements).forEach((element) => {
-			if (element.dataset.alwaysGiven) {
-				element.checked = true;
-			} else {
-				element.checked = check;
-			};
-		});
-	};
+    function toggleAll(check){
+        const  elements = document.getElementsByClassName('permission-box');
+        Array.from(elements).forEach( (element) => {
+            if(element.dataset.alwaysGiven){
+                element.checked = true;
+            } else {
+                element.checked = check;
+            }
+        });
+    }
 </script>
 {% endblock %}

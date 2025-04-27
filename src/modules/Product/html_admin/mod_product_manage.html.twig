@@ -334,21 +334,20 @@
 
 {% block js %}
 <script>
-    $(function() {
-        $("[name='form_id']").on('change',function() {
-            var form_id = $(this).val();
-            var btn = $("#formbuilder_btn");
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.querySelector("[name='form_id']")) {
+            const formId = document.querySelector("[name='form_id']").value;
+            const btn = document.getElementById("formbuilder_btn");
 
-            if (form_id != "") {
-                btn.html("{{ 'Edit form'|trans }}");
-                var href = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + form_id;
-                btn.attr('href', href);
+            if (formId !== "") {
+                btn.innerHTML = "{{ 'Edit Form'|trans }}";
+                const href = "{{ 'extension/settings/formbuilder'|alink }}" + (formId ? "?id=" + formId : "");
+                btn.setAttribute('href', href);
+            } else {
+                btn.innerHTML = "{{ 'Add New Form'|trans }}";
+                btn.setAttribute('href', "{{ 'extension/settings/formbuilder'|alink }}");
             }
-            else {
-                btn.html("{{ 'Add new form'|trans }}");
-                btn.attr("href", "{{ 'extension/settings/formbuilder'|alink }}");
-            }
-        });
+        }
     });
 </script>
 {% endblock %}

@@ -198,11 +198,11 @@
         function onAfterUpdate(result) {}
         function onAfterModuleActivated(result) {
             if(result.redirect && result.type === 'mod') {
-                bb.redirect("{{ ''|alink }}/" + result.id);
+                window.location = "{{ ''|alink }}/" + result.id;
             } else if (result.has_settings) {
-                bb.redirect("{{ 'extension/settings'|alink }}/" + result.id);
+                window.location = "{{ 'extension/settings'|alink }}/" + result.id;
             } else {
-                bb.reload();
+                window.location.reload();
             }
         }
     </script>

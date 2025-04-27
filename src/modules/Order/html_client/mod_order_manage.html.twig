@@ -273,72 +273,71 @@
     </div>
 
 {% endblock %}
-
 {% block js %}
 {% autoescape "js" %}
-    <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", () => {
-
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
             const cancelRequestForm = document.getElementById('cancel-request-form');
             const upgradeRequestForm = document.getElementById('upgrade-request-form');
             const openTicketForm = document.getElementById('open-ticket-form');
 
-            cancelRequestForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                API.client.post('support/ticket_create',
-                    new FormData(cancelRequestForm).serializeObject(),
+            cancelRequestForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                API.client.post('support/ticket_create', new FormData(cancelRequestForm).serializeObject(),
                     () => {
                         FOSSBilling.message('Service cancellation request received');
                         const cancelRequestModal = bootstrap.Modal.getInstance(document.getElementById('cancel-request-modal'))
                         cancelRequestModal.hide();
                     },
-                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error')
-                )
+                    (res) => {
+                        FOSSBilling.message(`${res.message} (${res.code})`, 'error');
+                    });
             });
 
-            upgradeRequestForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                API.client.post('support/ticket_create',
-                    new FormData(upgradeRequestForm).serializeObject(),
+            upgradeRequestForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                API.client.post('support/ticket_create', new FormData(upgradeRequestForm).serializeObject(),
                     () => {
                         FOSSBilling.message('Service upgrade request received');
                         const upgradeRequestModal = bootstrap.Modal.getInstance(document.getElementById('upgrade-request-modal'))
                         upgradeRequestModal.hide();
                     },
-                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error')
-                )
+                    (res) => {
+                        FOSSBilling.message(`${res.message} (${res.code})`, 'error')
+                    });
             });
 
-            openTicketForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                API.client.post('support/ticket_create',
-                    new FormData(openTicketForm).serializeObject(),
+            openTicketForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                API.client.post('support/ticket_create', new FormData(openTicketForm).serializeObject(),
                     () => {
                         FOSSBilling.message('Ticket was submitted. If you want to track conversation please go to support section');
                         let openTicketModal = bootstrap.Modal.getInstance(document.getElementById('open-ticket-modal'));
                         openTicketModal.hide();
                     },
-                    (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error')
-                )
+                    (res) => {
+                        FOSSBilling.message(`${res.message} (${res.code})`, 'error')
+                    });
             });
 
         });
 
-        $(function () {
-            $('#renewal-button').on('click', function (e) {
-                e.preventDefault();
+        const renewalButton = document.getElementById('renewal-button');
+        if (renewalButton) {
+            renewalButton.addEventListener('click', function (event) {
+                event.preventDefault();
 
                 if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
-                    bb.post(
-                        'client/invoice/renewal_invoice',
-                        {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
-                        function (result) {
-                            bb.redirect("{{ 'invoice'|link }}" + '/' + result);
-                        }
-                    );
+                    API.client.post('invoice/renewal_invoice', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                        (result) => {
+                            window.location = "{{ 'invoice'|link }}" + '/' + result;
+                        });
                 }
             });
-        });
+        }
     </script>
 {% endautoescape %}
 {% endblock %}

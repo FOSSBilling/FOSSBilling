@@ -268,7 +268,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         if (isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {
             $form .= sprintf('<h2>%s</h2>', __trans('Redirecting to PayPal.com'));
-            $form .= "<script type='text/javascript'>$(document).ready(function(){    document.getElementById('payment_button').style.display = 'none';    document.forms['payment_form'].submit();});</script>";
+            $form .= "<script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            document.getElementById('payment_button').style.display = 'none';
+                            document.forms['payment_form'].submit();
+                        });
+                     </script>";
         }
 
         return $form;

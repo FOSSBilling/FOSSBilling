@@ -5,8 +5,7 @@
     {{ 'Delete selected'|trans }}</a>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-
+    document.addEventListener("DOMContentLoaded", function() {
         const deleteBtn = document.getElementById('batch-delete-selected-btn');
         const masterCheckbox = document.querySelector('input.batch-delete-master-checkbox');
         const checkboxes = document.querySelectorAll('input.batch-delete-checkbox');
@@ -29,19 +28,21 @@
             deleteBtn.classList.add('d-none');
         }
 
-        $('#batch-delete-selected-btn').on('click', function () {
-            if ($('input.batch-delete-checkbox:checked').length) {
+        deleteBtn.addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('input.batch-delete-checkbox:checked');
+            if (checkedBoxes.length) {
                 Modals.create({
                     type: 'danger',
                     title: "{{ 'Are you sure?'|trans }}",
                     content: "{{ 'Are you sure you want to delete the selected items?'|trans }}",
-                    confirmCallback: function() {
-                        var ids = $('input.batch-delete-checkbox:checked').map(function() {
-                            return $(this).attr("data-item-id");
-                        }).get();
-                        bb.post('{{ action }}', { ids: ids, CSRFToken: "{{ CSRFToken }}" }, function (result) {
-                            bb.reload();
-                        })
+                    confirmCallback: () => {
+                        const ids = Array.from(checkedBoxes).map(function(checkbox) {
+                            return checkbox.getAttribute("data-item-id");
+                        });
+                        API.admin.post('{{ action }}', { ids: ids, CSRFToken: "{{ CSRFToken }}" },
+                            (result) => {
+                                window.location.reload();
+                            });
                     }
                 });
             } else {
@@ -53,8 +54,10 @@
             }
         });
 
-        $('input.batch-delete-master-checkbox').on('click', function () {
-            $('input.batch-delete-checkbox').prop('checked', this.checked);
+        masterCheckbox.addEventListener('click', function() {
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = masterCheckbox.checked;
+            });
         });
     });
 </script>

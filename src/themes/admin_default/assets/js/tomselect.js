@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     localeSelector.on("change", (value) => {
       bb.cookieCreate("BBLANG", value, 365);
-      bb.reload();
+      window.location.reload();
     });
   }
 
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
       searchField: ["label", "value"],
       load: (query, callback) => {
         let items;
-        let restUrl = new URL(bb.restUrl(autocompleteSelectorEl.dataset.resturl));
+        let restUrl = new URL(window.location.origin + '/api/' + autocompleteSelectorEl.dataset.resturl);
         restUrl.searchParams.append("search", query);
         restUrl.searchParams.append("CSRFToken", Tools.getCSRFToken());
         restUrl.searchParams.append("per_page", 5);
@@ -97,9 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cannedResponseSelector.on('change', (value) => {
       console.log(value)
       if (!value) return;
-      const restUrl = new URL(
-        bb.restUrl(cannedResponseSelectorEl.dataset.resturl)
-      );
+      const restUrl = new URL(window.location.origin + '/api/' + cannedResponseSelectorEl.dataset.resturl);
       restUrl.searchParams.append('id', value);
       restUrl.searchParams.append('CSRFToken', Tools.getCSRFToken());
       fetch(restUrl)

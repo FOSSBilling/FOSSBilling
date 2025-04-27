@@ -86,11 +86,12 @@
 
 {% block js %}
     <script>
-        $(function () {
-            $('#anti-spam').remove();
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('anti-spam').remove();
         });
+
         function onTicketCreate(result){
-            bb.redirect("{{ 'support/contact-us/conversation'|link }}" + '/' + result);
+            window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + result;
         }
     </script>
 {% endblock %}

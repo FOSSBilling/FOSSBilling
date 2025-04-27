@@ -17,7 +17,6 @@ Encore
 
   .addEntry('fossbilling', './assets/fossbilling.js')
 
-  .autoProvidejQuery()
   .enableIntegrityHashes()
   .disableSingleRuntimeChunk()
   .cleanupOutputBeforeBuild()

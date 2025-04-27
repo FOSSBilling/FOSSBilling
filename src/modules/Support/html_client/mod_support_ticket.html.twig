@@ -162,8 +162,7 @@
 
             ticketReplyForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                API.client.post('support/ticket_reply',
-                    new FormData(ticketReplyForm).serializeObject(),
+                API.client.post('support/ticket_reply', new FormData(ticketReplyForm).serializeObject(),
                     () => {
                         flashMessage({
                             message: 'Posted reply',
@@ -177,8 +176,7 @@
             closeTicketBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleLoader();
-                API.client.post('support/ticket_close',
-                    new FormData(ticketReplyForm).serializeObject(),
+                API.client.post('support/ticket_close', new FormData(ticketReplyForm).serializeObject(),
                     () => {
                         flashMessage({
                             message: 'Closed ticket #{{ ticket.id }}',
