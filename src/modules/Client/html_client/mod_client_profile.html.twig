@@ -197,7 +197,7 @@
                         <h5 class="card-title mb-1">{{ 'API Key'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
                         <form class="api-form" method="post" action="client/profile/api_key_reset" id="change-api-key"
-                              data-api-msg="API key was changed">
+                              data-api-msg="API key was changed.">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% if client.profile_api_key_get %}
                                 <div class="alert alert-warning" role="alert">

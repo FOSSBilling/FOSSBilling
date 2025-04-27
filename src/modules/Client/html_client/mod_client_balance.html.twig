@@ -65,8 +65,7 @@
 {% block js %}
 <script>
     function onAfterInvoiceCreated(hash) {
-        var link = '{{ "invoice"|link }}/' + hash;
-        bb.redirect(link);
+        window.location = '{{ "invoice"|link }}/' + hash;
     }
 </script>
 {% endblock %}

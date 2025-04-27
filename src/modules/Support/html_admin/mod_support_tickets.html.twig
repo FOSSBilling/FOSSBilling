@@ -281,8 +281,8 @@
             </table>
 
             <div class="card-footer d-flex align-items-center justify-content-between">
-                {{ include('partial_batch_delete.html.twig', { 'action': 'admin/support/batch_delete' }) }}
-                {{ include('partial_pagination.html.twig', { 'list': tickets, 'url': 'support' }) }}
+                {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete' } %}
+                {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}
             </div>
         </div>
 
@@ -394,7 +394,7 @@
     })
 
     function onAfterPublicTicketCreate(result) {
-        bb.redirect("{{ 'support/public-ticket'|alink }}/" + result);
+        window.location = "{{ 'support/public-ticket'|alink }}/" + result;
     }
 </script>
 {% endblock %}

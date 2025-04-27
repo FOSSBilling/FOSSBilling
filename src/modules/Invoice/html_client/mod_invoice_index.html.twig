@@ -109,35 +109,35 @@
 {% endblock %}
 {% block js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
-    const pageParam = urlParams.get('page');
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        const pageParam = urlParams.get('page');
 
-    if (tabParam === 'paid') {
-        const paidTab = document.getElementById('paid-tab');
-        if (paidTab) {
-            const tab = new bootstrap.Tab(paidTab);
-            tab.show();
+        if (tabParam === 'paid') {
+            const paidTab = document.getElementById('paid-tab');
+            if (paidTab) {
+                const tab = new bootstrap.Tab(paidTab);
+                tab.show();
+            }
         }
-    }
 
-    // Update URL when tabs are clicked.
-    document.getElementById('unpaid-tab').addEventListener('shown.bs.tab', function() {
-        // Reset to base URL without tab parameter and reload.
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('tab');
-        newUrl.searchParams.delete('page');
-        window.location.href = newUrl.toString();
-    });
+        // Update URL when tabs are clicked.
+        document.getElementById('unpaid-tab').addEventListener('shown.bs.tab', function() {
+            // Reset to base URL without tab parameter and reload.
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('tab');
+            newUrl.searchParams.delete('page');
+            window.location.href = newUrl.toString();
+        });
 
-    document.getElementById('paid-tab').addEventListener('shown.bs.tab', function() {
-        // Set tab to 'paid', reset page parameter and reload.
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('tab', 'paid');
-        newUrl.searchParams.delete('page');
-        window.location.href = newUrl.toString();
+        document.getElementById('paid-tab').addEventListener('shown.bs.tab', function() {
+            // Set tab to 'paid', reset page parameter and reload.
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('tab', 'paid');
+            newUrl.searchParams.delete('page');
+            window.location.href = newUrl.toString();
+        });
     });
-});
 </script>
 {% endblock %}

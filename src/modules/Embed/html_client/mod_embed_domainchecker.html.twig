@@ -45,13 +45,27 @@
     </fieldset>
 </form>
 
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 <script>
-    $(function() {
-        $('#domain-checker').on('submit', function(event) {
-            $.post("{{ constant('SYSTEM_URL') }}api/guest/servicedomain/check",
-            $(this).serialize(),
-            function(json) {
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('domain-checker').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const searchParams = new URLSearchParams();
+
+            for (const [key, value] of formData) {
+                searchParams.append(key, value);
+            }
+
+            fetch("{{ constant('SYSTEM_URL') }}api/guest/servicedomain/check", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: searchParams.toString()
+            })
+            .then(response => response.json())
+            .then(json => {
                 if (json.error) {
                     alert(json.error.message);
                 } else if (json.result) {
@@ -59,9 +73,10 @@
                 } else {
                     alert('Domain is already registered');
                 }
-            }, 'json');
-
-            return false;
+            })
+            .catch(error => {
+                alert('Error checking domain: ' + error);
+            });
         });
     });
 </script>

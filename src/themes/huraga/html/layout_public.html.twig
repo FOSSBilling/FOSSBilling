@@ -4,8 +4,6 @@
     <meta charset="utf-8">
     <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
 
-    <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}">
-    <meta property="bb:client_area" content="{{ '/'|link }}">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">

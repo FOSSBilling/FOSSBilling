@@ -204,81 +204,81 @@
             </div>
         </div>
     </div>
-
     {% block js %}
         <script>
-            $(function () {
-                $('.domain-tabs a').on('click', function (e) {
-                    e.preventDefault();
-
-                    $(this).tab('show');
+            document.addEventListener("DOMContentLoaded", function() {
+                document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(tab) {
+                    tab.addEventListener('click', function(event) {
+                        event.preventDefault();
+                    });
                 });
 
-                $('#domain-lock').on('click', function (event) {
+                document.getElementById('domain-lock').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    bb.post(
-                        'client/servicedomain/lock',
-                        {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
-                        function (result) {
+                    API.client.post('servicedomain/lock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                        () => {
                             FOSSBilling.message('Domain locked');
-                            $('#domain-lock').toggle();
-                            $('#domain-unlock').toggle();
-                        }
-                    );
+
+                            document.getElementById('domain-lock').style.display =
+                                document.getElementById('domain-lock').style.display === 'none' ? '' : 'none';
+                            document.getElementById('domain-unlock').style.display =
+                                document.getElementById('domain-unlock').style.display === 'none' ? '' : 'none';
+                        });
                 });
 
-                $('#domain-unlock').on('click', function (event) {
+                document.getElementById('domain-unlock').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    bb.post(
-                        'client/servicedomain/unlock',
-                        {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
-                        function (result) {
+                    API.client.post('servicedomain/unlock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                        () => {
                             FOSSBilling.message('Domain unlocked');
-                            $('#domain-lock').toggle();
-                            $('#domain-unlock').toggle();
-                        }
-                    );
+
+                            document.getElementById('domain-lock').style.display =
+                                document.getElementById('domain-lock').style.display === 'none' ? '' : 'none';
+                            document.getElementById('domain-unlock').style.display =
+                                document.getElementById('domain-unlock').style.display === 'none' ? '' : 'none';
+                        });
                 });
 
-                $('#domain-enable-pp').on('click', function (event) {
+                document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    bb.post(
-                        'client/servicedomain/enable_privacy_protection',
-                        {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
-                        function (result) {
+                    API.client.post('servicedomain/enable_privacy_protection', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                        (result) =>{
                             FOSSBilling.message('Privacy Protection enabled');
-                            $('#domain-enable-pp').toggle();
-                            $('#domain-disable-pp').toggle();
-                        }
-                    );
+
+                            const enableBtn = document.getElementById('domain-enable-pp');
+                            const disableBtn = document.getElementById('domain-disable-pp');
+
+                            enableBtn.style.display = enableBtn.style.display === 'none' ? '' : 'none';
+                            disableBtn.style.display = disableBtn.style.display === 'none' ? '' : 'none';
+                        });
                 });
 
-                $('#domain-disable-pp').on('click', function (event) {
+                document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    bb.post(
-                        'client/servicedomain/disable_privacy_protection',
-                        {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
-                        function (result) {
+                    API.post.client('servicedomain/disable_privacy_protection', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                        (result) => {
                             FOSSBilling.message('Privacy Protection disabled');
-                            $('#domain-enable-pp').toggle();
-                            $('#domain-disable-pp').toggle();
+
+                            const enableBtn = document.getElementById('domain-enable-pp');
+                            const disableBtn = document.getElementById('domain-disable-pp');
+
+                            enableBtn.style.display = enableBtn.style.display === 'none' ? '' : 'none';
+                            disableBtn.style.display = disableBtn.style.display === 'none' ? '' : 'none';
                         }
                     );
                 });
 
-                $('#get-epp').on('click', function (event) {
+                document.getElementById('get-epp').addEventListener('click', function(event) {
                     event.preventDefault();
-                    bb.post(
-                        'client/servicedomain/get_transfer_code',
-                        {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
-                        function (result) {
+
+                    API.client.post('servicedomain/get_transfer_code', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                        (result) => {
                             FOSSBilling.message('Domain transfer code is: ' + result);
-                        }
-                    );
+                        });
                 });
             });
         </script>

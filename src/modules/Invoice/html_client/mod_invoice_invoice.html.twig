@@ -275,9 +275,11 @@
 {% endblock %}
 {% block js %}
 <script>
-    $(function() {
-        $(".hover-popover").tooltip({
-            placement: 'top'
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.hover-popover').forEach(element => {
+            const tooltip = new bootstrap.Tooltip(element, {
+                placement: 'top'
+            });
         });
     });
 
@@ -321,7 +323,7 @@
         document.getElementById('paymentPromptLabel').textContent = `{{ 'Pay with'|trans }}`.concat(` `, title);
         document.getElementById('subscription').href = paymentLink;
         document.getElementById('pay-nondescript').href = paymentLink;
-        paymentLink.searchParams.append('allow_subscription', 0); 
+        paymentLink.searchParams.append('allow_subscription', 0);
         document.getElementById('single').href = paymentLink;
 
         modal = new bootstrap.Modal('#paymentPrompt');

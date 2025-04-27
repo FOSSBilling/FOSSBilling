@@ -244,105 +244,86 @@
 {% endif %}
 
 <script>
-$(function() {
-    {% if service.locked == 0 %}
-        document.getElementById('domain-unlock').classList.remove('d-inline-block');
-        document.getElementById('domain-unlock').style.display = 'none';
-    {% endif %}
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if service.locked == 0 %}
+            document.getElementById('domain-unlock').classList.remove('d-inline-block');
+            document.getElementById('domain-unlock').style.display = 'none';
+        {% endif %}
 
-    {% if service.locked == 1 %}
-        document.getElementById('domain-lock').classList.remove('d-inline-block');
-        document.getElementById('domain-lock').style.display = 'none';
-    {% endif %}
+        {% if service.locked == 1 %}
+            document.getElementById('domain-lock').classList.remove('d-inline-block');
+            document.getElementById('domain-lock').style.display = 'none';
+        {% endif %}
 
-    $('#domain-lock').on('click', function(event) {
-        bb.post(
-            'admin/servicedomain/lock',
-            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
-            function(result) {
-                FOSSBilling.message("{{ 'Domain locked'|trans }}");
+        document.getElementById('domain-lock').addEventListener('click', function(event) {
+            API.admin.post('servicedomain/lock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    FOSSBilling.message("{{ 'Domain locked'|trans }}");
 
-                document.getElementById('domain-lock').classList.remove('d-inline-block');
-                document.getElementById('domain-lock').style.display = 'none';
-                document.getElementById('domain-unlock').classList.add('d-inline-block');
+                    document.getElementById('domain-lock').classList.remove('d-inline-block');
+                    document.getElementById('domain-lock').style.display = 'none';
+                    document.getElementById('domain-unlock').classList.add('d-inline-block');
 
-                $('#locked-value').text('1');
-            }
-        );
+                    document.getElementById('locked-value').textContent = '1';
+                });
+        });
+
+        document.getElementById('domain-unlock').addEventListener('click', function(event) {
+            API.admin.post('servicedomain/unlock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    FOSSBilling.message("{{ 'Domain unlocked'|trans }}");
+
+                    document.getElementById('domain-lock').classList.add('d-inline-block');
+                    document.getElementById('domain-unlock').classList.remove('d-inline-block');
+                    document.getElementById('domain-unlock').style.display = 'none';
+
+                    document.getElementById('locked-value').innerHTML = '<span class="badge bg-success me-1"></span> {{ "No"|trans }}';
+                });
+        });
+
+        {% if service.privacy == 0 %}
+            {# document.getElementById('domain-disable-pp').style.display = 'none'; #}
+            document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
+            document.getElementById('domain-disable-pp').style.display = 'none';
+        {% endif %}
+
+        {% if service.privacy == 1 %}
+            {# document.getElementById('domain-enable-pp').style.display = 'none'; #}
+            document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
+            document.getElementById('domain-enable-pp').style.display = 'none';
+        {% endif %}
+
+        document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
+            API.admin.post('servicedomain/enable_privacy_protection',{ order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    FOSSBilling.message("{{ 'Privacy protection enabled'|trans }}");
+
+                    document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
+                    document.getElementById('domain-enable-pp').style.display = 'none';
+                    document.getElementById('domain-disable-pp').classList.add('d-inline-block');
+
+                    document.getElementById('privacy-value').innerHTML = '<span class="badge bg-danger me-1"></span> {{ "Enabled"|trans }}';
+                });
+        });
+
+        document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
+            API.admin.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    FOSSBilling.message("{{ 'Privacy protection disabled'|trans }}");
+
+                    document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
+                    document.getElementById('domain-disable-pp').style.display = 'none';
+                    document.getElementById('domain-enable-pp').classList.add('d-inline-block');
+
+                    document.getElementById('privacy-value').innerHTML = '<span class="badge bg-success me-1"></span> {{ "Disabled"|trans }}';
+                });
+        });
+
+        document.getElementById('get-epp').addEventListener('click', function(event) {
+            API.admin.post('servicedomain/get_transfer_code', { order_id: {{ order.id}}, CSRFToken: "{{ CSRFToken }}" },
+                (result) => {
+                    FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
+                });
+        });
     });
-
-    $('#domain-unlock').on('click', function(event) {
-        bb.post(
-            'admin/servicedomain/unlock',
-            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
-            function(result) {
-                FOSSBilling.message("{{ 'Domain unlocked'|trans }}");
-
-                document.getElementById('domain-lock').classList.add('d-inline-block');
-                document.getElementById('domain-unlock').classList.remove('d-inline-block');
-                document.getElementById('domain-unlock').style.display = 'none';
-
-                $('#locked-value').text('0');
-            }
-        );
-    });
-
-    {% if service.privacy == 0 %}
-        {# $('#domain-disable-pp').hide(); #}
-        document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
-        document.getElementById('domain-disable-pp').style.display = 'none';
-    {% endif %}
-
-    {% if service.privacy == 1 %}
-        {# $('#domain-enable-pp').hide(); #}
-        document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
-        document.getElementById('domain-enable-pp').style.display = 'none';
-    {% endif %}
-
-    $('#domain-enable-pp').on('click', function(event) {
-        bb.post(
-            'admin/servicedomain/enable_privacy_protection',
-            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
-            function(result) {
-                FOSSBilling.message("{{ 'Privacy protection enabled'|trans }}");
-
-                {# $('#domain-enable-pp').toggle(); #}
-                {# $('#domain-disable-pp').toggle(); #}
-                document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
-                document.getElementById('domain-enable-pp').style.display = 'none';
-                document.getElementById('domain-disable-pp').classList.add('d-inline-block');
-
-                $('#privacy-value').text('1');
-            }
-        );
-    });
-
-    $('#domain-disable-pp').on('click', function(event) {
-        bb.post(
-            'admin/servicedomain/disable_privacy_protection',
-            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
-            function(result) {
-                FOSSBilling.message("{{ 'Privacy protection disabled'|trans }}");
-
-                {# $('#domain-enable-pp').toggle(); #}
-                {# $('#domain-disable-pp').toggle(); #}
-                document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
-                document.getElementById('domain-disable-pp').style.display = 'none';
-                document.getElementById('domain-enable-pp').classList.add('d-inline-block');
-
-                $('#privacy-value').text('0');
-            }
-        );
-    });
-
-    $('#get-epp').on('click', function(event) {
-        bb.post(
-            'admin/servicedomain/get_transfer_code',
-            { order_id: {{ order.id}}, CSRFToken: "{{ CSRFToken }}" },
-            function(result) {
-                FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
-            }
-        );
-    });
-});
 </script>

@@ -78,7 +78,7 @@
                         </section>
                     </div>
                 </div>
-                <hr>                
+                <hr>
             {% endfor %}
         </div>
         <div class="card-footer" id="reply-to">
@@ -86,7 +86,7 @@
                 <form method="post" action="" class="api_form" data-api-url="guest/support/ticket_reply" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
-                    
+
                     <textarea name="message" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>
                     <button class="btn btn-primary btn-large mt-1" type="submit" id="submit-support-message" value="{{ 'Post'|trans }}" onclick="">{{ 'Post'|trans }}</button>
                 </form>
@@ -100,24 +100,29 @@
 
 {% block js %}
 <script>
-$(function() {
-    $('.reply-to-message').on('click', function(event) {
-        event.preventDefault();
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.reply-to-message').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
 
-        var quote = $(this).attr('message-quote');
+                const replyTextarea = document.getElementById('ticket-reply-text');
 
-        $('#ticket-reply-text').text(quote);
-        $('#ticket-reply-text').focus();
-    });
+                if (replyTextarea) {
+                    replyTextarea.value = this.getAttribute('message-quote');
+                    replyTextarea.focus();
+                }
+            });
+        });
 
-    $('#new-ticket-button').on('click', function(e) {
-        e.preventDefault();
+        document.getElementById('new-ticket-button').addEventListener('click', function(event) {
+            event.preventDefault();
 
-        bb.post("guest/support/ticket_close", { hash: '{{ ticket.hash }}', CSRFToken: "{{ CSRFToken }}" }, function(r) {
-            FOSSBilling.message("Ticket was closed");
-            bb.reload();
+            API.guest.post("support/ticket_close", { hash: '{{ ticket.hash }}', CSRFToken: "{{ CSRFToken }}" },
+                () => {
+                    FOSSBilling.message("Ticket was closed");
+                    window.location.reload();
+                });
         });
     });
-});
 </script>
 {% endblock %}

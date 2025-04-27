@@ -224,8 +224,8 @@
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/invoice/batch_delete_transaction' }) }}
-        {{ include('partial_pagination.html.twig', { 'list': transactions, 'url': 'invoice/transactions' }) }}
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'invoice/batch_delete_transaction '} %}
+        {% include 'partial_pagination.html.twig' with { 'list': transactions, 'url': 'invoice/transactions' } %}
     </div>
 </div>
 {% endblock %}

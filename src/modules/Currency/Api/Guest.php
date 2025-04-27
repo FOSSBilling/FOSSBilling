@@ -82,7 +82,7 @@ class Guest extends \Api_Abstract
 
         $p = floatval($price);
         if ($convert) {
-            $p = $price * $c['conversion_rate'];
+            $p = floatval($price) * $c['conversion_rate'];
         }
 
         if ($without_currency) {

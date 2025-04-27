@@ -108,7 +108,6 @@
         <div class="card-body">
             <h3 class="card-title">{{ 'Email content'|trans }}</h3>
             <div class="card-tabs">
-
                 <ul class="nav nav-tabs" id="content-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <a href="#tab-message" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-message" aria-selected="true"
@@ -188,55 +187,57 @@
 {% block js %}
 {% autoescape "js" %}
 <script>
-function onAfterMessageUpdate() {
-    API.admin.post('massmailer/preview', { id: {{ msg.id }}, include_recipients: 1 }, function(result) {
-        document.querySelector('#recipients-banner').classList.add('d-none');
-        document.querySelector('#preview-banner').classList.add('d-none');
-        document.querySelector('#recipients').classList.remove('d-none');
-        document.querySelector('#preview').classList.remove('d-none');
-        document.querySelector('#preview-title').textContent = result.subject;
-        document.querySelector('#preview-content').innerHTML = result.content;
+    function onAfterMessageUpdate() {
+        API.admin.post('massmailer/preview', { id: {{ msg.id }}, include_recipients: 1 },
+            (result) => {
+                document.querySelector('#recipients-banner').classList.add('d-none');
+                document.querySelector('#preview-banner').classList.add('d-none');
+                document.querySelector('#recipients').classList.remove('d-none');
+                document.querySelector('#preview').classList.remove('d-none');
+                document.querySelector('#preview-title').textContent = result.subject;
+                document.querySelector('#preview-content').innerHTML = result.content;
 
-        result.recipients.forEach(function(recipient) {
-            const listItem = document.createElement('li');
-            listItem.classList.add('list-group-item');
-            listItem.textContent = recipient.name.concat(' (', recipient.email, ')');
-            document.getElementById('recipient-list').appendChild(listItem);
+                result.recipients.forEach(function(recipient) {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('list-group-item');
+                    listItem.textContent = recipient.name.concat(' (', recipient.email, ')');
+                    document.getElementById('recipient-list').appendChild(listItem);
+                });
+
+                document.getElementById('recipient-tab').textContent = '{{ 'Recipients'|trans }}'.concat(' (', result.recipients.length, ')');
+
+                const previewTab = new bootstrap.Tab(document.querySelector('#content-tabs a[data-bs-target="#tab-preview"]'));
+                previewTab.show();
+            });
+    }
+
+    document.querySelector('#send-msg').addEventListener('click', function() {
+        Modals.create({
+            type: 'small-confirm',
+            title: 'Send message to clients?',
+            content: 'Are you sure you want to send this message to clients?',
+            confirmCallback: () => {
+                API.admin.post('massmailer/send', { id: {{ msg.id }} },
+                    (result) => {
+                        FOSSBilling.message("{{ 'Message was added to mail queue and will be sent with scheduled tasks.'|trans }}");
+                    });
+            },
         });
-
-        document.getElementById('recipient-tab').textContent = '{{ 'Recipients'|trans }}'.concat(' (', result.recipients.length, ')');
-
-        const previewTab = new bootstrap.Tab(document.querySelector('#content-tabs a[data-bs-target="#tab-preview"]'));
-        previewTab.show();
     });
-}
 
-document.querySelector('#send-msg').addEventListener('click', () => {
-    Modals.create({
-        type: 'small-confirm',
-        title: 'Send message to clients?',
-        content: 'Are you sure you want to send this message to clients?',
-        confirmCallback: function() {
-            API.admin.post('massmailer/send', { id: {{ msg.id }} }, function(result) {
-                FOSSBilling.message("{{ 'Message was added to mail queue and will be sent with scheduled tasks.'|trans }}");
-            });
-        },
-    })
-});
-
-document.querySelector('#send-test-msg').addEventListener('click', () => {
-    Modals.create({
-        type: 'small-confirm',
-        title: 'Send test message?',
-        content: 'Are you sure you want to send a test message?',
-        confirmCallback: function() {
-            API.admin.post('massmailer/send_test', { id: {{ msg.id }} }, function(result) {
-                FOSSBilling.message("{{ 'Message was sent.'|trans }}");
-            });
-        },
-    })
-});
-
+    document.querySelector('#send-test-msg').addEventListener('click', function() {
+        Modals.create({
+            type: 'small-confirm',
+            title: 'Send test message?',
+            content: 'Are you sure you want to send a test message?',
+            confirmCallback: () => {
+                API.admin.post('massmailer/send_test', { id: {{ msg.id }} },
+                    (result) => {
+                        FOSSBilling.message("{{ 'Message was sent.'|trans }}");
+                    });
+            },
+        })
+    });
 </script>
 {% endautoescape %}
 {% endblock %}

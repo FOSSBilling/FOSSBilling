@@ -2,7 +2,6 @@ import "@melloware/coloris/dist/coloris.css";
 import './scss/fossbilling.scss';
 
 import './js/sprite';
-import $ from 'jquery';
 import './js/ui/modals';
 import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
@@ -15,7 +14,6 @@ import './js/fossbilling';
 import 'sortable-tablesort/dist/sortable.min.js';
 
 globalThis.ApexCharts = ApexCharts;
-globalThis.$ = globalThis.jQuery = $;
 globalThis.bootstrap = tabler.bootstrap;
 
 init();

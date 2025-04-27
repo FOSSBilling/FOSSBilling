@@ -295,16 +295,19 @@
 {% block js %}
     <script>
         function onAfterStaffCreate(id) {
-            bb.redirect("{{ 'staff/manage'|alink }}/" + id + '#tab-permissions');
+            window.location = "{{ 'staff/manage'|alink }}/" + id + '#tab-permissions';
         }
 
-        $(function () {
-            $('input[name=check_ip]').on('click', function () {
-                if ($(this).val() == 1) {
-                    $('#check_ip').slideDown();
-                } else {
-                    $('#check_ip').slideUp();
-                }
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll('input[name=check_ip]').forEach(function(radio) {
+                radio.addEventListener('click', function() {
+                    const checkIpElement = document.getElementById('check_ip');
+                    if (this.value == 1) {
+                        checkIpElement.style.display = 'block';
+                    } else {
+                        checkIpElement.style.display = 'none';
+                    }
+                });
             });
         });
     </script>

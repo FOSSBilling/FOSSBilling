@@ -93,7 +93,7 @@
             </table>
 
             <div class="card-footer d-flex align-items-center">
-                {{ include('partial_batch_delete.html.twig', { 'action': 'admin/invoice/batch_delete_tax' }) }}
+                {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete_tax' } %}
             </div>
         </div>
 

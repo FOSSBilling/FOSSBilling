@@ -45,7 +45,7 @@
                     <label class="form-label col-sm-4 col-md-3 col-form-label">{{ 'Your current preset'|trans }}</label>
                     <div class="col-sm-5 col-md-3">
                         <div class="input-group">
-                            <select class="form-select" name="preset" onchange="bb.post('admin/theme/preset_select', { code: '{{ theme_code }}', preset: $(this).val(), CSRFToken: '{{ CSRFToken }}' }, function(){ bb.reload(); })">
+                            <select class="form-select" name="preset" onchange="onSelectedPresetChange()">
                                 {% for preset in presets %}
                                     <option value="{{ preset }}"{% if preset == current_preset %} selected{% endif %}>{{ preset }}</option>
                                 {% endfor %}
@@ -94,8 +94,15 @@
 {% endblock %}
 {% block js %}
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        function onSelectedPresetChange() {
+            let selectedPreset = document.querySelector('select[name="preset"]').value;
+            API.admin.post('theme/preset_select', { code: '{{ theme_code }}', preset: selectedPreset, CSRFToken: '{{ CSRFToken }}' },
+                () => {
+                    window.location.reload();
+                });
+        }
 
+        document.addEventListener('DOMContentLoaded', function() {
             function createOptionElement(value, text) {
                 let optionEl = document.createElement('option');
                 optionEl.setAttribute('value', value);
@@ -150,7 +157,6 @@
                 el.insertAdjacentHTML('afterend', filePathBtn);
 
             })
-
         });
     </script>
 {% endblock %}
