@@ -6,7 +6,7 @@ import $ from 'jquery';
 import './js/ui/modals';
 import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
-import '@tabler/core/src/js/tabler';
+import '@tabler/core/js/src/tabler';
 import './js/tomselect'
 import './js/datepicker'
 import ApexCharts from 'apexcharts';
