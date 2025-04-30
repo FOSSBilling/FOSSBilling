@@ -67,7 +67,7 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
 
         if (count($functionsFound) === 1) {
             $result = __trans(':function: is enabled, potentially being a security concern.', [':function:' => array_key_first($functionsFound)]) . "\n";
-            $state = $properties['type'];
+            $state = $functionsFound[0]['type'];
         } else {
             $result = __trans("The following PHP functions are enabled, potentially being a security concern:\n");
             foreach ($functionsFound as $function => $properties) {
