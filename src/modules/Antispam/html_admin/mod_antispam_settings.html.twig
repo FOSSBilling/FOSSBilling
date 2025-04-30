@@ -2,7 +2,7 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'Antispam settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Anti-spam settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -25,7 +25,7 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Antispam settings'|trans }}</h3>
+            <h3 class="card-title">{{ 'Ant-spam settings'|trans }}</h3>
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_antispam" }) %}
@@ -39,7 +39,7 @@
                     <div class="row col-md-6 pt-2 ps-0">
                         <label class="form-check form-check-single form-switch ps-0 mb-2">
                             <input id="block_ips_check" class="form-check-input" name="block_ips" type="checkbox"
-                                   {% if params.block_ips %}checked="checked"{% endif %}">
+                                   {% if params.block_ips|default(true) %}checked="checked"{% endif %}">
                         </label>
                         <div class="col ps-0">
                             <small class="form-hint">{{ 'Blocked IPs are not allowed to login, register or open public ticket. (One IP per line)'|trans }}</small>
@@ -120,8 +120,20 @@
                     <div class="col-md-6 pt-2 ps-0">
                         <label class="form-check form-check-single form-switch ps-0">
                             <input id="check_temp_emails" class="form-check-input" name="check_temp_emails" type="checkbox"
-                                   {% if params.check_temp_emails %} checked="checked" {% endif %}">
+                                   {% if params.check_temp_emails|default(true) %} checked="checked" {% endif %}">
                         </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <h3 class="card-title">{{ 'Hidden honeypot field'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Configure a hidden honeypot field on the sign-in page to catch basic bots'|trans }}</p>
+                <div class="mb-3 row">
+                    <label class="col-md-3 col-form-label" for="honeypot_field">{{ 'Honeypot field name'|trans }}</label>
+                    <div class="col-md-6 row">
+                        <input class="form-control" type="text" id="honeypot_field" name="honeypot_field"
+                               value="{{ params.honeypot_field|default('bio') }}" placeholder="bio">
                     </div>
                 </div>
             </div>

@@ -40,7 +40,7 @@ class Admin extends \Api_Abstract
             $blocked_ips[] = $data['ip'];
 
             $config['blocked_ips'] = $this->stringifyList($blocked_ips);
-            error_log('After: ' . $config['blocked_ips']);
+            $config['block_ips'] = true;
             $config['ext'] = 'mod_antispam';
 
             $this->di['mod_service']('extension')->setConfig($config);
@@ -54,7 +54,6 @@ class Admin extends \Api_Abstract
     private function getIpList()
     {
         $config = $this->di['mod_config']('antispam');
-        error_log('Before: ' . $config['blocked_ips']);
         $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
         $blocked_ips = array_map(trim(...), $blocked_ips);
 

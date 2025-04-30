@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Client\Api;
 
+use FOSSBilling\InformationException;
+
 class Guest extends \Api_Abstract
 {
     /**
@@ -82,6 +84,11 @@ class Guest extends \Api_Abstract
         $email = strtolower(trim($email));
         if ($service->clientAlreadyExists($email)) {
             throw new \FOSSBilling\InformationException('This email address is already registered.');
+        }
+
+        $honeypotName = $this->di['mod_config']('antispam')['honeypot_field'] ?? 'bio';
+        if(!empty($honeypotName) && !empty($data[$honeypotName])){
+            throw new InformationException("An error has occured.");
         }
 
         $client = $service->guestCreateClient($data);
