@@ -11,9 +11,6 @@ final class GuestTest extends TestCase
 {
     public function testDisposableEmailCheck(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
         $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
@@ -38,9 +35,6 @@ final class GuestTest extends TestCase
 
     public function testStopForumSpam(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
         $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
